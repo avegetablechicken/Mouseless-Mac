@@ -476,6 +476,15 @@
                                 "type": "basic"
                             },
                             {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "com.parallels.desktop.console",
+                                            "com.parallels.macvm"
+                                        ],
+                                        "type": "frontmost_application_unless"
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "right_arrow",
                                     "modifiers": { "mandatory": ["fn", "left_control"] }
@@ -484,6 +493,15 @@
                                 "type": "basic"
                             },
                             {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "com.parallels.desktop.console",
+                                            "com.parallels.macvm"
+                                        ],
+                                        "type": "frontmost_application_unless"
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "up_arrow",
                                     "modifiers": { "mandatory": ["fn", "left_control"] }
@@ -492,6 +510,15 @@
                                 "type": "basic"
                             },
                             {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "com.parallels.desktop.console",
+                                            "com.parallels.macvm"
+                                        ],
+                                        "type": "frontmost_application_unless"
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "down_arrow",
                                     "modifiers": { "mandatory": ["fn", "left_control"] }
@@ -522,6 +549,15 @@
                                 "type": "basic"
                             },
                             {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "com.parallels.desktop.console",
+                                            "com.parallels.macvm"
+                                        ],
+                                        "type": "frontmost_application_unless"
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "right_arrow",
                                     "modifiers": { "mandatory": ["fn", "left_control", "left_option"] }
@@ -530,6 +566,15 @@
                                 "type": "basic"
                             },
                             {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "com.parallels.desktop.console",
+                                            "com.parallels.macvm"
+                                        ],
+                                        "type": "frontmost_application_unless"
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "left_arrow",
                                     "modifiers": { "mandatory": ["fn", "left_shift", "left_control", "left_option"] }
@@ -538,6 +583,15 @@
                                 "type": "basic"
                             },
                             {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "com.parallels.desktop.console",
+                                            "com.parallels.macvm"
+                                        ],
+                                        "type": "frontmost_application_unless"
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "right_arrow",
                                     "modifiers": { "mandatory": ["fn", "left_shift", "left_control", "left_option"] }
@@ -552,6 +606,15 @@
                         "enabled": false,
                         "manipulators": [
                             {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "com.parallels.desktop.console",
+                                            "com.parallels.macvm"
+                                        ],
+                                        "type": "frontmost_application_unless"
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "c",
                                     "modifiers": { "mandatory": ["fn", "left_control"] }
