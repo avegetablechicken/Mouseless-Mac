@@ -4445,9 +4445,12 @@ local function registerOpenRecent(appObject)
   if specApp ~= nil or spec == nil or hs.fnutils.contains(spec.excluded or {}, bundleID) then
     return
   end
-  local localizedFile = localizedMenuBarItem("File", appObject:bundleID())
-  if localizedFile == nil then return end
-  if appObject:findMenuItem({ localizedFile }) == nil then return end
+  local localizedFile = 'File'
+  if appObject:findMenuItem({ localizedFile }) == nil then
+    localizedFile = localizedMenuBarItem("File", appObject:bundleID())
+    if localizedFile == nil then return end
+    if appObject:findMenuItem({ localizedFile }) == nil then return end
+  end
   local appUIObj = hs.axuielement.applicationElement(appObject)
   local findMenu = getAXChildren(appUIObj, "AXMenuBar", 1, "AXMenuBarItem", localizedFile, "AXMenu", 1)
   if findMenu == nil then return end
