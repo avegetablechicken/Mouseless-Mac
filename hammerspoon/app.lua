@@ -2229,7 +2229,12 @@ appHotKeyCallbacks = {
         return false
       end,
       repeatable = true,
-      fn = receivePosition
+      fn = function(position, appObject)
+        local mousePosition = hs.mouse.absolutePosition()
+        if leftClick({ position.x + 5, position.y + 5 }, appObject:name()) then
+          hs.timer.doAfter(0.1, function() hs.mouse.absolutePosition(mousePosition) end)
+        end
+      end
     },
     ["forward"] = {
       message = "下一页",
@@ -2246,7 +2251,12 @@ appHotKeyCallbacks = {
         return false
       end,
       repeatable = true,
-      fn = receivePosition
+      fn = function(position, appObject)
+        local mousePosition = hs.mouse.absolutePosition()
+        if leftClick({ position.x + 5, position.y + 5 }, appObject:name()) then
+          hs.timer.doAfter(0.1, function() hs.mouse.absolutePosition(mousePosition) end)
+        end
+      end
     },
     ["refresh"] = {
       message = "刷新",
@@ -2266,7 +2276,12 @@ appHotKeyCallbacks = {
         return refreshButtonPosition ~= nil and searchButtonPosition ~= nil
             and refreshButtonPosition.x ~= searchButtonPosition.x, refreshButtonPosition
       end,
-      fn = receivePosition
+      fn = function(position, appObject)
+        local mousePosition = hs.mouse.absolutePosition()
+        if leftClick({ position.x + 5, position.y + 5 }, appObject:name()) then
+          hs.timer.doAfter(0.1, function() hs.mouse.absolutePosition(mousePosition) end)
+        end
+      end
     },
     ["playBarCloseSingleSong"] = {
       message = "关闭单曲",
