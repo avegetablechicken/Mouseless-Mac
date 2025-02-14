@@ -305,9 +305,9 @@ local function deleteSelectedMessage(appObject, menuItem, force)
   if button ~= nil then
     button:performAction("AXPress")
     if force ~= nil then
-      hs.timer.doAfter(0.1, function()
+      hs.timer.doAfter(0.2, function()
         hs.eventtap.keyStroke("", "Tab", nil, appObject)
-        hs.timer.doAfter(0.1, function()
+        hs.timer.doAfter(0.2, function()
           hs.eventtap.keyStroke("", "Space", nil, appObject)
         end)
       end)
