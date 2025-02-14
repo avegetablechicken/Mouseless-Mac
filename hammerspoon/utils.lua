@@ -2183,7 +2183,7 @@ function leftClick(position, appName)
     end
     if appHere.AXTitle ~= appName then return false end
   end
-  hs.eventtap.leftClick(hs.geometry.point(position))
+  hs.eventtap.leftClick(position)
   return true
 end
 
@@ -2205,7 +2205,7 @@ function rightClick(position, appName)
     end
     if appHere.AXTitle ~= appName then return false end
   end
-  hs.eventtap.rightClick(hs.geometry.point(position))
+  hs.eventtap.rightClick(position)
   return true
 end
 
