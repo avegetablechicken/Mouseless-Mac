@@ -386,7 +386,7 @@
       {
         "mods": "${hyper.hyper}",
         "key": "S",
-        "bundleID": "com.apple.ScriptEditor2"
+        "bundleID": "com.apple.ScreenContinuity"
       },
       {
         "mods": "${hyper.hyper}",
