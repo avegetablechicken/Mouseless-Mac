@@ -4634,14 +4634,16 @@ local function registerForOpenSavePanel(appObject)
   local getUIObj = function(winUIObj)
     local windowIdent = winUIObj:attributeValue("AXIdentifier")
     local dontSaveButton, sidebarCells = nil, {}
-    local specialConfirmFunc = specialConfirmFuncs[appObject:bundleID()]
-    if specialConfirmFunc ~= nil then
-      dontSaveButton = specialConfirmFunc(winUIObj)
-    elseif windowIdent == "save-panel" then
-      for _, button in ipairs(winUIObj:childrenWithRole("AXButton")) do
-        if button.AXIdentifier == "DontSaveButton" then
-          dontSaveButton = button
-          break
+    if get(KeybindingConfigs.hotkeys, appObject:bundleID(), "confirmDelete") == nil then
+      local specialConfirmFunc = specialConfirmFuncs[appObject:bundleID()]
+      if specialConfirmFunc ~= nil then
+        dontSaveButton = specialConfirmFunc(winUIObj)
+      elseif windowIdent == "save-panel" then
+        for _, button in ipairs(winUIObj:childrenWithRole("AXButton")) do
+          if button.AXIdentifier == "DontSaveButton" then
+            dontSaveButton = button
+            break
+          end
         end
       end
     end
