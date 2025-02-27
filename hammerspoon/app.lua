@@ -4567,7 +4567,7 @@ registerZoomHotkeys(frontApp)
 -- & hotkey to confirm delete
 local openSavePanelHotkeys = {}
 
--- specialized for `WPS Office`
+-- special buttons for no saving in some apps
 local specialConfirmFuncs = {
   ["com.kingsoft.wpsoffice.mac"] = function(winUIObj)
     if winUIObj.AXSubrole == "AXDialog" then
