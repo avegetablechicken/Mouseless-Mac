@@ -1581,6 +1581,25 @@ appHotKeyCallbacks = {
       message = localizedMessage("Show in Finder"),
       condition = checkMenuItem({ "File", "Show in Finder" }),
       fn = receiveMenuItem
+    },
+    ["confirmDelete"] = {
+      message = localizedMessage("Don't Save"),
+      mods = get(KeybindingConfigs.hotkeys.shared, "confirmDelete", "mods"),
+      key = get(KeybindingConfigs.hotkeys.shared, "confirmDelete", "key"),
+      condition = function(appObject)
+        local winObj = appObject:focusedWindow()
+        if winObj == nil then return false end
+        local winUIObj = hs.axuielement.windowElement(winObj)
+        local buttons = winUIObj:childrenWithRole("AXButton")
+        local title = localizedString("Don't Save", appObject:bundleID())
+        for _, button in ipairs(buttons) do
+          if button.AXTitle == title then
+            return true, button
+          end
+        end
+        return false
+      end,
+      fn = receiveButton
     }
   },
 
