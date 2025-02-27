@@ -4570,9 +4570,9 @@ local openSavePanelHotkeys = {}
 -- specialized for `WPS Office`
 local specialConfirmFuncs = {
   ["com.kingsoft.wpsoffice.mac"] = function(winUIObj)
-    local btnName = localizedMenuItem("Don't Save", "com.kingsoft.wpsoffice.mac")
-    if btnName == nil then return end
     if winUIObj.AXSubrole == "AXDialog" then
+      local btnName = localizedMenuItem("Don't Save", "com.kingsoft.wpsoffice.mac")
+      if btnName == nil then return end
       local buttons = winUIObj:childrenWithRole("AXButton")
       for _, button in ipairs(buttons) do
         if button.AXTitle == btnName then
