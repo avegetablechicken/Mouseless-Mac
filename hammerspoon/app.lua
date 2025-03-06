@@ -2752,6 +2752,11 @@ appHotKeyCallbacks = {
         hs.timer.doAfter(1, function()
           local switch = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
               "AXPopover", 1, "AXGroup", 3, "AXButton", 1)
+          if switch == nil then
+            hs.timer.usleep(0.1 * 1000000)
+            switch = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
+                "AXPopover", 1, "AXGroup", 3, "AXButton", 2)
+          end
           local state = switch.AXValue
           switch:performAction("AXPress")
           if state == 'off' then
