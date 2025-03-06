@@ -1,9 +1,15 @@
 {
-  "menuBarItemsMayChange": {
-    "basic": [
+  "menuBarItems": {
+    "none": [
+      "at.obdev.littlesnitch",
+      "at.obdev.littlesnitch.agent",
+      "at.obdev.littlesnitch.networkmonitor",
+      "pl.maketheweb.TopNotch"
+    ],
+    "changable": [
       "com.kingsoft.wpsoffice.mac"
     ],
-    "window": [
+    "changeOnWindow": [
       "com.microsoft.VSCode",
       "com.jetbrains.CLion",
       "com.jetbrains.CLion-EAP",

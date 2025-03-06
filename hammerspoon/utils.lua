@@ -150,7 +150,11 @@ SPECIAL_KEY_SIMBOL_MAP = {
   ['\xf0\x9f\x8e\xa4'] = '🎤︎',
 }
 
+local appsWithoutMenuBarItems
 function getMenuItems(appObject)
+  if appsWithoutMenuBarItems == nil then
+    appsWithoutMenuBarItems = get(ApplicationConfigs, "menuBarItems", "none") or {}
+  end
   local menuItems
   local maxTryTime = 3
   local tryInterval = 0.05
@@ -158,7 +162,7 @@ function getMenuItems(appObject)
   while tryTimes <= maxTryTime / tryInterval do
     menuItems = appObject:getMenuItems()
     if menuItems ~= nil then return menuItems end
-    if appObject:bundleID():find("at.obdev.littlesnitch") ~= nil then return end
+    if hs.fnutils.contains(appsWithoutMenuBarItems, appObject:bundleID()) then return end
     hs.timer.usleep(tryInterval * 1000000)
     appObject = findApplication(appObject:bundleID())
     if appObject == nil then break end

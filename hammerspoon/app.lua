@@ -1,8 +1,8 @@
 require "utils"
 
-local applicationConfigs
+ApplicationConfigs = nil
 if hs.fs.attributes("config/application.json") ~= nil then
-  applicationConfigs = hs.json.read("config/application.json")
+  ApplicationConfigs = hs.json.read("config/application.json")
 end
 
 hs.application.enableSpotlightForNameSearches(true)
@@ -4287,7 +4287,7 @@ end
 
 -- for apps whose launching can be detected by Hammerspoon
 local processesOnLaunch = {}
-local appsLaunchSilently = applicationConfigs.launchSilently or {}
+local appsLaunchSilently = ApplicationConfigs["launchSilently"] or {}
 local function execOnLaunch(bundleID, action, onlyFirstTime)
   if hs.fnutils.contains(appsLaunchSilently, bundleID) then
     ExecOnSilentLaunch(bundleID, action)
@@ -4976,7 +4976,7 @@ end
 altMenuBarItem(frontApp, frontAppMenuItems)
 
 -- some apps may change their menu bar items irregularly
-local appswatchMenuBarItems = get(applicationConfigs.menuBarItemsMayChange, 'basic') or {}
+local appswatchMenuBarItems = get(ApplicationConfigs, "menuBarItems", 'changable') or {}
 local appsMenuBarItemTitlesString = {}
 
 local getMenuBarItemTitlesString = function(appObject, menuItems)
@@ -5013,7 +5013,7 @@ local function watchMenuBarItems(appObject, menuItems)
 end
 
 -- some apps may change their menu bar items based on the focused window
-local appsMayChangeMenuBar = get(applicationConfigs.menuBarItemsMayChange, 'window') or {}
+local appsMayChangeMenuBar = get(ApplicationConfigs, "menuBarItems", 'changeOnWindow') or {}
 
 local function appMenuBarChangeCallback(appObject)
   local menuItems = getMenuItems(appObject)
@@ -5194,8 +5194,8 @@ local function registerPseudoWindowDestroyWatcher(appObject, roles, windowFilter
       function(bundleID) appPseudoWindowObservers[bundleID] = nil end)
 end
 
-local appsAutoHideWithNoWindowsLoaded = applicationConfigs.autoHideWithNoWindow
-local appsAutoQuitWithNoWindowsLoaded = applicationConfigs.autoQuitWithNoWindow
+local appsAutoHideWithNoWindowsLoaded = ApplicationConfigs["autoHideWithNoWindow"] or {}
+local appsAutoQuitWithNoWindowsLoaded = ApplicationConfigs["autoQuitWithNoWindow"] or {}
 local appsAutoHideWithNoWindows = {}
 local appsAutoQuitWithNoWindows = {}
 -- account for pseudo windows such as popover or sheet
@@ -5203,7 +5203,7 @@ local appsAutoHideWithNoPseudoWindows = {}
 local appsAutoQuitWithNoPseudoWindows = {}
 -- some apps may first close a window before create a targeted one, so delay is needed before checking
 local appsWithNoWindowsDelay = {}
-for _, item in ipairs(appsAutoHideWithNoWindowsLoaded or {}) do
+for _, item in ipairs(appsAutoHideWithNoWindowsLoaded) do
   if type(item) == 'string' then
     appsAutoHideWithNoWindows[item] = true
   else
@@ -5227,7 +5227,7 @@ for _, item in ipairs(appsAutoHideWithNoWindowsLoaded or {}) do
     end
   end
 end
-for _, item in ipairs(appsAutoQuitWithNoWindowsLoaded or {}) do
+for _, item in ipairs(appsAutoQuitWithNoWindowsLoaded) do
   if type(item) == 'string' then
     appsAutoQuitWithNoWindows[item] = true
   else
@@ -5351,7 +5351,7 @@ local function connectMountainDuckEntries(appObject, connection)
     end
   end
 end
-local mountainDuckConfig = applicationConfigs["io.mountainduck"]
+local mountainDuckConfig = ApplicationConfigs["io.mountainduck"]
 if mountainDuckConfig ~= nil and mountainDuckConfig.connections ~= nil then
   for _, connection in ipairs(mountainDuckConfig.connections) do
     if type(connection) == 'table' then
@@ -5555,7 +5555,7 @@ local function suspendHotkeysInRemoteDesktop(appObject)
   end
 end
 
-local remoteDesktopAppsRequireSuspendHotkeys = applicationConfigs.suspendHotkeysInRemoteDesktop or {}
+local remoteDesktopAppsRequireSuspendHotkeys = ApplicationConfigs["suspendHotkeysInRemoteDesktop"] or {}
 for _, bundleID in ipairs(remoteDesktopAppsRequireSuspendHotkeys) do
   if frontApp:bundleID() == bundleID then
     suspendHotkeysInRemoteDesktop(frontApp)
@@ -5611,7 +5611,7 @@ deactivateCloseWindowForIOSApps(frontApp)
 -- ## application callbacks
 
 -- specify input source for apps
-local appsInputSourceMap = applicationConfigs.inputSource or {}
+local appsInputSourceMap = ApplicationConfigs["inputSource"] or {}
 local function selectInputSourceInApp(appObject)
   local inputSource = appsInputSourceMap[appObject:bundleID()]
   if inputSource ~= nil then
