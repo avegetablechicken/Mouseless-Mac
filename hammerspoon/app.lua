@@ -393,7 +393,8 @@ local function deleteMousePositionCall(winObj)
         end
         if popup == nil then return end
       end
-      local menuItem = popup:childrenWithRole("AXMenuItem")[5]
+      local locTitle = localizedString("Remove from Recents", winObj:application():bundleID())
+      local menuItem = getAXChildren(popup, "AXMenuItem", locTitle)
       if menuItem ~= nil then
         menuItem:performAction("AXPress")
       end
@@ -461,7 +462,8 @@ local function deleteAllCalls(winObj)
         end
         if popup == nil then return end
       end
-      local menuItem = popup:childrenWithRole("AXMenuItem")[5]
+      local locTitle = localizedString("Remove from Recents", winObj:application():bundleID())
+      local menuItem = getAXChildren(popup, "AXMenuItem", locTitle)
       if menuItem ~= nil then
         menuItem:performAction("AXPress")
       end
