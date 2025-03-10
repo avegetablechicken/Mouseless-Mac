@@ -343,22 +343,14 @@ local function deleteAllMessages(appObject)
         return
       end
 
-      local action
-      action = function(i)
-        local messageItem = messageItems[i]
-        messageItem:performAction("AXPress")
-        hs.timer.doAfter(0.1, function()
-          deleteSelectedMessage(appObject, nil, true)
-          hs.timer.doAfter(1.5, function()
-            if i < #messageItems then
-              action(i + 1)
-            else
-              deleteAllMessages(appObject)
-            end
-          end)
+      local messageItem = messageItems[1]
+      messageItem:performAction("AXPress")
+      hs.timer.doAfter(0.1, function()
+        deleteSelectedMessage(appObject, nil, true)
+        hs.timer.doAfter(1.9, function()
+          deleteAllMessages(appObject)
         end)
-      end
-      action(1)
+      end)
     end,
     function(element)
       return element.AXIdentifier == "ConversationList"
