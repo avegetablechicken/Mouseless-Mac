@@ -508,10 +508,13 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
   end
 
   if karaHotkeys == nil then
-    karaHotkeys = loadKarabinerKeyBindings("static/karabiner-keybindings.json")
-    hs.fnutils.each(karaHotkeys, function(hotkey) hotkey.source = 1 end)
+    local _, karaIsRunning = hs.execute("pgrep Karabiner-VirtualHIDDevice-Daemon")
+    if karaIsRunning then
+      karaHotkeys = loadKarabinerKeyBindings("static/karabiner-keybindings.json")
+      hs.fnutils.each(karaHotkeys, function(hotkey) hotkey.source = 1 end)
+    end
   end
-  allKeys = hs.fnutils.concat(allKeys, karaHotkeys)
+  allKeys = hs.fnutils.concat(allKeys, karaHotkeys or {})
 
   for _, entry in ipairs(allKeys) do
     testValid(entry)
