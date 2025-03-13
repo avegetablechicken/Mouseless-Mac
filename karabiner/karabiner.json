@@ -455,7 +455,7 @@
                         ]
                     },
                     {
-                        "description": "Fn + Control + arrow to zoom window to screen side",
+                        "description": "Fn + Control + arrow to zoom window to half screen",
                         "enabled": false,
                         "manipulators": [
                             {
@@ -502,7 +502,7 @@
                         ]
                     },
                     {
-                        "description": "Fn + Control + Option + Shift (optional) + arrow to zoom window to screen side",
+                        "description": "Fn + Control + Option + Shift (optional) + arrow to zoom window to 1/3 or 2/3 screen",
                         "manipulators": [
                             {
                                 "conditions": [
