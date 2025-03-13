@@ -88,6 +88,13 @@
     },
     {
         "mods": ["fn", "control", "shift"],
+        "key": "S",
+        "message": "Move towards Bottom",
+        "kind": "WIN_OP",
+        "subkind": "MOVE"
+    },
+    {
+        "mods": ["fn", "control", "shift"],
         "key": "A",
         "message": "Move towards Left",
         "kind": "WIN_OP",
@@ -124,13 +131,6 @@
     {
         "mods": ["fn", "control", "shift"],
         "key": "X",
-        "message": "Move towards Bottom",
-        "kind": "WIN_OP",
-        "subkind": "MOVE"
-    },
-    {
-        "mods": ["fn", "control", "shift"],
-        "key": "C",
         "message": "Move towards Bottom-Right",
         "kind": "WIN_OP",
         "subkind": "MOVE"
