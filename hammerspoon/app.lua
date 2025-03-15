@@ -2008,6 +2008,83 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["com.tencent.yuanbao"] =
+  {
+    ["settings"] = {
+      message = "设置",
+      condition = function(appObject)
+        if appObject:focusedWindow() == nil then return false end
+        local winUIObj = hs.axuielement.windowElement(appObject:focusedWindow())
+        local webarea = getAXChildren(winUIObj, "AXGroup", 1, "AXGroup", 1,
+          "AXScrollArea", 1, "AXWebArea", 1)
+        if webarea == nil then return false end
+        local button = hs.fnutils.find(webarea:childrenWithRole("AXGroup"), function(b)
+          return hs.fnutils.find(b.AXDOMClassList or {}, function(c)
+            return c:find("side%-bar_name") ~= nil
+          end) ~= nil
+        end)
+        if button ~= nil and button.AXPosition.x ~= winUIObj.AXPosition.x then
+          return true, button.AXPosition
+        else
+          return false
+        end
+      end,
+      fn = receivePosition
+    },
+    ["newChat"] = {
+      message = "新建对话",
+      condition = function(appObject)
+        if appObject:focusedWindow() == nil then return false end
+        local winUIObj = hs.axuielement.windowElement(appObject:focusedWindow())
+        local webarea = getAXChildren(winUIObj, "AXGroup", 1, "AXGroup", 1,
+            "AXScrollArea", 1, "AXWebArea", 1)
+        if webarea == nil then return false end
+        local button = hs.fnutils.find(webarea:childrenWithRole("AXGroup"), function(b)
+          return hs.fnutils.find(b.AXDOMClassList or {}, function(c)
+            return c:find("chat_new%-chat%-close") ~= nil
+                or c:find("side%-bar_newChatIcon") ~= nil
+          end) ~= nil
+        end)
+        return button ~= nil, button
+      end,
+      fn = receiveButton
+    },
+    ["toggleSidebar"] = {
+      message = "切换侧栏",
+      condition = function(appObject)
+        if appObject:focusedWindow() == nil then return false end
+        local winUIObj = hs.axuielement.windowElement(appObject:focusedWindow())
+        local webarea = getAXChildren(winUIObj, "AXGroup", 1, "AXGroup", 1,
+            "AXScrollArea", 1, "AXWebArea", 1)
+        if webarea == nil then return false end
+        local button = hs.fnutils.find(webarea:childrenWithRole("AXGroup"), function(b)
+          return hs.fnutils.find(b.AXDOMClassList or {}, function(c)
+            return c:find("folder_foldIcon") ~= nil
+          end) ~= nil
+        end)
+        return button ~= nil, button
+      end,
+      fn = receiveButton
+    },
+    ["back"] = {
+      message = "返回",
+      condition = function(appObject)
+        if appObject:focusedWindow() == nil then return false end
+        local winUIObj = hs.axuielement.windowElement(appObject:focusedWindow())
+        local webarea = getAXChildren(winUIObj, "AXGroup", 1, "AXGroup", 1,
+            "AXScrollArea", 1, "AXWebArea", 1)
+        if webarea == nil then return false end
+        local button = hs.fnutils.find(webarea:childrenWithRole("AXGroup"), function(b)
+          return hs.fnutils.find(b.AXDOMClassList or {}, function(c)
+            return c:find("setting_arrowLeft") ~= nil
+          end) ~= nil
+        end)
+        return button ~= nil, button
+      end,
+      fn = receiveButton
+    }
+  },
+
   ["JabRef"] =
   {
     ["preferences"] = {

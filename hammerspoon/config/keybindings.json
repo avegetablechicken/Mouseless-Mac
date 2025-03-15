@@ -1012,6 +1012,24 @@
         "background": true
       }
     },
+    "com.tencent.yuanbao": {
+      "settings": {
+        "mods": "command",
+        "key": ","
+      },
+      "newChat": {
+        "mods": "command",
+        "key": "N"
+      },
+      "toggleSidebar": {
+        "mods": ["control", "command"],
+        "key": "S"
+      },
+      "back": {
+        "mods": "command",
+        "key": "["
+      }
+    },
     "JabRef": {
       "preferences": {
         "mods": "command",
