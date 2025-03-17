@@ -1215,10 +1215,12 @@ local function localizedStringImpl(str, bundleID, params, force)
   if framework.chromium then
     if findApplication(bundleID) then
       local menuItems = getMenuItems(findApplication(bundleID))
-      table.remove(menuItems, 1)
-      for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
-        if hs.fnutils.find(menuItems, function(item) return item.AXTitle == title end) ~= nil then
-          return str
+      if menuItems ~= nil then
+        table.remove(menuItems, 1)
+        for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
+          if hs.fnutils.find(menuItems, function(item) return item.AXTitle == title end) ~= nil then
+            return str
+          end
         end
       end
     end
@@ -1788,10 +1790,12 @@ local function delocalizedStringImpl(str, bundleID, params)
   if framework.chromium then
     if findApplication(bundleID) then
       local menuItems = getMenuItems(findApplication(bundleID))
-      table.remove(menuItems, 1)
-      for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
-        if hs.fnutils.find(menuItems, function(item) return item.AXTitle == title end) ~= nil then
-          return str
+      if menuItems ~= nil then
+        table.remove(menuItems, 1)
+        for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
+          if hs.fnutils.find(menuItems, function(item) return item.AXTitle == title end) ~= nil then
+            return str
+          end
         end
       end
     end
