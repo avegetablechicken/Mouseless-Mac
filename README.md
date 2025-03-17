@@ -12,6 +12,22 @@ brew install hammerspoon karabiner-elements --cask
 
 Then clone this repository, rename `hammerspoon` to `.hammerspoon` and move it to your home directory, add  move `karabiner` to $HOME/.config. Finally, just launch Hammerspoon and Karabiner-Elements. Now you can throw away your mouse!
 
+Note: Current version of Hammerspoon may experience a long delay during loading. You can fix it by addin a line at line 1412 in "/Applications/Hammerspoon.app/Contents/Resources/extensions/hs/window_filter.lua".
+
+```lua
+local function startAppWatcher(app,appname,retry,nologging,force)
+  if not app or not appname then log.e('called startAppWatcher with no app') return end
+ + if app:bundleID() == "com.apple.WebKit.WebContent" then return end
+  if apps[appname] then return not nologging and log.df('app %s already registered',appname) end
+  if app:kind()<0 or not windowfilter.isGuiApp(appname) then log.df('app %s has no GUI',appname) return end
+  if not fnutils.contains(axuielement.applicationElement(app):attributeNames() or {}, "AXFocusedWindow") then
+      log.df('app %s has no AXFocusedWindow element',appname)
+      return
+  end
+  ...
+end
+```
+
 ## Features
 
 ### Hammerspoon
