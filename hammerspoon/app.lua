@@ -1310,8 +1310,7 @@ appHotKeyCallbacks = {
 
   ["com.apple.FaceTime"] = {
     ["removeFromRecents"] = {
-      message = localizedMessage("Remove from Recents",
-                                 { framework = "ConversationKit.framework" }),
+      message = localizedMessage("Remove from Recents"),
       condition = function(appObject)
         return appObject:focusedWindow() ~= nil, appObject:focusedWindow()
       end,

@@ -1,6 +1,7 @@
 {
   "resources": {
     "com.apple.MobileSMS": "ChatKit.framework",
+    "com.apple.FaceTime": "ConversationKit.framework",
     "com.apple.Safari": "Safari.framework",
     "com.apple.Home": "UIKitMacHelper.framework",
     "com.apple.iMovieApp": "Flexo.framework",
