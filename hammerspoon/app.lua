@@ -1792,6 +1792,11 @@ appHotKeyCallbacks = {
         end)
       end
     },
+    ["toggleFormatInspector"] = {  -- View > Inspector > Format
+      message = localizedMessage({ "Inspector", "Format" }),
+      condition = checkMenuItem({ "View", "Inspector", "Format" }),
+      fn = receiveMenuItem
+    },
     ["play"] = {  -- Play > Play Slideshow
       message = localizedMessage("Play Slideshow"),
       condition = checkMenuItem({ "Play", "Play Slideshow" }),
@@ -1862,6 +1867,11 @@ appHotKeyCallbacks = {
       repeatable = true,
       fn = receiveMenuItem
     },
+    ["toggleFormatInspector"] = {  -- View > Inspector > Format
+      message = localizedMessage({ "Inspector", "Format" }),
+      condition = checkMenuItem({ "View", "Inspector", "Format" }),
+      fn = receiveMenuItem
+    },
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
       condition = function(appObject)
@@ -1910,6 +1920,11 @@ appHotKeyCallbacks = {
       message = localizedMessage("Paste"),
       condition = checkMenuItem({ "Edit", "Paste" }),
       repeatable = true,
+      fn = receiveMenuItem
+    },
+    ["toggleFormatInspector"] = {  -- View > Inspector > Format
+      message = localizedMessage({ "Inspector", "Format" }),
+      condition = checkMenuItem({ "View", "Inspector", "Format" }),
       fn = receiveMenuItem
     },
     ["showInFinder"] = {

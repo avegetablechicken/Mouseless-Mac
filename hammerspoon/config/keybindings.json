@@ -922,6 +922,10 @@
         "mods": ["option", "command"],
         "key": "B"
       },
+      "toggleFormatInspector": {
+        "mods": ["control", "command"],
+        "key": "F"
+      },
       "play": {
         "mods": ["shift", "command"],
         "key": "Return"
@@ -960,6 +964,10 @@
         "mods": ["shift", "option", "command"],
         "key": "V"
       },
+      "toggleFormatInspector": {
+        "mods": ["control", "command"],
+        "key": "F"
+      },
       "showInFinder": {
         "mods": ["shift", "command"],
         "key": "O"
@@ -977,6 +985,10 @@
       "pasteAndMatchStyle": {
         "mods": "command",
         "key": "V"
+      },
+      "toggleFormatInspector": {
+        "mods": ["control", "command"],
+        "key": "F"
       },
       "paste": {
         "mods": ["shift", "option", "command"],
