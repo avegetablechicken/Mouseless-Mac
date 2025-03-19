@@ -107,7 +107,7 @@ local function registerAppHotkeys()
           appPath = hs.application.pathForBundleID(bid)
           if appPath == "" then appPath = nil end
           if appPath ~= nil then
-            bundleID = config.bundleID
+            bundleID = bid
             break
           end
         end
