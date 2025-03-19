@@ -231,7 +231,7 @@ local function loadKarabinerKeyBindings(filePath)
     if type(mods) == "string" then mods = {mods} end
     local modsRepr = ""
     for _, mod in ipairs(modifiersShowReverseOrder) do
-      if hs.fnutils.contains(mods, mod) then modsRepr = modsRepr .. modifierSymbolMap[mod] end
+      if hs.fnutils.contains(mods, mod) then modsRepr = modifierSymbolMap[mod] .. modsRepr end
     end
     local key = string.upper(item.key) == HYPER and 'hyper' or item.key
     key = modifierSymbolMap[key] or string.upper(key)
@@ -273,7 +273,7 @@ end
 local function menuItemHotkeyIdx(mods, key)
   local idx = ""
   for _, mod in ipairs{"cmd", "alt", "ctrl", "shift"} do
-    if hs.fnutils.contains(mods, mod) then idx = idx .. modifierSymbolMap[mod] end
+    if hs.fnutils.contains(mods, mod) then idx = modifierSymbolMap[mod] .. idx end
   end
   if string.byte(key, 1) <= 32 or string.byte(key, 1) > 127 then
     key = SPECIAL_KEY_SIMBOL_MAP[key] or key
