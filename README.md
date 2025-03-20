@@ -1,4 +1,4 @@
-# Mac Without Mouse
+# Mouseless
 
 Utilizing Hammerspoon and Karabiner-Elements to improve your productivity by operating fully via your keyboard and touchpad!
 
