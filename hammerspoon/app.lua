@@ -4276,6 +4276,8 @@ local function inWinOfUnactivatedAppWatcherEnableCallback(bid, filter, winObj, e
     end
   end
 end
+
+local execOnQuit, stopOnQuit
 local function registerSingleWinFilterForDaemonApp(appObject, filter)
   local bid = appObject:bundleID()
   if filter.allowSheet or filter.allowPopover or bid == "com.tencent.LemonMonitor" then
