@@ -369,14 +369,13 @@
         "key": "O",
         "bundleID": [
           "com.kingsoft.wpsoffice.mac",
-          "com.microsoft.Word",
-          "com.apple.iWork.Pages"
+          "com.microsoft.Word"
         ]
       },
       {
         "mods": "${hyper.hyper}",
         "key": "P",
-        "bundleID": "com.jetbrains.pycharm"
+        "bundleID": "com.apple.iWork.Pages"
       },
       {
         "mods": "${hyper.hyper}",
