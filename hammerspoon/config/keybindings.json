@@ -397,21 +397,11 @@
       },
       {
         "mods": "${hyper.hyper}",
-        "key": "G",
-        "bundleID": "com.torusknot.SourceTreeNotMAS"
-      },
-      {
-        "mods": "${hyper.hyper}",
         "key": "J",
         "bundleID": [
           "JabRef",
           "org.zotero.zotero"
         ]
-      },
-      {
-        "mods": "${hyper.hyper}",
-        "key": "K",
-        "bundleID": "org.klatexformula.klatexformula"
       },
       {
         "mods": "${hyper.hyper}",
