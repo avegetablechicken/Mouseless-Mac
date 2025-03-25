@@ -2053,6 +2053,7 @@ appHotKeyCallbacks = {
     },
     ["newChat"] = {
       message = "新建对话",
+      bindCondition = versionLessThan("1.6.0"),
       condition = function(appObject)
         if appObject:focusedWindow() == nil then return false end
         local winUIObj = hs.axuielement.windowElement(appObject:focusedWindow())
