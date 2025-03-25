@@ -426,8 +426,8 @@
         "mods": "${hyper.hyper}",
         "key": "C",
         "bundleID": [
-          "com.jetbrains.CLion",
-          "com.jetbrains.CLion-EAP"
+          "com.tencent.yuanbao",
+          "com.openai.chat"
         ]
       },
       {
