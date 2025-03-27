@@ -978,6 +978,8 @@ local function browserChooser()
                 browser = browser
               })
         end
+      elseif browser == "com.apple.Safari" then
+        hs.alert.show("ERROR for Safari. RESTARTING Safari may solve it")
       end
     end
   end
