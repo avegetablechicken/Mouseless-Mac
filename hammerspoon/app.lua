@@ -5192,6 +5192,9 @@ end
 registerObserverForMenuBarChange(frontApp, frontAppMenuItems)
 
 -- auto hide or quit apps with no windows (including pseudo windows suck as popover or sheet)
+local appsAutoHideWithNoWindows = {}
+local appsAutoQuitWithNoWindows = {}
+
 local specialNoWindowsRules = {
   ["com.apple.finder"] = function(appObject)
     if #hs.window.visibleWindows() == 1
@@ -5201,19 +5204,21 @@ local specialNoWindowsRules = {
     local windows = appObject:visibleWindows()
     return #hs.fnutils.ifilter(windows, function(win)
         return win:id() ~= hs.window.desktop():id() end) == 0
-  end,
-
-  ["com.app.menubarx"] = function(appObject)
-    if versionGreaterEqual("1.6.9")(appObject) then return false end
-    local windows = appObject:visibleWindows()
-    return #hs.fnutils.filter(windows, function(win) return win:title() ~= "" end) == 0
   end
 }
 local function processAppWithNoWindows(appObject, quit, delay)
   local fn = function()
+    local defaultRule = function()
+      local windowFilterRules = quit and appsAutoQuitWithNoWindows or appsAutoHideWithNoWindows
+      local windowFilter = hs.window.filter.new(false):setAppFilter(
+        appObject:name(), windowFilterRules[appObject:bundleID()])
+      return hs.fnutils.find(appObject:visibleWindows(), function(win)
+        return windowFilter:isWindowAllowed(win)
+      end) == nil
+    end
     local specialRule = specialNoWindowsRules[appObject:bundleID()]
-    if (specialRule == nil and #appObject:visibleWindows() == 0)
-        or (specialRule ~= nil and specialRule(appObject)) then
+    if (specialRule == nil and defaultRule())
+        or (specialRule ~= nil and specialRule(appObject, defaultRule)) then
       if quit == true then
         local wFilter = hs.window.filter.new(appObject:name())
         if #wFilter:getWindows() == 0 then
@@ -5231,8 +5236,14 @@ local function processAppWithNoWindows(appObject, quit, delay)
   end
 end
 
+local specialNoPseudoWindowsRules = {
+  ["com.app.menubarx"] = function(appObject, defaultRule)
+    if versionGreaterEqual("1.6.9")(appObject) then return false end
+    return defaultRule()
+  end
+}
 local appPseudoWindowObservers = {}
-local function registerPseudoWindowDestroyWatcher(appObject, roles, windowFilter, quit, delay)
+local function registerPseudoWindowDestroyWatcher(appObject, roles, quit, delay)
   local observer = appPseudoWindowObservers[appObject:bundleID()]
   local appUIObj = hs.axuielement.applicationElement(appObject)
   if observer ~= nil then observer:start() return end
@@ -5241,9 +5252,9 @@ local function registerPseudoWindowDestroyWatcher(appObject, roles, windowFilter
     appUIObj,
     hs.axuielement.observer.notifications.focusedUIElementChanged
   )
-  if windowFilter ~= nil then
-    windowFilter = hs.window.filter.new(false):allowApp(appObject:name(), windowFilter)
-  end
+  local windowFilterRules = quit and appsAutoQuitWithNoWindows or appsAutoHideWithNoWindows
+  local windowFilter = hs.window.filter.new(false):setAppFilter(
+      appObject:name(), windowFilterRules[appObject:bundleID()])
   local criterion = function(element) return hs.fnutils.contains(roles, element.AXRole) end
   local params = { count = 1, depth = 2 }
   local pseudoWindowObserver
@@ -5262,13 +5273,14 @@ local function registerPseudoWindowDestroyWatcher(appObject, roles, windowFilter
         local pseudoWindowObserverCallback = function()
           appUIObj:elementSearch(function(newMsg, newResults, newCount)
               if newCount == 0 then
-                local windows = appObject:visibleWindows()
-                if windowFilter ~= nil then
-                  windows = hs.fnutils.filter(windows, function(win)
+                local defaultRule = function()
+                  return hs.fnutils.find(appObject:visibleWindows(), function(win)
                     return windowFilter:isWindowAllowed(win)
-                  end)
+                  end) == nil
                 end
-                if #windows == 0 then
+                local specialRule = specialNoPseudoWindowsRules[appObject:bundleID()]
+                if (specialRule == nil and defaultRule())
+                    or (specialRule ~= nil and specialRule(appObject, defaultRule)) then
                   if quit == true then
                     local wFilter = hs.window.filter.new(appObject:name())
                     if #wFilter:getWindows() == 0 then
@@ -5302,8 +5314,6 @@ end
 
 local appsAutoHideWithNoWindowsLoaded = ApplicationConfigs["autoHideWithNoWindow"] or {}
 local appsAutoQuitWithNoWindowsLoaded = ApplicationConfigs["autoQuitWithNoWindow"] or {}
-local appsAutoHideWithNoWindows = {}
-local appsAutoQuitWithNoWindows = {}
 -- account for pseudo windows such as popover or sheet
 local appsAutoHideWithNoPseudoWindows = {}
 local appsAutoQuitWithNoPseudoWindows = {}
@@ -5313,23 +5323,25 @@ for _, item in ipairs(appsAutoHideWithNoWindowsLoaded) do
   if type(item) == 'string' then
     appsAutoHideWithNoWindows[item] = true
   else
-    for k, v in pairs(item) do
-      appsAutoHideWithNoWindows[k] = v
-      if v.allowPopover or v.allowSheet then
-        appsAutoHideWithNoPseudoWindows[k] = {}
-        if v.allowPopover then
-          table.insert(appsAutoHideWithNoPseudoWindows[k], "AXPopover")
-          appsAutoHideWithNoWindows[k].allowPopover = nil
-        end
-        if v.allowSheet then
-          table.insert(appsAutoHideWithNoPseudoWindows[k], "AXSheet")
-          appsAutoHideWithNoWindows[k].allowSheet = nil
+    for bid, cfg in pairs(item) do
+      local windowFilter
+      for k, v in pairs(cfg) do
+        if (k == "allowPopover" or k == "allowSheet") and v then
+          appsAutoHideWithNoPseudoWindows[bid] = {}
+          if k == "allowPopover" then
+            table.insert(appsAutoHideWithNoPseudoWindows[bid], "AXPopover")
+          end
+          if k == "allowSheet" then
+            table.insert(appsAutoHideWithNoPseudoWindows[bid], "AXSheet")
+          end
+        elseif k == "delay" then
+          appsWithNoWindowsDelay[bid] = v
+        else
+          if windowFilter == nil then windowFilter = {} end
+          windowFilter[k] = v
         end
       end
-      if v.delay then
-        appsWithNoWindowsDelay[k] = v.delay
-        v.delay = nil
-      end
+      appsAutoHideWithNoWindows[bid] = windowFilter or true
     end
   end
 end
@@ -5337,23 +5349,25 @@ for _, item in ipairs(appsAutoQuitWithNoWindowsLoaded) do
   if type(item) == 'string' then
     appsAutoQuitWithNoWindows[item] = true
   else
-    for k, v in pairs(item) do
-      appsAutoQuitWithNoWindows[k] = v
-      if v.allowPopover or v.allowSheet then
-        appsAutoQuitWithNoPseudoWindows[k] = {}
-        if v.allowPopover then
-          table.insert(appsAutoQuitWithNoPseudoWindows[k], "AXPopover")
-          appsAutoQuitWithNoWindows[k].allowPopover = nil
-        end
-        if v.allowSheet then
-          table.insert(appsAutoQuitWithNoPseudoWindows[k], "AXSheet")
-          appsAutoQuitWithNoWindows[k].allowSheet = nil
+    for bid, cfg in pairs(item) do
+      local windowFilter
+      for k, v in pairs(cfg) do
+        if (k == "allowPopover" or k == "allowSheet") and v then
+          appsAutoQuitWithNoPseudoWindows[bid] = {}
+          if k == "allowPopover" then
+            table.insert(appsAutoQuitWithNoPseudoWindows[bid], "AXPopover")
+          end
+          if k == "allowSheet" then
+            table.insert(appsAutoQuitWithNoPseudoWindows[bid], "AXSheet")
+          end
+        elseif k == "delay" then
+          appsWithNoWindowsDelay[bid] = v
+        else
+          if windowFilter == nil then windowFilter = {} end
+          windowFilter[k] = v
         end
       end
-      if v.delay then
-        appsWithNoWindowsDelay[k] = v.delay
-        v.delay = nil
-      end
+      appsAutoQuitWithNoWindows[bid] = windowFilter or true
     end
   end
 end
@@ -5398,10 +5412,9 @@ windowFilterAutoQuit:subscribe(hs.window.filter.windowDestroyed,
   end)
 
 -- Hammerspoon only account standard windows, so add watchers for pseudo windows here
-for bundleID, rules in pairs(appsAutoHideWithNoPseudoWindows) do
+for bundleID, roles in pairs(appsAutoHideWithNoPseudoWindows) do
   local func = function(appObject)
-    registerPseudoWindowDestroyWatcher(appObject, rules,
-        appsAutoHideWithNoWindows[bundleID], false, appsWithNoWindowsDelay[bundleID])
+    registerPseudoWindowDestroyWatcher(appObject, roles, false, appsWithNoWindowsDelay[bundleID])
   end
   local appObject = findApplication(bundleID)
   if appObject ~= nil then
@@ -5410,10 +5423,9 @@ for bundleID, rules in pairs(appsAutoHideWithNoPseudoWindows) do
     execOnLaunch(bundleID, func, true)
   end
 end
-for bundleID, rules in pairs(appsAutoQuitWithNoPseudoWindows) do
+for bundleID, roles in pairs(appsAutoQuitWithNoPseudoWindows) do
   local func = function(appObject)
-    registerPseudoWindowDestroyWatcher(appObject, rules,
-        appsAutoHideWithNoWindows[bundleID], true, appsWithNoWindowsDelay[bundleID])
+    registerPseudoWindowDestroyWatcher(appObject, roles, true, appsWithNoWindowsDelay[bundleID])
   end
   local appObject = findApplication(bundleID)
   if appObject ~= nil then

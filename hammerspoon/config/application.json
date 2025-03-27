@@ -48,7 +48,8 @@
     "com.apple.finder",
     {
       "com.app.menubarx": {
-        "allowPopover": true
+        "allowPopover": true,
+        "rejectTitles": "^$"
       },
       "com.mathpix.snipping-tool-noappstore": {
         "allowPopover": true,
