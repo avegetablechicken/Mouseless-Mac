@@ -2087,6 +2087,13 @@ appHotKeyCallbacks = {
       end,
       fn = receiveButton
     },
+    ["maximize"] = {
+      mods = get(KeybindingConfigs.hotkeys.shared, "zoom", "mods"),
+      key = get(KeybindingConfigs.hotkeys.shared, "zoom", "key"),
+      message = "最大化",
+      condition = checkMenuItem({"窗口", "最大化"}),
+      fn = receiveMenuItem
+    },
     ["back"] = {
       message = "返回",
       condition = function(appObject)
