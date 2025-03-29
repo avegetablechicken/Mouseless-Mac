@@ -5082,7 +5082,7 @@ end
 altMenuBarItem(frontApp, frontAppMenuItems)
 
 -- some apps may change their menu bar items irregularly
-local appswatchMenuBarItems = get(ApplicationConfigs, "menuBarItems", 'changable') or {}
+local appswatchMenuBarItems = get(ApplicationConfigs, "menuBarItems", 'changing') or {}
 local appsMenuBarItemTitlesString = {}
 
 local getMenuBarItemTitlesString = function(appObject, menuItems)

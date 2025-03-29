@@ -7,7 +7,7 @@
       "at.obdev.littlesnitch.networkmonitor",
       "pl.maketheweb.TopNotch"
     ],
-    "changable": [
+    "changing": [
       "com.kingsoft.wpsoffice.mac"
     ],
     "changeOnWindow": [
