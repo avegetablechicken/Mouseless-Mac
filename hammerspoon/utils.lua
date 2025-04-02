@@ -1271,6 +1271,7 @@ local function localizedStringImpl(str, bundleID, params, force)
         function (v) return v == true end) and not setDefaultLocale() then
       return result, appLocale, locale
     end
+    if locale == nil then return end
   end
   if localeDir == nil then
     if mode == 'lproj' then
