@@ -1121,6 +1121,16 @@
         "key": ","
       }
     },
+    "com.realvnc.vncviewer": {
+      "toggleSidebar": {
+        "mods": ["control", "command"],
+        "key": "S"
+      },
+      "toggleStatusBar": {
+        "mods": "command",
+        "key": "/"
+      }
+    },
     "com.parallels.desktop.console": {
       "showControlCenter": {
         "mods": ["shift", "command"],

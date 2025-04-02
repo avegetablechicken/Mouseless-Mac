@@ -3001,6 +3001,19 @@ appHotKeyCallbacks = {
     },
   },
 
+  ["com.realvnc.vncviewer"] = {
+    ["toggleSidebar"] = {
+      message = "Toggle sidebar",
+      condition = checkMenuItem({ "View", "Show sidebar" }),
+      fn = receiveMenuItem
+    },
+    ["toggleStatusBar"] = {
+      message = "Toggle status bar",
+      condition = checkMenuItem({ "View", "Show status bar" }),
+      fn = receiveMenuItem
+    }
+  },
+
   ["com.parallels.desktop.console"] =
   {
     ["new..."] = {
