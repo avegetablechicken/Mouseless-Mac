@@ -1329,9 +1329,9 @@ local function localizedStringImpl(str, bundleID, params, force)
     if result ~= nil then return result end
 
     if string.sub(str, -3) == "..." or string.sub(str, -3) == "…" then
-      result = localizedString(string.sub(str, 1, -4), bundleID, params)
+      result, appLocale, locale = localizedStringImpl(string.sub(str, 1, -4), bundleID, params)
       if result ~= nil then
-        return result .. string.sub(str, -3)
+        return result .. string.sub(str, -3), appLocale, locale
       end
     end
   end
@@ -1895,9 +1895,9 @@ local function delocalizedStringImpl(str, bundleID, params)
     if result ~= nil then return result end
 
     if string.sub(str, -3) == "..." or string.sub(str, -3) == "…" then
-      result = delocalizedString(string.sub(str, 1, -4), bundleID, params)
+      result, appLocale, locale = delocalizedStringImpl(string.sub(str, 1, -4), bundleID, params)
       if result ~= nil then
-        return result .. string.sub(str, -3)
+        return result .. string.sub(str, -3), appLocale, locale
       end
     end
   end
