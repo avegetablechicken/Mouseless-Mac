@@ -370,6 +370,11 @@
       },
       {
         "mods": "${hyper.hyper}",
+        "key": "I",
+        "bundleID": "com.apple.ScreenContinuity"
+      },
+      {
+        "mods": "${hyper.hyper}",
         "key": "O",
         "bundleID": [
           "com.kingsoft.wpsoffice.mac",
@@ -385,11 +390,6 @@
         "mods": "${hyper.hyper}",
         "key": "A",
         "bundleID": "com.apple.ActivityMonitor"
-      },
-      {
-        "mods": "${hyper.hyper}",
-        "key": "S",
-        "bundleID": "com.apple.ScreenContinuity"
       },
       {
         "mods": "${hyper.hyper}",
