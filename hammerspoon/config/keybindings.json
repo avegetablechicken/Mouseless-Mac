@@ -350,6 +350,15 @@
       },
       {
         "mods": "${hyper.hyper}",
+        "key": "T",
+        "bundleID": [
+          "com.vallettaventures.Texpad",
+          "texstudio",
+          "TeXShop"
+        ]
+      },
+      {
+        "mods": "${hyper.hyper}",
         "key": "U",
         "bundleID": [
           "com.nektony.App-Cleaner-SIIICn",
@@ -401,15 +410,6 @@
         "bundleID": [
           "JabRef",
           "org.zotero.zotero"
-        ]
-      },
-      {
-        "mods": "${hyper.hyper}",
-        "key": "L",
-        "bundleID": [
-          "com.vallettaventures.Texpad",
-          "texstudio",
-          "TeXShop"
         ]
       },
       {
