@@ -370,11 +370,6 @@
       },
       {
         "mods": "${hyper.hyper}",
-        "key": "I",
-        "bundleID": "com.apple.AccessibilityInspector"
-      },
-      {
-        "mods": "${hyper.hyper}",
         "key": "O",
         "bundleID": [
           "com.kingsoft.wpsoffice.mac",
