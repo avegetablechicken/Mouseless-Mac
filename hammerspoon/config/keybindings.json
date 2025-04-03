@@ -376,15 +376,15 @@
       {
         "mods": "${hyper.hyper}",
         "key": "O",
-        "bundleID": [
-          "com.kingsoft.wpsoffice.mac",
-          "com.microsoft.Word"
-        ]
+        "bundleID": "com.kingsoft.wpsoffice.mac"
       },
       {
         "mods": "${hyper.hyper}",
         "key": "P",
-        "bundleID": "com.apple.iWork.Pages"
+        "bundleID": [
+          "com.apple.iWork.Pages",
+          "com.microsoft.Word"
+        ]
       },
       {
         "mods": "${hyper.hyper}",
