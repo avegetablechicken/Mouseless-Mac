@@ -1116,6 +1116,70 @@
         "key": ","
       }
     },
+    "com.nektony.App-Cleaner-SIII": {
+      "uninstall": {
+        "mods": "command",
+        "key": "Return"
+      },
+      "remove": {
+        "mods": "command",
+        "key": "Return"
+      },
+      "enable": {
+        "mods": "command",
+        "key": "Return"
+      },
+      "disable": {
+        "mods": "command",
+        "key": "Return"
+      },
+      "update": {
+        "mods": "command",
+        "key": "Return"
+      },
+      "confirmRemove": {
+        "mods": "",
+        "key": "Return"
+      },
+      "confirmUpdate": {
+        "mods": "",
+        "key": "Return"
+      },
+      "confirmRetry": {
+        "mods": "",
+        "key": "Return"
+      }
+    },
+    "com.nektony.App-Cleaner-SIIICn": {
+      "remove": {
+        "mods": "command",
+        "key": "Return"
+      },
+      "enable": {
+        "mods": "command",
+        "key": "Return"
+      },
+      "disable": {
+        "mods": "command",
+        "key": "Return"
+      },
+      "update": {
+        "mods": "command",
+        "key": "Return"
+      },
+      "confirmRemove": {
+        "mods": "",
+        "key": "Return"
+      },
+      "confirmUpdate": {
+        "mods": "",
+        "key": "Return"
+      },
+      "confirmRetry": {
+        "mods": "",
+        "key": "Return"
+      }
+    },
     "com.realvnc.vncviewer": {
       "toggleSidebar": {
         "mods": ["control", "command"],

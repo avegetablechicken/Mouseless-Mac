@@ -596,6 +596,44 @@ local function JabRefShowLibraryByIndex(idx)
   end
 end
 
+-- ### App Cleaner & Uninstaller
+local function buttonValidForAppCleanerUninstaller(title, localize)
+  if localize == nil then localize = true end
+  return function(winObj)
+    local realTitle = title
+    if localize then
+      realTitle = localizedString(title, winObj:application():bundleID())
+    end
+    local winUIObj = hs.axuielement.windowElement(winObj)
+    local sg = winUIObj:childrenWithRole("AXSplitGroup")[1]
+    if sg == nil then return false end
+    local button = hs.fnutils.find(sg:childrenWithRole("AXButton"), function(bt)
+      return bt.AXIdentifier == "uaid:RemoveSelectedItemsButton"
+          and bt.AXTitle == realTitle and bt.AXEnabled
+    end)
+    return button ~= nil, button
+  end
+end
+
+local function confirmButtonValidForAppCleanerUninstaller(title, localize)
+  if localize == nil then localize = true end
+  return function(winObj)
+    local realTitle = title
+    if localize then
+      realTitle = localizedString(title, winObj:application():bundleID())
+    end
+    local winUIObj = hs.axuielement.windowElement(winObj)
+    local cancel = hs.fnutils.find(winUIObj:childrenWithRole("AXButton"), function(bt)
+      return bt.AXIdentifier == "uaid:RemoveDialogSecondButton" and bt.AXEnabled
+    end)
+    if cancel == nil then return false end
+    local button = hs.fnutils.find(winUIObj:childrenWithRole("AXStaticText"), function(bt)
+      return bt.AXValue == realTitle
+    end)
+    return button ~= nil, button ~= nil and button.AXPosition
+  end
+end
+
 -- ### Bartender
 local bartenderBarItemNames
 local bartenderBarItemIDs
@@ -2470,6 +2508,122 @@ appHotKeyCallbacks = {
       fn = function(winUIObj)
         leftClickAndRestore({ x = winUIObj.AXPosition.x + winUIObj.AXSize.w/2,
                               y = winUIObj.AXPosition.y })
+      end
+    }
+  },
+
+  ["com.nektony.App-Cleaner-SIII"] =
+  {
+    ["uninstall"] = {
+      message = localizedMessage('Uninstall'),
+      windowFilter = true,
+      condition = buttonValidForAppCleanerUninstaller('Uninstall'),
+      fn = receiveButton
+    },
+    ["remove"] = {
+      message = localizedMessage('Remove'),
+      windowFilter = true,
+      condition = buttonValidForAppCleanerUninstaller('Remove'),
+      fn = receiveButton
+    },
+    ["enable"] = {
+      message = localizedMessage('Enable'),
+      windowFilter = true,
+      condition = buttonValidForAppCleanerUninstaller('Enable'),
+      fn = receiveButton
+    },
+    ["disable"] = {
+      message = localizedMessage('Disable'),
+      windowFilter = true,
+      condition = buttonValidForAppCleanerUninstaller('Disable'),
+      fn = receiveButton
+    },
+    ["update"] = {
+      message = localizedMessage('Update'),
+      windowFilter = true,
+      condition = buttonValidForAppCleanerUninstaller('Update'),
+      fn = receiveButton
+    },
+    ["confirmRemove"] = {
+      message = localizedMessage('Remove'),
+      windowFilter = true,
+      condition = confirmButtonValidForAppCleanerUninstaller('Remove'),
+      fn = function(position, winObj)
+        -- fixme: false click
+        leftClick(position, winObj:application():name())
+      end
+    },
+    ["confirmUpdate"] = {
+      message = localizedMessage('Update'),
+      windowFilter = true,
+      condition = confirmButtonValidForAppCleanerUninstaller('Update'),
+      fn = function(position, winObj)
+        -- fixme: false click
+        leftClick(position, winObj:application():name())
+      end
+    },
+    ["confirmRetry"] = {
+      message = localizedMessage('Retry'),
+      windowFilter = true,
+      condition = confirmButtonValidForAppCleanerUninstaller('Retry'),
+      fn = function(position, winObj)
+        -- fixme: false click
+        leftClick(position, winObj:application():name())
+      end
+    }
+  },
+
+  ["com.nektony.App-Cleaner-SIIICn"] =
+  {
+    ["remove"] = {
+      message = '移除',
+      windowFilter = true,
+      condition = buttonValidForAppCleanerUninstaller('移除', false),
+      fn = receiveButton
+    },
+    ["enable"] = {
+      message = '启用',
+      windowFilter = true,
+      condition = buttonValidForAppCleanerUninstaller('启用', false),
+      fn = receiveButton
+    },
+    ["disable"] = {
+      message = '禁用',
+      windowFilter = true,
+      condition = buttonValidForAppCleanerUninstaller('禁用', false),
+      fn = receiveButton
+    },
+    ["update"] = {
+      message = '更新',
+      windowFilter = true,
+      condition = buttonValidForAppCleanerUninstaller('更新', false),
+      fn = receiveButton
+    },
+    ["confirmRemove"] = {
+      message = '移除',
+      windowFilter = true,
+      condition = confirmButtonValidForAppCleanerUninstaller('移除', false),
+      fn = function(position, winObj)
+        -- fixme: false click
+        leftClick(position, winObj:application():name())
+      end
+    },
+    ["confirmUpdate"] = {
+      message = '更新',
+      windowFilter = true,
+      condition = confirmButtonValidForAppCleanerUninstaller('更新', false),
+      fn = function(position, winObj)
+        -- fixme: false click
+        leftClick(position, winObj:application():name())
+      end
+    },
+    ["confirmRetry"] = {
+      message = '重试',
+      windowFilter = true,
+      condition = confirmButtonValidForAppCleanerUninstaller('重试', false),
+      fn = function(position, winObj)
+        -- fixme: false click
+        leftClick(position, winObj:application():name())
       end
     }
   },
