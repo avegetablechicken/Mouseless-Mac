@@ -2472,13 +2472,12 @@ appHotKeyCallbacks = {
       message = "最近打开",
       fn = function(appObject)
         local appUIObj = hs.axuielement.applicationElement(appObject)
-        local menuBarItems = appUIObj:childrenWithRole('AXMenuBar')[1]:childrenWithRole('AXMenuBarItem')
+        local menuBarItems = getAXChildren(appUIObj, 'AXMenuBar', 1,'AXMenuBarItem')
         local menuBarItem = hs.fnutils.find(menuBarItems, function(item)
           return item.AXChildren ~= nil and #item.AXChildren > 0 and item.AXTitle == '文件'
         end)
         if menuBarItem == nil then return end
-        local menuItem = hs.fnutils.find(menuBarItem:childrenWithRole('AXMenu')[1]
-                                                    :childrenWithRole('AXMenuItem'),
+        local menuItem = hs.fnutils.find(getAXChildren(menuBarItem, 'AXMenu', 1,'AXMenuItem'),
                                          function(item) return item.AXTitle == '最近打开' end)
         if menuItem ~= nil then
           menuBarItem:performAction('AXPress')
@@ -5086,9 +5085,9 @@ local function altMenuBarItem(appObject, menuItems)
   if appObject:focusedWindow() ~= nil then
     local winUIObj = hs.axuielement.windowElement(appObject:focusedWindow())
     if #winUIObj:childrenWithRole("AXMenuBar") > 0 then
-      local menuObj = winUIObj:childrenWithRole("AXMenuBar")[1]:childrenWithRole("AXMenu")
+      local menuObj = getAXChildren(winUIObj, "AXMenuBar", 1, "AXMenu")
       if #menuObj == 0 then
-        menuObj = winUIObj:childrenWithRole("AXMenuBar")[1]:childrenWithRole("AXMenuBar")
+        menuObj = getAXChildren(winUIObj, "AXMenuBar", 1, "AXMenuBar")
       end
       if #menuObj > 0 then
         useWindowMenuBar = true
@@ -5128,9 +5127,9 @@ local function altMenuBarItem(appObject, menuItems)
   if useWindowMenuBar then
     clickMenuCallback = function(title)
       local winUIObj = hs.axuielement.windowElement(appObject:focusedWindow())
-      local menuObj = winUIObj:childrenWithRole("AXMenuBar")[1]:childrenWithRole("AXMenu")
+      local menuObj = getAXChildren(winUIObj, "AXMenuBar", "AXMenu")
       if #menuObj == 0 then
-        menuObj = winUIObj:childrenWithRole("AXMenuBar")[1]:childrenWithRole("AXMenuBar")
+        menuObj = getAXChildren(winUIObj, "AXMenuBar", 1, "AXMenuBar")
       end
       local targetMenuObj = hs.fnutils.find(menuObj, function(item)
         return item:attributeValue("AXTitle"):gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "") == title

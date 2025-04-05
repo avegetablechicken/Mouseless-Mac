@@ -48,7 +48,8 @@ function getAXChildren(element, role, index, ...)
   else
     children = element:childrenWithRole(role)
   end
-  if type(index) == 'number' then
+  if index == nil then return children
+  elseif type(index) == 'number' then
     if index < 0 then index = #children + index + 1 end
     child = children[index]
   else

@@ -1059,12 +1059,12 @@ local function PDFChooser()
       end
       local toolbar = nil
       if win:isFullScreen() then
-        toolbar = winUIObj:childrenWithRole("AXGroup")[1]:childrenWithRole("AXToolbar")[1]
+        toolbar = getAXChildren(winUIObj, "AXGroup", 1, "AXToolbar", 1)
       else
         toolbar = winUIObj:childrenWithRole("AXToolbar")[1]
       end
-      local tabList = toolbar:childrenWithRole("AXGroup")[1]:childrenWithRole("AXTabGroup")[1]
-          :childrenWithRole("AXScrollArea")[1]:childrenWithRole("AXGroup")
+      local tabList = getAXChildren(
+          toolbar, "AXGroup", 1, "AXTabGroup", 1, "AXScrollArea", 1, "AXGroup")
       local tabTitles = {}
       for _, tab in ipairs(tabList) do
         table.insert(tabTitles, tab:attributeValue("AXHelp"))
