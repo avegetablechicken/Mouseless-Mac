@@ -1334,7 +1334,7 @@
     "whbalzac.Dongtaizhuomian": {
       "invokeInAppScreenSaver": {
         "mods": "${hyper.daemon}",
-        "key": "L",
+        "key": "S",
         "background": true
       }
     },
