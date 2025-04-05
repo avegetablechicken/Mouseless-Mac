@@ -140,7 +140,7 @@ local function registerAppHotkeys()
         else
           appName = hs.application.infoForBundlePath(appPath).CFBundleName
         end
-        local hotkey = bindHotkeySpec(config, "Toggle " .. appName,
+        local hotkey = bindHotkeySpec(config, appName,
             hs.fnutils.partial(config.fn or focusOrHide, bundleID or appName))
         hotkey.kind = HK.APPKEY
         if bundleID then
