@@ -3074,6 +3074,21 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["com.apple.Passwords.MenuBarExtra"] =
+  {
+    ["showPasswordDialog"] = {
+      message = "Show Password",
+      bindCondition = function()
+        local enableMenuBarExtra = hs.execute(
+            "defaults read com.apple.Passwords EnableMenuBarExtra | tr -d '\\n'")
+        return enableMenuBarExtra == "1"
+      end,
+      fn = function(appObject)
+        clickRightMenuBarItem(appObject:bundleID())
+      end
+    }
+  },
+
   ["com.macosgame.iwallpaper"] =
   {
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],

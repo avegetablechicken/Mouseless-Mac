@@ -1401,6 +1401,14 @@
         "persist": true
       }
     },
+    "com.apple.Passwords.MenuBarExtra": {
+      "showPasswordDialog": {
+        "mods": "${hyper.daemon}",
+        "key": "P",
+        "background": true,
+        "persist": true
+      }
+    },
     "com.tencent.LemonMonitor": {
       "closeWindow": {
         "mods": "",
