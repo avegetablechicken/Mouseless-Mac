@@ -1396,7 +1396,7 @@
     "com.mathpix.snipping-tool-noappstore": {
       "OCRForLatex": {
         "mods": "${hyper.daemon}",
-        "key": "M",
+        "key": "T",
         "background": true,
         "persist": true
       }
