@@ -48,6 +48,7 @@
     "com.openai.chat",
     "com.tdesktop.Telegram",
     "com.apple.finder",
+    "com.pigigaldi.pock",
     {
       "com.app.menubarx": {
         "allowPopover": true,
