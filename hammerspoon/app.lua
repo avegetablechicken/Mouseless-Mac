@@ -2937,7 +2937,8 @@ appHotKeyCallbacks = {
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
     ["minimize"] = specialCommonHotkeyConfigs["minimize"],
-    ["quit"] = specialCommonHotkeyConfigs["quit"]
+    ["quit"] = specialCommonHotkeyConfigs["quit"],
+    ["hide"] = specialCommonHotkeyConfigs["hide"],
   },
 
   ["com.app.menubarx"] =
@@ -3098,16 +3099,21 @@ appHotKeyCallbacks = {
 
   ["org.pqrs.Karabiner-EventViewer"] =
   {
-    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"]
+    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
+    ["minimize"] = specialCommonHotkeyConfigs["minimize"],
+    ["hide"] = specialCommonHotkeyConfigs["hide"]
   },
 
   ["com.pigigaldi.pock"] =
   {
-    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"]
+    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
+    ["minimize"] = specialCommonHotkeyConfigs["minimize"],
+    ["hide"] = specialCommonHotkeyConfigs["hide"]
   },
 
   ["com.tencent.LemonUpdate"] =
   {
+    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
     ["minimize"] = specialCommonHotkeyConfigs["minimize"],
     ["hide"] = specialCommonHotkeyConfigs["hide"]
   },
@@ -3139,7 +3145,8 @@ appHotKeyCallbacks = {
 
   ["com.apple.displaycalibrator"] =
   {
-    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"]
+    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
+    ["minimize"] = specialCommonHotkeyConfigs["minimize"]
   },
 
   ["com.apple.DeskCam"] =
