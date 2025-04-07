@@ -382,6 +382,18 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, bundleI
       end
       table.insert(t, { idx = idx, msg = idx .. ": " .. title,
                         kind = HK.IN_APP, valid = subItem.AXEnabled })
+    elseif menuItem.AXTitle == 'Move & Resize'
+        -- hack for performance
+        or localizationMap.common[menuItem.AXTitle] == 'Move & Resize' then
+      for hkIdx, itemTitle in pairs(windowMenuItemsSinceSequoia2) do
+        if subItem.AXTitle == itemTitle
+            or delocalizedMenuItem(subItem.AXTitle, bundleID) == itemTitle then
+          idx = "🌐︎" .. hkIdx
+          table.insert(t, { idx = idx, msg = idx .. ": " .. title,
+                            kind = HK.IN_APP, valid = subItem.AXEnabled })
+          break
+        end
+      end
     end
     getSubMenuHotkeys(t, subItem, false, titlePrefix and title or nil, bundleID)
     ::L_CONTINUE::
