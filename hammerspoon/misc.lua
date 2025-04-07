@@ -196,16 +196,16 @@ local modifiersShowReverseOrder =
 {
   "fn",
   "command", "cmd",
+  "shift",
   "option", "alt",
   "control", "ctrl",
-  "shift",
   "trackpad:bottom-right",
   "trackpad:bottom-left",
   "trackpad:top-right",
   "trackpad:top-left",
 }
 
-local modifierSymbols = { "🌐︎", "⌘", "⌥", "⌃", "⇧", "✧", "⌟", "⌞", "⌝", "⌜" }
+local modifierSymbols = { "🌐︎", "⌘", "⇧", "⌥", "⌃", "✧", "⌟", "⌞", "⌝", "⌜" }
 
 local modifierSymbolMap = {
   command = "⌘",
