@@ -5,7 +5,8 @@
       "at.obdev.littlesnitch",
       "at.obdev.littlesnitch.agent",
       "at.obdev.littlesnitch.networkmonitor",
-      "pl.maketheweb.TopNotch"
+      "pl.maketheweb.TopNotch",
+      "com.pigigaldi.pock"
     ],
     "changing": [
       "com.kingsoft.wpsoffice.mac"
