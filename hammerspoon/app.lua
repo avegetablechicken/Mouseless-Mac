@@ -5150,7 +5150,7 @@ local function altMenuBarItem(appObject, menuItems)
   if useWindowMenuBar then
     clickMenuCallback = function(title)
       local winUIObj = hs.axuielement.windowElement(appObject:focusedWindow())
-      local menuObj = getAXChildren(winUIObj, "AXMenuBar", "AXMenu")
+      local menuObj = getAXChildren(winUIObj, "AXMenuBar", 1, "AXMenu")
       if #menuObj == 0 then
         menuObj = getAXChildren(winUIObj, "AXMenuBar", 1, "AXMenuBar")
       end
