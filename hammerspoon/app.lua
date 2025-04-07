@@ -3108,7 +3108,8 @@ appHotKeyCallbacks = {
   {
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
     ["minimize"] = specialCommonHotkeyConfigs["minimize"],
-    ["hide"] = specialCommonHotkeyConfigs["hide"]
+    ["hide"] = specialCommonHotkeyConfigs["hide"],
+    ["quit"] = specialCommonHotkeyConfigs["quit"]
   },
 
   ["com.tencent.LemonUpdate"] =
