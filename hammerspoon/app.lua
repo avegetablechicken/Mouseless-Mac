@@ -1134,10 +1134,12 @@ end
 
 -- send key strokes to the app. but if the key binding is found, select corresponding menu item
 ---@diagnostic disable-next-line: lowercase-global
-function selectMenuItemOrKeyStroke(appObject, mods, key)
+function selectMenuItemOrKeyStroke(appObject, mods, key, resendToSystem)
   local menuItemPath, enabled = findMenuItemByKeyBinding(appObject, mods, key)
   if menuItemPath ~= nil and enabled then
     appObject:selectMenuItem(menuItemPath)
+  elseif resendToSystem then
+    safeGlobalKeyStroke(mods, key)
   else
     hs.eventtap.keyStroke(mods, key, nil, appObject)
   end
@@ -4048,6 +4050,7 @@ function WrapCondition(appObject, config, mode)
   local cond = config.condition
   local windowFilter = config.windowFilter
   local websiteFilter = config.websiteFilter
+  local resendToSystem = config.defaultResendToSystem
 
   if windowFilter ~= nil then
     local bid = appObject:bundleID()
@@ -4132,7 +4135,7 @@ function WrapCondition(appObject, config, mode)
   fn = function(...)
     local obj = windowFilter == nil and appObject or appObject:focusedWindow()
     if obj == nil then  -- no window focused when triggering window-specific hotkeys
-      selectMenuItemOrKeyStroke(appObject, mods, key)
+      selectMenuItemOrKeyStroke(appObject, mods, key, resendToSystem)
       return
     end
     local satisfied, result, url = cond(obj)
@@ -4149,7 +4152,11 @@ function WrapCondition(appObject, config, mode)
       return
     elseif result == COND_FAIL.NO_MENU_ITEM_BY_KEYBINDING
         or result == COND_FAIL.MENU_ITEM_SELECTED then
-      hs.eventtap.keyStroke(mods, key, nil, appObject)
+      if resendToSystem then
+        safeGlobalKeyStroke(mods, key)
+      else
+        hs.eventtap.keyStroke(mods, key, nil, appObject)
+      end
       return
     elseif result == COND_FAIL.WINDOW_FILTER_NOT_SATISFIED then
       if prevWindowCallback ~= nil then
@@ -4162,11 +4169,12 @@ function WrapCondition(appObject, config, mode)
         return
       end
     elseif result == COND_FAIL.NOT_FRONTMOST_WINDOW then
-      selectMenuItemOrKeyStroke(hs.window.frontmostWindow():application(), mods, key)
+      selectMenuItemOrKeyStroke(hs.window.frontmostWindow():application(), mods, key,
+                                resendToSystem)
       return
     end
     -- most of the time, directly selecting menu item costs less time than key strokes
-    selectMenuItemOrKeyStroke(appObject, mods, key)
+    selectMenuItemOrKeyStroke(appObject, mods, key, resendToSystem)
   end
   return fn, cond
 end
