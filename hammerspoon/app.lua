@@ -4207,7 +4207,7 @@ local function wrapInfoChain(appObject, config, cond, mode)
     local bid = appObject:bundleID()
     if InWinHotkeyInfoChain[bid] == nil then InWinHotkeyInfoChain[bid] = {} end
     local hkIdx = hotkeyIdx(mods, key)
-    if mode == 1 then
+    if mode == KEY_MODE.PRESS then
       local prevHotkeyInfo = InWinHotkeyInfoChain[bid][hkIdx]
       InWinHotkeyInfoChain[bid][hkIdx] = {
         condition = cond,
