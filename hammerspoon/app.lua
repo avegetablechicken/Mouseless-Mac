@@ -1133,8 +1133,7 @@ local function receiveButton(button)
 end
 
 -- send key strokes to the app. but if the key binding is found, select corresponding menu item
----@diagnostic disable-next-line: lowercase-global
-function selectMenuItemOrKeyStroke(appObject, mods, key, resendToSystem)
+local function selectMenuItemOrKeyStroke(appObject, mods, key, resendToSystem)
   local menuItemPath, enabled = findMenuItemByKeyBinding(appObject, mods, key)
   if menuItemPath ~= nil and enabled then
     appObject:selectMenuItem(menuItemPath)
