@@ -781,6 +781,10 @@
       "clearAllRecents": {
         "mods": ["option", "command"],
         "key": "delete"
+      },
+      "newFaceTime": {
+        "mods": "command",
+        "key": "N"
       }
     },
     "com.apple.AppStore": {

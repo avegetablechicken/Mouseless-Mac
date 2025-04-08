@@ -1382,6 +1382,17 @@ appHotKeyCallbacks = {
         return appObject:focusedWindow() ~= nil, appObject:focusedWindow()
       end,
       fn = deleteAllCalls
+    },
+    ["newFaceTime"] = {
+      message = localizedMessage("New FaceTime"),
+      condition = function(appObject)
+        if appObject:focusedWindow() == nil then return false end
+        local winUIObj = hs.axuielement.windowElement(appObject:focusedWindow())
+        local button = getAXChildren(winUIObj, "AXGroup", 1, "AXGroup", 1,
+            "AXGroup", 1, "AXGroup", 1, "AXButton", 2)
+        return button ~= nil, button
+      end,
+      fn = receiveButton
     }
   },
 
