@@ -4235,7 +4235,7 @@ local function appBind(appObject, mods, key, message, pressedfn, repeatedfn, con
     repeatedfn = inAppHotKeysWrapper(appObject, mods, key, message,
                                      KEY_MODE.REPEAT, repeatedfn, cond, websiteFilter)
   end
-  if cond ~= nil then
+  if cond ~= nil or websiteFilter ~= nil then
     -- in current version of Hammerspoon, if a callback lasts kind of too long,
     -- keeping pressing a hotkey may lead to unexpected repeated triggering of callback function
     -- a workaround is to check if callback function is executing, if so, do nothing
@@ -4351,6 +4351,17 @@ local function winBind(appObject, mods, key, message, pressedfn, repeatedfn, win
   end
   repeatedfn = inWinHotKeysWrapper(appObject, mods, key, message,
                                    KEY_MODE.REPEAT, repeatedfn, windowFilter, cond)
+  if cond ~= nil or windowFilter ~= nil then
+    local oldFn = pressedfn
+    pressedfn = function()
+      if callBackExecuting then return end
+      hs.timer.doAfter(0, function()
+        callBackExecuting = true
+        oldFn()
+        callBackExecuting = false
+      end)
+    end
+  end
   return bindHotkey(mods, key, message, pressedfn, nil, repeatedfn, ...)
 end
 
