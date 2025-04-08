@@ -962,17 +962,31 @@ end
 local function commonLocalizedMessage(message)
   if message == "Hide" or message == "Quit" then
     return function(appObject)
-      local appLocale = applicationLocales(appObject:bundleID())[1]
+      local bundleID = type(appObject) == 'string' and appObject or appObject:bundleID()
+      local appName
+      if type(appObject) == 'string' then
+        local appPath = hs.application.pathForBundleID(bundleID)
+        appName = hs.execute(string.format("mdls -name kMDItemDisplayName -raw '%s'", appPath))
+        if appName ~= nil and appName:sub(-4) == '.app' then
+          appName = appName:sub(1, -5)
+        else
+          appName = hs.application.nameForBundleID(bundleID)
+        end
+      else
+        appName = appObject:name()
+      end
+      local appLocale = applicationLocales(bundleID)[1]
       local result = localizedString(message .. ' App Store', 'com.apple.AppStore',
                                      { locale = appLocale })
       if result ~= nil then
-        return result:gsub('App Store', appObject:name())
+        return result:gsub('App Store', appName)
       end
-      return message .. ' ' .. appObject:name()
+      return message .. ' ' .. appName
     end
   elseif message == "Back" then
     return function(appObject)
-      local appLocale = applicationLocales(appObject:bundleID())[1]
+      local bundleID = type(appObject) == 'string' and appObject or appObject:bundleID()
+      local appLocale = applicationLocales(bundleID)[1]
       local result = localizedString(message, 'com.apple.AppStore',
                                      { locale = appLocale })
       if result ~= nil then
@@ -982,7 +996,8 @@ local function commonLocalizedMessage(message)
     end
   else
     return function(appObject)
-      local appLocale = applicationLocales(appObject:bundleID())[1]
+      local bundleID = type(appObject) == 'string' and appObject or appObject:bundleID()
+      local appLocale = applicationLocales(bundleID)[1]
       local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
       local locale = getMatchedLocale(appLocale, resourceDir, 'lproj')
       if locale ~= nil then
@@ -1000,7 +1015,7 @@ end
 
 local function localizedMessage(message, params, sep)
   return function(appObject)
-    local bundleID = appObject:bundleID()
+    local bundleID = type(appObject) == 'string' and appObject or appObject:bundleID()
     if type(message) == 'string' then
       return localizedMenuItem(message, bundleID, params) or message
     else
@@ -3944,6 +3959,8 @@ local function registerRunningAppHotKeys(bid, appObject)
         msg = cfg.message
       elseif not isPersistent then
         msg = cfg.message(appObject)
+      else
+        msg = cfg.message(bid)
       end
       if msg ~= nil then
         local hotkey = bindHotkeySpec(keybinding, msg, fn, nil, repeatedFn)
