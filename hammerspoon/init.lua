@@ -116,7 +116,11 @@ function safeGlobalKeyStroke(mods, key)
   end
   hs.eventtap.keyStroke(mods, key)
   if conflicted[1] ~= nil then
-    hs.timer.doAfter(1, function() conflicted[1]:enable() end)
+    hs.timer.doAfter(1, function()
+      if conflicted[1].enable ~= nil then
+        conflicted[1]:enable()
+      end
+    end)
   end
 end
 
