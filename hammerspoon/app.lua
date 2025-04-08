@@ -4060,6 +4060,7 @@ local prevWebsiteCallbacks = {}
 local prevWindowCallbacks = {}
 function WrapCondition(appObject, config, mode)
   local prevWebsiteCallback, prevWindowCallback
+  local bid = appObject:bundleID()
 
   local mods, key = config.mods, config.key
   local func = mode == KEY_MODE.REPEAT and config.repeatedfn or config.fn
@@ -4069,11 +4070,8 @@ function WrapCondition(appObject, config, mode)
   local resendToSystem = config.defaultResendToSystem
 
   if windowFilter ~= nil then
-    local bid = appObject:bundleID()
     local hkIdx = hotkeyIdx(mods, key)
-    if prevWindowCallbacks[bid] ~= nil and prevWindowCallbacks[bid][hkIdx] ~= nil then
-      prevWindowCallback = prevWindowCallbacks[bid][hkIdx][mode]
-    end
+    prevWindowCallback = get(prevWindowCallbacks, bid, hkIdx, mode)
     local actualFilter
     if type(windowFilter) == 'table' then
       for k, v in pairs(windowFilter) do
@@ -4110,9 +4108,7 @@ function WrapCondition(appObject, config, mode)
   end
   if websiteFilter ~= nil then
     local hkIdx = hotkeyIdx(mods, key)
-    if prevWebsiteCallbacks[hkIdx] ~= nil then
-      prevWebsiteCallback = prevWebsiteCallbacks[hkIdx][mode]
-    end
+    prevWebsiteCallback = get(prevWebsiteCallbacks, bid, hkIdx, mode)
     local oldCond = cond
     cond = function(obj)
       local url = getTabUrl(appObject)
@@ -4198,16 +4194,16 @@ end
 InWebsiteHotkeyInfoChain = {}
 InWinHotkeyInfoChain = {}
 local function wrapInfoChain(appObject, config, cond, mode)
+  local bid = appObject:bundleID()
   local mods, key = config.mods, config.key
   local message = config.message
   local windowFilter = config.windowFilter
   local websiteFilter = config.websiteFilter
 
   if windowFilter ~= nil then
-    local bid = appObject:bundleID()
     if InWinHotkeyInfoChain[bid] == nil then InWinHotkeyInfoChain[bid] = {} end
-    local hkIdx = hotkeyIdx(mods, key)
     if mode == KEY_MODE.PRESS then
+      local hkIdx = hotkeyIdx(mods, key)
       local prevHotkeyInfo = InWinHotkeyInfoChain[bid][hkIdx]
       InWinHotkeyInfoChain[bid][hkIdx] = {
         condition = cond,
@@ -4216,13 +4212,16 @@ local function wrapInfoChain(appObject, config, cond, mode)
       }
     end
   elseif websiteFilter ~= nil then
-    local hkIdx = hotkeyIdx(mods, key)
-    local prevWebsiteHotkeyInfo = InWebsiteHotkeyInfoChain[hkIdx]
-    InWebsiteHotkeyInfoChain[hkIdx] = {
-      condition = cond,
-      message = message,
-      previous = prevWebsiteHotkeyInfo
-    }
+    if InWebsiteHotkeyInfoChain[bid] == nil then InWebsiteHotkeyInfoChain[bid] = {} end
+    if mode == KEY_MODE.PRESS then
+      local hkIdx = hotkeyIdx(mods, key)
+      local prevWebsiteHotkeyInfo = InWebsiteHotkeyInfoChain[bid][hkIdx]
+      InWebsiteHotkeyInfoChain[bid][hkIdx] = {
+        condition = cond,
+        message = message,
+        previous = prevWebsiteHotkeyInfo
+      }
+    end
   end
 end
 
@@ -4232,11 +4231,13 @@ end
 local function inAppHotKeysWrapper(appObject, config, mode)
   local fn, cond = WrapCondition(appObject, config, mode)
   if config.websiteFilter ~= nil then
+    local bid = appObject:bundleID()
+    if prevWebsiteCallbacks[bid] == nil then prevWebsiteCallbacks[bid] = {} end
     local hkIdx = hotkeyIdx(config.mods, config.key)
-    if prevWebsiteCallbacks[hkIdx] == nil then prevWebsiteCallbacks[hkIdx] = { nil, nil } end
-    prevWebsiteCallbacks[hkIdx][mode] = fn
+    if prevWebsiteCallbacks[bid][hkIdx] == nil then prevWebsiteCallbacks[bid][hkIdx] = { nil, nil } end
+    prevWebsiteCallbacks[bid][hkIdx][mode] = fn
   end
-  wrapInfoChain(nil, config, cond, mode)
+  wrapInfoChain(appObject, config, cond, mode)
   return fn, cond
 end
 

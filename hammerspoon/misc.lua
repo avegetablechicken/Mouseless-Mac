@@ -446,20 +446,17 @@ local function testValid(entry)
   local actualMsg
   if valid then
     valid = entry.condition == nil or entry.condition(hs.application.frontmostApplication())
+    local bundleID = hs.application.frontmostApplication():bundleID()
     if valid and entry.kind == HK.IN_APP and entry.subkind == HK.IN_APP_.WEBSITE then
-      if InWebsiteHotkeyInfoChain ~= nil and InWebsiteHotkeyInfoChain[entry.idx] ~= nil then
-        local hotkeyInfo = InWebsiteHotkeyInfoChain[entry.idx]
-        if hotkeyInfo then
-          valid, actualMsg = getValidMessage(hotkeyInfo, hs.application.frontmostApplication())
-        end
+      local hotkeyInfo = get(InWebsiteHotkeyInfoChain, bundleID, entry.idx)
+      if hotkeyInfo ~= nil then
+        valid, actualMsg = getValidMessage(hotkeyInfo, hs.application.frontmostApplication())
       end
     elseif valid and entry.kind == HK.IN_APP and entry.subkind == HK.IN_APP_.WINDOW then
-      local bundleID = hs.application.frontmostApplication():bundleID()
-      if InWinHotkeyInfoChain ~= nil and InWinHotkeyInfoChain[bundleID] ~= nil then
-        local hotkeyInfo = InWinHotkeyInfoChain[bundleID][entry.idx]
-        if hotkeyInfo then
-          valid, actualMsg = getValidMessage(hotkeyInfo, hs.application.frontmostApplication():focusedWindow())
-        end
+      local hotkeyInfo = get(InWinHotkeyInfoChain, bundleID, entry.idx)
+      if hotkeyInfo ~= nil then
+        valid, actualMsg = getValidMessage(hotkeyInfo,
+            hs.application.frontmostApplication():focusedWindow())
       end
     end
     entry.valid = valid
