@@ -3064,28 +3064,17 @@ appHotKeyCallbacks = {
       end
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
-    ["hidePopoverOrExitOCR"] = {
+    ["hidePopover"] = {
       mods = "", key = "Escape",
-      message = "Hide Popover or Exit OCR",
-      condition = function(appObject)
-        if appObject:focusedWindow() == nil then return false end
-        local winObj = appObject:focusedWindow()
-        if winObj:role() == "AXPopover" then
-          return true, 1
-        elseif winObj:role() == "AXWindow" and winObj:subrole() == "AXUnknown" then
-          return true, 2
-        end
-        return false
+      message = "Hide Popover",
+      windowFilter = {
+        allowPopover = true
+      },
+      fn = function(winObj)
+        clickRightMenuBarItem(winObj:application():bundleID())
       end,
-      fn = function(result, appObject)
-        if result == 1 then
-          clickRightMenuBarItem(appObject:bundleID())
-        else
-          safeGlobalKeyStroke("", "Escape")
-          appObject:hide()
-        end
-      end,
-      deleteOnDisable = true
+      deleteOnDisable = true,
+      defaultResendToSystem = true
     }
   },
 
