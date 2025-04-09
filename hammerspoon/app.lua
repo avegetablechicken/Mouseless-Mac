@@ -4241,7 +4241,22 @@ local function inAppHotKeysWrapper(appObject, config, mode)
   return fn, cond
 end
 
-local callBackExecuting
+-- in current version of Hammerspoon, if a callback lasts kind of too long,
+-- keeping pressing a hotkey may lead to unexpected repeated triggering of callback function
+-- a workaround is to check if callback function is executing, if so, do nothing
+-- note that this workaround may not work when the callback lasts really too long
+local callBackExecuting = false
+local function callBackExecutingWrapper(fn)
+  return function()
+    if callBackExecuting then return end
+    hs.timer.doAfter(0, function()
+      callBackExecuting = true
+      fn()
+      callBackExecuting = false
+    end)
+  end
+end
+
 local function appBind(appObject, config, ...)
   local pressedfn, cond = inAppHotKeysWrapper(appObject, config, KEY_MODE.PRESS)
   if config.repeatedfn == nil and (config.condition ~= nil or config.websiteFilter ~= nil) then
@@ -4252,18 +4267,9 @@ local function appBind(appObject, config, ...)
     repeatedfn = inAppHotKeysWrapper(appObject, config, KEY_MODE.REPEAT)
   end
   if config.condition ~= nil then
-    -- in current version of Hammerspoon, if a callback lasts kind of too long,
-    -- keeping pressing a hotkey may lead to unexpected repeated triggering of callback function
-    -- a workaround is to check if callback function is executing, if so, do nothing
-    -- note that this workaround may not work when the callback lasts really too long
-    local oldFn = pressedfn
-    pressedfn = function()
-      if callBackExecuting then return end
-      hs.timer.doAfter(0, function()
-        callBackExecuting = true
-        oldFn()
-        callBackExecuting = false
-      end)
+    pressedfn = callBackExecutingWrapper(pressedfn)
+    if repeatedfn ~= nil then
+      repeatedfn = callBackExecutingWrapper(repeatedfn)
     end
   end
   local hotkey = bindHotkeySpec(config, config.message, pressedfn, nil, repeatedfn, ...)
@@ -4361,15 +4367,8 @@ local function winBind(appObject, config, ...)
   end
   local repeatedfn = inWinHotKeysWrapper(appObject, config, KEY_MODE.REPEAT)
   if config.condition ~= nil then
-    local oldFn = pressedfn
-    pressedfn = function()
-      if callBackExecuting then return end
-      hs.timer.doAfter(0, function()
-        callBackExecuting = true
-        oldFn()
-        callBackExecuting = false
-      end)
-    end
+    pressedfn = callBackExecutingWrapper(pressedfn)
+    repeatedfn = callBackExecutingWrapper(repeatedfn)
   end
   return bindHotkeySpec(config, config.message, pressedfn, nil, repeatedfn, ...)
 end
