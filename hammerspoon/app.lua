@@ -5511,6 +5511,7 @@ local function registerPseudoWindowDestroyWatcher(appObject, roles, quit, delay)
           pseudoWindowObserver:stop()
           pseudoWindowObserver = nil
         end
+        local role = results[1].AXRole
         pseudoWindowObserver = hs.axuielement.observer.new(appObject:pid())
         pseudoWindowObserver:addWatcher(
           results[1],
@@ -5520,9 +5521,15 @@ local function registerPseudoWindowDestroyWatcher(appObject, roles, quit, delay)
           appUIObj:elementSearch(function(newMsg, newResults, newCount)
               if newCount == 0 then
                 local defaultRule = function()
-                  return hs.fnutils.find(appObject:visibleWindows(), function(win)
+                  local noWindow = hs.fnutils.find(appObject:visibleWindows(), function(win)
                     return windowFilter:isWindowAllowed(win)
                   end) == nil
+                  local noMenuFromPopover = true
+                  if role == "AXPopover" then
+                    local menuBarMenu = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1)
+                    noMenuFromPopover = menuBarMenu.AXSelected == false
+                  end
+                  return noWindow and noMenuFromPopover
                 end
                 local specialRule = specialNoPseudoWindowsRules[appObject:bundleID()]
                 if (specialRule == nil and defaultRule())
