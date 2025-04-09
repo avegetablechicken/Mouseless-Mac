@@ -4251,7 +4251,7 @@ local function appBind(appObject, config, ...)
   if repeatedfn ~= nil then
     repeatedfn = inAppHotKeysWrapper(appObject, config, KEY_MODE.REPEAT)
   end
-  if config.condition ~= nil or config.websiteFilter ~= nil then
+  if config.condition ~= nil then
     -- in current version of Hammerspoon, if a callback lasts kind of too long,
     -- keeping pressing a hotkey may lead to unexpected repeated triggering of callback function
     -- a workaround is to check if callback function is executing, if so, do nothing
