@@ -877,7 +877,7 @@
         "key": "S"
       },
       "insertTextBox": {
-        "mods": ["shift", "command"],
+        "mods": ["control", "command"],
         "key": "T"
       },
       "insertEquation": {
@@ -919,7 +919,7 @@
         "key": "Return"
       },
       "insertTextBox": {
-        "mods": ["shift", "command"],
+        "mods": ["control", "command"],
         "key": "T"
       },
       "insertShape": {
