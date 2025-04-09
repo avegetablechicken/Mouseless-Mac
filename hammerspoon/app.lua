@@ -4236,8 +4236,8 @@ local function inAppHotKeysWrapper(appObject, config, mode)
     local hkIdx = hotkeyIdx(config.mods, config.key)
     if prevWebsiteCallbacks[bid][hkIdx] == nil then prevWebsiteCallbacks[bid][hkIdx] = { nil, nil } end
     prevWebsiteCallbacks[bid][hkIdx][mode] = fn
+    wrapInfoChain(appObject, config, cond, mode)
   end
-  wrapInfoChain(appObject, config, cond, mode)
   return fn, cond
 end
 
@@ -4345,13 +4345,11 @@ end
 -- each window filter will be tested until one matched target window
 local function inWinHotKeysWrapper(appObject, config, mode)
   local fn, cond = WrapCondition(appObject, config, mode)
-  if config.windowFilter ~= nil then
-    local bid = appObject:bundleID()
-    if prevWindowCallbacks[bid] == nil then prevWindowCallbacks[bid] = {} end
-    local hkIdx = hotkeyIdx(config.mods, config.key)
-    if prevWindowCallbacks[bid][hkIdx] == nil then prevWindowCallbacks[bid][hkIdx] = { nil, nil } end
-    prevWindowCallbacks[bid][hkIdx][mode] = fn
-  end
+  local bid = appObject:bundleID()
+  if prevWindowCallbacks[bid] == nil then prevWindowCallbacks[bid] = {} end
+  local hkIdx = hotkeyIdx(config.mods, config.key)
+  if prevWindowCallbacks[bid][hkIdx] == nil then prevWindowCallbacks[bid][hkIdx] = { nil, nil } end
+  prevWindowCallbacks[bid][hkIdx][mode] = fn
   wrapInfoChain(appObject, config, cond, mode)
   return fn
 end
@@ -4362,7 +4360,7 @@ local function winBind(appObject, config, ...)
     config.repeatedfn = function() end
   end
   local repeatedfn = inWinHotKeysWrapper(appObject, config, KEY_MODE.REPEAT)
-  if config.condition ~= nil or config.windowFilter ~= nil then
+  if config.condition ~= nil then
     local oldFn = pressedfn
     pressedfn = function()
       if callBackExecuting then return end
