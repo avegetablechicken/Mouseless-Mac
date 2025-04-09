@@ -58,6 +58,10 @@
       "com.mathpix.snipping-tool-noappstore": {
         "allowPopover": true,
         "delay": 0.5
+      },
+      "com.omni.mac.utility.store.ntfs": {
+        "allowPopover": true,
+        "delay": 0.5
       }
     }
   ],
