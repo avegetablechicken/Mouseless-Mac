@@ -3140,6 +3140,13 @@ appHotKeyCallbacks = {
     ["quit"] = specialCommonHotkeyConfigs["quit"]
   },
 
+  ["com.mac.utility.screen.recorder"] =
+  {
+    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
+    ["minimize"] = specialCommonHotkeyConfigs["minimize"],
+    ["hide"] = specialCommonHotkeyConfigs["hide"],
+  },
+
   ["com.tencent.LemonUpdate"] =
   {
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
