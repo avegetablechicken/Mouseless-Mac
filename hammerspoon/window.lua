@@ -1102,7 +1102,7 @@ local function PDFChooser()
   if appObject ~= nil then
     local allWindows = hs.window.filter.new(false):allowApp(appObject:name()):getWindows()
     local winTabTitles = {}
-    local menuItems = getMenuItems(appObject)
+    local menuItems = appObject:getMenuItems()
     for _, menuItem in ipairs(menuItems or {}) do
       if menuItem.AXTitle == localizedMenuBarItem('Tab', appObject:bundleID()) then
         local subMenuItems = menuItem.AXChildren[1]

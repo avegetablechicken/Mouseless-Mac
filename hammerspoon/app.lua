@@ -4765,7 +4765,7 @@ end
 
 
 -- ## hotkeys or configs shared by multiple apps
-local frontAppMenuItems = getMenuItems(frontApp)
+local frontAppMenuItems = frontApp:getMenuItems()
 
 -- basically aims to remap ctrl+` to shift+ctrl+tab to make it more convenient for fingers
 local remapPreviousTabHotkey
@@ -5181,7 +5181,7 @@ local function altMenuBarItem(appObject, menuItems)
   local menuBarItemActualIndices = {}
   if menuBarItemTitles == nil then
     if menuItems == nil then
-      menuItems = getMenuItems(appObject)
+      menuItems = appObject:getMenuItems()
     end
     if menuItems == nil then return end
     local ignoredItems = {}
@@ -5333,7 +5333,7 @@ local appsMenuBarItemTitlesString = {}
 
 local getMenuBarItemTitlesString = function(appObject, menuItems)
   if menuItems == nil then
-    menuItems = getMenuItems(appObject)
+    menuItems = appObject:getMenuItems()
   end
   if menuItems == nil or #menuItems == 0 then return "" end
   local menuBarItemTitles = {}
@@ -5348,7 +5348,7 @@ local function watchMenuBarItems(appObject, menuItems)
   appsMenuBarItemTitlesString[bundleID] = getMenuBarItemTitlesString(appObject, menuItems)
   local watcher = ExecContinuously(function()
     local appObject = findApplication(bundleID)
-    local menuItems = getMenuItems(appObject)
+    local menuItems = appObject:getMenuItems()
     local menuBarItemTitlesString = getMenuBarItemTitlesString(appObject, menuItems)
     if menuBarItemTitlesString ~= appsMenuBarItemTitlesString[bundleID] then
       appsMenuBarItemTitlesString[bundleID] = menuBarItemTitlesString
@@ -5368,7 +5368,7 @@ end
 local appsMayChangeMenuBar = get(ApplicationConfigs, "menuBarItems", 'changeOnWindow') or {}
 
 local function appMenuBarChangeCallback(appObject)
-  local menuItems = getMenuItems(appObject)
+  local menuItems = appObject:getMenuItems()
   local menuBarItemStr = getMenuBarItemTitlesString(appObject, menuItems)
   if menuBarItemStr == appsMenuBarItemTitlesString[appObject:bundleID()] then
     return
@@ -5382,7 +5382,7 @@ local function appMenuBarChangeCallback(appObject)
     if hs.application.frontmostApplication():bundleID() ~= appObject:bundleID() then
       return
     end
-    local menuItems = getMenuItems(appObject)
+    local menuItems = appObject:getMenuItems()
     local newMenuBarItemTitlesString = getMenuBarItemTitlesString(appObject, menuItems)
     if newMenuBarItemTitlesString ~= menuBarItemStr then
       appsMenuBarItemTitlesString[appObject:bundleID()] = newMenuBarItemTitlesString
@@ -6098,7 +6098,7 @@ function App_applicationCallback(appName, eventType, appObject)
       registerForOpenSavePanel(appObject)
       local action = function()
         checkFullyLaunched = nil
-        local menuItems = getMenuItems(appObject)
+        local menuItems = appObject:getMenuItems()
         altMenuBarItem(appObject, menuItems)
         registerInAppHotKeys(appObject)
         registerInWinHotKeys(appObject)

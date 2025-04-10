@@ -151,26 +151,6 @@ SPECIAL_KEY_SIMBOL_MAP = {
   ['\xf0\x9f\x8e\xa4'] = '🎤︎',
 }
 
-local appsWithoutMenuBarItems
-function getMenuItems(appObject)
-  if appsWithoutMenuBarItems == nil then
-    appsWithoutMenuBarItems = get(ApplicationConfigs, "menuBarItems", "none") or {}
-  end
-  local menuItems
-  local maxTryTime = 3
-  local tryInterval = 0.05
-  local tryTimes = 1
-  while tryTimes <= maxTryTime / tryInterval do
-    menuItems = appObject:getMenuItems()
-    if menuItems ~= nil then return menuItems end
-    if hs.fnutils.contains(appsWithoutMenuBarItems, appObject:bundleID()) then return end
-    hs.timer.usleep(tryInterval * 1000000)
-    appObject = findApplication(appObject:bundleID())
-    if appObject == nil then break end
-    tryTimes = tryTimes + 1
-  end
-end
-
 function findMenuItem(appObject, menuItemTitle, params)
   local menuItem = appObject:findMenuItem(menuItemTitle)
   if menuItem ~= nil then return menuItem, menuItemTitle end
@@ -251,7 +231,7 @@ local modifierSymbolMap = {
 
 function findMenuItemByKeyBinding(appObject, mods, key, menuItems)
   if menuItems == nil then
-    menuItems = getMenuItems(appObject)
+    menuItems = appObject:getMenuItems()
   end
   if menuItems == nil then return end
   if mods == '' then mods = {} end
@@ -1215,7 +1195,7 @@ local function localizedStringImpl(str, bundleID, params, force)
   if resourceDir == nil then return nil end
   if framework.chromium then
     if findApplication(bundleID) then
-      local menuItems = getMenuItems(findApplication(bundleID))
+      local menuItems = findApplication(bundleID):getMenuItems()
       if menuItems ~= nil then
         table.remove(menuItems, 1)
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
@@ -1791,7 +1771,7 @@ local function delocalizedStringImpl(str, bundleID, params)
   if resourceDir == nil then return nil end
   if framework.chromium then
     if findApplication(bundleID) then
-      local menuItems = getMenuItems(findApplication(bundleID))
+      local menuItems = findApplication(bundleID):getMenuItems()
       if menuItems ~= nil then
         table.remove(menuItems, 1)
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
