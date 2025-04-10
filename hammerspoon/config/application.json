@@ -1,6 +1,7 @@
 {
   "menuBarItems": {
     "none": [
+      "com.apple.CaptiveNetworkAssistant",
       "com.surteesstudios.Bartender",
       "at.obdev.littlesnitch",
       "at.obdev.littlesnitch.agent",
