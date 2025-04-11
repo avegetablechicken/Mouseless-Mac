@@ -5549,9 +5549,12 @@ local function registerPseudoWindowDestroyWatcher(appObject, roles, quit, delay)
             end,
             criterion, params)
         end
-        pseudoWindowObserver:callback(function()
-          hs.timer.doAfter(delay or 0, pseudoWindowObserverCallback)
-        end)
+        if delay then
+          pseudoWindowObserverCallback = function()
+            hs.timer.doAfter(delay, pseudoWindowObserverCallback)
+          end
+        end
+        pseudoWindowObserver:callback(pseudoWindowObserverCallback)
         pseudoWindowObserver:start()
         stopOnDeactivated(appObject:bundleID(), pseudoWindowObserver)
       end
