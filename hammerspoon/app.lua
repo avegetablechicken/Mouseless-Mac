@@ -2401,9 +2401,16 @@ appHotKeyCallbacks = {
       message = "上一页",
       condition = function(appObject)
         if appObject:focusedWindow() == nil then return false end
-        local appUIObj = hs.axuielement.applicationElement(appObject)
-        local frame = appObject:focusedWindow():frame()
-        local titleBarUIObj = appUIObj:elementAtPosition(frame.x + 100, frame.y + 10)
+        local titleBarUIObj
+        if versionLessThan("10.3.0")(appObject) then
+          local appUIObj = hs.axuielement.applicationElement(appObject)
+          local frame = appObject:focusedWindow():frame()
+          titleBarUIObj = appUIObj:elementAtPosition(frame.x + 100, frame.y + 10)
+        else
+          local winUIObj = hs.axuielement.windowElement(appObject:focusedWindow())
+          titleBarUIObj = getAXChildren(winUIObj, "AXUnknown", 3)
+          if titleBarUIObj == nil then return false end
+        end
         for _, button in ipairs(titleBarUIObj.AXChildren or {}) do
           if button.AXHelp == "后退" then
             return true, button:attributeValue("AXPosition")
@@ -2423,9 +2430,16 @@ appHotKeyCallbacks = {
       message = "下一页",
       condition = function(appObject)
         if appObject:focusedWindow() == nil then return false end
-        local appUIObj = hs.axuielement.applicationElement(appObject)
-        local frame = appObject:focusedWindow():frame()
-        local titleBarUIObj = appUIObj:elementAtPosition(frame.x + 100, frame.y + 10)
+        local titleBarUIObj
+        if versionLessThan("10.3.0")(appObject) then
+          local appUIObj = hs.axuielement.applicationElement(appObject)
+          local frame = appObject:focusedWindow():frame()
+          titleBarUIObj = appUIObj:elementAtPosition(frame.x + 100, frame.y + 10)
+        else
+          local winUIObj = hs.axuielement.windowElement(appObject:focusedWindow())
+          titleBarUIObj = getAXChildren(winUIObj, "AXUnknown", 3)
+          if titleBarUIObj == nil then return false end
+        end
         for _, button in ipairs(titleBarUIObj.AXChildren or {}) do
           if button.AXHelp == "前进" then
             return true, button:attributeValue("AXPosition")
@@ -2445,9 +2459,16 @@ appHotKeyCallbacks = {
       message = "刷新",
       condition = function(appObject)
         if appObject:focusedWindow() == nil then return false end
-        local appUIObj = hs.axuielement.applicationElement(appObject)
-        local frame = appObject:focusedWindow():frame()
-        local titleBarUIObj = appUIObj:elementAtPosition(frame.x + 100, frame.y + 10)
+        local titleBarUIObj
+        if versionLessThan("10.3.0")(appObject) then
+          local appUIObj = hs.axuielement.applicationElement(appObject)
+          local frame = appObject:focusedWindow():frame()
+          titleBarUIObj = appUIObj:elementAtPosition(frame.x + 100, frame.y + 10)
+        else
+          local winUIObj = hs.axuielement.windowElement(appObject:focusedWindow())
+          titleBarUIObj = getAXChildren(winUIObj, "AXUnknown", 3)
+          if titleBarUIObj == nil then return false end
+        end
         local refreshButtonPosition, searchButtonPosition
         for _, button in ipairs(titleBarUIObj.AXChildren or {}) do
           if button.AXHelp == "刷新" then
