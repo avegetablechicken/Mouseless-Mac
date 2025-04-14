@@ -2175,6 +2175,27 @@ appHotKeyCallbacks = {
         return button ~= nil, button
       end,
       fn = receiveButton
+    },
+    ["toggleLauncher"] = {
+      message = function(appObject)
+        local appName
+        if type(appObject) == 'string' then
+          local bundleID = appObject
+          local appPath = hs.application.pathForBundleID(bundleID)
+          appName = hs.execute(string.format("mdls -name kMDItemDisplayName -raw '%s'", appPath))
+          if appName ~= nil and appName:sub(-4) == '.app' then
+            appName = appName:sub(1, -5)
+          else
+            appName = hs.application.nameForBundleID(bundleID)
+          end
+        else
+          appName = appObject:name()
+        end
+        return "Toggle " .. appName .. " Launcher"
+      end,
+      fn = function(appObject)
+        clickRightMenuBarItem(appObject:bundleID())
+      end
     }
   },
 
