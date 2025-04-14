@@ -6154,6 +6154,13 @@ function App_applicationCallback(appName, eventType, appObject)
       local action = function()
         checkFullyLaunched = nil
         local menuItems = appObject:getMenuItems()
+        local retry = 0
+        while menuItems == nil and retry < 10 do
+          hs.timer.usleep(0.01 * 1000000)
+          menuItems = appObject:getMenuItems()
+          if menuItems ~= nil then break end
+          retry = retry + 1
+        end
         altMenuBarItem(appObject, menuItems)
         registerInAppHotKeys(appObject)
         registerInWinHotKeys(appObject)
