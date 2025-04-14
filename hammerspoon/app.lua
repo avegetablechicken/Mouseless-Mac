@@ -2196,6 +2196,16 @@ appHotKeyCallbacks = {
       fn = function(appObject)
         clickRightMenuBarItem(appObject:bundleID())
       end
+    },
+    ["showMainWindow"] = {
+      message = "Show Main Window",
+      windowFilter = {
+        allowRoles = "AXSystemDialog"
+      },
+      background = true,
+      fn = function(winObj)
+        hs.application.launchOrFocusByBundleID(winObj:application():bundleID())
+      end
     }
   },
 

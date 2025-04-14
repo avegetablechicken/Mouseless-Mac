@@ -980,6 +980,10 @@
         "mods": ["option", "command"],
         "key": "space",
         "background": true
+      },
+      "showMainWindow": {
+        "mods": "command",
+        "key": "O"
       }
     },
     "JabRef": {
