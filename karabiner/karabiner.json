@@ -529,6 +529,79 @@
                         ]
                     },
                     {
+                        "description": "Fn + Control + [ ] ; ' to zoom window to corner",
+                        "manipulators": [
+                            {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "com.parallels.desktop.console",
+                                            "com.parallels.macvm"
+                                        ],
+                                        "type": "frontmost_application_unless"
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "open_bracket",
+                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                },
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=top-left'" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "com.parallels.desktop.console",
+                                            "com.parallels.macvm"
+                                        ],
+                                        "type": "frontmost_application_unless"
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "close_bracket",
+                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                },
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=top-right'" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "com.parallels.desktop.console",
+                                            "com.parallels.macvm"
+                                        ],
+                                        "type": "frontmost_application_unless"
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "semicolon",
+                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                },
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=bottom-left'" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "com.parallels.desktop.console",
+                                            "com.parallels.macvm"
+                                        ],
+                                        "type": "frontmost_application_unless"
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "quote",
+                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                },
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=bottom-right'" }],
+                                "type": "basic"
+                            }
+                        ]
+                    },
+                    {
                         "description": "Fn + Control + Option + Shift (optional) + arrow to zoom window to 1/3 or 2/3 screen",
                         "manipulators": [
                             {

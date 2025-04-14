@@ -206,28 +206,28 @@ function()
 end)
 
 -- move and zoom to top-left
-bindResizeWindow(winHK["zoomToTopLeft"], "Zoom to Top-Left",
+bindResizeWindowURL("top-left",
 function()
   if hs.window.focusedWindow() == nil then return end
   hs.window.focusedWindow():moveToUnit(hs.geometry.rect(0.0, 0.0, 0.5, 0.5))
 end)
 
 -- move and zoom to top-right
-bindResizeWindow(winHK["zoomToTopRight"], "Zoom to Top-Right",
+bindResizeWindowURL("top-right",
 function()
   if hs.window.focusedWindow() == nil then return end
   hs.window.focusedWindow():moveToUnit(hs.geometry.rect(0.5, 0.0, 0.5, 0.5))
 end)
 
 -- move and zoom to bottom-left
-bindResizeWindow(winHK["zoomToBottomLeft"], "Zoom to Bottom-Left",
+bindResizeWindowURL("bottom-left",
 function()
   if hs.window.focusedWindow() == nil then return end
   hs.window.focusedWindow():moveToUnit(hs.geometry.rect(0.0, 0.5, 0.5, 0.5))
 end)
 
 -- move and zoom to bottom-right
-bindResizeWindow(winHK["zoomToBottomRight"], "Zoom to Bottom-Right",
+bindResizeWindowURL("bottom-right",
 function()
   if hs.window.focusedWindow() == nil then return end
   hs.window.focusedWindow():moveToUnit(hs.geometry.rect(0.5, 0.5, 0.5, 0.5))

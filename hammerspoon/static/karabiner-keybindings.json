@@ -164,6 +164,34 @@
         "subkind": "RESIZE"
     },
     {
+        "mods": ["fn", "control"],
+        "key": "[",
+        "message": "Zoom to Top-Left",
+        "kind": "WIN_OP",
+        "subkind": "RESIZE"
+    },
+    {
+        "mods": ["fn", "control"],
+        "key": "]",
+        "message": "Zoom to Top-Right",
+        "kind": "WIN_OP",
+        "subkind": "RESIZE"
+    },
+    {
+        "mods": ["fn", "control"],
+        "key": ";",
+        "message": "Zoom to Bottom-Left",
+        "kind": "WIN_OP",
+        "subkind": "RESIZE"
+    },
+    {
+        "mods": ["fn", "control"],
+        "key": "'",
+        "message": "Zoom to Bottom-Right",
+        "kind": "WIN_OP",
+        "subkind": "RESIZE"
+    },
+    {
         "mods": "fn",
         "key": "Tab",
         "message": "Forward"

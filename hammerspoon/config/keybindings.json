@@ -114,22 +114,6 @@
         "mods": ["shift", "control", "option"],
         "key": "S"
       },
-      "zoomToTopLeft": {
-        "mods": ["option", "command"],
-        "key": ";"
-      },
-      "zoomToTopRight": {
-        "mods": ["option", "command"],
-        "key": "'"
-      },
-      "zoomToBottomLeft": {
-        "mods": ["shift", "option", "command"],
-        "key": ";"
-      },
-      "zoomToBottomRight": {
-        "mods": ["shift", "option", "command"],
-        "key": "'"
-      },
       "moveToSpace1": {
         "mods": "${hyper.moveToSpace}",
         "key": "1"
