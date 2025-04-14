@@ -301,7 +301,7 @@ function()
 end)
 
 -- expand on left
-bindResizeWindow(winHK["leftExpand"], "Left Border Expand",
+bindResizeWindowURL("left-expand",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -313,10 +313,10 @@ function()
   f.x = math.max(max.x, f.x - resizeStep)
   f.w = r - f.x
   win:setFrame(f)
-end, true)
+end)
 
 -- shrink on left
-bindResizeWindow(winHK["leftShrink"], "Left Border Shrink",
+bindResizeWindowURL("left-shrink",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -326,10 +326,10 @@ function()
   f.w = math.max(resizeStep, f.w - resizeStep)
   f.x = r - f.w
   win:setFrame(f)
-end, true)
+end)
 
 -- expand on right
-bindResizeWindow(winHK["rightExpand"], "Right Border Expand",
+bindResizeWindowURL("right-expand",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -339,10 +339,10 @@ function()
 
   f.w = math.min(max.x + max.w - f.x, f.w + resizeStep)
   win:setFrame(f)
-end, true)
+end)
 
 -- shrink on right
-bindResizeWindow(winHK["rightShrink"], "Right Border Shrink",
+bindResizeWindowURL("right-shrink",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -350,10 +350,10 @@ function()
 
   f.w = math.max(resizeStep, f.w - resizeStep)
   win:setFrame(f)
-end, true)
+end)
 
 -- expand on top
-bindResizeWindow(winHK["topExpand"], "Top Border Expand",
+bindResizeWindowURL("top-expand",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -365,10 +365,10 @@ function()
   f.y = math.max(max.y, f.y - resizeStep)
   f.h = b - f.y
   win:setFrame(f)
-end, true)
+end)
 
 -- shrink on top
-bindResizeWindow(winHK["topShrink"], "Top Border Shrink",
+bindResizeWindowURL("top-shrink",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -378,10 +378,10 @@ function()
   f.h = math.max(resizeStep, f.h - resizeStep)
   f.y = b - f.h
   win:setFrame(f)
-end, true)
+end)
 
 -- expand on bottom
-bindResizeWindow(winHK["bottomExpand"], "Bottom Border Expand",
+bindResizeWindowURL("bottom-expand",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -391,10 +391,10 @@ function()
 
   f.h = math.min(max.y + max.h - f.y, f.h + resizeStep)
   win:setFrame(f)
-end, true)
+end)
 
 -- shrink on bottom
-bindResizeWindow(winHK["bottomShrink"], "Bottom Border Shrink",
+bindResizeWindowURL("bottom-shrink",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -402,7 +402,7 @@ function()
 
   f.h = math.max(resizeStep, f.h - resizeStep)
   win:setFrame(f)
-end, true)
+end)
 
 -- move to top-left
 bindMoveWindowURL("top-left", 1,

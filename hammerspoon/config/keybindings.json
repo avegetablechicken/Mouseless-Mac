@@ -82,38 +82,6 @@
         "mods": "${hyper.daemon}",
         "key": "X"
       },
-      "leftExpand": {
-        "mods": ["control", "option"],
-        "key": "A"
-      },
-      "rightExpand": {
-        "mods": ["control", "option"],
-        "key": "D"
-      },
-      "topExpand": {
-        "mods": ["control", "option"],
-        "key": "W"
-      },
-      "bottomExpand": {
-        "mods": ["control", "option"],
-        "key": "S"
-      },
-      "leftShrink": {
-        "mods": ["shift", "control", "option"],
-        "key": "A"
-      },
-      "rightShrink": {
-        "mods": ["shift", "control", "option"],
-        "key": "D"
-      },
-      "topShrink": {
-        "mods": ["shift", "control", "option"],
-        "key": "W"
-      },
-      "bottomShrink": {
-        "mods": ["shift", "control", "option"],
-        "key": "S"
-      },
       "moveToSpace1": {
         "mods": "${hyper.moveToSpace}",
         "key": "1"

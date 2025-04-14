@@ -178,6 +178,62 @@
         "subkind": "RESIZE"
     },
     {
+        "mods": ["fn", "option"],
+        "key": "Left",
+        "message": "Left Border Expands",
+        "kind": "WIN_OP",
+        "subkind": "RESIZE"
+    },
+    {
+        "mods": ["fn", "option", "shift"],
+        "key": "Left",
+        "message": "Left Border Shrinks",
+        "kind": "WIN_OP",
+        "subkind": "RESIZE"
+    },
+    {
+        "mods": ["fn", "option"],
+        "key": "Right",
+        "message": "Right Border Expands",
+        "kind": "WIN_OP",
+        "subkind": "RESIZE"
+    },
+    {
+        "mods": ["fn", "option", "shift"],
+        "key": "Right",
+        "message": "Right Border Shrinks",
+        "kind": "WIN_OP",
+        "subkind": "RESIZE"
+    },
+    {
+        "mods": ["fn", "option"],
+        "key": "Up",
+        "message": "Top Border Expands",
+        "kind": "WIN_OP",
+        "subkind": "RESIZE"
+    },
+    {
+        "mods": ["fn", "option", "shift"],
+        "key": "Up",
+        "message": "Top Border Shrinks",
+        "kind": "WIN_OP",
+        "subkind": "RESIZE"
+    },
+    {
+        "mods": ["fn", "option"],
+        "key": "Down",
+        "message": "Bottom Border Expands",
+        "kind": "WIN_OP",
+        "subkind": "RESIZE"
+    },
+    {
+        "mods": ["fn", "option", "shift"],
+        "key": "Down",
+        "message": "Bottom Border Shrinks",
+        "kind": "WIN_OP",
+        "subkind": "RESIZE"
+    },
+    {
         "mods": "fn",
         "key": "Tab",
         "message": "Forward"
