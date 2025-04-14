@@ -1040,12 +1040,11 @@ end
 
 local function PDFChooser()
   local choices = {}
-  local app
 
   -- `PDF Expert`
   local allWindowsPDFExpert, winTabTitlesPDFExpert
-  app = find("com.readdle.PDFExpert-Mac")
-  if app ~= nil then
+  if find("com.readdle.PDFExpert-Mac") ~= nil then
+    local app = find("com.readdle.PDFExpert-Mac")
     local allWindows = hs.window.filter.new(false):allowApp(app:name()):getWindows()
     local winTabTitles = {}
     local winTitles = {}
@@ -1098,8 +1097,8 @@ local function PDFChooser()
 
   -- `UPDF`
   local allWindowsUPDF
-  app = find("com.superace.updf.mac")
-  if app ~= nil then
+  if find("com.superace.updf.mac") ~= nil then
+    local app = find("com.superace.updf.mac")
     local allWindows = hs.window.filter.new(false):allowApp(app:name()):getWindows()
     local winTabTitles = {}
     local menuItems = app:getMenuItems()
@@ -1143,8 +1142,8 @@ local function PDFChooser()
   end
 
   -- `Preview`
-  app = find("com.apple.Preview")
-  if app ~= nil then
+  if find("com.apple.Preview") ~= nil then
+    local app = find("com.apple.Preview")
     local ok, results = hs.osascript.applescript([[
       tell application id "]] .. app:bundleID() .. [[" to get {id, name} of (every window whose name ends with ".pdf")
     ]])
@@ -1164,7 +1163,7 @@ local function PDFChooser()
   -- browsers
   for _, browser in ipairs({"com.apple.Safari", "com.google.Chrome",
                             "com.microsoft.edgemac", "com.microsoft.edgemac.Dev"}) do
-    app = find(browser)
+    local app = find(browser)
     if app ~= nil then
       local title, tabIDCmd
       if browser == "com.apple.Safari" then
@@ -1212,7 +1211,6 @@ local function PDFChooser()
     end
   end
 
-  app = nil
   if #choices == 0 then
     hs.alert.show("NO VALID TABS")
     return
