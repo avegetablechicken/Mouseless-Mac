@@ -995,7 +995,7 @@ end
 
 local function popupControlCenterSubPanel(panel, allowReentry)
   local ident = controlCenterSubPanelIdentifiers[panel]
-  local winObj = find("com.apple.controlcenter"):mainWindow()
+  local win = find("com.apple.controlcenter"):mainWindow()
   local osVersion = getOSVersion()
   local pane = osVersion < OS.Ventura and "window 1" or "group 1 of window 1"
 
@@ -1042,7 +1042,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
   end
 
   local ok, result
-  if winObj == nil then
+  if win == nil then
     local _ok, menuBarItemIndex = hs.osascript.applescript(string.format([[
       tell application "System Events"
         set controlitems to menu bar 1 of application process "ControlCenter"
