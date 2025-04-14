@@ -962,19 +962,8 @@ end
 local function commonLocalizedMessage(message)
   if message == "Hide" or message == "Quit" then
     return function(appObject)
+      local appName = displayName(appObject, true)
       local bundleID = type(appObject) == 'string' and appObject or appObject:bundleID()
-      local appName
-      if type(appObject) == 'string' then
-        local appPath = hs.application.pathForBundleID(bundleID)
-        appName = hs.execute(string.format("mdls -name kMDItemDisplayName -raw '%s'", appPath))
-        if appName ~= nil and appName:sub(-4) == '.app' then
-          appName = appName:sub(1, -5)
-        else
-          appName = hs.application.nameForBundleID(bundleID)
-        end
-      else
-        appName = appObject:name()
-      end
       local appLocale = applicationLocales(bundleID)[1]
       local result = localizedString(message .. ' App Store', 'com.apple.AppStore',
                                      { locale = appLocale })
@@ -2178,19 +2167,7 @@ appHotKeyCallbacks = {
     },
     ["toggleLauncher"] = {
       message = function(appObject)
-        local appName
-        if type(appObject) == 'string' then
-          local bundleID = appObject
-          local appPath = hs.application.pathForBundleID(bundleID)
-          appName = hs.execute(string.format("mdls -name kMDItemDisplayName -raw '%s'", appPath))
-          if appName ~= nil and appName:sub(-4) == '.app' then
-            appName = appName:sub(1, -5)
-          else
-            appName = hs.application.nameForBundleID(bundleID)
-          end
-        else
-          appName = appObject:name()
-        end
+        local appName = displayName(appObject, true)
         return "Toggle " .. appName .. " Launcher"
       end,
       fn = function(appObject)

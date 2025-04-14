@@ -2152,8 +2152,7 @@ function registerControlCenterHotKeys(panel)
       hotkey = newControlCenter("", "Space", result[2],
         function()
           if defaultMusicAppForControlCenter ~= nil then
-            local appleMusicAppPath = hs.application.pathForBundleID('com.apple.Music')
-            local appName, _ = hs.execute(string.format("mdls -name kMDItemDisplayName -raw '%s'", appleMusicAppPath))
+            local appName = displayName('com.apple.Music')
             local ok, isAppleMusic = hs.osascript.applescript([[
               tell application "System Events"
                 set appTitle to static text 1 of ]] .. pane .. [[ of application process "ControlCenter"

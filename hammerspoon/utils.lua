@@ -110,6 +110,22 @@ function menuBarVisible()
   return true
 end
 
+function displayName(appObject, returnDefault)
+  if type(appObject) == 'string' then
+    local bundleID = appObject
+    local appPath = hs.application.pathForBundleID(bundleID)
+    local appName, status_ok = hs.execute(
+        string.format("mdls -name kMDItemDisplayName -raw '%s'", appPath))
+    if status_ok and appName:sub(-4) == '.app' then
+      return appName:sub(1, -5)
+    elseif returnDefault then
+      return hs.application.nameForBundleID(bundleID)
+    end
+  else
+    return appObject:name()
+  end
+end
+
 function showMenuItemWrapper(fn)
   return function()
     if menuBarVisible() then
