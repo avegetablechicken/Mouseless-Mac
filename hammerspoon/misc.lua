@@ -2,7 +2,7 @@ local misc = KeybindingConfigs.hotkeys.global
 
 -- call `ShortCuts` to copy to PC
 local iconForShortcuts = hs.image.imageFromAppBundle("com.apple.shortcuts")
-local shortcutsLaunched = findApplication("com.apple.shortcuts") ~= nil
+local shortcutsLaunched = find("com.apple.shortcuts") ~= nil
 
 local ok = hs.osascript.applescript([[tell application "Shortcuts" to get shortcut "Paste to PC"]])
 if ok then
@@ -11,12 +11,12 @@ if ok then
     hs.eventtap.keyStroke("⌘", "C")
     local task = hs.task.new("/usr/bin/osascript", nil,
         { '-e', 'tell application "Shortcuts" to run shortcut "Paste to PC"' })
-    local _ShortcutsLaunched = findApplication("com.apple.shortcuts") ~= nil
+    local _ShortcutsLaunched = find("com.apple.shortcuts") ~= nil
     task:start()
     hs.timer.doAfter(10, function()
       if task:isRunning() then task:terminate() end
       if not _ShortcutsLaunched then
-        local shortcutsObj = findApplication("com.apple.shortcuts")
+        local shortcutsObj = find("com.apple.shortcuts")
         if shortcutsObj then
             shortcutsObj:kill()
         end
@@ -34,12 +34,12 @@ if ok then
     local task = hs.task.new("/usr/bin/osascript",
         function(exitCode) if exitCode == 0 then hs.eventtap.keyStroke("⌘", "V") end end,
         { '-e', 'tell application "Shortcuts" to run shortcut "Copy from PC"' })
-    local _ShortcutsLaunched = findApplication("com.apple.shortcuts") ~= nil
+    local _ShortcutsLaunched = find("com.apple.shortcuts") ~= nil
     task:start()
     hs.timer.doAfter(10, function()
       if task:isRunning() then task:terminate() end
       if not _ShortcutsLaunched then
-        local shortcutsObj = findApplication("com.apple.shortcuts")
+        local shortcutsObj = find("com.apple.shortcuts")
         if shortcutsObj then
             shortcutsObj:kill()
         end
@@ -49,7 +49,7 @@ if ok then
   hotkey.icon = iconForShortcuts
 end
 if not shortcutsLaunched then
-  local shortcutsObj = findApplication("com.apple.shortcuts")
+  local shortcutsObj = find("com.apple.shortcuts")
   if shortcutsObj then
     shortcutsObj:kill()
   end
@@ -160,7 +160,7 @@ local function parseVerificationCodeFromFirstMessage()
 end
 
 NewMessageWindowFilter = hs.window.filter.new(false):
-allowApp(findApplication("com.apple.notificationcenterui"):name()):
+allowApp(find("com.apple.notificationcenterui"):name()):
 subscribe(hs.window.filter.windowCreated,
   function()
     local code = parseVerificationCodeFromFirstMessage()
@@ -400,10 +400,10 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, bundleI
   end
 end
 
-local function getMenuHotkeys(appObject, titleAsEntry, titlePrefix)
+local function getMenuHotkeys(app, titleAsEntry, titlePrefix)
   local appHotkeys = {}
-  for i, menuItem in ipairs(appObject:getMenuItems() or {}) do
-    getSubMenuHotkeys(appHotkeys, menuItem, titleAsEntry, titlePrefix, appObject:bundleID())
+  for i, menuItem in ipairs(app:getMenuItems() or {}) do
+    getSubMenuHotkeys(appHotkeys, menuItem, titleAsEntry, titlePrefix, app:bundleID())
   end
   return appHotkeys
 end

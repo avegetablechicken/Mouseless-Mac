@@ -117,11 +117,11 @@ local proxyAppBundleIDs = {
 -- toggle connect/disconnect VPN using `V2RayX`
 local function toggleV2RayX(enable, alert)
   local bundleID = proxyAppBundleIDs.V2RayX
-  if findApplication(bundleID) == nil then
+  if find(bundleID) == nil then
     hs.application.launchOrFocusByBundleID(bundleID)
   end
 
-  local appUIObj = hs.axuielement.applicationElement(findApplication(bundleID))
+  local appUIObj = hs.axuielement.applicationElement(find(bundleID))
   local menu = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
       "AXMenu", 1)
   if menu == nil then
@@ -180,11 +180,11 @@ end
 -- toggle connect/disconnect VPN using `V2rayU`
 local function toggleV2RayU(enable, alert)
   local bundleID = proxyAppBundleIDs.V2rayU
-  if findApplication(bundleID) == nil then
+  if find(bundleID) == nil then
     hs.application.launchOrFocusByBundleID(bundleID)
   end
 
-  local appUIObj = hs.axuielement.applicationElement(findApplication(bundleID))
+  local appUIObj = hs.axuielement.applicationElement(find(bundleID))
   local menu = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
       "AXMenu", 1)
   if menu == nil then
@@ -245,11 +245,11 @@ end
 -- toggle connect/disconnect VPN using `MonoCloud`(`MonoProxyMac`)
 local function toggleMonoCloud(enable, alert)
   local bundleID = proxyAppBundleIDs.MonoCloud
-  if findApplication(bundleID) == nil then
+  if find(bundleID) == nil then
     hs.application.launchOrFocusByBundleID(bundleID)
   end
 
-  local appUIObj = hs.axuielement.applicationElement(findApplication(bundleID))
+  local appUIObj = hs.axuielement.applicationElement(find(bundleID))
   local menuItem = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
       "AXMenu", 1, "AXMenuItem", "Set As System Proxy")
   if menuItem == nil then
@@ -595,8 +595,8 @@ local function parseProxyInfo(info, require_mode)
           mode = "Global"
         elseif require_mode then
           local bundleID = proxyAppBundleIDs.MonoCloud
-          if findApplication(bundleID) ~= nil then
-            local appUIObj = hs.axuielement.applicationElement(findApplication(bundleID))
+          if find(bundleID) ~= nil then
+            local appUIObj = hs.axuielement.applicationElement(find(bundleID))
             local outboundModeMenu = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
               "AXMenu", 1, "AXMenuItem", "Outbound Mode", "AXMenu", 1)
             if outboundModeMenu ~= nil then
@@ -684,7 +684,7 @@ local function registerProxySettingsEntry(menu)
       local ok, frame = hs.osascript.applescript(script)
       if ok and type(frame) == "table" then
         leftClickAndRestore({ frame[1][1] + frame[2][1] - 1, frame[1][2] },
-                            findApplication("com.apple.systempreferences"):name())
+                            find("com.apple.systempreferences"):name())
       end
     end,
     shortcut = 'p'
@@ -766,10 +766,10 @@ local function registerProxyMenuImpl()
           local actionFunc = function()
             clickRightMenuBarItem(bundleID)
           end
-          if findApplication(bundleID) == nil then
+          if find(bundleID) == nil then
             hs.application.launchOrFocusByBundleID(bundleID)
             hs.timer.waitUntil(
-              function() return findApplication(bundleID) ~= nil end,
+              function() return find(bundleID) ~= nil end,
               actionFunc)
           else
             actionFunc()
@@ -921,15 +921,15 @@ local menubarHK = KeybindingConfigs.hotkeys.global
 
 local proxyHotkey = bindHotkeySpec(menubarHK["showProxyMenu"], "Show Proxy Menu",
 function()
-  if findApplication("com.surteesstudios.Bartender") ~= nil then
+  if find("com.surteesstudios.Bartender") ~= nil then
     hs.osascript.applescript(string.format([[
       tell application id "com.surteesstudios.Bartender"
         activate "org.hammerspoon.Hammerspoon-%s"
       end tell
     ]], proxy:autosaveName()))
   else
-    local appObject = findApplication("org.hammerspoon.Hammerspoon")
-    local appUIObject = hs.axuielement.applicationElement(appObject)
+    local app = find("org.hammerspoon.Hammerspoon")
+    local appUIObject = hs.axuielement.applicationElement(app)
     local menuBarMenu = getAXChildren(appUIObject, "AXMenuBar", -1, "AXMenuBarItem", proxy:title())
     if menuBarMenu ~= nil then
       menuBarMenu:performAction("AXPress")
@@ -995,7 +995,7 @@ end
 
 local function popupControlCenterSubPanel(panel, allowReentry)
   local ident = controlCenterSubPanelIdentifiers[panel]
-  local winObj = findApplication("com.apple.controlcenter"):mainWindow()
+  local winObj = find("com.apple.controlcenter"):mainWindow()
   local osVersion = getOSVersion()
   local pane = osVersion < OS.Ventura and "window 1" or "group 1 of window 1"
 
@@ -1055,7 +1055,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       end tell
     ]], controlCenterMenuBarItemIdentifiers[panel]))
     if _ok and menuBarItemIndex ~= 0 then
-      if findApplication("com.surteesstudios.Bartender") ~= nil then
+      if find("com.surteesstudios.Bartender") ~= nil then
         local menuBarPanel = panel == "Focus" and "Focus Modes" or panel
         ok, result = hs.osascript.applescript(string.format([[
           tell application id "com.surteesstudios.Bartender"
@@ -1237,7 +1237,7 @@ function registerControlCenterHotKeys(panel)
   end
 
   local selectNetworkHotkeys, selectNetworkWatcher
-  controlCenterSubPanelWatcher = hs.window.filter.new(findApplication("com.apple.controlcenter"):name())
+  controlCenterSubPanelWatcher = hs.window.filter.new(find("com.apple.controlcenter"):name())
     :subscribe(hs.window.filter.windowDestroyed, function()
       if selectNetworkWatcher ~= nil then
         StopExecContinuously(selectNetworkWatcher)
@@ -1906,9 +1906,9 @@ function registerControlCenterHotKeys(panel)
                 end tell
               ]])
               if ok then
-                local appObject = findApplication(bundleID)
+                local app = find(bundleID)
                 local hotkey, observer
-                local fn, cond = WrapCondition(appObject, {
+                local fn, cond = WrapCondition(app, {
                   mods = "⌘", spec = "Return", fn = function()
                   hs.osascript.applescript([[
                     tell application "System Events"
@@ -1932,9 +1932,9 @@ function registerControlCenterHotKeys(panel)
                 hotkey.kind = HK.IN_APP
                 hotkey.subkind = HK.IN_APP_.WINDOW
                 hotkey.condition = cond
-                local appUIObj = hs.axuielement.applicationElement(appObject)
-                local winUIObj = hs.axuielement.windowElement(appObject:focusedWindow())
-                observer = hs.axuielement.observer.new(appObject:pid())
+                local appUIObj = hs.axuielement.applicationElement(app)
+                local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
+                observer = hs.axuielement.observer.new(app:pid())
                 observer:addWatcher(
                   appUIObj, hs.axuielement.observer.notifications.focusedUIElementChanged)
                 observer:addWatcher(
@@ -2226,7 +2226,7 @@ function registerControlCenterHotKeys(panel)
 end
 
 local controlCenterPanelConfigs = KeybindingConfigs.hotkeys.controlcenter
-local localizedControlCenter = findApplication("com.apple.controlcenter"):name()
+local localizedControlCenter = find("com.apple.controlcenter"):name()
 for panel, spec in pairs(controlCenterPanelConfigs) do
   local localizedPanel = controlCenterLocalized(panel)
   bindControlCenter(spec, localizedControlCenter .. " > " .. localizedPanel,
@@ -2314,7 +2314,7 @@ end
 
 local tapperForExtraInfo
 local controlCenterPanelHotKeys = {}
-local controlCenterWatcher = hs.window.filter.new(findApplication("com.apple.controlcenter"):name())
+local controlCenterWatcher = hs.window.filter.new(find("com.apple.controlcenter"):name())
 controlCenterWatcher:subscribe(hs.window.filter.windowCreated,
 function()
   for panel, spec in pairs(controlCenterPanelConfigs) do
@@ -2350,14 +2350,14 @@ end)
 -- # callbacks
 
 -- application event callbacks
-function System_applicationCallback(appName, eventType, appObject)
+function System_applicationCallback(appName, eventType, app)
   if eventType == hs.application.watcher.deactivated then
     if appName == nil and getCurNetworkService() ~= nil then
       local enabledProxy = parseProxyInfo(proxy_info(), false)
       for _, proxyApp in ipairs(proxyMenuItemCandidates) do
         if enabledProxy == proxyApp.appname then
           local bundleID = proxyAppBundleIDs[enabledProxy]
-          if findApplication(bundleID) == nil then
+          if find(bundleID) == nil then
             disable_proxy()
           end
           break

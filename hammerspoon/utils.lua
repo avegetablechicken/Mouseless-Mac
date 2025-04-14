@@ -85,10 +85,10 @@ function activatedWindowIndex()
   end
 end
 
-function aWinFor(bundleID_or_appObject)
+function aWinFor(app)
   local bundleID
-  if type(bundleID_or_appObject) == 'string' then bundleID = bundleID_or_appObject
-  else bundleID = bundleID_or_appObject:bundleID() end
+  if type(app) == 'string' then bundleID = app
+  else bundleID = app:bundleID() end
   return string.format(
       'window %d of (first application process whose bundle identifier is "%s")\n',
       activatedWindowIndex(), bundleID)
@@ -110,9 +110,9 @@ function menuBarVisible()
   return true
 end
 
-function displayName(appObject, returnDefault)
-  if type(appObject) == 'string' then
-    local bundleID = appObject
+function displayName(app, returnDefault)
+  if type(app) == 'string' then
+    local bundleID = app
     local appPath = hs.application.pathForBundleID(bundleID)
     local appName, status_ok = hs.execute(
         string.format("mdls -name kMDItemDisplayName -raw '%s'", appPath))
@@ -122,7 +122,7 @@ function displayName(appObject, returnDefault)
       return hs.application.nameForBundleID(bundleID)
     end
   else
-    return appObject:name()
+    return app:name()
   end
 end
 
@@ -167,42 +167,42 @@ SPECIAL_KEY_SIMBOL_MAP = {
   ['\xf0\x9f\x8e\xa4'] = '🎤︎',
 }
 
-function findMenuItem(appObject, menuItemTitle, params)
-  local menuItem = appObject:findMenuItem(menuItemTitle)
+function findMenuItem(app, menuItemTitle, params)
+  local menuItem = app:findMenuItem(menuItemTitle)
   if menuItem ~= nil then return menuItem, menuItemTitle end
   local targetMenuItem = {}
-  local locStr = localizedMenuBarItem(menuItemTitle[1], appObject:bundleID())
+  local locStr = localizedMenuBarItem(menuItemTitle[1], app:bundleID())
   table.insert(targetMenuItem, locStr or menuItemTitle[1])
   for i=#menuItemTitle,2,-1 do
-    locStr = localizedMenuItem(menuItemTitle[i], appObject:bundleID(), params)
+    locStr = localizedMenuItem(menuItemTitle[i], app:bundleID(), params)
     table.insert(targetMenuItem, 2, locStr or menuItemTitle[i])
   end
-  return appObject:findMenuItem(targetMenuItem), targetMenuItem
+  return app:findMenuItem(targetMenuItem), targetMenuItem
 end
 
-function selectMenuItem(appObject, menuItemTitle, params, show)
+function selectMenuItem(app, menuItemTitle, params, show)
   if type(params) == "boolean" then
     show = params params = nil
   end
 
   if show then
-    local menuItem, targetMenuItem = findMenuItem(appObject, menuItemTitle, params)
+    local menuItem, targetMenuItem = findMenuItem(app, menuItemTitle, params)
     if menuItem ~= nil then
       showMenuItemWrapper(function()
-        appObject:selectMenuItem({targetMenuItem[1]})
+        app:selectMenuItem({targetMenuItem[1]})
       end)()
-      return appObject:selectMenuItem(targetMenuItem)
+      return app:selectMenuItem(targetMenuItem)
     end
   else
-    if appObject:selectMenuItem(menuItemTitle) then return true end
+    if app:selectMenuItem(menuItemTitle) then return true end
     local targetMenuItem = {}
-    local locStr = localizedMenuBarItem(menuItemTitle[1], appObject:bundleID())
+    local locStr = localizedMenuBarItem(menuItemTitle[1], app:bundleID())
     table.insert(targetMenuItem, locStr or menuItemTitle[1])
     for i=#menuItemTitle,2,-1 do
-      locStr = localizedMenuItem(menuItemTitle[i], appObject:bundleID(), params)
+      locStr = localizedMenuItem(menuItemTitle[i], app:bundleID(), params)
       table.insert(targetMenuItem, 2, locStr or menuItemTitle[i])
     end
-    return appObject:selectMenuItem(targetMenuItem)
+    return app:selectMenuItem(targetMenuItem)
   end
 end
 
@@ -245,9 +245,9 @@ local modifierSymbolMap = {
   ["⇧"] = 'shift'
 }
 
-function findMenuItemByKeyBinding(appObject, mods, key, menuItems)
+function findMenuItemByKeyBinding(app, mods, key, menuItems)
   if menuItems == nil then
-    menuItems = appObject:getMenuItems()
+    menuItems = app:getMenuItems()
   end
   if menuItems == nil then return end
   if mods == '' then mods = {} end
@@ -275,21 +275,21 @@ function findMenuItemByKeyBinding(appObject, mods, key, menuItems)
   end
 end
 
-local function filterParallels(appObjects)
-  return hs.fnutils.find(appObjects, function(app)
+local function filterParallels(apps)
+  return hs.fnutils.find(apps, function(app)
     return string.find(app:bundleID(), "com.parallels") == nil
   end)
 end
 
-function findApplication(hint, exact)
+function find(hint, exact)
   if exact == nil then exact = true end
   return filterParallels{hs.application.find(hint, exact)}
 end
 
-function quitApplication(app)
-  local appObject = findApplication(app, true)
-  if appObject ~= nil then
-    appObject:kill()
+function quit(hint)
+  local app = find(hint, true)
+  if app ~= nil then
+    app:kill()
     return true
   end
   return false
@@ -1210,8 +1210,8 @@ local function localizedStringImpl(str, bundleID, params, force)
   local resourceDir, framework = getResourceDir(bundleID, localeFramework)
   if resourceDir == nil then return nil end
   if framework.chromium then
-    if findApplication(bundleID) then
-      local menuItems = findApplication(bundleID):getMenuItems()
+    if find(bundleID) then
+      local menuItems = find(bundleID):getMenuItems()
       if menuItems ~= nil then
         table.remove(menuItems, 1)
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
@@ -1786,8 +1786,8 @@ local function delocalizedStringImpl(str, bundleID, params)
   local resourceDir, framework = getResourceDir(bundleID, localeFramework)
   if resourceDir == nil then return nil end
   if framework.chromium then
-    if findApplication(bundleID) then
-      local menuItems = findApplication(bundleID):getMenuItems()
+    if find(bundleID) then
+      local menuItems = find(bundleID):getMenuItems()
       if menuItems ~= nil then
         table.remove(menuItems, 1)
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
@@ -2092,8 +2092,8 @@ function localizedMenuBarItem(title, bundleID, params)
   local locTitle = hs.fnutils.indexOf(localizationMap[bundleID] or {}, title)
   if locTitle ~= nil then
     -- "View" may be localized to different strings in the same app (e.g. WeChat)
-    if title == 'View' and findApplication(bundleID) then
-      if findApplication(bundleID):findMenuItem({ locTitle }) ~= nil then
+    if title == 'View' and find(bundleID) then
+      if find(bundleID):findMenuItem({ locTitle }) ~= nil then
         return locTitle
       end
     else
@@ -2101,10 +2101,10 @@ function localizedMenuBarItem(title, bundleID, params)
     end
   end
   -- the app may pretend being localized (e.g. Visual Studio Code)
-  if findApplication(bundleID) then
+  if find(bundleID) then
     if type(params) == 'table' and params.locale ~= nil
         and params.locale == getMatchedLocale(appLocale, { params.locale }) then
-      if findApplication(bundleID):findMenuItem({ title }) ~= nil then
+      if find(bundleID):findMenuItem({ title }) ~= nil then
         return title
       end
     end
@@ -2164,7 +2164,7 @@ function hasTopNotch(screen)
 end
 
 function hiddenByBartender(id)
-  if findApplication("com.surteesstudios.Bartender") == nil then
+  if find("com.surteesstudios.Bartender") == nil then
     return false
   end
   local ok, hiddenItems = hs.osascript.applescript([[
@@ -2225,9 +2225,9 @@ function rightClickAndRestore(position, appName)
 end
 
 function clickAppRightMenuBarItem(bundleID, menuItemPath, show)
-  local appObject = findApplication(bundleID)
-  if appObject == nil then return false end
-  local appUIObject = hs.axuielement.applicationElement(appObject)
+  local app = find(bundleID)
+  if app == nil then return false end
+  local appUIObject = hs.axuielement.applicationElement(app)
   local menuBarMenu = getAXChildren(appUIObject, "AXMenuBar", -1, "AXMenuBarItem", 1)
 
   if type(menuItemPath) ~= 'table' then
@@ -2269,7 +2269,7 @@ local controlCenterIdentifiers = hs.json.read("static/controlcenter-identifies.j
 local controlCenterMenuBarItemIdentifiers = controlCenterIdentifiers.menubar
 function clickControlCenterMenuBarItemSinceBigSur(menuItem)
   if controlCenterMenuBarItemIdentifiers[menuItem] == nil then return false end
-  local appUIObject = hs.axuielement.applicationElement(findApplication("com.apple.controlcenter"))
+  local appUIObject = hs.axuielement.applicationElement(find("com.apple.controlcenter"))
   local menuBarItems = getAXChildren(appUIObject, "AXMenuBar", -1):childrenWithRole("AXMenuBarItem")
   for _, item in ipairs(menuBarItems) do
     if item.AXIdentifier:find(controlCenterMenuBarItemIdentifiers[menuItem]) ~= nil then
@@ -2312,7 +2312,7 @@ function clickRightMenuBarItem(menuBarName, menuItemPath, show)
   if menuBarName == "Control Center" then
     return clickControlCenterMenuBarItem(menuBarName)
   end
-  local resourceDir = findApplication("com.apple.controlcenter"):path() .. "/Contents/Resources"
+  local resourceDir = find("com.apple.controlcenter"):path() .. "/Contents/Resources"
   local newName = menuBarName:gsub(" ", ""):gsub("‑", "")
   if hs.fs.attributes(resourceDir .. '/' .. newName .. '.loctable') ~= nil
       or hs.fs.attributes(resourceDir .. '/en.lproj/' .. newName .. '.strings') ~= nil then

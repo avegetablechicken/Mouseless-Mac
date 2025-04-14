@@ -304,9 +304,9 @@ local function reloadConfig(files)
   end
 end
 
-local function applicationCallback(appName, eventType, appObject)
-  App_applicationCallback(appName, eventType, appObject)
-  System_applicationCallback(appName, eventType, appObject)
+local function applicationCallback(appName, eventType, app)
+  App_applicationCallback(appName, eventType, app)
+  System_applicationCallback(appName, eventType, app)
 end
 
 -- for apps that launch silently
@@ -320,14 +320,14 @@ function ExecOnSilentLaunch(bundleID, action, onlyFirstTime)
   if onlyFirstTime then
     local idx = #processesOnSilentLaunch[bundleID] + 1
     local oldAction = action
-    action = function(appObject)
-      oldAction(appObject)
+    action = function(app)
+      oldAction(app)
       table.remove(processesOnSilentLaunch[bundleID], idx)
     end
   end
 
   table.insert(processesOnSilentLaunch[bundleID], action)
-  hasLaunched[bundleID] = findApplication(bundleID) ~= nil
+  hasLaunched[bundleID] = find(bundleID) ~= nil
 end
 
 local processesOnSilentQuit = {}
@@ -336,29 +336,29 @@ function ExecOnSilentQuit(bundleID, action)
     processesOnSilentQuit[bundleID] = {}
   end
   table.insert(processesOnSilentQuit[bundleID], action)
-  hasLaunched[bundleID] = findApplication(bundleID) ~= nil
+  hasLaunched[bundleID] = find(bundleID) ~= nil
 end
 
 ExecContinuously(function()
   local hasLaunchedTmp = {}
   for bid, processes in pairs(processesOnSilentLaunch) do
-    local appObject = findApplication(bid)
-    if hasLaunched[bid] == false and appObject ~= nil then
+    local app = find(bid)
+    if hasLaunched[bid] == false and app ~= nil then
       for _, proc in ipairs(processes) do
-        proc(appObject)
+        proc(app)
       end
     end
-    hasLaunchedTmp[bid] = appObject ~= nil
+    hasLaunchedTmp[bid] = app ~= nil
   end
 
   for bid, processes in pairs(processesOnSilentQuit) do
-    local appObject = findApplication(bid)
-    if hasLaunched[bid] == true and appObject == nil then
+    local app = find(bid)
+    if hasLaunched[bid] == true and app == nil then
       for _, proc in ipairs(processes) do
         proc(bid)
       end
     end
-    hasLaunchedTmp[bid] = appObject ~= nil
+    hasLaunchedTmp[bid] = app ~= nil
   end
 
   hasLaunched = hasLaunchedTmp
