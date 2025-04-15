@@ -16,8 +16,8 @@ local function focusOrHideFinder(app)
   local windows = windowFilter:getWindows()
   local nonDesktop = hs.fnutils.find(windows, function(win)
     return win:id() ~= hs.window.desktop():id()
-  end)
-  if nonDesktop == nil then
+  end) == nil
+  if nonDesktop then
     app = hs.application.open(app:bundleID())
   elseif hs.window.focusedWindow() ~= nil
       and hs.window.focusedWindow():application() == app then
