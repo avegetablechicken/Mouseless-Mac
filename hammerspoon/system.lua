@@ -116,12 +116,12 @@ local proxyAppBundleIDs = {
 
 -- toggle connect/disconnect VPN using `V2RayX`
 local function toggleV2RayX(enable, alert)
-  local bundleID = proxyAppBundleIDs.V2RayX
-  if find(bundleID) == nil then
-    hs.application.launchOrFocusByBundleID(bundleID)
+  local appid = proxyAppBundleIDs.V2RayX
+  if find(appid) == nil then
+    hs.application.launchOrFocusByBundleID(appid)
   end
 
-  local appUIObj = hs.axuielement.applicationElement(find(bundleID))
+  local appUIObj = hs.axuielement.applicationElement(find(appid))
   local menu = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
       "AXMenu", 1)
   if menu == nil then
@@ -179,12 +179,12 @@ end
 
 -- toggle connect/disconnect VPN using `V2rayU`
 local function toggleV2RayU(enable, alert)
-  local bundleID = proxyAppBundleIDs.V2rayU
-  if find(bundleID) == nil then
-    hs.application.launchOrFocusByBundleID(bundleID)
+  local appid = proxyAppBundleIDs.V2rayU
+  if find(appid) == nil then
+    hs.application.launchOrFocusByBundleID(appid)
   end
 
-  local appUIObj = hs.axuielement.applicationElement(find(bundleID))
+  local appUIObj = hs.axuielement.applicationElement(find(appid))
   local menu = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
       "AXMenu", 1)
   if menu == nil then
@@ -195,8 +195,8 @@ local function toggleV2RayU(enable, alert)
   end
 
   local set
-  local turnOnTitle = localizedString("Turn v2ray-core On", bundleID)
-  local turnOffTitle = localizedString("Turn v2ray-core Off", bundleID)
+  local turnOnTitle = localizedString("Turn v2ray-core On", appid)
+  local turnOffTitle = localizedString("Turn v2ray-core Off", appid)
   if enable == true then
     local turnOn = getAXChildren(menu, "AXMenuItem", turnOnTitle)
     if turnOn ~= nil then
@@ -244,12 +244,12 @@ end
 
 -- toggle connect/disconnect VPN using `MonoCloud`(`MonoProxyMac`)
 local function toggleMonoCloud(enable, alert)
-  local bundleID = proxyAppBundleIDs.MonoCloud
-  if find(bundleID) == nil then
-    hs.application.launchOrFocusByBundleID(bundleID)
+  local appid = proxyAppBundleIDs.MonoCloud
+  if find(appid) == nil then
+    hs.application.launchOrFocusByBundleID(appid)
   end
 
-  local appUIObj = hs.axuielement.applicationElement(find(bundleID))
+  local appUIObj = hs.axuielement.applicationElement(find(appid))
   local menuItem = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
       "AXMenu", 1, "AXMenuItem", "Set As System Proxy")
   if menuItem == nil then
@@ -594,9 +594,9 @@ local function parseProxyInfo(info, require_mode)
         if enabledProxy ~= "MonoCloud" then
           mode = "Global"
         elseif require_mode then
-          local bundleID = proxyAppBundleIDs.MonoCloud
-          if find(bundleID) ~= nil then
-            local appUIObj = hs.axuielement.applicationElement(find(bundleID))
+          local appid = proxyAppBundleIDs.MonoCloud
+          if find(appid) ~= nil then
+            local appUIObj = hs.axuielement.applicationElement(find(appid))
             local outboundModeMenu = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
               "AXMenu", 1, "AXMenuItem", "Outbound Mode", "AXMenu", 1)
             if outboundModeMenu ~= nil then
@@ -755,21 +755,21 @@ local function registerProxyMenuImpl()
   end
 
   for _, candidate in ipairs(proxyMenuItemCandidates) do
-    local bundleID = proxyAppBundleIDs[candidate.appname]
+    local appid = proxyAppBundleIDs[candidate.appname]
     if ProxyConfigs[candidate.appname] ~= nil
-        and hs.application.pathForBundleID(bundleID) ~= nil
-        and hs.application.pathForBundleID(bundleID) ~= "" then
+        and hs.application.pathForBundleID(appid) ~= nil
+        and hs.application.pathForBundleID(appid) ~= "" then
       table.insert(proxyMenu, { title = "-" })
       table.insert(proxyMenu, {
         title = candidate.appname,
         fn = function()
           local actionFunc = function()
-            clickRightMenuBarItem(bundleID)
+            clickRightMenuBarItem(appid)
           end
-          if find(bundleID) == nil then
-            hs.application.launchOrFocusByBundleID(bundleID)
+          if find(appid) == nil then
+            hs.application.launchOrFocusByBundleID(appid)
             hs.timer.waitUntil(
-              function() return find(bundleID) ~= nil end,
+              function() return find(appid) ~= nil end,
               actionFunc)
           else
             actionFunc()
@@ -1838,18 +1838,18 @@ function registerControlCenterHotKeys(panel)
           enableds[i] = 1 - enableds[i]
 
           if checkbox == "Dark Mode" then
-            local bundleID = hs.application.frontmostApplication():bundleID()
-            if hs.fnutils.contains({"com.google.Chrome", "com.microsoft.edgemac", "com.microsoft.edgemac.Dev"}, bundleID) then
-              local scheme = bundleID == "com.google.Chrome" and "chrome" or "edge"
+            local appid = hs.application.frontmostApplication():bundleID()
+            if hs.fnutils.contains({"com.google.Chrome", "com.microsoft.edgemac", "com.microsoft.edgemac.Dev"}, appid) then
+              local scheme = appid == "com.google.Chrome" and "chrome" or "edge"
               local darkMode = enableds[i] == 1 and "Enabled" or "Disabled"
               local optionList = nil
-              if bundleID == "com.google.Chrome" then
+              if appid == "com.google.Chrome" then
                 optionList = "group 1 of group 4 of group 1 of group 2 of exp"
               else
                 optionList = "group 1 of group 3 of group 1 of group 2 of group 1 of exp"
               end
               local ok = hs.osascript.applescript([[
-                tell application id "]] .. bundleID .. [["
+                tell application id "]] .. appid .. [["
                   set tabCount to count of tabs of front window
                   set tabFound to false
                   repeat with i from 1 to tabCount
@@ -1874,7 +1874,7 @@ function registerControlCenterHotKeys(panel)
 
                 tell application "System Events"
                   delay 0.5
-                  set win to ]] .. aWinFor(bundleID) .. [[
+                  set win to ]] .. aWinFor(appid) .. [[
                   set exp to (first UI element whose value of attribute "AXTitle" is not "") ¬
                       of group 1 of group 1 of group 1 of group 1 of win
                   if exists ]] .. optionList .. [[ then
@@ -1906,13 +1906,13 @@ function registerControlCenterHotKeys(panel)
                 end tell
               ]])
               if ok then
-                local app = find(bundleID)
+                local app = find(appid)
                 local hotkey, observer
                 local fn, cond = WrapCondition(app, {
                   mods = "⌘", spec = "Return", fn = function()
                   hs.osascript.applescript([[
                     tell application "System Events"
-                      set win to ]] .. aWinFor(bundleID) .. [[
+                      set win to ]] .. aWinFor(appid) .. [[
                       set exp to (first UI element whose value of attribute "AXTitle" is not "") ¬
                           of group 1 of group 1 of group 1 of group 1 of win
                       set bt to button 1 of group 2 of last group of group 4 of exp
@@ -1945,8 +1945,8 @@ function registerControlCenterHotKeys(panel)
                 observer:callback(function()
                   local frontWinBundleID = hs.window.frontmostWindow():application():bundleID()
                   local ok, url = hs.osascript.applescript(
-                      [[tell application id "]] .. bundleID .. [[" to get URL of active tab of front window]])
-                  if frontWinBundleID ~= bundleID or not ok or url ~= scheme .. "://flags/#enable-force-dark" then
+                      [[tell application id "]] .. appid .. [[" to get URL of active tab of front window]])
+                  if frontWinBundleID ~= appid or not ok or url ~= scheme .. "://flags/#enable-force-dark" then
                     if hotkey ~= nil then
                       hotkey:delete()
                       hotkey = nil
@@ -2152,11 +2152,11 @@ function registerControlCenterHotKeys(panel)
       hotkey = newControlCenter("", "Space", result[2],
         function()
           if defaultMusicAppForControlCenter ~= nil then
-            local appName = displayName('com.apple.Music')
+            local appname = displayName('com.apple.Music')
             local ok, isAppleMusic = hs.osascript.applescript([[
               tell application "System Events"
                 set appTitle to static text 1 of ]] .. pane .. [[ of application process "ControlCenter"
-                return value of appTitle is "]] .. appName .. [["
+                return value of appTitle is "]] .. appname .. [["
               end tell
             ]])
             if ok and isAppleMusic then
@@ -2350,14 +2350,14 @@ end)
 -- # callbacks
 
 -- application event callbacks
-function System_applicationCallback(appName, eventType, app)
+function System_applicationCallback(appname, eventType, app)
   if eventType == hs.application.watcher.deactivated then
-    if appName == nil and getCurNetworkService() ~= nil then
+    if appname == nil and getCurNetworkService() ~= nil then
       local enabledProxy = parseProxyInfo(proxy_info(), false)
       for _, proxyApp in ipairs(proxyMenuItemCandidates) do
         if enabledProxy == proxyApp.appname then
-          local bundleID = proxyAppBundleIDs[enabledProxy]
-          if find(bundleID) == nil then
+          local appid = proxyAppBundleIDs[enabledProxy]
+          if find(appid) == nil then
             disable_proxy()
           end
           break

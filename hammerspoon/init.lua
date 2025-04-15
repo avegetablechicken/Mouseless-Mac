@@ -304,39 +304,39 @@ local function reloadConfig(files)
   end
 end
 
-local function applicationCallback(appName, eventType, app)
-  App_applicationCallback(appName, eventType, app)
-  System_applicationCallback(appName, eventType, app)
+local function applicationCallback(appname, eventType, app)
+  App_applicationCallback(appname, eventType, app)
+  System_applicationCallback(appname, eventType, app)
 end
 
 -- for apps that launch silently
 local processesOnSilentLaunch = {}
 local hasLaunched = {}
-function ExecOnSilentLaunch(bundleID, action, onlyFirstTime)
-  if processesOnSilentLaunch[bundleID] == nil then
-    processesOnSilentLaunch[bundleID] = {}
+function ExecOnSilentLaunch(appid, action, onlyFirstTime)
+  if processesOnSilentLaunch[appid] == nil then
+    processesOnSilentLaunch[appid] = {}
   end
 
   if onlyFirstTime then
-    local idx = #processesOnSilentLaunch[bundleID] + 1
+    local idx = #processesOnSilentLaunch[appid] + 1
     local oldAction = action
     action = function(app)
       oldAction(app)
-      table.remove(processesOnSilentLaunch[bundleID], idx)
+      table.remove(processesOnSilentLaunch[appid], idx)
     end
   end
 
-  table.insert(processesOnSilentLaunch[bundleID], action)
-  hasLaunched[bundleID] = find(bundleID) ~= nil
+  table.insert(processesOnSilentLaunch[appid], action)
+  hasLaunched[appid] = find(appid) ~= nil
 end
 
 local processesOnSilentQuit = {}
-function ExecOnSilentQuit(bundleID, action)
-  if processesOnSilentQuit[bundleID] == nil then
-    processesOnSilentQuit[bundleID] = {}
+function ExecOnSilentQuit(appid, action)
+  if processesOnSilentQuit[appid] == nil then
+    processesOnSilentQuit[appid] = {}
   end
-  table.insert(processesOnSilentQuit[bundleID], action)
-  hasLaunched[bundleID] = find(bundleID) ~= nil
+  table.insert(processesOnSilentQuit[appid], action)
+  hasLaunched[appid] = find(appid) ~= nil
 end
 
 ExecContinuously(function()

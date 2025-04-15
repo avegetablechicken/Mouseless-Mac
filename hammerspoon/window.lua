@@ -545,14 +545,14 @@ local function bindWindowMisc(...)
 end
 
 local function runningAppDisplayNames(bundleIDs)
-  local appNames = {}
+  local appnames = {}
   for _, bundleID in ipairs(bundleIDs) do
     local app = find(bundleID)
     if app ~= nil then
-      table.insert(appNames, app:name())
+      table.insert(appnames, app:name())
     end
   end
-  return appNames
+  return appnames
 end
 
 -- visible windows on all user spaces (wallpaper apps excluded)
@@ -643,8 +643,8 @@ local function registerWindowSwitcher()
     end
     if switcher == nil then
       local filter = hs.window.filter.new()
-      for _, appName in ipairs(runningAppDisplayNames(ignoredApps)) do
-        filter:rejectApp(appName)
+      for _, appname in ipairs(runningAppDisplayNames(ignoredApps)) do
+        filter:rejectApp(appname)
       end
       switcher = hs.window.switcher.new(filter)
     end
@@ -687,8 +687,8 @@ local function registerWindowSwitcher()
     end
     if switcher == nil then
       local filter = hs.window.filter.new()
-      for _, appName in ipairs(runningAppDisplayNames(ignoredApps)) do
-        filter:rejectApp(appName)
+      for _, appname in ipairs(runningAppDisplayNames(ignoredApps)) do
+        filter:rejectApp(appname)
       end
       switcher = hs.window.switcher.new(filter)
     end
@@ -901,8 +901,8 @@ end
 bindWindowMisc(misc["searchWindow"], 'Switch to Window',
 function()
   local wFilter = hs.window.filter.new()
-  for _, appName in ipairs(runningAppDisplayNames(ignoredApps)) do
-    wFilter:rejectApp(appName)
+  for _, appname in ipairs(runningAppDisplayNames(ignoredApps)) do
+    wFilter:rejectApp(appname)
   end
   local allWindows = wFilter:getWindows()
   local choices = {}
@@ -1326,15 +1326,15 @@ end
 -- use it to switch to a tab
 bindWindowMisc(misc["searchTab"], 'Switch to Tab',
 function()
-  local bundleID = hs.application.frontmostApplication():bundleID()
-  if hs.fnutils.contains({ "com.readdle.PDFExpert-Mac", "com.superace.updf.mac" }, bundleID) then
+  local appid = hs.application.frontmostApplication():bundleID()
+  if hs.fnutils.contains({ "com.readdle.PDFExpert-Mac", "com.superace.updf.mac" }, appid) then
     PDFChooser()
     return
   end
 
-  if bundleID == "com.apple.Preview" then
+  if appid == "com.apple.Preview" then
     local ok, name = hs.osascript.applescript([[
-      tell application id "]] .. bundleID .. [[" to get name of front document
+      tell application id "]] .. appid .. [[" to get name of front document
     ]])
     if ok and name:sub(-4) == '.pdf' then
       PDFChooser()

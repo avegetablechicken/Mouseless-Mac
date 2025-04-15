@@ -296,7 +296,7 @@ local windowMenuItemsSinceSequoia2 = {
   ["⌥⌃⇧←"] = "Left & Quarters", ["⌥⌃⇧→"] = "Right & Quarters",
   ["⌥⌃⇧↑"] = "Top & Quarters", ["⌥⌃⇧↓"] = "Bottom & Quarters",
 }
-local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, bundleID)
+local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
   if menuItem.AXChildren == nil then return end
   if titleAsEntry == true then
     table.insert(t, menuItem.AXTitle)
@@ -325,7 +325,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, bundleI
             and (menuItem.AXTitle == "Edit"
             or localizationMap.common[menuItem.AXTitle] == 'Edit')  -- hack for performance
             and (subItem.AXTitle == "Emoji & Symbols"
-            or delocalizedMenuItem(subItem.AXTitle, bundleID) == "Emoji & Symbols") then
+            or delocalizedMenuItem(subItem.AXTitle, appid) == "Emoji & Symbols") then
           idx = "🌐︎E"
         end
       elseif subItem.AXMenuItemCmdChar == 'F' and subItem.AXMenuItemCmdGlyph == ""
@@ -335,7 +335,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, bundleI
             or subItem.AXTitle == "Zoom" then
           idx = "🌐︎F"
         else
-          local enTitle = delocalizedMenuItem(subItem.AXTitle, bundleID)
+          local enTitle = delocalizedMenuItem(subItem.AXTitle, appid)
           if enTitle == "Enter Full Screen" or enTitle == "Exit Full Screen"
               or enTitle == "Zoom" then
             idx = "🌐︎F"
@@ -363,7 +363,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, bundleI
             or localizationMap.common[menuItem.AXTitle] == 'Window' then
           for hkIdx, itemTitle in pairs(windowMenuItemsSinceSequoia1) do
             if idx == hkIdx and (subItem.AXTitle == itemTitle
-                or delocalizedMenuItem(subItem.AXTitle, bundleID) == itemTitle) then
+                or delocalizedMenuItem(subItem.AXTitle, appid) == itemTitle) then
               idx = "🌐︎" .. idx
               break
             end
@@ -373,7 +373,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, bundleI
             or localizationMap.common[menuItem.AXTitle] == 'Move & Resize' then
           for hkIdx, itemTitle in pairs(windowMenuItemsSinceSequoia2) do
             if idx == hkIdx and (subItem.AXTitle == itemTitle
-                or delocalizedMenuItem(subItem.AXTitle, bundleID) == itemTitle) then
+                or delocalizedMenuItem(subItem.AXTitle, appid) == itemTitle) then
               idx = "🌐︎" .. idx
               break
             end
@@ -386,7 +386,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, bundleI
         and subItem.AXMenuItemCmdModifiers[1] ~= 'cmd' then
       idx = hs.fnutils.indexOf(windowMenuItemsSinceSequoia2, subItem.AXTitle)
       if idx == nil then
-        local delocTitle = delocalizedMenuItem(subItem.AXTitle, bundleID)
+        local delocTitle = delocalizedMenuItem(subItem.AXTitle, appid)
         idx = hs.fnutils.indexOf(windowMenuItemsSinceSequoia2, delocTitle)
       end
       if idx ~= nil then idx = "🌐︎" .. idx end
@@ -395,7 +395,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, bundleI
       table.insert(t, { idx = idx, msg = idx .. ": " .. title,
                         kind = HK.IN_APP, valid = subItem.AXEnabled })
     end
-    getSubMenuHotkeys(t, subItem, false, titlePrefix and title or nil, bundleID)
+    getSubMenuHotkeys(t, subItem, false, titlePrefix and title or nil, appid)
     ::L_CONTINUE::
   end
 end
@@ -446,14 +446,14 @@ local function testValid(entry)
   local actualMsg
   if valid then
     valid = entry.condition == nil or entry.condition(hs.application.frontmostApplication())
-    local bundleID = hs.application.frontmostApplication():bundleID()
+    local appid = hs.application.frontmostApplication():bundleID()
     if valid and entry.kind == HK.IN_APP and entry.subkind == HK.IN_APP_.WEBSITE then
-      local hotkeyInfo = get(InWebsiteHotkeyInfoChain, bundleID, entry.idx)
+      local hotkeyInfo = get(InWebsiteHotkeyInfoChain, appid, entry.idx)
       if hotkeyInfo ~= nil then
         valid, actualMsg = getValidMessage(hotkeyInfo, hs.application.frontmostApplication())
       end
     elseif valid and entry.kind == HK.IN_APP and entry.subkind == HK.IN_APP_.WINDOW then
-      local hotkeyInfo = get(InWinHotkeyInfoChain, bundleID, entry.idx)
+      local hotkeyInfo = get(InWinHotkeyInfoChain, appid, entry.idx)
       if hotkeyInfo ~= nil then
         valid, actualMsg = getValidMessage(hotkeyInfo,
             hs.application.frontmostApplication():focusedWindow())
@@ -1094,9 +1094,9 @@ table.insert(DoubleTapModalList, hkKeybinding)
 
 local function getCurrentApplication()
   local app = hs.window.frontmostWindow():application()
-  local bundleID = app:bundleID()
-  local appName = app:name()
-  return app, appName, bundleID
+  local appid = app:bundleID()
+  local appname = app:name()
+  return app, appname, appid
 end
 
 -- show info of current window
@@ -1109,7 +1109,7 @@ bindHotkeySpec(misc["showCurrentWindowInfo"], "Show Info of Current Window", fun
   local subrole = win:subrole()
   local pid = win:pid()
   local frame = win:frame()
-  local app, appName, bundleID = getCurrentApplication()
+  local app, appname, appid = getCurrentApplication()
   hs.focus()
   hs.dialog.blockAlert("Current Window",
     string.format([[
@@ -1121,7 +1121,7 @@ bindHotkeySpec(misc["showCurrentWindowInfo"], "Show Info of Current Window", fun
 
       App: %s (%s)]],
     title, id, role, subrole, pid, frame.x, frame.y, frame.w, frame.h,
-    appName, bundleID))
+    appname, appid))
 end)
 
 local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", function()
@@ -1143,7 +1143,7 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
                                 idx = hotkey.idx, msg = hotkey.msg,
                                 condition = hotkey.condition,
                                 kind = hotkey.kind, subkind = hotkey.subkind,
-                                bundleID = hotkey.bundleID, appPath = hotkey.appPath,
+                                appid = hotkey.appid, appPath = hotkey.appPath,
                                 icon = hotkey.icon })
       end
     end
@@ -1155,7 +1155,7 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
                          idx = entry.idx, msg = entry.msg,
                          condition = entry.condition,
                          kind = entry.kind, subkind = entry.subkind,
-                         bundleID = entry.bundleID, appPath = entry.appPath,
+                         appid = entry.appid, appPath = entry.appPath,
                          icon = entry.icon }
       if entry.kind == HK.IN_APP and entry.subkind == HK.IN_APP_.MENU then
         table.insert(enabledAltMenuHotkeys, newEntry)
@@ -1279,8 +1279,8 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
     if image == nil then
       if entry.kind == HK.PRIVELLEGE then
         image = HSImage
-      elseif entry.bundleID then
-        image = hs.image.imageFromAppBundle(entry.bundleID)
+      elseif entry.appid then
+        image = hs.image.imageFromAppBundle(entry.appid)
       elseif entry.appPath then
         local iconFile = hs.application.infoForBundlePath(entry.appPath).CFBundleIconFile
         if iconFile then

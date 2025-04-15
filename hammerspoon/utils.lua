@@ -86,12 +86,12 @@ function activatedWindowIndex()
 end
 
 function aWinFor(app)
-  local bundleID
-  if type(app) == 'string' then bundleID = app
-  else bundleID = app:bundleID() end
+  local appid
+  if type(app) == 'string' then appid = app
+  else appid = app:bundleID() end
   return string.format(
       'window %d of (first application process whose bundle identifier is "%s")\n',
-      activatedWindowIndex(), bundleID)
+      activatedWindowIndex(), appid)
 end
 
 function menuBarVisible()
@@ -112,14 +112,14 @@ end
 
 function displayName(app, returnDefault)
   if type(app) == 'string' then
-    local bundleID = app
-    local appPath = hs.application.pathForBundleID(bundleID)
-    local appName, status_ok = hs.execute(
+    local appid = app
+    local appPath = hs.application.pathForBundleID(appid)
+    local appname, status_ok = hs.execute(
         string.format("mdls -name kMDItemDisplayName -raw '%s'", appPath))
-    if status_ok and appName:sub(-4) == '.app' then
-      return appName:sub(1, -5)
+    if status_ok and appname:sub(-4) == '.app' then
+      return appname:sub(1, -5)
     elseif returnDefault then
-      return hs.application.nameForBundleID(bundleID)
+      return hs.application.nameForBundleID(appid)
     end
   else
     return app:name()
@@ -306,11 +306,11 @@ if hs.fs.attributes("config/localization.json") ~= nil then
   localizationMap['resources'] = nil
   localizationMapLoaded = hs.fnutils.copy(localizationMap)
 end
-function resetLocalizationMap(bundleID)
-  if localizationMapLoaded[bundleID] ~= nil then
-    localizationMap[bundleID] = hs.fnutils.copy(localizationMapLoaded[bundleID])
+function resetLocalizationMap(appid)
+  if localizationMapLoaded[appid] ~= nil then
+    localizationMap[appid] = hs.fnutils.copy(localizationMapLoaded[appid])
   else
-    localizationMap[bundleID] = nil
+    localizationMap[appid] = nil
   end
 end
 
@@ -321,21 +321,21 @@ local function systemLocales()
   return hs.fnutils.split(locales, ',')
 end
 
-function applicationLocales(bundleID)
+function applicationLocales(appid)
   local locales, ok = hs.execute(
-      string.format("(defaults read %s AppleLanguages || defaults read -globalDomain AppleLanguages) | tr -d '()\" \\n'", bundleID))
+      string.format("(defaults read %s AppleLanguages || defaults read -globalDomain AppleLanguages) | tr -d '()\" \\n'", appid))
   return hs.fnutils.split(locales, ',')
 end
 
-local function getResourceDir(bundleID, frameworkName)
+local function getResourceDir(appid, frameworkName)
   if frameworkName == nil then
-    frameworkName = localizationFrameworks[bundleID]
+    frameworkName = localizationFrameworks[appid]
   end
   local resourceDir
   local framework = {}
-  local appContentPath = hs.application.pathForBundleID(bundleID) .. "/Contents"
+  local appContentPath = hs.application.pathForBundleID(appid) .. "/Contents"
   if hs.fs.attributes(appContentPath) == nil then
-    resourceDir = hs.application.pathForBundleID(bundleID) .. "/WrappedBundle/.."
+    resourceDir = hs.application.pathForBundleID(appid) .. "/WrappedBundle/.."
   elseif frameworkName ~= nil then
     local frameworkDir
     if hs.fs.attributes(frameworkName) ~= nil then
@@ -894,7 +894,7 @@ local function localizeByStrings(str, localeDir, localeFile, localesDict, locale
   if result ~= nil then return result end
 end
 
-local function localizeByNIB(str, localeDir, localeFile, bundleID)
+local function localizeByNIB(str, localeDir, localeFile, appid)
   local resourceDir = localeDir .. '/..'
   local locale = localeDir:match("^.*/(.*)%.lproj$")
   local enLocaleDir = baseLocaleDirs(resourceDir)[1]
@@ -921,7 +921,7 @@ local function localizeByNIB(str, localeDir, localeFile, bundleID)
     end
 
     if isBinarayPlist(NIBPath) and isBinarayPlist(enNIBPath) then
-      local xmlDir = localeTmpDir .. bundleID .. '/' .. locale
+      local xmlDir = localeTmpDir .. appid .. '/' .. locale
       local xmlPath = xmlDir .. '/' .. file .. '.xml'
       if hs.fs.attributes(xmlPath) == nil then
         hs.execute(string.format("mkdir -p '%s'", xmlDir))
@@ -929,7 +929,7 @@ local function localizeByNIB(str, localeDir, localeFile, bundleID)
             "plutil -convert xml1 '%s' -o '%s'", NIBPath, xmlPath))
         if not status then return end
       end
-      local enXmlDir = localeTmpDir .. bundleID .. '/' .. enLocale
+      local enXmlDir = localeTmpDir .. appid .. '/' .. enLocale
       local enXmlPath = enXmlDir .. '/' .. file .. '.xml'
       if hs.fs.attributes(enXmlPath) == nil then
         hs.execute(string.format("mkdir -p '%s'", enXmlDir))
@@ -937,7 +937,7 @@ local function localizeByNIB(str, localeDir, localeFile, bundleID)
             "plutil -convert xml1 '%s' -o '%s'", enNIBPath, enXmlPath))
         if not status then return end
       end
-      local diffDir = localeTmpDir .. bundleID .. '/' .. enLocale .. '-' .. locale
+      local diffDir = localeTmpDir .. appid .. '/' .. enLocale .. '-' .. locale
       local diffPath = diffDir .. '/' .. file .. '.diff'
       if hs.fs.attributes(diffPath) == nil then
         hs.execute(string.format("mkdir -p '%s'", diffDir))
@@ -955,7 +955,7 @@ local function localizeByNIB(str, localeDir, localeFile, bundleID)
       return result ~= "" and result or nil
     end
 
-    local enJsonDir = localeTmpDir .. bundleID .. '/' .. enLocale
+    local enJsonDir = localeTmpDir .. appid .. '/' .. enLocale
     local enJsonPath = enJsonDir .. '/' .. file .. '.json'
     if hs.fs.attributes(enJsonPath) == nil then
       hs.execute(string.format("mkdir -p '%s'", enJsonDir))
@@ -963,7 +963,7 @@ local function localizeByNIB(str, localeDir, localeFile, bundleID)
                                    enNIBPath, enJsonPath))
       if not status then return end
     end
-    local jsonDir = localeTmpDir .. bundleID .. '/' .. locale
+    local jsonDir = localeTmpDir .. appid .. '/' .. locale
     local jsonPath = jsonDir .. '/' .. file .. '.json'
     if hs.fs.attributes(jsonPath) == nil then
       hs.execute(string.format("mkdir -p '%s'", jsonDir))
@@ -971,7 +971,7 @@ local function localizeByNIB(str, localeDir, localeFile, bundleID)
                                    NIBPath, jsonPath))
       if not status then return end
     end
-    local diffDir = localeTmpDir .. bundleID .. '/' .. enLocale .. '-' .. locale
+    local diffDir = localeTmpDir .. appid .. '/' .. enLocale .. '-' .. locale
     local diffPath = diffDir .. '/' .. file .. '.diff'
     if hs.fs.attributes(diffPath) == nil then
       hs.execute(string.format("mkdir -p '%s'", diffDir))
@@ -1043,7 +1043,7 @@ local function dirNotExistOrEmpty(dir)
   return true
 end
 
-local function localizeByChromium(str, localeDir, bundleID)
+local function localizeByChromium(str, localeDir, appid)
   local resourceDir = localeDir .. '/..'
   local locale = localeDir:match("^.*/(.*)%.lproj$")
   for _, enLocale in ipairs{"en", "English", "Base", "en_US", "en_GB"} do
@@ -1052,7 +1052,7 @@ local function localizeByChromium(str, localeDir, bundleID)
         if file:sub(-4) == ".pak" then
           local fullPath = resourceDir .. '/' .. enLocale .. '.lproj/' .. file
           local fileStem = file:sub(1, -5)
-          local enTmpBaseDir = string.format(localeTmpDir .. '%s/%s', bundleID, enLocale)
+          local enTmpBaseDir = string.format(localeTmpDir .. '%s/%s', appid, enLocale)
           local enTmpdir = enTmpBaseDir .. '/' .. fileStem
           if dirNotExistOrEmpty(enTmpdir) then
             hs.execute(string.format("mkdir -p '%s'", enTmpBaseDir))
@@ -1063,7 +1063,7 @@ local function localizeByChromium(str, localeDir, bundleID)
           if status and output ~= "" then
             if hs.fs.attributes(localeDir .. '/' .. file) then
               local matchFile = output:match("^.*/(.*)$")
-              local tmpBaseDir = string.format(localeTmpDir .. '%s/%s', bundleID, locale)
+              local tmpBaseDir = string.format(localeTmpDir .. '%s/%s', appid, locale)
               local tmpdir = tmpBaseDir .. '/' .. fileStem
               if dirNotExistOrEmpty(tmpdir) then
                 hs.execute(string.format("mkdir -p '%s'", tmpBaseDir))
@@ -1088,17 +1088,17 @@ local function localizeByChromium(str, localeDir, bundleID)
   return nil
 end
 
-local function localizeQt(str, bundleID, appLocale)
-  local appPath = hs.application.pathForBundleID(bundleID)
+local function localizeQt(str, appid, appLocale)
+  local appPath = hs.application.pathForBundleID(appid)
   local resourceDir = appPath .. "/../../share/qt/translations"
   if hs.fs.attributes(resourceDir) == nil then return end
-  local appName = appPath:match("^.*/([^/]+)%.app$")
-  if appName == nil
-      or hs.fs.attributes(resourceDir .. "/" .. appName:lower() .. "_en.qm") == nil then
+  local appname = appPath:match("^.*/([^/]+)%.app$")
+  if appname == nil
+      or hs.fs.attributes(resourceDir .. "/" .. appname:lower() .. "_en.qm") == nil then
     return
   end
   local locales = {}
-  local prefix = appName:lower() .. '_'
+  local prefix = appname:lower() .. '_'
   for file in hs.fs.dir(resourceDir) do
     if file:sub(-3) == ".qm" and file:sub(1, #prefix) == prefix then
       table.insert(locales, file:sub(#prefix + 1, -4))
@@ -1155,8 +1155,8 @@ local appLocaleDir = {}
 local localeMatchTmpFile = localeTmpDir .. 'map.json'
 if hs.fs.attributes(localeMatchTmpFile) ~= nil then
   appLocaleDir = hs.json.read(localeMatchTmpFile)
-  for bundleID, locale in pairs(appLocaleDir) do
-    appLocaleDir[bundleID] = hs.fnutils.copy(locale)
+  for appid, locale in pairs(appLocaleDir) do
+    appLocaleDir[appid] = hs.fnutils.copy(locale)
   end
 end
 local appLocaleMap = {}
@@ -1165,15 +1165,15 @@ local appLocaleAssetBufferInverse = {}
 local localeTmpFile = localeTmpDir .. 'strings.json'
 if hs.fs.attributes(localeTmpFile) ~= nil then
   appLocaleMap = hs.json.read(localeTmpFile)
-  for bundleID, map in pairs(appLocaleMap) do
-    appLocaleMap[bundleID] = hs.fnutils.copy(map)
-    for k, v in pairs(appLocaleMap[bundleID]) do
-      appLocaleMap[bundleID][k] = hs.fnutils.copy(v)
+  for appid, map in pairs(appLocaleMap) do
+    appLocaleMap[appid] = hs.fnutils.copy(map)
+    for k, v in pairs(appLocaleMap[appid]) do
+      appLocaleMap[appid][k] = hs.fnutils.copy(v)
     end
   end
 end
 
-local function localizedStringImpl(str, bundleID, params, force)
+local function localizedStringImpl(str, appid, params, force)
   local appLocale, localeFile, localeFramework
   if type(params) == "table" then
     appLocale = params.locale
@@ -1185,33 +1185,33 @@ local function localizedStringImpl(str, bundleID, params, force)
   if force == nil then force = false end
 
   if appLocale == nil then
-    local locales = applicationLocales(bundleID)
+    local locales = applicationLocales(appid)
     appLocale = locales[1]
   end
 
   local result
 
   if not force then
-    result = get(appLocaleMap, bundleID, appLocale, str)
+    result = get(appLocaleMap, appid, appLocale, str)
     if result == false then return nil
     elseif result ~= nil then return result end
   end
 
-  if localizationMap[bundleID] ~= nil then
-    result = hs.fnutils.indexOf(localizationMap[bundleID], str)
+  if localizationMap[appid] ~= nil then
+    result = hs.fnutils.indexOf(localizationMap[appid], str)
     if result ~= nil then return result end
   end
 
-  if hs.application.pathForBundleID(bundleID) == nil
-      or hs.application.pathForBundleID(bundleID) == "" then
+  if hs.application.pathForBundleID(appid) == nil
+      or hs.application.pathForBundleID(appid) == "" then
     return nil
   end
 
-  local resourceDir, framework = getResourceDir(bundleID, localeFramework)
+  local resourceDir, framework = getResourceDir(appid, localeFramework)
   if resourceDir == nil then return nil end
   if framework.chromium then
-    if find(bundleID) then
-      local menuItems = find(bundleID):getMenuItems()
+    if find(appid) then
+      local menuItems = find(appid):getMenuItems()
       if menuItems ~= nil then
         table.remove(menuItems, 1)
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
@@ -1225,16 +1225,16 @@ local function localizedStringImpl(str, bundleID, params, force)
 
   local locale, localeDir, mode
 
-  if bundleID == "com.openai.chat" then
+  if appid == "com.openai.chat" then
     result, locale = localizeChatGPT(str, appLocale)
     return result, appLocale, locale
-  elseif bundleID:find("org.qt%-project") ~= nil then
-    result, locale = localizeQt(str, bundleID, appLocale)
+  elseif appid:find("org.qt%-project") ~= nil then
+    result, locale = localizeQt(str, appid, appLocale)
     return result, appLocale, locale
   end
 
   local setDefaultLocale = function()
-    resourceDir = hs.application.pathForBundleID(bundleID) .. "/Contents/Resources"
+    resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
     framework = {}
     if hs.fs.attributes(resourceDir) == nil then return false end
     mode = 'lproj'
@@ -1246,7 +1246,7 @@ local function localizedStringImpl(str, bundleID, params, force)
 
   if not framework.mono then mode = 'lproj' end
   if locale == nil then
-    locale = get(appLocaleDir, bundleID, appLocale)
+    locale = get(appLocaleDir, appid, appLocale)
     if locale == false then return nil end
     if locale ~= nil and localeDir == nil then
       if mode == 'lproj' then
@@ -1289,14 +1289,14 @@ local function localizedStringImpl(str, bundleID, params, force)
     end
   end
 
-  if appLocaleAssetBuffer[bundleID] == nil
-      or get(appLocaleDir, bundleID, appLocale) ~= locale then
-    appLocaleAssetBuffer[bundleID] = {}
+  if appLocaleAssetBuffer[appid] == nil
+      or get(appLocaleDir, appid, appLocale) ~= locale then
+    appLocaleAssetBuffer[appid] = {}
   end
-  local localesDict = appLocaleAssetBuffer[bundleID]
+  local localesDict = appLocaleAssetBuffer[appid]
 
   if framework.chromium then
-    result = localizeByChromium(str, localeDir, bundleID)
+    result = localizeByChromium(str, localeDir, appid)
     if result ~= nil or not setDefaultLocale() then return result, appLocale, locale end
   end
 
@@ -1314,19 +1314,19 @@ local function localizedStringImpl(str, bundleID, params, force)
     result = localizeByLoctable(str, resourceDir, localeFile, locale, localesDict)
     if result ~= nil then return result end
 
-    if emptyCache or appLocaleAssetBufferInverse[bundleID] == nil
-        or get(appLocaleDir, bundleID, appLocale) ~= locale then
-      appLocaleAssetBufferInverse[bundleID] = {}
+    if emptyCache or appLocaleAssetBufferInverse[appid] == nil
+        or get(appLocaleDir, appid, appLocale) ~= locale then
+      appLocaleAssetBufferInverse[appid] = {}
     end
     result = localizeByStrings(str, localeDir, localeFile, localesDict,
-                               appLocaleAssetBufferInverse[bundleID])
+                               appLocaleAssetBufferInverse[appid])
     if result ~= nil then return result end
 
-    result = localizeByNIB(str, localeDir, localeFile, bundleID)
+    result = localizeByNIB(str, localeDir, localeFile, appid)
     if result ~= nil then return result end
 
     if string.sub(str, -3) == "..." or string.sub(str, -3) == "…" then
-      result, appLocale, locale = localizedStringImpl(string.sub(str, 1, -4), bundleID, params)
+      result, appLocale, locale = localizedStringImpl(string.sub(str, 1, -4), appid, params)
       if result ~= nil then
         return result .. string.sub(str, -3), appLocale, locale
       end
@@ -1350,30 +1350,30 @@ local function localizedStringImpl(str, bundleID, params, force)
   return result, appLocale, locale
 end
 
-function localizedString(str, bundleID, params, force)
-  local result, appLocale, locale = localizedStringImpl(str, bundleID, params, force)
+function localizedString(str, appid, params, force)
+  local result, appLocale, locale = localizedStringImpl(str, appid, params, force)
   if appLocale == nil then return result end
 
-  if appLocaleDir[bundleID] == nil then
-    appLocaleDir[bundleID] = {}
+  if appLocaleDir[appid] == nil then
+    appLocaleDir[appid] = {}
   end
   if locale == nil then
-    appLocaleDir[bundleID][appLocale] = false
+    appLocaleDir[appid][appLocale] = false
     goto L_END_DUMP_LOCALIZED
   else
-    appLocaleDir[bundleID][appLocale] = locale
+    appLocaleDir[appid][appLocale] = locale
   end
 
-  if appLocaleMap[bundleID] == nil then
-    appLocaleMap[bundleID] = {}
+  if appLocaleMap[appid] == nil then
+    appLocaleMap[appid] = {}
   end
-  if appLocaleMap[bundleID][appLocale] == nil then
-    appLocaleMap[bundleID][appLocale] = {}
+  if appLocaleMap[appid][appLocale] == nil then
+    appLocaleMap[appid][appLocale] = {}
   end
   if result ~= nil then
-    appLocaleMap[bundleID][appLocale][str] = result
+    appLocaleMap[appid][appLocale][str] = result
   else
-    appLocaleMap[bundleID][appLocale][str] = false
+    appLocaleMap[appid][appLocale][str] = false
   end
 
   ::L_END_DUMP_LOCALIZED::
@@ -1500,7 +1500,7 @@ local function delocalizeByStrings(str, localeDir, localeFile, deLocalesInvDict)
   end
 end
 
-local function delocalizeByNIB(str, localeDir, localeFile, bundleID)
+local function delocalizeByNIB(str, localeDir, localeFile, appid)
   local resourceDir = localeDir .. '/..'
   local locale = localeDir:match("^.*/(.*)%.lproj$")
   local enLocaleDir = baseLocaleDirs(resourceDir)[1]
@@ -1527,7 +1527,7 @@ local function delocalizeByNIB(str, localeDir, localeFile, bundleID)
     end
 
     if isBinarayPlist(NIBPath) and isBinarayPlist(enNIBPath) then
-      local xmlDir = localeTmpDir .. bundleID .. '/' .. locale
+      local xmlDir = localeTmpDir .. appid .. '/' .. locale
       local xmlPath = xmlDir .. '/' .. file .. '.xml'
       if hs.fs.attributes(xmlPath) == nil then
         hs.execute(string.format("mkdir -p '%s'", xmlDir))
@@ -1535,7 +1535,7 @@ local function delocalizeByNIB(str, localeDir, localeFile, bundleID)
             "plutil -convert xml1 '%s' -o '%s'", NIBPath, xmlPath))
         if not status then return end
       end
-      local enXmlDir = localeTmpDir .. bundleID .. '/' .. enLocale
+      local enXmlDir = localeTmpDir .. appid .. '/' .. enLocale
       local enXmlPath = enXmlDir .. '/' .. file .. '.xml'
       if hs.fs.attributes(enXmlPath) == nil then
         hs.execute(string.format("mkdir -p '%s'", enXmlDir))
@@ -1543,7 +1543,7 @@ local function delocalizeByNIB(str, localeDir, localeFile, bundleID)
             "plutil -convert xml1 '%s' -o '%s'", enNIBPath, enXmlPath))
         if not status then return end
       end
-      local diffDir = localeTmpDir .. bundleID .. '/' .. locale .. '-' .. enLocale
+      local diffDir = localeTmpDir .. appid .. '/' .. locale .. '-' .. enLocale
       local diffPath = diffDir .. '/' .. file .. '.diff'
       if hs.fs.attributes(diffPath) == nil then
         hs.execute(string.format("mkdir -p '%s'", diffDir))
@@ -1561,7 +1561,7 @@ local function delocalizeByNIB(str, localeDir, localeFile, bundleID)
       return result ~= "" and result or nil
     end
 
-    local jsonDir = localeTmpDir .. bundleID .. '/' .. locale
+    local jsonDir = localeTmpDir .. appid .. '/' .. locale
     local jsonPath = jsonDir .. '/' .. file .. '.json'
     if hs.fs.attributes(jsonPath) == nil then
       hs.execute(string.format("mkdir -p '%s'", jsonDir))
@@ -1569,7 +1569,7 @@ local function delocalizeByNIB(str, localeDir, localeFile, bundleID)
                                    NIBPath, jsonPath))
       if not status then return end
     end
-    local enJsonDir = localeTmpDir .. bundleID .. '/' .. enLocale
+    local enJsonDir = localeTmpDir .. appid .. '/' .. enLocale
     local enJsonPath = enJsonDir .. '/' .. file .. '.json'
       if hs.fs.attributes(enJsonPath) == nil then
       hs.execute(string.format("mkdir -p '%s'", enJsonDir))
@@ -1577,7 +1577,7 @@ local function delocalizeByNIB(str, localeDir, localeFile, bundleID)
                                    enLocaleDir .. '/' .. file .. '.nib', enJsonPath))
       if not status then return end
     end
-    local diffDir = localeTmpDir .. bundleID .. '/' .. locale .. '-' .. enLocale
+    local diffDir = localeTmpDir .. appid .. '/' .. locale .. '-' .. enLocale
     local diffPath = diffDir .. '/' .. file .. '.diff'
     if hs.fs.attributes(diffPath) == nil then
       hs.execute(string.format("mkdir -p '%s'", diffDir))
@@ -1641,13 +1641,13 @@ local function delocalizeByMono(str, localeDir)
   end
 end
 
-local function delocalizeByChromium(str, localeDir, bundleID)
+local function delocalizeByChromium(str, localeDir, appid)
   local resourceDir = localeDir .. '/..'
   local locale = localeDir:match("^.*/(.*)%.lproj$")
   for file in hs.fs.dir(localeDir) do
     if file:sub(-4) == ".pak" then
       local fileStem = file:sub(1, -5)
-      local tmpBaseDir = string.format(localeTmpDir .. '%s/%s', bundleID, locale)
+      local tmpBaseDir = string.format(localeTmpDir .. '%s/%s', appid, locale)
       local tmpdir = tmpBaseDir .. '/' .. fileStem
       if dirNotExistOrEmpty(tmpdir) then
         hs.execute(string.format("mkdir -p '%s'", tmpBaseDir))
@@ -1662,7 +1662,7 @@ local function delocalizeByChromium(str, localeDir, bundleID)
         for _, enLocale in ipairs{"en", "English", "Base", "en_US", "en_GB"} do
           local fullPath = resourceDir .. '/' .. enLocale .. '.lproj/' .. file
           if hs.fs.attributes(fullPath) ~= nil then
-            local enTmpBaseDir = string.format(localeTmpDir .. '%s/%s', bundleID, enLocale)
+            local enTmpBaseDir = string.format(localeTmpDir .. '%s/%s', appid, enLocale)
             local enTmpdir = enTmpBaseDir .. '/' .. fileStem
             if dirNotExistOrEmpty(enTmpdir) then
               hs.execute(string.format("mkdir -p '%s'", enTmpBaseDir))
@@ -1686,17 +1686,17 @@ local function delocalizeByChromium(str, localeDir, bundleID)
   return nil
 end
 
-local function delocalizeQt(str, bundleID, appLocale)
-  local appPath = hs.application.pathForBundleID(bundleID)
+local function delocalizeQt(str, appid, appLocale)
+  local appPath = hs.application.pathForBundleID(appid)
   local resourceDir = appPath .. "/../../share/qt/translations"
   if hs.fs.attributes(resourceDir) == nil then return end
-  local appName = appPath:match("^.*/([^/]+)%.app$")
-  if appName == nil
-      or hs.fs.attributes(resourceDir .. "/" .. appName:lower() .. "_en.qm") == nil then
+  local appname = appPath:match("^.*/([^/]+)%.app$")
+  if appname == nil
+      or hs.fs.attributes(resourceDir .. "/" .. appname:lower() .. "_en.qm") == nil then
     return
   end
   local locales = {}
-  local prefix = appName:lower() .. '_'
+  local prefix = appname:lower() .. '_'
   for file in hs.fs.dir(resourceDir) do
     if file:sub(-3) == ".qm" and file:sub(1, #prefix) == prefix then
       table.insert(locales, file:sub(#prefix + 1, -4))
@@ -1756,15 +1756,15 @@ local deLocaleInversedMap = {}
 local menuItemTmpFile = localeTmpDir .. 'menuitems.json'
 if hs.fs.attributes(menuItemTmpFile) ~= nil then
   deLocaleMap = hs.json.read(menuItemTmpFile)
-  for bundleID, map in pairs(deLocaleMap) do
-    deLocaleMap[bundleID] = hs.fnutils.copy(map)
-    for k, v in pairs(deLocaleMap[bundleID]) do
-      deLocaleMap[bundleID][k] = hs.fnutils.copy(v)
+  for appid, map in pairs(deLocaleMap) do
+    deLocaleMap[appid] = hs.fnutils.copy(map)
+    for k, v in pairs(deLocaleMap[appid]) do
+      deLocaleMap[appid][k] = hs.fnutils.copy(v)
     end
   end
 end
 
-local function delocalizedStringImpl(str, bundleID, params)
+local function delocalizedStringImpl(str, appid, params)
   local appLocale, localeFile, localeFramework
   if type(params) == "table" then
     appLocale = params.locale
@@ -1775,19 +1775,19 @@ local function delocalizedStringImpl(str, bundleID, params)
   end
 
   if appLocale == nil then
-    local locales = applicationLocales(bundleID)
+    local locales = applicationLocales(appid)
     appLocale = locales[1]
   end
 
-  local result = get(deLocaleMap, bundleID, appLocale, str)
+  local result = get(deLocaleMap, appid, appLocale, str)
   if result == false then return nil
   elseif result ~= nil then return result end
 
-  local resourceDir, framework = getResourceDir(bundleID, localeFramework)
+  local resourceDir, framework = getResourceDir(appid, localeFramework)
   if resourceDir == nil then return nil end
   if framework.chromium then
-    if find(bundleID) then
-      local menuItems = find(bundleID):getMenuItems()
+    if find(appid) then
+      local menuItems = find(appid):getMenuItems()
       if menuItems ~= nil then
         table.remove(menuItems, 1)
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
@@ -1801,20 +1801,20 @@ local function delocalizedStringImpl(str, bundleID, params)
 
   local locale, localeDir, mode
 
-  if bundleID == "org.zotero.zotero" then
+  if appid == "org.zotero.zotero" then
     result, locale = delocalizeZoteroMenu(str, appLocale)
     return result, appLocale, locale
-  elseif bundleID == "com.mathworks.matlab" then
+  elseif appid == "com.mathworks.matlab" then
     result, locale = delocalizeMATLABFigureMenu(str, appLocale)
     return result, appLocale, locale
-  elseif bundleID:find("org.qt%-project") ~= nil then
-    result, locale = delocalizeQt(str, bundleID, appLocale)
+  elseif appid:find("org.qt%-project") ~= nil then
+    result, locale = delocalizeQt(str, appid, appLocale)
     return result, appLocale, locale
   end
 
   if not framework.mono then mode = 'lproj' end
   if locale == nil then
-    locale = get(appLocaleDir, bundleID, appLocale)
+    locale = get(appLocaleDir, appid, appLocale)
     if locale == false then return nil end
   end
   if locale == nil then
@@ -1844,7 +1844,7 @@ local function delocalizedStringImpl(str, bundleID, params)
   end
 
   local setDefaultLocale = function()
-    resourceDir = hs.application.pathForBundleID(bundleID) .. "/Contents/Resources"
+    resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
     if hs.fs.attributes(resourceDir) == nil then return false end
     mode = 'lproj'
     locale = getMatchedLocale(appLocale, resourceDir, mode)
@@ -1854,7 +1854,7 @@ local function delocalizedStringImpl(str, bundleID, params)
   end
 
   if framework.chromium then
-    result = delocalizeByChromium(str, localeDir, bundleID)
+    result = delocalizeByChromium(str, localeDir, appid)
     if result ~= nil or not setDefaultLocale() then
       return result, appLocale, locale
     end
@@ -1863,7 +1863,7 @@ local function delocalizedStringImpl(str, bundleID, params)
   if framework.mono then
     result = delocalizeByMono(str, localeDir)
     if result ~= nil then
-      if bundleID == "com.microsoft.visual-studio" then
+      if appid == "com.microsoft.visual-studio" then
         result = result:gsub('_', '')
       end
     end
@@ -1881,18 +1881,18 @@ local function delocalizedStringImpl(str, bundleID, params)
     result = delocalizeByLoctable(str, resourceDir, localeFile, locale)
     if result ~= nil then return result end
 
-    if emptyCache or deLocaleInversedMap[bundleID] == nil
-        or get(appLocaleDir, bundleID, appLocale) ~= locale then
-      deLocaleInversedMap[bundleID] = {}
+    if emptyCache or deLocaleInversedMap[appid] == nil
+        or get(appLocaleDir, appid, appLocale) ~= locale then
+      deLocaleInversedMap[appid] = {}
     end
-    result = delocalizeByStrings(str, localeDir, localeFile, deLocaleInversedMap[bundleID])
+    result = delocalizeByStrings(str, localeDir, localeFile, deLocaleInversedMap[appid])
     if result ~= nil then return result end
 
-    result = delocalizeByNIB(str, localeDir, localeFile, bundleID)
+    result = delocalizeByNIB(str, localeDir, localeFile, appid)
     if result ~= nil then return result end
 
     if string.sub(str, -3) == "..." or string.sub(str, -3) == "…" then
-      result, appLocale, locale = delocalizedStringImpl(string.sub(str, 1, -4), bundleID, params)
+      result, appLocale, locale = delocalizedStringImpl(string.sub(str, 1, -4), appid, params)
       if result ~= nil then
         return result .. string.sub(str, -3), appLocale, locale
       end
@@ -1916,36 +1916,36 @@ local function delocalizedStringImpl(str, bundleID, params)
   return result, appLocale, locale
 end
 
-function delocalizedString(str, bundleID, params)
-  local result, appLocale, locale = delocalizedStringImpl(str, bundleID, params)
+function delocalizedString(str, appid, params)
+  local result, appLocale, locale = delocalizedStringImpl(str, appid, params)
   if appLocale == nil then return result end
 
-  if appLocaleDir[bundleID] == nil then
-    appLocaleDir[bundleID] = {}
+  if appLocaleDir[appid] == nil then
+    appLocaleDir[appid] = {}
   end
   if locale == nil then
-    appLocaleDir[bundleID][appLocale] = false
+    appLocaleDir[appid][appLocale] = false
     return
   else
-    appLocaleDir[bundleID][appLocale] = locale
+    appLocaleDir[appid][appLocale] = locale
   end
 
-  if deLocaleMap[bundleID] == nil then
-    deLocaleMap[bundleID] = {}
+  if deLocaleMap[appid] == nil then
+    deLocaleMap[appid] = {}
   end
-  if deLocaleMap[bundleID][appLocale] == nil then
-    deLocaleMap[bundleID][appLocale] = {}
+  if deLocaleMap[appid][appLocale] == nil then
+    deLocaleMap[appid][appLocale] = {}
   end
   if result ~= nil then
-    deLocaleMap[bundleID][appLocale][str] = result
+    deLocaleMap[appid][appLocale][str] = result
   else
-    deLocaleMap[bundleID][appLocale][str] = false
+    deLocaleMap[appid][appLocale][str] = false
   end
   return result
 end
 
-function localizeCommonMenuItemTitles(locale, bundleID)
-  if locale == SYSTEM_LOCALE and bundleID ~= nil then return end
+function localizeCommonMenuItemTitles(locale, appid)
+  if locale == SYSTEM_LOCALE and appid ~= nil then return end
 
   local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
   local matchedLocale = getMatchedLocale(locale, resourceDir, 'lproj')
@@ -1986,19 +1986,19 @@ function localizeCommonMenuItemTitles(locale, bundleID)
   end
 
   if locale ~= SYSTEM_LOCALE then
-    if localizationMap[bundleID] == nil then
-      localizationMap[bundleID] = {}
+    if localizationMap[appid] == nil then
+      localizationMap[appid] = {}
     end
     for _, title in ipairs { 'File', 'View', 'Window', 'Help' } do
       local localizedTitle = localizeByLoctable(title, resourceDir, 'MenuCommands', matchedLocale, {})
       if localizedTitle ~= nil then
-        localizationMap[bundleID][localizedTitle] = title
+        localizationMap[appid][localizedTitle] = title
       end
     end
     local title = 'Edit'
     local localizedTitle = localizeByLoctable(title, resourceDir, 'InputManager', matchedLocale, {})
     if localizedTitle ~= nil then
-      localizationMap[bundleID][localizedTitle] = title
+      localizationMap[appid][localizedTitle] = title
     end
   end
 end
@@ -2006,9 +2006,9 @@ end
 SYSTEM_LOCALE = systemLocales()[1]
 localizeCommonMenuItemTitles(SYSTEM_LOCALE)
 
-function delocalizedMenuItem(title, bundleID, params)
+function delocalizedMenuItem(title, appid, params)
   local defaultTitleMap = localizationMap.common
-  local titleMap = localizationMap[bundleID]
+  local titleMap = localizationMap[appid]
   if titleMap ~= nil then
     if titleMap[title] ~= nil then
       return titleMap[title]
@@ -2017,18 +2017,18 @@ function delocalizedMenuItem(title, bundleID, params)
   if defaultTitleMap ~= nil then
     if defaultTitleMap[title] ~= nil then
       if titleMap == nil then
-        localizationMap[bundleID] = {}
-        titleMap = localizationMap[bundleID]
+        localizationMap[appid] = {}
+        titleMap = localizationMap[appid]
       end
       titleMap[title] = defaultTitleMap[title]
       return titleMap[title]
     end
   end
-  local newTitle = delocalizedString(title, bundleID, params)
+  local newTitle = delocalizedString(title, appid, params)
   if newTitle ~= nil then
     if titleMap == nil then
-      localizationMap[bundleID] = {}
-      titleMap = localizationMap[bundleID]
+      localizationMap[appid] = {}
+      titleMap = localizationMap[appid]
     end
     titleMap[title] = newTitle
     if hs.fs.attributes(localeTmpDir) == nil then
@@ -2040,12 +2040,12 @@ function delocalizedMenuItem(title, bundleID, params)
   return newTitle
 end
 
-function delocalizeMenuBarItems(itemTitles, bundleID, localeFile)
-  if localizationMap[bundleID] == nil then
-    localizationMap[bundleID] = {}
+function delocalizeMenuBarItems(itemTitles, appid, localeFile)
+  if localizationMap[appid] == nil then
+    localizationMap[appid] = {}
   end
   local defaultTitleMap = localizationMap.common
-  local titleMap = localizationMap[bundleID]
+  local titleMap = localizationMap[appid]
   local result = {}
   local shouldWrite = false
   for _, title in ipairs(itemTitles) do
@@ -2068,7 +2068,7 @@ function delocalizeMenuBarItems(itemTitles, bundleID, localeFile)
           goto L_CONTINUE
         end
       end
-      local newTitle = delocalizedString(title, bundleID, localeFile)
+      local newTitle = delocalizedString(title, appid, localeFile)
       if newTitle ~= nil then
         table.insert(result, { title, newTitle })
         titleMap[title] = newTitle
@@ -2087,13 +2087,13 @@ function delocalizeMenuBarItems(itemTitles, bundleID, localeFile)
   return result
 end
 
-function localizedMenuBarItem(title, bundleID, params)
-  local appLocale = applicationLocales(bundleID)[1]
-  local locTitle = hs.fnutils.indexOf(localizationMap[bundleID] or {}, title)
+function localizedMenuBarItem(title, appid, params)
+  local appLocale = applicationLocales(appid)[1]
+  local locTitle = hs.fnutils.indexOf(localizationMap[appid] or {}, title)
   if locTitle ~= nil then
     -- "View" may be localized to different strings in the same app (e.g. WeChat)
-    if title == 'View' and find(bundleID) then
-      if find(bundleID):findMenuItem({ locTitle }) ~= nil then
+    if title == 'View' and find(appid) then
+      if find(appid):findMenuItem({ locTitle }) ~= nil then
         return locTitle
       end
     else
@@ -2101,10 +2101,10 @@ function localizedMenuBarItem(title, bundleID, params)
     end
   end
   -- the app may pretend being localized (e.g. Visual Studio Code)
-  if find(bundleID) then
+  if find(appid) then
     if type(params) == 'table' and params.locale ~= nil
         and params.locale == getMatchedLocale(appLocale, { params.locale }) then
-      if find(bundleID):findMenuItem({ title }) ~= nil then
+      if find(appid):findMenuItem({ title }) ~= nil then
         return title
       end
     end
@@ -2113,14 +2113,14 @@ function localizedMenuBarItem(title, bundleID, params)
     locTitle = hs.fnutils.indexOf(localizationMap.common, title)
     if locTitle ~= nil then return locTitle end
   end
-  locTitle = localizedString(title, bundleID, params)
+  locTitle = localizedString(title, appid, params)
   if locTitle ~= nil then
-    if localizationMap[bundleID] == nil then
-      localizationMap[bundleID] = {}
+    if localizationMap[appid] == nil then
+      localizationMap[appid] = {}
     end
-    localizationMap[bundleID][locTitle] = title
-    if get(deLocaleMap[bundleID], appLocale, locTitle) ~= nil then
-      deLocaleMap[bundleID][appLocale][locTitle] = title
+    localizationMap[appid][locTitle] = title
+    if get(deLocaleMap[appid], appLocale, locTitle) ~= nil then
+      deLocaleMap[appid][appLocale][locTitle] = title
       if hs.fs.attributes(localeTmpDir) == nil then
         hs.execute(string.format("mkdir -p '%s'", localeTmpDir))
       end
@@ -2131,9 +2131,9 @@ function localizedMenuBarItem(title, bundleID, params)
   end
 end
 
-function localizedMenuItem(title, bundleID, params)
-  local appLocale = applicationLocales(bundleID)[1]
-  local locTitle = hs.fnutils.indexOf(localizationMap[bundleID] or {}, title)
+function localizedMenuItem(title, appid, params)
+  local appLocale = applicationLocales(appid)[1]
+  local locTitle = hs.fnutils.indexOf(localizationMap[appid] or {}, title)
   if locTitle ~= nil then
     return locTitle
   end
@@ -2141,12 +2141,12 @@ function localizedMenuItem(title, bundleID, params)
     locTitle = hs.fnutils.indexOf(localizationMap.common, title)
     if locTitle ~= nil then return locTitle end
   end
-  locTitle = localizedString(title, bundleID, params)
+  locTitle = localizedString(title, appid, params)
   if locTitle ~= nil then
-    if localizationMap[bundleID] == nil then
-      localizationMap[bundleID] = {}
+    if localizationMap[appid] == nil then
+      localizationMap[appid] = {}
     end
-    localizationMap[bundleID][locTitle] = title
+    localizationMap[appid][locTitle] = title
     return locTitle
   end
 end
@@ -2180,52 +2180,52 @@ function hiddenByBartender(id)
   end
 end
 
-function leftClick(position, appName)
+function leftClick(position, appname)
   if position.x == nil then position = hs.geometry.point(position) end
-  if appName ~= nil then
+  if appname ~= nil then
     local appHere = hs.axuielement.systemElementAtPosition(position)
     while appHere ~= nil and appHere.AXParent ~= nil do
       appHere = appHere.AXParent
     end
-    if appHere.AXTitle ~= appName then return false end
+    if appHere.AXTitle ~= appname then return false end
   end
   hs.eventtap.leftClick(position)
   return true
 end
 
-function leftClickAndRestore(position, appName)
+function leftClickAndRestore(position, appname)
   local mousePosition = hs.mouse.absolutePosition()
-  if leftClick(position, appName) then
+  if leftClick(position, appname) then
     hs.mouse.absolutePosition(mousePosition)
     return true
   end
   return false
 end
 
-function rightClick(position, appName)
+function rightClick(position, appname)
   if position.x == nil then position = hs.geometry.point(position) end
-  if appName ~= nil then
+  if appname ~= nil then
     local appHere = hs.axuielement.systemElementAtPosition(position)
     while appHere.AXParent ~= nil do
       appHere = appHere.AXParent
     end
-    if appHere.AXTitle ~= appName then return false end
+    if appHere.AXTitle ~= appname then return false end
   end
   hs.eventtap.rightClick(position)
   return true
 end
 
-function rightClickAndRestore(position, appName)
+function rightClickAndRestore(position, appname)
   local mousePosition = hs.mouse.absolutePosition()
-  if rightClick(position, appName) then
+  if rightClick(position, appname) then
     hs.mouse.absolutePosition(mousePosition)
     return true
   end
   return false
 end
 
-function clickAppRightMenuBarItem(bundleID, menuItemPath, show)
-  local app = find(bundleID)
+function clickAppRightMenuBarItem(appid, menuItemPath, show)
+  local app = find(appid)
   if app == nil then return false end
   local appUIObj = hs.axuielement.applicationElement(app)
   local menuBarMenu = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1)
@@ -2238,9 +2238,9 @@ function clickAppRightMenuBarItem(bundleID, menuItemPath, show)
   end
 
   if show then
-    if hiddenByBartender(bundleID) then
+    if hiddenByBartender(appid) then
       hs.osascript.applescript([[
-        tell application id "com.surteesstudios.Bartender" to activate "]] .. bundleID .. [[-Item-0"
+        tell application id "com.surteesstudios.Bartender" to activate "]] .. appid .. [[-Item-0"
       ]])
     else
       menuBarMenu:performAction("AXPress")
@@ -2253,7 +2253,7 @@ function clickAppRightMenuBarItem(bundleID, menuItemPath, show)
     local parent = menu
     menu = getAXChildren(parent, "AXMenu", 1, "AXMenuItem", item)
     if menu == nil and type(item) == 'string' then
-      local locItem = localizedString(item, bundleID)
+      local locItem = localizedString(item, appid)
       if locItem ~= nil then
         menu = getAXChildren(parent, "AXMenu", 1, "AXMenuItem", locItem)
       end
