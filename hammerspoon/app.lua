@@ -1203,8 +1203,6 @@ appHotKeyCallbacks = {
   ["com.apple.finder"] =
   {
     ["openRecent"] = {
-      mods = get(KeybindingConfigs.hotkeys.shared, "openRecent", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "openRecent", "key"),
       message = localizedMessage("Recent Folders"),
       condition = checkMenuItem({ "Go", "Recent Folders" }),
       fn = showMenuItem
@@ -1437,8 +1435,6 @@ appHotKeyCallbacks = {
       fn = function(url) hs.execute('open -R "' .. url .. '"') end
     },
     ["openRecent"] = {
-      mods = get(KeybindingConfigs.hotkeys.shared, "openRecent", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "openRecent", "key"),
       message = localizedMessage("Recently Closed"),
       condition = checkMenuItem({ "History", "Recently Closed" }),
       fn = showMenuItem
@@ -1512,8 +1508,6 @@ appHotKeyCallbacks = {
       fn = function(app) hs.eventtap.keyStroke("⌘⌥", "W", nil, app) end
     },
     ["openRecent"] = {
-      mods = get(KeybindingConfigs.hotkeys.shared, "openRecent", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "openRecent", "key"),
       message = "Open Recent",
       condition = function(app)
         local enabled, menuItem = checkMenuItem({ "File", "Open Recent", "More…" })(app)
@@ -1567,8 +1561,6 @@ appHotKeyCallbacks = {
       fn = receiveMenuItem
     },
     ["remapPreviousTab"] = {
-      mods = get(KeybindingConfigs.hotkeys.shared, "remapPreviousTab", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "remapPreviousTab", "key"),
       message = localizedMessage("Go to Previous Tab"),
       condition = checkMenuItem({ "Window", "Go to Previous Tab" }),
       repeatable = true,
@@ -1579,8 +1571,6 @@ appHotKeyCallbacks = {
   ["com.vallettaventures.Texpad"] =
   {
     ["openRecent"] = {
-      mods = get(KeybindingConfigs.hotkeys.shared, "openRecent", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "openRecent", "key"),
       message = localizedMessage("Recent Documents"),
       condition = checkMenuItem({ "File", "Recent Documents" }),
       fn = showMenuItem
@@ -1602,8 +1592,6 @@ appHotKeyCallbacks = {
       end
     },
     ["openRecent"] = {
-      mods = get(KeybindingConfigs.hotkeys.shared, "openRecent", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "openRecent", "key"),
       message = localizedMessage("Open Recent"),
       condition = function(app)
         local enabled, menuItemPath = checkMenuItem({ "File", "Open Quickly…" })(app)
@@ -1637,8 +1625,6 @@ appHotKeyCallbacks = {
     },
     ["confirmDelete"] = {
       message = localizedMessage("Don't Save"),
-      mods = get(KeybindingConfigs.hotkeys.shared, "confirmDelete", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "confirmDelete", "key"),
       condition = function(app)
         local win = app:focusedWindow()
         if win == nil then return false end
@@ -1754,8 +1740,6 @@ appHotKeyCallbacks = {
       fn = receiveMenuItem
     },
     ["openRecent"] = {
-      mods = get(KeybindingConfigs.hotkeys.shared, "openRecent", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "openRecent", "key"),
       message = localizedMessage("Recent"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
@@ -2210,15 +2194,11 @@ appHotKeyCallbacks = {
       fn = receiveMenuItem
     },
     ["openRecent"] = {
-      mods = get(KeybindingConfigs.hotkeys.shared, "openRecent", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "openRecent", "key"),
       message = "Recent Libraries",
       condition = checkMenuItem({ "File", "Recent libraries" }),
       fn = showMenuItem
     },
     ["remapPreviousTab"] = {
-      mods = get(KeybindingConfigs.hotkeys.shared, "remapPreviousTab", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "remapPreviousTab", "key"),
       message = "Previous Library",
       condition = JabRefShowLibraryByIndex(2),
       repeatable = true,
@@ -2334,8 +2314,6 @@ appHotKeyCallbacks = {
       fn = receiveMenuItem
     },
     ["openRecent"] = {
-      mods = get(KeybindingConfigs.hotkeys.shared, "openRecent", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "openRecent", "key"),
       message = localizedMessage("Open Library"),
       condition = checkMenuItem({ "File", "Open Library" }),
       fn = showMenuItem
@@ -2534,8 +2512,6 @@ appHotKeyCallbacks = {
   ["com.tencent.tenvideo"] =
   {
     ["openRecent"] = {
-      mods = get(KeybindingConfigs.hotkeys.shared, "openRecent", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "openRecent", "key"),
       message = "最近打开",
       fn = function(app)
         local appUIObj = hs.axuielement.applicationElement(app)
@@ -3233,8 +3209,6 @@ appHotKeyCallbacks = {
   ["com.apple.Chess"] =
   {
     ["openRecent"] = {
-      mods = get(KeybindingConfigs.hotkeys.shared, "openRecent", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "openRecent", "key"),
       message = localizedMessage("Open Recent"),
       condition = checkMenuItem({ "Game", "Open Recent" }),
       fn = showMenuItem
@@ -3244,8 +3218,6 @@ appHotKeyCallbacks = {
   ["com.apple.ScreenSharing"] =
   {
     ["openRecent"] = {
-      mods = get(KeybindingConfigs.hotkeys.shared, "openRecent", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "openRecent", "key"),
       message = localizedMessage("Open Recent"),
       condition = checkMenuItem({ "Connect", "Open Recent" }),
       fn = showMenuItem
@@ -3662,8 +3634,6 @@ appHotKeyCallbacks = {
   ["org.qt-project.Designer"] =
   {
     ["openRecent"] = {
-      mods = get(KeybindingConfigs.hotkeys.shared, "openRecent", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "openRecent", "key"),
       message = localizedMessage("&Recent Forms"),
       condition = checkMenuItem({ "File", "&Recent Forms" }),
       fn = showMenuItem
@@ -3673,8 +3643,6 @@ appHotKeyCallbacks = {
   ["org.qt-project.Linguist"] =
   {
     ["openRecent"] = {
-      mods = get(KeybindingConfigs.hotkeys.shared, "openRecent", "mods"),
-      key = get(KeybindingConfigs.hotkeys.shared, "openRecent", "key"),
       message = localizedMessage("Recently Opened &Files"),
       condition = checkMenuItem({ "File", "Recently Opened &Files" }),
       fn = showMenuItem
@@ -4342,6 +4310,13 @@ local function registerInAppHotKeys(app)
       -- prefer properties specified in configuration file than in code
       local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
       local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+      if hasKey == false then
+        local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
+        if kbShared ~= nil then
+          keybinding = { mods = kbShared.mods, key = kbShared.key }
+          hasKey = true
+        end
+      end
       local isBackground = keybinding.background ~= nil and keybinding.background or cfg.background
       local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
       local bindable = function()
@@ -4434,6 +4409,13 @@ local function registerInWinHotKeys(app)
       -- prefer properties specified in configuration file than in code
       local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
       local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+      if hasKey == false then
+        local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
+        if kbShared ~= nil then
+          keybinding = { mods = kbShared.mods, key = kbShared.key }
+          hasKey = true
+        end
+      end
       local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
       local isBackground = keybinding.background ~= nil and keybinding.background or cfg.background
       local bindable = function()
