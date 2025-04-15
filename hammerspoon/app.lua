@@ -4625,7 +4625,10 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
   end)
   inWinOfUnactivatedAppWatchers[bid][filter] = windowFilter
   execOnQuit(bid, function()
-    windowFilter:unsubscribeAll() windowFilter = nil
+    if windowFilter ~= nil then
+      windowFilter:unsubscribeAll()
+      windowFilter = nil
+    end
     inWinOfUnactivatedAppWatchers[bid][filter] = nil
   end)
 end
