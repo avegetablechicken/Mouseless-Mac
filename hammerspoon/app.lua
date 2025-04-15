@@ -2170,6 +2170,24 @@ appHotKeyCallbacks = {
           }
           leftClickAndRestore(position, app:name())
         end
+      end,
+      fnOnLaunch = function(app)
+        app:focusedWindow():close()
+        app:hide()
+        hs.timer.usleep(1000000)
+        if find('com.surteesstudios.Bartender') then
+          hs.osascript.applescript([[
+            tell application id "com.surteesstudios.Bartender" to activate "]] .. app:bundleID() .. [[-Item-0"
+          ]])
+        else
+          local appUIObj = hs.axuielement.applicationElement(app)
+          local menuBarMenu = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1)
+          local position = {
+            menuBarMenu.AXPosition.x + menuBarMenu.AXSize.w / 2,
+            menuBarMenu.AXPosition.y + menuBarMenu.AXSize.h / 2,
+          }
+          leftClickAndRestore(position, app:name())
+        end
       end
     },
     ["showMainWindow"] = {

@@ -979,7 +979,8 @@
       "toggleLauncher": {
         "mods": ["option", "command"],
         "key": "space",
-        "background": true
+        "background": true,
+        "persist": true
       },
       "showMainWindow": {
         "mods": "command",
