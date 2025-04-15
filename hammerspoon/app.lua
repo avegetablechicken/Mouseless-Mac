@@ -2155,7 +2155,7 @@ appHotKeyCallbacks = {
         return "Toggle " .. appName .. " Launcher"
       end,
       fn = function(app)
-        if hiddenByBartender(app:bundleID()) then
+        if find('com.surteesstudios.Bartender') then
           -- fixme: false invoke when `Bartender` try to show or hide menubar icon
           -- always show the icon to workaround it
           hs.osascript.applescript([[
@@ -2164,7 +2164,10 @@ appHotKeyCallbacks = {
         else
           local appUIObj = hs.axuielement.applicationElement(app)
           local menuBarMenu = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1)
-          local position = { menuBarMenu.AXPosition.x + 12, menuBarMenu.AXPosition.y + 12 }
+          local position = {
+            menuBarMenu.AXPosition.x + menuBarMenu.AXSize.w / 2,
+            menuBarMenu.AXPosition.y + menuBarMenu.AXSize.h / 2,
+          }
           leftClickAndRestore(position, app:name())
         end
       end
