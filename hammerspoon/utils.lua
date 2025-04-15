@@ -2227,8 +2227,8 @@ end
 function clickAppRightMenuBarItem(bundleID, menuItemPath, show)
   local app = find(bundleID)
   if app == nil then return false end
-  local appUIObject = hs.axuielement.applicationElement(app)
-  local menuBarMenu = getAXChildren(appUIObject, "AXMenuBar", -1, "AXMenuBarItem", 1)
+  local appUIObj = hs.axuielement.applicationElement(app)
+  local menuBarMenu = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1)
 
   if type(menuItemPath) ~= 'table' then
     menuItemPath = { menuItemPath }
@@ -2269,8 +2269,8 @@ local controlCenterIdentifiers = hs.json.read("static/controlcenter-identifies.j
 local controlCenterMenuBarItemIdentifiers = controlCenterIdentifiers.menubar
 function clickControlCenterMenuBarItemSinceBigSur(menuItem)
   if controlCenterMenuBarItemIdentifiers[menuItem] == nil then return false end
-  local appUIObject = hs.axuielement.applicationElement(find("com.apple.controlcenter"))
-  local menuBarItems = getAXChildren(appUIObject, "AXMenuBar", -1):childrenWithRole("AXMenuBarItem")
+  local appUIObj = hs.axuielement.applicationElement(find("com.apple.controlcenter"))
+  local menuBarItems = getAXChildren(appUIObj, "AXMenuBar", -1):childrenWithRole("AXMenuBarItem")
   for _, item in ipairs(menuBarItems) do
     if item.AXIdentifier:find(controlCenterMenuBarItemIdentifiers[menuItem]) ~= nil then
       item:performAction("AXPress")

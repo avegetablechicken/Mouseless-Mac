@@ -929,8 +929,8 @@ function()
     ]], proxy:autosaveName()))
   else
     local app = find("org.hammerspoon.Hammerspoon")
-    local appUIObject = hs.axuielement.applicationElement(app)
-    local menuBarMenu = getAXChildren(appUIObject, "AXMenuBar", -1, "AXMenuBarItem", proxy:title())
+    local appUIObj = hs.axuielement.applicationElement(app)
+    local menuBarMenu = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", proxy:title())
     if menuBarMenu ~= nil then
       menuBarMenu:performAction("AXPress")
     end
