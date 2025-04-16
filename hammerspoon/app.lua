@@ -3983,15 +3983,14 @@ local function registerRunningAppHotKeys(bid, app)
       local fn
       if isPersistent then
         fn = function()
-          local newApp = find(bid)
-          if newApp then
-            cfg.fn(newApp)
+          if find(bid) then
+            cfg.fn(find(bid))
           else
-            newApp = hs.application.open(bid)
+            hs.application.open(bid)
             hs.timer.doAfter(1, function()
-              if newApp then
+              if find(bid) then
                 local cb = cfg.fnOnLaunch or cfg.fn
-                cb(newApp)
+                cb(find(bid))
               end
             end)
           end
