@@ -2171,7 +2171,7 @@ appHotKeyCallbacks = {
           leftClickAndRestore(position, app:name())
         end
       end,
-      fnOnLaunch = function(app)
+      onLaunch = function(app)
         app:focusedWindow():close()
         app:hide()
         hs.timer.usleep(1000000)
@@ -2714,7 +2714,7 @@ appHotKeyCallbacks = {
           hs.alert("Barrier stopped")
         end
       end,
-      fnOnLaunch = function(app)
+      onLaunch = function(app)
         if app:focusedWindow() == nil then
           hs.alert("Error occurred")
         else
@@ -3989,7 +3989,7 @@ local function registerRunningAppHotKeys(bid, app)
             hs.execute(string.format("open -g -b '%s'", bid))
             hs.timer.doAfter(1, function()
               if find(bid) then
-                local cb = cfg.fnOnLaunch or cfg.fn
+                local cb = cfg.onLaunch or cfg.fn
                 cb(find(bid))
               end
             end)
