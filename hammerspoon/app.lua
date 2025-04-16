@@ -3986,7 +3986,7 @@ local function registerRunningAppHotKeys(bid, app)
           if find(bid) then
             cfg.fn(find(bid))
           else
-            hs.application.open(bid)
+            hs.execute(string.format("open -g -b '%s'", bid))
             hs.timer.doAfter(1, function()
               if find(bid) then
                 local cb = cfg.fnOnLaunch or cfg.fn
