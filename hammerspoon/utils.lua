@@ -60,7 +60,7 @@ function getAXChildren(element, role, index, ...)
   return getAXChildren(child, ...)
 end
 
-function inFullscreenWindow()
+function inFullscreenSpace()
   local focusedWindow = hs.application.frontmostApplication():focusedWindow()
   if focusedWindow ~= nil and focusedWindow:id() ~= 0 then
     local spaces = hs.spaces.windowSpaces(focusedWindow)
@@ -74,7 +74,7 @@ function inFullscreenWindow()
 end
 
 function activatedWindowIndex()
-  if inFullscreenWindow() then
+  if inFullscreenSpace() then
     local cnt = #hs.application.frontmostApplication():visibleWindows()
     if hs.application.frontmostApplication():bundleID() == "com.apple.finder" then
       cnt = cnt - 1
@@ -95,7 +95,7 @@ function aWinFor(app)
 end
 
 function menuBarVisible()
-  if inFullscreenWindow() then
+  if inFullscreenSpace() then
     local thisAppAutohide = hs.execute("defaults read "
         .. hs.application.frontmostApplication():bundleID() .. " AppleMenuBarVisibleInFullscreen | tr -d '\\n'")
     if thisAppAutohide == "0" then
