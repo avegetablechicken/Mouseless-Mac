@@ -4768,10 +4768,14 @@ end
 
 -- register hotkeys for active app
 local frontApp = hs.application.frontmostApplication()
-registerInAppHotKeys(frontApp)
+if frontApp then
+  registerInAppHotKeys(frontApp)
+end
 
 -- register hotkeys for focused window of active app
-registerInWinHotKeys(frontApp)
+if frontApp then
+  registerInWinHotKeys(frontApp)
+end
 
 -- register watchers for frontmost window belonging to unactivated app
 for bid, appConfig in pairs(appHotKeyCallbacks) do
@@ -4810,7 +4814,7 @@ end
 
 
 -- ## hotkeys or configs shared by multiple apps
-local frontAppMenuItems = frontApp:getMenuItems()
+local frontAppMenuItems = frontApp and frontApp:getMenuItems() or nil
 
 -- basically aims to remap ctrl+` to shift+ctrl+tab to make it more convenient for fingers
 local remapPreviousTabHotkey
@@ -4844,7 +4848,9 @@ local function remapPreviousTab(app, menuItems)
   end
 end
 
-remapPreviousTab(frontApp, frontAppMenuItems)
+if frontApp then
+  remapPreviousTab(frontApp, frontAppMenuItems)
+end
 
 -- register hotkey to open recent when it is available
 local openRecentHotkey
@@ -4915,7 +4921,9 @@ local function registerOpenRecent(app)
     openRecentHotkey.subkind = HK.IN_APP_.APP
   end
 end
-registerOpenRecent(frontApp)
+if frontApp then
+  registerOpenRecent(frontApp)
+end
 
 local zoomHotkeys = {}
 local function registerZoomHotkeys(app)
@@ -4969,7 +4977,9 @@ local function registerZoomHotkeys(app)
     end
   end
 end
-registerZoomHotkeys(frontApp)
+if frontApp then
+  registerZoomHotkeys(frontApp)
+end
 
 -- bind hotkeys for open or save panel that are similar in `Finder`
 -- & hotkey to confirm delete
@@ -5141,7 +5151,9 @@ local function registerForOpenSavePanel(app)
     end
   end)
 end
-registerForOpenSavePanel(frontApp)
+if frontApp then
+  registerForOpenSavePanel(frontApp)
+end
 
 -- bind `alt+?` hotkeys to select left menu bar items
 AltMenuBarItemHotkeys = {}
@@ -5370,7 +5382,9 @@ local function altMenuBarItem(app, menuItems)
     end
   end
 end
-altMenuBarItem(frontApp, frontAppMenuItems)
+if frontApp then
+  altMenuBarItem(frontApp, frontAppMenuItems)
+end
 
 -- some apps may change their menu bar items irregularly
 local appswatchMenuBarItems = get(ApplicationConfigs, "menuBarItems", 'changing') or {}
@@ -5480,7 +5494,9 @@ local function registerObserverForMenuBarChange(app, menuItems)
       end
     end)
 end
-registerObserverForMenuBarChange(frontApp, frontAppMenuItems)
+if frontApp then
+  registerObserverForMenuBarChange(frontApp, frontAppMenuItems)
+end
 
 -- auto hide or quit apps with no windows (including pseudo windows suck as popover or sheet)
 local appsAutoHideWithNoWindows = {}
@@ -5948,7 +5964,7 @@ function(ev)
   return false
 end)
 
-if remoteDesktopsMappingModifiers[frontApp:bundleID()] then
+if frontApp and remoteDesktopsMappingModifiers[frontApp:bundleID()] then
   remoteDesktopModifierTapper:start()
 end
 for bid, _ in pairs(remoteDesktopsMappingModifiers) do
@@ -5976,7 +5992,7 @@ end
 
 local remoteDesktopAppsRequireSuspendHotkeys = ApplicationConfigs["suspendHotkeysInRemoteDesktop"] or {}
 for _, appid in ipairs(remoteDesktopAppsRequireSuspendHotkeys) do
-  if frontApp:bundleID() == appid then
+  if frontApp and frontApp:bundleID() == appid then
     suspendHotkeysInRemoteDesktop(frontApp)
   end
   execOnActivated(appid, suspendHotkeysInRemoteDesktop)
@@ -5999,7 +6015,7 @@ local function watchForRemoteDesktopWindow(app)
 end
 
 for _, appid in ipairs(remoteDesktopAppsRequireSuspendHotkeys) do
-  if frontApp:bundleID() == appid then
+  if frontApp and frontApp:bundleID() == appid then
     watchForRemoteDesktopWindow(frontApp)
   end
   execOnActivated(appid, watchForRemoteDesktopWindow)
@@ -6022,7 +6038,9 @@ local function deactivateCloseWindowForIOSApps(app)
     iOSAppHotkey:disable()
   end
 end
-deactivateCloseWindowForIOSApps(frontApp)
+if frontApp then
+  deactivateCloseWindowForIOSApps(frontApp)
+end
 
 
 -- # callbacks
