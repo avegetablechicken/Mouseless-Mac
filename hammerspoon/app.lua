@@ -4237,7 +4237,7 @@ local function wrapInfoChain(app, config, cond, mode)
 
   if windowFilter ~= nil then
     if InWinHotkeyInfoChain[bid] == nil then InWinHotkeyInfoChain[bid] = {} end
-    if mode == KEY_MODE.PRESS then
+    if mode == KEY_MODE.PRESS then  -- only info for pressing event is enough
       local hkIdx = hotkeyIdx(mods, key)
       local prevHotkeyInfo = InWinHotkeyInfoChain[bid][hkIdx]
       InWinHotkeyInfoChain[bid][hkIdx] = {
@@ -4260,17 +4260,18 @@ local function wrapInfoChain(app, config, cond, mode)
   end
 end
 
--- multiple website-specified hotkeys may share a common keybinding
--- they are cached in a linked list.
--- each website filter will be tested until one matched target tab
 local function inAppHotKeysWrapper(app, config, mode)
   local fn, cond = WrapCondition(app, config, mode)
   if config.websiteFilter ~= nil then
+    -- multiple website-specified hotkeys may share a common keybinding
+    -- they are cached in a linked list.
+    -- each website filterParallels will be tested until one matched target tab
     local bid = app:bundleID()
     if prevWebsiteCallbacks[bid] == nil then prevWebsiteCallbacks[bid] = {} end
     local hkIdx = hotkeyIdx(config.mods, config.key)
     if prevWebsiteCallbacks[bid][hkIdx] == nil then prevWebsiteCallbacks[bid][hkIdx] = { nil, nil } end
     prevWebsiteCallbacks[bid][hkIdx][mode] = fn
+    -- essential info are also cached in a linked list for showing keybindings by `HSKeybindings`
     wrapInfoChain(app, config, cond, mode)
   end
   return fn, cond
@@ -4295,13 +4296,15 @@ end
 local function appBind(app, config, ...)
   local pressedfn, cond = inAppHotKeysWrapper(app, config, KEY_MODE.PRESS)
   if config.repeatedfn == nil and (config.condition ~= nil or config.websiteFilter ~= nil) then
+    -- if hotkey condition is not satisfied, holding event should be passed to the app
+    -- so callback for holding event must always be registered
     config.repeatedfn = function() end
   end
   local repeatedfn = config.repeatedfn
   if repeatedfn ~= nil then
     repeatedfn = inAppHotKeysWrapper(app, config, KEY_MODE.REPEAT)
   end
-  if config.condition ~= nil then
+  if config.condition ~= nil then  -- executing condition may take too much time
     pressedfn = callBackExecutingWrapper(pressedfn)
     if repeatedfn ~= nil then
       repeatedfn = callBackExecutingWrapper(repeatedfn)
@@ -4388,16 +4391,17 @@ local function unregisterInAppHotKeys(bid, delete)
   end
 end
 
--- multiple window-specified hotkeys may share a common keybinding
--- they are cached in a linked list.
--- each window filter will be tested until one matched target window
 local function inWinHotKeysWrapper(app, config, mode)
   local fn, cond = WrapCondition(app, config, mode)
+  -- multiple window-specified hotkeys may share a common keybinding
+  -- they are cached in a linked list.
+  -- each window filter will be tested until one matched target window
   local bid = app:bundleID()
   if prevWindowCallbacks[bid] == nil then prevWindowCallbacks[bid] = {} end
   local hkIdx = hotkeyIdx(config.mods, config.key)
   if prevWindowCallbacks[bid][hkIdx] == nil then prevWindowCallbacks[bid][hkIdx] = { nil, nil } end
   prevWindowCallbacks[bid][hkIdx][mode] = fn
+  -- essential info are also cached in a linked list for showing keybindings by `HSKeybindings`
   wrapInfoChain(app, config, cond, mode)
   return fn
 end
@@ -4405,10 +4409,12 @@ end
 local function winBind(app, config, ...)
   local pressedfn = inWinHotKeysWrapper(app, config, KEY_MODE.PRESS)
   if config.repeatedfn == nil then
+    -- if window filter does not allow current window, holding event should be passed to the app
+    -- so callback for holding event must always be registered
     config.repeatedfn = function() end
   end
   local repeatedfn = inWinHotKeysWrapper(app, config, KEY_MODE.REPEAT)
-  if config.condition ~= nil then
+  if config.condition ~= nil then  -- executing condition may take too much time
     pressedfn = callBackExecutingWrapper(pressedfn)
     repeatedfn = callBackExecutingWrapper(repeatedfn)
   end
