@@ -949,6 +949,32 @@
         "key": "E"
       }
     },
+    "com.eusoft.freeeudic": {
+      "function1": {
+        "mods": ["option", "command"],
+        "key": "1"
+      },
+      "function2": {
+        "mods": ["option", "command"],
+        "key": "2"
+      },
+      "function3": {
+        "mods": ["option", "command"],
+        "key": "3"
+      },
+      "function4": {
+        "mods": ["option", "command"],
+        "key": "4"
+      },
+      "function5": {
+        "mods": ["option", "command"],
+        "key": "5"
+      },
+      "function6": {
+        "mods": ["option", "command"],
+        "key": "6"
+      }
+    },
     "com.openai.chat": {
       "toggleSidebar": {
         "mods": ["control", "command"],
