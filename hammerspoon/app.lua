@@ -4303,6 +4303,11 @@ local function callBackExecutingWrapper(fn)
 end
 
 local function appWinBind(app, config, ...)
+  if config.spec ~= nil then
+    config.mods = config.spec.mods
+    config.key = config.spec.key
+    config.spec = nil
+  end
   local pressedfn, cond = wrapCondition(app, config, KEY_MODE.PRESS)
   if config.repeatedfn == nil
       and (config.condition ~= nil or config.windowFiler ~= nil or config.websiteFilter ~= nil) then
@@ -4835,8 +4840,7 @@ local function remapPreviousTab(app, menuItems)
       return menuItemCond ~= nil and menuItemCond.enabled
     end
     remapPreviousTabHotkey = AppBind(app, {
-      mods = spec.mods, key = spec.key,
-      message = menuItemPath[#menuItemPath],
+      spec = spec, message = menuItemPath[#menuItemPath],
       fn = fn, repeatedfn = fn, condition = cond
     })
   end
@@ -4907,8 +4911,7 @@ local function registerOpenRecent(app)
       return menuItemCond ~= nil and menuItemCond.enabled
     end
     openRecentHotkey = AppBind(app, {
-      mods = spec.mods, key = spec.key,
-      message = menuItemPath[2],
+      spec = spec.mods, message = menuItemPath[2],
       fn = fn, condition = cond
     })
   end
@@ -4960,8 +4963,7 @@ local function registerZoomHotkeys(app)
         return menuItemCond ~= nil and menuItemCond.enabled
       end
       zoomHotkeys[hkID] = AppBind(app, {
-        mods = spec.mods, key = spec.key,
-        message = menuItemPath[2],
+        spec = spec, message = menuItemPath[2],
         fn = fn, condition = cond
       })
     end
@@ -5069,8 +5071,7 @@ local function registerForOpenSavePanel(app)
         if spec ~= nil then
           local folder = cell:childrenWithRole("AXStaticText")[1].AXValue
           local hotkey = WinBind(app, {
-            mods = spec.mods, key = spec.key,
-            message = header .. ' > ' .. folder,
+            spec = spec, message = header .. ' > ' .. folder,
             fn = function() cell:performAction("AXOpen") end,
           })
           table.insert(openSavePanelHotkeys, hotkey)
@@ -5096,7 +5097,7 @@ local function registerForOpenSavePanel(app)
       local spec = get(KeybindingConfigs.hotkeys.shared, "confirmDelete")
       if spec ~= nil then
         local hotkey = WinBind(app, {
-          mods = spec.mods, key = spec.key,
+          spec = spec,
           message = dontSaveButton.AXTitle or dontSaveButton.AXDescription,
           fn = function() dontSaveButton:performAction("AXPress") end,
         })
@@ -5142,9 +5143,7 @@ AltMenuBarItemHotkeys = {}
 local function bindAltMenu(app, mods, key, message, fn)
   fn = showMenuItemWrapper(fn)
   local hotkey = AppBind(app, {
-    mods = mods, key = key,
-    message = message,
-    fn = fn,
+    mods = mods, key = key, message = message, fn = fn,
   })
   hotkey.subkind = HK.IN_APP_.MENU
   return hotkey
