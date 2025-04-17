@@ -6100,6 +6100,12 @@ end
 -- some apps may have slow launch time, so need to wait until fully launched to bind menu bar item hotkeys
 local appsLaunchSlow = {
   {
+    appid = "com.apple.iMovieApp",
+    criterion = function(app)
+      return app:getMenuItems() ~= nil
+    end
+  },
+  {
     appid = "com.google.Chrome",
     criterion = function(app)
       return findMenuItem(app, { "Help" }) ~= nil
