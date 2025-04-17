@@ -1909,7 +1909,7 @@ function registerControlCenterHotKeys(panel)
                 local app = find(appid)
                 local hotkey, observer
                 local fn, cond = WrapCondition(app, {
-                  mods = "⌘", spec = "Return", fn = function()
+                  mods = "⌘", key = "Return", fn = function()
                   hs.osascript.applescript([[
                     tell application "System Events"
                       set win to ]] .. aWinFor(appid) .. [[
