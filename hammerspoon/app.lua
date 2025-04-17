@@ -4091,9 +4091,43 @@ local KEY_MODE = {
   REPEAT = 2,
 }
 
+InWebsiteHotkeyInfoChain = {}
+InWinHotkeyInfoChain = {}
+local function wrapInfoChain(app, config, cond, mode)
+  local bid = app:bundleID()
+  local mods, key = config.mods, config.key
+  local message = config.message
+  local windowFilter = config.windowFilter
+  local websiteFilter = config.websiteFilter
+
+  if windowFilter ~= nil then
+    if InWinHotkeyInfoChain[bid] == nil then InWinHotkeyInfoChain[bid] = {} end
+    if mode == KEY_MODE.PRESS then -- only info for pressing event is enough
+      local hkIdx = hotkeyIdx(mods, key)
+      local prevHotkeyInfo = InWinHotkeyInfoChain[bid][hkIdx]
+      InWinHotkeyInfoChain[bid][hkIdx] = {
+        condition = cond,
+        message = message,
+        previous = prevHotkeyInfo
+      }
+    end
+  elseif websiteFilter ~= nil then
+    if InWebsiteHotkeyInfoChain[bid] == nil then InWebsiteHotkeyInfoChain[bid] = {} end
+    if mode == KEY_MODE.PRESS then
+      local hkIdx = hotkeyIdx(mods, key)
+      local prevWebsiteHotkeyInfo = InWebsiteHotkeyInfoChain[bid][hkIdx]
+      InWebsiteHotkeyInfoChain[bid][hkIdx] = {
+        condition = cond,
+        message = message,
+        previous = prevWebsiteHotkeyInfo
+      }
+    end
+  end
+end
+
 local prevWebsiteCallbacks = {}
 local prevWindowCallbacks = {}
-function WrapCondition(app, config, mode)
+local function wrapCondition(app, config, mode)
   local prevWebsiteCallback, prevWindowCallback
   local bid = app:bundleID()
 
@@ -4102,12 +4136,14 @@ function WrapCondition(app, config, mode)
   local cond = config.condition
   local windowFilter = config.windowFilter
   local websiteFilter = config.websiteFilter
+  -- some apps only accept system key strokes and neglect key strokes targeted at them
   local resendToSystem = config.defaultResendToSystem
 
+  -- testify window filter and return TF & extra result
   if windowFilter ~= nil then
     local hkIdx = hotkeyIdx(mods, key)
     prevWindowCallback = get(prevWindowCallbacks, bid, hkIdx, mode)
-    local actualFilter
+    local actualFilter  -- remove self-customed properties
     if type(windowFilter) == 'table' then
       for k, v in pairs(windowFilter) do
         if k ~= "allowSheet" and k ~= "allowPopover" then
@@ -4141,6 +4177,7 @@ function WrapCondition(app, config, mode)
       end
     end
   end
+  -- testify website filter and return TF, valid URL & extra result
   if websiteFilter ~= nil then
     local hkIdx = hotkeyIdx(mods, key)
     prevWebsiteCallback = get(prevWebsiteCallbacks, bid, hkIdx, mode)
@@ -4223,54 +4260,26 @@ function WrapCondition(app, config, mode)
     -- most of the time, directly selecting menu item costs less time than key strokes
     selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
   end
-  return fn, cond
-end
-
-InWebsiteHotkeyInfoChain = {}
-InWinHotkeyInfoChain = {}
-local function wrapInfoChain(app, config, cond, mode)
-  local bid = app:bundleID()
-  local mods, key = config.mods, config.key
-  local message = config.message
-  local windowFilter = config.windowFilter
-  local websiteFilter = config.websiteFilter
 
   if windowFilter ~= nil then
-    if InWinHotkeyInfoChain[bid] == nil then InWinHotkeyInfoChain[bid] = {} end
-    if mode == KEY_MODE.PRESS then  -- only info for pressing event is enough
-      local hkIdx = hotkeyIdx(mods, key)
-      local prevHotkeyInfo = InWinHotkeyInfoChain[bid][hkIdx]
-      InWinHotkeyInfoChain[bid][hkIdx] = {
-        condition = cond,
-        message = message,
-        previous = prevHotkeyInfo
-      }
-    end
-  elseif websiteFilter ~= nil then
-    if InWebsiteHotkeyInfoChain[bid] == nil then InWebsiteHotkeyInfoChain[bid] = {} end
-    if mode == KEY_MODE.PRESS then
-      local hkIdx = hotkeyIdx(mods, key)
-      local prevWebsiteHotkeyInfo = InWebsiteHotkeyInfoChain[bid][hkIdx]
-      InWebsiteHotkeyInfoChain[bid][hkIdx] = {
-        condition = cond,
-        message = message,
-        previous = prevWebsiteHotkeyInfo
-      }
-    end
+    -- multiple window-specified hotkeys may share a common keybinding
+    -- they are cached in a linked list.
+    -- each window filter will be tested until one matched target window
+    if prevWindowCallbacks[bid] == nil then prevWindowCallbacks[bid] = {} end
+    local hkIdx = hotkeyIdx(mods, key)
+    if prevWindowCallbacks[bid][hkIdx] == nil then prevWindowCallbacks[bid][hkIdx] = { nil, nil } end
+    prevWindowCallbacks[bid][hkIdx][mode] = fn
   end
-end
-
-local function inAppHotKeysWrapper(app, config, mode)
-  local fn, cond = WrapCondition(app, config, mode)
-  if config.websiteFilter ~= nil then
+  if websiteFilter ~= nil then
     -- multiple website-specified hotkeys may share a common keybinding
     -- they are cached in a linked list.
     -- each website filterParallels will be tested until one matched target tab
-    local bid = app:bundleID()
     if prevWebsiteCallbacks[bid] == nil then prevWebsiteCallbacks[bid] = {} end
-    local hkIdx = hotkeyIdx(config.mods, config.key)
+    local hkIdx = hotkeyIdx(mods, key)
     if prevWebsiteCallbacks[bid][hkIdx] == nil then prevWebsiteCallbacks[bid][hkIdx] = { nil, nil } end
     prevWebsiteCallbacks[bid][hkIdx][mode] = fn
+  end
+  if windowFilter ~= nil or websiteFilter ~= nil then
     -- essential info are also cached in a linked list for showing keybindings by `HSKeybindings`
     wrapInfoChain(app, config, cond, mode)
   end
@@ -4293,16 +4302,17 @@ local function callBackExecutingWrapper(fn)
   end
 end
 
-local function appBind(app, config, ...)
-  local pressedfn, cond = inAppHotKeysWrapper(app, config, KEY_MODE.PRESS)
-  if config.repeatedfn == nil and (config.condition ~= nil or config.websiteFilter ~= nil) then
+local function appWinBind(app, config, ...)
+  local pressedfn, cond = wrapCondition(app, config, KEY_MODE.PRESS)
+  if config.repeatedfn == nil
+      and (config.condition ~= nil or config.windowFiler ~= nil or config.websiteFilter ~= nil) then
     -- if hotkey condition is not satisfied, holding event should be passed to the app
     -- so callback for holding event must always be registered
     config.repeatedfn = function() end
   end
   local repeatedfn = config.repeatedfn
   if repeatedfn ~= nil then
-    repeatedfn = inAppHotKeysWrapper(app, config, KEY_MODE.REPEAT)
+    repeatedfn = wrapCondition(app, config, KEY_MODE.REPEAT)
   end
   if config.condition ~= nil then  -- executing condition may take too much time
     pressedfn = callBackExecutingWrapper(pressedfn)
@@ -4311,7 +4321,19 @@ local function appBind(app, config, ...)
     end
   end
   local hotkey = bindHotkeySpec(config, config.message, pressedfn, nil, repeatedfn, ...)
-  if config.websiteFilter == nil then hotkey.condition = cond end
+  hotkey.kind = HK.IN_APP
+  hotkey.deleteOnDisable = config.deleteOnDisable
+  return hotkey, cond
+end
+
+function AppBind(app, config, ...)
+  local hotkey, cond = appWinBind(app, config, ...)
+  if config.websiteFilter == nil then
+    hotkey.condition = cond
+    hotkey.subkind = HK.IN_APP_.APP
+  else
+    hotkey.subkind = HK.IN_APP_.WEBSITE
+  end
   return hotkey
 end
 
@@ -4355,11 +4377,7 @@ local function registerInAppHotKeys(app)
           config.websiteFilter = keybinding.websiteFilter or cfg.websiteFilter
           config.repeatable = keybinding.repeatable ~= nil and keybinding.repeatable or cfg.repeatable
           config.repeatedfn = config.repeatable and cfg.fn or nil
-          local hotkey = appBind(app, config)
-          hotkey.kind = HK.IN_APP
-          if config.websiteFilter ~= nil then hotkey.subkind = HK.IN_APP_.WEBSITE end
-          hotkey.deleteOnDisable = cfg.deleteOnDisable
-          inAppHotKeys[bid][hkID] = hotkey
+          inAppHotKeys[bid][hkID] = AppBind(app, config)
         end
       end
     end
@@ -4391,34 +4409,10 @@ local function unregisterInAppHotKeys(bid, delete)
   end
 end
 
-local function inWinHotKeysWrapper(app, config, mode)
-  local fn, cond = WrapCondition(app, config, mode)
-  -- multiple window-specified hotkeys may share a common keybinding
-  -- they are cached in a linked list.
-  -- each window filter will be tested until one matched target window
-  local bid = app:bundleID()
-  if prevWindowCallbacks[bid] == nil then prevWindowCallbacks[bid] = {} end
-  local hkIdx = hotkeyIdx(config.mods, config.key)
-  if prevWindowCallbacks[bid][hkIdx] == nil then prevWindowCallbacks[bid][hkIdx] = { nil, nil } end
-  prevWindowCallbacks[bid][hkIdx][mode] = fn
-  -- essential info are also cached in a linked list for showing keybindings by `HSKeybindings`
-  wrapInfoChain(app, config, cond, mode)
-  return fn
-end
-
-local function winBind(app, config, ...)
-  local pressedfn = inWinHotKeysWrapper(app, config, KEY_MODE.PRESS)
-  if config.repeatedfn == nil then
-    -- if window filter does not allow current window, holding event should be passed to the app
-    -- so callback for holding event must always be registered
-    config.repeatedfn = function() end
-  end
-  local repeatedfn = inWinHotKeysWrapper(app, config, KEY_MODE.REPEAT)
-  if config.condition ~= nil then  -- executing condition may take too much time
-    pressedfn = callBackExecutingWrapper(pressedfn)
-    repeatedfn = callBackExecutingWrapper(repeatedfn)
-  end
-  return bindHotkeySpec(config, config.message, pressedfn, nil, repeatedfn, ...)
+function WinBind(app, config, ...)
+  local hotkey = appWinBind(app, config, ...)
+  hotkey.subkind = HK.IN_APP_.WINDOW
+  return hotkey
 end
 
 -- hotkeys for focused window of active app
@@ -4457,11 +4451,7 @@ local function registerInWinHotKeys(app)
           config.windowFilter = keybinding.windowFilter or cfg.windowFilter
           config.repeatable = keybinding.repeatable ~= nil and keybinding.repeatable or cfg.repeatable
           config.repeatedfn = config.repeatable and cfg.fn or nil
-          local hotkey = winBind(app, config)
-          hotkey.kind = HK.IN_APP
-          hotkey.subkind = HK.IN_APP_.WINDOW
-          hotkey.deleteOnDisable = cfg.deleteOnDisable
-          inWinHotKeys[bid][hkID] = hotkey
+          inWinHotKeys[bid][hkID] = WinBind(app, config)
         end
       end
     else
@@ -4844,13 +4834,11 @@ local function remapPreviousTab(app, menuItems)
       local menuItemCond = app:findMenuItem(menuItemPath)
       return menuItemCond ~= nil and menuItemCond.enabled
     end
-    remapPreviousTabHotkey = appBind(app, {
+    remapPreviousTabHotkey = AppBind(app, {
       mods = spec.mods, key = spec.key,
       message = menuItemPath[#menuItemPath],
       fn = fn, repeatedfn = fn, condition = cond
     })
-    remapPreviousTabHotkey.kind = HK.IN_APP
-    remapPreviousTabHotkey.subkind = HK.IN_APP_.APP
   end
 end
 
@@ -4918,13 +4906,11 @@ local function registerOpenRecent(app)
       local menuItemCond = app:findMenuItem(menuItemPath)
       return menuItemCond ~= nil and menuItemCond.enabled
     end
-    openRecentHotkey = appBind(app, {
+    openRecentHotkey = AppBind(app, {
       mods = spec.mods, key = spec.key,
       message = menuItemPath[2],
       fn = fn, condition = cond
     })
-    openRecentHotkey.kind = HK.IN_APP
-    openRecentHotkey.subkind = HK.IN_APP_.APP
   end
 end
 if frontApp then
@@ -4973,13 +4959,11 @@ local function registerZoomHotkeys(app)
         local menuItemCond = app:findMenuItem(menuItemPath)
         return menuItemCond ~= nil and menuItemCond.enabled
       end
-      zoomHotkeys[hkID] = appBind(app, {
+      zoomHotkeys[hkID] = AppBind(app, {
         mods = spec.mods, key = spec.key,
         message = menuItemPath[2],
         fn = fn, condition = cond
       })
-      zoomHotkeys[hkID].kind = HK.IN_APP
-      zoomHotkeys[hkID].subkind = HK.IN_APP_.APP
     end
   end
 end
@@ -5084,15 +5068,11 @@ local function registerForOpenSavePanel(app)
         local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
         if spec ~= nil then
           local folder = cell:childrenWithRole("AXStaticText")[1].AXValue
-          local fn, cond = WrapCondition(app, {
-            mods = spec.mods, key = spec.key, fn = function()
-              cell:performAction("AXOpen")
-            end,
+          local hotkey = WinBind(app, {
+            mods = spec.mods, key = spec.key,
+            message = header .. ' > ' .. folder,
+            fn = function() cell:performAction("AXOpen") end,
           })
-          local hotkey = bindHotkeySpec(spec, header .. ' > ' .. folder, fn)
-          hotkey.kind = HK.IN_APP
-          hotkey.subkind = HK.IN_APP_.WINDOW
-          hotkey.condition = cond
           table.insert(openSavePanelHotkeys, hotkey)
           i = i + 1
         end
@@ -5115,16 +5095,11 @@ local function registerForOpenSavePanel(app)
     if dontSaveButton ~= nil then
       local spec = get(KeybindingConfigs.hotkeys.shared, "confirmDelete")
       if spec ~= nil then
-        local fn, cond = WrapCondition(app, {
-          mods = spec.mods, key = spec.key, fn = function()
-            dontSaveButton:performAction("AXPress")
-          end,
+        local hotkey = WinBind(app, {
+          mods = spec.mods, key = spec.key,
+          message = dontSaveButton.AXTitle or dontSaveButton.AXDescription,
+          fn = function() dontSaveButton:performAction("AXPress") end,
         })
-        local msg = dontSaveButton.AXTitle or dontSaveButton.AXDescription
-        local hotkey = bindHotkeySpec(spec, msg, fn)
-        hotkey.kind = HK.IN_APP
-        hotkey.subkind = HK.IN_APP_.WINDOW
-        hotkey.condition = cond
         table.insert(openSavePanelHotkeys, hotkey)
       end
     end
@@ -5166,12 +5141,11 @@ AltMenuBarItemHotkeys = {}
 
 local function bindAltMenu(app, mods, key, message, fn)
   fn = showMenuItemWrapper(fn)
-  local hotkey = appBind(app, {
+  local hotkey = AppBind(app, {
     mods = mods, key = key,
     message = message,
     fn = fn,
   })
-  hotkey.kind = HK.IN_APP
   hotkey.subkind = HK.IN_APP_.MENU
   return hotkey
 end

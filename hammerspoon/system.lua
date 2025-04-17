@@ -1908,30 +1908,29 @@ function registerControlCenterHotKeys(panel)
               if ok then
                 local app = find(appid)
                 local hotkey, observer
-                local fn, cond = WrapCondition(app, {
-                  mods = "⌘", key = "Return", fn = function()
-                  hs.osascript.applescript([[
-                    tell application "System Events"
-                      set win to ]] .. aWinFor(appid) .. [[
-                      set exp to (first UI element whose value of attribute "AXTitle" is not "") ¬
-                          of group 1 of group 1 of group 1 of group 1 of win
-                      set bt to button 1 of group 2 of last group of group 4 of exp
-                      perform action 1 of bt
-                    end tell
-                  ]])
-                  if hotkey ~= nil then
-                    hotkey:delete()
-                    hotkey = nil
-                  end
-                  if observer ~= nil then
-                    observer:stop()
-                    observer = nil
-                  end
-                end })
-                hotkey = bindHotkey("⌘", "Return", "Relaunch", fn)
-                hotkey.kind = HK.IN_APP
-                hotkey.subkind = HK.IN_APP_.WINDOW
-                hotkey.condition = cond
+                hotkey = WinBind(app, {
+                  mods = "⌘", key = "Return",
+                  message = "Relaunch",
+                  fn = function()
+                    hs.osascript.applescript([[
+                      tell application "System Events"
+                        set win to ]] .. aWinFor(appid) .. [[
+                        set exp to (first UI element whose value of attribute "AXTitle" is not "") ¬
+                            of group 1 of group 1 of group 1 of group 1 of win
+                        set bt to button 1 of group 2 of last group of group 4 of exp
+                        perform action 1 of bt
+                      end tell
+                    ]])
+                    if hotkey ~= nil then
+                      hotkey:delete()
+                      hotkey = nil
+                    end
+                    if observer ~= nil then
+                      observer:stop()
+                      observer = nil
+                    end
+                  end,
+                })
                 local appUIObj = hs.axuielement.applicationElement(app)
                 local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
                 observer = hs.axuielement.observer.new(app:pid())
