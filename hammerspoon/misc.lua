@@ -441,22 +441,23 @@ end
 
 local function testValid(entry)
   local pos = string.find(entry.msg, ": ")
-  local valid = pos ~= nil
-      and not (entry.suspendable and FLAGS["SUSPEND"])
+  local valid = pos ~= nil and not (entry.suspendable and FLAGS["SUSPEND"])
   local actualMsg
   if valid then
-    valid = entry.condition == nil or entry.condition(hs.application.frontmostApplication())
-    local appid = hs.application.frontmostApplication():bundleID()
+    local app = hs.application.frontmostApplication()
+    if entry.condition ~= nil then
+      valid = entry.condition(app)
+    end
+    local appid = app:bundleID()
     if valid and entry.kind == HK.IN_APP and entry.subkind == HK.IN_APP_.WEBSITE then
       local hotkeyInfo = get(InWebsiteHotkeyInfoChain, appid, entry.idx)
       if hotkeyInfo ~= nil then
-        valid, actualMsg = getValidMessage(hotkeyInfo, hs.application.frontmostApplication())
+        valid, actualMsg = getValidMessage(hotkeyInfo, app)
       end
     elseif valid and entry.kind == HK.IN_APP and entry.subkind == HK.IN_APP_.WINDOW then
       local hotkeyInfo = get(InWinHotkeyInfoChain, appid, entry.idx)
       if hotkeyInfo ~= nil then
-        valid, actualMsg = getValidMessage(hotkeyInfo,
-            hs.application.frontmostApplication():focusedWindow())
+        valid, actualMsg = getValidMessage(hotkeyInfo, app:focusedWindow())
       end
     end
     entry.valid = valid
