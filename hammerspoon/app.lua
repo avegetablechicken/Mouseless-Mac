@@ -4183,6 +4183,10 @@ local function wrapCondition(app, config, mode)
     prevWebsiteCallback = get(prevWebsiteCallbacks, appid, hkIdx, mode)
     local oldCond = cond
     cond = function(obj)
+      if app:focusedWindow() == nil
+          or app:focusedWindow():subrole() ~= "AXStandardWindow" then
+        return false
+      end
       local url = getTabUrl(app)
       if url ~= nil then
         local allowURLs = websiteFilter.allowURLs
