@@ -341,24 +341,24 @@ end
 
 ExecContinuously(function()
   local hasLaunchedTmp = {}
-  for bid, processes in pairs(processesOnSilentLaunch) do
-    local app = find(bid)
-    if hasLaunched[bid] == false and app ~= nil then
+  for appid, processes in pairs(processesOnSilentLaunch) do
+    local app = find(appid)
+    if hasLaunched[appid] == false and app ~= nil then
       for _, proc in ipairs(processes) do
         proc(app)
       end
     end
-    hasLaunchedTmp[bid] = app ~= nil
+    hasLaunchedTmp[appid] = app ~= nil
   end
 
-  for bid, processes in pairs(processesOnSilentQuit) do
-    local app = find(bid)
-    if hasLaunched[bid] == true and app == nil then
+  for appid, processes in pairs(processesOnSilentQuit) do
+    local app = find(appid)
+    if hasLaunched[appid] == true and app == nil then
       for _, proc in ipairs(processes) do
-        proc(bid)
+        proc(appid)
       end
     end
-    hasLaunchedTmp[bid] = app ~= nil
+    hasLaunchedTmp[appid] = app ~= nil
   end
 
   hasLaunched = hasLaunchedTmp

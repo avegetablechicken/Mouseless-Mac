@@ -103,11 +103,11 @@ local function registerAppHotkeys()
         if appPath == "" then appPath = nil end
         if appPath ~= nil then appid = config.bundleID end
       elseif type(config.bundleID) == "table" then
-        for _, bid in ipairs(config.bundleID) do
-          appPath = hs.application.pathForBundleID(bid)
+        for _, id in ipairs(config.bundleID) do
+          appPath = hs.application.pathForBundleID(id)
           if appPath == "" then appPath = nil end
           if appPath ~= nil then
-            appid = bid
+            appid = id
             break
           end
         end
@@ -676,8 +676,8 @@ local function getBartenderBarItemTitle(index, rightClick)
           for i = 1, #appnames do
             local appname = appnames[i]
             local itemID = itemList[splitterIndex + 1 + #appnames - i]
-            local bid, idx = string.match(itemID, "(.-)%-Item%-(%d+)$")
-            if bid ~= nil then
+            local id, idx = string.match(itemID, "(.-)%-Item%-(%d+)$")
+            if id ~= nil then
               if idx == "0" then
                 table.insert(bartenderBarItemNames, appname)
               else
@@ -3929,18 +3929,18 @@ local supportedBrowsers = {
   "com.apple.Safari", "com.google.Chrome",
   "com.microsoft.edgemac", "com.microsoft.edgemac.Dev"
 }
-for _, bid in ipairs(supportedBrowsers) do
-  if appHotKeyCallbacks[bid] == nil then
-    appHotKeyCallbacks[bid] = {}
+for _, appid in ipairs(supportedBrowsers) do
+  if appHotKeyCallbacks[appid] == nil then
+    appHotKeyCallbacks[appid] = {}
   end
   for k, v in pairs(browserTabHotKeyCallbacks) do
-    appHotKeyCallbacks[bid][k] = v
+    appHotKeyCallbacks[appid][k] = v
   end
-  if KeybindingConfigs.hotkeys[bid] == nil then
-    KeybindingConfigs.hotkeys[bid] = {}
+  if KeybindingConfigs.hotkeys[appid] == nil then
+    KeybindingConfigs.hotkeys[appid] = {}
   end
   for k, v in pairs(KeybindingConfigs.hotkeys.browsers or {}) do
-    KeybindingConfigs.hotkeys[bid][k] = v
+    KeybindingConfigs.hotkeys[appid][k] = v
   end
 end
 
@@ -3949,29 +3949,29 @@ local inAppHotKeys = {}
 local inWinHotKeys = {}
 
 -- hotkeys for background apps
-local function registerRunningAppHotKeys(bid, app)
-  if appHotKeyCallbacks[bid] == nil then return end
-  local keybindings = KeybindingConfigs.hotkeys[bid] or {}
+local function registerRunningAppHotKeys(appid, app)
+  if appHotKeyCallbacks[appid] == nil then return end
+  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
 
   if app == nil then
-    app = find(bid)
+    app = find(appid)
   end
 
-  if runningAppHotKeys[bid] == nil then
-    runningAppHotKeys[bid] = {}
+  if runningAppHotKeys[appid] == nil then
+    runningAppHotKeys[appid] = {}
   end
 
   -- do not support "condition" property currently
-  for hkID, cfg in pairs(appHotKeyCallbacks[bid]) do
-    if runningAppHotKeys[bid][hkID] ~= nil then
-      runningAppHotKeys[bid][hkID]:enable()
+  for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
+    if runningAppHotKeys[appid][hkID] ~= nil then
+      runningAppHotKeys[appid][hkID]:enable()
       goto L_CONTINUE
     end
     -- prefer properties specified in configuration file than in code
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local isBackground = keybinding.background ~= nil and keybinding.background or cfg.background
     local isPersistent = keybinding.persist ~= nil and keybinding.persist or cfg.persist
-    local appInstalled = hs.application.pathForBundleID(bid) ~= nil and hs.application.pathForBundleID(bid) ~= ""
+    local appInstalled = hs.application.pathForBundleID(appid) ~= nil and hs.application.pathForBundleID(appid) ~= ""
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local bindable = function()
       return cfg.bindCondition == nil or ((app ~= nil and cfg.bindCondition(app))
@@ -3983,14 +3983,14 @@ local function registerRunningAppHotKeys(bid, app)
       local fn
       if isPersistent then
         fn = function()
-          if find(bid) then
-            cfg.fn(find(bid))
+          if find(appid) then
+            cfg.fn(find(appid))
           else
-            hs.execute(string.format("open -g -b '%s'", bid))
+            hs.execute(string.format("open -g -b '%s'", appid))
             hs.timer.doAfter(1, function()
-              if find(bid) then
+              if find(appid) then
                 local cb = cfg.onLaunch or cfg.fn
-                cb(find(bid))
+                cb(find(appid))
               end
             end)
           end
@@ -4006,7 +4006,7 @@ local function registerRunningAppHotKeys(bid, app)
       elseif not isPersistent then
         msg = cfg.message(app)
       else
-        msg = cfg.message(bid)
+        msg = cfg.message(appid)
       end
       if msg ~= nil then
         local hotkey = bindHotkeySpec(keybinding, msg, fn, nil, repeatedFn)
@@ -4015,29 +4015,29 @@ local function registerRunningAppHotKeys(bid, app)
         end
         hotkey.kind = cfg.kind or HK.BACKGROUND
         hotkey.deleteOnDisable = cfg.deleteOnDisable
-        hotkey.appid = bid
-        runningAppHotKeys[bid][hkID] = hotkey
+        hotkey.appid = appid
+        runningAppHotKeys[appid][hkID] = hotkey
       end
     end
     ::L_CONTINUE::
   end
 end
 
-local function unregisterRunningAppHotKeys(bid, force)
-  if appHotKeyCallbacks[bid] == nil then return end
+local function unregisterRunningAppHotKeys(appid, force)
+  if appHotKeyCallbacks[appid] == nil then return end
 
   if force then
-    for _, hotkey in pairs(runningAppHotKeys[bid] or {}) do
+    for _, hotkey in pairs(runningAppHotKeys[appid] or {}) do
       hotkey:delete()
     end
-    runningAppHotKeys[bid] = nil
+    runningAppHotKeys[appid] = nil
   else
-    for _, hotkey in pairs(runningAppHotKeys[bid] or {}) do
+    for _, hotkey in pairs(runningAppHotKeys[appid] or {}) do
       if hotkey.persist ~= true then
         hotkey:disable()
         if hotkey.deleteOnDisable then
           hotkey:delete()
-          runningAppHotKeys[bid][hotkey] = nil
+          runningAppHotKeys[appid][hotkey] = nil
         end
       end
     end
@@ -4058,8 +4058,8 @@ function(win, appname, eventType)
   if eventType == hs.window.filter.windowCreated or eventType == hs.window.filter.windowFocused then
     WindowCreatedSince[win:id()] = win:application():bundleID()
   else
-    for wid, bid in pairs(WindowCreatedSince) do
-      if hs.window.get(wid) == nil or hs.window.get(wid):application():bundleID() ~= bid then
+    for wid, appid in pairs(WindowCreatedSince) do
+      if hs.window.get(wid) == nil or hs.window.get(wid):application():bundleID() ~= appid then
         WindowCreatedSince[wid] = nil
       end
     end
@@ -4094,29 +4094,29 @@ local KEY_MODE = {
 InWebsiteHotkeyInfoChain = {}
 InWinHotkeyInfoChain = {}
 local function wrapInfoChain(app, config, cond, mode)
-  local bid = app:bundleID()
+  local appid = app:bundleID()
   local mods, key = config.mods, config.key
   local message = config.message
   local windowFilter = config.windowFilter
   local websiteFilter = config.websiteFilter
 
   if windowFilter ~= nil then
-    if InWinHotkeyInfoChain[bid] == nil then InWinHotkeyInfoChain[bid] = {} end
+    if InWinHotkeyInfoChain[appid] == nil then InWinHotkeyInfoChain[appid] = {} end
     if mode == KEY_MODE.PRESS then -- only info for pressing event is enough
       local hkIdx = hotkeyIdx(mods, key)
-      local prevHotkeyInfo = InWinHotkeyInfoChain[bid][hkIdx]
-      InWinHotkeyInfoChain[bid][hkIdx] = {
+      local prevHotkeyInfo = InWinHotkeyInfoChain[appid][hkIdx]
+      InWinHotkeyInfoChain[appid][hkIdx] = {
         condition = cond,
         message = message,
         previous = prevHotkeyInfo
       }
     end
   elseif websiteFilter ~= nil then
-    if InWebsiteHotkeyInfoChain[bid] == nil then InWebsiteHotkeyInfoChain[bid] = {} end
+    if InWebsiteHotkeyInfoChain[appid] == nil then InWebsiteHotkeyInfoChain[appid] = {} end
     if mode == KEY_MODE.PRESS then
       local hkIdx = hotkeyIdx(mods, key)
-      local prevWebsiteHotkeyInfo = InWebsiteHotkeyInfoChain[bid][hkIdx]
-      InWebsiteHotkeyInfoChain[bid][hkIdx] = {
+      local prevWebsiteHotkeyInfo = InWebsiteHotkeyInfoChain[appid][hkIdx]
+      InWebsiteHotkeyInfoChain[appid][hkIdx] = {
         condition = cond,
         message = message,
         previous = prevWebsiteHotkeyInfo
@@ -4129,7 +4129,7 @@ local prevWebsiteCallbacks = {}
 local prevWindowCallbacks = {}
 local function wrapCondition(app, config, mode)
   local prevWebsiteCallback, prevWindowCallback
-  local bid = app:bundleID()
+  local appid = app:bundleID()
 
   local mods, key = config.mods, config.key
   local func = mode == KEY_MODE.REPEAT and config.repeatedfn or config.fn
@@ -4142,7 +4142,7 @@ local function wrapCondition(app, config, mode)
   -- testify window filter and return TF & extra result
   if windowFilter ~= nil then
     local hkIdx = hotkeyIdx(mods, key)
-    prevWindowCallback = get(prevWindowCallbacks, bid, hkIdx, mode)
+    prevWindowCallback = get(prevWindowCallbacks, appid, hkIdx, mode)
     local actualFilter  -- remove self-customed properties
     if type(windowFilter) == 'table' then
       for k, v in pairs(windowFilter) do
@@ -4180,7 +4180,7 @@ local function wrapCondition(app, config, mode)
   -- testify website filter and return TF, valid URL & extra result
   if websiteFilter ~= nil then
     local hkIdx = hotkeyIdx(mods, key)
-    prevWebsiteCallback = get(prevWebsiteCallbacks, bid, hkIdx, mode)
+    prevWebsiteCallback = get(prevWebsiteCallbacks, appid, hkIdx, mode)
     local oldCond = cond
     cond = function(obj)
       local url = getTabUrl(app)
@@ -4265,19 +4265,19 @@ local function wrapCondition(app, config, mode)
     -- multiple window-specified hotkeys may share a common keybinding
     -- they are cached in a linked list.
     -- each window filter will be tested until one matched target window
-    if prevWindowCallbacks[bid] == nil then prevWindowCallbacks[bid] = {} end
+    if prevWindowCallbacks[appid] == nil then prevWindowCallbacks[appid] = {} end
     local hkIdx = hotkeyIdx(mods, key)
-    if prevWindowCallbacks[bid][hkIdx] == nil then prevWindowCallbacks[bid][hkIdx] = { nil, nil } end
-    prevWindowCallbacks[bid][hkIdx][mode] = fn
+    if prevWindowCallbacks[appid][hkIdx] == nil then prevWindowCallbacks[appid][hkIdx] = { nil, nil } end
+    prevWindowCallbacks[appid][hkIdx][mode] = fn
   end
   if websiteFilter ~= nil then
     -- multiple website-specified hotkeys may share a common keybinding
     -- they are cached in a linked list.
     -- each website filterParallels will be tested until one matched target tab
-    if prevWebsiteCallbacks[bid] == nil then prevWebsiteCallbacks[bid] = {} end
+    if prevWebsiteCallbacks[appid] == nil then prevWebsiteCallbacks[appid] = {} end
     local hkIdx = hotkeyIdx(mods, key)
-    if prevWebsiteCallbacks[bid][hkIdx] == nil then prevWebsiteCallbacks[bid][hkIdx] = { nil, nil } end
-    prevWebsiteCallbacks[bid][hkIdx][mode] = fn
+    if prevWebsiteCallbacks[appid][hkIdx] == nil then prevWebsiteCallbacks[appid][hkIdx] = { nil, nil } end
+    prevWebsiteCallbacks[appid][hkIdx][mode] = fn
   end
   if windowFilter ~= nil or websiteFilter ~= nil then
     -- essential info are also cached in a linked list for showing keybindings by `HSKeybindings`
@@ -4339,18 +4339,18 @@ end
 
 -- hotkeys for active app
 local function registerInAppHotKeys(app)
-  local bid = app:bundleID()
-  if appHotKeyCallbacks[bid] == nil then return end
-  local keybindings = KeybindingConfigs.hotkeys[bid] or {}
+  local appid = app:bundleID()
+  if appHotKeyCallbacks[appid] == nil then return end
+  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
   prevWebsiteCallbacks = {}
 
-  if not inAppHotKeys[bid] then
-    inAppHotKeys[bid] = {}
+  if not inAppHotKeys[appid] then
+    inAppHotKeys[appid] = {}
   end
-  for hkID, cfg in pairs(appHotKeyCallbacks[bid]) do
+  for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
     if type(hkID) == 'number' then break end
-    if inAppHotKeys[bid][hkID] ~= nil then
-      inAppHotKeys[bid][hkID]:enable()
+    if inAppHotKeys[appid][hkID] ~= nil then
+      inAppHotKeys[appid][hkID]:enable()
     else
       -- prefer properties specified in configuration file than in code
       local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
@@ -4377,34 +4377,34 @@ local function registerInAppHotKeys(app)
           config.websiteFilter = keybinding.websiteFilter or cfg.websiteFilter
           config.repeatable = keybinding.repeatable ~= nil and keybinding.repeatable or cfg.repeatable
           config.repeatedfn = config.repeatable and cfg.fn or nil
-          inAppHotKeys[bid][hkID] = AppBind(app, config)
+          inAppHotKeys[appid][hkID] = AppBind(app, config)
         end
       end
     end
   end
 end
 
-local function unregisterInAppHotKeys(bid, delete)
-  if appHotKeyCallbacks[bid] == nil then return end
+local function unregisterInAppHotKeys(appid, delete)
+  if appHotKeyCallbacks[appid] == nil then return end
 
   if delete then
-    for _, hotkey in pairs(inAppHotKeys[bid] or {}) do
+    for _, hotkey in pairs(inAppHotKeys[appid] or {}) do
       hotkey:delete()
     end
-    inAppHotKeys[bid] = nil
+    inAppHotKeys[appid] = nil
   else
     local allDeleted = true
-    for hkID, hotkey in pairs(inAppHotKeys[bid]) do
+    for hkID, hotkey in pairs(inAppHotKeys[appid]) do
       hotkey:disable()
       if hotkey.deleteOnDisable then
         hotkey:delete()
-        inAppHotKeys[bid][hkID] = nil
+        inAppHotKeys[appid][hkID] = nil
       else
         allDeleted = false
       end
     end
     if allDeleted then
-      inAppHotKeys[bid] = nil
+      inAppHotKeys[appid] = nil
     end
   end
 end
@@ -4417,15 +4417,15 @@ end
 
 -- hotkeys for focused window of active app
 local function registerInWinHotKeys(app)
-  local bid = app:bundleID()
-  if appHotKeyCallbacks[bid] == nil then return end
-  local keybindings = KeybindingConfigs.hotkeys[bid] or {}
+  local appid = app:bundleID()
+  if appHotKeyCallbacks[appid] == nil then return end
+  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
 
-  if not inWinHotKeys[bid] then
-    inWinHotKeys[bid] = {}
+  if not inWinHotKeys[appid] then
+    inWinHotKeys[appid] = {}
   end
-  for hkID, cfg in pairs(appHotKeyCallbacks[bid]) do
-    if inWinHotKeys[bid][hkID] == nil then
+  for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
+    if inWinHotKeys[appid][hkID] == nil then
       -- prefer properties specified in configuration file than in code
       local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
       local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
@@ -4451,30 +4451,30 @@ local function registerInWinHotKeys(app)
           config.windowFilter = keybinding.windowFilter or cfg.windowFilter
           config.repeatable = keybinding.repeatable ~= nil and keybinding.repeatable or cfg.repeatable
           config.repeatedfn = config.repeatable and cfg.fn or nil
-          inWinHotKeys[bid][hkID] = WinBind(app, config)
+          inWinHotKeys[appid][hkID] = WinBind(app, config)
         end
       end
     else
-      inWinHotKeys[bid][hkID]:enable()
+      inWinHotKeys[appid][hkID]:enable()
     end
   end
 end
 
-local function unregisterInWinHotKeys(bid, delete)
-  if appHotKeyCallbacks[bid] == nil or inWinHotKeys[bid] == nil then return end
+local function unregisterInWinHotKeys(appid, delete)
+  if appHotKeyCallbacks[appid] == nil or inWinHotKeys[appid] == nil then return end
 
-  local hasDeleteOnDisable = hs.fnutils.some(inWinHotKeys[bid], function(_, hotkey)
+  local hasDeleteOnDisable = hs.fnutils.some(inWinHotKeys[appid], function(_, hotkey)
     return hotkey.deleteOnDisable
   end)
   if delete or hasDeleteOnDisable then
-    for _, hotkey in pairs(inWinHotKeys[bid]) do
+    for _, hotkey in pairs(inWinHotKeys[appid]) do
       hotkey:delete()
     end
-    inWinHotKeys[bid] = nil
-    prevWindowCallbacks[bid] = nil
-    InWinHotkeyInfoChain[bid] = nil
+    inWinHotKeys[appid] = nil
+    prevWindowCallbacks[appid] = nil
+    InWinHotkeyInfoChain[appid] = nil
   else
-    for _, hotkey in pairs(inWinHotKeys[bid]) do
+    for _, hotkey in pairs(inWinHotKeys[appid]) do
       hotkey:disable()
     end
   end
@@ -4513,15 +4513,15 @@ end
 -- hotkeys for frontmost window belonging to unactivated app
 local inWinOfUnactivatedAppHotKeys = {}
 local inWinOfUnactivatedAppWatchers = {}
-local function inWinOfUnactivatedAppWatcherEnableCallback(bid, filter, win, event)
-  if inWinOfUnactivatedAppHotKeys[bid] == nil then
-    inWinOfUnactivatedAppHotKeys[bid] = {}
+local function inWinOfUnactivatedAppWatcherEnableCallback(appid, filter, win, event)
+  if inWinOfUnactivatedAppHotKeys[appid] == nil then
+    inWinOfUnactivatedAppHotKeys[appid] = {}
   elseif event == hs.window.filter.windowFocused then
     return
   end
-  for hkID, cfg in pairs(appHotKeyCallbacks[bid]) do
-    local app = find(bid)
-    local filterCfg = get(KeybindingConfigs.hotkeys[bid], hkID) or cfg
+  for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
+    local app = find(appid)
+    local filterCfg = get(KeybindingConfigs.hotkeys[appid], hkID) or cfg
     local hasKey = filterCfg.mods ~= nil and filterCfg.key ~= nil
     local isBackground = filterCfg.background ~= nil and filterCfg.background or cfg.background
     local windowFilter = filterCfg.windowFilter or cfg.windowFilter
@@ -4532,7 +4532,7 @@ local function inWinOfUnactivatedAppWatcherEnableCallback(bid, filter, win, even
     if hasKey and isForWindow and isBackground and bindable() and sameFilter(windowFilter, filter) then
       local msg = type(cfg.message) == 'string' and cfg.message or cfg.message(app)
       if msg ~= nil then
-        local keybinding = get(KeybindingConfigs.hotkeys[bid], hkID) or cfg
+        local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID) or cfg
         local repeatable = keybinding.repeatable ~= nil and keybinding.repeatable or cfg.repeatable
         local cond = resendToFrontmostWindow()
         local wrapper = function(func)
@@ -4549,7 +4549,7 @@ local function inWinOfUnactivatedAppWatcherEnableCallback(bid, filter, win, even
         local hotkey = bindHotkeySpec(keybinding, msg, fn, nil, repeatedFn)
         hotkey.kind = HK.IN_WIN
         hotkey.condition = hs.fnutils.partial(cond, win)
-        table.insert(inWinOfUnactivatedAppHotKeys[bid], hotkey)
+        table.insert(inWinOfUnactivatedAppHotKeys[appid], hotkey)
       end
     end
   end
@@ -4557,8 +4557,8 @@ end
 
 local execOnQuit, stopOnQuit
 local function registerSingleWinFilterForDaemonApp(app, filter)
-  local bid = app:bundleID()
-  if filter.allowSheet or filter.allowPopover or bid == "com.tencent.LemonMonitor" then
+  local appid = app:bundleID()
+  if filter.allowSheet or filter.allowPopover or appid == "com.tencent.LemonMonitor" then
     local appUIObj = hs.axuielement.applicationElement(app)
     local observer = hs.axuielement.observer.new(app:pid())
     observer:addWatcher(
@@ -4566,22 +4566,22 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
       hs.axuielement.observer.notifications.focusedWindowChanged
     )
     observer:callback(function(observer, element, notification)
-      inWinOfUnactivatedAppWatcherEnableCallback(bid, filter, element)
+      inWinOfUnactivatedAppWatcherEnableCallback(appid, filter, element)
       local closeObserver = hs.axuielement.observer.new(app:pid())
       closeObserver:addWatcher(
         element,
         hs.axuielement.observer.notifications.uIElementDestroyed
       )
       closeObserver:callback(function(obs)
-        if inWinOfUnactivatedAppHotKeys[bid] ~= nil then -- fix weird bug
-          for i, hotkey in ipairs(inWinOfUnactivatedAppHotKeys[bid]) do
+        if inWinOfUnactivatedAppHotKeys[appid] ~= nil then -- fix weird bug
+          for i, hotkey in ipairs(inWinOfUnactivatedAppHotKeys[appid]) do
             if hotkey.idx ~= nil then
               hotkey:delete()
-              inWinOfUnactivatedAppHotKeys[bid][i] = nil
+              inWinOfUnactivatedAppHotKeys[appid][i] = nil
             end
           end
-          if #inWinOfUnactivatedAppHotKeys[bid] == 0 then
-            inWinOfUnactivatedAppHotKeys[bid] = nil
+          if #inWinOfUnactivatedAppHotKeys[appid] == 0 then
+            inWinOfUnactivatedAppHotKeys[appid] = nil
           end
         end
         obs:stop()
@@ -4590,16 +4590,16 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
       closeObserver:start()
     end)
     observer:start()
-    inWinOfUnactivatedAppWatchers[bid][filter] = observer
-    stopOnQuit(bid, observer, function()
-      inWinOfUnactivatedAppWatchers[bid][filter] = nil
+    inWinOfUnactivatedAppWatchers[appid][filter] = observer
+    stopOnQuit(appid, observer, function()
+      inWinOfUnactivatedAppWatchers[appid][filter] = nil
     end)
     return
   end
   local windowFilter = hs.window.filter.new(false):setAppFilter(app:name(), filter)
       :subscribe({ hs.window.filter.windowCreated, hs.window.filter.windowFocused },
   function(win, appname, event)
-    inWinOfUnactivatedAppWatcherEnableCallback(bid, filter, win, event)
+    inWinOfUnactivatedAppWatcherEnableCallback(appid, filter, win, event)
   end)
       :subscribe({  hs.window.filter.windowDestroyed, hs.window.filter.windowUnfocused },
   function(win, appname, event)
@@ -4608,30 +4608,30 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
         and hs.window.frontmostWindow():id() == win:id() then
       return
     end
-    if inWinOfUnactivatedAppHotKeys[bid] ~= nil then  -- fix weird bug
-      for i, hotkey in ipairs(inWinOfUnactivatedAppHotKeys[bid]) do
+    if inWinOfUnactivatedAppHotKeys[appid] ~= nil then  -- fix weird bug
+      for i, hotkey in ipairs(inWinOfUnactivatedAppHotKeys[appid]) do
         if hotkey.idx ~= nil then
           hotkey:delete()
-          inWinOfUnactivatedAppHotKeys[bid][i] = nil
+          inWinOfUnactivatedAppHotKeys[appid][i] = nil
         end
       end
-      inWinOfUnactivatedAppHotKeys[bid] = nil
+      inWinOfUnactivatedAppHotKeys[appid] = nil
     end
   end)
-  inWinOfUnactivatedAppWatchers[bid][filter] = windowFilter
-  execOnQuit(bid, function()
+  inWinOfUnactivatedAppWatchers[appid][filter] = windowFilter
+  execOnQuit(appid, function()
     if windowFilter ~= nil then
       windowFilter:unsubscribeAll()
       windowFilter = nil
     end
-    inWinOfUnactivatedAppWatchers[bid][filter] = nil
+    inWinOfUnactivatedAppWatchers[appid][filter] = nil
   end)
 end
 
 local function registerWinFiltersForDaemonApp(app, appConfig)
-  local bid = app:bundleID()
+  local appid = app:bundleID()
   for hkID, cfg in pairs(appConfig) do
-    local keybinding = get(KeybindingConfigs.hotkeys[bid], hkID) or { mods = cfg.mods, key = cfg.key }
+    local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID) or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local isBackground = keybinding.background ~= nil and keybinding.background or cfg.background
@@ -4639,11 +4639,11 @@ local function registerWinFiltersForDaemonApp(app, appConfig)
       return cfg.bindCondition == nil or cfg.bindCondition(app)
     end
     if hasKey and isForWindow and isBackground and bindable() then
-      if inWinOfUnactivatedAppWatchers[bid] == nil then
-        inWinOfUnactivatedAppWatchers[bid] = {}
+      if inWinOfUnactivatedAppWatchers[appid] == nil then
+        inWinOfUnactivatedAppWatchers[appid] = {}
       end
       local windowFilter = keybinding.windowFilter or cfg.windowFilter
-      for f, _ in pairs(inWinOfUnactivatedAppWatchers[bid]) do
+      for f, _ in pairs(inWinOfUnactivatedAppWatchers[appid]) do
         -- a window filter can be shared by multiple hotkeys
         if sameFilter(f, windowFilter) then
           goto L_CONTINUE
@@ -4740,14 +4740,14 @@ local function updateAppLocale(appid)
   appLocales[appid] = appLocale
 end
 
-for _, bid in ipairs(appsLaunchSilently) do
-  ExecOnSilentLaunch(bid, hs.fnutils.partial(updateAppLocale, bid))
+for _, appid in ipairs(appsLaunchSilently) do
+  ExecOnSilentLaunch(appid, hs.fnutils.partial(updateAppLocale, appid))
 end
 
 -- register hotkeys for background apps
-for bid, appConfig in pairs(appHotKeyCallbacks) do
-  registerRunningAppHotKeys(bid)
-  local keybindings = KeybindingConfigs.hotkeys[bid] or {}
+for appid, appConfig in pairs(appHotKeyCallbacks) do
+  registerRunningAppHotKeys(appid)
+  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
   for hkID, cfg in pairs(appConfig) do
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
@@ -4755,8 +4755,8 @@ for bid, appConfig in pairs(appHotKeyCallbacks) do
     local isPersistent = keybinding.persist ~= nil and keybinding.persist or cfg.persist
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     if hasKey and not isForWindow and isBackground and not isPersistent then
-      execOnLaunch(bid, hs.fnutils.partial(registerRunningAppHotKeys, bid))
-      execOnQuit(bid, hs.fnutils.partial(unregisterRunningAppHotKeys, bid, false))
+      execOnLaunch(appid, hs.fnutils.partial(registerRunningAppHotKeys, appid))
+      execOnQuit(appid, hs.fnutils.partial(unregisterRunningAppHotKeys, appid, false))
       break
     end
   end
@@ -4774,19 +4774,19 @@ if frontApp then
 end
 
 -- register watchers for frontmost window belonging to unactivated app
-for bid, appConfig in pairs(appHotKeyCallbacks) do
-  local app = find(bid)
+for appid, appConfig in pairs(appHotKeyCallbacks) do
+  local app = find(appid)
   if app ~= nil then
     registerWinFiltersForDaemonApp(app, appConfig)
   end
-  local keybindings = KeybindingConfigs.hotkeys[bid] or {}
+  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
   for hkID, cfg in pairs(appConfig) do
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local isBackground = keybinding.background ~= nil and keybinding.background or cfg.background
     if hasKey and isForWindow and isBackground then
-      execOnLaunch(bid, function(app)
+      execOnLaunch(appid, function(app)
         registerWinFiltersForDaemonApp(app, appConfig)
       end)
       break
@@ -5620,25 +5620,25 @@ for _, item in ipairs(appsAutoHideWithNoWindowsLoaded) do
   if type(item) == 'string' then
     appsAutoHideWithNoWindows[item] = true
   else
-    for bid, cfg in pairs(item) do
+    for appid, cfg in pairs(item) do
       local windowFilter
       for k, v in pairs(cfg) do
         if (k == "allowPopover" or k == "allowSheet") and v then
-          appsAutoHideWithNoPseudoWindows[bid] = {}
+          appsAutoHideWithNoPseudoWindows[appid] = {}
           if k == "allowPopover" then
-            table.insert(appsAutoHideWithNoPseudoWindows[bid], "AXPopover")
+            table.insert(appsAutoHideWithNoPseudoWindows[appid], "AXPopover")
           end
           if k == "allowSheet" then
-            table.insert(appsAutoHideWithNoPseudoWindows[bid], "AXSheet")
+            table.insert(appsAutoHideWithNoPseudoWindows[appid], "AXSheet")
           end
         elseif k == "delay" then
-          appsWithNoWindowsDelay[bid] = v
+          appsWithNoWindowsDelay[appid] = v
         else
           if windowFilter == nil then windowFilter = {} end
           windowFilter[k] = v
         end
       end
-      appsAutoHideWithNoWindows[bid] = windowFilter or true
+      appsAutoHideWithNoWindows[appid] = windowFilter or true
     end
   end
 end
@@ -5646,25 +5646,25 @@ for _, item in ipairs(appsAutoQuitWithNoWindowsLoaded) do
   if type(item) == 'string' then
     appsAutoQuitWithNoWindows[item] = true
   else
-    for bid, cfg in pairs(item) do
+    for appid, cfg in pairs(item) do
       local windowFilter
       for k, v in pairs(cfg) do
         if (k == "allowPopover" or k == "allowSheet") and v then
-          appsAutoQuitWithNoPseudoWindows[bid] = {}
+          appsAutoQuitWithNoPseudoWindows[appid] = {}
           if k == "allowPopover" then
-            table.insert(appsAutoQuitWithNoPseudoWindows[bid], "AXPopover")
+            table.insert(appsAutoQuitWithNoPseudoWindows[appid], "AXPopover")
           end
           if k == "allowSheet" then
-            table.insert(appsAutoQuitWithNoPseudoWindows[bid], "AXSheet")
+            table.insert(appsAutoQuitWithNoPseudoWindows[appid], "AXSheet")
           end
         elseif k == "delay" then
-          appsWithNoWindowsDelay[bid] = v
+          appsWithNoWindowsDelay[appid] = v
         else
           if windowFilter == nil then windowFilter = {} end
           windowFilter[k] = v
         end
       end
-      appsAutoQuitWithNoWindows[bid] = windowFilter or true
+      appsAutoQuitWithNoWindows[appid] = windowFilter or true
     end
   end
 end
@@ -5947,8 +5947,8 @@ end)
 if frontApp and remoteDesktopsMappingModifiers[frontApp:bundleID()] then
   remoteDesktopModifierTapper:start()
 end
-for bid, _ in pairs(remoteDesktopsMappingModifiers) do
-  execOnActivated(bid, function()
+for appid, _ in pairs(remoteDesktopsMappingModifiers) do
+  execOnActivated(appid, function()
     if not remoteDesktopModifierTapper:isEnabled() then
       remoteDesktopModifierTapper:start()
     end
@@ -6193,48 +6193,48 @@ function App_applicationCallback(appname, eventType, app)
     end
   elseif eventType == hs.application.watcher.deactivated
       or eventType == hs.application.watcher.terminated then
-    for bid, processes in pairs(processesOnDeactivated) do
-      if find(bid) == nil then
+    for appid, processes in pairs(processesOnDeactivated) do
+      if find(appid) == nil then
         for _, proc in ipairs(processes) do
           proc(app)
         end
       end
     end
-    for bid, processes in pairs(processesOnQuit) do
-      if find(bid) == nil then
+    for appid, processes in pairs(processesOnQuit) do
+      if find(appid) == nil then
         for _, proc in ipairs(processes) do
           proc(app)
         end
       end
     end
-    for bid, obs in pairs(observersStopOnDeactivated) do
-      if find(bid) == nil then
+    for appid, obs in pairs(observersStopOnDeactivated) do
+      if find(appid) == nil then
         for _, ob in ipairs(obs) do
           local observer, func = ob[1], ob[2]
           observer:stop()
-          if func ~= nil then func(bid, observer) end
+          if func ~= nil then func(appid, observer) end
         end
-        observersStopOnDeactivated[bid] = nil
+        observersStopOnDeactivated[appid] = nil
       end
     end
-    for bid, obs in pairs(observersStopOnQuit) do
-      if find(bid) == nil then
+    for appid, obs in pairs(observersStopOnQuit) do
+      if find(appid) == nil then
         for _, ob in ipairs(obs) do
           local observer, func = ob[1], ob[2]
           observer:stop()
-          if func ~= nil then func(bid, observer) end
+          if func ~= nil then func(appid, observer) end
         end
-        observersStopOnQuit[bid] = nil
+        observersStopOnQuit[appid] = nil
       end
     end
-    for bid, _ in pairs(inAppHotKeys) do
-      if find(bid) == nil then
-        unregisterInAppHotKeys(bid, true)
+    for appid, _ in pairs(inAppHotKeys) do
+      if find(appid) == nil then
+        unregisterInAppHotKeys(appid, true)
       end
     end
-    for bid, _ in pairs(inWinHotKeys) do
-      if find(bid) == nil then
-        unregisterInWinHotKeys(bid, true)
+    for appid, _ in pairs(inWinHotKeys) do
+      if find(appid) == nil then
+        unregisterInWinHotKeys(appid, true)
       end
     end
   end

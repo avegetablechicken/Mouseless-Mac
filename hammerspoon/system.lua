@@ -2162,10 +2162,10 @@ function registerControlCenterHotKeys(panel)
               if type(defaultMusicAppForControlCenter) == 'string' then
                 defaultMusicAppForControlCenter = { defaultMusicAppForControlCenter }
               end
-              for _, bid in ipairs(defaultMusicAppForControlCenter) do
-                local appPath = hs.application.pathForBundleID(bid)
+              for _, appid in ipairs(defaultMusicAppForControlCenter) do
+                local appPath = hs.application.pathForBundleID(appid)
                 if appPath ~= nil and appPath ~= "" then
-                  hs.application.launchOrFocusByBundleID(bid)
+                  hs.application.launchOrFocusByBundleID(appid)
                   return
                 end
               end
