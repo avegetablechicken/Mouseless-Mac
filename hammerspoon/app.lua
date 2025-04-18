@@ -3228,7 +3228,7 @@ appHotKeyCallbacks = {
       fn = receiveButton
     },
     ["copyUsername"] = {
-      message = "Username",
+      message = localizedString("Username", "com.apple.Passwords"),
       windowFilter = {
         allowRoles = "AXSystemDialog",
         allowTitles = "^$"
@@ -3253,7 +3253,7 @@ appHotKeyCallbacks = {
       end
     },
     ["copyPassword"] = {
-      message = "Password",
+      message = localizedString("Password", "com.apple.Passwords"),
       windowFilter = {
         allowRoles = "AXSystemDialog",
         allowTitles = "^$"
