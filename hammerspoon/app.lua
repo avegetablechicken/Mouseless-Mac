@@ -5136,7 +5136,7 @@ local function registerOpenRecent(app)
       return menuItemCond ~= nil and menuItemCond.enabled
     end
     openRecentHotkey = AppBind(app, {
-      spec = spec.mods, message = menuItemPath[2],
+      spec = spec, message = menuItemPath[2],
       fn = fn, condition = cond
     })
   end
