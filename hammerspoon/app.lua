@@ -2046,7 +2046,9 @@ appHotKeyCallbacks = {
       fn = receiveMenuItem
     },
     ["function6"] = {
-      message = localizedMessage("管理"),
+      message = function(app)
+        return (localizedString("管 理", app:bundleID()) or "管 理"):gsub(' ', '')
+      end,
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
