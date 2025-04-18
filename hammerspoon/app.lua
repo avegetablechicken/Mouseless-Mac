@@ -4350,7 +4350,7 @@ local function callBackExecutingWrapper(fn)
   end
 end
 
-local function appWinBind(app, config, ...)
+local function bindAppWinImpl(app, config, ...)
   if config.spec ~= nil then
     config.mods = config.spec.mods
     config.key = config.spec.key
@@ -4374,13 +4374,13 @@ local function appWinBind(app, config, ...)
     end
   end
   local hotkey = bindHotkeySpec(config, config.message, pressedfn, nil, repeatedfn, ...)
-  hotkey.kind = HK.IN_APP
   hotkey.deleteOnDisable = config.deleteOnDisable
   return hotkey, cond
 end
 
 function AppBind(app, config, ...)
-  local hotkey, cond = appWinBind(app, config, ...)
+  local hotkey, cond = bindAppWinImpl(app, config, ...)
+  hotkey.kind = HK.IN_APP
   if config.websiteFilter == nil then
     hotkey.condition = cond
     hotkey.subkind = HK.IN_APP_.APP
@@ -4462,8 +4462,9 @@ local function unregisterInAppHotKeys(appid, delete)
   end
 end
 
-function WinBind(app, config, ...)
-  local hotkey = appWinBind(app, config, ...)
+function AppWinBind(app, config, ...)
+  local hotkey = bindAppWinImpl(app, config, ...)
+  hotkey.kind = HK.IN_APP
   hotkey.subkind = HK.IN_APP_.WINDOW
   return hotkey
 end
@@ -4504,7 +4505,7 @@ local function registerInWinHotKeys(app)
           config.windowFilter = keybinding.windowFilter or cfg.windowFilter
           config.repeatable = keybinding.repeatable ~= nil and keybinding.repeatable or cfg.repeatable
           config.repeatedfn = config.repeatable and cfg.fn or nil
-          inWinHotKeys[appid][hkID] = WinBind(app, config)
+          inWinHotKeys[appid][hkID] = AppWinBind(app, config)
         end
       end
     else
@@ -5118,7 +5119,7 @@ local function registerForOpenSavePanel(app)
         local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
         if spec ~= nil then
           local folder = cell:childrenWithRole("AXStaticText")[1].AXValue
-          local hotkey = WinBind(app, {
+          local hotkey = AppWinBind(app, {
             spec = spec, message = header .. ' > ' .. folder,
             fn = function() cell:performAction("AXOpen") end,
           })
@@ -5144,7 +5145,7 @@ local function registerForOpenSavePanel(app)
     if dontSaveButton ~= nil then
       local spec = get(KeybindingConfigs.hotkeys.shared, "confirmDelete")
       if spec ~= nil then
-        local hotkey = WinBind(app, {
+        local hotkey = AppWinBind(app, {
           spec = spec,
           message = dontSaveButton.AXTitle or dontSaveButton.AXDescription,
           fn = function() dontSaveButton:performAction("AXPress") end,

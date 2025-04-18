@@ -1908,7 +1908,7 @@ function registerControlCenterHotKeys(panel)
               if ok then
                 local app = find(appid)
                 local hotkey, observer
-                hotkey = WinBind(app, {
+                hotkey = AppWinBind(app, {
                   mods = "⌘", key = "Return",
                   message = "Relaunch",
                   fn = function()
