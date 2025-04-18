@@ -3227,6 +3227,56 @@ appHotKeyCallbacks = {
       background = true,
       fn = receiveButton
     },
+    ["copyUsername"] = {
+      message = "Username",
+      windowFilter = {
+        allowRoles = "AXSystemDialog",
+        allowTitles = "^$"
+      },
+      condition = function(win)
+        local winUIObj = hs.axuielement.windowElement(win)
+        local elem = getAXChildren(winUIObj, "AXGroup", 1, nil, 1)
+        return elem.AXRole == "AXButton"
+      end,
+      background = true,
+      fn = function(win)
+        local winUIObj = hs.axuielement.windowElement(win)
+        local field = getAXChildren(winUIObj, "AXGroup", 1, "AXScrollArea", 1,
+            "AXGroup", 1, "AXScrollArea", 1, "AXOutline", 1, "AXRow", 2, nil, 1,
+            "AXStaticText", 2)
+        assert(field)
+        local position = {
+          field.AXPosition.x + field.AXSize.w / 2,
+          field.AXPosition.y + field.AXSize.h / 2
+        }
+        leftClickAndRestore(position, win:application():name())
+      end
+    },
+    ["copyPassword"] = {
+      message = "Password",
+      windowFilter = {
+        allowRoles = "AXSystemDialog",
+        allowTitles = "^$"
+      },
+      condition = function(win)
+        local winUIObj = hs.axuielement.windowElement(win)
+        local elem = getAXChildren(winUIObj, "AXGroup", 1, nil, 1)
+        return elem.AXRole == "AXButton"
+      end,
+      background = true,
+      fn = function(win)
+        local winUIObj = hs.axuielement.windowElement(win)
+        local field = getAXChildren(winUIObj, "AXGroup", 1, "AXScrollArea", 1,
+            "AXGroup", 1, "AXScrollArea", 1, "AXOutline", 1, "AXRow", 3, nil, 1,
+            "AXStaticText", 2)
+        assert(field)
+        local position = {
+          field.AXPosition.x + field.AXSize.w / 2,
+          field.AXPosition.y + field.AXSize.h / 2
+        }
+        leftClickAndRestore(position, win:application():name())
+      end
+    },
     ["record1"] = {
       message = "Record 1",
       windowFilter = {

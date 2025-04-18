@@ -1399,6 +1399,14 @@
         "mods": "command",
         "key": "["
       },
+      "copyUsername": {
+        "mods": "option",
+        "key": "1"
+      },
+      "copyPassword": {
+        "mods": "option",
+        "key": "2"
+      },
       "record1": {
         "mods": "command",
         "key": "1"
