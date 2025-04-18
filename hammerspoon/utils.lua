@@ -2048,44 +2048,41 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
   local titleMap = delocMap[appid]
   local result = {}
   local shouldWrite = false
+  local isValid = function(t)
+    local splits = hs.fnutils.split(t, ' ')
+    return string.byte(t, 1) <= 127
+        and (string.len(t) < 2 or string.byte(t, 2) <= 127)
+        and (string.len(t) < 3 or string.byte(t, 3) <= 127)
+        and (#splits == 1 or string.byte(splits[2], 1) <= 127)
+  end
   for _, title in ipairs(itemTitles) do
     -- remove titles starting with non-ascii characters
-    local splits = hs.fnutils.split(title, ' ')
-    if string.byte(title, 1) <= 127
-        and (string.len(title) < 2 or string.byte(title, 2) <= 127)
-        and (string.len(title) < 3 or string.byte(title, 3) <= 127)
-        and (#splits == 1 or string.byte(splits[2], 1) <= 127) then
+    if isValid(title) then
       table.insert(result, { title, title })
     else
+      local delocTitle
       if titleMap[title] ~= nil then
-        table.insert(result, { title, titleMap[title] })
-        goto L_CONTINUE
+        delocTitle = titleMap[title]
+      elseif defaultTitleMap ~= nil and defaultTitleMap[title] ~= nil then
+        delocTitle = defaultTitleMap[title]
+        titleMap[title] = delocTitle
+      else
+        delocTitle = delocalizedString(title, appid, localeFile)
+        titleMap[title] = delocTitle
+        shouldWrite = delocTitle ~= nil
       end
-      if defaultTitleMap ~= nil then
-        if defaultTitleMap[title] ~= nil then
-          table.insert(result, { title, defaultTitleMap[title] })
-          titleMap[title] = defaultTitleMap[title]
-          goto L_CONTINUE
-        end
-      end
-      local newTitle = delocalizedString(title, appid, localeFile)
-      if newTitle ~= nil then
-        shouldWrite = true
-        if string.byte(newTitle, 1) > 127 then
-          if titleMap[newTitle] ~= nil then
-            newTitle = titleMap[newTitle]
-          elseif defaultTitleMap ~= nil then
-            if defaultTitleMap[newTitle] ~= nil then
-              newTitle = defaultTitleMap[newTitle]
-            end
+      if delocTitle ~= nil then
+        if not isValid(delocTitle) then
+          if titleMap[delocTitle] ~= nil then
+            delocTitle = titleMap[delocTitle]
+          elseif defaultTitleMap ~= nil and defaultTitleMap[delocTitle] ~= nil then
+            delocTitle = defaultTitleMap[delocTitle]
           end
         end
-        if string.byte(newTitle, 1) <= 127 then
-          table.insert(result, { title, newTitle })
-          titleMap[title] = newTitle
+        if isValid(delocTitle) then
+          table.insert(result, { title, delocTitle })
         end
       end
-      ::L_CONTINUE::
     end
   end
   if shouldWrite then
