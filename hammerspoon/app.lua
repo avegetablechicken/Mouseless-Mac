@@ -751,6 +751,22 @@ local function clickBartenderBarItem(index, rightClick)
   end
 end
 
+-- ### PasswordsMenuBarExtra
+local function getPasswordRecordPosition(index)
+  return function(win)
+    local winUIObj = hs.axuielement.windowElement(win)
+    local searchField = getAXChildren(winUIObj, "AXGroup", 1, "AXTextField", 1)
+    if searchField ~= nil then
+      local row = getAXChildren(winUIObj, "AXGroup", 1, "AXScrollArea", 1,
+        "AXGroup", 1, "AXScrollArea", 1, "AXOutline", 1, "AXRow", index)
+      if row ~= nil then
+        return true, { row.AXPosition.x + 10, row.AXPosition.y + 10 }
+      end
+    end
+    return false
+  end
+end
+
 -- ### iCopy
 local function iCopySelectHotkeyMod(app)
   return versionLessThan("1.1.1")(app) and "" or "⌃"
@@ -3210,6 +3226,102 @@ appHotKeyCallbacks = {
       end,
       background = true,
       fn = receiveButton
+    },
+    ["record1"] = {
+      message = "Record 1",
+      windowFilter = {
+        allowRoles = "AXSystemDialog",
+        allowTitles = "^$"
+      },
+      condition = getPasswordRecordPosition(1),
+      background = true,
+      fn = function(position, win)
+        return receivePosition(position, win:application())
+      end
+    },
+    ["record2"] = {
+      message = "Record 2",
+      windowFilter = {
+        allowRoles = "AXSystemDialog",
+        allowTitles = "^$"
+      },
+      condition = getPasswordRecordPosition(2),
+      background = true,
+      fn = function(position, win)
+        return receivePosition(position, win:application())
+      end
+    },
+    ["record3"] = {
+      message = "Record 3",
+      windowFilter = {
+        allowRoles = "AXSystemDialog",
+        allowTitles = "^$"
+      },
+      condition = getPasswordRecordPosition(3),
+      background = true,
+      fn = function(position, win)
+        return receivePosition(position, win:application())
+      end
+    },
+    ["record4"] = {
+      message = "Record 4",
+      windowFilter = {
+        allowRoles = "AXSystemDialog",
+        allowTitles = "^$"
+      },
+      condition = getPasswordRecordPosition(4),
+      background = true,
+      fn = function(position, win)
+        return receivePosition(position, win:application())
+      end
+    },
+    ["record5"] = {
+      message = "Record 5",
+      windowFilter = {
+        allowRoles = "AXSystemDialog",
+        allowTitles = "^$"
+      },
+      condition = getPasswordRecordPosition(5),
+      background = true,
+      fn = function(position, win)
+        return receivePosition(position, win:application())
+      end
+    },
+    ["record6"] = {
+      message = "Record 6",
+      windowFilter = {
+        allowRoles = "AXSystemDialog",
+        allowTitles = "^$"
+      },
+      condition = getPasswordRecordPosition(6),
+      background = true,
+      fn = function(position, win)
+        return receivePosition(position, win:application())
+      end
+    },
+    ["record7"] = {
+      message = "Record 7",
+      windowFilter = {
+        allowRoles = "AXSystemDialog",
+        allowTitles = "^$"
+      },
+      condition = getPasswordRecordPosition(7),
+      background = true,
+      fn = function(position, win)
+        return receivePosition(position, win:application())
+      end
+    },
+    ["record8"] = {
+      message = "Record 8",
+      windowFilter = {
+        allowRoles = "AXSystemDialog",
+        allowTitles = "^$"
+      },
+      condition = getPasswordRecordPosition(8),
+      background = true,
+      fn = function(position, win)
+        return receivePosition(position, win:application())
+      end
     }
   },
 

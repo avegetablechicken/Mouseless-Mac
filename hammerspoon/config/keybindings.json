@@ -1398,6 +1398,38 @@
       "back": {
         "mods": "command",
         "key": "["
+      },
+      "record1": {
+        "mods": "command",
+        "key": "1"
+      },
+      "record2": {
+        "mods": "command",
+        "key": "2"
+      },
+      "record3": {
+        "mods": "command",
+        "key": "3"
+      },
+      "record4": {
+        "mods": "command",
+        "key": "4"
+      },
+      "record5": {
+        "mods": "command",
+        "key": "5"
+      },
+      "record6": {
+        "mods": "command",
+        "key": "6"
+      },
+      "record7": {
+        "mods": "command",
+        "key": "7"
+      },
+      "record8": {
+        "mods": "command",
+        "key": "8"
       }
     },
     "com.tencent.LemonMonitor": {
