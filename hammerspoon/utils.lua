@@ -1989,7 +1989,7 @@ function localizeCommonMenuItemTitles(locale, appid)
     if delocMap[appid] == nil then
       delocMap[appid] = {}
     end
-    for _, title in ipairs { 'File', 'View', 'Window', 'Help' } do
+    for _, title in ipairs { 'File', 'View', 'Window', 'Help', 'Zoom', 'Zoom All' } do
       local localizedTitle = localizeByLoctable(title, resourceDir, 'MenuCommands', matchedLocale, {})
       if localizedTitle ~= nil then
         delocMap[appid][localizedTitle] = title
