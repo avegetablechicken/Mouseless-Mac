@@ -1950,7 +1950,6 @@ function localizeCommonMenuItemTitles(locale, appid)
   local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
   local matchedLocale = getMatchedLocale(locale, resourceDir, 'lproj')
   local titleList = {
-    'Preferences', 'Preferences…', 'Settings…',
     'Zoom', 'Zoom All',
     'Enter Full Screen', 'Exit Full Screen',
   }
