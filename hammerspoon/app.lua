@@ -4564,6 +4564,13 @@ local function sameFilter(a, b)
   return true
 end
 
+function WinBind(app, config, ...)
+  local hotkey, cond = bindAppWinImpl(app, config, ...)
+  hotkey.kind = HK.IN_WIN
+  hotkey.condition = cond
+  return hotkey
+end
+
 -- hotkeys for frontmost window belonging to unactivated app
 local inWinOfUnactivatedAppHotKeys = {}
 local inWinOfUnactivatedAppWatchers = {}
@@ -4575,10 +4582,10 @@ local function inWinOfUnactivatedAppWatcherEnableCallback(appid, filter, win, ev
   end
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
     local app = find(appid)
-    local filterCfg = get(KeybindingConfigs.hotkeys[appid], hkID) or cfg
-    local hasKey = filterCfg.mods ~= nil and filterCfg.key ~= nil
-    local isBackground = filterCfg.background ~= nil and filterCfg.background or cfg.background
-    local windowFilter = filterCfg.windowFilter or cfg.windowFilter
+    local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID) or cfg
+    local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    local isBackground = keybinding.background ~= nil and keybinding.background or cfg.background
+    local windowFilter = keybinding.windowFilter or cfg.windowFilter
     local isForWindow = windowFilter ~= nil
     local bindable = function()
       return cfg.bindCondition == nil or cfg.bindCondition(app)
@@ -4586,23 +4593,14 @@ local function inWinOfUnactivatedAppWatcherEnableCallback(appid, filter, win, ev
     if hasKey and isForWindow and isBackground and bindable() and sameFilter(windowFilter, filter) then
       local msg = type(cfg.message) == 'string' and cfg.message or cfg.message(app)
       if msg ~= nil then
-        local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID) or cfg
-        local repeatable = keybinding.repeatable ~= nil and keybinding.repeatable or cfg.repeatable
-        local cond = resendToFrontmostWindow()
-        local wrapper = function(func)
-          return function()
-            if cond(win) then
-              func(win)
-            else
-              selectMenuItemOrKeyStroke(hs.window.frontmostWindow():application(), keybinding.mods, keybinding.key)
-            end
-          end
-        end
-        local fn = wrapper(cfg.fn)
-        local repeatedFn = wrapper(repeatable and cfg.fn or function() end)
-        local hotkey = bindHotkeySpec(keybinding, msg, fn, nil, repeatedFn)
-        hotkey.kind = HK.IN_WIN
-        hotkey.condition = hs.fnutils.partial(cond, win)
+        local config = hs.fnutils.copy(cfg)
+        config.mods = keybinding.mods
+        config.key = keybinding.key
+        config.message = msg
+        config.repeatable = keybinding.repeatable ~= nil and keybinding.repeatable or cfg.repeatable
+        config.repeatedFn = config.repeatable and cfg.fn or nil
+        config.windowFilter = true
+        local hotkey = WinBind(app, config)
         table.insert(inWinOfUnactivatedAppHotKeys[appid], hotkey)
       end
     end

@@ -444,10 +444,14 @@ local function testValid(entry)
   local valid = pos ~= nil and not (entry.suspendable and FLAGS["SUSPEND"])
   local actualMsg
   if valid then
-    local app = hs.application.frontmostApplication()
     if entry.condition ~= nil then
-      valid = entry.condition(app)
+      if entry.kind == HK.IN_WIN then
+        valid = entry.condition(hs.window.frontmostWindow())
+      else
+        valid = entry.condition(hs.application.frontmostApplication())
+      end
     end
+    local app = hs.application.frontmostApplication()
     local appid = app:bundleID()
     if valid and entry.kind == HK.IN_APP and entry.subkind == HK.IN_APP_.WEBSITE then
       local hotkeyInfo = get(InWebsiteHotkeyInfoChain, appid, entry.idx)
