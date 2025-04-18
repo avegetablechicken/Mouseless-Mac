@@ -323,7 +323,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
           and subItem.AXChildren == nil then
         if i == #menuItem.AXChildren[1]
             and (menuItem.AXTitle == "Edit"
-            or localizationMap.common[menuItem.AXTitle] == 'Edit')  -- hack for performance
+            or delocMap.common[menuItem.AXTitle] == 'Edit')  -- hack for performance
             and (subItem.AXTitle == "Emoji & Symbols"
             or delocalizedMenuItem(subItem.AXTitle, appid) == "Emoji & Symbols") then
           idx = "🌐︎E"
@@ -360,7 +360,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
       if osv >= OS.Sequoia then
         if menuItem.AXTitle == 'Window'
             -- hack for performance
-            or localizationMap.common[menuItem.AXTitle] == 'Window' then
+            or delocMap.common[menuItem.AXTitle] == 'Window' then
           for hkIdx, itemTitle in pairs(windowMenuItemsSinceSequoia1) do
             if idx == hkIdx and (subItem.AXTitle == itemTitle
                 or delocalizedMenuItem(subItem.AXTitle, appid) == itemTitle) then
@@ -370,7 +370,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
           end
         elseif menuItem.AXTitle == 'Move & Resize'
             -- hack for performance
-            or localizationMap.common[menuItem.AXTitle] == 'Move & Resize' then
+            or delocMap.common[menuItem.AXTitle] == 'Move & Resize' then
           for hkIdx, itemTitle in pairs(windowMenuItemsSinceSequoia2) do
             if idx == hkIdx and (subItem.AXTitle == itemTitle
                 or delocalizedMenuItem(subItem.AXTitle, appid) == itemTitle) then
@@ -382,7 +382,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
       end
     elseif (menuItem.AXTitle == 'Move & Resize'
         -- hack for performance
-        or localizationMap.common[menuItem.AXTitle] == 'Move & Resize')
+        or delocMap.common[menuItem.AXTitle] == 'Move & Resize')
         and subItem.AXMenuItemCmdModifiers[1] ~= 'cmd' then
       idx = hs.fnutils.indexOf(windowMenuItemsSinceSequoia2, subItem.AXTitle)
       if idx == nil then

@@ -1691,7 +1691,7 @@ appHotKeyCallbacks = {
     ["exportToPDF"] = {
       message = localizedMessage("Export to PDF..."),
       condition = function(app)
-        local titleMap = localizationMap[app:bundleID()]  -- hack for multi-map
+        local titleMap = delocMap[app:bundleID()]  -- hack for multi-map
         if titleMap ~= nil then
           local localizedFile = localizedMenuBarItem('File', app:bundleID())
           for k, v in pairs(titleMap) do
@@ -1714,7 +1714,7 @@ appHotKeyCallbacks = {
     ["insertTextBox"] = {
       message = localizedMessage({ "Insert", "Text Box" }),
       condition = function(app)
-        local titleMap = localizationMap[app:bundleID()]  -- hack for multi-map
+        local titleMap = delocMap[app:bundleID()]  -- hack for multi-map
         if titleMap ~= nil then
           local localizedInsert = localizedMenuBarItem('Insert', app:bundleID())
           local localizedTextBox = localizedMenuItem('Text Box', app:bundleID())

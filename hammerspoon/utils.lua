@@ -297,24 +297,24 @@ end
 
 local localeTmpDir = hs.fs.temporaryDirectory() .. 'org.hammerspoon.Hammerspoon/locale/'
 
-localizationMap = {}
+delocMap = {}
 localizationMapLoaded = {}
 local localizationFrameworks = {}
 if hs.fs.attributes("config/localization.json") ~= nil then
-  localizationMap = hs.json.read("config/localization.json")
-  localizationFrameworks = localizationMap['resources']
-  localizationMap['resources'] = nil
-  localizationMapLoaded = hs.fnutils.copy(localizationMap)
+  delocMap = hs.json.read("config/localization.json")
+  localizationFrameworks = delocMap['resources']
+  delocMap['resources'] = nil
+  localizationMapLoaded = hs.fnutils.copy(delocMap)
 end
 function resetLocalizationMap(appid)
   if localizationMapLoaded[appid] ~= nil then
-    localizationMap[appid] = hs.fnutils.copy(localizationMapLoaded[appid])
+    delocMap[appid] = hs.fnutils.copy(localizationMapLoaded[appid])
   else
-    localizationMap[appid] = nil
+    delocMap[appid] = nil
   end
 end
 
-localizationMap.common = {}
+delocMap.common = {}
 
 local function systemLocales()
   local locales, ok = hs.execute("defaults read -globalDomain AppleLanguages | tr -d '()\" \\n'")
@@ -1197,8 +1197,8 @@ local function localizedStringImpl(str, appid, params, force)
     elseif result ~= nil then return result end
   end
 
-  if localizationMap[appid] ~= nil then
-    result = hs.fnutils.indexOf(localizationMap[appid], str)
+  if delocMap[appid] ~= nil then
+    result = hs.fnutils.indexOf(delocMap[appid], str)
     if result ~= nil then return result end
   end
 
@@ -1970,7 +1970,7 @@ function localizeCommonMenuItemTitles(locale, appid)
     local escapedTitle = title:gsub('…', '\\U2026'):gsub('“', '\\U201C'):gsub('”', '\\U201D')
     local localizedTitle = localizeByLoctable(escapedTitle, resourceDir, 'MenuCommands', matchedLocale, {})
     if localizedTitle ~= nil then
-      localizationMap.common[localizedTitle] = title
+      delocMap.common[localizedTitle] = title
     end
   end
   titleList = { 'Emoji & Symbols' }
@@ -1980,24 +1980,24 @@ function localizeCommonMenuItemTitles(locale, appid)
   for _, title in ipairs(titleList) do
     local localizedTitle = localizeByLoctable(title, resourceDir, 'InputManager', matchedLocale, {})
     if localizedTitle ~= nil then
-      localizationMap.common[localizedTitle] = title
+      delocMap.common[localizedTitle] = title
     end
   end
 
   if locale ~= SYSTEM_LOCALE then
-    if localizationMap[appid] == nil then
-      localizationMap[appid] = {}
+    if delocMap[appid] == nil then
+      delocMap[appid] = {}
     end
     for _, title in ipairs { 'File', 'View', 'Window', 'Help' } do
       local localizedTitle = localizeByLoctable(title, resourceDir, 'MenuCommands', matchedLocale, {})
       if localizedTitle ~= nil then
-        localizationMap[appid][localizedTitle] = title
+        delocMap[appid][localizedTitle] = title
       end
     end
     local title = 'Edit'
     local localizedTitle = localizeByLoctable(title, resourceDir, 'InputManager', matchedLocale, {})
     if localizedTitle ~= nil then
-      localizationMap[appid][localizedTitle] = title
+      delocMap[appid][localizedTitle] = title
     end
   end
 end
@@ -2006,8 +2006,8 @@ SYSTEM_LOCALE = systemLocales()[1]
 localizeCommonMenuItemTitles(SYSTEM_LOCALE)
 
 function delocalizedMenuItem(title, appid, params)
-  local defaultTitleMap = localizationMap.common
-  local titleMap = localizationMap[appid]
+  local defaultTitleMap = delocMap.common
+  local titleMap = delocMap[appid]
   if titleMap ~= nil then
     if titleMap[title] ~= nil then
       return titleMap[title]
@@ -2016,8 +2016,8 @@ function delocalizedMenuItem(title, appid, params)
   if defaultTitleMap ~= nil then
     if defaultTitleMap[title] ~= nil then
       if titleMap == nil then
-        localizationMap[appid] = {}
-        titleMap = localizationMap[appid]
+        delocMap[appid] = {}
+        titleMap = delocMap[appid]
       end
       titleMap[title] = defaultTitleMap[title]
       return titleMap[title]
@@ -2026,8 +2026,8 @@ function delocalizedMenuItem(title, appid, params)
   local newTitle = delocalizedString(title, appid, params)
   if newTitle ~= nil then
     if titleMap == nil then
-      localizationMap[appid] = {}
-      titleMap = localizationMap[appid]
+      delocMap[appid] = {}
+      titleMap = delocMap[appid]
     end
     titleMap[title] = newTitle
     if hs.fs.attributes(localeTmpDir) == nil then
@@ -2040,11 +2040,11 @@ function delocalizedMenuItem(title, appid, params)
 end
 
 function delocalizeMenuBarItems(itemTitles, appid, localeFile)
-  if localizationMap[appid] == nil then
-    localizationMap[appid] = {}
+  if delocMap[appid] == nil then
+    delocMap[appid] = {}
   end
-  local defaultTitleMap = localizationMap.common
-  local titleMap = localizationMap[appid]
+  local defaultTitleMap = delocMap.common
+  local titleMap = delocMap[appid]
   local result = {}
   local shouldWrite = false
   for _, title in ipairs(itemTitles) do
@@ -2099,7 +2099,7 @@ end
 
 function localizedMenuBarItem(title, appid, params)
   local appLocale = applicationLocales(appid)[1]
-  local locTitle = hs.fnutils.indexOf(localizationMap[appid] or {}, title)
+  local locTitle = hs.fnutils.indexOf(delocMap[appid] or {}, title)
   if locTitle ~= nil then
     -- "View" may be localized to different strings in the same app (e.g. WeChat)
     if title == 'View' and find(appid) then
@@ -2120,15 +2120,15 @@ function localizedMenuBarItem(title, appid, params)
     end
   end
   if appLocale == getMatchedLocale(SYSTEM_LOCALE, { appLocale }) then
-    locTitle = hs.fnutils.indexOf(localizationMap.common, title)
+    locTitle = hs.fnutils.indexOf(delocMap.common, title)
     if locTitle ~= nil then return locTitle end
   end
   locTitle = localizedString(title, appid, params)
   if locTitle ~= nil then
-    if localizationMap[appid] == nil then
-      localizationMap[appid] = {}
+    if delocMap[appid] == nil then
+      delocMap[appid] = {}
     end
-    localizationMap[appid][locTitle] = title
+    delocMap[appid][locTitle] = title
     if get(deLocaleMap[appid], appLocale, locTitle) ~= nil then
       deLocaleMap[appid][appLocale][locTitle] = title
       if hs.fs.attributes(localeTmpDir) == nil then
@@ -2143,20 +2143,20 @@ end
 
 function localizedMenuItem(title, appid, params)
   local appLocale = applicationLocales(appid)[1]
-  local locTitle = hs.fnutils.indexOf(localizationMap[appid] or {}, title)
+  local locTitle = hs.fnutils.indexOf(delocMap[appid] or {}, title)
   if locTitle ~= nil then
     return locTitle
   end
   if appLocale == getMatchedLocale(SYSTEM_LOCALE, { appLocale }) then
-    locTitle = hs.fnutils.indexOf(localizationMap.common, title)
+    locTitle = hs.fnutils.indexOf(delocMap.common, title)
     if locTitle ~= nil then return locTitle end
   end
   locTitle = localizedString(title, appid, params)
   if locTitle ~= nil then
-    if localizationMap[appid] == nil then
-      localizationMap[appid] = {}
+    if delocMap[appid] == nil then
+      delocMap[appid] = {}
     end
-    localizationMap[appid][locTitle] = title
+    delocMap[appid][locTitle] = title
     return locTitle
   end
 end
