@@ -2024,17 +2024,17 @@ appHotKeyCallbacks = {
   ["com.eusoft.freeeudic"] =
   {
     ["function1"] = {
-      message = "词典",
+      message = localizedMessage("词典"),
       condition = checkMenuItem({ "功能", "返回首页" }),
       fn = receiveMenuItem
     },
     ["function2"] = {
-      message = "百科",
+      message = localizedMessage("百科"),
       condition = checkMenuItem({ "功能", "百科" }),
       fn = receiveMenuItem
     },
     ["function3"] = {
-      message = "翻译写作",
+      message = localizedMessage("翻译写作"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
@@ -2044,17 +2044,17 @@ appHotKeyCallbacks = {
       fn = receiveButton
     },
     ["function4"] = {
-      message = "生词笔记",
+      message = localizedMessage("生词笔记"),
       condition = checkMenuItem({ "功能", "我的学习记录" }),
       fn = receiveMenuItem
     },
     ["function5"] = {
-      message = "背单词",
+      message = localizedMessage("背单词"),
       condition = checkMenuItem({ "功能", "背单词" }),
       fn = receiveMenuItem
     },
     ["function6"] = {
-      message = "管理",
+      message = localizedMessage("管理"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
