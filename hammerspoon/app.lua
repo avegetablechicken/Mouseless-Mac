@@ -4967,6 +4967,12 @@ local function updateAppLocale(appid)
   appLocales[appid] = appLocale
 end
 
+local frontApp = hs.application.frontmostApplication()
+if frontApp then
+  local appid = frontApp:bundleID()
+  appLocales[appid] = applicationLocales(appid)[1]
+end
+
 for _, appid in ipairs(appsLaunchSilently) do
   ExecOnSilentLaunch(appid, hs.fnutils.partial(updateAppLocale, appid))
 end
@@ -4990,7 +4996,6 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
 end
 
 -- register hotkeys for active app
-local frontApp = hs.application.frontmostApplication()
 if frontApp then
   registerInAppHotKeys(frontApp)
 end
@@ -6337,7 +6342,6 @@ end
 function App_applicationCallback(appname, eventType, app)
   local appid = app:bundleID()
   if eventType == hs.application.watcher.launching then
-    updateAppLocale(appid)
     testFullyLaunched(app)
   elseif eventType == hs.application.watcher.launched then
     checkFullyLaunched = nil
@@ -6345,9 +6349,7 @@ function App_applicationCallback(appname, eventType, app)
       proc(app)
     end
   elseif eventType == hs.application.watcher.activated then
-    if appLocales[appid] == nil then
-      updateAppLocale(appid)
-    end
+    updateAppLocale(appid)
     WindowCreatedSince = {}
     if appid == nil then return end
     if remoteDesktopObserver ~= nil then
