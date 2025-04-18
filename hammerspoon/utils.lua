@@ -2069,9 +2069,20 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
       end
       local newTitle = delocalizedString(title, appid, localeFile)
       if newTitle ~= nil then
-        table.insert(result, { title, newTitle })
-        titleMap[title] = newTitle
         shouldWrite = true
+        if string.byte(newTitle, 1) > 127 then
+          if titleMap[newTitle] ~= nil then
+            newTitle = titleMap[newTitle]
+          elseif defaultTitleMap ~= nil then
+            if defaultTitleMap[newTitle] ~= nil then
+              newTitle = defaultTitleMap[newTitle]
+            end
+          end
+        end
+        if string.byte(newTitle, 1) <= 127 then
+          table.insert(result, { title, newTitle })
+          titleMap[title] = newTitle
+        end
       end
       ::L_CONTINUE::
     end
