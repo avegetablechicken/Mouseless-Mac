@@ -597,38 +597,30 @@ local function JabRefShowLibraryByIndex(idx)
 end
 
 -- ### App Cleaner & Uninstaller
-local function buttonValidForAppCleanerUninstaller(title, localize)
-  if localize == nil then localize = true end
+local function buttonValidForAppCleanerUninstaller(title)
   return function(win)
-    local realTitle = title
-    if localize then
-      realTitle = localizedString(title, win:application():bundleID())
-    end
+    local locTitle = localizedString(title, win:application():bundleID())
     local winUIObj = hs.axuielement.windowElement(win)
     local sg = winUIObj:childrenWithRole("AXSplitGroup")[1]
     if sg == nil then return false end
     local button = hs.fnutils.find(sg:childrenWithRole("AXButton"), function(bt)
       return bt.AXIdentifier == "uaid:RemoveSelectedItemsButton"
-          and bt.AXTitle == realTitle and bt.AXEnabled
+          and bt.AXTitle == locTitle and bt.AXEnabled
     end)
     return button ~= nil, button
   end
 end
 
-local function confirmButtonValidForAppCleanerUninstaller(title, localize)
-  if localize == nil then localize = true end
+local function confirmButtonValidForAppCleanerUninstaller(title)
   return function(win)
-    local realTitle = title
-    if localize then
-      realTitle = localizedString(title, win:application():bundleID())
-    end
+    local locTitle = localizedString(title, win:application():bundleID())
     local winUIObj = hs.axuielement.windowElement(win)
     local cancel = hs.fnutils.find(winUIObj:childrenWithRole("AXButton"), function(bt)
       return bt.AXIdentifier == "uaid:RemoveDialogSecondButton" and bt.AXEnabled
     end)
     if cancel == nil then return false end
     local button = hs.fnutils.find(winUIObj:childrenWithRole("AXStaticText"), function(bt)
-      return bt.AXValue == realTitle
+      return bt.AXValue == locTitle
     end)
     return button ~= nil, button ~= nil and button.AXPosition
   end
@@ -2696,51 +2688,51 @@ appHotKeyCallbacks = {
   ["com.nektony.App-Cleaner-SIIICn"] =
   {
     ["remove"] = {
-      message = '移除',
+      message = localizedMessage('Remove_Button_Title'),
       windowFilter = true,
-      condition = buttonValidForAppCleanerUninstaller('移除', false),
+      condition = buttonValidForAppCleanerUninstaller('Remove_Button_Title'),
       fn = receiveButton
     },
     ["enable"] = {
-      message = '启用',
+      message = localizedMessage('EnableMenuItemTitle'),
       windowFilter = true,
-      condition = buttonValidForAppCleanerUninstaller('启用', false),
+      condition = buttonValidForAppCleanerUninstaller('EnableMenuItemTitle'),
       fn = receiveButton
     },
     ["disable"] = {
-      message = '禁用',
+      message = localizedMessage('DisableMenuItemTitle'),
       windowFilter = true,
-      condition = buttonValidForAppCleanerUninstaller('禁用', false),
+      condition = buttonValidForAppCleanerUninstaller('DisableMenuItemTitle'),
       fn = receiveButton
     },
     ["update"] = {
-      message = '更新',
+      message = localizedMessage('UpdateButtonTitle'),
       windowFilter = true,
-      condition = buttonValidForAppCleanerUninstaller('更新', false),
+      condition = buttonValidForAppCleanerUninstaller('UpdateButtonTitle'),
       fn = receiveButton
     },
     ["confirmRemove"] = {
-      message = '移除',
+      message = localizedMessage('PartialRemove_Remove'),
       windowFilter = true,
-      condition = confirmButtonValidForAppCleanerUninstaller('移除', false),
+      condition = confirmButtonValidForAppCleanerUninstaller('PartialRemove_Remove'),
       fn = function(position, win)
         -- fixme: false click
         leftClick(position, win:application():name())
       end
     },
     ["confirmUpdate"] = {
-      message = '更新',
+      message = localizedMessage('UpdateButtonTitle'),
       windowFilter = true,
-      condition = confirmButtonValidForAppCleanerUninstaller('更新', false),
+      condition = confirmButtonValidForAppCleanerUninstaller('UpdateButtonTitle'),
       fn = function(position, win)
         -- fixme: false click
         leftClick(position, win:application():name())
       end
     },
     ["confirmRetry"] = {
-      message = '重试',
+      message = localizedMessage('PartialRemove_Retry'),
       windowFilter = true,
-      condition = confirmButtonValidForAppCleanerUninstaller('重试', false),
+      condition = confirmButtonValidForAppCleanerUninstaller('PartialRemove_Retry'),
       fn = function(position, win)
         -- fixme: false click
         leftClick(position, win:application():name())
