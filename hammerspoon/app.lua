@@ -3250,6 +3250,7 @@ appHotKeyCallbacks = {
           field.AXPosition.y + field.AXSize.h / 2
         }
         leftClickAndRestore(position, win:application():name())
+        clickRightMenuBarItem(win:application():bundleID())
       end
     },
     ["copyPassword"] = {
@@ -3275,6 +3276,7 @@ appHotKeyCallbacks = {
           field.AXPosition.y + field.AXSize.h / 2
         }
         leftClickAndRestore(position, win:application():name())
+        clickRightMenuBarItem(win:application():bundleID())
       end
     },
     ["record1"] = {
