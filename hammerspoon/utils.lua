@@ -1945,6 +1945,7 @@ function delocalizedString(str, appid, params)
 end
 
 function localizeCommonMenuItemTitles(locale, appid)
+  if locale == 'en' or locale:find('en_') or locale == 'English' then return end
   if locale == SYSTEM_LOCALE and appid ~= nil then return end
 
   local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
