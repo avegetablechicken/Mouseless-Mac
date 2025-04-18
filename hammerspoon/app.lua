@@ -3196,6 +3196,20 @@ appHotKeyCallbacks = {
       fn = function(app)
         clickRightMenuBarItem(app:bundleID())
       end
+    },
+    ["back"] = {
+      message = commonLocalizedMessage("Back"),
+      windowFilter = {
+        allowRoles = "AXSystemDialog",
+        allowTitles = "^$"
+      },
+      condition = function(win)
+        local winUIObj = hs.axuielement.windowElement(win)
+        local elem = getAXChildren(winUIObj, "AXGroup", 1, nil, 1)
+        return elem.AXRole == "AXButton", elem
+      end,
+      background = true,
+      fn = receiveButton
     }
   },
 

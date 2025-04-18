@@ -1394,6 +1394,10 @@
         "key": "P",
         "background": true,
         "persist": true
+      },
+      "back": {
+        "mods": "command",
+        "key": "["
       }
     },
     "com.tencent.LemonMonitor": {
