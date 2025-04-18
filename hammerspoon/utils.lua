@@ -701,7 +701,7 @@ local function parseBinaryPlistFile(file, keepOrder, keepAll)
     plutil -convert xml1 ']] .. file .. [[' -o /dev/stdout | \
     awk '
     BEGIN { printf("{"); first = 1 }
-    /<string>.*\.title<\/string>/ {
+    /<string>.*\.(title|label)<\/string>/ {
       key = $0;
       sub("<string>", "", key);
       sub("</string>", "", key);
@@ -745,7 +745,7 @@ local function parseNibFile(file, keepOrder, keepAll)
   local jsonStr = hs.execute([[
     /usr/bin/python3 scripts/nib_parse.py dump-json ']] .. file .. [[' -o /dev/stdout | \
     grep '"data": "' | sed 's/^.*"data": "//;s/"$//' | \
-    awk 'BEGIN { printf("{"); first = 1 } /\.title$/ {
+    awk 'BEGIN { printf("{"); first = 1 } /\.(title|label)$/ {
       key = $0;
       gsub("%", "%%", prev);
       if (!first) printf(", ");
