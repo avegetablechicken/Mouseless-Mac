@@ -3202,8 +3202,8 @@ appHotKeyCallbacks = {
 
   ["com.apple.Passwords.MenuBarExtra"] =
   {
-    ["showPasswordDialog"] = {
-      message = "Show Password",
+    ["showPasswordsDialog"] = {
+      message = "Show Passwords",
       bindCondition = function()
         local enableMenuBarExtra = hs.execute(
             "defaults read com.apple.Passwords EnableMenuBarExtra | tr -d '\\n'")

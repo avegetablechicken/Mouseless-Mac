@@ -1389,7 +1389,7 @@
       }
     },
     "com.apple.Passwords.MenuBarExtra": {
-      "showPasswordDialog": {
+      "showPasswordsDialog": {
         "mods": "${hyper.daemon}",
         "key": "P",
         "background": true,
