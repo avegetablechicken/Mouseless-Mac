@@ -3204,6 +3204,40 @@ appHotKeyCallbacks = {
         clickRightMenuBarItem(app:bundleID())
       end
     },
+    ["newPassword"] = {
+      message = localizedString("New Password", "com.apple.Passwords"),
+      windowFilter = {
+        allowRoles = "AXSystemDialog",
+        allowTitles = "^$"
+      },
+      condition = function(win)
+        local winUIObj = hs.axuielement.windowElement(win)
+        local buttons = getAXChildren(winUIObj, "AXGroup", 1, "AXButton")
+        local button = hs.fnutils.find(buttons, function(btn)
+          return btn.AXIdentifier == 'plus'
+        end)
+        return button ~= nil, button
+      end,
+      background = true,
+      fn = receiveButton
+    },
+    ["showAllPasswords"] = {
+      message = "Show All Passwords",
+      windowFilter = {
+        allowRoles = "AXSystemDialog",
+        allowTitles = "^$"
+      },
+      condition = function(win)
+        local winUIObj = hs.axuielement.windowElement(win)
+        local buttons = getAXChildren(winUIObj, "AXGroup", 1, "AXButton")
+        local button = hs.fnutils.find(buttons, function(btn)
+          return btn.AXIdentifier == 'macwindow'
+        end)
+        return button ~= nil, button
+      end,
+      background = true,
+      fn = receiveButton
+    },
     ["back"] = {
       message = commonLocalizedMessage("Back"),
       windowFilter = {

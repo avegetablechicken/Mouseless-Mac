@@ -1395,6 +1395,14 @@
         "background": true,
         "persist": true
       },
+      "newPassword": {
+        "mods": "command",
+        "key": "N"
+      },
+      "showAllPasswords": {
+        "mods": "command",
+        "key": "O"
+      },
       "back": {
         "mods": "command",
         "key": "["
