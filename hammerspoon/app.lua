@@ -6272,64 +6272,34 @@ end
 
 -- some apps may launch slowly. Wait until complete launch to operate on menu bar items
 local appsLaunchSlow = {
-  {
-    appid = "com.apple.iMovieApp",
-    criterion = function(app)
-      return app:getMenuItems() ~= nil
-    end
-  },
-  {
-    appid = "com.google.Chrome",
-    criterion = function(app)
-      return findMenuItem(app, { "Help" }) ~= nil
-    end
-  },
-  {
-    appid = "com.microsoft.VSCode",
-    criterion = function(app)
-      return app:getMenuItems() ~= nil and #app:getMenuItems() > 1
-    end
-  },
-  {
-    appid = "com.jetbrains.CLion",
-    criterion = function(app)
-      return app:getMenuItems() ~= nil and #app:getMenuItems() > 10
-    end
-  },
-  {
-    appid = "com.jetbrains.CLion-EAP",
-    criterion = function(app)
-      return app:getMenuItems() ~= nil and #app:getMenuItems() > 10
-    end
-  },
-
-  {
-    appid = "com.jetbrains.intellij",
-    criterion = function(app)
-      return app:getMenuItems() ~= nil and #app:getMenuItems() > 10
-    end
-  },
-
-  {
-    appid = "com.jetbrains.pycharm",
-    criterion = function(app)
-      return app:getMenuItems() ~= nil and #app:getMenuItems() > 10
-    end
-  }
+  ["com.apple.iMovieApp"] = function(app)
+    return app:getMenuItems() ~= nil
+  end,
+  ["com.google.Chrome"] = function(app)
+    return findMenuItem(app, { "Help" }) ~= nil
+  end,
+  ["com.microsoft.VSCode"] = function(app)
+    return app:getMenuItems() ~= nil and #app:getMenuItems() > 1
+  end,
+  ["com.jetbrains.CLion"] = function(app)
+    return app:getMenuItems() ~= nil and #app:getMenuItems() > 10
+  end,
+  ["com.jetbrains.CLion-EAP"] = function(app)
+    return app:getMenuItems() ~= nil and #app:getMenuItems() > 10
+  end,
+  ["com.jetbrains.intellij"] = function(app)
+    return app:getMenuItems() ~= nil and #app:getMenuItems() > 10
+  end,
+  ["com.jetbrains.pycharm"] = function(app)
+    return app:getMenuItems() ~= nil and #app:getMenuItems() > 10
+  end
 }
 
 local checkFullyLaunched
 local function testFullyLaunched(app)
-  local appSpec = hs.fnutils.find(appsLaunchSlow, function(appSpec)
-    return app:bundleID() == appSpec.appid
-  end)
-  if appSpec == nil then
-    appSpec = hs.fnutils.find(appsLaunchSlow, function(appSpec)
-      return app:path() == appSpec.appPath
-    end)
-  end
-  if appSpec ~= nil and not appSpec.criterion(app) then
-    checkFullyLaunched = appSpec.criterion
+  local criterion = appsLaunchSlow[app:bundleID()]
+  if criterion ~= nil and not criterion(app) then
+    checkFullyLaunched = criterion
   end
 end
 
