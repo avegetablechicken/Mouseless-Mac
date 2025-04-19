@@ -21,6 +21,10 @@
     ]
   },
 
+  "launchSlowly": [
+    "com.apple.iMovieApp"
+  ],
+
   "launchSilently": [
     "com.surteesstudios.Bartender",
     "com.mathpix.snipping-tool-noappstore",

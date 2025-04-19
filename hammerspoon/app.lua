@@ -6272,9 +6272,6 @@ end
 
 -- some apps may launch slowly. Wait until complete launch to operate on menu bar items
 local appsLaunchSlow = {
-  ["com.apple.iMovieApp"] = function(app)
-    return app:getMenuItems() ~= nil
-  end,
   ["com.google.Chrome"] = function(app)
     return findMenuItem(app, { "Help" }) ~= nil
   end,
@@ -6294,6 +6291,11 @@ local appsLaunchSlow = {
     return app:getMenuItems() ~= nil and #app:getMenuItems() > 10
   end
 }
+local appsLaunchSlowList = ApplicationConfigs["launchSlowly"] or {}
+local commonCheckLaunchFunc = function(app) print(app) return app:getMenuItems() ~= nil end
+for _, appid in ipairs(appsLaunchSlowList) do
+  appsLaunchSlow[appid] = commonCheckLaunchFunc
+end
 
 local checkFullyLaunched
 local function testFullyLaunched(app)
