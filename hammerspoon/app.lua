@@ -6270,7 +6270,7 @@ local function selectInputSourceInApp(app)
   end
 end
 
--- some apps may have slow launch time, so need to wait until fully launched to bind menu bar item hotkeys
+-- some apps may launch slowly. Wait until complete launch to operate on menu bar items
 local appsLaunchSlow = {
   {
     appid = "com.apple.iMovieApp",
