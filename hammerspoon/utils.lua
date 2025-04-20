@@ -558,6 +558,7 @@ function getQtMatchedLocale(appLocale, resourceDir)
   return matchedLocale, bestMatch.extra
 end
 
+-- assume base locale is English (not always the situation)
 local baseLocales = {
   "Base", "en", "English"
 }
@@ -573,6 +574,8 @@ local function getBaseLocaleDirs(resourceDir)
   return dirs
 end
 
+-- basically should only be called when base locale is English,
+-- but actually it can't be guranteed
 local extraEnglishLocales = {
   "en_US", "en_GB"
 }
