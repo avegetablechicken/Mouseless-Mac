@@ -971,36 +971,42 @@ local function commonLocalizedMessage(message)
     return function(app)
       local appname = displayName(app)
       local appid = type(app) == 'string' and app or app:bundleID()
-      local appLocale = applicationLocale(appid)
-      local result = localizedString(message .. ' App Store', 'com.apple.AppStore',
-                                     { locale = appLocale })
-      if result ~= nil then
-        return result:gsub('App Store', appname)
+      local appLocale = applicationValidLocale(appid)
+      if appLocale ~= nil then
+        local result = localizedString(message .. ' App Store', 'com.apple.AppStore',
+                                       { locale = appLocale })
+        if result ~= nil then
+          return result:gsub('App Store', appname)
+        end
       end
       return message .. ' ' .. appname
     end
   elseif message == "Back" then
     return function(app)
       local appid = type(app) == 'string' and app or app:bundleID()
-      local appLocale = applicationLocale(appid)
-      local result = localizedString(message, 'com.apple.AppStore',
-                                     { locale = appLocale })
-      if result ~= nil then
-        return result
+      local appLocale = applicationValidLocale(appid)
+      if appLocale ~= nil then
+        local result = localizedString(message, 'com.apple.AppStore',
+                                       { locale = appLocale })
+        if result ~= nil then
+          return result
+        end
       end
       return message
     end
   else
     return function(app)
       local appid = type(app) == 'string' and app or app:bundleID()
-      local appLocale = applicationLocale(appid)
-      local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
-      local locale = getMatchedLocale(appLocale, resourceDir, 'lproj')
-      if locale ~= nil then
-        for _, stem in ipairs{ 'MenuCommands', 'Menus', 'Common' } do
-          local result = localizeByLoctable(message, resourceDir, stem, locale, {})
-          if result ~= nil then
-            return result:gsub('“%%@”', ''):gsub('%%@', '')
+      local appLocale = applicationValidLocale(appid)
+      if appLocale ~= nil then
+        local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
+        local locale = getMatchedLocale(appLocale, resourceDir, 'lproj')
+        if locale ~= nil then
+          for _, stem in ipairs{ 'MenuCommands', 'Menus', 'Common' } do
+            local result = localizeByLoctable(message, resourceDir, stem, locale, {})
+            if result ~= nil then
+              return result:gsub('“%%@”', ''):gsub('%%@', '')
+            end
           end
         end
       end

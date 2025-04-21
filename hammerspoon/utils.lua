@@ -316,6 +316,12 @@ function applicationLocale(appid)
   end
 end
 
+function applicationValidLocale(appid)
+  local locale = applicationLocale(appid)
+  local resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
+  return getMatchedLocale(locale, resourceDir, 'lproj')
+end
+
 local function getResourceDir(appid, frameworkName)
   if frameworkName == nil then
     frameworkName = localizationFrameworks[appid]
