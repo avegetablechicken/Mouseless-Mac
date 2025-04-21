@@ -4776,7 +4776,7 @@ end
 -- hotkeys for frontmost window belonging to daemon app
 local backgroundWindowHotkeys = {}
 local backgroundWindowFilters = {}
-local function backgroundWindowObserverEnableCallback(appid, filter, win, event)
+local function backgroundWindowObserverEnableCallback(appid, filter, event)
   if backgroundWindowHotkeys[appid] == nil then
     backgroundWindowHotkeys[appid] = {}
   elseif event == hs.window.filter.windowFocused then
@@ -4820,7 +4820,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
       hs.axuielement.observer.notifications.focusedWindowChanged
     )
     observer:callback(function(observer, element, notification)
-      backgroundWindowObserverEnableCallback(appid, filter, element)
+      backgroundWindowObserverEnableCallback(appid, filter)
       local closeObserver = hs.axuielement.observer.new(app:pid())
       closeObserver:addWatcher(
         element,
@@ -4853,7 +4853,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
   local windowFilter = hs.window.filter.new(false):setAppFilter(app:name(), filter)
       :subscribe({ hs.window.filter.windowCreated, hs.window.filter.windowFocused },
   function(win, appname, event)
-    backgroundWindowObserverEnableCallback(appid, filter, win, event)
+    backgroundWindowObserverEnableCallback(appid, filter, event)
   end)
       :subscribe({  hs.window.filter.windowDestroyed, hs.window.filter.windowUnfocused },
   function(win, appname, event)
@@ -5061,7 +5061,7 @@ if frontWin ~= nil then
     for filter, _ in pairs(backgroundWindowFilters[frontWinAppBid]) do
       local filterEnable = hs.window.filter.new(false):setAppFilter(frontWin:application():title(), filter)
       if filterEnable:isWindowAllowed(frontWin) then
-        backgroundWindowObserverEnableCallback(frontWinAppBid, filter, frontWin)
+        backgroundWindowObserverEnableCallback(frontWinAppBid, filter)
       end
     end
   end
