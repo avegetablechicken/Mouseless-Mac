@@ -1009,7 +1009,7 @@ local function localizeByQtImpl(str, file)
   if status and output ~= "" then return output end
 end
 
-local function localizeByQt(str, localeDir, localesDict)
+local function localizeByQt(str, localeDir)
   if type(localeDir) == 'table' then
     for _, file in ipairs(localeDir) do
       local result = localizeByQtImpl(str, file)
