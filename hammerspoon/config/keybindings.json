@@ -1454,6 +1454,12 @@
         "key": "escape"
       }
     },
+    "cn.better365.iCopy": {
+      "setting": {
+        "mods": "command",
+        "key": ","
+      }
+    },
     "com.torusknot.SourceTreeNotMAS": {
       "showInFinder": {
         "mods": ["shift", "option", "command"],

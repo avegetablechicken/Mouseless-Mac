@@ -3943,6 +3943,15 @@ appHotKeyCallbacks = {
 
   ["cn.better365.iCopy"] =
   {
+    ["setting"] = {
+      message = localizedMessage("Setting"),
+      windowFilter = iCopyWindowFilter,
+      fn = function(win)
+        local winUIObj = hs.axuielement.windowElement(win)
+        local button = getAXChildren(winUIObj, "AXButton", 1)
+        if button ~= nil then button:performAction("AXPress") end
+      end
+    },
     ["select1stItem"] = {
       mods = "⌘", key = "1",
       message = "Select 1st Item",
