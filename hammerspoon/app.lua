@@ -133,23 +133,22 @@ local function registerAppHotkeys()
       end
     end
     if appPath ~= nil then
-      local appname, status_ok = hs.execute(string.format("mdls -name kMDItemDisplayName -raw '%s'", appPath))
-      if status_ok then
-        if appname:sub(-4) == '.app' then
-          appname = appname:sub(1, -5)
-        else
-          appname = hs.application.infoForBundlePath(appPath).CFBundleName
-        end
-        local hotkey = bindHotkeySpec(config, appname,
-            hs.fnutils.partial(config.fn or focusOrHide, appid or appname))
-        hotkey.kind = HK.APPKEY
-        if appid then
-          hotkey.appid = appid
-        else
-          hotkey.appPath = appPath
-        end
-        table.insert(appHotkeys, hotkey)
+      local appname
+      if appid ~= nil then
+        appname = displayName(appid)
+      else
+        appname = hs.execute(string.format("mdls -name kMDItemDisplayName -raw '%s'", appPath))
+        appname = appname:sub(1, -5)
       end
+      local hotkey = bindHotkeySpec(config, appname,
+          hs.fnutils.partial(config.fn or focusOrHide, appid or appname))
+      hotkey.kind = HK.APPKEY
+      if appid then
+        hotkey.appid = appid
+      else
+        hotkey.appPath = appPath
+      end
+      table.insert(appHotkeys, hotkey)
     end
   end
 end
@@ -970,7 +969,7 @@ end
 local function commonLocalizedMessage(message)
   if message == "Hide" or message == "Quit" then
     return function(app)
-      local appname = displayName(app, true)
+      local appname = displayName(app)
       local appid = type(app) == 'string' and app or app:bundleID()
       local appLocale = applicationLocale(appid)
       local result = localizedString(message .. ' App Store', 'com.apple.AppStore',
@@ -2205,7 +2204,7 @@ appHotKeyCallbacks = {
     },
     ["toggleLauncher"] = {
       message = function(app)
-        local appname = displayName(app, true)
+        local appname = displayName(app)
         return "Toggle " .. appname .. " Launcher"
       end,
       fn = function(app)

@@ -110,22 +110,6 @@ function menuBarVisible()
   return true
 end
 
-function displayName(app, returnDefault)
-  if type(app) == 'string' then
-    local appid = app
-    local appPath = hs.application.pathForBundleID(appid)
-    local appname, status_ok = hs.execute(
-        string.format("mdls -name kMDItemDisplayName -raw '%s'", appPath))
-    if status_ok and appname:sub(-4) == '.app' then
-      return appname:sub(1, -5)
-    elseif returnDefault then
-      return hs.application.nameForBundleID(appid)
-    end
-  else
-    return app:name()
-  end
-end
-
 function showMenuItemWrapper(fn)
   return function()
     if menuBarVisible() then
@@ -2162,6 +2146,53 @@ function localizedMenuItem(title, appid, params)
     delocMap[appid][locTitle] = title
     return locTitle
   end
+end
+
+function displayName(app)
+  if app.name ~= nil then return app:name() end
+  local appid = app  -- assume app is installed
+  local basename = hs.application.nameForBundleID(appid)
+  local appLocale = applicationLocale(appid)
+  local appname = get(appLocaleMap, appid, appLocale, basename)
+  if appname ~= nil then return appname end
+
+  local resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
+  local locale = get(appLocaleDir, appid, appLocale)
+  if locale == false then return basename end
+  if locale == nil then
+    locale = getMatchedLocale(appLocale, resourceDir, 'lproj')
+    if locale == nil then return basename end
+  end
+  if hs.fs.attributes(resourceDir .. '/InfoPlist.loctable') ~= nil then
+    appname = localizeByLoctable('CFBundleDisplayName',
+        resourceDir, 'InfoPlist', locale, {})
+    if appname == nil then
+      appname = localizeByLoctable('CFBundleName',
+          resourceDir, 'InfoPlist', locale, {})
+    end
+  else
+    local localeDir = resourceDir .. "/" .. locale .. ".lproj"
+    if hs.fs.attributes(localeDir .. '/InfoPlist.strings') ~= nil then
+      jsonDict = parseStringsFile(localeDir .. '/InfoPlist.strings')
+      appname = jsonDict['CFBundleDisplayName']
+      if appname == nil then appname = jsonDict['CFBundleyName'] end
+    end
+  end
+
+  if appname == nil then appname = basename end
+  if appLocaleMap[appid] == nil then
+    appLocaleMap[appid] = {}
+  end
+  if appLocaleMap[appid][appLocale] == nil then
+    appLocaleMap[appid][appLocale] = {}
+  end
+  appLocaleMap[appid][appLocale][basename] = appname
+  if hs.fs.attributes(localeTmpDir) == nil then
+    hs.execute(string.format("mkdir -p '%s'", localeTmpDir))
+  end
+  hs.json.write(appLocaleMap, localeTmpFile, false, true)
+
+  return appname
 end
 
 -- helpers for click menubar to the right
