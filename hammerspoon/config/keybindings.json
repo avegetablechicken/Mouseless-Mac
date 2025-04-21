@@ -39,11 +39,11 @@
         "key": "G"
       },
       "copyToPC": {
-        "mods": ["shift", "option", "command"],
+        "mods": ["control", "command"],
         "key": "C"
       },
       "pasteFromPC": {
-        "mods": ["shift", "option", "command"],
+        "mods": ["control", "command"],
         "key": "V"
       },
       "switchWindow": {
