@@ -22,7 +22,8 @@
   },
 
   "launchSlowly": [
-    "com.apple.iMovieApp"
+    "com.apple.iMovieApp",
+    "org.klatexformula.klatexformula"
   ],
 
   "launchSilently": [
