@@ -997,7 +997,8 @@ local function popupControlCenterSubPanel(panel, allowReentry)
   local ident = controlCenterSubPanelIdentifiers[panel]
   local win = find("com.apple.controlcenter"):mainWindow()
   local osVersion = getOSVersion()
-  local pane = osVersion < OS.Ventura and "window 1" or "group 1 of window 1"
+  local pane = (osVersion < OS.Ventura and "window 1" or "group 1 of window 1")
+      .. ' of application process "ControlCenter"'
 
   local enter = nil
   local enterTemplate = [[
@@ -1081,7 +1082,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
 
           ]] .. delayCmd .. [[
 
-          set pane to ]] .. pane .. [[ of application process "ControlCenter"
+          set pane to ]] .. pane .. [[ 
           ]] .. enter .. [[
           if panelFound then
             return 1
@@ -1142,7 +1143,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     allowReentry = tostring(allowReentry)
     ok, result = hs.osascript.applescript([[
       tell application "System Events"
-        set pane to ]] .. pane .. [[ of application process "ControlCenter"
+        set pane to ]] .. pane .. [[ 
         set wifi to false
         set bluetooth to false
         repeat with ele in (every checkbox of pane)
@@ -1171,7 +1172,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
             perform action 1 of controlcenter
 
             delay 0.5
-            set pane to ]] .. pane .. [[ of application process "ControlCenter"
+            set pane to ]] .. pane .. [[ 
             ]] .. enter .. [[
             if panelFound then
               return -1
@@ -1209,7 +1210,8 @@ local backgroundSoundsHotkeys
 ---@diagnostic disable-next-line: lowercase-global
 function registerControlCenterHotKeys(panel)
   local osVersion = getOSVersion()
-  local pane = osVersion < OS.Ventura and "window 1" or "group 1 of window 1"
+  local pane = (osVersion < OS.Ventura and "window 1" or "group 1 of window 1")
+      .. ' of application process "ControlCenter"'
 
   local function mayLocalize(value)
     return controlCenterLocalized(panel, value)
@@ -1320,12 +1322,12 @@ function registerControlCenterHotKeys(panel)
     if osVersion < OS.Ventura then
       local ok, result = hs.osascript.applescript([[
         tell application "System Events"
-          repeat until button 1 of ]] .. pane .. [[ of application process ¬
-            "ControlCenter" whose title contains "…" exists
+          repeat until button 1 of ]] .. pane .. [[ ¬
+              whose title contains "…" exists
             delay 0.1
           end repeat
-          set bt to every button of ]] .. pane .. [[ of application process ¬
-            "ControlCenter" whose title contains "…"
+          set bt to every button of ]] .. pane .. [[ ¬
+              whose title contains "…"
           if (count bt) is not 0 then
             return title of last item of bt
           else
@@ -1338,8 +1340,8 @@ function registerControlCenterHotKeys(panel)
           function()
             hs.osascript.applescript([[
               tell application "System Events"
-                set bt to last button of ]] .. pane .. [[ of application process ¬
-                  "ControlCenter" whose title contains "…"
+                set bt to last button of ]] .. pane .. [[ ¬
+                    whose title contains "…"
                 perform action 1 of bt
               end tell
             ]])
@@ -1369,7 +1371,7 @@ function registerControlCenterHotKeys(panel)
         function()
           hs.osascript.applescript([[
             tell application "System Events"
-              set bt to last button of ]] .. pane .. [[ of application process "ControlCenter"
+              set bt to last button of ]] .. pane .. [[ 
               perform action 1 of bt
             end tell
           ]])
@@ -1393,7 +1395,7 @@ function registerControlCenterHotKeys(panel)
               end repeat
               return
             end if
-            repeat with cb in checkboxes of ]] .. pane .. [[ of application process "ControlCenter"
+            repeat with cb in checkboxes of ]] .. pane .. [[ 
               if (attribute "AXIdentifier" of cb exists) ¬
                   and (value of attribute "AXIdentifier" of cb contains "-header") then
                 perform action 1 of cb
@@ -1436,7 +1438,7 @@ function registerControlCenterHotKeys(panel)
         function()
           hs.osascript.applescript([[
             tell application "System Events"
-              set enabledSliders to sliders of ]] .. pos .. " " .. pane .. [[ of application process "ControlCenter" ¬
+              set enabledSliders to sliders of ]] .. pos .. " " .. pane .. [[ ¬
                   whose value of attribute "AXEnabled" is true
               if (count enabledSliders) is 1 then
                 set slid to item 1 of enabledSliders
@@ -1460,15 +1462,16 @@ function registerControlCenterHotKeys(panel)
     local ok, devices = hs.osascript.applescript([[
       tell application "System Events"
         set totalDelay to 0.0
-        repeat until checkbox 1 of scroll area 1 of ]] .. pane .. [[ of application process "ControlCenter" exists
+        repeat until checkbox 1 of scroll area 1 of ]] .. pane .. [[ exists
           delay 0.1
           set totalDelay to totalDelay + 0.1
           if totalDelay > 0.5 then
             return 0
           end if
         end repeat
-        set sa to scroll area 1 of ]] .. pane .. [[ of application process "ControlCenter"
-        return {]] .. cbField.. [[, value} of (checkboxes whose value of attribute "AXEnabled" is true) of sa
+        set sa to scroll area 1 of ]] .. pane .. [[ 
+        return {]] .. cbField.. [[, value} of ¬
+            (checkboxes whose value of attribute "AXEnabled" is true) of sa
       end tell
     ]])
     if ok and type(devices) == 'table' then
@@ -1488,8 +1491,9 @@ function registerControlCenterHotKeys(panel)
           function()
             hs.osascript.applescript([[
               tell application "System Events"
-                set sa to scroll area 1 of ]] .. pane .. [[ of application process "ControlCenter"
-                set cb to item ]] .. tostring(i) .. [[ of (checkboxes whose value of attribute "AXEnabled" is true) of sa
+                set sa to scroll area 1 of ]] .. pane .. [[ 
+                set cb to item ]] .. tostring(i) .. [[ of  ¬
+                    (checkboxes whose value of attribute "AXEnabled" is true) of sa
                 perform action 1 of cb
               end tell
             ]])
@@ -1540,8 +1544,8 @@ function registerControlCenterHotKeys(panel)
       tell application "System Events"
         set cnt to 0
         repeat until cnt >= 10
-          if exists scroll area 1 of ]] .. pane .. [[ of application process "ControlCenter" then
-            set sa to scroll area 1 of ]] .. pane .. [[ of application process "ControlCenter"
+          if exists scroll area 1 of ]] .. pane .. [[ then
+            set sa to scroll area 1 of ]] .. pane .. [[ 
             if value of attribute "AXRole" of ui element 1 of sa is "AXOpaqueProviderGroup" then
               set sa to ui element 1 of sa
             end if
@@ -1562,7 +1566,7 @@ function registerControlCenterHotKeys(panel)
       local actionFunc = function()
         hs.osascript.applescript([[
           tell application "System Events"
-            set sa to scroll area 1 of ]] .. pane .. [[ of application process "ControlCenter"
+            set sa to scroll area 1 of ]] .. pane .. [[ 
             if value of attribute "AXRole" of ui element 1 of sa is "AXOpaqueProviderGroup" then
               set sa to ui element 1 of sa
             end if
@@ -1589,9 +1593,9 @@ function registerControlCenterHotKeys(panel)
       else
         cbField = "the value of attribute \"AXIdentifier\""
       end
-      local ok, result = hs.osascript.applescript([[
+      local ok, fullTitles = hs.osascript.applescript([[
         tell application "System Events"
-          set sa to scroll area 1 of ]] .. pane .. [[ of application process "ControlCenter"
+          set sa to scroll area 1 of ]] .. pane .. [[ 
           if value of attribute "AXRole" of ui element 1 of sa is "AXOpaqueProviderGroup" then
             set sa to ui element 1 of sa
           end if
@@ -1620,7 +1624,7 @@ function registerControlCenterHotKeys(panel)
           for idx, title in ipairs(availableNetworks) do
             local ok, selected = hs.osascript.applescript([[
               tell application "System Events"
-                set sa to scroll area 1 of ]] .. pane .. [[ of application process "ControlCenter"
+                set sa to scroll area 1 of ]] .. pane .. [[ 
                 if value of attribute "AXRole" of ui element 1 of sa is "AXOpaqueProviderGroup" then
                   set sa to ui element 1 of sa
                 end if
@@ -1635,7 +1639,7 @@ function registerControlCenterHotKeys(panel)
               function()
                 hs.osascript.applescript([[
                   tell application "System Events"
-                    set sa to scroll area 1 of ]] .. pane .. [[ of application process "ControlCenter"
+                    set sa to scroll area 1 of ]] .. pane .. [[ 
                     if value of attribute "AXRole" of ui element 1 of sa is "AXOpaqueProviderGroup" then
                       set sa to ui element 1 of sa
                     end if
@@ -1664,20 +1668,20 @@ function registerControlCenterHotKeys(panel)
     if osVersion < OS.Ventura then
       ok, toggleNames = hs.osascript.applescript([[
         tell application "System Events"
-          repeat until checkbox 3 of ]] .. pane .. [[ of application process "ControlCenter" exists
+          repeat until checkbox 3 of ]] .. pane .. [[ exists
             delay 0.1
           end repeat
-          return {title of checkbox 2 of ]] .. pane .. [[ of application process "ControlCenter", ¬
-                  title of checkbox 3 of ]] .. pane .. [[ of application process "ControlCenter"}
+          return {title of checkbox 2 of ]] .. pane .. [[, ¬
+                  title of checkbox 3 of ]] .. pane .. [[}
         end tell
       ]])
     else
       local ok, toggleIdents = hs.osascript.applescript([[
         tell application "System Events"
-          repeat until checkbox 3 of ]] .. pane .. [[ of application process "ControlCenter" exists
+          repeat until checkbox 3 of ]] .. pane .. [[ exists
             delay 0.1
           end repeat
-          set pane to ]] .. pane .. [[ of application process "ControlCenter"
+          set pane to ]] .. pane .. [[ 
           return {value of attribute "AXIdentifier" of checkbox 2 of pane, ¬
                   value of attribute "AXIdentifier" of checkbox 3 of pane}
         end tell
@@ -1697,7 +1701,7 @@ function registerControlCenterHotKeys(panel)
           function()
             hs.osascript.applescript([[
               tell application "System Events"
-                set cb to checkbox ]] .. tostring(i+1) .. [[ of ]] .. pane .. [[ of application process "ControlCenter"
+                set cb to checkbox ]] .. tostring(i+1) .. [[ of ]] .. pane .. [[ 
                 perform action 1 of cb
               end tell
             ]])
@@ -1710,7 +1714,7 @@ function registerControlCenterHotKeys(panel)
     if osVersion < OS.Ventura then
       ok, toggleNames = hs.osascript.applescript([[
         tell application "System Events"
-          set pane to ]] .. pane .. [[ of application process "ControlCenter"
+          set pane to ]] .. pane .. [[ 
           repeat until checkbox 2 of pane exists
             delay 0.1
           end repeat
@@ -1721,7 +1725,7 @@ function registerControlCenterHotKeys(panel)
       local toggleIdents
       ok, toggleIdents = hs.osascript.applescript([[
         tell application "System Events"
-          set pane to ]] .. pane .. [[ of application process "ControlCenter"
+          set pane to ]] .. pane .. [[ 
           repeat until checkbox 2 of pane exists
             delay 0.1
           end repeat
@@ -1745,7 +1749,7 @@ function registerControlCenterHotKeys(panel)
           function()
             hs.osascript.applescript([[
               tell application "System Events"
-                set cb to ]] .. order .. [[ checkbox of ]] .. pane .. [[ of application process "ControlCenter"
+                set cb to ]] .. order .. [[ checkbox of ]] .. pane .. [[ 
                 perform action 1 of cb
               end tell
             ]])
@@ -1757,7 +1761,7 @@ function registerControlCenterHotKeys(panel)
           function()
             hs.osascript.applescript([[
               tell application "System Events"
-                set pane to ]] .. pane .. [[ of application process "ControlCenter"
+                set pane to ]] .. pane .. [[ 
                 if count of checkboxes of pane > 2 then
                   set cb to checkbox ]] .. tostring(i) .. [[ of pane
                   perform action 1 of cb
@@ -1773,15 +1777,15 @@ function registerControlCenterHotKeys(panel)
     local ok, idx = hs.osascript.applescript([[
       tell application "System Events"
         set totalDelay to 0.0
-        repeat until ]] .. role .. " 1 of " .. pane .. [[ of application process "ControlCenter" exists
+        repeat until ]] .. role .. " 1 of " .. pane .. [[ exists
           set totalDelay to totalDelay + 0.1
           if totalDelay > 0.5 then
             return
           end
           delay 0.1
         end
-        repeat with i from 1 to count (]] .. role .. " of " .. pane .. [[) of application process "ControlCenter"
-          set sa to ]] .. role .. " i of " .. pane .. [[ of application process "ControlCenter"
+        repeat with i from 1 to count (]] .. role .. " of " .. pane .. [[)
+          set sa to ]] .. role .. " i of " .. pane .. [[ 
           set c to count (UI elements of sa)
           repeat with jj from 1 to c
             set j to c - jj + 1
@@ -1799,7 +1803,7 @@ function registerControlCenterHotKeys(panel)
         function()
           hs.osascript.applescript([[
             tell application "System Events"
-              set sa to ]] .. role .. " " .. tostring(i) .. " of " .. pane .. [[ of application process "ControlCenter"
+              set sa to ]] .. role .. " " .. tostring(i) .. " of " .. pane .. [[ 
               perform action 1 of ui element ]] .. tostring(j) .. [[ of sa
             end tell
           ]])
@@ -1990,7 +1994,7 @@ function registerControlCenterHotKeys(panel)
       function()
         hs.osascript.applescript([[
           tell application "System Events"
-            set cb to checkbox 1 of group 1 of ]] .. pane .. [[ of application process "ControlCenter"
+            set cb to checkbox 1 of group 1 of ]] .. pane .. [[ 
             perform action 1 of cb
           end tell
         ]])
@@ -2001,9 +2005,9 @@ function registerControlCenterHotKeys(panel)
       local ok, result = hs.osascript.applescript([[
         tell application "System Events"
           delay 0.5
-          if exists ui element 1 of ]] .. pane .. [[ of application process "ControlCenter" ¬
+          if exists ui element 1 of ]] .. pane .. [[ ¬
               whose value of attribute "AXRole" is "AXDisclosureTriangle" then
-            set ele to ui element 1 of ]] .. pane .. [[ of application process "ControlCenter" ¬
+            set ele to ui element 1 of ]] .. pane .. [[ ¬
                 whose value of attribute "AXRole" is "AXDisclosureTriangle"
               return value of ele
           end if
@@ -2014,7 +2018,7 @@ function registerControlCenterHotKeys(panel)
         local actionFunc = function()
           hs.osascript.applescript([[
           tell application "System Events"
-            set ele to ui element 1 of ]] .. pane .. [[ of application process "ControlCenter" ¬
+            set ele to ui element 1 of ]] .. pane .. [[ ¬
                 whose value of attribute "AXRole" is "AXDisclosureTriangle"
             perform action 1 of ele
           end tell
@@ -2033,7 +2037,7 @@ function registerControlCenterHotKeys(panel)
       end
       ok, result = hs.osascript.applescript([[
         tell application "System Events"
-          set enabledSliders to sliders of ]] .. pane .. [[ of application process "ControlCenter" ¬
+          set enabledSliders to sliders of ]] .. pane .. [[ ¬
               whose value of attribute "AXEnabled" is true
           return (count enabledSliders) is 1
         end tell
@@ -2051,7 +2055,7 @@ function registerControlCenterHotKeys(panel)
             function()
               hs.osascript.applescript([[
                 tell application "System Events"
-                  set enabledSliders to sliders of ]] .. pane .. [[ of application process "ControlCenter" ¬
+                  set enabledSliders to sliders of ]] .. pane .. [[ ¬
                       whose value of attribute "AXEnabled" is true
                   if (count enabledSliders) is 1 then
                     set slid to item 1 of enabledSliders
@@ -2067,7 +2071,7 @@ function registerControlCenterHotKeys(panel)
       ok, result = hs.osascript.applescript([[
         tell application "System Events"
           set cbs to {}
-          repeat with cb in checkboxes of ]] .. pane .. [[ of application process "ControlCenter"
+          repeat with cb in checkboxes of ]] .. pane .. [[ 
             if (exists attribute "AXIdentifier" of cb) ¬
                 and (value of attribute "AXIdentifier" of cb contains "button-identifier") then
               set cbs to cbs & value of attribute "AXIdentifier" of cb
@@ -2086,7 +2090,7 @@ function registerControlCenterHotKeys(panel)
             function()
               hs.osascript.applescript([[
                 tell application "System Events"
-                  set cb to checkbox 1 of ]] .. pane .. [[ of application process "ControlCenter" ¬
+                  set cb to checkbox 1 of ]] .. pane .. [[ ¬
                       whose value of attribute "AXIdentifier" is "]] .. ident .. [["
                   perform action 1 of cb
                 end tell
@@ -2102,7 +2106,7 @@ function registerControlCenterHotKeys(panel)
       function()
         local ok = hs.osascript.applescript([[
           tell application "System Events"
-            set cb to checkbox 1 of ]] .. pane .. [[ of application process "ControlCenter"
+            set cb to checkbox 1 of ]] .. pane .. [[ 
             perform action 1 of cb
           end tell
         ]])
@@ -2123,19 +2127,19 @@ function registerControlCenterHotKeys(panel)
     if osVersion < OS.Ventura then
       ok, result = hs.osascript.applescript([[
         tell application "System Events"
-          repeat until button 3 of ]] .. pane .. [[ of application process "ControlCenter" exists
+          repeat until button 3 of ]] .. pane .. [[ exists
             delay 0.1
           end repeat
-          return title of (every button of ]] .. pane .. [[ of application process "ControlCenter")
+          return title of (every button of ]] .. pane .. [[)
         end tell
       ]])
     else
       ok, result = hs.osascript.applescript([[
         tell application "System Events"
-          repeat until button 3 of ]] .. pane .. [[ of application process "ControlCenter" exists
+          repeat until button 3 of ]] .. pane .. [[ exists
             delay 0.1
           end repeat
-          return number of buttons of ]] .. pane .. [[ of application process "ControlCenter"
+          return number of buttons of ]] .. pane .. [[ 
         end tell
       ]])
     end
@@ -2154,7 +2158,7 @@ function registerControlCenterHotKeys(panel)
             local appname = displayName('com.apple.Music')
             local ok, isAppleMusic = hs.osascript.applescript([[
               tell application "System Events"
-                set appTitle to static text 1 of ]] .. pane .. [[ of application process "ControlCenter"
+                set appTitle to static text 1 of ]] .. pane .. [[ 
                 return value of appTitle is "]] .. appname .. [["
               end tell
             ]])
@@ -2173,7 +2177,7 @@ function registerControlCenterHotKeys(panel)
           end
           hs.osascript.applescript([[
             tell application "System Events"
-              set bt to button 2 of ]] .. pane .. [[ of application process "ControlCenter"
+              set bt to button 2 of ]] .. pane .. [[ 
               perform action 1 of bt
             end tell
           ]])
@@ -2183,7 +2187,7 @@ function registerControlCenterHotKeys(panel)
         function()
           hs.osascript.applescript([[
             tell application "System Events"
-              set bt to button 1 of ]] .. pane .. [[ of application process "ControlCenter"
+              set bt to button 1 of ]] .. pane .. [[ 
               perform action 1 of bt
             end tell
           ]])
@@ -2193,7 +2197,7 @@ function registerControlCenterHotKeys(panel)
         function()
           hs.osascript.applescript([[
             tell application "System Events"
-              set bt to button 3 of ]] .. pane .. [[ of application process "ControlCenter"
+              set bt to button 3 of ]] .. pane .. [[ 
               perform action 1 of bt
             end tell
           ]])
@@ -2213,7 +2217,7 @@ function registerControlCenterHotKeys(panel)
           function()
             hs.osascript.applescript([[
               tell application "System Events"
-                set bt to button ]] .. tostring(2 * i - 1) .. [[ of ]] .. pane .. [[ of application process "ControlCenter"
+                set bt to button ]] .. tostring(2 * i - 1) .. [[ of ]] .. pane .. [[ 
                 perform action 1 of bt
               end tell
             ]])
@@ -2234,7 +2238,8 @@ end
 
 local function getActiveControlCenterPanel()
   local osVersion = getOSVersion()
-  local pane = osVersion < OS.Ventura and "window 1" or "group 1 of window 1"
+  local pane = (osVersion < OS.Ventura and "window 1" or "group 1 of window 1")
+      .. ' of application process "ControlCenter"'
 
   local function mayLocalize(value)
     return controlCenterLocalized("Now Playing", value)
@@ -2250,7 +2255,7 @@ local function getActiveControlCenterPanel()
   ]]
   local script = [[
     tell application "System Events"
-      set pane to ]] .. pane .. [[ of application process "ControlCenter"
+      set pane to ]] .. pane .. [[ 
   ]]
   for panel, ident in pairs(controlCenterSubPanelIdentifiers) do
     local already = nil
