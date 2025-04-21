@@ -5483,18 +5483,29 @@ local function altMenuBarItem(app, menuItems)
       menuItems = app:getMenuItems()
     end
     if menuItems == nil then return end
-    local ignoredItems = {}
+    local itemDict = {}
     menuBarItemTitles = {}
     for i, item in ipairs(menuItems) do
-      if ignoredItems[item.AXTitle] then
-        menuBarItemActualIndices[item.AXTitle] = i + 1
+      if itemDict[item.AXTitle] then
+        if item.AXTitle == app:name() then
+          -- ordinary menu bar item share the same title with app menu
+          -- e.t.c. "Barrier" menu in `Barrier`
+          menuBarItemActualIndices[item.AXTitle] = i + 1
+        elseif itemDict[item.AXTitle].AXChildren == nil then
+          -- two ordinary menu bar items share the same title, but the former is invalid
+          -- e.t.c. two "File" menus in `QQLive`
+          local idx = hs.fnutils.indexOf(menuBarItemTitles, item.AXTitle)
+          table.remove(menuBarItemTitles, idx)
+          menuBarItemActualIndices[item.AXTitle] = i + 1
+        elseif item.AXChildren == nil then
+          -- two ordinary menu bar items share the same title, but the latter is invalid
+          goto CHECK_MENU_ITEM_CONTINUE
+        end
+        -- assume at most two menu bar items share the same title
       end
-      if i == 1 or item.AXChildren == nil then
-        ignoredItems[item.AXTitle] = true
-      end
-      if item.AXChildren ~= nil then
-        table.insert(menuBarItemTitles, item.AXTitle)
-      end
+      itemDict[item.AXTitle] = item
+      table.insert(menuBarItemTitles, item.AXTitle)
+      ::CHECK_MENU_ITEM_CONTINUE::
     end
     menuBarItemTitles = hs.fnutils.filter(menuBarItemTitles, function(item)
       return item ~= nil and item ~= ""
