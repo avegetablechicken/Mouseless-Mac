@@ -3,13 +3,6 @@ local moveStep = windowParams.windowMoveStep or 20
 local resizeStep = windowParams.windowResizeStep or 100
 local windowZoomToCenterSize = windowParams.windowZoomToCenterSize or { w = 830, h = 750 }
 
-local function newWindow(...)
-  local hotkey = newHotkeySpec(...)
-  if hotkey == nil then return nil end
-  hotkey.kind = HK.WIN_OP
-  return hotkey
-end
-
 local function bindWindow(...)
   local hotkey = bindHotkeySpec(...)
   if hotkey == nil then return nil end
@@ -530,14 +523,14 @@ end)
 
 local misc = KeybindingConfigs.hotkeys.global
 
-local function newWindowMisc(...)
+local function newWindowSwitch(...)
   local hotkey = newHotkeySpec(...)
   if hotkey == nil then return nil end
   hotkey.kind = HK.SWITCH
   return hotkey
 end
 
-local function bindWindowMisc(...)
+local function bindWindowSwitch(...)
   local hotkey = bindHotkeySpec(...)
   if hotkey == nil then return nil end
   hotkey.kind = HK.SWITCH
@@ -579,7 +572,7 @@ local anotherLastWindowModifierTap
 
 local function registerWindowSwitcher()
   anotherLastWindowHotkey =
-  newWindowMisc(misc["switchWindowBackTriggered"], 'Previous Window',
+  newWindowSwitch(misc["switchWindowBackTriggered"], 'Previous Window',
   function()
     if windowSwitcherWindowNumber > 0 then
       windowSwitcherWindowIdx = windowSwitcherWindowIdx - 1
@@ -631,7 +624,7 @@ local function registerWindowSwitcher()
     return false
   end)
 
-  nextWindowHotkey = bindWindowMisc(misc["switchWindow"], 'Next Window',
+  nextWindowHotkey = bindWindowSwitch(misc["switchWindow"], 'Next Window',
   function()
     if not anotherLastWindowModifierTap:isEnabled() then
       hotkeyEnabledByWindowSwitcher = true
@@ -675,7 +668,7 @@ local function registerWindowSwitcher()
   end,
   { fn = enabledByWindowSwitcherFunc, or_ = true })
 
-  lastWindowHotkey = bindWindowMisc(misc["switchWindowBack"], 'Previous Window',
+  lastWindowHotkey = bindWindowSwitch(misc["switchWindowBack"], 'Previous Window',
   function()
     if not anotherLastWindowModifierTap:isEnabled() then
       hotkeyEnabledByWindowSwitcher = true
@@ -763,7 +756,7 @@ local anotherLastBrowserModifierTap
 
 if misc["switchBrowserWindow"] ~= nil then
   anotherLastBrowserHotkey =
-  newWindowMisc(misc["switchBrowserWindowBackTriggered"], 'Previous Browser Window',
+  newWindowSwitch(misc["switchBrowserWindowBackTriggered"], 'Previous Browser Window',
   function()
     if windowSwitcherWindowNumber > 0 then
       windowSwitcherWindowIdx = windowSwitcherWindowIdx - 1
@@ -815,7 +808,7 @@ if misc["switchBrowserWindow"] ~= nil then
     return false
   end)
 
-  bindWindowMisc(misc["switchBrowserWindow"], 'Next Browser Window',
+  bindWindowSwitch(misc["switchBrowserWindow"], 'Next Browser Window',
   function()
     if not anotherLastBrowserModifierTap:isEnabled() then
       hotkeyEnabledByWindowSwitcher = true
@@ -857,7 +850,7 @@ if misc["switchBrowserWindow"] ~= nil then
   end,
   { fn = enabledByWindowSwitcherFunc, or_ = true })
 
-  bindWindowMisc(misc["switchBrowserWindowBack"], 'Previous Browser Window',
+  bindWindowSwitch(misc["switchBrowserWindowBack"], 'Previous Browser Window',
   function()
     if not anotherLastBrowserModifierTap:isEnabled() then
       hotkeyEnabledByWindowSwitcher = true
@@ -898,7 +891,7 @@ end
 
 -- show a dialog to specify a window title from all visible windows, use it to switch to a window
 -- fixme: full screen space will be ignored if not once focused
-bindWindowMisc(misc["searchWindow"], 'Switch to Window',
+bindWindowSwitch(misc["searchWindow"], 'Switch to Window',
 function()
   local wFilter = hs.window.filter.new()
   for _, appname in ipairs(runningAppDisplayNames(ignoredApps)) do
@@ -938,12 +931,12 @@ local function browserChooser()
   for _, browser in ipairs(browserBundleIDs) do
     local app = find(browser)
     if app ~= nil then
-      local title, tabIDCmd
+      local field, tabIDCmd
       if browser == "com.apple.Safari" then
-        title = 'name'
+        field = 'name'
         tabIDCmd = 'set theID to j\n'
       else
-        title = 'title'
+        field = 'title'
         tabIDCmd = 'set theID to id of atab\n'
       end
       local script = [[
@@ -957,7 +950,7 @@ local function browserChooser()
               set atab to item j of tabList
               ]] .. tabIDCmd .. [[
               set theUrl to URL of atab
-              set theTitle to ]] .. title .. [[ of atab
+              set theTitle to ]] .. field .. [[ of atab
               set theResult to theResult & theWinID & "|||" & theID & "|||" & theUrl & "|||" & theTitle & "|||"
             end repeat
           end repeat
@@ -1165,12 +1158,12 @@ local function PDFChooser()
                             "com.microsoft.edgemac", "com.microsoft.edgemac.Dev"}) do
     local app = find(browser)
     if app ~= nil then
-      local title, tabIDCmd
+      local field, tabIDCmd
       if browser == "com.apple.Safari" then
-        title = 'name'
+        field = 'name'
         tabIDCmd = 'set theID to j\n'
       else
-        title = 'title'
+        field = 'title'
         tabIDCmd = 'set theID to id of atab\n'
       end
       local script = [[
@@ -1185,7 +1178,7 @@ local function PDFChooser()
               set theUrl to URL of atab
               if theUrl ends with ".pdf" then
                 ]] .. tabIDCmd .. [[
-                set theTitle to ]] .. title .. [[ of atab
+                set theTitle to ]] .. field .. [[ of atab
                 set theResult to theResult & theWinID & "|||" & theID & "|||" & theUrl & "|||" & theTitle & "|||"
               end if
             end repeat
@@ -1267,7 +1260,7 @@ local function PDFChooser()
         selectMenuItem(app, { 'Tab', choice.text })
       end)
     elseif choice.app == "com.apple.Preview" then
-      local ok, result = hs.osascript.applescript([[
+      hs.osascript.applescript([[
         tell application id "]] .. choice.app .. [["
           activate
           set aWindow to window id ]] .. choice.id .. [[
@@ -1324,7 +1317,7 @@ end
 
 -- show a dialog to specify a tab title from all windows of browsers or `PDF Expert`
 -- use it to switch to a tab
-bindWindowMisc(misc["searchTab"], 'Switch to Tab',
+bindWindowSwitch(misc["searchTab"], 'Switch to Tab',
 function()
   local appid = hs.application.frontmostApplication():bundleID()
   if hs.fnutils.contains({ "com.readdle.PDFExpert-Mac", "com.superace.updf.mac" }, appid) then

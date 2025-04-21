@@ -700,17 +700,17 @@ local function registerProxyMenuImpl()
       title = "Information",
       fn = function()
         local info = proxy_info()
-        local enabledProxy, mode = parseProxyInfo(proxy_info())
-        local info_str
-        if enabledProxy ~= "" then
-          info_str = "Enabled: " .. enabledProxy
-          if mode ~= nil then
-            info_str = info_str .. " (" .. mode .. ")"
+        local enabled, m = parseProxyInfo(proxy_info())
+        local header
+        if enabled ~= "" then
+          header = "Enabled: " .. enabled
+          if m ~= nil then
+            header = header .. " (" .. m .. ")"
           end
         else
-          info_str = "No Proxy Enabled"
+          header = "No Proxy Enabled"
         end
-        info_str = info_str .. [[
+        header = header .. [[
 
 
           Details:
@@ -729,7 +729,7 @@ local function registerProxyMenuImpl()
           SOCKS Proxy:
           ]] .. info[5]
         hs.focus()
-        hs.dialog.blockAlert("Proxy Configuration", info_str)
+        hs.dialog.blockAlert("Proxy Configuration", header)
       end,
       shortcut = 'i',
     },
@@ -1317,8 +1317,10 @@ function registerControlCenterHotKeys(panel)
   if not checkAndRegisterControlCenterHotKeys(hotkeyMainBack) then return end
 
   -- jump to related panel in `System Preferences`
-  if hs.fnutils.contains({ "Wi‑Fi", "Bluetooth", "Focus", "Keyboard Brightness", "Screen Mirroring", "Display", "Sound",
-                           "Accessibility Shortcuts", "Battery", "Hearing", "Users", }, panel) then
+  if hs.fnutils.contains({ "Wi‑Fi", "Bluetooth", "Focus", "Keyboard Brightness",
+                           "Screen Mirroring", "Display", "Sound",
+                           "Accessibility Shortcuts", "Battery",
+                           "Hearing", "Users", }, panel) then
     if osVersion < OS.Ventura then
       local ok, result = hs.osascript.applescript([[
         tell application "System Events"
@@ -1604,13 +1606,13 @@ function registerControlCenterHotKeys(panel)
       ]])
       if ok then
         local availableNetworks = {}
-        for idx, titleFull in ipairs(result) do
+        for idx, ft in ipairs(fullTitles) do
           if idx > 10 then break end
           local title
           if osVersion < OS.Ventura then
-            title = string.match(titleFull, "([^,]+)")
+            title = string.match(ft, "([^,]+)")
           else
-            title = string.sub(titleFull, string.len("wifi-network-") + 1, -1)
+            title = string.sub(ft, string.len("wifi-network-") + 1, -1)
           end
           table.insert(availableNetworks, title)
         end

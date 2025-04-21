@@ -392,7 +392,7 @@ end
 
 local function getMenuHotkeys(app, titleAsEntry, titlePrefix)
   local appHotkeys = {}
-  for i, menuItem in ipairs(app:getMenuItems() or {}) do
+  for _, menuItem in ipairs(app:getMenuItems() or {}) do
     getSubMenuHotkeys(appHotkeys, menuItem, titleAsEntry, titlePrefix, app:bundleID())
   end
   return appHotkeys

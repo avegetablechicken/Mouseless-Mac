@@ -1046,8 +1046,8 @@ end
 -- if so, return the path of the menu item
 local function checkMenuItem(menuItemTitle, params)
   return function(app)
-    local menuItem, menuItemTitle = findMenuItem(app, menuItemTitle, params)
-    return menuItem ~= nil and menuItem.enabled, menuItemTitle
+    local menuItem, locTitle = findMenuItem(app, menuItemTitle, params)
+    return menuItem ~= nil and menuItem.enabled, locTitle
   end
 end
 
@@ -6421,48 +6421,48 @@ function App_applicationCallback(appname, eventType, app)
     end
   elseif eventType == hs.application.watcher.deactivated
       or eventType == hs.application.watcher.terminated then
-    for appid, processes in pairs(processesOnDeactivated) do
-      if find(appid) == nil then
+    for id, processes in pairs(processesOnDeactivated) do
+      if find(id) == nil then
         for _, proc in ipairs(processes) do
           proc(app)
         end
       end
     end
-    for appid, processes in pairs(processesOnQuit) do
-      if find(appid) == nil then
+    for id, processes in pairs(processesOnQuit) do
+      if find(id) == nil then
         for _, proc in ipairs(processes) do
           proc(app)
         end
       end
     end
-    for appid, obs in pairs(observersStopOnDeactivated) do
-      if find(appid) == nil then
+    for id, obs in pairs(observersStopOnDeactivated) do
+      if find(id) == nil then
         for _, ob in ipairs(obs) do
           local observer, func = ob[1], ob[2]
           observer:stop()
-          if func ~= nil then func(appid, observer) end
+          if func ~= nil then func(id, observer) end
         end
-        observersStopOnDeactivated[appid] = nil
+        observersStopOnDeactivated[id] = nil
       end
     end
-    for appid, obs in pairs(observersStopOnQuit) do
-      if find(appid) == nil then
+    for id, obs in pairs(observersStopOnQuit) do
+      if find(id) == nil then
         for _, ob in ipairs(obs) do
           local observer, func = ob[1], ob[2]
           observer:stop()
-          if func ~= nil then func(appid, observer) end
+          if func ~= nil then func(id, observer) end
         end
-        observersStopOnQuit[appid] = nil
+        observersStopOnQuit[id] = nil
       end
     end
-    for appid, _ in pairs(inAppHotKeys) do
-      if find(appid) == nil then
-        unregisterInAppHotKeys(appid, true)
+    for id, _ in pairs(inAppHotKeys) do
+      if find(id) == nil then
+        unregisterInAppHotKeys(id, true)
       end
     end
-    for appid, _ in pairs(inWinHotKeys) do
-      if find(appid) == nil then
-        unregisterInWinHotKeys(appid, true)
+    for id, _ in pairs(inWinHotKeys) do
+      if find(id) == nil then
+        unregisterInWinHotKeys(id, true)
       end
     end
   end

@@ -1714,7 +1714,8 @@ local function delocalizeZoteroMenu(str, appLocale)
   if locale == nil then return nil end
   local localeFile = 'chrome/locale/' .. locale .. '/zotero/standalone.dtd'
   local enLocaleFile = 'chrome/locale/en-US/zotero/standalone.dtd'
-  local key, status = hs.execute("unzip -p \"" .. resourceDir .. "/zotero.jar\" \"" .. localeFile .. "\""
+  local key
+  key, status = hs.execute("unzip -p \"" .. resourceDir .. "/zotero.jar\" \"" .. localeFile .. "\""
       .. " | awk '/<!ENTITY .* \"" .. str .. "\">/ { gsub(/<!ENTITY | \"" .. str .. "\">/, \"\"); printf \"%s\", $0 }'")
   if status ~= true then return nil end
   local enValue, status = hs.execute("unzip -p \"" .. resourceDir .. "/zotero.jar\" \"" .. enLocaleFile .. "\""
@@ -2211,7 +2212,7 @@ function hiddenByBartender(id)
   if find("com.surteesstudios.Bartender") == nil then
     return false
   end
-  local ok, hiddenItems = hs.osascript.applescript([[
+  local _, hiddenItems = hs.osascript.applescript([[
     tell application id "com.surteesstudios.Bartender" to list menu bar items
   ]])
   local hiddenItemList = hs.fnutils.split(hiddenItems, "\n")
