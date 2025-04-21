@@ -629,7 +629,7 @@ end
 local bartenderBarItemNames
 local bartenderBarItemIDs
 local bartenderBarWindowFilter = { allowTitles = "^Bartender Bar$" }
-local bartenderBarFilter
+BartenderBarFilter = nil
 local function getBartenderBarItemTitle(index, rightClick)
   return function(app)
     if bartenderBarItemNames == nil then
@@ -693,15 +693,15 @@ local function getBartenderBarItemTitle(index, rightClick)
             table.insert(bartenderBarItemIDs, i)
           end
         end
-        bartenderBarFilter = hs.window.filter.new(false):setAppFilter(
+        BartenderBarFilter = hs.window.filter.new(false):setAppFilter(
             app:name(), bartenderBarWindowFilter)
-        bartenderBarFilter:subscribe(
+        BartenderBarFilter:subscribe(
             { hs.window.filter.windowDestroyed, hs.window.filter.windowUnfocused },
             function()
               bartenderBarItemNames = nil
               bartenderBarItemIDs = nil
-              bartenderBarFilter:unsubscribeAll()
-              bartenderBarFilter = nil
+              BartenderBarFilter:unsubscribeAll()
+              BartenderBarFilter = nil
             end)
       end
     end
@@ -4294,7 +4294,7 @@ end
 -- we have to record them because key strokes must be sent to frontmost window instead of frontmost app
 -- and some windows may be make frontmost silently
 WindowCreatedSince = {}
-local windowCreatedSinceWatcher = hs.window.filter.new(true):subscribe(
+WindowCreatedSinceWatcher = hs.window.filter.new(true):subscribe(
 {hs.window.filter.windowCreated, hs.window.filter.windowFocused, hs.window.filter.windowDestroyed},
 function(win, appname, eventType)
   if win == nil or win:application() == nil
@@ -4775,7 +4775,7 @@ end
 
 -- hotkeys for frontmost window belonging to daemon app
 local backgroundWindowHotkeys = {}
-local backgroundWindowFilters = {}
+BackgroundWindowFilters = {}
 local function backgroundWindowObserverEnableCallback(appid, filter, event)
   if backgroundWindowHotkeys[appid] == nil then
     backgroundWindowHotkeys[appid] = {}
@@ -4844,9 +4844,9 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
       closeObserver:start()
     end)
     observer:start()
-    backgroundWindowFilters[appid][filter] = observer
+    BackgroundWindowFilters[appid][filter] = observer
     stopOnQuit(appid, observer, function()
-      backgroundWindowFilters[appid][filter] = nil
+      BackgroundWindowFilters[appid][filter] = nil
     end)
     return
   end
@@ -4872,13 +4872,13 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
       backgroundWindowHotkeys[appid] = nil
     end
   end)
-  backgroundWindowFilters[appid][filter] = windowFilter
+  BackgroundWindowFilters[appid][filter] = windowFilter
   execOnQuit(appid, function()
     if windowFilter ~= nil then
       windowFilter:unsubscribeAll()
       windowFilter = nil
     end
-    backgroundWindowFilters[appid][filter] = nil
+    BackgroundWindowFilters[appid][filter] = nil
   end)
 end
 
@@ -4893,11 +4893,11 @@ local function registerWinFiltersForDaemonApp(app, appConfig)
       return cfg.bindCondition == nil or cfg.bindCondition(app)
     end
     if hasKey and isForWindow and isBackground and bindable() then
-      if backgroundWindowFilters[appid] == nil then
-        backgroundWindowFilters[appid] = {}
+      if BackgroundWindowFilters[appid] == nil then
+        BackgroundWindowFilters[appid] = {}
       end
       local windowFilter = keybinding.windowFilter or cfg.windowFilter
-      for f, _ in pairs(backgroundWindowFilters[appid]) do
+      for f, _ in pairs(BackgroundWindowFilters[appid]) do
         -- a window filter can be shared by multiple hotkeys
         if sameFilter(f, windowFilter) then
           goto L_CONTINUE
@@ -5057,8 +5057,8 @@ end
 local frontWin = hs.window.frontmostWindow()
 if frontWin ~= nil then
   local frontWinAppBid = frontWin:application():bundleID()
-  if backgroundWindowFilters[frontWinAppBid] ~= nil then
-    for filter, _ in pairs(backgroundWindowFilters[frontWinAppBid]) do
+  if BackgroundWindowFilters[frontWinAppBid] ~= nil then
+    for filter, _ in pairs(BackgroundWindowFilters[frontWinAppBid]) do
       local filterEnable = hs.window.filter.new(false):setAppFilter(frontWin:application():title(), filter)
       if filterEnable:isWindowAllowed(frontWin) then
         backgroundWindowObserverEnableCallback(frontWinAppBid, filter)
@@ -5782,9 +5782,9 @@ local specialNoPseudoWindowsRules = {
     return defaultRule()
   end
 }
-local appPseudoWindowObservers = {}
+PseudoWindowDestroyObservers = {}
 local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
-  local observer = appPseudoWindowObservers[app:bundleID()]
+  local observer = PseudoWindowDestroyObservers[app:bundleID()]
   local appUIObj = hs.axuielement.applicationElement(app)
   if observer ~= nil then observer:start() return end
   observer = hs.axuielement.observer.new(app:pid())
@@ -5857,9 +5857,9 @@ local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
   end
   observer:callback(observerCallback)
   observer:start()
-  appPseudoWindowObservers[app:bundleID()] = observer
+  PseudoWindowDestroyObservers[app:bundleID()] = observer
   stopOnQuit(app:bundleID(), observer,
-      function(appid) appPseudoWindowObservers[appid] = nil end)
+      function(appid) PseudoWindowDestroyObservers[appid] = nil end)
 end
 
 local appsAutoHideWithNoWindowsLoaded = ApplicationConfigs["autoHideWithNoWindow"] or {}
@@ -5922,11 +5922,11 @@ for _, item in ipairs(appsAutoQuitWithNoWindowsLoaded) do
   end
 end
 
-local windowFilterAutoHide = hs.window.filter.new(false)
+AutoHideWindowFilter = hs.window.filter.new(false)
     :setAppFilter("Hammerspoon", true)  -- Hammerspoon overlook itself by default, so add it here
 for appid, cfg in pairs(appsAutoHideWithNoWindows) do
   local func = function(app)
-    windowFilterAutoHide:setAppFilter(app:name(), cfg)
+    AutoHideWindowFilter:setAppFilter(app:name(), cfg)
   end
   local app = find(appid)
   if app ~= nil then
@@ -5935,17 +5935,17 @@ for appid, cfg in pairs(appsAutoHideWithNoWindows) do
     execOnLaunch(appid, func, true)
   end
 end
-windowFilterAutoHide:subscribe(hs.window.filter.windowDestroyed,
+AutoHideWindowFilter:subscribe(hs.window.filter.windowDestroyed,
   function(win)
     if win == nil or win:application() == nil then return end
     local appid = win:application():bundleID()
     processAppWithNoWindows(win:application(), false, appsWithNoWindowsDelay[appid])
   end)
 
-local windowFilterAutoQuit = hs.window.filter.new(false)
+AutoQuitWindowFilter = hs.window.filter.new(false)
 for appid, cfg in pairs(appsAutoQuitWithNoWindows) do
   local func = function(app)
-    windowFilterAutoQuit:setAppFilter(app:name(), cfg)
+    AutoQuitWindowFilter:setAppFilter(app:name(), cfg)
   end
   local app = find(appid)
   if app ~= nil then
@@ -5954,7 +5954,7 @@ for appid, cfg in pairs(appsAutoQuitWithNoWindows) do
     execOnLaunch(appid, func, true)
   end
 end
-windowFilterAutoQuit:subscribe(hs.window.filter.windowDestroyed,
+AutoQuitWindowFilter:subscribe(hs.window.filter.windowDestroyed,
   function(win)
     if win == nil or win:application() == nil then return end
     local appid = win:application():bundleID()
@@ -6055,17 +6055,18 @@ end
 
 -- ## Barrier
 -- barrier window may not be focused when it is created, so focus it
+BarrierFocusWindowFilter = nil
 if hs.application.pathForBundleID("barrier") ~= nil
     and hs.application.pathForBundleID("barrier") ~= "" then
   local app = find("barrier")
   if app == nil then
     execOnLaunch("barrier", function(app)
-      hs.window.filter.new(false):allowApp(app:name()):subscribe(
+      BarrierFocusWindowFilter = hs.window.filter.new(false):allowApp(app:name()):subscribe(
         hs.window.filter.windowCreated, function(win) win:focus() end
       )
     end)
   else
-    hs.window.filter.new(false):allowApp(app:name()):subscribe(
+    BarrierFocusWindowFilter = hs.window.filter.new(false):allowApp(app:name()):subscribe(
       hs.window.filter.windowCreated, function(win) win:focus() end
     )
   end
@@ -6092,15 +6093,15 @@ for _, rules in pairs(remoteDesktopsMappingModifiers) do
   end
 end
 
-local microsoftRemoteDesktopWindowFilter
+MicrosoftRemoteDesktopWindowFilter = nil
 if hs.application.nameForBundleID("com.microsoft.rdc.macos") == "Windows App" then
-  microsoftRemoteDesktopWindowFilter = { rejectTitles = {} }
+  MicrosoftRemoteDesktopWindowFilter = { rejectTitles = {} }
   local preLocalizeWindowsApp = function ()
     for _, title in ipairs { "Favorites", "Devices", "Apps",
       "Settings", "About", "Device View Options", "App View Options" } do
       local locTitle = "^" .. localizedString(title, "com.microsoft.rdc.macos") .. "$"
-      if not hs.fnutils.contains(microsoftRemoteDesktopWindowFilter.rejectTitles, locTitle) then
-        table.insert(microsoftRemoteDesktopWindowFilter.rejectTitles, locTitle)
+      if not hs.fnutils.contains(MicrosoftRemoteDesktopWindowFilter.rejectTitles, locTitle) then
+        table.insert(MicrosoftRemoteDesktopWindowFilter.rejectTitles, locTitle)
       end
     end
   end
@@ -6109,7 +6110,7 @@ if hs.application.nameForBundleID("com.microsoft.rdc.macos") == "Windows App" th
   end
   execOnActivated("com.microsoft.rdc.macos", preLocalizeWindowsApp)
 else
-  microsoftRemoteDesktopWindowFilter = {
+  MicrosoftRemoteDesktopWindowFilter = {
     rejectTitles = {
       "^Microsoft Remote Desktop$",
       "^Preferences$",
@@ -6125,7 +6126,7 @@ local function isDefaultRemoteDesktopWindow(window)
       function(child) return child.AXHelp == "Session information" end) ~= nil
   elseif appid == "com.microsoft.rdc.macos" then
     local wFilter = hs.window.filter.new(false):setAppFilter(
-        window:application():name(), microsoftRemoteDesktopWindowFilter)
+        window:application():name(), MicrosoftRemoteDesktopWindowFilter)
     local result = wFilter:isWindowAllowed(window)
     if result then
       local winUIObj = hs.axuielement.windowElement(window)
@@ -6171,7 +6172,7 @@ local function remoteDesktopWindowFilter(app)
   return nil
 end
 local justModifiedRemoteDesktopModifiers = false
-local remoteDesktopModifierTapper = hs.eventtap.new({
+RemoteDesktopModifierTapper = hs.eventtap.new({
   hs.eventtap.event.types.flagsChanged, hs.eventtap.event.types.keyDown, hs.eventtap.event.types.keyUp},
 function(ev)
   local rule = remoteDesktopWindowFilter(hs.application.frontmostApplication())
@@ -6198,12 +6199,12 @@ function(ev)
 end)
 
 if frontApp and remoteDesktopsMappingModifiers[frontApp:bundleID()] then
-  remoteDesktopModifierTapper:start()
+  RemoteDesktopModifierTapper:start()
 end
 for appid, _ in pairs(remoteDesktopsMappingModifiers) do
   execOnActivated(appid, function()
-    if not remoteDesktopModifierTapper:isEnabled() then
-      remoteDesktopModifierTapper:start()
+    if not RemoteDesktopModifierTapper:isEnabled() then
+      RemoteDesktopModifierTapper:start()
     end
   end)
 end
@@ -6231,7 +6232,7 @@ for _, appid in ipairs(remoteDesktopAppsRequireSuspendHotkeys) do
   execOnActivated(appid, suspendHotkeysInRemoteDesktop)
 end
 
-local remoteDesktopObserver
+RemoteDesktopObserver = nil
 local function watchForRemoteDesktopWindow(app)
   local appUIObj = hs.axuielement.applicationElement(app)
   local observer = hs.axuielement.observer.new(app:pid())
@@ -6244,7 +6245,7 @@ local function watchForRemoteDesktopWindow(app)
   observer:start()
   stopOnDeactivated(app:bundleID(), observer)
   stopOnQuit(app:bundleID(), observer)
-  remoteDesktopObserver = observer
+  RemoteDesktopObserver = observer
 end
 
 for _, appid in ipairs(remoteDesktopAppsRequireSuspendHotkeys) do
@@ -6351,7 +6352,7 @@ function App_applicationCallback(appname, eventType, app)
     updateAppLocale(appid)
     WindowCreatedSince = {}
     if appid == nil then return end
-    if remoteDesktopObserver ~= nil then
+    if RemoteDesktopObserver ~= nil then
       if FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] ~= nil then
         FLAGS["SUSPEND"] = not FLAGS["SUSPEND_IN_REMOTE_DESKTOP"]
         FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] = nil
@@ -6468,8 +6469,8 @@ function App_applicationCallback(appname, eventType, app)
   end
   if eventType == hs.application.watcher.deactivated then
     if remoteDesktopsMappingModifiers[hs.application.frontmostApplication():bundleID()] == nil then
-      if remoteDesktopModifierTapper:isEnabled() then
-        remoteDesktopModifierTapper:stop()
+      if RemoteDesktopModifierTapper:isEnabled() then
+        RemoteDesktopModifierTapper:stop()
       end
     end
   end

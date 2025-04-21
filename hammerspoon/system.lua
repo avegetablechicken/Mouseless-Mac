@@ -2321,8 +2321,8 @@ end
 
 local tapperForExtraInfo
 local controlCenterPanelHotKeys = {}
-local controlCenterWatcher = hs.window.filter.new(find("com.apple.controlcenter"):name())
-controlCenterWatcher:subscribe(hs.window.filter.windowCreated,
+ControlCenterWindowFilter = hs.window.filter.new(find("com.apple.controlcenter"):name())
+ControlCenterWindowFilter:subscribe(hs.window.filter.windowCreated,
 function()
   for panel, spec in pairs(controlCenterPanelConfigs) do
     local localizedPanel = controlCenterLocalized(panel)
@@ -2344,7 +2344,7 @@ function()
       end):start()
   end
 end)
-controlCenterWatcher:subscribe(hs.window.filter.windowDestroyed,
+ControlCenterWindowFilter:subscribe(hs.window.filter.windowDestroyed,
 function()
   tapperForExtraInfo:stop()
   tapperForExtraInfo = nil
