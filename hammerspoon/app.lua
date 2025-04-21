@@ -4819,7 +4819,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
       appUIObj,
       hs.axuielement.observer.notifications.focusedWindowChanged
     )
-    observer:callback(function(observer, element, notification)
+    observer:callback(function(_, element, notification)
       backgroundWindowObserverEnableCallback(appid, filter)
       local closeObserver = hs.axuielement.observer.new(app:pid())
       closeObserver:addWatcher(
@@ -5811,7 +5811,7 @@ local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
           results[1],
           hs.axuielement.observer.notifications.uIElementDestroyed
         )
-        local pseudoWindowObserverCallback = function()
+        local pseudoWindowObserverCallback = function(obs)
           appUIObj:elementSearch(function(newMsg, newResults, newCount)
               if newCount == 0 then
                 local defaultRule = function()
@@ -5836,8 +5836,8 @@ local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
                   else
                     app:hide()
                   end
-                  pseudoWindowObserver:stop()
-                  pseudoWindowObserver = nil
+                  obs:stop()
+                  obs = nil
                 end
               end
             end,
