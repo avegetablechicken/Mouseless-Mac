@@ -6425,14 +6425,14 @@ function App_applicationCallback(appname, eventType, app)
     for id, processes in pairs(processesOnDeactivated) do
       if find(id) == nil then
         for _, proc in ipairs(processes) do
-          proc(app)
+          proc()
         end
       end
     end
     for id, processes in pairs(processesOnQuit) do
       if find(id) == nil then
         for _, proc in ipairs(processes) do
-          proc(app)
+          proc()
         end
       end
     end
