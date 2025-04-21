@@ -972,7 +972,7 @@ local function commonLocalizedMessage(message)
     return function(app)
       local appname = displayName(app, true)
       local appid = type(app) == 'string' and app or app:bundleID()
-      local appLocale = applicationLocales(appid)[1]
+      local appLocale = applicationLocale(appid)
       local result = localizedString(message .. ' App Store', 'com.apple.AppStore',
                                      { locale = appLocale })
       if result ~= nil then
@@ -983,7 +983,7 @@ local function commonLocalizedMessage(message)
   elseif message == "Back" then
     return function(app)
       local appid = type(app) == 'string' and app or app:bundleID()
-      local appLocale = applicationLocales(appid)[1]
+      local appLocale = applicationLocale(appid)
       local result = localizedString(message, 'com.apple.AppStore',
                                      { locale = appLocale })
       if result ~= nil then
@@ -994,7 +994,7 @@ local function commonLocalizedMessage(message)
   else
     return function(app)
       local appid = type(app) == 'string' and app or app:bundleID()
-      local appLocale = applicationLocales(appid)[1]
+      local appLocale = applicationLocale(appid)
       local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
       local locale = getMatchedLocale(appLocale, resourceDir, 'lproj')
       if locale ~= nil then
@@ -4983,7 +4983,7 @@ end
 
 local appLocales = {} -- if app locale changes, it may change its menu bar items, so need to rebind
 local function updateAppLocale(appid)
-  local appLocale = applicationLocales(appid)[1]
+  local appLocale = applicationLocale(appid)
   local oldAppLocale = appLocales[appid] or SYSTEM_LOCALE
   if oldAppLocale ~= appLocale then
     if getMatchedLocale(oldAppLocale, { appLocale }) ~= appLocale then
@@ -4998,7 +4998,7 @@ end
 local frontApp = hs.application.frontmostApplication()
 if frontApp then
   local appid = frontApp:bundleID()
-  appLocales[appid] = applicationLocales(appid)[1]
+  appLocales[appid] = applicationLocale(appid)
 end
 
 for _, appid in ipairs(appsLaunchSilently) do
@@ -5144,7 +5144,7 @@ local function registerOpenRecent(app)
       menuItemPath = { localizedFile, localizedOpenRecent }
       menuItem = app:findMenuItem(menuItemPath)
       if menuItem == nil then
-        local appLocale = applicationLocales(appid)[1]
+        local appLocale = applicationLocale(appid)
         if appLocale ~= SYSTEM_LOCALE and appLocale:sub(1, 2) ~= 'en' then
           local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
           local matchedLocale = getMatchedLocale(appLocale, resourceDir, 'lproj')

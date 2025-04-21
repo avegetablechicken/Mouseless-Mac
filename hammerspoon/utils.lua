@@ -320,11 +320,16 @@ local function systemLocales()
   local locales, ok = hs.execute("defaults read -globalDomain AppleLanguages | tr -d '()\" \\n'")
   return hs.fnutils.split(locales, ',')
 end
+SYSTEM_LOCALE = systemLocales()[1]
 
-function applicationLocales(appid)
-  local locales, ok = hs.execute(
-      string.format("(defaults read %s AppleLanguages || defaults read -globalDomain AppleLanguages) | tr -d '()\" \\n'", appid))
-  return hs.fnutils.split(locales, ',')
+function applicationLocale(appid)
+  local locales = hs.execute(
+      string.format("defaults read %s AppleLanguages | tr -d '()\" \\n'", appid))
+  if locales ~= "" then
+    return hs.fnutils.split(locales, ',')[1]
+  else
+    return SYSTEM_LOCALE
+  end
 end
 
 local function getResourceDir(appid, frameworkName)
@@ -1188,8 +1193,7 @@ local function localizedStringImpl(str, appid, params, force)
   if force == nil then force = false end
 
   if appLocale == nil then
-    local locales = applicationLocales(appid)
-    appLocale = locales[1]
+    appLocale = applicationLocale(appid)
   end
 
   local result
@@ -1778,8 +1782,7 @@ local function delocalizedStringImpl(str, appid, params)
   end
 
   if appLocale == nil then
-    local locales = applicationLocales(appid)
-    appLocale = locales[1]
+    appLocale = applicationLocale(appid)
   end
 
   local result = get(deLocaleMap, appid, appLocale, str)
@@ -2006,7 +2009,6 @@ function localizeCommonMenuItemTitles(locale, appid)
   end
 end
 
-SYSTEM_LOCALE = systemLocales()[1]
 localizeCommonMenuItemTitles(SYSTEM_LOCALE)
 
 function delocalizedMenuItem(title, appid, params)
@@ -2099,7 +2101,7 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
 end
 
 function localizedMenuBarItem(title, appid, params)
-  local appLocale = applicationLocales(appid)[1]
+  local appLocale = applicationLocale(appid)
   local locTitle = hs.fnutils.indexOf(delocMap[appid] or {}, title)
   if locTitle ~= nil then
     -- "View" may be localized to different strings in the same app (e.g. WeChat)
@@ -2143,7 +2145,7 @@ function localizedMenuBarItem(title, appid, params)
 end
 
 function localizedMenuItem(title, appid, params)
-  local appLocale = applicationLocales(appid)[1]
+  local appLocale = applicationLocale(appid)
   local locTitle = hs.fnutils.indexOf(delocMap[appid] or {}, title)
   if locTitle ~= nil then
     return locTitle
