@@ -4773,12 +4773,12 @@ function WinBind(app, config, ...)
   return hotkey
 end
 
--- hotkeys for frontmost window belonging to unactivated app
-local inWinOfUnactivatedAppHotKeys = {}
-local inWinOfUnactivatedAppWatchers = {}
-local function inWinOfUnactivatedAppWatcherEnableCallback(appid, filter, win, event)
-  if inWinOfUnactivatedAppHotKeys[appid] == nil then
-    inWinOfUnactivatedAppHotKeys[appid] = {}
+-- hotkeys for frontmost window belonging to daemon app
+local backgroundWindowHotkeys = {}
+local backgroundWindowFilters = {}
+local function backgroundWindowObserverEnableCallback(appid, filter, win, event)
+  if backgroundWindowHotkeys[appid] == nil then
+    backgroundWindowHotkeys[appid] = {}
   elseif event == hs.window.filter.windowFocused then
     return
   end
@@ -4803,7 +4803,7 @@ local function inWinOfUnactivatedAppWatcherEnableCallback(appid, filter, win, ev
         config.repeatedFn = config.repeatable and cfg.fn or nil
         config.windowFilter = true
         local hotkey = WinBind(app, config)
-        table.insert(inWinOfUnactivatedAppHotKeys[appid], hotkey)
+        table.insert(backgroundWindowHotkeys[appid], hotkey)
       end
     end
   end
@@ -4820,22 +4820,22 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
       hs.axuielement.observer.notifications.focusedWindowChanged
     )
     observer:callback(function(observer, element, notification)
-      inWinOfUnactivatedAppWatcherEnableCallback(appid, filter, element)
+      backgroundWindowObserverEnableCallback(appid, filter, element)
       local closeObserver = hs.axuielement.observer.new(app:pid())
       closeObserver:addWatcher(
         element,
         hs.axuielement.observer.notifications.uIElementDestroyed
       )
       closeObserver:callback(function(obs)
-        if inWinOfUnactivatedAppHotKeys[appid] ~= nil then -- fix weird bug
-          for i, hotkey in ipairs(inWinOfUnactivatedAppHotKeys[appid]) do
+        if backgroundWindowHotkeys[appid] ~= nil then -- fix weird bug
+          for i, hotkey in ipairs(backgroundWindowHotkeys[appid]) do
             if hotkey.idx ~= nil then
               hotkey:delete()
-              inWinOfUnactivatedAppHotKeys[appid][i] = nil
+              backgroundWindowHotkeys[appid][i] = nil
             end
           end
-          if #inWinOfUnactivatedAppHotKeys[appid] == 0 then
-            inWinOfUnactivatedAppHotKeys[appid] = nil
+          if #backgroundWindowHotkeys[appid] == 0 then
+            backgroundWindowHotkeys[appid] = nil
           end
         end
         obs:stop()
@@ -4844,16 +4844,16 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
       closeObserver:start()
     end)
     observer:start()
-    inWinOfUnactivatedAppWatchers[appid][filter] = observer
+    backgroundWindowFilters[appid][filter] = observer
     stopOnQuit(appid, observer, function()
-      inWinOfUnactivatedAppWatchers[appid][filter] = nil
+      backgroundWindowFilters[appid][filter] = nil
     end)
     return
   end
   local windowFilter = hs.window.filter.new(false):setAppFilter(app:name(), filter)
       :subscribe({ hs.window.filter.windowCreated, hs.window.filter.windowFocused },
   function(win, appname, event)
-    inWinOfUnactivatedAppWatcherEnableCallback(appid, filter, win, event)
+    backgroundWindowObserverEnableCallback(appid, filter, win, event)
   end)
       :subscribe({  hs.window.filter.windowDestroyed, hs.window.filter.windowUnfocused },
   function(win, appname, event)
@@ -4862,23 +4862,23 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
         and hs.window.frontmostWindow():id() == win:id() then
       return
     end
-    if inWinOfUnactivatedAppHotKeys[appid] ~= nil then  -- fix weird bug
-      for i, hotkey in ipairs(inWinOfUnactivatedAppHotKeys[appid]) do
+    if backgroundWindowHotkeys[appid] ~= nil then  -- fix weird bug
+      for i, hotkey in ipairs(backgroundWindowHotkeys[appid]) do
         if hotkey.idx ~= nil then
           hotkey:delete()
-          inWinOfUnactivatedAppHotKeys[appid][i] = nil
+          backgroundWindowHotkeys[appid][i] = nil
         end
       end
-      inWinOfUnactivatedAppHotKeys[appid] = nil
+      backgroundWindowHotkeys[appid] = nil
     end
   end)
-  inWinOfUnactivatedAppWatchers[appid][filter] = windowFilter
+  backgroundWindowFilters[appid][filter] = windowFilter
   execOnQuit(appid, function()
     if windowFilter ~= nil then
       windowFilter:unsubscribeAll()
       windowFilter = nil
     end
-    inWinOfUnactivatedAppWatchers[appid][filter] = nil
+    backgroundWindowFilters[appid][filter] = nil
   end)
 end
 
@@ -4893,11 +4893,11 @@ local function registerWinFiltersForDaemonApp(app, appConfig)
       return cfg.bindCondition == nil or cfg.bindCondition(app)
     end
     if hasKey and isForWindow and isBackground and bindable() then
-      if inWinOfUnactivatedAppWatchers[appid] == nil then
-        inWinOfUnactivatedAppWatchers[appid] = {}
+      if backgroundWindowFilters[appid] == nil then
+        backgroundWindowFilters[appid] = {}
       end
       local windowFilter = keybinding.windowFilter or cfg.windowFilter
-      for f, _ in pairs(inWinOfUnactivatedAppWatchers[appid]) do
+      for f, _ in pairs(backgroundWindowFilters[appid]) do
         -- a window filter can be shared by multiple hotkeys
         if sameFilter(f, windowFilter) then
           goto L_CONTINUE
@@ -5032,7 +5032,7 @@ if frontApp then
   registerInWinHotKeys(frontApp)
 end
 
--- register watchers for frontmost window belonging to unactivated app
+-- register watchers for frontmost window belonging to daemon app
 for appid, appConfig in pairs(appHotKeyCallbacks) do
   local app = find(appid)
   if app ~= nil then
@@ -5053,15 +5053,15 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
   end
 end
 
--- register hotkeys for frontmost window belonging to unactivated app
+-- register hotkeys for frontmost window belonging to daemon app
 local frontWin = hs.window.frontmostWindow()
 if frontWin ~= nil then
   local frontWinAppBid = frontWin:application():bundleID()
-  if inWinOfUnactivatedAppWatchers[frontWinAppBid] ~= nil then
-    for filter, _ in pairs(inWinOfUnactivatedAppWatchers[frontWinAppBid]) do
+  if backgroundWindowFilters[frontWinAppBid] ~= nil then
+    for filter, _ in pairs(backgroundWindowFilters[frontWinAppBid]) do
       local filterEnable = hs.window.filter.new(false):setAppFilter(frontWin:application():title(), filter)
       if filterEnable:isWindowAllowed(frontWin) then
-        inWinOfUnactivatedAppWatcherEnableCallback(frontWinAppBid, filter, frontWin)
+        backgroundWindowObserverEnableCallback(frontWinAppBid, filter, frontWin)
       end
     end
   end
@@ -5783,7 +5783,7 @@ local specialNoPseudoWindowsRules = {
   end
 }
 local appPseudoWindowObservers = {}
-local function registerPseudoWindowDestroyWatcher(app, roles, quit, delay)
+local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
   local observer = appPseudoWindowObservers[app:bundleID()]
   local appUIObj = hs.axuielement.applicationElement(app)
   if observer ~= nil then observer:start() return end
@@ -5964,7 +5964,7 @@ windowFilterAutoQuit:subscribe(hs.window.filter.windowDestroyed,
 -- Hammerspoon only account standard windows, so add watchers for pseudo windows here
 for appid, roles in pairs(appsAutoHideWithNoPseudoWindows) do
   local func = function(app)
-    registerPseudoWindowDestroyWatcher(app, roles, false, appsWithNoWindowsDelay[appid])
+    registerPseudoWindowDestroyObserver(app, roles, false, appsWithNoWindowsDelay[appid])
   end
   local app = find(appid)
   if app ~= nil then
@@ -5975,7 +5975,7 @@ for appid, roles in pairs(appsAutoHideWithNoPseudoWindows) do
 end
 for appid, roles in pairs(appsAutoQuitWithNoPseudoWindows) do
   local func = function(app)
-    registerPseudoWindowDestroyWatcher(app, roles, true, appsWithNoWindowsDelay[appid])
+    registerPseudoWindowDestroyObserver(app, roles, true, appsWithNoWindowsDelay[appid])
   end
   local app = find(appid)
   if app ~= nil then
