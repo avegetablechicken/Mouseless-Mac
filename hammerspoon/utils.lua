@@ -2302,6 +2302,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
         tell application id "com.surteesstudios.Bartender" to activate "]] .. appid .. [[-Item-0"
       ]])
     else
+      -- note: some apps do not react to "AXPress", you have to click them.
       menuBarMenu:performAction("AXPress")
     end
   end
