@@ -2275,7 +2275,7 @@ function rightClickAndRestore(position, appname)
   return false
 end
 
-function clickAppRightMenuBarItem(appid, menuItemPath, show)
+function clickRightMenuBarItem(appid, menuItemPath, show)
   local app = find(appid)
   if app == nil then return false end
   local appUIObj = hs.axuielement.applicationElement(app)
@@ -2314,60 +2314,4 @@ function clickAppRightMenuBarItem(appid, menuItemPath, show)
 
   menu:performAction("AXPress")
   return true
-end
-
-local controlCenterIdentifiers = hs.json.read("static/controlcenter-identifies.json")
-local controlCenterMenuBarItemIdentifiers = controlCenterIdentifiers.menubar
-function clickControlCenterMenuBarItemSinceBigSur(menuItem)
-  if controlCenterMenuBarItemIdentifiers[menuItem] == nil then return false end
-  local appUIObj = hs.axuielement.applicationElement(find("com.apple.controlcenter"))
-  local menuBarItems = getAXChildren(appUIObj, "AXMenuBar", -1):childrenWithRole("AXMenuBarItem")
-  for _, item in ipairs(menuBarItems) do
-    if item.AXIdentifier:find(controlCenterMenuBarItemIdentifiers[menuItem]) ~= nil then
-      item:performAction("AXPress")
-      return true
-    end
-  end
-  return false
-end
-
-function clickControlCenterMenuBarItem(menuItem)
-  local osVersion = getOSVersion()
-  if osVersion >= OS["Big Sur"] then
-    return clickControlCenterMenuBarItemSinceBigSur(menuItem)
-  end
-  return false
-end
-
-function controlCenterLocalized(panel, key)
-  if key == nil then
-    key = panel
-  end
-  if panel == "Users" and key == "Users" then
-    key = "User"
-  end
-  panel = panel:gsub(" ", ""):gsub("‑", "")
-  local result = localizedString(key, "com.apple.controlcenter", panel)
-  if result == nil and panel == "Focus" then
-    result = localizedString(key, "com.apple.controlcenter",
-        { framework = "DoNotDisturb.framework" }, true)
-    if result == nil then
-      result = localizedString(key, "com.apple.controlcenter",
-          { framework = "DoNotDisturbKit.framework" }, true)
-    end
-  end
-  return result
-end
-
-function clickRightMenuBarItem(menuBarName, menuItemPath, show)
-  if menuBarName == "Control Center" then
-    return clickControlCenterMenuBarItem(menuBarName)
-  end
-  local resourceDir = find("com.apple.controlcenter"):path() .. "/Contents/Resources"
-  local newName = menuBarName:gsub(" ", ""):gsub("‑", "")
-  if hs.fs.attributes(resourceDir .. '/' .. newName .. '.loctable') ~= nil
-      or hs.fs.attributes(resourceDir .. '/en.lproj/' .. newName .. '.strings') ~= nil then
-    return clickControlCenterMenuBarItem(menuBarName)
-  end
-  return clickAppRightMenuBarItem(menuBarName, menuItemPath, show)
 end

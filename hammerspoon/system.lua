@@ -993,6 +993,26 @@ if hs.fs.attributes("config/application.json") ~= nil then
   defaultMusicAppForControlCenter = applicationConfigs.defaultMusicAppForControlCenter
 end
 
+local function controlCenterLocalized(panel, key)
+  if key == nil then
+    key = panel
+  end
+  if panel == "Users" and key == "Users" then
+    key = "User"
+  end
+  panel = panel:gsub(" ", ""):gsub("‑", "")
+  local result = localizedString(key, "com.apple.controlcenter", panel)
+  if result == nil and panel == "Focus" then
+    result = localizedString(key, "com.apple.controlcenter",
+        { framework = "DoNotDisturb.framework" }, true)
+    if result == nil then
+      result = localizedString(key, "com.apple.controlcenter",
+          { framework = "DoNotDisturbKit.framework" }, true)
+    end
+  end
+  return result
+end
+
 local function popupControlCenterSubPanel(panel, allowReentry)
   local ident = controlCenterSubPanelIdentifiers[panel]
   local win = find("com.apple.controlcenter"):mainWindow()
@@ -1306,7 +1326,13 @@ function registerControlCenterHotKeys(panel)
         controlCenterSubPanelWatcher = nil
       end
 
-      clickRightMenuBarItem("Control Center")
+      local appUIObj = hs.axuielement.applicationElement(find("com.apple.controlcenter"))
+      local ident = controlCenterMenuBarItemIdentifiers["Control Center"]
+      local menuBarItem = hs.fnutils.find(getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem"),
+        function(item)
+          return item.AXIdentifier:find(ident) ~= nil
+        end)
+      menuBarItem:performAction("AXPress")
       hotkeyMainForward = newControlCenter("⌘", "]", "Forward",
         function()
           assert(hotkeyMainForward) hotkeyMainForward:disable()
