@@ -1751,7 +1751,7 @@ end
 
 local deLocaleMap = {}
 local deLocaleInversedMap = {}
-local menuItemTmpFile = localeTmpDir .. 'menuitems.json'
+local menuItemTmpFile = localeTmpDir .. 'menubar.json'
 if hs.fs.attributes(menuItemTmpFile) ~= nil then
   deLocaleMap = hs.json.read(menuItemTmpFile)
   for appid, map in pairs(deLocaleMap) do
