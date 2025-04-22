@@ -2276,10 +2276,18 @@ function rightClickAndRestore(position, appname)
 end
 
 function clickRightMenuBarItem(appid, menuItemPath, show)
-  local app = find(appid)
-  if app == nil then return false end
+  local menuBarIdx, app = 1, nil
+  if type(appid) == 'table' then
+    menuBarIdx = appid[2] appid = appid[1]
+  end
+  if type(appid) == 'string' then
+    app = find(appid)
+    if app == nil then return false end
+  else
+    app = appid appid = app:bundleID()
+  end
   local appUIObj = hs.axuielement.applicationElement(app)
-  local menuBarMenu = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1)
+  local menuBarMenu = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", menuBarIdx)
 
   if type(menuItemPath) ~= 'table' then
     menuItemPath = { menuItemPath }

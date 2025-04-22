@@ -2755,7 +2755,7 @@ appHotKeyCallbacks = {
         local appUIObj = hs.axuielement.applicationElement(app)
         local menu = getAXChildren(appUIObj, "AXMenuBar", 2, "AXMenuBarItem", 1, "AXMenu", 1)
         if menu == nil then
-          clickRightMenuBarItem(app:bundleID())
+          clickRightMenuBarItem(app)
           menu = getAXChildren(appUIObj, "AXMenuBar", 2, "AXMenuBarItem", 1, "AXMenu", 1)
         end
         local start = getAXChildren(menu, "AXMenuItem", "Start")
@@ -3098,7 +3098,7 @@ appHotKeyCallbacks = {
     ["showSystemStatus"] = {
       message = "Show System Status",
       kind = HK.MENUBAR,
-      fn = function(app) clickRightMenuBarItem(app:bundleID()) end
+      fn = function(app) clickRightMenuBarItem(app) end
     }
   },
 
@@ -3108,7 +3108,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("In-app Screensaver",
                                 { localeFile = "HotkeyWindowController" }),
       fn = function(app)
-        clickRightMenuBarItem(app:bundleID(),
+        clickRightMenuBarItem(app,
             localizedString("In-app Screensaver", app:bundleID(),
                             { localeFile = "HotkeyWindowController" }))
       end
@@ -3120,7 +3120,7 @@ appHotKeyCallbacks = {
     ["toggleTopNotch"] = {
       message = "Toggle Top Notch",
       fn = function(app)
-        clickRightMenuBarItem(app:bundleID())
+        clickRightMenuBarItem(app)
         local appUIObj = hs.axuielement.applicationElement(app)
         hs.timer.doAfter(1, function()
           local switch = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
@@ -3189,7 +3189,7 @@ appHotKeyCallbacks = {
         allowPopover = true
       },
       fn = function(win)
-        clickRightMenuBarItem(win:application():bundleID())
+        clickRightMenuBarItem(win:application())
       end,
       deleteOnDisable = true,
       defaultResendToSystem = true
@@ -3205,9 +3205,7 @@ appHotKeyCallbacks = {
             "defaults read com.apple.Passwords EnableMenuBarExtra | tr -d '\\n'")
         return enableMenuBarExtra == "1"
       end,
-      fn = function(app)
-        clickRightMenuBarItem(app:bundleID())
-      end
+      fn = clickRightMenuBarItem
     },
     ["newPassword"] = {
       message = localizedString("New Password", "com.apple.Passwords"),
@@ -3280,7 +3278,7 @@ appHotKeyCallbacks = {
           field.AXPosition.y + field.AXSize.h / 2
         }
         leftClickAndRestore(position, win:application():name())
-        clickRightMenuBarItem(win:application():bundleID())
+        clickRightMenuBarItem(win:application())
       end
     },
     ["copyPassword"] = {
@@ -3306,7 +3304,7 @@ appHotKeyCallbacks = {
           field.AXPosition.y + field.AXSize.h / 2
         }
         leftClickAndRestore(position, win:application():name())
-        clickRightMenuBarItem(win:application():bundleID())
+        clickRightMenuBarItem(win:application())
       end
     },
     ["record1"] = {
