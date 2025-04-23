@@ -476,43 +476,43 @@
         "key": "D"
       },
       "open1stSidebarItemOnOpenSavePanel": {
-        "mods": "option",
+        "mods":  ["option", "command"],
         "key": "1"
       },
       "open2ndSidebarItemOnOpenSavePanel": {
-        "mods": "option",
+        "mods": ["option", "command"],
         "key": "2"
       },
       "open3rdSidebarItemOnOpenSavePanel": {
-        "mods": "option",
+        "mods": ["option", "command"],
         "key": "3"
       },
       "open4thSidebarItemOnOpenSavePanel": {
-        "mods": "option",
+        "mods": ["option", "command"],
         "key": "4"
       },
       "open5thSidebarItemOnOpenSavePanel": {
-        "mods": "option",
+        "mods": ["option", "command"],
         "key": "5"
       },
       "open6thSidebarItemOnOpenSavePanel": {
-        "mods": "option",
+        "mods": ["option", "command"],
         "key": "6"
       },
       "open7thSidebarItemOnOpenSavePanel": {
-        "mods": "option",
+        "mods": ["option", "command"],
         "key": "7"
       },
       "open8thSidebarItemOnOpenSavePanel": {
-        "mods": "option",
+        "mods": ["option", "command"],
         "key": "8"
       },
       "open9thSidebarItemOnOpenSavePanel": {
-        "mods": "option",
+        "mods": ["option", "command"],
         "key": "9"
       },
       "open10thSidebarItemOnOpenSavePanel": {
-        "mods": "option",
+        "mods": ["option", "command"],
         "key": "0"
       }
     },
