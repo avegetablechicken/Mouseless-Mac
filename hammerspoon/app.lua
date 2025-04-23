@@ -4027,6 +4027,14 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["cn.better365.Cleaner"] =
+  {
+    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
+    ["minimize"] = specialCommonHotkeyConfigs["minimize"],
+    ["hide"] = specialCommonHotkeyConfigs["hide"],
+    ["quit"] = specialCommonHotkeyConfigs["quit"]
+  },
+
   ["cn.better365.iCopy"] =
   {
     ["setting"] = {
