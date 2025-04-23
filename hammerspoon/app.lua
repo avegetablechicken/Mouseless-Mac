@@ -3496,6 +3496,23 @@ appHotKeyCallbacks = {
   },
 
   ["com.realvnc.vncviewer"] = {
+    ["search"] = {
+      message = "Search",
+      windowFilter = {
+        allowTitles = "^(Real)VNC Viewer$"
+      },
+      fn = function(win)
+        local winUIObj = hs.axuielement.windowElement(win)
+        local searchField = winUIObj:childrenWithRole("AXTextField")[1]
+        if searchField ~= nil then
+          local position = {
+            searchField.AXPosition.x + 5,
+            searchField.AXPosition.y + 5,
+          }
+          leftClickAndRestore(position, win:application():name())
+        end
+      end
+    },
     ["toggleSidebar"] = {
       message = "Toggle sidebar",
       condition = checkMenuItem({ "View", "Show sidebar" }),

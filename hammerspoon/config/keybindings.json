@@ -1168,6 +1168,10 @@
       }
     },
     "com.realvnc.vncviewer": {
+      "search": {
+        "mods": "command",
+        "key": "F"
+      },
       "toggleSidebar": {
         "mods": ["control", "command"],
         "key": "S"
