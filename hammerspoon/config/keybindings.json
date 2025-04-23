@@ -1298,6 +1298,42 @@
         "mods": "control",
         "key": "F1",
         "background": true
+      },
+      "view1": {
+        "mods": "command",
+        "key": "1"
+      },
+      "view2": {
+        "mods": "command",
+        "key": "2"
+      },
+      "view3": {
+        "mods": "command",
+        "key": "3"
+      },
+      "view4": {
+        "mods": "command",
+        "key": "4"
+      },
+      "view5": {
+        "mods": "command",
+        "key": "5"
+      },
+      "view6": {
+        "mods": "command",
+        "key": "6"
+      },
+      "view7": {
+        "mods": "command",
+        "key": "7"
+      },
+      "view8": {
+        "mods": "command",
+        "key": "8"
+      },
+      "view9": {
+        "mods": "command",
+        "key": "9"
       }
     },
     "com.app.menubarx": {

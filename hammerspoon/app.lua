@@ -742,6 +742,17 @@ local function clickBartenderBarItem(index, rightClick)
   end
 end
 
+local function clickBartenderSidebarItem(index)
+  return function(win)
+    local winUIObj = hs.axuielement.windowElement(win)
+    local row = getAXChildren(winUIObj, "AXSplitGroup", 1, "AXScrollArea", 1,
+        "AXOutline", 1, "AXRow", index, "AXCell", 1, "AXImage", 1)
+    if row ~= nil then
+      leftClickAndRestore(row.AXPosition, win:application():name())
+    end
+  end
+end
+
 -- ### PasswordsMenuBarExtra
 local function getPasswordRecordPosition(index)
   return function(win)
@@ -3054,6 +3065,60 @@ appHotKeyCallbacks = {
         mods, key = parsePlistKeyBinding(mods, key)
         safeGlobalKeyStroke(mods, key)
       end
+    },
+    ["view1"] =
+    {
+      message = "General",
+      windowFilter = { allowTitles = "^Bartender 5$" },
+      fn = clickBartenderSidebarItem(1)
+    },
+    ["view2"] =
+    {
+      message = "Menu Bar Items",
+      windowFilter = { allowTitles = "^Bartender 5$" },
+      fn = clickBartenderSidebarItem(2)
+    },
+    ["view3"] =
+    {
+      message = "Menu Bar Style",
+      windowFilter = { allowTitles = "^Bartender 5$" },
+      fn = clickBartenderSidebarItem(3)
+    },
+    ["view4"] =
+    {
+      message = "Presets",
+      windowFilter = { allowTitles = "^Bartender 5$" },
+      fn = clickBartenderSidebarItem(4)
+    },
+    ["view5"] =
+    {
+      message = "Triggers",
+      windowFilter = { allowTitles = "^Bartender 5$" },
+      fn = clickBartenderSidebarItem(5)
+    },
+    ["view6"] =
+    {
+      message = "Hotkeys",
+      windowFilter = { allowTitles = "^Bartender 5$" },
+      fn = clickBartenderSidebarItem(6)
+    },
+    ["view7"] =
+    {
+      message = "Advanced",
+      windowFilter = { allowTitles = "^Bartender 5$" },
+      fn = clickBartenderSidebarItem(7)
+    },
+    ["view8"] =
+    {
+      message = "License",
+      windowFilter = { allowTitles = "^Bartender 5$" },
+      fn = clickBartenderSidebarItem(8)
+    },
+    ["view9"] =
+    {
+      message = "About",
+      windowFilter = { allowTitles = "^Bartender 5$" },
+      fn = clickBartenderSidebarItem(9)
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
     ["minimize"] = specialCommonHotkeyConfigs["minimize"],
