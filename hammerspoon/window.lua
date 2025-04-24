@@ -550,13 +550,7 @@ end
 
 -- visible windows on all user spaces (wallpaper apps excluded)
 -- fixme: full screen space will be ignored if not once focused
-local ignoredApps = {
-  "com.apple.controlcenter",
-  "com.apple.notificationcenterui",
-  "com.pigigaldi.pock",
-  "whbalzac.Dongtaizhuomian",
-  "com.macosgame.iwallpaper",
-}
+local ignoredApps = ApplicationConfigs["windowSwitcherIgnore"] or {}
 local switcher
 
 local hotkeyEnabledByWindowSwitcher = false

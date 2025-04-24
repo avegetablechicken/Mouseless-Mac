@@ -89,6 +89,14 @@
     "com.eusoft.freeeudic"
   ],
 
+  "windowSwitcherIgnore": [
+    "com.apple.controlcenter",
+    "com.apple.notificationcenterui",
+    "com.pigigaldi.pock",
+    "whbalzac.Dongtaizhuomian",
+    "com.macosgame.iwallpaper"
+  ],
+
   "suspendHotkeysInRemoteDesktop": [
     "com.microsoft.rdc.macos",
     "com.devolutions.remotedesktopmanager",
