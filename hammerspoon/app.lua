@@ -6444,6 +6444,7 @@ local commonCheckLaunchFunc = function(app) print(app) return app:getMenuItems()
 for _, appid in ipairs(appsLaunchSlowList) do
   appsLaunchSlow[appid] = commonCheckLaunchFunc
 end
+local appsLaunchWaitTime = ApplicationConfigs["launchWaitTime"] or 0.1
 
 local checkFullyLaunched
 local function testFullyLaunched(app)
@@ -6489,7 +6490,7 @@ function App_applicationCallback(appname, eventType, app)
         checkFullyLaunched = nil
         local menuItems = app:getMenuItems()
         local retry = 0
-        while menuItems == nil and retry < 10 do
+        while menuItems == nil and retry < appsLaunchWaitTime / 0.01 do
           hs.timer.usleep(0.01 * 1000000)
           menuItems = app:getMenuItems()
           if menuItems ~= nil then break end

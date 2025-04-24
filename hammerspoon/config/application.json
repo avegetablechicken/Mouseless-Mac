@@ -21,6 +21,7 @@
     ]
   },
 
+  "launchWaitTime": 0.1,
   "launchSlowly": [
     "com.apple.iMovieApp",
     "org.klatexformula.klatexformula"
