@@ -1227,6 +1227,7 @@ end
 local hotkeyMainForward, hotkeyMainBack
 local hotkeyShow, hotkeyHide
 local backgroundSoundsHotkeys
+local selectNetworkHotkeys, selectNetworkWatcher
 ---@diagnostic disable-next-line: lowercase-global
 function registerControlCenterHotKeys(panel)
   local osVersion = getOSVersion()
@@ -1257,47 +1258,6 @@ function registerControlCenterHotKeys(panel)
     end
     backgroundSoundsHotkeys = nil
   end
-
-  local selectNetworkHotkeys, selectNetworkWatcher
-  controlCenterSubPanelWatcher = hs.window.filter.new(find("com.apple.controlcenter"):name())
-    :subscribe(hs.window.filter.windowDestroyed, function()
-      if selectNetworkWatcher ~= nil then
-        StopExecContinuously(selectNetworkWatcher)
-        selectNetworkWatcher = nil
-      end
-      if selectNetworkHotkeys ~= nil then
-        for _, hotkey in ipairs(selectNetworkHotkeys) do
-          hotkey:delete()
-        end
-        selectNetworkHotkeys = nil
-      end
-      if controlCenterHotKeys ~= nil then
-        for _, hotkey in ipairs(controlCenterHotKeys) do
-          hotkey:delete()
-        end
-        controlCenterHotKeys = nil
-      end
-      hotkeyMainBack = nil
-      hotkeyMainForward = nil
-      if hotkeyShow ~= nil then
-        hotkeyShow:delete()
-        hotkeyShow = nil
-      end
-      if hotkeyHide ~= nil then
-        hotkeyHide:delete()
-        hotkeyHide = nil
-      end
-      if backgroundSoundsHotkeys ~= nil then
-        for _, hotkey in ipairs(backgroundSoundsHotkeys) do
-          hotkey:delete()
-        end
-        backgroundSoundsHotkeys = nil
-      end
-      if controlCenterSubPanelWatcher ~= nil then
-        controlCenterSubPanelWatcher:unsubscribeAll()
-        controlCenterSubPanelWatcher = nil
-      end
-    end)
 
   -- back to main panel
   hotkeyMainBack = newControlCenter("⌘", "[", "Back",
@@ -2347,9 +2307,12 @@ end
 
 local tapperForExtraInfo
 local controlCenterPanelHotKeys = {}
-ControlCenterWindowFilter = hs.window.filter.new(find("com.apple.controlcenter"):name())
-ControlCenterWindowFilter:subscribe(hs.window.filter.windowCreated,
-function()
+local controlCenter = find("com.apple.controlcenter")
+ControlCenterObserver = hs.axuielement.observer.new(controlCenter:pid())
+ControlCenterObserver:addWatcher(
+  hs.axuielement.applicationElement(controlCenter),
+  hs.axuielement.observer.notifications.windowCreated)
+local function controlCenterObserverCallback()
   for panel, spec in pairs(controlCenterPanelConfigs) do
     local localizedPanel = controlCenterLocalized(panel)
     local hotkey = bindControlCenter({ mods = "", key = spec.key },
@@ -2369,15 +2332,70 @@ function()
         return false
       end):start()
   end
-end)
-ControlCenterWindowFilter:subscribe(hs.window.filter.windowDestroyed,
-function()
-  tapperForExtraInfo:stop()
-  tapperForExtraInfo = nil
-  for _, hotkey in ipairs(controlCenterPanelHotKeys) do
-    hotkey:delete()
+  local controlCenterDestroyObserver = hs.axuielement.observer.new(controlCenter:pid())
+  controlCenterDestroyObserver:addWatcher(
+    hs.axuielement.windowElement(controlCenter:focusedWindow()),
+    hs.axuielement.observer.notifications.uIElementDestroyed
+  )
+  controlCenterDestroyObserver:callback(function()
+    tapperForExtraInfo:stop()
+    tapperForExtraInfo = nil
+    for _, hotkey in ipairs(controlCenterPanelHotKeys) do
+      hotkey:delete()
+    end
+    controlCenterPanelHotKeys = {}
+    if selectNetworkWatcher ~= nil then
+      StopExecContinuously(selectNetworkWatcher)
+      selectNetworkWatcher = nil
+    end
+    if selectNetworkHotkeys ~= nil then
+      for _, hotkey in ipairs(selectNetworkHotkeys) do
+        hotkey:delete()
+      end
+      selectNetworkHotkeys = nil
+    end
+    if controlCenterHotKeys ~= nil then
+      for _, hotkey in ipairs(controlCenterHotKeys) do
+        hotkey:delete()
+      end
+      controlCenterHotKeys = nil
+    end
+    hotkeyMainBack = nil
+    hotkeyMainForward = nil
+    if hotkeyShow ~= nil then
+      hotkeyShow:delete()
+      hotkeyShow = nil
+    end
+    if hotkeyHide ~= nil then
+      hotkeyHide:delete()
+      hotkeyHide = nil
+    end
+    if backgroundSoundsHotkeys ~= nil then
+      for _, hotkey in ipairs(backgroundSoundsHotkeys) do
+        hotkey:delete()
+      end
+      backgroundSoundsHotkeys = nil
+    end
+    controlCenterDestroyObserver:stop()
+    controlCenterDestroyObserver = nil
+  end)
+  controlCenterDestroyObserver:start()
+end
+ControlCenterObserver:callback(controlCenterObserverCallback)
+ControlCenterObserver:start()
+ExecContinuously(function()
+  if not controlCenter:isRunning() then
+    hs.timer.doAfter(2, function()
+      ControlCenterObserver:stop()
+      controlCenter = find("com.apple.controlcenter")
+      ControlCenterObserver = hs.axuielement.observer.new(controlCenter:pid())
+      ControlCenterObserver:addWatcher(
+        hs.axuielement.applicationElement(controlCenter),
+        hs.axuielement.observer.notifications.windowCreated)
+      ControlCenterObserver:callback(controlCenterObserverCallback)
+      ControlCenterObserver:start()
+    end)
   end
-  controlCenterPanelHotKeys = {}
 end)
 
 -- # callbacks
