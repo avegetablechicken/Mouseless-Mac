@@ -2244,10 +2244,19 @@ function leftClick(position, appname)
   return true
 end
 
-function leftClickAndRestore(position, appname)
+function leftClickAndRestore(position, appname, delay)
+  if type(appname) == 'number' then
+    delay = appname appname = nil
+  end
   local mousePosition = hs.mouse.absolutePosition()
   if leftClick(position, appname) then
-    hs.mouse.absolutePosition(mousePosition)
+    if delay then
+      hs.timer.doAfter(delay, function()
+        hs.mouse.absolutePosition(mousePosition)
+      end)
+    else
+      hs.mouse.absolutePosition(mousePosition)
+    end
     return true
   end
   return false
@@ -2266,10 +2275,19 @@ function rightClick(position, appname)
   return true
 end
 
-function rightClickAndRestore(position, appname)
+function rightClickAndRestore(position, appname, delay)
+  if type(appname) == 'number' then
+    delay = appname appname = nil
+  end
   local mousePosition = hs.mouse.absolutePosition()
   if rightClick(position, appname) then
-    hs.mouse.absolutePosition(mousePosition)
+    if delay then
+      hs.timer.doAfter(delay, function()
+        hs.mouse.absolutePosition(mousePosition)
+      end)
+    else
+      hs.mouse.absolutePosition(mousePosition)
+    end
     return true
   end
   return false

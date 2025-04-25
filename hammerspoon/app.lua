@@ -2551,10 +2551,7 @@ appHotKeyCallbacks = {
       end,
       repeatable = true,
       fn = function(position, app)
-        local mousePosition = hs.mouse.absolutePosition()
-        if leftClick({ position.x + 5, position.y + 5 }, app:name()) then
-          hs.timer.doAfter(0.1, function() hs.mouse.absolutePosition(mousePosition) end)
-        end
+        leftClickAndRestore({ position.x + 5, position.y + 5 }, app:name(), 0.1)
       end
     },
     ["forward"] = {
@@ -2580,10 +2577,7 @@ appHotKeyCallbacks = {
       end,
       repeatable = true,
       fn = function(position, app)
-        local mousePosition = hs.mouse.absolutePosition()
-        if leftClick({ position.x + 5, position.y + 5 }, app:name()) then
-          hs.timer.doAfter(0.1, function() hs.mouse.absolutePosition(mousePosition) end)
-        end
+        leftClickAndRestore({ position.x + 5, position.y + 5 }, app:name(), 0.1)
       end
     },
     ["refresh"] = {
@@ -2612,10 +2606,7 @@ appHotKeyCallbacks = {
             and refreshButtonPosition.x ~= searchButtonPosition.x, refreshButtonPosition
       end,
       fn = function(position, app)
-        local mousePosition = hs.mouse.absolutePosition()
-        if leftClick({ position.x + 5, position.y + 5 }, app:name()) then
-          hs.timer.doAfter(0.1, function() hs.mouse.absolutePosition(mousePosition) end)
-        end
+        leftClickAndRestore({ position.x + 5, position.y + 5 }, app:name(), 0.1)
       end
     },
     ["playBarCloseSingleSong"] = {
