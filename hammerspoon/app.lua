@@ -336,31 +336,22 @@ end
 
 local function deleteAllMessages(app)
   local appUIObj = hs.axuielement.applicationElement(app)
-  appUIObj:elementSearch(
-    function(msg, results, count)
-      if count ~= 1 then return end
-
-      local messageItems = results[1].AXChildren
-      if messageItems == nil or #messageItems == 0
-          or (#messageItems == 1 and (messageItems[1].AXDescription == nil
-            or messageItems[1].AXDescription:sub(4) ==
-               localizedString('New Message', app:bundleID()))) then
-        return
-      end
-
-      local messageItem = messageItems[1]
-      messageItem:performAction("AXPress")
-      hs.timer.doAfter(0.1, function()
-        deleteSelectedMessage(app, nil, true)
-        hs.timer.doAfter(1.9, function()
-          deleteAllMessages(app)
-        end)
-      end)
-    end,
-    function(element)
-      return element.AXIdentifier == "ConversationList"
-    end
-  )
+  local messageItems = getAXChildren(appUIObj, "AXWindow", 1, "AXGroup", 1, "AXGroup", 1,
+      "AXGroup", 1, "AXGroup", 2, "AXGroup", 1, "AXGroup", 1, "AXStaticText")
+  if #messageItems == 0
+      or (#messageItems == 1 and (messageItems[1].AXDescription == nil
+        or messageItems[1].AXDescription:sub(4) ==
+          localizedString('New Message', app:bundleID()))) then
+    return
+  end
+  local messageItem = messageItems[1]
+  messageItem:performAction("AXPress")
+  hs.timer.doAfter(0.1, function()
+    deleteSelectedMessage(app, nil, true)
+    hs.timer.doAfter(1.9, function()
+      deleteAllMessages(app)
+    end)
+  end)
 end
 
 -- ### FaceTime
