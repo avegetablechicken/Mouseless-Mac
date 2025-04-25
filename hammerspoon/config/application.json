@@ -37,6 +37,7 @@
   "autoHideWithNoWindow": [
     "org.hammerspoon.Hammerspoon",
     "com.surteesstudios.Bartender",
+    "com.gaosun.eul",
     "com.jetbrains.toolbox",
     "com.Snipaste",
     "com.mac.utility.screen.recorder",
