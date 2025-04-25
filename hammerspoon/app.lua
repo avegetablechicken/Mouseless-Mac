@@ -334,22 +334,13 @@ local function deleteSelectedMessage(app, menuItem, force)
   end
 end
 
-local function deleteAllMessages(app)
-  local appUIObj = hs.axuielement.applicationElement(app)
-  local messageItems = getAXChildren(appUIObj, "AXWindow", 1, "AXGroup", 1, "AXGroup", 1,
-      "AXGroup", 1, "AXGroup", 2, "AXGroup", 1, "AXGroup", 1, "AXStaticText")
-  if #messageItems == 0
-      or (#messageItems == 1 and (messageItems[1].AXDescription == nil
-        or messageItems[1].AXDescription:sub(4) ==
-          localizedString('New Message', app:bundleID()))) then
-    return
-  end
+local function deleteAllMessages(messageItems, app)
   local messageItem = messageItems[1]
   messageItem:performAction("AXPress")
   hs.timer.doAfter(0.1, function()
     deleteSelectedMessage(app, nil, true)
     hs.timer.doAfter(1.9, function()
-      deleteAllMessages(app)
+      deleteAllMessages(messageItems, app)
     end)
   end)
 end
@@ -1346,27 +1337,88 @@ appHotKeyCallbacks = {
   {
     ["deleteConversation"] = {
       message = localizedMessage("Delete Conversation…"),
-      condition = checkMenuItem({
-        getOSVersion() < OS.Ventura and "File" or "Conversation",
-        "Delete Conversation…"
-      }),
+      condition = function(app)
+        local appUIObj = hs.axuielement.applicationElement(app)
+        local messageItems = getAXChildren(appUIObj, "AXWindow", 1, "AXGroup", 1, "AXGroup", 1,
+            "AXGroup", 1, "AXGroup", 2, "AXGroup", 1, "AXGroup", 1, "AXStaticText")
+        local selected = hs.fnutils.find(messageItems or {}, function(msg)
+          return msg.AXSelected == true
+        end)
+        if selected == nil then return false end
+        return checkMenuItem({
+          getOSVersion() < OS.Ventura and "File" or "Conversation",
+          "Delete Conversation…"
+        })(app)
+      end,
       fn = function(menuItemTitle, app) deleteSelectedMessage(app, menuItemTitle) end
     },
     ["deleteAllConversations"] = {
       message = "Delete All Conversations",
+      condition = function(app)
+        local appUIObj = hs.axuielement.applicationElement(app)
+        local messageItems = getAXChildren(appUIObj, "AXWindow", 1, "AXGroup", 1, "AXGroup", 1,
+            "AXGroup", 1, "AXGroup", 2, "AXGroup", 1, "AXGroup", 1, "AXStaticText")
+        if messageItems == nil or #messageItems == 0
+            or (#messageItems == 1 and (messageItems[1].AXDescription == nil
+              or messageItems[1].AXDescription:sub(4) ==
+                localizedString('New Message', app:bundleID()))) then
+          return false
+        end
+        return true, messageItems
+      end,
       fn = deleteAllMessages
     },
     ["goToPreviousConversation"] = {
       message = menuItemMessage('⇧⌃', "⇥", 2),
-      condition = checkMenuItemByKeybinding('⇧⌃', "⇥"),
+      condition = function(app)
+        local appUIObj = hs.axuielement.applicationElement(app)
+        local messageItems = getAXChildren(appUIObj, "AXWindow", 1, "AXGroup", 1, "AXGroup", 1,
+            "AXGroup", 1, "AXGroup", 2, "AXGroup", 1, "AXGroup", 1, "AXStaticText")
+        if messageItems == nil or #messageItems == 0 then return false end
+        if messageItems[1].AXSelected then
+          return true, messageItems[#messageItems]
+        else
+          local selected = hs.fnutils.find(messageItems, function(msg)
+            return msg.AXSelected == true
+          end)
+          if selected == nil then return true, messageItems[#messageItems] end
+        end
+        return checkMenuItemByKeybinding('⇧⌃', "⇥")(app)
+      end,
       repeatable = true,
-      fn = receiveMenuItem
+      fn = function(result, app)
+        if type(result) ~= 'table' then
+          result:performAction("AXPress")
+        else
+          app:selectMenuItem(result)
+        end
+      end
     },
     ["goToNextConversation"] = {
       message = menuItemMessage('⌃', "⇥", 2),
-      condition = checkMenuItemByKeybinding('⌃', "⇥"),
+      condition = function(app)
+        local appUIObj = hs.axuielement.applicationElement(app)
+        local messageItems = getAXChildren(appUIObj, "AXWindow", 1, "AXGroup", 1, "AXGroup", 1,
+            "AXGroup", 1, "AXGroup", 2, "AXGroup", 1, "AXGroup", 1, "AXStaticText")
+        if messageItems == nil or #messageItems == 0 then return false end
+        if messageItems[#messageItems].AXSelected then
+          return true, messageItems[1]
+        else
+          local selected = hs.fnutils.find(messageItems, function(msg)
+            return msg.AXSelected == true
+          end)
+          if selected == nil then return true, messageItems[1] end
+        end
+        return checkMenuItemByKeybinding('⌃', "⇥")(app)
+      end,
       repeatable = true,
-      fn = receiveMenuItem
+      fn = function(result, app)
+        if type(result) ~= 'table' then
+          result:performAction("AXPress")
+        else
+          app:selectMenuItem(result)
+        end
+      end
     }
   },
 
