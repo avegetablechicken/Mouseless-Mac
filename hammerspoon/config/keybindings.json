@@ -1348,6 +1348,10 @@
         "mods": "${hyper.daemon}",
         "key": "Z",
         "background": true
+      },
+      "preferencesInMenuBarMenu": {
+        "mods": "command",
+        "key": ","
       }
     },
     "cn.better365.iShotProHelper": {
