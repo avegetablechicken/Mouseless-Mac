@@ -4631,12 +4631,14 @@ local function wrapCondition(app, config, mode)
       end
     end
   end
-  -- if a menu is extended, hotkeys with no modifiers are disabled
-  if mods == nil or mods == "" or #mods == 0 then
-    cond = noSelectedMenuBarItemFunc(cond)
+  if not config.menubar then
+    -- if a menu is extended, hotkeys with no modifiers are disabled
+    if mods == nil or mods == "" or #mods == 0 then
+      cond = noSelectedMenuBarItemFunc(cond)
+    end
+    -- send key strokes to frontmost window instead of frontmost app
+    cond = resendToFrontmostWindow(cond)
   end
-  -- send key strokes to frontmost window instead of frontmost app
-  cond = resendToFrontmostWindow(cond)
   local fn = func
   fn = function(...)
     local obj = windowFilter == nil and app or app:focusedWindow()
@@ -4644,7 +4646,12 @@ local function wrapCondition(app, config, mode)
       selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
       return
     end
-    local satisfied, result, url = cond(obj)
+    local satisfied, result, url
+    if cond ~= nil then
+      satisfied, result, url = cond(obj)
+    else
+      satisfied = true
+    end
     if satisfied then
       if result ~= nil then  -- condition function can pass result to callback function
         if url ~= nil then
@@ -4791,10 +4798,11 @@ local function registerInAppHotKeys(app)
       end
       local isBackground = keybinding.background ~= nil and keybinding.background or cfg.background
       local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
+      local isMenuBarMenu = keybinding.menubar ~= nil or cfg.menubar ~= nil
       local bindable = function()
         return cfg.bindCondition == nil or cfg.bindCondition(app)
       end
-      if hasKey and not isBackground and not isForWindow and bindable() then
+      if hasKey and not isBackground and not isForWindow and not isMenuBarMenu and bindable() then
         local msg = type(cfg.message) == 'string' and cfg.message or cfg.message(app)
         if msg ~= nil then
           local config = hs.fnutils.copy(cfg)
@@ -5081,6 +5089,94 @@ local function registerWinFiltersForDaemonApp(app, appConfig)
   end
 end
 
+-- hotkeys for menu belonging to menubar app
+local menuBarMenuHotkeys = {}
+local function menuBarMenuObserverEnableCallback(appid, appConfig)
+  if menuBarMenuHotkeys[appid] == nil then
+    menuBarMenuHotkeys[appid] = {}
+  end
+  for hkID, cfg in pairs(appConfig) do
+    local app = find(appid)
+    local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID) or { mods = cfg.mods, key = cfg.key }
+    local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    local isMenuBarMenu = keybinding.menubar ~= nil and keybinding.menubar or cfg.menubar
+    local bindable = function()
+      return cfg.bindCondition == nil or cfg.bindCondition(app)
+    end
+    if hasKey and isMenuBarMenu and bindable() then
+      local msg = type(cfg.message) == 'string' and cfg.message or cfg.message(app)
+      if msg ~= nil then
+        local config = hs.fnutils.copy(cfg)
+        config.mods = keybinding.mods
+        config.key = keybinding.key
+        config.message = msg
+        config.repeatable = keybinding.repeatable ~= nil and keybinding.repeatable or cfg.repeatable
+        config.repeatedFn = config.repeatable and cfg.fn or nil
+        config.menubar = true
+        local hotkey, cond = bindAppWinImpl(app, config)
+        hotkey.condition = cond
+        hotkey.kind = HK.MENUBAR
+        table.insert(menuBarMenuHotkeys[appid], hotkey)
+      end
+    end
+  end
+end
+
+MenuBarMenuObservers = {}
+local function registerObserversForMenuBarMenu(app, appConfig)
+  local appid = app:bundleID()
+  for hkID, cfg in pairs(appConfig) do
+    local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID) or { mods = cfg.mods, key = cfg.key }
+    local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    local isMenuBarMenu = keybinding.menubar ~= nil and keybinding.menubar or cfg.menubar
+    local bindable = function()
+      return cfg.bindCondition == nil or cfg.bindCondition(app)
+    end
+    if hasKey and isMenuBarMenu and bindable() then
+      local observer = MenuBarMenuObservers[appid]
+      if observer == nil then
+        local appUIObj = hs.axuielement.applicationElement(app)
+        observer = hs.axuielement.observer.new(app:pid())
+        observer:addWatcher(
+          appUIObj,
+          hs.axuielement.observer.notifications.menuOpened
+        )
+        observer:callback(function(_, element, notification)
+          local mbItem = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1)
+          if not mbItem.AXSelected then return end
+          menuBarMenuObserverEnableCallback(appid, appConfig)
+          local closeObserver = hs.axuielement.observer.new(app:pid())
+          closeObserver:addWatcher(
+            element,
+            hs.axuielement.observer.notifications.menuClosed
+          )
+          closeObserver:callback(function(obs)
+            if menuBarMenuHotkeys[appid] ~= nil then
+              for i, hotkey in ipairs(menuBarMenuHotkeys[appid]) do
+                if hotkey.idx ~= nil then
+                  hotkey:delete()
+                  menuBarMenuHotkeys[appid][i] = nil
+                end
+              end
+              if #menuBarMenuHotkeys[appid] == 0 then
+                menuBarMenuHotkeys[appid] = nil
+              end
+            end
+            obs:stop()
+            obs = nil
+          end)
+          closeObserver:start()
+        end)
+      end
+      observer:start()
+      MenuBarMenuObservers[appid] = observer
+      stopOnQuit(appid, observer, function()
+        MenuBarMenuObservers[appid] = nil
+      end)
+      break
+    end
+  end
+end
 
 -- ## function utilities for process management on app switching
 
@@ -5219,6 +5315,26 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     if hasKey and isForWindow and isBackground then
       execOnLaunch(appid, function(app)
         registerWinFiltersForDaemonApp(app, appConfig)
+      end)
+      break
+    end
+  end
+end
+
+-- register watchers for menu of menubar app
+for appid, appConfig in pairs(appHotKeyCallbacks) do
+  local app = find(appid)
+  if app ~= nil then
+    registerObserversForMenuBarMenu(app, appConfig)
+  end
+  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
+  for hkID, cfg in pairs(appConfig) do
+    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+    local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    local isMenuBarMenu = keybinding.menubar ~= nil and keybinding.menubar or cfg.menubar
+    if hasKey and isMenuBarMenu then
+      execOnLaunch(appid, function(app)
+        registerObserversForMenuBarMenu(app, appConfig)
       end)
       break
     end
