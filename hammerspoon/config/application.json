@@ -52,7 +52,7 @@
     {
       "com.app.menubarx": {
         "allowPopover": true,
-        "rejectTitles": "^$"
+        "rejectTitles": [ "^$", "ignoreWhenCheckOpeningWindows" ]
       },
       "com.mathpix.snipping-tool-noappstore": {
         "allowPopover": true,
