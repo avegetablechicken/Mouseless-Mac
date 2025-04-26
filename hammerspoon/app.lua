@@ -3197,41 +3197,26 @@ appHotKeyCallbacks = {
     ["showSystemStatus"] = {
       message = "Show System Status",
       kind = HK.MENUBAR,
+      fn = clickRightMenuBarItem
+    },
+    ["preferencesInMenuBarMenu"] = {
+      message = function(app)
+        return app:name() .. ' > '
+            .. localizedString('Preferences', app:bundleID())
+      end,
+      menubar = true,
       fn = function(app)
-        clickRightMenuBarItem(app)
-        local appid = app:bundleID()
-        local spec = get(KeybindingConfigs.hotkeys, appid,
-                         "preferencesInMenuBarMenu")
-        if spec == nil then return end
-        local prefString = localizedString('Preferences', appid)
+        local prefString = localizedString('Preferences', app:bundleID())
         local appUIObj = hs.axuielement.applicationElement(app)
         local menu = getAXChildren(appUIObj, "AXMenuBar", -1,
             "AXMenuBarItem", 1, "AXMenu", 1, "AXMenuItem", 1, "AXGroup", 1)
         local button = hs.fnutils.find(menu:childrenWithRole("AXStaticText"),
             function(item) return item.AXValue == prefString end)
-        local hotkey = AppBind(app, {
-          spec = spec, message = app:name() .. " > " .. prefString,
-          fn = function()
-            local position = {
-              button.AXPosition.x + 5,
-              button.AXPosition.y + 5
-            }
-            leftClickAndRestore(position, app:name(), 0.2)
-          end
-        })
-        assert(hotkey)
-        hotkey.kind = HK.MENUBAR
-        local observer = hs.axuielement.observer.new(app:pid())
-        observer:addWatcher(
-          appUIObj,
-          hs.axuielement.observer.notifications.menuClosed
-        )
-        observer:callback(function()
-          hotkey:delete()
-          observer:stop()
-          observer = nil
-        end)
-        observer:start()
+        local position = {
+          button.AXPosition.x + 5,
+          button.AXPosition.y + 5
+        }
+        leftClickAndRestore(position, app:name(), 0.2)
       end
     }
   },
@@ -4631,7 +4616,7 @@ local function wrapCondition(app, config, mode)
       end
     end
   end
-  if not config.menubar then
+  if config.menubar ~= true then
     -- if a menu is extended, hotkeys with no modifiers are disabled
     if mods == nil or mods == "" or #mods == 0 then
       cond = noSelectedMenuBarItemFunc(cond)
