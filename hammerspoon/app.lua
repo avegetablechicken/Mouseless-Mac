@@ -4728,7 +4728,7 @@ local function bindAppWinImpl(app, config, ...)
   end
   local pressedfn, cond = wrapCondition(app, config, KEY_MODE.PRESS)
   if config.repeatedfn == nil
-      and (config.condition ~= nil or config.windowFiler ~= nil or config.websiteFilter ~= nil) then
+      and (config.condition ~= nil or config.windowFilter ~= nil or config.websiteFilter ~= nil) then
     -- if hotkey condition is not satisfied, holding event should be passed to the app
     -- so callback for holding event must always be registered
     config.repeatedfn = function() end
