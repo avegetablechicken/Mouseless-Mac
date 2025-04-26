@@ -2669,7 +2669,9 @@ appHotKeyCallbacks = {
       message = commonLocalizedMessage("Close Window"),
       windowFilter = {},
       background = true,
-      fn = function(winUIObj)
+      nonFrontmost = true,
+      fn = function(win)
+        local winUIObj = hs.axuielement.windowElement(win)
         leftClickAndRestore({ x = winUIObj.AXPosition.x + winUIObj.AXSize.w/2,
                               y = winUIObj.AXPosition.y })
       end
@@ -4543,7 +4545,7 @@ local function wrapCondition(app, config, mode)
   local resendToSystem = config.defaultResendToSystem
 
   -- testify window filter and return TF & extra result
-  if windowFilter ~= nil then
+  if windowFilter ~= nil and windowFilter ~= 'background' then
     local hkIdx = hotkeyIdx(mods, key)
     prevWindowCallback = get(prevWindowCallbacks, appid, hkIdx, mode)
     local actualFilter  -- remove self-customed properties
@@ -4622,7 +4624,9 @@ local function wrapCondition(app, config, mode)
       cond = noSelectedMenuBarItemFunc(cond)
     end
     -- send key strokes to frontmost window instead of frontmost app
-    cond = resendToFrontmostWindow(cond)
+    if config.nonFrontmost ~= true then
+      cond = resendToFrontmostWindow(cond)
+    end
   end
   local fn = func
   fn = function(...)
@@ -4675,7 +4679,7 @@ local function wrapCondition(app, config, mode)
     selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
   end
 
-  if windowFilter ~= nil then
+  if windowFilter ~= nil and windowFilter ~= 'background' then
     -- multiple window-specified hotkeys may share a common keybinding
     -- they are cached in a linked list.
     -- each window filter will be tested until one matched target window
@@ -4693,7 +4697,7 @@ local function wrapCondition(app, config, mode)
     if prevWebsiteCallbacks[appid][hkIdx] == nil then prevWebsiteCallbacks[appid][hkIdx] = { nil, nil } end
     prevWebsiteCallbacks[appid][hkIdx][mode] = fn
   end
-  if windowFilter ~= nil or websiteFilter ~= nil then
+  if (windowFilter ~= nil and windowFilter ~= 'background') or websiteFilter ~= nil then
     -- essential info are also cached in a linked list for showing keybindings by `HSKeybindings`
     wrapInfoChain(app, config, cond, mode)
   end
@@ -4932,6 +4936,7 @@ local function sameFilter(a, b)
 end
 
 function WinBind(app, config, ...)
+  config.windowFilter = 'background'
   local hotkey, cond = bindAppWinImpl(app, config, ...)
   hotkey.kind = HK.IN_WIN
   hotkey.condition = cond
@@ -4966,7 +4971,7 @@ local function backgroundWindowObserverEnableCallback(appid, filter, event)
         config.message = msg
         config.repeatable = keybinding.repeatable ~= nil and keybinding.repeatable or cfg.repeatable
         config.repeatedFn = config.repeatable and cfg.fn or nil
-        config.windowFilter = true
+        config.nonFrontmost = keybinding.nonFrontmost ~= nil and keybinding.nonFrontmost or cfg.nonFrontmost
         local hotkey = WinBind(app, config)
         table.insert(backgroundWindowHotkeys[appid], hotkey)
       end
