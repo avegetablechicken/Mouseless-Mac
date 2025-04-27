@@ -1004,18 +1004,25 @@ local function localizeByNIB(str, localeDir, localeFile, appid)
   end
 end
 
-local function localizeByQtImpl(str, file)
-  local cmd
-  for _, dir in ipairs { "/usr/local/bin", "/opt/homebrew/bin", "/opt/local/bin" } do
-    if hs.fs.attributes(dir .. '/lconvert') ~= nil then
-      cmd = dir .. '/lconvert'
-      break
+local localeTools = {
+  Qt = "lconvert",
+  gettext = "msgunfmt",
+  npm = "npx",
+  LZFSE = "lzfse",
+}
+local function getCMD(framework)
+  local cmd = localeTools[framework]
+  for _, dir in ipairs { "/usr/local/bin/", "/opt/homebrew/bin/", "/opt/local/bin/" } do
+    if hs.fs.attributes(dir .. cmd) ~= nil then
+      return dir .. cmd
     end
   end
-  if cmd == nil then
-    hs.alert.show("lconvert not found, cannot localize.")
-    return
-  end
+  hs.alert.show(string.format('"%s" not found. Please install "%s".'), cmd, framework)
+end
+
+local function localizeByQtImpl(str, file)
+  local cmd = getCMD("Qt")
+  if cmd == nil then return end
   local output, status = hs.execute(string.format([[
       %s -i "%s" -of po \
       | awk "/msgid \"%s\"/ { getline; sub(/^msgstr \"/, \"\"); sub(/\"\$/, \"\"); print \$0; exit }" \
@@ -1043,17 +1050,8 @@ local function localizeByQt(str, localeDir)
 end
 
 local function localizeByMono(str, localeDir)
-  local cmd
-  for _, dir in ipairs { "/usr/local/bin", "/opt/homebrew/bin", "/opt/local/bin" } do
-    if hs.fs.attributes(dir .. '/msgunfmt') ~= nil then
-      cmd = dir .. '/msgunfmt'
-      break
-    end
-  end
-  if cmd == nil then
-    hs.alert.show("msgunfmt not found, cannot localize.")
-    return
-  end
+  local cmd = getCMD("gettext")
+  if cmd == nil then return end
   for file in hs.fs.dir(localeDir .. '/LC_MESSAGES') do
     if file:sub(-3) == ".mo" then
       local output, status = hs.execute(string.format([[
@@ -1130,18 +1128,8 @@ local function localizeByElectron(str, appid, appLocale, localesPath, file)
     if hs.fs.attributes(localesFile) ~= nil then
       locales = hs.json.read(localesFile)
     else
-      local cmd
-      for _, dir in ipairs { "/usr/local/bin", "/opt/homebrew/bin", "/opt/local/bin" } do
-        if hs.fs.attributes(dir .. '/npx') ~= nil then
-          cmd = dir .. '/npx'
-          break
-        end
-      end
-      if cmd == nil then
-        hs.alert.show(string.format("npx not found, cannot localize %s.",
-            hs.application.nameForBundleID(appid)))
-        return
-      end
+      local cmd = getCMD("npm")
+      if cmd == nil then return end
       local result, ok = hs.execute(string.format(
         [[%s @electron/asar list "%s" | grep "^/%s/" | cut -c17- | grep -v '/']],
         cmd, path, localesPath),
@@ -1166,13 +1154,7 @@ local function localizeByElectron(str, appid, appLocale, localesPath, file)
   if hs.fs.attributes(localeTmpFile) == nil then
     local localeFilePath = string.format("%s/%s/%s.json",
         localesPath, locale, file)
-    local cmd
-    for _, dir in ipairs { "/usr/local/bin", "/opt/homebrew/bin", "/opt/local/bin" } do
-      if hs.fs.attributes(dir .. '/npx') ~= nil then
-        cmd = dir .. '/npx'
-        break
-      end
-    end
+    local cmd = getCMD("npm")
     hs.execute(string.format(
       [[%s @electron/asar extract-file "%s" "%s"]], cmd, path, localeFilePath),
     true)
@@ -1217,17 +1199,8 @@ local function localizeXmind(str, appLocale)
 end
 
 local function localizeChatGPT(str, appLocale)
-  local cmd
-  for _, dir in ipairs { "/usr/local/bin", "/opt/homebrew/bin", "/opt/local/bin" } do
-    if hs.fs.attributes(dir .. '/lzfse') ~= nil then
-      cmd = dir .. '/lzfse'
-      break
-    end
-  end
-  if cmd == nil then
-    hs.alert.show("lzfse not found, cannot localize ChatGPT.")
-    return
-  end
+  local cmd = getCMD("LZFSE")
+  if cmd == nil then return end
   local resourceDir = hs.application.pathForBundleID("com.openai.chat")
       .. "/Contents/Frameworks/Assets.framework/Resources"
       .. "/Assets_Assets.bundle/Contents/Resources/CompressedStrings"
@@ -1711,17 +1684,8 @@ local function delocalizeByNIB(str, localeDir, localeFile, appid)
 end
 
 local function delocalizeByQtImpl(str, file)
-  local cmd
-  for _, dir in ipairs { "/usr/local/bin", "/opt/homebrew/bin", "/opt/local/bin" } do
-    if hs.fs.attributes(dir .. '/lconvert') ~= nil then
-      cmd = dir .. '/lconvert'
-      break
-    end
-  end
-  if cmd == nil then
-    hs.alert.show("lconvert not found, cannot localize.")
-    return
-  end
+  local cmd = getCMD("Qt")
+  if cmd == nil then return end
   local output, status = hs.execute(string.format([[
       %s -i "%s" -of po \
       | awk "/msgstr \"%s\"/ { sub(/^msgid \"/, \"\", prevline); sub(/\"\$/, \"\", prevline); print prevline; exit } { prevline = \$0 }" \
@@ -1749,17 +1713,8 @@ local function delocalizeByQt(str, localeDir)
 end
 
 local function delocalizeByMono(str, localeDir)
-  local cmd
-  for _, dir in ipairs { "/usr/local/bin", "/opt/homebrew/bin", "/opt/local/bin" } do
-    if hs.fs.attributes(dir .. '/msgunfmt') ~= nil then
-      cmd = dir .. '/msgunfmt'
-      break
-    end
-  end
-  if cmd == nil then
-    hs.alert.show("msgunfmt not found, cannot localize.")
-    return
-  end
+  local cmd = getCMD("gettext")
+  if cmd == nil then return end
   for file in hs.fs.dir(localeDir .. '/LC_MESSAGES') do
     if file:sub(-3) == ".mo" then
       local output, status = hs.execute(string.format([[
@@ -1827,18 +1782,8 @@ local function delocalizeByElectron(str, appid, appLocale, localesPath, file)
     if hs.fs.attributes(localesFile) ~= nil then
       locales = hs.json.read(localesFile)
     else
-      local cmd
-      for _, dir in ipairs { "/usr/local/bin", "/opt/homebrew/bin", "/opt/local/bin" } do
-        if hs.fs.attributes(dir .. '/npx') ~= nil then
-          cmd = dir .. '/npx'
-          break
-        end
-      end
-      if cmd == nil then
-        hs.alert.show(string.format("npx not found, cannot localize %s.",
-            hs.application.nameForBundleID(appid)))
-        return
-      end
+      local cmd = getCMD("npm")
+      if cmd == nil then return end
       local result, ok = hs.execute(string.format(
         [[%s @electron/asar list "%s" | grep "^/%s/" | cut -c17- | grep -v '/']],
         cmd, path, localesPath),
@@ -1863,13 +1808,7 @@ local function delocalizeByElectron(str, appid, appLocale, localesPath, file)
   if hs.fs.attributes(localeTmpFile) == nil then
     local localeFilePath = string.format("%s/%s/%s.json",
         localesPath, locale, file)
-    local cmd
-    for _, dir in ipairs { "/usr/local/bin", "/opt/homebrew/bin", "/opt/local/bin" } do
-      if hs.fs.attributes(dir .. '/npx') ~= nil then
-        cmd = dir .. '/npx'
-        break
-      end
-    end
+    local cmd = getCMD("npm")
     hs.execute(string.format(
       [[%s @electron/asar extract-file "%s" "%s"]], cmd, path, localeFilePath),
     true)
