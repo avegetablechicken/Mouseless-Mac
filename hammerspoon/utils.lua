@@ -1005,8 +1005,22 @@ local function localizeByNIB(str, localeDir, localeFile, appid)
 end
 
 local function localizeByQtImpl(str, file)
-  local output, status = hs.execute(string.format(
-      "zsh scripts/qm_localize.sh '%s' '%s'", file, str))
+  local cmd
+  for _, dir in ipairs { "/usr/local/bin", "/opt/homebrew/bin", "/opt/local/bin" } do
+    if hs.fs.attributes(dir .. '/lconvert') ~= nil then
+      cmd = dir .. '/lconvert'
+      break
+    end
+  end
+  if cmd == nil then
+    hs.alert.show("lconvert not found, cannot localize.")
+    return
+  end
+  local output, status = hs.execute(string.format([[
+      %s -i "%s" -of po \
+      | awk "/msgid \"%s\"/ { getline; sub(/^msgstr \"/, \"\"); sub(/\"\$/, \"\"); print \$0; exit }" \
+      | tr -d "\n"
+    ]], cmd, file, str))
   if status and output ~= "" then return output end
 end
 
@@ -1029,11 +1043,24 @@ local function localizeByQt(str, localeDir)
 end
 
 local function localizeByMono(str, localeDir)
+  local cmd
+  for _, dir in ipairs { "/usr/local/bin", "/opt/homebrew/bin", "/opt/local/bin" } do
+    if hs.fs.attributes(dir .. '/msgunfmt') ~= nil then
+      cmd = dir .. '/msgunfmt'
+      break
+    end
+  end
+  if cmd == nil then
+    hs.alert.show("msgunfmt not found, cannot localize.")
+    return
+  end
   for file in hs.fs.dir(localeDir .. '/LC_MESSAGES') do
     if file:sub(-3) == ".mo" then
-      local output, status = hs.execute(string.format(
-        "zsh scripts/mono_localize.sh '%s' '%s'",
-        localeDir .. '/LC_MESSAGES/' .. file, str))
+      local output, status = hs.execute(string.format([[
+          %s "%s" -o - \
+          | awk "/msgid \"%s\"/ { getline nextline; sub(/^msgstr \"/, \"\", nextline); sub(/\"\$/, \"\", nextline); print nextline; exit }" \
+          | tr -d "\n"
+        ]], cmd, localeDir .. '/LC_MESSAGES/' .. file, str))
       if status and output ~= "" then return output end
     end
   end
@@ -1684,8 +1711,22 @@ local function delocalizeByNIB(str, localeDir, localeFile, appid)
 end
 
 local function delocalizeByQtImpl(str, file)
-  local output, status = hs.execute(string.format(
-      "zsh scripts/qm_delocalize.sh '%s' '%s'", file, str))
+  local cmd
+  for _, dir in ipairs { "/usr/local/bin", "/opt/homebrew/bin", "/opt/local/bin" } do
+    if hs.fs.attributes(dir .. '/lconvert') ~= nil then
+      cmd = dir .. '/lconvert'
+      break
+    end
+  end
+  if cmd == nil then
+    hs.alert.show("lconvert not found, cannot localize.")
+    return
+  end
+  local output, status = hs.execute(string.format([[
+      %s -i "%s" -of po \
+      | awk "/msgstr \"%s\"/ { sub(/^msgid \"/, \"\", prevline); sub(/\"\$/, \"\", prevline); print prevline; exit } { prevline = \$0 }" \
+      | tr -d "\n"
+    ]], cmd, file, str))
   if status and output ~= "" then return output end
 end
 
@@ -1708,11 +1749,24 @@ local function delocalizeByQt(str, localeDir)
 end
 
 local function delocalizeByMono(str, localeDir)
+  local cmd
+  for _, dir in ipairs { "/usr/local/bin", "/opt/homebrew/bin", "/opt/local/bin" } do
+    if hs.fs.attributes(dir .. '/msgunfmt') ~= nil then
+      cmd = dir .. '/msgunfmt'
+      break
+    end
+  end
+  if cmd == nil then
+    hs.alert.show("msgunfmt not found, cannot localize.")
+    return
+  end
   for file in hs.fs.dir(localeDir .. '/LC_MESSAGES') do
     if file:sub(-3) == ".mo" then
-      local output, status = hs.execute(string.format(
-          "zsh scripts/mono_delocalize.sh '%s' '%s'",
-          localeDir .. '/LC_MESSAGES/' .. file, str))
+      local output, status = hs.execute(string.format([[
+          %s "%s" -o - \
+          | awk "/msgstr \"$2\"/ { sub(/^msgid \"/, \"\", prevline); sub(/\"\$/, \"\", prevline); print prevline; exit } { prevline = \$0 }" \
+          | tr -d "\n"
+        ]], cmd, localeDir .. '/LC_MESSAGES/' .. file, str))
       if status and output ~= "" then return output end
     end
   end
