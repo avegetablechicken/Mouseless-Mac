@@ -2075,7 +2075,7 @@ function delocalizedString(str, appid, params)
   end
   if locale == nil then
     appLocaleDir[appid][appLocale] = false
-    return
+    goto L_END_DUMP_DELOCALIZED
   else
     appLocaleDir[appid][appLocale] = locale
   end
@@ -2091,6 +2091,13 @@ function delocalizedString(str, appid, params)
   else
     deLocaleMap[appid][appLocale][str] = false
   end
+
+  ::L_END_DUMP_DELOCALIZED::
+  if hs.fs.attributes(localeTmpDir) == nil then
+    hs.execute(string.format("mkdir -p '%s'", localeTmpDir))
+  end
+  hs.json.write(appLocaleDir, localeMatchTmpFile, false, true)
+  hs.json.write(deLocaleMap, menuItemTmpFile, false, true)
   return result
 end
 
@@ -2180,11 +2187,6 @@ function delocalizedMenuItem(title, appid, params)
       titleMap = delocMap[appid]
     end
     titleMap[title] = newTitle
-    if hs.fs.attributes(localeTmpDir) == nil then
-      hs.execute(string.format("mkdir -p '%s'", localeTmpDir))
-    end
-    hs.json.write(appLocaleDir, localeMatchTmpFile, false, true)
-    hs.json.write(deLocaleMap, menuItemTmpFile, false, true)
   end
   return newTitle
 end
@@ -2196,7 +2198,6 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
   local defaultTitleMap = delocMap.common
   local titleMap = delocMap[appid]
   local result = {}
-  local shouldWrite = false
   local isValid = function(t)
     local splits = hs.fnutils.split(t, ' ')
     return string.byte(t, 1) <= 127
@@ -2218,7 +2219,6 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
       else
         delocTitle = delocalizedString(title, appid, localeFile)
         titleMap[title] = delocTitle
-        shouldWrite = delocTitle ~= nil
       end
       if delocTitle ~= nil then
         if not isValid(delocTitle) then
@@ -2233,13 +2233,6 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
         end
       end
     end
-  end
-  if shouldWrite then
-    if hs.fs.attributes(localeTmpDir) == nil then
-      hs.execute(string.format("mkdir -p '%s'", localeTmpDir))
-    end
-    hs.json.write(appLocaleDir, localeMatchTmpFile, false, true)
-    hs.json.write(deLocaleMap, menuItemTmpFile, false, true)
   end
   return result
 end
