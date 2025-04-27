@@ -4471,7 +4471,7 @@ function(win, appname, eventType)
   end
 end)
 
-local function resendToFrontmostWindow(cond)
+local function resendToFrontmostWindow(cond, nonFrontmost)
   return function(obj)
     if obj.application == nil and obj.focusedWindow == nil then return true end
     local app = obj.application ~= nil and obj:application() or obj
@@ -4480,6 +4480,9 @@ local function resendToFrontmostWindow(cond)
         and frontWin:application():bundleID() ~= app:bundleID() then
       return false, COND_FAIL.NOT_FRONTMOST_WINDOW
     elseif frontWin ~= nil and app:focusedWindow() == nil
+        and WindowCreatedSince[frontWin:id()] then
+      return false, COND_FAIL.NOT_FRONTMOST_WINDOW
+    elseif nonFrontmost and frontWin ~= nil
         and WindowCreatedSince[frontWin:id()] then
       return false, COND_FAIL.NOT_FRONTMOST_WINDOW
     end
@@ -4623,11 +4626,9 @@ local function wrapCondition(app, config, mode)
     if mods == nil or mods == "" or #mods == 0 then
       cond = noSelectedMenuBarItemFunc(cond)
     end
-    -- send key strokes to frontmost window instead of frontmost app
-    if config.nonFrontmost ~= true then
-      cond = resendToFrontmostWindow(cond)
-    end
   end
+  -- send key strokes to frontmost window instead of frontmost app
+  cond = resendToFrontmostWindow(cond, config.nonFrontmost or config.menubar)
   local fn = func
   fn = function(...)
     local obj = windowFilter == nil and app or app:focusedWindow()
@@ -4635,12 +4636,7 @@ local function wrapCondition(app, config, mode)
       selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
       return
     end
-    local satisfied, result, url
-    if cond ~= nil then
-      satisfied, result, url = cond(obj)
-    else
-      satisfied = true
-    end
+    local satisfied, result, url = cond(obj)
     if satisfied then
       if result ~= nil then  -- condition function can pass result to callback function
         if url ~= nil then
