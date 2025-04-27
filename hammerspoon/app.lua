@@ -4939,7 +4939,8 @@ function WinBind(app, config, ...)
   return hotkey
 end
 
--- hotkeys for frontmost window belonging to daemon app
+-- hotkeys for focused window belonging to daemon app
+-- the window is frontmost unless specified "nonFrontmost"
 local daemonAppFocusedWindowHotkeys = {}
 DaemonAppFocusedWindowFilters = {}
 local function registerDaemonAppInWinHotkeys(appid, filter, event)
@@ -5286,7 +5287,7 @@ if frontApp then
   registerInWinHotKeys(frontApp)
 end
 
--- register watchers for frontmost window belonging to daemon app
+-- register watchers for focused window belonging to daemon app
 for appid, appConfig in pairs(appHotKeyCallbacks) do
   local app = find(appid)
   if app ~= nil then
@@ -5327,7 +5328,7 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
   end
 end
 
--- register hotkeys for frontmost window belonging to daemon app
+-- register hotkeys for focused window belonging to daemon app
 local frontWin = hs.window.frontmostWindow()
 if frontWin ~= nil then
   local frontWinAppBid = frontWin:application():bundleID()
