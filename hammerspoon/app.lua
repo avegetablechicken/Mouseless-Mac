@@ -5927,6 +5927,7 @@ local function watchMenuBarItems(app, menuItems)
   appsMenuBarItemTitlesString[appid] = getMenuBarItemTitlesString(app, menuItems)
   local watcher = ExecContinuously(function()
     local app = find(appid)
+    if app == nil then return end
     local menuItems = app:getMenuItems()
     local menuBarItemTitlesString = getMenuBarItemTitlesString(app, menuItems)
     if menuBarItemTitlesString ~= appsMenuBarItemTitlesString[appid] then
