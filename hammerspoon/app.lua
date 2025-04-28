@@ -1028,7 +1028,8 @@ end
 local function menuItemMessage(mods, key, titleIndex, sep)
   return function(app)
     if type(titleIndex) == 'number' then
-      return findMenuItemByKeyBinding(app, mods, key)[titleIndex]
+      local menuItem = findMenuItemByKeyBinding(app, mods, key)
+      if menuItem ~= nil then return menuItem[titleIndex] end
     else
       if sep == nil then sep = ' > ' end
       local menuItem = findMenuItemByKeyBinding(app, mods, key)
