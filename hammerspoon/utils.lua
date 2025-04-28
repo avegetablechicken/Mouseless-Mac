@@ -566,9 +566,14 @@ local baseLocales = {
 local function getBaseLocaleDirs(resourceDir)
   local dirs = {}
   for _, locale in ipairs(baseLocales) do
-    local localeDir = resourceDir .. '/' .. locale .. '.lproj'
+    local localeDir = resourceDir .. '/' .. locale
     if hs.fs.attributes(localeDir) ~= nil then
       table.insert(dirs, localeDir)
+    else
+      localeDir = localeDir .. '.lproj'
+      if hs.fs.attributes(localeDir) ~= nil then
+        table.insert(dirs, localeDir)
+      end
     end
   end
   if #dirs == 0 then table.insert(dirs, resourceDir) end
@@ -583,9 +588,14 @@ local extraEnglishLocales = {
 local function appendExtraEnglishLocaleDirs(resourceDir, baseDirs)
   local dirs = hs.fnutils.copy(baseDirs)
   for _, locale in ipairs(extraEnglishLocales) do
-    local localeDir = resourceDir .. '/' .. locale .. '.lproj'
+    local localeDir = resourceDir .. '/' .. locale
     if hs.fs.attributes(localeDir) ~= nil then
       table.insert(dirs, localeDir)
+    else
+      localeDir = localeDir .. '.lproj'
+      if hs.fs.attributes(localeDir) ~= nil then
+        table.insert(dirs, localeDir)
+      end
     end
   end
   return dirs
@@ -1281,6 +1291,17 @@ local function localizedStringImpl(str, appid, params, force)
     return nil
   end
 
+  if appid == "com.openai.chat" then
+    result, locale = localizeChatGPT(str, appLocale)
+    return result, appLocale, locale
+  elseif appid:find("org.qt%-project") ~= nil then
+    result, locale = localizeQt(str, appid, appLocale)
+    return result, appLocale, locale
+  elseif appid == "net.xmind.vana.app" then
+    result, locale = localizeXmind(str, appLocale)
+    return result, appLocale, locale
+  end
+
   local resourceDir, framework = getResourceDir(appid, localeFramework)
   if resourceDir == nil then return nil end
   if framework.chromium then
@@ -1299,17 +1320,6 @@ local function localizedStringImpl(str, appid, params, force)
 
   local locale, localeDir, mode
 
-  if appid == "com.openai.chat" then
-    result, locale = localizeChatGPT(str, appLocale)
-    return result, appLocale, locale
-  elseif appid:find("org.qt%-project") ~= nil then
-    result, locale = localizeQt(str, appid, appLocale)
-    return result, appLocale, locale
-  elseif appid == "net.xmind.vana.app" then
-    result, locale = localizeXmind(str, appLocale)
-    return result, appLocale, locale
-  end
-
   local setDefaultLocale = function()
     resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
     framework = {}
@@ -1321,7 +1331,9 @@ local function localizedStringImpl(str, appid, params, force)
     return true
   end
 
-  if not framework.mono then mode = 'lproj' end
+  if not framework.mono and not framework.electron then
+    mode = 'lproj'
+  end
   if locale == nil then
     locale = get(appLocaleDir, appid, appLocale)
     if locale == false then return nil end
@@ -1923,6 +1935,20 @@ local function delocalizedStringImpl(str, appid, params)
   if result == false then return nil
   elseif result ~= nil then return result end
 
+  if appid == "org.zotero.zotero" then
+    result, locale = delocalizeZoteroMenu(str, appLocale)
+    return result, appLocale, locale
+  elseif appid == "com.mathworks.matlab" then
+    result, locale = delocalizeMATLABFigureMenu(str, appLocale)
+    return result, appLocale, locale
+  elseif appid:find("org.qt%-project") ~= nil then
+    result, locale = delocalizeQt(str, appid, appLocale)
+    return result, appLocale, locale
+  elseif appid == "net.xmind.vana.app" then
+    result, locale = delocalizeXmind(str, appLocale)
+    return result, appLocale, locale
+  end
+
   local resourceDir, framework = getResourceDir(appid, localeFramework)
   if resourceDir == nil then return nil end
   if framework.chromium then
@@ -1941,21 +1967,9 @@ local function delocalizedStringImpl(str, appid, params)
 
   local locale, localeDir, mode
 
-  if appid == "org.zotero.zotero" then
-    result, locale = delocalizeZoteroMenu(str, appLocale)
-    return result, appLocale, locale
-  elseif appid == "com.mathworks.matlab" then
-    result, locale = delocalizeMATLABFigureMenu(str, appLocale)
-    return result, appLocale, locale
-  elseif appid:find("org.qt%-project") ~= nil then
-    result, locale = delocalizeQt(str, appid, appLocale)
-    return result, appLocale, locale
-  elseif appid == "net.xmind.vana.app" then
-    result, locale = delocalizeXmind(str, appLocale)
-    return result, appLocale, locale
+  if not framework.mono and not framework.electron then
+    mode = 'lproj'
   end
-
-  if not framework.mono then mode = 'lproj' end
   if locale == nil then
     locale = get(appLocaleDir, appid, appLocale)
     if locale == false then return nil end
