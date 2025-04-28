@@ -1203,6 +1203,75 @@ local function localizeQt(str, appid, appLocale)
   end
 end
 
+local function getSTRInQtKso(str, file)
+  local cmd = getCMD("Qt")
+  if cmd == nil then return end
+  str = str:gsub('|', '\\|')
+  local output, status = hs.execute(string.format([[
+      %s -i "%s" -of po \
+      | awk "/msgctxt \"%s\"/ { getline; getline; sub(/^msgstr \"/, \"\"); sub(/\"\$/, \"\"); print \$0; exit }" \
+      | tr -d "\n"
+    ]], cmd, file, str))
+  if status and output ~= "" then return output end
+end
+
+local function getCTXTInQtKso(str, file)
+  local cmd = getCMD("Qt")
+  if cmd == nil then return end
+  local output, status = hs.execute(string.format([[
+      %s -i "%s" -of po \
+      | awk "/msgstr \"%s\"/ { sub(/^msgctxt \"/, \"\", prev2); sub(/\"\$/, \"\", prev2); print prev2; exit } { prev2 = prev1; prev1 = \$0; }" \
+      | tr -d "\n"
+    ]], cmd, file, str))
+  if status and output ~= "" then return output end
+end
+
+local function localizeWPS(str, appLocale, localeFile)
+  local resourceDir = hs.application.pathForBundleID("com.kingsoft.wpsoffice.mac")
+      .. '/Contents/Resources/office6/mui'
+  local locale = getMatchedLocale(appLocale, resourceDir)
+  local localeDir = resourceDir .. '/' .. locale
+
+  local searchFunc = function(str)
+    if localeFile then
+      if hs.fs.attributes(localeDir .. '/' .. localeFile .. '.qm') ~= nil then
+        return getSTRInQtKso(str, localeDir .. '/' .. localeFile .. '.qm')
+      end
+    else
+      for file in hs.fs.dir(localeDir) do
+        if file:sub(-3) == ".qm" then
+          local result = getSTRInQtKso(str, localeDir .. '/' .. file)
+          if result ~= nil then return result end
+        end
+      end
+    end
+  end
+  local result = searchFunc(str)
+  if result ~= nil then return result, locale end
+
+  local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
+  local dirs = appendExtraEnglishLocaleDirs(resourceDir, baseLocaleDirs)
+  local ctxt
+  for _, dir in ipairs(dirs) do
+    if localeFile then
+      if hs.fs.attributes(dir .. '/' .. localeFile .. '.qm') ~= nil then
+        ctxt = getCTXTInQtKso(str, dir .. '/' .. localeFile .. '.qm')
+      end
+    else
+      for file in hs.fs.dir(dir) do
+        if file:sub(-3) == ".qm" then
+          ctxt = getCTXTInQtKso(str, dir .. '/' .. file)
+          if ctxt ~= nil then
+            localeFile = file:sub(-3)
+          end
+        end
+      end
+    end
+  end
+  result = searchFunc(ctxt)
+  if result ~= nil then return result, locale end
+end
+
 local function localizeXmind(str, appLocale)
   return localizeByElectron(str, 'net.xmind.vana.app', appLocale,
       'static/locales', 'translation')
@@ -1296,6 +1365,9 @@ local function localizedStringImpl(str, appid, params, force)
     return result, appLocale, locale
   elseif appid:find("org.qt%-project") ~= nil then
     result, locale = localizeQt(str, appid, appLocale)
+    return result, appLocale, locale
+  elseif appid == "com.kingsoft.wpsoffice.mac" then
+    result, locale = localizeWPS(str, appLocale, localeFile)
     return result, appLocale, locale
   elseif appid == "net.xmind.vana.app" then
     result, locale = localizeXmind(str, appLocale)
@@ -1862,6 +1934,40 @@ local function delocalizeQt(str, appid, appLocale)
   if result ~= nil then return result, locale end
 end
 
+local function delocalizeWPS(str, appLocale, localeFile)
+  local resourceDir = hs.application.pathForBundleID("com.kingsoft.wpsoffice.mac")
+      .. '/Contents/Resources/office6/mui'
+  local locale = getMatchedLocale(appLocale, resourceDir)
+  local localeDir = resourceDir .. '/' .. locale
+
+  local ctxt
+  if localeFile then
+    if hs.fs.attributes(localeDir .. '/' .. localeFile .. '.qm') ~= nil then
+      ctxt = getCTXTInQtKso(str, localeDir .. '/' .. localeFile .. '.qm')
+    end
+  else
+    for file in hs.fs.dir(localeDir) do
+      if file:sub(-3) == ".qm" then
+        ctxt = getCTXTInQtKso(str, localeDir .. '/' .. file)
+        if ctxt ~= nil then
+          localeFile = file:sub(-3)
+          break
+        end
+      end
+    end
+  end
+  if ctxt == nil then return end
+
+  local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
+  local dirs = appendExtraEnglishLocaleDirs(resourceDir, baseLocaleDirs)
+  for _, dir in ipairs(dirs) do
+    if hs.fs.attributes(dir .. '/' .. localeFile .. '.qm') ~= nil then
+      local result = getSTRInQtKso(ctxt, dir .. '/' .. localeFile .. '.qm')
+      if result ~= nil then return result, locale end
+    end
+  end
+end
+
 local function delocalizeXmind(str, appLocale)
   return delocalizeByElectron(str, 'net.xmind.vana.app', appLocale,
       'static/locales', 'translation')
@@ -1943,6 +2049,9 @@ local function delocalizedStringImpl(str, appid, params)
     return result, appLocale, locale
   elseif appid:find("org.qt%-project") ~= nil then
     result, locale = delocalizeQt(str, appid, appLocale)
+    return result, appLocale, locale
+  elseif appid == "com.kingsoft.wpsoffice.mac" then
+    result, locale = delocalizeWPS(str, appLocale, localeFile)
     return result, appLocale, locale
   elseif appid == "net.xmind.vana.app" then
     result, locale = delocalizeXmind(str, appLocale)
