@@ -6611,27 +6611,48 @@ local appsLaunchSlow = {
     return app:getMenuItems() ~= nil and #app:getMenuItems() > 10
   end
 }
-local appsLaunchSlowList = ApplicationConfigs["launchSlowly"] or {}
-local commonCheckLaunchFunc = function(app) print(app) return app:getMenuItems() ~= nil end
-for _, appid in ipairs(appsLaunchSlowList) do
-  appsLaunchSlow[appid] = commonCheckLaunchFunc
-end
-local appsLaunchWaitTime = ApplicationConfigs["launchWaitTime"] or 0.1
+local fullyLaunchCriterion, menuItemsPrepared
 
-local checkFullyLaunched
-local function testFullyLaunched(app)
-  local criterion = appsLaunchSlow[app:bundleID()]
-  if criterion ~= nil and not criterion(app) then
-    checkFullyLaunched = criterion
+local function onLaunchedAndActivated(app)
+  fullyLaunchCriterion = nil
+  local menuItems = app:getMenuItems()
+  altMenuBarItem(app, menuItems)
+  registerInAppHotKeys(app)
+  registerInWinHotKeys(app)
+  remapPreviousTab(app, menuItems)
+  registerOpenRecent(app)
+  registerZoomHotkeys(app)
+  registerObserverForMenuBarChange(app, menuItems)
+
+  if HSKeybindings ~= nil and HSKeybindings.isShowing then
+    local validOnly = HSKeybindings.validOnly
+    local showHS = HSKeybindings.showHS
+    local showApp = HSKeybindings.showApp
+    HSKeybindings:reset()
+    HSKeybindings:update(validOnly, showHS, showApp, true)
   end
+  FLAGS["NO_RESHOW_KEYBINDING"] = false
+  return menuItems ~= nil
 end
 
 function App_applicationCallback(appname, eventType, app)
   local appid = app:bundleID()
   if eventType == hs.application.watcher.launching then
-    testFullyLaunched(app)
+    fullyLaunchCriterion = appsLaunchSlow[app:bundleID()]
   elseif eventType == hs.application.watcher.launched then
-    checkFullyLaunched = nil
+    local criterion = fullyLaunchCriterion
+    if criterion ~= nil then
+      if not criterion(app) then
+        hs.timer.waitUntil(function() return criterion(app) end,
+                           function() onLaunchedAndActivated(app) end,
+                           0.01)
+      else
+        onLaunchedAndActivated(app)
+      end
+    elseif menuItemsPrepared == false then
+      onLaunchedAndActivated(app)
+    end
+    menuItemsPrepared = nil
     for _, proc in ipairs(processesOnLaunch[appid] or {}) do
       proc(app)
     end
@@ -6658,40 +6679,9 @@ function App_applicationCallback(appname, eventType, app)
     -- necesary for "registerForOpenSavePanel" for unknown reason
     hs.timer.doAfter(0, function()
       registerForOpenSavePanel(app)
-      local action = function()
-        checkFullyLaunched = nil
-        local menuItems = app:getMenuItems()
-        local retry = 0
-        while menuItems == nil and retry < appsLaunchWaitTime / 0.01 do
-          hs.timer.usleep(0.01 * 1000000)
-          menuItems = app:getMenuItems()
-          if menuItems ~= nil then break end
-          retry = retry + 1
-        end
-        altMenuBarItem(app, menuItems)
-        registerInAppHotKeys(app)
-        registerInWinHotKeys(app)
-        remapPreviousTab(app, menuItems)
-        registerOpenRecent(app)
-        registerZoomHotkeys(app)
-        registerObserverForMenuBarChange(app, menuItems)
+      if fullyLaunchCriterion == nil then
+        menuItemsPrepared = onLaunchedAndActivated(app)
       end
-      local criterion = checkFullyLaunched
-      if criterion ~= nil and not criterion(app) then
-        hs.timer.waitUntil(function() return criterion(app) end,
-                           action, 0.01)
-      else
-        action()
-      end
-
-      if HSKeybindings ~= nil and HSKeybindings.isShowing then
-        local validOnly = HSKeybindings.validOnly
-        local showHS = HSKeybindings.showHS
-        local showApp = HSKeybindings.showApp
-        HSKeybindings:reset()
-        HSKeybindings:update(validOnly, showHS, showApp, true)
-      end
-      FLAGS["NO_RESHOW_KEYBINDING"] = false
     end)
   elseif eventType == hs.application.watcher.deactivated and appname ~= nil then
     if appid then
