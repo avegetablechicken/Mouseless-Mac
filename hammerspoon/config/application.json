@@ -24,6 +24,7 @@
   "launchWaitTime": 0.1,
   "launchSlowly": [
     "com.apple.iMovieApp",
+    "net.xmind.vana.app",
     "org.klatexformula.klatexformula"
   ],
 
