@@ -1074,6 +1074,10 @@
         "mods": "command",
         "key": "["
       },
+      "hideChat": {
+        "mods": ["shift", "command"],
+        "key": "H"
+      },
       "openInDefaultBrowser": {
         "mods": ["shift", "command"],
         "key": "O"
