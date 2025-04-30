@@ -990,14 +990,12 @@ local function commonLocalizedMessage(message)
       local appid = type(app) == 'string' and app or app:bundleID()
       local appLocale = applicationValidLocale(appid)
       if appLocale ~= nil then
-        local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
-        local locale = getMatchedLocale(appLocale, resourceDir, 'lproj')
-        if locale ~= nil then
-          for _, stem in ipairs{ 'MenuCommands', 'Menus', 'Common' } do
-            local result = localizeByLoctable(message, resourceDir, stem, locale, {})
-            if result ~= nil then
-              return result:gsub('“%%@”', ''):gsub('%%@', '')
-            end
+        for _, stem in ipairs{ 'MenuCommands', 'Menus', 'Common' } do
+          local result = localizedString(message, {
+            locale = appLocale, localeFile = stem, framework = "AppKit.framework"
+          }, true)
+          if result ~= nil then
+            return result:gsub('“%%@”', ''):gsub('%%@', '')
           end
         end
       end
@@ -5473,18 +5471,18 @@ local function registerOpenRecent(app)
   if menuItem == nil then
     if appid:sub(1, 10) == "com.apple." then
       if localizedOpenRecent == nil then
-        local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
-        local matchedLocale = getMatchedLocale(SYSTEM_LOCALE, resourceDir, 'lproj')
-        localizedOpenRecent = localizeByLoctable('Open Recent', resourceDir, 'MenuCommands', matchedLocale, {})
+        localizedOpenRecent = localizedString('Open Recent', {
+          localeFile = 'MenuCommands', framework = "AppKit.framework",
+        })
       end
       menuItemPath = { localizedFile, localizedOpenRecent }
       menuItem = app:findMenuItem(menuItemPath)
       if menuItem == nil then
         local appLocale = applicationLocale(appid)
         if appLocale ~= SYSTEM_LOCALE and appLocale:sub(1, 2) ~= 'en' then
-          local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
-          local matchedLocale = getMatchedLocale(appLocale, resourceDir, 'lproj')
-          local localized = localizeByLoctable('Open Recent', resourceDir, 'MenuCommands', matchedLocale, {})
+          local localized = localizedString('Open Recent', {
+            localeFile = 'MenuCommands', framework = "AppKit.framework",
+          })
           menuItemPath = { localizedFile, localized }
         end
       end

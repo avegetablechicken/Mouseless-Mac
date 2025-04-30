@@ -648,7 +648,7 @@ local function localizeByLoctableImpl(str, filePath, fileStem, locale, localesDi
   end
 end
 
-function localizeByLoctable(str, resourceDir, localeFile, loc, localesDict)
+local function localizeByLoctable(str, resourceDir, localeFile, loc, localesDict)
   if localeFile ~= nil then
     local fullPath = resourceDir .. '/' .. localeFile .. '.loctable'
     if hs.fs.attributes(fullPath) ~= nil then

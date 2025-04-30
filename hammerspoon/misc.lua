@@ -114,10 +114,16 @@ if hs.fs.attributes("config/misc.json") ~= nil then
   verificationPatterns = hs.json.read("config/misc.json").verificationFilter or {}
 end
 local defaultVerificationPattern = 'verification code'
-local resourceDir = '/System/Library/PrivateFrameworks/AddressBookCore.framework/Resources'
-local matchedLocale = getMatchedLocale(SYSTEM_LOCALE, resourceDir, 'lproj')
-local locDefaultVerificationPattern = string.lower(localizeByLoctable(defaultVerificationPattern,
-    resourceDir, 'AB-NARWHAL', matchedLocale, {}))
+local locDefaultVerificationPattern = localizedString(
+  defaultVerificationPattern, {
+    localeFile = 'AB-NARWHAL',
+    framework = 'AddressBookCore.framework',
+  })
+if locDefaultVerificationPattern then
+  locDefaultVerificationPattern = string.lower(locDefaultVerificationPattern)
+else
+  locDefaultVerificationPattern = defaultVerificationPattern
+end
 local function parseVerificationCodeFromFirstMessage()
   local content, ok = hs.execute([[
     /usr/bin/sqlite3 $HOME/Library/Messages/chat.db \
