@@ -1078,6 +1078,10 @@
         "mods": ["shift", "command"],
         "key": "H"
       },
+      "showChatProfile": {
+        "mods": "command",
+        "key": "I"
+      },
       "openInDefaultBrowser": {
         "mods": ["shift", "command"],
         "key": "O"

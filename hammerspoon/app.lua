@@ -2540,6 +2540,41 @@ appHotKeyCallbacks = {
         end
       end
     },
+    ["showChatProfile"] = {
+      message = localizedMessage("Chats.Menu.Profile"),
+      condition = function(app)
+        if app:focusedWindow() == nil then return end
+        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
+        local curChatTitle = getAXChildren(winUIObj, "AXSplitGroup", 1,
+            "AXSplitGroup", 1, "AXStaticText", 1)
+        if curChatTitle == nil then return false end
+        local btTitle = localizedString("ComposeBar.VideoTooltip", app:bundleID())
+        local bt = getAXChildren(winUIObj, "AXSplitGroup", 1,
+            "AXSplitGroup", 1, "AXButton", btTitle)
+        return bt ~= nil, curChatTitle.AXValue
+      end,
+      fn = function(title, app)
+        if app:focusedWindow() == nil then return end
+        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
+        local chats = getAXChildren(winUIObj, "AXSplitGroup", 1,
+            "AXScrollArea", 1, "AXTable", 1, "AXRow")
+        local curChat = hs.fnutils.find(chats, function(c)
+          local row = getAXChildren(c, "AXCell", 1, "AXRow", 1)
+          return row ~= nil and (row.AXTitle == title
+              or row.AXTitle:sub(1, #title + 1) == title .. ",")
+        end)
+        if curChat ~= nil then
+          getAXChildren(curChat, "AXCell", 1):performAction("AXShowMenu")
+          local menu = getAXChildren(curChat, "AXCell", 1,
+              "AXRow", 1, "AXMenu", 1)
+          if menu then
+            local profile = hs.fnutils.find(menu:childrenWithRole("AXMenuItem"),
+                function(c) return c.AXIdentifier == "contextMenuProfile:" end)
+            if profile then profile:performAction("AXPress") end
+          end
+        end
+      end
+    },
     ["openInDefaultBrowser"] = {
       message = localizedMessage("Open in Default Browser"),
       condition = function(app)
