@@ -1552,7 +1552,7 @@ appHotKeyCallbacks = {
           return false
         else
           local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-          return winUIObj:attributeValue("AXIdentifier") ~= "open-panel"
+          return winUIObj.AXIdentifier ~= "open-panel"
         end
       end,
       repeatable = true,
@@ -1567,7 +1567,7 @@ appHotKeyCallbacks = {
           return false
         else
           local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-          return winUIObj:attributeValue("AXIdentifier") ~= "open-panel"
+          return winUIObj.AXIdentifier ~= "open-panel"
         end
       end,
       repeatable = true,
@@ -1602,7 +1602,7 @@ appHotKeyCallbacks = {
           return false
         else
           local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-          return winUIObj:attributeValue("AXIdentifier") ~= "open-panel"
+          return winUIObj.AXIdentifier ~= "open-panel"
         end
       end,
       repeatable = true,
@@ -2141,7 +2141,7 @@ appHotKeyCallbacks = {
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-        if winUIObj:attributeValue("AXIdentifier") ~= "ChatGPTSettingsAppWindow" then
+        if winUIObj.AXIdentifier ~= "ChatGPTSettingsAppWindow" then
           return false
         end
         local button = getc(winUIObj, "AXToolbar", 1, "AXButton", 1, "AXButton", 1)
@@ -2607,7 +2607,7 @@ appHotKeyCallbacks = {
         end
         for _, button in ipairs(titleBarUIObj.AXChildren or {}) do
           if button.AXHelp == "后退" then
-            return true, button:attributeValue("AXPosition")
+            return true, button.AXPosition
           end
         end
         return false
@@ -2633,7 +2633,7 @@ appHotKeyCallbacks = {
         end
         for _, button in ipairs(titleBarUIObj.AXChildren or {}) do
           if button.AXHelp == "前进" then
-            return true, button:attributeValue("AXPosition")
+            return true, button.AXPosition
           end
         end
         return false
@@ -2660,9 +2660,9 @@ appHotKeyCallbacks = {
         local refreshButtonPosition, searchButtonPosition
         for _, button in ipairs(titleBarUIObj.AXChildren or {}) do
           if button.AXHelp == "刷新" then
-            refreshButtonPosition = button:attributeValue("AXPosition")
+            refreshButtonPosition = button.AXPosition
           elseif button.AXHelp == nil then
-            searchButtonPosition = button:attributeValue("AXPosition")
+            searchButtonPosition = button.AXPosition
           end
         end
         return refreshButtonPosition ~= nil and searchButtonPosition ~= nil
@@ -5613,7 +5613,7 @@ local function registerForOpenSavePanel(app)
   end
 
   local getUIObj = function(winUIObj)
-    local windowIdent = winUIObj:attributeValue("AXIdentifier")
+    local windowIdent = winUIObj.AXIdentifier
     local dontSaveButton, sidebarCells = nil, {}
     if get(KeybindingConfigs.hotkeys, app:bundleID(), "confirmDelete") == nil then
       local specialConfirmFunc = specialConfirmFuncs[app:bundleID()]
@@ -5798,7 +5798,7 @@ local function altMenuBarItem(app, menuItems)
       if #menuObj > 0 then
         useWindowMenuBar = true
         menuBarItemTitles = hs.fnutils.map(menuObj, function(item)
-          return item:attributeValue("AXTitle"):gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "")
+          return item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "")
         end)
         table.insert(menuBarItemTitles, 1, app:name())
       end
@@ -5849,7 +5849,7 @@ local function altMenuBarItem(app, menuItems)
         menuObj = getc(winUIObj, "AXMenuBar", 1, "AXMenuBar")
       end
       local targetMenuObj = hs.fnutils.find(menuObj, function(item)
-        return item:attributeValue("AXTitle"):gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "") == title
+        return item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "") == title
       end)
       local actionNames = targetMenuObj:actionNames()
       if actionNames ~= nil and hs.fnutils.contains(actionNames, "AXPick") then

@@ -1040,7 +1040,7 @@ local function PDFChooser()
       local winUIObj = hs.axuielement.windowElement(win)
       local filePath = ""
       if #getc(winUIObj, "AXUnknown") ~= 0 then
-        local winIdent = getc(winUIObj, "AXUnknown", 1):attributeValue("AXIdentifier")
+        local winIdent = getc(winUIObj, "AXUnknown", 1).AXIdentifier
         filePath = string.match(winIdent, "PDFTabContentView (.*%.pdf)$")
       end
       local toolbar = nil
@@ -1053,7 +1053,7 @@ local function PDFChooser()
           toolbar, "AXGroup", 1, "AXTabGroup", 1, "AXScrollArea", 1, "AXGroup")
       local tabTitles = {}
       for _, tab in ipairs(tabList) do
-        table.insert(tabTitles, tab:attributeValue("AXHelp"))
+        table.insert(tabTitles, tab.AXHelp)
       end
       table.insert(winTitles, win:title())
       table.insert(winPaths, filePath)
