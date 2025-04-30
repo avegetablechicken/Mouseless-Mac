@@ -600,9 +600,7 @@ local function confirmButtonValidForAppCleanerUninstaller(title)
       return bt.AXIdentifier == "uaid:RemoveDialogSecondButton" and bt.AXEnabled
     end)
     if cancel == nil then return false end
-    local button = hs.fnutils.find(winUIObj:childrenWithRole("AXStaticText"), function(bt)
-      return bt.AXValue == locTitle
-    end)
+    local button = getAXChildren(winUIObj, "AXStaticText", locTitle)
     return button ~= nil, button ~= nil and button.AXPosition
   end
 end
@@ -3275,10 +3273,9 @@ appHotKeyCallbacks = {
       fn = function(app)
         local prefString = localizedString('Preferences', app:bundleID())
         local appUIObj = hs.axuielement.applicationElement(app)
-        local menu = getAXChildren(appUIObj, "AXMenuBar", -1,
-            "AXMenuBarItem", 1, "AXMenu", 1, "AXMenuItem", 1, "AXGroup", 1)
-        local button = hs.fnutils.find(menu:childrenWithRole("AXStaticText"),
-            function(item) return item.AXValue == prefString end)
+        local button = getAXChildren(appUIObj, "AXMenuBar", -1,
+            "AXMenuBarItem", 1, "AXMenu", 1, "AXMenuItem", 1, "AXGroup", 1,
+            "AXStaticText", prefString)
         local position = {
           button.AXPosition.x + 5,
           button.AXPosition.y + 5

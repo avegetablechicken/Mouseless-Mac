@@ -52,6 +52,10 @@ function getAXChildren(element, role, index, ...)
   elseif type(index) == 'number' then
     if index < 0 then index = #children + index + 1 end
     child = children[index]
+  elseif role == "AXStaticText" or role == "AXTextField" then
+    child = hs.fnutils.find(children, function(c)
+      return c.AXValue == index
+    end)
   else
     child = hs.fnutils.find(children, function(c)
       return c.AXTitle == index
