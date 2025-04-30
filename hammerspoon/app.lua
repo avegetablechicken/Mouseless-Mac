@@ -321,7 +321,7 @@ local function deleteSelectedMessage(app, menuItem, force)
   end
   if menuItem == nil then
     local _, menuItemPath = findMenuItem(app, {
-      getOSVersion() < OS.Ventura and "File" or "Conversation",
+      OS_VERSION < OS.Ventura and "File" or "Conversation",
       "Delete Conversation…"
     })
     menuItem = menuItemPath
@@ -1345,7 +1345,7 @@ appHotKeyCallbacks = {
         end)
         if selected == nil then return false end
         return checkMenuItem({
-          getOSVersion() < OS.Ventura and "File" or "Conversation",
+          OS_VERSION < OS.Ventura and "File" or "Conversation",
           "Delete Conversation…"
         })(app)
       end,

@@ -624,7 +624,6 @@ local function registerProxySettingsEntry(menu)
   table.insert(menu, {
     title = "Proxy Settings",
     fn = function()
-      local osVersion = getOSVersion()
       local script = [[
         tell application id "com.apple.systempreferences" to activate
         tell application "System Events"
@@ -638,7 +637,7 @@ local function registerProxySettingsEntry(menu)
           end tell
         end tell
       ]]
-      if osVersion < OS.Ventura then
+      if OS_VERSION < OS.Ventura then
         script = script .. [[
           tell application id "com.apple.systempreferences"
             set current pane to pane "com.apple.preference.network"
@@ -1016,8 +1015,7 @@ end
 local function popupControlCenterSubPanel(panel, allowReentry)
   local ident = controlCenterSubPanelIdentifiers[panel]
   local win = find("com.apple.controlcenter"):mainWindow()
-  local osVersion = getOSVersion()
-  local pane = (osVersion < OS.Ventura and "window 1" or "group 1 of window 1")
+  local pane = (OS_VERSION < OS.Ventura and "window 1" or "group 1 of window 1")
       .. ' of application process "ControlCenter"'
 
   local enter = nil
@@ -1044,13 +1042,13 @@ local function popupControlCenterSubPanel(panel, allowReentry)
   if hs.fnutils.contains({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop", "Music Recognition" }, panel) then
     enter = string.format(enterTemplate, "checkbox", ident, 2)
   elseif panel == "Screen Mirroring" then
-    if osVersion < OS.Ventura then
+    if OS_VERSION < OS.Ventura then
       enter = string.format(enterTemplate, "checkbox", ident, 2)
     else
       enter = string.format(enterTemplate, "button", ident, 1)
     end
   elseif panel == "Display" then
-    enter = string.format(enterTemplate, osVersion < OS.Ventura and "static text" or "group", ident, 1)
+    enter = string.format(enterTemplate, OS_VERSION < OS.Ventura and "static text" or "group", ident, 1)
   elseif panel == "Sound" then
     enter = string.format(enterTemplate, "static text", ident, 1)
   elseif hs.fnutils.contains({ "Accessibility Shortcuts", "Battery", "Hearing", "Users", "Keyboard Brightness" }, panel) then
@@ -1139,7 +1137,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     elseif panel == "Hearing" then
       already = string.format(alreadyTemplate, "static text", controlCenterMenuBarItemIdentifiers[panel])
     elseif panel == "Now Playing" then
-      if osVersion < OS.Ventura then
+      if OS_VERSION < OS.Ventura then
         local mayLocalize = hs.fnutils.partial(controlCenterLocalized, "Now Playing")
         already = [[
           if (exists button "]] .. mayLocalize("rewind") .. [[" of pane) or  ¬
@@ -1230,8 +1228,7 @@ local backgroundSoundsHotkeys
 local selectNetworkHotkeys, selectNetworkWatcher
 ---@diagnostic disable-next-line: lowercase-global
 function registerControlCenterHotKeys(panel)
-  local osVersion = getOSVersion()
-  local pane = (osVersion < OS.Ventura and "window 1" or "group 1 of window 1")
+  local pane = (OS_VERSION < OS.Ventura and "window 1" or "group 1 of window 1")
       .. ' of application process "ControlCenter"'
 
   local function mayLocalize(value)
@@ -1307,7 +1304,7 @@ function registerControlCenterHotKeys(panel)
                            "Screen Mirroring", "Display", "Sound",
                            "Accessibility Shortcuts", "Battery",
                            "Hearing", "Users", }, panel) then
-    if osVersion < OS.Ventura then
+    if OS_VERSION < OS.Ventura then
       local ok, result = hs.osascript.applescript([[
         tell application "System Events"
           repeat until button 1 of ]] .. pane .. [[ ¬
@@ -1412,7 +1409,7 @@ function registerControlCenterHotKeys(panel)
 
     local pos = nil
     if panel == "Display" then
-      if osVersion < OS.Ventura then
+      if OS_VERSION < OS.Ventura then
         pos = "scroll area 1 of"
       else
         pos = "group 1 of"
@@ -1442,7 +1439,7 @@ function registerControlCenterHotKeys(panel)
   -- panel with a list of devices
   if hs.fnutils.contains({"Bluetooth", "Sound", "Screen Mirroring"}, panel) then
     local cbField
-    if osVersion < OS.Ventura then
+    if OS_VERSION < OS.Ventura then
       cbField = "title"
     else
       cbField = "the value of attribute \"AXIdentifier\""
@@ -1576,7 +1573,7 @@ function registerControlCenterHotKeys(panel)
     local availableNetworksString = ""
     local selectNetworkActionFunc = function()
       local cbField
-      if osVersion < OS.Ventura then
+      if OS_VERSION < OS.Ventura then
         cbField = "title"
       else
         cbField = "the value of attribute \"AXIdentifier\""
@@ -1595,7 +1592,7 @@ function registerControlCenterHotKeys(panel)
         for idx, ft in ipairs(fullTitles) do
           if idx > 10 then break end
           local title
-          if osVersion < OS.Ventura then
+          if OS_VERSION < OS.Ventura then
             title = string.match(ft, "([^,]+)")
           else
             title = string.sub(ft, string.len("wifi-network-") + 1, -1)
@@ -1653,7 +1650,7 @@ function registerControlCenterHotKeys(panel)
     selectNetworkWatcher = ExecContinuously(selectNetworkActionFunc)
   elseif panel == "AirDrop" then
     local ok, toggleNames
-    if osVersion < OS.Ventura then
+    if OS_VERSION < OS.Ventura then
       ok, toggleNames = hs.osascript.applescript([[
         tell application "System Events"
           repeat until checkbox 3 of ]] .. pane .. [[ exists
@@ -1700,7 +1697,7 @@ function registerControlCenterHotKeys(panel)
     end
   elseif panel == "Focus" then
     local ok, toggleNames
-    if osVersion < OS.Ventura then
+    if OS_VERSION < OS.Ventura then
       ok, toggleNames = hs.osascript.applescript([[
         tell application "System Events"
           set pane to ]] .. pane .. [[ 
@@ -1762,7 +1759,7 @@ function registerControlCenterHotKeys(panel)
       end
     end
   elseif panel == "Display" then
-    local role = osVersion < OS.Ventura and "scroll area" or "group"
+    local role = OS_VERSION < OS.Ventura and "scroll area" or "group"
     local ok, idx = hs.osascript.applescript([[
       tell application "System Events"
         set totalDelay to 0.0
@@ -1800,7 +1797,7 @@ function registerControlCenterHotKeys(panel)
       if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
     end
 
-    local area = osVersion < OS.Ventura and "scroll area 1 of window 1" or "group 1 of window 1"
+    local area = OS_VERSION < OS.Ventura and "scroll area 1 of window 1" or "group 1 of window 1"
     local ok, result = hs.osascript.applescript([[
       tell application "System Events"
         repeat until checkbox 3 of ]] .. area.. [[ of application process "ControlCenter" exists
@@ -2113,7 +2110,7 @@ function registerControlCenterHotKeys(panel)
     silderFunc()
   elseif panel == "Now Playing" then
     local ok, result
-    if osVersion < OS.Ventura then
+    if OS_VERSION < OS.Ventura then
       ok, result = hs.osascript.applescript([[
         tell application "System Events"
           repeat until button 3 of ]] .. pane .. [[ exists
@@ -2226,8 +2223,7 @@ for panel, spec in pairs(controlCenterPanelConfigs) do
 end
 
 local function getActiveControlCenterPanel()
-  local osVersion = getOSVersion()
-  local pane = (osVersion < OS.Ventura and "window 1" or "group 1 of window 1")
+  local pane = (OS_VERSION < OS.Ventura and "window 1" or "group 1 of window 1")
       .. ' of application process "ControlCenter"'
 
   local function mayLocalize(value)
@@ -2271,7 +2267,7 @@ local function getActiveControlCenterPanel()
     end
   end
   local already
-  if osVersion < OS.Ventura then
+  if OS_VERSION < OS.Ventura then
     already = [[
       if (exists button "]] .. mayLocalize("rewind") .. [[" of pane) or  ¬
           (exists button "]] .. mayLocalize("previous") .. [[" of pane) or ¬

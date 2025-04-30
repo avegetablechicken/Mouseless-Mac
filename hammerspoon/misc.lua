@@ -291,7 +291,6 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
   if titleAsEntry == true then
     table.insert(t, menuItem.AXTitle)
   end
-  local osv = getOSVersion()
   for i, subItem in ipairs(menuItem.AXChildren[1]) do
     if i > 1 and menuItem.AXChildren[1][i - 1] == subItem then
       goto L_CONTINUE
@@ -347,7 +346,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
       end
     end
     if idx ~= nil then
-      if osv >= OS.Sequoia then
+      if OS_VERSION >= OS.Sequoia then
         if menuItem.AXTitle == 'Window'
             -- hack for performance
             or delocMap.common[menuItem.AXTitle] == 'Window' then

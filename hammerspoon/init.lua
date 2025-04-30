@@ -1,5 +1,38 @@
 ---@diagnostic disable: lowercase-global
 
+OS = {
+  Cheetah = "10.00",
+  Puma = "10.01",
+  Jaguar = "10.02",
+  Panther = "10.03",
+  Tiger = "10.04",
+  Leopard = "10.05",
+  ["Snow Leopard"] = "10.06",
+  Lion = "10.07",
+  ["Mountain Lion"] = "10.08",
+  Mavericks = "10.09",
+  Yosemite = "10.10",
+  ["El Capitan"] = "10.11",
+  Sierra = "10.12",
+  ["High Sierra"] = "10.13",
+  Mojave = "10.14",
+  Catalina = "10.15",
+  ["Big Sur"] = "11",
+  Monterey = "12",
+  Ventura = "13",
+  Sonoma = "14",
+  Sequoia = "15",
+}
+
+local osVersion = hs.host.operatingSystemVersion()
+local v = osVersion.major
+if v < 11 then
+  local vminor = (osVersion.minor < 10 and "0" or "") .. tostring(osVersion.minor)
+  OS_VERSION = tostring(v) .. "." .. tostring(vminor)
+else
+  OS_VERSION = tostring(v)
+end
+
 HK = {
   PRIVELLEGE = 0,
   SWITCH = 1,
