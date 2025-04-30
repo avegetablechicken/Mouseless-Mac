@@ -1045,11 +1045,11 @@ local function PDFChooser()
       end
       local toolbar = nil
       if win:isFullScreen() then
-        toolbar = getAXChildren(winUIObj, "AXGroup", 1, "AXToolbar", 1)
+        toolbar = getc(winUIObj, "AXGroup", 1, "AXToolbar", 1)
       else
         toolbar = winUIObj:childrenWithRole("AXToolbar")[1]
       end
-      local tabList = getAXChildren(
+      local tabList = getc(
           toolbar, "AXGroup", 1, "AXTabGroup", 1, "AXScrollArea", 1, "AXGroup")
       local tabTitles = {}
       for _, tab in ipairs(tabList) do
@@ -1219,7 +1219,7 @@ local function PDFChooser()
           if isFullScreen then
             winUIObj = winUIObj:childrenWithRole("AXGroup")[1]
           end
-          local aTab = getAXChildren(winUIObj, "AXToolbar", 1, "AXGroup", 1, "AXTabGroup", 1, "AXScrollArea", 1, nil, choice.id)
+          local aTab = getc(winUIObj, "AXToolbar", 1, "AXGroup", 1, "AXTabGroup", 1, "AXScrollArea", 1, nil, choice.id)
           if aTab ~= nil then
             local position = aTab.AXPosition
             if leftClickAndRestore({ x = position.x + 10, y = position.y }, app:name()) then

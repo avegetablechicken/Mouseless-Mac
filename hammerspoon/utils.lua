@@ -40,7 +40,7 @@ function get(table, key, ...)
   return get(table[key], ...)
 end
 
-function getAXChildren(element, role, index, ...)
+function getc(element, role, index, ...)
   if element == nil or (role == nil and index == nil) then return element end
   local children, child
   if role == nil and element.AXChildren ~= nil then
@@ -61,7 +61,7 @@ function getAXChildren(element, role, index, ...)
       return c.AXTitle == index
     end)
   end
-  return getAXChildren(child, ...)
+  return getc(child, ...)
 end
 
 function inFullscreenSpace()
@@ -2571,7 +2571,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
     app = appid appid = app:bundleID()
   end
   local appUIObj = hs.axuielement.applicationElement(app)
-  local menuBarMenu = getAXChildren(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", menuBarIdx)
+  local menuBarMenu = getc(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", menuBarIdx)
 
   if type(menuItemPath) ~= 'table' then
     menuItemPath = { menuItemPath }
@@ -2595,11 +2595,11 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   local menu = menuBarMenu
   for _, item in ipairs(menuItemPath) do
     local parent = menu
-    menu = getAXChildren(parent, "AXMenu", 1, "AXMenuItem", item)
+    menu = getc(parent, "AXMenu", 1, "AXMenuItem", item)
     if menu == nil and type(item) == 'string' then
       local locItem = localizedString(item, appid)
       if locItem ~= nil then
-        menu = getAXChildren(parent, "AXMenu", 1, "AXMenuItem", locItem)
+        menu = getc(parent, "AXMenu", 1, "AXMenuItem", locItem)
       end
     end
     if menu == nil then return false end
