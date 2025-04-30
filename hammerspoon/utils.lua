@@ -297,8 +297,11 @@ local function getResourceDir(appid, frameworkName)
   end
   local resourceDir
   local framework = {}
-  local appContentPath = hs.application.pathForBundleID(appid) .. "/Contents"
-  if hs.fs.attributes(appContentPath) == nil then
+  local appContentPath
+  if appid ~= '__macos' then
+    appContentPath = hs.application.pathForBundleID(appid) .. "/Contents"
+  end
+  if appContentPath and hs.fs.attributes(appContentPath) == nil then
     resourceDir = hs.application.pathForBundleID(appid) .. "/WrappedBundle/.."
   elseif frameworkName ~= nil then
     local frameworkDir
@@ -1308,7 +1311,7 @@ local function localizedStringImpl(str, appid, params, force)
   if force == nil then force = false end
 
   if appLocale == nil then
-    appLocale = applicationLocale(appid)
+    appLocale = appid ~= '__macos' and applicationLocale(appid) or SYSTEM_LOCALE
   end
 
   local result
@@ -1324,8 +1327,8 @@ local function localizedStringImpl(str, appid, params, force)
     if result ~= nil then return result end
   end
 
-  if hs.application.pathForBundleID(appid) == nil
-      or hs.application.pathForBundleID(appid) == "" then
+  if appid ~= '__macos' and (hs.application.pathForBundleID(appid) == nil
+      or hs.application.pathForBundleID(appid) == "") then
     return nil
   end
 
@@ -1362,6 +1365,7 @@ local function localizedStringImpl(str, appid, params, force)
   local locale, localeDir, mode
 
   local setDefaultLocale = function()
+    if appid == '__macos' then return false end
     resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
     framework = {}
     if hs.fs.attributes(resourceDir) == nil then return false end
@@ -1481,6 +1485,13 @@ local function localizedStringImpl(str, appid, params, force)
 end
 
 function localizedString(str, appid, params, force)
+  if type(appid) == 'table' then
+    force = params params = appid appid = nil
+  end
+  if appid == nil and (type(params) ~= 'table' or params.framework == nil) then
+    return
+  end
+  appid = appid or '__macos'
   local result, appLocale, locale = localizedStringImpl(str, appid, params, force)
   if appLocale == nil then return result end
 
