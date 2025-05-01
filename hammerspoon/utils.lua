@@ -1152,6 +1152,9 @@ end
 local function localizeQt(str, appid, appLocale)
   local appPath = hs.application.pathForBundleID(appid)
   local resourceDir = appPath .. "/../../share/qt/translations"
+  if hs.fs.attributes(resourceDir) == nil then
+    resourceDir = appPath .. "/../Qt/translations"
+  end
   if hs.fs.attributes(resourceDir) == nil then return end
   local appname = appPath:match("^.*/([^/]+)%.app$")
   if appname == nil
@@ -1888,6 +1891,9 @@ end
 local function delocalizeQt(str, appid, appLocale)
   local appPath = hs.application.pathForBundleID(appid)
   local resourceDir = appPath .. "/../../share/qt/translations"
+  if hs.fs.attributes(resourceDir) == nil then
+    resourceDir = appPath .. "/../Qt/translations"
+  end
   if hs.fs.attributes(resourceDir) == nil then return end
   local appname = appPath:match("^.*/([^/]+)%.app$")
   if appname == nil
