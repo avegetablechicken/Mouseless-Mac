@@ -5881,12 +5881,12 @@ local function altMenuBarItem(app, menuItems)
     for i=2,#menuBarItemTitles do
       local title, letter = menuBarItemTitles[i]:match("(.-)%s*%((.-)%)")
       if letter then
-        alreadySetHotkeys[letter] = {menuBarItemTitles[i], title}
+        alreadySetHotkeys[string.upper(letter)] = {menuBarItemTitles[i], title}
       else
         letter = menuBarItemTitles[i]:match("[^%s]-&(%a)")
         if letter ~= nil then
           title = menuBarItemTitles[i]:gsub('[^%s]-&(%a)', '%1')
-          alreadySetHotkeys[letter] = { menuBarItemTitles[i], title }
+          alreadySetHotkeys[string.upper(letter)] = { menuBarItemTitles[i], title }
         else
           table.insert(itemTitles, menuBarItemTitles[i])
         end
