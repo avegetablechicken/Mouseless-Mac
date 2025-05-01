@@ -1060,7 +1060,7 @@ local function localizeByChromium(str, localeDir, appid)
   for _, enLocale in ipairs{"en", "English", "Base", "en_US", "en_GB"} do
     if hs.fs.attributes(resourceDir .. '/' .. enLocale .. '.lproj') ~= nil then
       for file in hs.fs.dir(resourceDir .. '/' .. enLocale .. '.lproj') do
-        if file:sub(-4) == ".pak" then
+        if file:sub(-4) == ".pak" and hs.fs.attributes(localeDir .. '/' .. file) then
           local fullPath = resourceDir .. '/' .. enLocale .. '.lproj/' .. file
           local fileStem = file:sub(1, -5)
           local enTmpBaseDir = string.format(localeTmpDir .. '%s/%s', appid, enLocale)
@@ -1072,23 +1072,21 @@ local function localizeByChromium(str, localeDir, appid)
           end
           local output, status = hs.execute("grep -lrE '^" .. str .. "$' '" .. enTmpdir .. "' | tr -d '\\n'")
           if status and output ~= "" then
-            if hs.fs.attributes(localeDir .. '/' .. file) then
-              local matchFile = output:match("^.*/(.*)$")
-              local tmpBaseDir = string.format(localeTmpDir .. '%s/%s', appid, locale)
-              local tmpdir = tmpBaseDir .. '/' .. fileStem
-              if dirNotExistOrEmpty(tmpdir) then
-                hs.execute(string.format("mkdir -p '%s'", tmpBaseDir))
-                hs.execute(string.format(
-                    "scripts/pak -u '%s' '%s'", localeDir .. '/' .. file, tmpdir))
-              end
-              local matchFullPath = tmpdir .. '/' .. matchFile
-              if hs.fs.attributes(matchFullPath) ~= nil then
-                local f = io.open(matchFullPath, "r")
-                if f ~= nil then
-                  local content = f:read("*a")
-                  f:close()
-                  return content
-                end
+            local matchFile = output:match("^.*/(.*)$")
+            local tmpBaseDir = string.format(localeTmpDir .. '%s/%s', appid, locale)
+            local tmpdir = tmpBaseDir .. '/' .. fileStem
+            if dirNotExistOrEmpty(tmpdir) then
+              hs.execute(string.format("mkdir -p '%s'", tmpBaseDir))
+              hs.execute(string.format(
+                  "scripts/pak -u '%s' '%s'", localeDir .. '/' .. file, tmpdir))
+            end
+            local matchFullPath = tmpdir .. '/' .. matchFile
+            if hs.fs.attributes(matchFullPath) ~= nil then
+              local f = io.open(matchFullPath, "r")
+              if f ~= nil then
+                local content = f:read("*a")
+                f:close()
+                return content
               end
             end
           end
