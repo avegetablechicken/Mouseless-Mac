@@ -5895,6 +5895,13 @@ local function altMenuBarItem(app, menuItems)
 
     -- process localized titles
     itemTitles = delocalizeMenuBarItems(itemTitles, app:bundleID())
+    for i=#itemTitles,1,-1 do
+      local letter = itemTitles[i][2]:match("[^%s]-&(%a)")
+      if letter ~= nil then
+        alreadySetHotkeys[string.upper(letter)] = itemTitles[i][1]
+        table.remove(itemTitles, i)
+      end
+    end
 
     local notSetItems = {}
     for _, title in ipairs(itemTitles) do

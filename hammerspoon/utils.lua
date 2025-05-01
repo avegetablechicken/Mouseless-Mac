@@ -1913,7 +1913,6 @@ local function delocalizeQt(str, appid, appLocale)
   local localeFile = resourceDir .. '/' .. prefix .. locale .. '.qm'
   local result = delocalizeByQtImpl(str .. '\\(&[A-Z]\\)', localeFile)
   if result ~= nil then
-    result = result:gsub('[^%s]-&(%a)', '%1')
     return result, locale
   end
   result = delocalizeByQtImpl(str, localeFile)
