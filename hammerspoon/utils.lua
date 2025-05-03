@@ -1318,6 +1318,11 @@ local function localizedStringImpl(str, appid, params, force)
   end
   if force == nil then force = false end
 
+  if delocMap[appid] ~= nil then
+    result = hs.fnutils.indexOf(delocMap[appid], str)
+    if result ~= nil then return result end
+  end
+
   if appLocale == nil then
     appLocale = appid ~= '__macos' and applicationLocale(appid) or SYSTEM_LOCALE
   end
@@ -1328,11 +1333,6 @@ local function localizedStringImpl(str, appid, params, force)
     result = get(appLocaleMap, appid, appLocale, str)
     if result == false then return nil
     elseif result ~= nil then return result end
-  end
-
-  if delocMap[appid] ~= nil then
-    result = hs.fnutils.indexOf(delocMap[appid], str)
-    if result ~= nil then return result end
   end
 
   if appid ~= '__macos' and (hs.application.pathForBundleID(appid) == nil
