@@ -13,7 +13,7 @@
   "com.tencent.qq": {
     "切换全屏": "Toggle fullscreen"
   },
-  "com.kingsoft.wpsoffice.mac": {
+  "com.kingsoft.wpsoffice.mac": [{
     "账户": "Account",
     "账号": "Account",
     "服务": "Tools",
@@ -27,24 +27,22 @@
     "幻灯片放映": "Slide Show",
     "批注": "Comment",
     "页面": "Page",
-    "工作区": "Workspace",
-
-    "最近": "Recent",
-    "首页": "Home",
-    "属性...": "Properties...",
-    "文本框": "Text Box",
-    "横向": "Horizontal Text Box",
-    "横向文本框": "Horizontal Text Box",
-    "高亮": "Highlight",
-    "下划线": "Underline",
-    "删除线": "Strikethrough",
-    "输出为PDF..." : "Export to PDF...",
-    "输出为PDF格式..." : "Export to PDF...",
-    "LaTeX公式...": "LaTeXEquation...",
-    "显示比例": "Zoom",
-    "打开文件位置": "Open File Location",
-    "不保存": "Don't Save"
-  },
+    "工作区": "Workspace"
+  }, {
+    "Recent": "最近",
+    "Home": "首页",
+    "Properties...": "属性...",
+    "Text Box": "文本框",
+    "Horizontal Text Box": ["横向", "横向文本框"],
+    "Highlight": "高亮",
+    "Underline": "下划线",
+    "Strikethrough": "删除线",
+    "Export to PDF...": ["输出为PDF...", "输出为PDF格式..."],
+    "LaTeXEquation...": "LaTeX公式...",
+    "Zoom": "显示比例",
+    "Open File Location": "打开文件位置",
+    "Don't Save": "不保存"
+  }],
 
   "com.baidu.BaiduNetdisk-mac": {
     "账户": "Account"

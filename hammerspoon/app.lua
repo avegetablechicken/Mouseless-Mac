@@ -1008,12 +1008,14 @@ local function localizedMessage(message, params, sep)
   return function(app)
     local appid = type(app) == 'string' and app or app:bundleID()
     if type(message) == 'string' then
-      return localizedString(message, appid, params) or message
+      local str = localizedString(message, appid, params) or message
+      return type(str) == 'string' and str or str[1]
     else
       if sep == nil then sep = ' > ' end
       local str = localizedMenuBarItem(message[1], appid, params) or message[1]
       for i=2,#message do
-        str = str .. sep .. (localizedString(message[i], appid, params) or message[i])
+        local itemStr = localizedString(message[i], appid, params) or message[i]
+        str = str .. sep .. (type(itemStr) == 'string' and itemStr or itemStr[1])
       end
       return str
     end
@@ -1739,18 +1741,21 @@ appHotKeyCallbacks = {
     ["exportToPDF"] = {
       message = localizedMessage("Export to PDF..."),
       condition = function(app)
-        local titleMap = delocMap[app:bundleID()]  -- hack for multi-map
-        if titleMap ~= nil then
-          local localizedFile = localizedMenuBarItem('File', app:bundleID())
-          for k, v in pairs(titleMap) do
-            if 'Export to PDF...' == v then
-              local localizedTitle = k
-              local menuItemPath = { localizedFile, localizedTitle }
-              local menuItem = app:findMenuItem(menuItemPath)
-              if menuItem ~= nil then
-                return menuItem.enabled, menuItemPath
-              end
+        local localizedFile = localizedMenuBarItem('File', app:bundleID())
+        local menuItemTitle = localizedString('Export to PDF...', app:bundleID())
+        if type(menuItemTitle) == 'table' then
+          for _, title in pairs(menuItemTitle) do
+            local menuItemPath = { localizedFile, title }
+            local menuItem = app:findMenuItem(menuItemPath)
+            if menuItem ~= nil then
+              return menuItem.enabled, menuItemPath
             end
+          end
+        else
+          local menuItemPath = { localizedFile, menuItemTitle }
+          local menuItem = app:findMenuItem(menuItemPath)
+          if menuItem ~= nil then
+            return menuItem.enabled, menuItemPath
           end
         end
         local menuItemPath = { 'File', 'Export to PDF...' }
@@ -1762,19 +1767,22 @@ appHotKeyCallbacks = {
     ["insertTextBox"] = {
       message = localizedMessage({ "Insert", "Text Box" }),
       condition = function(app)
-        local titleMap = delocMap[app:bundleID()]  -- hack for multi-map
-        if titleMap ~= nil then
-          local localizedInsert = localizedMenuBarItem('Insert', app:bundleID())
-          local localizedTextBox = localizedString('Text Box', app:bundleID())
-          for k, v in pairs(titleMap) do
-            if 'Horizontal Text Box' == v then
-              local localizedTitle = k
-              local menuItemPath = { localizedInsert, localizedTextBox, localizedTitle }
-              local menuItem = app:findMenuItem(menuItemPath)
-              if menuItem ~= nil then
-                return menuItem.enabled, menuItemPath
-              end
+        local localizedInsert = localizedMenuBarItem('Insert', app:bundleID())
+        local localizedTextBox = localizedString('Text Box', app:bundleID())
+        local menuItemTitle = localizedString('Horizontal Text Box', app:bundleID())
+        if type(menuItemTitle) == 'table' then
+          for _, title in pairs(menuItemTitle) do
+            local menuItemPath = { localizedInsert, localizedTextBox, title }
+            local menuItem = app:findMenuItem(menuItemPath)
+            if menuItem ~= nil then
+              return menuItem.enabled, menuItemPath
             end
+          end
+        else
+          local menuItemPath = { localizedInsert, localizedTextBox, menuItemTitle}
+          local menuItem = app:findMenuItem(menuItemPath)
+          if menuItem ~= nil then
+            return menuItem.enabled, menuItemPath
           end
         end
         local menuItemPath = { 'Insert', 'Text Box', 'Horizontal Text Box' }

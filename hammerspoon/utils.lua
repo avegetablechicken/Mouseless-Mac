@@ -250,19 +250,31 @@ end
 
 local localeTmpDir = hs.fs.temporaryDirectory() .. 'org.hammerspoon.Hammerspoon/locale/'
 
+local locMap = {}
 delocMap = {}
-localizationMapLoaded = {}
+localizationMapLoaded = { menubar = {}, strings = {} }
 local localizationFrameworks = {}
 if hs.fs.attributes("config/localization.json") ~= nil then
-  delocMap = hs.json.read("config/localization.json")
-  localizationFrameworks = delocMap['resources']
-  delocMap['resources'] = nil
-  localizationMapLoaded = hs.fnutils.copy(delocMap)
+  local json = hs.json.read("config/localization.json")
+  localizationFrameworks = json['resources']
+  json['resources'] = nil
+  for appid, config in pairs(json) do
+    if #config == 0 then
+      localizationMapLoaded['menubar'][appid] = config
+    else
+      localizationMapLoaded['menubar'][appid] = config[1]
+      localizationMapLoaded['strings'][appid] = config[2]
+    end
+  end
+  delocMap = hs.fnutils.copy(localizationMapLoaded['menubar'])
+  locMap = hs.fnutils.copy(localizationMapLoaded['strings'])
 end
 function resetLocalizationMap(appid)
   if localizationMapLoaded[appid] ~= nil then
-    delocMap[appid] = hs.fnutils.copy(localizationMapLoaded[appid])
+    delocMap[appid] = hs.fnutils.copy(localizationMapLoaded[appid]['menubar'])
+    locMap[appid] = hs.fnutils.copy(localizationMapLoaded[appid]['strings'])
   else
+    locMap[appid] = nil
     delocMap[appid] = nil
   end
 end
@@ -1320,6 +1332,10 @@ local function localizedStringImpl(str, appid, params, force)
 
   if delocMap[appid] ~= nil then
     result = hs.fnutils.indexOf(delocMap[appid], str)
+    if result ~= nil then return result end
+  end
+  if locMap[appid] ~= nil then
+    result = locMap[appid][str]
     if result ~= nil then return result end
   end
 
