@@ -3442,9 +3442,15 @@ appHotKeyCallbacks = {
       background = true,
       fn = function(win)
         local winUIObj = hs.axuielement.windowElement(win)
-        local field = getc(winUIObj, "AXGroup", 1, "AXScrollArea", 1,
-            "AXGroup", 1, "AXScrollArea", 1, "AXOutline", 1, "AXRow", 3, nil, 1,
-            "AXStaticText", 2)
+        local outline = getc(winUIObj, "AXGroup", 1, "AXScrollArea", 1,
+            "AXGroup", 1, "AXScrollArea", 1, "AXOutline", 1)
+        local field
+        if getc(outline, "AXRow", 3, nil, 1, "AXStaticText", 1).AXValue
+            == localizedString("Password", "com.apple.Passwords") then
+          field = getc(outline, "AXRow", 3, nil, 1, "AXStaticText", 2)
+        else
+          field = getc(outline, "AXRow", 4, nil, 1, "AXStaticText", 2)
+        end
         assert(field)
         local position = {
           field.AXPosition.x + field.AXSize.w / 2,
