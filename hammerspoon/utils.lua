@@ -276,9 +276,30 @@ if hs.fs.attributes("config/localization.json") ~= nil then
   for appid, config in pairs(json) do
     if #config == 0 then
       localizationMapLoaded['menubar'][appid] = config
+      localizationMapLoaded['strings'][appid] = {}
+      local dict = localizationMapLoaded['strings'][appid]
+      for k, v in pairs(config) do
+        if dict[v] == nil then
+          dict[v] = k
+        elseif type(dict[v]) == 'string' then
+          dict[v] = { dict[v], k }
+        else
+          table.insert(dict[v], k)
+        end
+      end
     else
       localizationMapLoaded['menubar'][appid] = config[1]
       localizationMapLoaded['strings'][appid] = config[2]
+      local dict = localizationMapLoaded['strings'][appid]
+      for k, v in pairs(config[1]) do
+        if dict[v] == nil then
+          dict[v] = k
+        elseif type(dict[v]) == 'string' then
+          dict[v] = { dict[v], k }
+        else
+          table.insert(dict[v], k)
+        end
+      end
     end
   end
   delocMap = hs.fnutils.copy(localizationMapLoaded['menubar'])
@@ -295,6 +316,7 @@ function resetLocalizationMap(appid)
 end
 
 delocMap.common = {}
+locMap.common = {}
 
 local function systemLocales()
   local locales, ok = hs.execute("defaults read -globalDomain AppleLanguages | tr -d '()\" \\n'")
@@ -1345,10 +1367,6 @@ local function localizedStringImpl(str, appid, params, force)
   end
   if force == nil then force = false end
 
-  if delocMap[appid] ~= nil then
-    result = hs.fnutils.indexOf(delocMap[appid], str)
-    if result ~= nil then return result end
-  end
   if locMap[appid] ~= nil then
     result = locMap[appid][str]
     if result ~= nil then return result end
@@ -2256,17 +2274,23 @@ function localizeCommonMenuItemTitles(locale, appid)
   if delocMap[target] == nil then
     delocMap[target] = {}
   end
-  local targetMap = delocMap[target]
+  if locMap[target] == nil then
+    locMap[target] = {}
+  end
+  local targetDelocMap = delocMap[target]
+  local targetLocMap = locMap[target]
   for _, title in ipairs { 'File', 'View', 'Window', 'Help' } do
     local escapedTitle = title:gsub('…', '\\U2026'):gsub('“', '\\U201C'):gsub('”', '\\U201D')
     local localizedTitle = localizeByLoctable(escapedTitle, resourceDir, 'MenuCommands', matchedLocale, {})
     if localizedTitle ~= nil then
-      targetMap[localizedTitle] = title
+      targetDelocMap[localizedTitle] = title
+      targetLocMap[title] = localizedTitle
     end
   end
   local localizedTitle = localizeByLoctable('Edit', resourceDir, 'InputManager', matchedLocale, {})
   if localizedTitle ~= nil then
-    targetMap[localizedTitle] = 'Edit'
+    targetDelocMap[localizedTitle] = 'Edit'
+    targetLocMap['Edit'] = localizedTitle
   end
 
   local titleList = {
@@ -2375,8 +2399,8 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
 end
 
 function localizedMenuBarItem(title, appid, params)
-  if delocMap[appid] ~= nil then
-    local locTitle = hs.fnutils.indexOf(delocMap[appid], title)
+  if locMap[appid] ~= nil then
+    local locTitle = locMap[appid][title]
     if locTitle ~= nil then
       -- "View" may be localized to different strings in the same app (e.g. WeChat)
       if title == 'View' and find(appid) then
@@ -2406,7 +2430,7 @@ function localizedMenuBarItem(title, appid, params)
     end
   end
   if appLocale == getMatchedLocale(SYSTEM_LOCALE, { appLocale }) then
-    local locTitle = hs.fnutils.indexOf(delocMap.common, title)
+    local locTitle = locMap.common[title]
     if locTitle ~= nil then return locTitle end
   end
   local locTitle = localizedString(title, appid, params)
