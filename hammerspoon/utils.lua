@@ -2347,19 +2347,21 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
 end
 
 function localizedMenuBarItem(title, appid, params)
-  local appLocale = applicationLocale(appid)
-  local locTitle = hs.fnutils.indexOf(delocMap[appid] or {}, title)
-  if locTitle ~= nil then
-    -- "View" may be localized to different strings in the same app (e.g. WeChat)
-    if title == 'View' and find(appid) then
-      if find(appid):findMenuItem({ locTitle }) ~= nil then
+  if delocMap[appid] ~= nil then
+    local locTitle = hs.fnutils.indexOf(delocMap[appid], title)
+    if locTitle ~= nil then
+      -- "View" may be localized to different strings in the same app (e.g. WeChat)
+      if title == 'View' and find(appid) then
+        if find(appid):findMenuItem({ locTitle }) ~= nil then
+          return locTitle
+        end
+      else
         return locTitle
       end
-    else
-      return locTitle
     end
   end
   -- the app may pretend being localized (e.g. Visual Studio Code)
+  local appLocale = applicationLocale(appid)
   if find(appid) then
     if type(params) == 'table' and params.locale ~= nil
         and params.locale == getMatchedLocale(appLocale, { params.locale }) then
@@ -2369,10 +2371,10 @@ function localizedMenuBarItem(title, appid, params)
     end
   end
   if appLocale == getMatchedLocale(SYSTEM_LOCALE, { appLocale }) then
-    locTitle = hs.fnutils.indexOf(delocMap.common, title)
+    local locTitle = hs.fnutils.indexOf(delocMap.common, title)
     if locTitle ~= nil then return locTitle end
   end
-  locTitle = localizedString(title, appid, params)
+  local locTitle = localizedString(title, appid, params)
   if locTitle ~= nil then
     if delocMap[appid] == nil then
       delocMap[appid] = {}
@@ -2391,16 +2393,16 @@ function localizedMenuBarItem(title, appid, params)
 end
 
 function localizedMenuItem(title, appid, params)
-  local appLocale = applicationLocale(appid)
-  local locTitle = hs.fnutils.indexOf(delocMap[appid] or {}, title)
-  if locTitle ~= nil then
-    return locTitle
-  end
-  if appLocale == getMatchedLocale(SYSTEM_LOCALE, { appLocale }) then
-    locTitle = hs.fnutils.indexOf(delocMap.common, title)
+  if delocMap[appid] ~= nil then
+    local locTitle = hs.fnutils.indexOf(delocMap[appid], title)
     if locTitle ~= nil then return locTitle end
   end
-  locTitle = localizedString(title, appid, params)
+  local appLocale = applicationLocale(appid)
+  if appLocale == getMatchedLocale(SYSTEM_LOCALE, { appLocale }) then
+    local locTitle = hs.fnutils.indexOf(delocMap.common, title)
+    if locTitle ~= nil then return locTitle end
+  end
+  local locTitle = localizedString(title, appid, params)
   if locTitle ~= nil then
     if delocMap[appid] == nil then
       delocMap[appid] = {}
