@@ -1341,7 +1341,8 @@ appHotKeyCallbacks = {
         local messageItems = getc(appUIObj, "AXWindow", 1, "AXGroup", 1, "AXGroup", 1,
             "AXGroup", 1, "AXGroup", 2, "AXGroup", 1, "AXGroup", 1, "AXStaticText")
         local selected = hs.fnutils.find(messageItems or {}, function(msg)
-          return msg.AXSelected == true
+          return msg.AXSelected == true and msg.AXDescription:sub(4) ~=
+              localizedString('New Message', app:bundleID())
         end)
         if selected == nil then return false end
         return checkMenuItem({
