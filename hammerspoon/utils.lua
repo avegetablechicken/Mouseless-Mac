@@ -2383,6 +2383,13 @@ function localizedMenuBarItem(title, appid, params)
         if find(appid):findMenuItem({ locTitle }) ~= nil then
           return locTitle
         end
+      elseif type(locTitle) == 'table' then
+        local app = find(appid)
+        for _, t in ipairs(locTitle) do
+          if app:findMenuItem({ t }) ~= nil then
+            return t
+          end
+        end
       else
         return locTitle
       end
