@@ -126,9 +126,17 @@ function findMenuItem(app, menuItemTitle, params)
   local targetMenuItem = {}
   local locStr = localizedMenuBarItem(menuItemTitle[1], app:bundleID())
   table.insert(targetMenuItem, locStr or menuItemTitle[1])
-  for i=#menuItemTitle,2,-1 do
+  for i=2,#menuItemTitle do
     locStr = localizedString(menuItemTitle[i], app:bundleID(), params)
-    table.insert(targetMenuItem, 2, locStr or menuItemTitle[i])
+    if type(locStr) == 'table' then
+      for _, s in ipairs(locStr) do
+        table.insert(targetMenuItem, s)
+        if app:findMenuItem(targetMenuItem) then break
+        else targetMenuItem[#targetMenuItem] = nil end
+      end
+    else
+      table.insert(targetMenuItem, locStr or menuItemTitle[i])
+    end
   end
   return app:findMenuItem(targetMenuItem), targetMenuItem
 end
@@ -151,10 +159,18 @@ function selectMenuItem(app, menuItemTitle, params, show)
     local targetMenuItem = {}
     local locStr = localizedMenuBarItem(menuItemTitle[1], app:bundleID())
     table.insert(targetMenuItem, locStr or menuItemTitle[1])
-    for i=#menuItemTitle,2,-1 do
-      locStr = localizedString(menuItemTitle[i], app:bundleID(), params)
-      table.insert(targetMenuItem, 2, locStr or menuItemTitle[i])
+    for i=2,#menuItemTitle do
+    locStr = localizedString(menuItemTitle[i], app:bundleID(), params)
+    if type(locStr) == 'table' then
+      for _, s in ipairs(locStr) do
+        table.insert(targetMenuItem, s)
+        if app:findMenuItem(targetMenuItem) then break
+        else targetMenuItem[#targetMenuItem] = nil end
+      end
+    else
+      table.insert(targetMenuItem, locStr or menuItemTitle[i])
     end
+  end
     return app:selectMenuItem(targetMenuItem)
   end
 end

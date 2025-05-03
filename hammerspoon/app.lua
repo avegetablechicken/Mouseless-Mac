@@ -1740,55 +1740,12 @@ appHotKeyCallbacks = {
     },
     ["exportToPDF"] = {
       message = localizedMessage("Export to PDF..."),
-      condition = function(app)
-        local localizedFile = localizedMenuBarItem('File', app:bundleID())
-        local menuItemTitle = localizedString('Export to PDF...', app:bundleID())
-        if type(menuItemTitle) == 'table' then
-          for _, title in pairs(menuItemTitle) do
-            local menuItemPath = { localizedFile, title }
-            local menuItem = app:findMenuItem(menuItemPath)
-            if menuItem ~= nil then
-              return menuItem.enabled, menuItemPath
-            end
-          end
-        else
-          local menuItemPath = { localizedFile, menuItemTitle }
-          local menuItem = app:findMenuItem(menuItemPath)
-          if menuItem ~= nil then
-            return menuItem.enabled, menuItemPath
-          end
-        end
-        local menuItemPath = { 'File', 'Export to PDF...' }
-        local menuItem = app:findMenuItem(menuItemPath)
-        return menuItem ~= nil and menuItem.enabled, menuItemPath
-      end,
+      condition = checkMenuItem({ "File", "Export to PDF..." }),
       fn = receiveMenuItem
     },
     ["insertTextBox"] = {
       message = localizedMessage({ "Insert", "Text Box" }),
-      condition = function(app)
-        local localizedInsert = localizedMenuBarItem('Insert', app:bundleID())
-        local localizedTextBox = localizedString('Text Box', app:bundleID())
-        local menuItemTitle = localizedString('Horizontal Text Box', app:bundleID())
-        if type(menuItemTitle) == 'table' then
-          for _, title in pairs(menuItemTitle) do
-            local menuItemPath = { localizedInsert, localizedTextBox, title }
-            local menuItem = app:findMenuItem(menuItemPath)
-            if menuItem ~= nil then
-              return menuItem.enabled, menuItemPath
-            end
-          end
-        else
-          local menuItemPath = { localizedInsert, localizedTextBox, menuItemTitle}
-          local menuItem = app:findMenuItem(menuItemPath)
-          if menuItem ~= nil then
-            return menuItem.enabled, menuItemPath
-          end
-        end
-        local menuItemPath = { 'Insert', 'Text Box', 'Horizontal Text Box' }
-        local menuItem = app:findMenuItem(menuItemPath)
-        return menuItem ~= nil and menuItem.enabled, menuItemPath
-      end,
+      condition = checkMenuItem({ "Insert", "Text Box", "Horizontal Text Box" }),
       fn = receiveMenuItem
     },
     ["insertEquation"] = {
