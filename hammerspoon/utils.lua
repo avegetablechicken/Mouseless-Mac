@@ -2210,6 +2210,10 @@ function delocalizedString(str, appid, params)
   return result
 end
 
+-- some menu items are managed by system framework
+-- the localized strings of their titles are manged here
+-- should be use when localizing / delocalizing menu bar items
+-- and delocalizing menu items whose keybindings contain 'fn'
 function localizeCommonMenuItemTitles(locale, appid)
   if locale == 'en' or locale:find('en_') or locale == 'English' then return end
   if locale == SYSTEM_LOCALE and appid ~= nil then return end
