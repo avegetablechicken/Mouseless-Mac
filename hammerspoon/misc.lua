@@ -1015,14 +1015,14 @@ function()
       elseif ev:getKeyCode() == hs.keycodes.map["Escape"] then
         cancelFunc()
         return true
-      elseif ev:getKeyCode() == hs.keycodes.map["0"] then
-        HSKeybindings:update(true, true, true)
-        return true
       elseif ev:getKeyCode() == hs.keycodes.map["1"] then
         HSKeybindings:update(true, true, false)
         return true
       elseif ev:getKeyCode() == hs.keycodes.map["2"] then
         HSKeybindings:update(true, false, true)
+        return true
+      elseif ev:getKeyCode() == hs.keycodes.map["3"] then
+        HSKeybindings:update(true, true, true)
         return true
       end
     elseif ev:getType() == hs.eventtap.event.types.keyUp then
