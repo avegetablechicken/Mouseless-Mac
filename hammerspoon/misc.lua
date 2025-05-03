@@ -375,7 +375,8 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
           end
         end
       end
-    elseif (menuItem.AXTitle == 'Move & Resize'
+    elseif OS_VERSION >= OS.Sequoia
+        and (menuItem.AXTitle == 'Move & Resize'
         -- hack for performance
         or delocMap.common[menuItem.AXTitle] == 'Move & Resize')
         and subItem.AXMenuItemCmdModifiers[1] ~= 'cmd' then
