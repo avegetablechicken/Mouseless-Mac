@@ -2671,9 +2671,7 @@ appHotKeyCallbacks = {
         local menuBarItem = hs.fnutils.find(menuBarItems, function(item)
           return item.AXChildren ~= nil and #item.AXChildren > 0 and item.AXTitle == '文件'
         end)
-        if menuBarItem == nil then return end
-        local menuItem = hs.fnutils.find(getc(menuBarItem, 'AXMenu', 1,'AXMenuItem'),
-                                         function(item) return item.AXTitle == '最近打开' end)
+        local menuItem = getc(menuBarItem, 'AXMenu', 1, 'AXMenuItem', '最近打开')
         if menuItem ~= nil then
           menuBarItem:performAction('AXPress')
           menuItem:performAction('AXPress')
