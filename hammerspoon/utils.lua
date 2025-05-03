@@ -2252,14 +2252,27 @@ function localizeCommonMenuItemTitles(locale, appid)
 
   local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
   local matchedLocale = getMatchedLocale(locale, resourceDir, 'lproj')
+
+  local target = appid or 'common'
+  if delocMap[target] == nil then
+    delocMap[target] = {}
+  end
+  local targetMap = delocMap[target]
+  for _, title in ipairs { 'File', 'View', 'Window', 'Help' } do
+    local escapedTitle = title:gsub('…', '\\U2026'):gsub('“', '\\U201C'):gsub('”', '\\U201D')
+    local localizedTitle = localizeByLoctable(escapedTitle, resourceDir, 'MenuCommands', matchedLocale, {})
+    if localizedTitle ~= nil then
+      targetMap[localizedTitle] = title
+    end
+  end
+  local localizedTitle = localizeByLoctable('Edit', resourceDir, 'InputManager', matchedLocale, {})
+  if localizedTitle ~= nil then
+    targetMap[localizedTitle] = 'Edit'
+  end
+
   local titleList = {
     'Enter Full Screen', 'Exit Full Screen',
   }
-  if locale == SYSTEM_LOCALE then
-    titleList = hs.fnutils.concat({
-      'File', 'View', 'Window', 'Help',
-    }, titleList)
-  end
   if OS_VERSION >= OS.Sequoia then
     titleList = hs.fnutils.concat(titleList, {
       'Fill', 'Center', 'Move & Resize', 'Return to Previous Size',
@@ -2275,32 +2288,9 @@ function localizeCommonMenuItemTitles(locale, appid)
       delocMap.common[localizedTitle] = title
     end
   end
-  titleList = { 'Emoji & Symbols' }
-  if locale == SYSTEM_LOCALE then
-    table.insert(titleList, 'Edit')
-  end
-  for _, title in ipairs(titleList) do
-    local localizedTitle = localizeByLoctable(title, resourceDir, 'InputManager', matchedLocale, {})
-    if localizedTitle ~= nil then
-      delocMap.common[localizedTitle] = title
-    end
-  end
-
-  if locale ~= SYSTEM_LOCALE then
-    if delocMap[appid] == nil then
-      delocMap[appid] = {}
-    end
-    for _, title in ipairs { 'File', 'View', 'Window', 'Help' } do
-      local localizedTitle = localizeByLoctable(title, resourceDir, 'MenuCommands', matchedLocale, {})
-      if localizedTitle ~= nil then
-        delocMap[appid][localizedTitle] = title
-      end
-    end
-    local title = 'Edit'
-    local localizedTitle = localizeByLoctable(title, resourceDir, 'InputManager', matchedLocale, {})
-    if localizedTitle ~= nil then
-      delocMap[appid][localizedTitle] = title
-    end
+  local localizedTitle = localizeByLoctable('Emoji & Symbols', resourceDir, 'InputManager', matchedLocale, {})
+  if localizedTitle ~= nil then
+    delocMap.common[localizedTitle] = 'Emoji & Symbols'
   end
 end
 
