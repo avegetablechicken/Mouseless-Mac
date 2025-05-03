@@ -127,7 +127,7 @@ function findMenuItem(app, menuItemTitle, params)
   local locStr = localizedMenuBarItem(menuItemTitle[1], app:bundleID())
   table.insert(targetMenuItem, locStr or menuItemTitle[1])
   for i=#menuItemTitle,2,-1 do
-    locStr = localizedMenuItem(menuItemTitle[i], app:bundleID(), params)
+    locStr = localizedString(menuItemTitle[i], app:bundleID(), params)
     table.insert(targetMenuItem, 2, locStr or menuItemTitle[i])
   end
   return app:findMenuItem(targetMenuItem), targetMenuItem
@@ -152,7 +152,7 @@ function selectMenuItem(app, menuItemTitle, params, show)
     local locStr = localizedMenuBarItem(menuItemTitle[1], app:bundleID())
     table.insert(targetMenuItem, locStr or menuItemTitle[1])
     for i=#menuItemTitle,2,-1 do
-      locStr = localizedMenuItem(menuItemTitle[i], app:bundleID(), params)
+      locStr = localizedString(menuItemTitle[i], app:bundleID(), params)
       table.insert(targetMenuItem, 2, locStr or menuItemTitle[i])
     end
     return app:selectMenuItem(targetMenuItem)
@@ -2391,26 +2391,6 @@ function localizedMenuBarItem(title, appid, params)
       hs.json.write(appLocaleDir, localeMatchTmpFile, true, true)
       hs.json.write(deLocaleMap, menuItemTmpFile, true, true)
     end
-    return locTitle
-  end
-end
-
-function localizedMenuItem(title, appid, params)
-  if delocMap[appid] ~= nil then
-    local locTitle = hs.fnutils.indexOf(delocMap[appid], title)
-    if locTitle ~= nil then return locTitle end
-  end
-  local appLocale = applicationLocale(appid)
-  if appLocale == getMatchedLocale(SYSTEM_LOCALE, { appLocale }) then
-    local locTitle = hs.fnutils.indexOf(delocMap.common, title)
-    if locTitle ~= nil then return locTitle end
-  end
-  local locTitle = localizedString(title, appid, params)
-  if locTitle ~= nil then
-    if delocMap[appid] == nil then
-      delocMap[appid] = {}
-    end
-    delocMap[appid][locTitle] = title
     return locTitle
   end
 end

@@ -1008,12 +1008,12 @@ local function localizedMessage(message, params, sep)
   return function(app)
     local appid = type(app) == 'string' and app or app:bundleID()
     if type(message) == 'string' then
-      return localizedMenuItem(message, appid, params) or message
+      return localizedString(message, appid, params) or message
     else
       if sep == nil then sep = ' > ' end
       local str = localizedMenuBarItem(message[1], appid, params) or message[1]
       for i=2,#message do
-        str = str .. sep .. (localizedMenuItem(message[i], appid, params) or message[i])
+        str = str .. sep .. (localizedString(message[i], appid, params) or message[i])
       end
       return str
     end
@@ -1765,7 +1765,7 @@ appHotKeyCallbacks = {
         local titleMap = delocMap[app:bundleID()]  -- hack for multi-map
         if titleMap ~= nil then
           local localizedInsert = localizedMenuBarItem('Insert', app:bundleID())
-          local localizedTextBox = localizedMenuItem('Text Box', app:bundleID())
+          local localizedTextBox = localizedString('Text Box', app:bundleID())
           for k, v in pairs(titleMap) do
             if 'Horizontal Text Box' == v then
               local localizedTitle = k
@@ -5487,7 +5487,7 @@ local function registerOpenRecent(app)
         end
       end
     else
-      local localizedTitle = localizedMenuItem('Open Recent', appid)
+      local localizedTitle = localizedString('Open Recent', appid)
       if localizedTitle == nil then return end
       menuItemPath = { localizedFile, localizedTitle }
       menuItem = app:findMenuItem(menuItemPath)
@@ -5572,7 +5572,7 @@ local openSavePanelHotkeys = {}
 local specialConfirmFuncs = {
   ["com.kingsoft.wpsoffice.mac"] = function(winUIObj)
     if winUIObj.AXSubrole == "AXDialog" then
-      local btnName = localizedMenuItem("Don't Save", "com.kingsoft.wpsoffice.mac")
+      local btnName = localizedString("Don't Save", "com.kingsoft.wpsoffice.mac")
       if btnName == nil then return end
       local buttons = getc(winUIObj, "AXButton")
       for _, button in ipairs(buttons) do
