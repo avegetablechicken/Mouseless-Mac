@@ -3389,7 +3389,10 @@ appHotKeyCallbacks = {
       fn = receiveButton
     },
     ["back"] = {
-      message = commonLocalizedMessage("Back"),
+      message = localizedString("Back", {
+        locale = applicationLocale("com.apple.Passwords"),
+        framework = "AccessibilitySharedSupport.framework"
+      }),
       windowFilter = {
         allowRoles = "AXSystemDialog",
         allowTitles = "^$"
