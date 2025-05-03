@@ -266,8 +266,7 @@ end
 
 local localeTmpDir = hs.fs.temporaryDirectory() .. 'org.hammerspoon.Hammerspoon/locale/'
 
-local locMap = {}
-delocMap = {}
+local locMap, delocMap = {}, {}
 localizationMapLoaded = { menubar = {}, strings = {} }
 local localizationFrameworks = {}
 if hs.fs.attributes("config/localization.json") ~= nil then
@@ -2296,7 +2295,10 @@ end
 
 localizeCommonMenuItemTitles(SYSTEM_LOCALE)
 
-function delocalizedMenuItem(title, appid, params)
+function delocalizedMenuItem(title, appid, params, system)
+  if type(params) == 'boolean' then
+    system = params params = nil
+  end
   local defaultTitleMap = delocMap.common
   local titleMap = delocMap[appid]
   if titleMap ~= nil then
@@ -2314,6 +2316,7 @@ function delocalizedMenuItem(title, appid, params)
       return titleMap[title]
     end
   end
+  if system then return end
   local newTitle = delocalizedString(title, appid, params)
   if newTitle ~= nil then
     if titleMap == nil then

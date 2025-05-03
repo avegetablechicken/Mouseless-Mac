@@ -318,9 +318,9 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
           and subItem.AXChildren == nil then
         if i == #menuItem.AXChildren[1]
             and (menuItem.AXTitle == "Edit"
-            or delocMap.common[menuItem.AXTitle] == 'Edit')  -- hack for performance
+            or delocalizedMenuItem(menuItem.AXTitle, appid, true) == 'Edit')
             and (subItem.AXTitle == "Emoji & Symbols"
-            or delocalizedMenuItem(subItem.AXTitle, appid) == "Emoji & Symbols") then
+            or delocalizedMenuItem(subItem.AXTitle, appid, true) == "Emoji & Symbols") then
           idx = "🌐︎E"
         end
       elseif subItem.AXMenuItemCmdChar == 'F' and subItem.AXMenuItemCmdGlyph == ""
@@ -354,21 +354,19 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
     if idx ~= nil then
       if OS_VERSION >= OS.Sequoia then
         if menuItem.AXTitle == 'Window'
-            -- hack for performance
-            or delocMap.common[menuItem.AXTitle] == 'Window' then
+            or delocalizedMenuItem(menuItem.AXTitle, appid, true) == 'Window' then
           for hkIdx, itemTitle in pairs(windowMenuItemsSinceSequoia1) do
             if idx == hkIdx and (subItem.AXTitle == itemTitle
-                or delocalizedMenuItem(subItem.AXTitle, appid) == itemTitle) then
+                or delocalizedMenuItem(subItem.AXTitle, appid, true) == itemTitle) then
               idx = "🌐︎" .. idx
               break
             end
           end
         elseif menuItem.AXTitle == 'Move & Resize'
-            -- hack for performance
-            or delocMap.common[menuItem.AXTitle] == 'Move & Resize' then
+            or delocalizedMenuItem(menuItem.AXTitle, appid, true) == 'Move & Resize' then
           for hkIdx, itemTitle in pairs(windowMenuItemsSinceSequoia2) do
             if idx == hkIdx and (subItem.AXTitle == itemTitle
-                or delocalizedMenuItem(subItem.AXTitle, appid) == itemTitle) then
+                or delocalizedMenuItem(subItem.AXTitle, appid, true) == itemTitle) then
               idx = "🌐︎" .. idx
               break
             end
@@ -377,8 +375,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
       end
     elseif OS_VERSION >= OS.Sequoia
         and (menuItem.AXTitle == 'Move & Resize'
-        -- hack for performance
-        or delocMap.common[menuItem.AXTitle] == 'Move & Resize')
+        or delocalizedMenuItem(menuItem.AXTitle, appid, true) == 'Move & Resize')
         and subItem.AXMenuItemCmdModifiers[1] ~= 'cmd' then
       idx = hs.fnutils.indexOf(windowMenuItemsSinceSequoia2, subItem.AXTitle)
       if idx == nil then
