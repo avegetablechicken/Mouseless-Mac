@@ -5758,16 +5758,17 @@ local function processInvalidAltMenu(app, reinvokeKey)
   else
     json = {}
   end
+  local appid = app:bundleID()
   if isSameWin then
-    table.insert(appswatchMenuBarItems, app:bundleID())
+    table.insert(appswatchMenuBarItems, appid)
     watchMenuBarItems(app, newMenuItems)
     if json["changing"] == nil then json["changing"] = {} end
-    table.insert(json["changing"], app:bundleID())
+    table.insert(json["changing"], appid)
   else
-    table.insert(appsMayChangeMenuBar, app:bundleID())
+    table.insert(appsMayChangeMenuBar, appid)
     registerObserverForMenuBarChange(app, newMenuItems)
     if json["onWindow"] == nil then json["onWindow"] = {} end
-    table.insert(json["onWindow"], app:bundleID())
+    table.insert(json["onWindow"], appid)
   end
   hs.json.write(json, appsMayChangeMenuBarTmpFile, false, true)
 end
@@ -5780,9 +5781,10 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
   AltMenuBarItemHotkeys = {}
   windowOnBindAltMenu = nil
 
-  if app:bundleID() == nil then return end
+  local appid = app:bundleID()
+  if appid == nil then return end
   -- check whether called by window filter (possibly with delay)
-  if app:bundleID() ~= hs.application.frontmostApplication():bundleID() then
+  if appid ~= hs.application.frontmostApplication():bundleID() then
     return
   end
 
@@ -5791,8 +5793,7 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
   if enableIndex == nil then enableIndex = false end
   if enableLetter == nil then enableLetter = true end
   local excludedForLetter = get(KeybindingConfigs.hotkeys, "menubar", "letter", "exclude")
-  if excludedForLetter ~= nil and hs.fnutils.contains(excludedForLetter,
-                                                      app:bundleID()) then
+  if excludedForLetter ~= nil and hs.fnutils.contains(excludedForLetter, appid) then
     enableLetter = false
   end
   if enableIndex == false and enableLetter == false then return end
@@ -5919,7 +5920,7 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
     end
 
     -- process localized titles
-    itemTitles = delocalizeMenuBarItems(itemTitles, app:bundleID())
+    itemTitles = delocalizeMenuBarItems(itemTitles, appid)
     for i=#itemTitles,1,-1 do
       local letter = itemTitles[i][2]:match("[^%s]-&(%a)")
       if letter ~= nil then
@@ -6063,24 +6064,25 @@ if hs.fs.attributes(appsMayChangeMenuBarTmpFile) ~= nil then
 end
 
 local function appMenuBarChangeCallback(app)
+  local appid = app:bundleID()
   local menuItems = app:getMenuItems()
   local menuBarItemStr = getMenuBarItemTitlesString(app, menuItems)
-  if menuBarItemStr == appsMenuBarItemTitlesString[app:bundleID()] then
+  if menuBarItemStr == appsMenuBarItemTitlesString[appid] then
     return
   end
-  appsMenuBarItemTitlesString[app:bundleID()] = menuBarItemStr
+  appsMenuBarItemTitlesString[appid] = menuBarItemStr
   altMenuBarItem(app, menuItems)
   remapPreviousTab(app, menuItems)
   registerOpenRecent(app)
   registerZoomHotkeys(app)
   hs.timer.doAfter(1, function()
-    if hs.application.frontmostApplication():bundleID() ~= app:bundleID() then
+    if hs.application.frontmostApplication():bundleID() ~= appid then
       return
     end
     local menuItems = app:getMenuItems()
     local newMenuBarItemTitlesString = getMenuBarItemTitlesString(app, menuItems)
     if newMenuBarItemTitlesString ~= menuBarItemStr then
-      appsMenuBarItemTitlesString[app:bundleID()] = newMenuBarItemTitlesString
+      appsMenuBarItemTitlesString[appid] = newMenuBarItemTitlesString
       altMenuBarItem(app, menuItems)
       remapPreviousTab(app, menuItems)
       registerOpenRecent(app)
@@ -6090,18 +6092,18 @@ local function appMenuBarChangeCallback(app)
 end
 
 registerObserverForMenuBarChange = function(app, menuItems)
-  if app:bundleID() == nil then return end
+  local appid = app:bundleID()
+  if appid == nil then return end
 
-  if hs.fnutils.contains(appswatchMenuBarItems, app:bundleID()) then
+  if hs.fnutils.contains(appswatchMenuBarItems, appid) then
     watchMenuBarItems(app, menuItems)
   end
 
-  if not hs.fnutils.contains(appsMayChangeMenuBar, app:bundleID()) then
+  if not hs.fnutils.contains(appsMayChangeMenuBar, appid) then
     return
   end
 
-  appsMenuBarItemTitlesString[app:bundleID()] =
-      getMenuBarItemTitlesString(app, menuItems)
+  appsMenuBarItemTitlesString[appid] = getMenuBarItemTitlesString(app, menuItems)
 
   local observer, windowFilter
   observer = hs.axuielement.observer.new(app:pid())
@@ -6122,7 +6124,7 @@ registerObserverForMenuBarChange = function(app, menuItems)
           if win == nil or win:application() == nil then return end
           appMenuBarChangeCallback(win:application())
         end)
-  stopOnDeactivated(app:bundleID(), observer,
+  stopOnDeactivated(appid, observer,
     function()
       if windowFilter ~= nil then
         windowFilter:unsubscribeAll()
@@ -6151,15 +6153,16 @@ local specialNoWindowsRules = {
 }
 local function processAppWithNoWindows(app, quit, delay)
   local fn = function()
+    local appid = app:bundleID()
     local defaultRule = function()
       local windowFilterRules = quit and appsAutoQuitWithNoWindows or appsAutoHideWithNoWindows
       local windowFilter = hs.window.filter.new(false):setAppFilter(
-        app:bundleID(), windowFilterRules[app:bundleID()])
+        appid, windowFilterRules[appid])
       return hs.fnutils.find(app:visibleWindows(), function(win)
         return windowFilter:isWindowAllowed(win)
       end) == nil
     end
-    local specialRule = specialNoWindowsRules[app:bundleID()]
+    local specialRule = specialNoWindowsRules[appid]
     if (specialRule == nil and defaultRule())
         or (specialRule ~= nil and specialRule(app, defaultRule)) then
       if quit == true then
@@ -6187,7 +6190,8 @@ local specialNoPseudoWindowsRules = {
 }
 PseudoWindowDestroyObservers = {}
 local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
-  local observer = PseudoWindowDestroyObservers[app:bundleID()]
+  local appid = app:bundleID()
+  local observer = PseudoWindowDestroyObservers[appid]
   local appUIObj = hs.axuielement.applicationElement(app)
   if observer ~= nil then observer:start() return end
   observer = hs.axuielement.observer.new(app:pid())
@@ -6197,7 +6201,7 @@ local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
   )
   local windowFilterRules = quit and appsAutoQuitWithNoWindows or appsAutoHideWithNoWindows
   local windowFilter = hs.window.filter.new(false):setAppFilter(
-      app:name(), windowFilterRules[app:bundleID()])
+      app:name(), windowFilterRules[appid])
   local criterion = function(element) return hs.fnutils.contains(roles, element.AXRole) end
   local params = { count = 1, depth = 2 }
   local pseudoWindowObserver
@@ -6228,7 +6232,7 @@ local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
                   end
                   return noWindow and noMenuFromPopover
                 end
-                local specialRule = specialNoPseudoWindowsRules[app:bundleID()]
+                local specialRule = specialNoPseudoWindowsRules[appid]
                 if (specialRule == nil and defaultRule())
                     or (specialRule ~= nil and specialRule(app, defaultRule)) then
                   if quit == true then
@@ -6253,16 +6257,16 @@ local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
         end
         pseudoWindowObserver:callback(pseudoWindowObserverCallback)
         pseudoWindowObserver:start()
-        stopOnDeactivated(app:bundleID(), pseudoWindowObserver)
+        stopOnDeactivated(appid, pseudoWindowObserver)
       end
     end,
     criterion, params)
   end
   observer:callback(observerCallback)
   observer:start()
-  PseudoWindowDestroyObservers[app:bundleID()] = observer
-  stopOnQuit(app:bundleID(), observer,
-      function(appid) PseudoWindowDestroyObservers[appid] = nil end)
+  PseudoWindowDestroyObservers[appid] = observer
+  stopOnQuit(appid, observer,
+      function() PseudoWindowDestroyObservers[appid] = nil end)
 end
 
 local appsAutoHideWithNoWindowsLoaded = ApplicationConfigs["autoHideWithNoWindow"] or {}
@@ -6755,7 +6759,7 @@ end
 function App_applicationCallback(appname, eventType, app)
   local appid = app:bundleID()
   if eventType == hs.application.watcher.launching then
-    fullyLaunchCriterion = appsLaunchSlow[app:bundleID()]
+    fullyLaunchCriterion = appsLaunchSlow[appid]
   elseif eventType == hs.application.watcher.launched then
     local criterion = fullyLaunchCriterion
     if criterion ~= nil then
