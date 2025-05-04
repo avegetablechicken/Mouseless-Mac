@@ -2666,6 +2666,9 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = "最近打开",
       fn = function(app)
+        -- in early version of macOS there was a duplicated menu bar item '文件'
+        -- which does not have menu items. So we have to manually find out the
+        -- right menu bar item '文件'
         local appUIObj = hs.axuielement.applicationElement(app)
         local menuBarItems = getc(appUIObj, 'AXMenuBar', 1,'AXMenuBarItem')
         local menuBarItem = hs.fnutils.find(menuBarItems, function(item)
