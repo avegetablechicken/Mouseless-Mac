@@ -1,6 +1,6 @@
 require "utils"
 
-ApplicationConfigs = nil
+ApplicationConfigs = {}
 if hs.fs.attributes("config/application.json") ~= nil then
   ApplicationConfigs = hs.json.read("config/application.json")
 end
