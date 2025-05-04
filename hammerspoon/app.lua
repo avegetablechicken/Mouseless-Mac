@@ -5738,7 +5738,30 @@ local function searchHotkeyByNth(itemTitles, alreadySetHotkeys, index)
   return notSetItems, alreadySetHotkeys
 end
 
-local function altMenuBarItem(app, menuItems)
+local appsMayChangeMenuBar
+local appsMayChangeMenuBarTmpDir = hs.fs.temporaryDirectory() .. 'org.hammerspoon.Hammerspoon/application'
+local appsMayChangeMenuBarTmpFile = appsMayChangeMenuBarTmpDir .. '/variable_menubar.json'
+
+local altMenuBarItem, registerObserverForMenuBarChange
+local function processInvalidAltMenu(app, reinvokeKey)
+  local newMenuItems = app:getMenuItems()
+  altMenuBarItem(app, newMenuItems, reinvokeKey)
+  table.insert(appsMayChangeMenuBar, app:bundleID())
+  registerObserverForMenuBarChange(app, newMenuItems)
+  if hs.fs.attributes(appsMayChangeMenuBarTmpDir) == nil then
+    hs.execute(string.format("mkdir -p '%s'", appsMayChangeMenuBarTmpDir))
+  end
+  local json = {}
+  if hs.fs.attributes(appsMayChangeMenuBarTmpFile) ~= nil then
+    json = hs.json.read(appsMayChangeMenuBarTmpFile)
+  else
+    json = { onWindow = {} }
+  end
+  table.insert(json["onWindow"], app:bundleID())
+  hs.json.write(json, appsMayChangeMenuBarTmpFile)
+end
+
+altMenuBarItem = function(app, menuItems, reinvokeKey)
   -- delete previous hotkeys
   for _, hotkeyObject in ipairs(AltMenuBarItemHotkeys) do
     hotkeyObject:delete()
@@ -5818,15 +5841,19 @@ local function altMenuBarItem(app, menuItems)
 
   local clickMenuCallback
   if useWindowMenuBar then
-    clickMenuCallback = function(title)
+    clickMenuCallback = function(title, k)
       local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
       local menuObj = getc(winUIObj, "AXMenuBar", 1, "AXMenu")
-      if #menuObj == 0 then
+      if menuObj == nil or #menuObj == 0 then
         menuObj = getc(winUIObj, "AXMenuBar", 1, "AXMenuBar")
       end
-      local targetMenuObj = hs.fnutils.find(menuObj, function(item)
+      local targetMenuObj = hs.fnutils.find(menuObj or {}, function(item)
         return item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "") == title
       end)
+      if targetMenuObj == nil then
+        processInvalidAltMenu(app, k)
+        return
+      end
       local actionNames = targetMenuObj:actionNames()
       if actionNames ~= nil and hs.fnutils.contains(actionNames, "AXPick") then
         targetMenuObj:performAction("AXPick")
@@ -5838,17 +5865,20 @@ local function altMenuBarItem(app, menuItems)
       end
     end
   else
-    clickMenuCallback = function(title)
+    clickMenuCallback = function(title, k)
       local index = menuBarItemActualIndices[title]
       if index then
         local appUIObj = hs.axuielement.applicationElement(app)
         local menubarItem = getc(appUIObj, "AXMenuBar", 1, "AXMenuBarItem", index)
         if menubarItem then
           menubarItem:performAction("AXPress")
+          return
         end
       else
-        app:selectMenuItem({ title })
+        local ok = app:selectMenuItem({ title })
+        if ok then return end
       end
+      processInvalidAltMenu(app, k)
     end
   end
 
@@ -5912,9 +5942,12 @@ local function altMenuBarItem(app, menuItems)
     for i=2,#menuBarItemTitles do
       local spec = invMap[menuBarItemTitles[i]]
       if spec ~= nil then
-        local fn = hs.fnutils.partial(clickMenuCallback, menuBarItemTitles[i])
+        local fn = hs.fnutils.partial(clickMenuCallback, menuBarItemTitles[i], spec[1])
         local hotkeyObject = bindAltMenu(app, "⌥", spec[1], spec[2], fn)
         table.insert(AltMenuBarItemHotkeys, hotkeyObject)
+        if reinvokeKey == spec[1] then
+          clickMenuCallback(menuBarItemTitles[i])
+        end
       end
     end
   end
@@ -5943,9 +5976,12 @@ local function altMenuBarItem(app, menuItems)
       end
     end
     for i=1,maxMenuBarItemHotkey do
-      local fn = hs.fnutils.partial(clickMenuCallback, menuBarItemTitles[i + 1])
+      local fn = hs.fnutils.partial(clickMenuCallback, menuBarItemTitles[i + 1], i % 10)
       hotkeyObject = bindAltMenu(app, "⌥", tostring(i % 10), itemTitles[i], fn)
       table.insert(AltMenuBarItemHotkeys, hotkeyObject)
+      if reinvokeKey == i % 10 then
+        clickMenuCallback(menuBarItemTitles[i + 1])
+      end
     end
   end
 end
@@ -5992,7 +6028,13 @@ local function watchMenuBarItems(app, menuItems)
 end
 
 -- some apps may change their menu bar items based on the focused window
-local appsMayChangeMenuBar = get(ApplicationConfigs, "menuBarItems", 'changeOnWindow') or {}
+appsMayChangeMenuBar = get(ApplicationConfigs, "menuBarItems", 'changeOnWindow') or {}
+if hs.fs.attributes(appsMayChangeMenuBarTmpFile) ~= nil then
+  local tmp = hs.json.read(appsMayChangeMenuBarTmpFile)
+  for _, appid in ipairs(tmp['onWindow'] or {}) do
+    table.insert(appsMayChangeMenuBar, appid)
+  end
+end
 
 local function appMenuBarChangeCallback(app)
   local menuItems = app:getMenuItems()
@@ -6021,7 +6063,7 @@ local function appMenuBarChangeCallback(app)
   end)
 end
 
-local function registerObserverForMenuBarChange(app, menuItems)
+registerObserverForMenuBarChange = function(app, menuItems)
   if app:bundleID() == nil then return end
 
   if hs.fnutils.contains(appswatchMenuBarItems, app:bundleID()) then
