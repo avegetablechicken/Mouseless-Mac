@@ -5863,7 +5863,7 @@ local function altMenuBarItem(app, menuItems)
       else
         letter = menuBarItemTitles[i]:match("[^%s]-&(%a)")
         if letter ~= nil then
-          title = menuBarItemTitles[i]:gsub('[^%s]-&(%a)', '%1')
+          title = menuBarItemTitles[i]:gsub('([^%s]-)&(%a)', '%1%2')
           alreadySetHotkeys[string.upper(letter)] = { menuBarItemTitles[i], title }
         else
           table.insert(itemTitles, menuBarItemTitles[i])
@@ -5885,7 +5885,11 @@ local function altMenuBarItem(app, menuItems)
     for _, title in ipairs(itemTitles) do
       if hs.fnutils.contains({ 'File', 'Edit', 'View', 'Window', 'Help' }, title[2]) then
         local hotkey = string.sub(title[2], 1, 1)
-        alreadySetHotkeys[hotkey] = title[1]
+        if alreadySetHotkeys[hotkey] == nil then
+          alreadySetHotkeys[hotkey] = title[1]
+        else
+          table.insert(notSetItems, title)
+        end
       else
         table.insert(notSetItems, title)
       end
@@ -5931,7 +5935,7 @@ local function altMenuBarItem(app, menuItems)
       else
         letter = menuBarItemTitles[i]:match("[^%s]-&(%a)")
         if letter ~= nil then
-          title = menuBarItemTitles[i]:gsub('[^%s]-&(%a)', '%1')
+          title = menuBarItemTitles[i]:gsub('([^%s]-)&(%a)', '%1%2')
           table.insert(itemTitles, title)
         else
           table.insert(itemTitles, menuBarItemTitles[i])
