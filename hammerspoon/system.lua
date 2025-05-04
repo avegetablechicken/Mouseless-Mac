@@ -987,10 +987,7 @@ local controlCenterSubPanelIdentifiers = controlCenterIdentifiers.subpanel
 local controlCenterMenuBarItemIdentifiers = controlCenterIdentifiers.menubar
 local controlCenterAccessibiliyIdentifiers = controlCenterIdentifiers.accessibility
 local defaultMusicAppForControlCenter
-if hs.fs.attributes("config/application.json") ~= nil then
-  local applicationConfigs = hs.json.read("config/application.json")
-  defaultMusicAppForControlCenter = applicationConfigs.defaultMusicAppForControlCenter
-end
+defaultMusicAppForControlCenter = ApplicationConfigs["defaultMusicAppForControlCenter"]
 
 local function controlCenterLocalized(panel, key)
   if key == nil then
