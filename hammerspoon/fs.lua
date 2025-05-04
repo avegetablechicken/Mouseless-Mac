@@ -42,7 +42,7 @@ local function computePath(variables, path)
     end
   end)
   path = string.gsub(path, "%$%((.-)%)", function(key)
-    return hs.execute(key .. " | tr -d '\\n'")
+    return hs.execute(key, true)
   end)
   if string.sub(path, 1, 2) == "~/" then
     path = HOME_DIR .. string.sub(path, 2)

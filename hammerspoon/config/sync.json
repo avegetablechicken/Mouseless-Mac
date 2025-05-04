@@ -3,7 +3,7 @@
     "CONFIG_DIR": "~/Documents/scripts/config-your-computer",
     "COMMON_CONFIG_DIR": "${CONFIG_DIR}/common",
     "MACOS_CONFIG_DIR": "${CONFIG_DIR}/macos",
-    "HOMEBREW_PREFIX": "$(source ~/.zprofile; brew --prefix | tr -d '\\n')"
+    "HOMEBREW_PREFIX": "$(brew --prefix | tr -d '\\n')"
   },
 
   "file": {
