@@ -5738,16 +5738,17 @@ local function searchHotkeyByNth(itemTitles, alreadySetHotkeys, index)
   return notSetItems, alreadySetHotkeys
 end
 
-local appsMayChangeMenuBar
+local appswatchMenuBarItems, appsMayChangeMenuBar
 local appsMayChangeMenuBarTmpDir = hs.fs.temporaryDirectory() .. 'org.hammerspoon.Hammerspoon/application'
 local appsMayChangeMenuBarTmpFile = appsMayChangeMenuBarTmpDir .. '/variable_menubar.json'
+local windowOnBindAltMenu
 
-local altMenuBarItem, registerObserverForMenuBarChange
+local altMenuBarItem, registerObserverForMenuBarChange, watchMenuBarItems
 local function processInvalidAltMenu(app, reinvokeKey)
   local newMenuItems = app:getMenuItems()
+  local curWin = app:focusedWindow() and app:focusedWindow():id() or false
+  local isSameWin = curWin == windowOnBindAltMenu
   altMenuBarItem(app, newMenuItems, reinvokeKey)
-  table.insert(appsMayChangeMenuBar, app:bundleID())
-  registerObserverForMenuBarChange(app, newMenuItems)
   if hs.fs.attributes(appsMayChangeMenuBarTmpDir) == nil then
     hs.execute(string.format("mkdir -p '%s'", appsMayChangeMenuBarTmpDir))
   end
@@ -5755,10 +5756,20 @@ local function processInvalidAltMenu(app, reinvokeKey)
   if hs.fs.attributes(appsMayChangeMenuBarTmpFile) ~= nil then
     json = hs.json.read(appsMayChangeMenuBarTmpFile)
   else
-    json = { onWindow = {} }
+    json = {}
   end
-  table.insert(json["onWindow"], app:bundleID())
-  hs.json.write(json, appsMayChangeMenuBarTmpFile)
+  if isSameWin then
+    table.insert(appswatchMenuBarItems, app:bundleID())
+    watchMenuBarItems(app, newMenuItems)
+    if json["changing"] == nil then json["changing"] = {} end
+    table.insert(json["changing"], app:bundleID())
+  else
+    table.insert(appsMayChangeMenuBar, app:bundleID())
+    registerObserverForMenuBarChange(app, newMenuItems)
+    if json["onWindow"] == nil then json["onWindow"] = {} end
+    table.insert(json["onWindow"], app:bundleID())
+  end
+  hs.json.write(json, appsMayChangeMenuBarTmpFile, false, true)
 end
 
 altMenuBarItem = function(app, menuItems, reinvokeKey)
@@ -5767,6 +5778,7 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
     hotkeyObject:delete()
   end
   AltMenuBarItemHotkeys = {}
+  windowOnBindAltMenu = nil
 
   if app:bundleID() == nil then return end
   -- check whether called by window filter (possibly with delay)
@@ -5838,6 +5850,11 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
     end)
   end
   if menuBarItemTitles == nil or #menuBarItemTitles == 0 then return end
+  if app:focusedWindow() ~= nil then
+    windowOnBindAltMenu = app:focusedWindow():id()
+  else
+    windowOnBindAltMenu = false
+  end
 
   local clickMenuCallback
   if useWindowMenuBar then
@@ -5954,6 +5971,12 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
 
   -- by index
   if enableIndex == true then
+    if app:focusedWindow() ~= nil then
+      windowOnBindAltMenu = app:focusedWindow():id()
+    else
+      windowOnBindAltMenu = false
+    end
+
     local maxMenuBarItemHotkey = #menuBarItemTitles > 11 and 10 or (#menuBarItemTitles - 1)
     local hotkeyObject = bindAltMenu(app, "⌥", "`", menuBarItemTitles[1],
       function() app:selectMenuItem({ menuBarItemTitles[1] }) end)
@@ -5990,7 +6013,7 @@ if frontApp then
 end
 
 -- some apps may change their menu bar items irregularly
-local appswatchMenuBarItems = get(ApplicationConfigs, "menuBarItems", 'changing') or {}
+appswatchMenuBarItems = get(ApplicationConfigs, "menuBarItems", 'changing') or {}
 local appsMenuBarItemTitlesString = {}
 
 local getMenuBarItemTitlesString = function(app, menuItems)
@@ -6005,7 +6028,7 @@ local getMenuBarItemTitlesString = function(app, menuItems)
   return table.concat(menuBarItemTitles, "|")
 end
 
-local function watchMenuBarItems(app, menuItems)
+watchMenuBarItems = function(app, menuItems)
   local appid = app:bundleID()
   appsMenuBarItemTitlesString[appid] = getMenuBarItemTitlesString(app, menuItems)
   local watcher = ExecContinuously(function()
@@ -6031,6 +6054,9 @@ end
 appsMayChangeMenuBar = get(ApplicationConfigs, "menuBarItems", 'changeOnWindow') or {}
 if hs.fs.attributes(appsMayChangeMenuBarTmpFile) ~= nil then
   local tmp = hs.json.read(appsMayChangeMenuBarTmpFile)
+  for _, appid in ipairs(tmp['changing'] or {}) do
+    table.insert(appswatchMenuBarItems, appid)
+  end
   for _, appid in ipairs(tmp['onWindow'] or {}) do
     table.insert(appsMayChangeMenuBar, appid)
   end
