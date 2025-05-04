@@ -1186,8 +1186,8 @@ local function localizeByElectron(str, appid, appLocale, localesPath, file)
   local locale = getMatchedLocale(appLocale, locales)
 
   local tmpdir = string.format(localeTmpDir .. '%s/%s', appid, locale)
-  local localeTmpFile = tmpdir .. '/' .. file .. '.json'
-  if hs.fs.attributes(localeTmpFile) == nil then
+  local tmpfile = tmpdir .. '/' .. file .. '.json'
+  if hs.fs.attributes(tmpfile) == nil then
     local localeFilePath = string.format("%s/%s/%s.json",
         localesPath, locale, file)
     local cmd = getCMD("npm")
@@ -1199,7 +1199,7 @@ local function localizeByElectron(str, appid, appLocale, localesPath, file)
     end
     hs.execute(string.format("mv '%s' '%s'", file .. '.json', tmpdir))
   end
-  local json = hs.json.read(localeTmpFile)
+  local json = hs.json.read(tmpfile)
   return json[str], locale
 end
 
@@ -1928,8 +1928,8 @@ local function delocalizeByElectron(str, appid, appLocale, localesPath, file)
   local locale = getMatchedLocale(appLocale, locales)
 
   local tmpdir = string.format(localeTmpDir .. '%s/%s', appid, locale)
-  local localeTmpFile = tmpdir .. '/' .. file .. '.json'
-  if hs.fs.attributes(localeTmpFile) == nil then
+  local tmpfile = tmpdir .. '/' .. file .. '.json'
+  if hs.fs.attributes(tmpfile) == nil then
     local localeFilePath = string.format("%s/%s/%s.json",
         localesPath, locale, file)
     local cmd = getCMD("npm")
@@ -1941,7 +1941,7 @@ local function delocalizeByElectron(str, appid, appLocale, localesPath, file)
     end
     hs.execute(string.format("mv '%s' '%s'", file .. '.json', tmpdir))
   end
-  local json = hs.json.read(localeTmpFile)
+  local json = hs.json.read(tmpfile)
   return hs.fnutils.indexOf(json, str), locale
 end
 
