@@ -1,7 +1,8 @@
 {
   "menuBarItems": {
     "changing": [
-      "com.kingsoft.wpsoffice.mac"
+      "com.kingsoft.wpsoffice.mac",
+      "5ZSL2CJU2T.com.dingtalk.mac"
     ],
     "changeOnWindow": [
       "com.microsoft.VSCode",
