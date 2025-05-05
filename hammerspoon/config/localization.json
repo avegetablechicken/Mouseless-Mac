@@ -7,7 +7,8 @@
     "com.apple.Passwords": "LocalAuthenticationUI.framework",
     "com.apple.iMovieApp": "Flexo.framework",
     "com.charliemonroe.Downie-4": "XUCore.framework",
-    "com.charliemonroe.Permute-3": "XUCore.framework"
+    "com.charliemonroe.Permute-3": "XUCore.framework",
+    "JabRef": "org.jabref/l10n"
   },
 
   "com.tencent.qq": {

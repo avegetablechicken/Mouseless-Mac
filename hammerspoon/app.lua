@@ -2279,22 +2279,22 @@ appHotKeyCallbacks = {
   ["JabRef"] =
   {
     ["preferences"] = {
-      message = "Preferences",
+      message = localizedMessage("Preferences"),
       condition = checkMenuItem({ "File", "Preferences" }),
       fn = receiveMenuItem
     },
     ["newLibrary"] = {
-      message = "New Library",
+      message = localizedMessage("New library"),
       condition = checkMenuItem({ "File", "New library" }),
       fn = receiveMenuItem
     },
     ["openRecent"] = {
-      message = "Recent Libraries",
+      message = localizedMessage("Recent libraries"),
       condition = checkMenuItem({ "File", "Recent libraries" }),
       fn = showMenuItem
     },
     ["remapPreviousTab"] = {
-      message = "Previous Library",
+      message = localizedMessage("Previous library"),
       condition = JabRefShowLibraryByIndex(2),
       repeatable = true,
       fn = function(app) hs.eventtap.keyStroke('⇧⌃', 'Tab', nil, app) end
@@ -2302,7 +2302,7 @@ appHotKeyCallbacks = {
     ["showPrevLibrary"] = {
       mods = specialCommonHotkeyConfigs["showPrevTab"].mods,
       key = specialCommonHotkeyConfigs["showPrevTab"].key,
-      message = "Previous Library",
+      message = localizedMessage("Previous library"),
       condition = JabRefShowLibraryByIndex(2),
       repeatable = true,
       fn = function(app) hs.eventtap.keyStroke('⇧⌃', 'Tab', nil, app) end
@@ -2310,7 +2310,7 @@ appHotKeyCallbacks = {
     ["showNextLibrary"] = {
       mods = specialCommonHotkeyConfigs["showNextTab"].mods,
       key = specialCommonHotkeyConfigs["showNextTab"].key,
-      message = "Next Library",
+      message = localizedMessage("Next library"),
       condition = JabRefShowLibraryByIndex(2),
       repeatable = true,
       fn = function(app) hs.eventtap.keyStroke('⌃', 'Tab', nil, app) end
