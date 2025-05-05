@@ -2099,7 +2099,7 @@ appHotKeyCallbacks = {
       fn = receiveMenuItem
     },
     ["back"] = {
-      message = commonLocalizedMessage("Back"),
+      message = localizedMessage("Back"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
