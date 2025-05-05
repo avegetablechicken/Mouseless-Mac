@@ -334,12 +334,6 @@ function applicationLocale(appid)
   end
 end
 
-function applicationValidLocale(appid)
-  local locale = applicationLocale(appid)
-  local resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
-  return getMatchedLocale(locale, resourceDir, 'lproj')
-end
-
 local function dirNotExistOrEmpty(dir)
   if hs.fs.attributes(dir) == nil then return true end
   for file in hs.fs.dir(dir) do
@@ -2617,6 +2611,40 @@ function localizedMenuBarItem(title, appid, params)
     end
     return locTitle
   end
+end
+
+function applicationValidLocale(appid)
+  local appLocale = applicationLocale(appid)
+  local resourceDir, framework = getResourceDir(appid)
+  local locale, mode
+  if framework.java then
+    locale = getJavaMatchedLocale(appid, appLocale, resourceDir, framework.java)
+  end
+  if not framework.mono and not framework.electron then
+    mode = 'lproj'
+  end
+  if locale == nil then
+    locale = get(appLocaleDir, appid, appLocale)
+    if locale == false then return nil end
+    if locale ~= nil then
+      local localeDir
+      if mode == 'lproj' then
+        localeDir = resourceDir .. "/" .. locale .. ".lproj"
+      else
+        localeDir = resourceDir .. "/" .. locale
+      end
+      if hs.fs.attributes(localeDir) == nil then
+        locale = nil
+      end
+    end
+  end
+  if locale == nil then
+    locale = getMatchedLocale(appLocale, resourceDir, mode)
+    if locale == nil and framework.qt then
+      locale = getQtMatchedLocale(appLocale, resourceDir)
+    end
+  end
+  return locale
 end
 
 function displayName(app)
