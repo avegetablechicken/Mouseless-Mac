@@ -11,6 +11,17 @@
     "JabRef": "org.jabref/l10n"
   },
 
+  "com.baidu.BaiduNetdisk-mac": {
+    "账户": "Account"
+  },
+  "com.eusoft.freeeudic": {
+    "功能": "Features",
+    "学习": "Learn"
+  },
+  "com.tencent.QQMusicMac": {
+    "播放控制": "Controls"
+  },
+
   "com.tencent.qq": {
     "切换全屏": "Toggle fullscreen"
   },
@@ -43,16 +54,5 @@
     "Zoom": "显示比例",
     "Open File Location": "打开文件位置",
     "Don't Save": "不保存"
-  }],
-
-  "com.baidu.BaiduNetdisk-mac": {
-    "账户": "Account"
-  },
-  "com.eusoft.freeeudic": {
-    "功能": "Features",
-    "学习": "Learn"
-  },
-  "com.tencent.QQMusicMac": {
-    "播放控制": "Controls"
-  }
+  }]
 }
