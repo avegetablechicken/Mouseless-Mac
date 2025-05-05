@@ -340,6 +340,14 @@ function applicationValidLocale(appid)
   return getMatchedLocale(locale, resourceDir, 'lproj')
 end
 
+local function dirNotExistOrEmpty(dir)
+  if hs.fs.attributes(dir) == nil then return true end
+  for file in hs.fs.dir(dir) do
+    if string.sub(file, 1, 1) ~= '.' then return false end
+  end
+  return true
+end
+
 local function getResourceDir(appid, frameworkName)
   if frameworkName == nil then
     frameworkName = localizationFrameworks[appid]
@@ -357,6 +365,14 @@ local function getResourceDir(appid, frameworkName)
     if hs.fs.attributes(frameworkName) ~= nil then
       frameworkDir = frameworkName
     else
+      local jimage, status = hs.execute(string.format(
+        "find '%s' -type f -name jimage | tr -d '\\n'", appContentPath))
+      if status and jimage ~= "" then
+        resourceDir = jimage:sub(1, #jimage - #'/bin/jimage')
+        framework.java = frameworkName
+        goto END_GET_RESOURCE_DIR
+      end
+
       frameworkDir = hs.execute(string.format(
           "find '%s' -type d -name '%s' | head -n 1 | tr -d '\\n'", appContentPath, frameworkName))
       if frameworkDir == "" then
@@ -578,6 +594,99 @@ function getQtMatchedLocale(appLocale, resourceDir)
   if bestMatch.script ~= nil then matchedLocale = matchedLocale .. '_' .. bestMatch.script end
   if bestMatch.country ~= nil then matchedLocale = matchedLocale .. '_' .. bestMatch.country end
   return matchedLocale, bestMatch.extra
+end
+
+local jimageLocales = {}
+function getJavaMatchedLocale(appid, appLocale, javehome, path)
+  local tmpBaseDir = localeTmpDir .. appid
+  local cmd = javehome .. '/bin/jimage'
+  local modulePath = javehome .. '/lib/modules'
+  local localeFiles = jimageLocales[appid]
+  if localeFiles == nil then
+    localeFiles = {}
+    local localesFile = tmpBaseDir .. '/locales.json'
+    if hs.fs.attributes(localesFile) ~= nil then
+      localeFiles = hs.json.read(localesFile)
+    else
+      local result, ok = hs.execute(string.format(
+        [[%s list --include 'regex:.*%s/.*\.properties' '%s']],
+        cmd, path, modulePath))
+      if ok then
+        local module
+        for _, line in ipairs(hs.fnutils.split(result, '\n')) do
+          if line:sub(1, 8) == "Module: " then
+            module = line:sub(9)
+          elseif line == "" then
+            module = nil
+          elseif module then
+            table.insert(localeFiles, module .. '/' .. line:sub(1, -12):gsub('%s', ''))
+          end
+        end
+        jimageLocales[appid] = localeFiles
+        if dirNotExistOrEmpty(tmpBaseDir) then
+          hs.execute(string.format("mkdir '%s'", tmpBaseDir))
+        end
+        hs.json.write(localeFiles, localesFile)
+      else
+        return
+      end
+    end
+  end
+
+  local localDetails = hs.host.locale.details(appLocale)
+  local language = localDetails.languageCode
+  local script = localDetails.scriptCode
+  local country = localDetails.countryCode
+  if script == nil then
+    local localeItems = hs.fnutils.split(appLocale, '-')
+    if #localeItems == 3 or (#localeItems == 2 and localeItems[2] ~= country) then
+      script = localeItems[2]
+    end
+  end
+  local matchedLocales = {}
+  for _, file in ipairs(localeFiles) do
+    local pathSplits = hs.fnutils.split(file, '/')
+    local fileStem = pathSplits[#pathSplits]
+    local fileSplits = hs.fnutils.split(fileStem:gsub('-', '_'), '_')
+    for i = #fileSplits, #fileSplits - 2, -1 do
+      if fileSplits[i] == language then
+        local thisCountry, thisScript
+        if i + 1 <= #fileSplits then
+          if fileSplits[i + 1]:upper() == fileSplits[i + 1] then
+            thisCountry = fileSplits[i + 1]
+            if i == #fileSplits - 2 then
+              thisScript = fileSplits[i + 2]
+            end
+          else
+            thisScript = fileSplits[i + 1]
+          end
+        end
+        if script == nil or thisScript == nil or thisScript == script then
+          if language == 'zh' or language == 'yue' then
+            if thisCountry == 'HK' or thisCountry == 'MO' or thisCountry == 'TW' then
+              if thisScript == nil then thisScript = 'Hant' end
+            elseif thisCountry == 'CN' or thisCountry == 'SG' then
+              if thisScript == nil then thisScript = 'Hans' end
+            end
+          end
+          local locale = fileStem:match('_' .. language .. '$')
+          if locale == nil then
+            locale = fileStem:match('_' .. language .. '_.-$')
+          end
+          locale = locale:sub(2)
+          table.insert(matchedLocales, {
+            scriptCode = thisScript, countryCode = thisCountry, extra = locale
+          })
+        end
+      end
+    end
+  end
+  local bestMatch = getBestMatchedLocale(localDetails, matchedLocales, true)
+  local matchedLocale = bestMatch.extra
+  local matchedFiles = hs.fnutils.ifilter(localeFiles, function(f)
+    return f:sub(-#matchedLocale) == matchedLocale
+  end)
+  return matchedLocale, matchedFiles
 end
 
 -- assume base locale is English (not always the situation)
@@ -1095,14 +1204,6 @@ local function localizeByMono(str, localeDir)
   end
 end
 
-local function dirNotExistOrEmpty(dir)
-  if hs.fs.attributes(dir) == nil then return true end
-  for file in hs.fs.dir(dir) do
-    if string.sub(file, 1, 1) ~= '.' then return false end
-  end
-  return true
-end
-
 local function localizeByChromium(str, localeDir, appid)
   local resourceDir = localeDir .. '/..'
   local locale = localeDir:match("^.*/(.*)%.lproj$")
@@ -1201,6 +1302,29 @@ local function localizeByElectron(str, appid, appLocale, localesPath, file)
   end
   local json = hs.json.read(tmpfile)
   return json[str], locale
+end
+
+local function localizeByJava(str, appid, localeFiles, javehome)
+  for _, file in ipairs(localeFiles) do
+    local tmpBaseDir = localeTmpDir .. appid
+    local fullpath = tmpBaseDir .. '/' .. file .. ".properties"
+    if hs.fs.attributes(fullpath) == nil then
+      local cmd = javehome .. '/bin/jimage'
+      local modulePath = javehome .. '/lib/modules'
+      hs.execute(cmd .. " extract"
+          .. " --include regex:.*" .. file .. "\\.properties"
+          .. " --dir " .. tmpBaseDir .. " " .. modulePath)
+    end
+    if hs.fs.attributes(fullpath) ~= nil then
+      str = str:gsub(':', '\\:'):gsub(' ', '\\ ')
+      local result, ok = hs.execute(string.format(
+          "cat '%s' | grep '^%s='", fullpath, str:gsub('\\','\\\\')))
+      if ok then
+        result = hs.fnutils.split(result, '\n')
+        return result[1]:sub(#str + 2)
+      end
+    end
+  end
 end
 
 local function localizeQt(str, appid, appLocale)
@@ -1433,6 +1557,9 @@ local function localizedStringImpl(str, appid, params, force)
     return true
   end
 
+  if framework.java then
+    locale, localeDir = getJavaMatchedLocale(appid, appLocale, resourceDir, framework.java)
+  end
   if not framework.mono and not framework.electron then
     mode = 'lproj'
   end
@@ -1472,11 +1599,13 @@ local function localizedStringImpl(str, appid, params, force)
       and hs.fs.attributes(localeDir) == nil then
     _, localeDir = getQtMatchedLocale(appLocale, resourceDir)
   end
-  local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
-  for _, dir in ipairs(baseLocaleDirs) do
-    if hs.fs.attributes(dir) ~= nil
-        and hs.fs.attributes(localeDir).ino == hs.fs.attributes(dir).ino then
-      return str
+  if not framework.java then
+    local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
+    for _, dir in ipairs(baseLocaleDirs) do
+      if hs.fs.attributes(dir) ~= nil
+          and hs.fs.attributes(localeDir).ino == hs.fs.attributes(dir).ino then
+        return str
+      end
     end
   end
 
@@ -1498,6 +1627,11 @@ local function localizedStringImpl(str, appid, params, force)
 
   if framework.qt then
     result = localizeByQt(str, localeDir)
+    return result, appLocale, locale
+  end
+
+  if framework.java then
+    result = localizeByJava(str, appid, localeDir, resourceDir)
     return result, appLocale, locale
   end
 
@@ -1945,6 +2079,30 @@ local function delocalizeByElectron(str, appid, appLocale, localesPath, file)
   return hs.fnutils.indexOf(json, str), locale
 end
 
+local function delocalizeByJava(str, appid, localeFiles, javehome)
+  for _, file in ipairs(localeFiles) do
+    local tmpBaseDir = localeTmpDir .. appid
+    local fullpath = tmpBaseDir .. '/' .. file .. ".properties"
+    if hs.fs.attributes(fullpath) == nil then
+      local cmd = javehome .. '/bin/jimage'
+      local modulePath = javehome .. '/lib/modules'
+      hs.execute(cmd .. " extract"
+          .. " --include regex:.*" .. file .. "\\.properties"
+          .. " --dir " .. tmpBaseDir .. " " .. modulePath)
+    end
+    if hs.fs.attributes(fullpath) ~= nil then
+      local result, ok = hs.execute(string.format(
+          "cat '%s' | grep '=%s$'", fullpath, str))
+      if ok then
+        result = hs.fnutils.split(result, '\n')
+        result = result[1]:sub(1, #result[1] - #str - 1)
+        result = result:gsub('\\ ', ' '):gsub('\\:', ':')
+        return result
+      end
+    end
+  end
+end
+
 local function delocalizeQt(str, appid, appLocale)
   local appPath = hs.application.pathForBundleID(appid)
   local resourceDir = appPath .. "/../../share/qt/translations"
@@ -2118,6 +2276,9 @@ local function delocalizedStringImpl(str, appid, params)
 
   local locale, localeDir, mode
 
+  if framework.java then
+    locale, localeDir = getJavaMatchedLocale(appid, appLocale, resourceDir, framework.java)
+  end
   if not framework.mono and not framework.electron then
     mode = 'lproj'
   end
@@ -2143,11 +2304,13 @@ local function delocalizedStringImpl(str, appid, params)
       and hs.fs.attributes(localeDir) == nil then
     _, localeDir = getQtMatchedLocale(appLocale, resourceDir)
   end
-  local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
-  for _, dir in ipairs(baseLocaleDirs) do
-    if hs.fs.attributes(dir) ~= nil
-        and hs.fs.attributes(localeDir).ino == hs.fs.attributes(dir).ino then
-      return str
+  if not framework.java then
+    local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
+    for _, dir in ipairs(baseLocaleDirs) do
+      if hs.fs.attributes(dir) ~= nil
+          and hs.fs.attributes(localeDir).ino == hs.fs.attributes(dir).ino then
+        return str
+      end
     end
   end
 
@@ -2182,6 +2345,11 @@ local function delocalizedStringImpl(str, appid, params)
 
   if framework.qt then
     result = delocalizeByQt(str, localeDir)
+    return result, appLocale, locale
+  end
+
+  if framework.java then
+    result = delocalizeByJava(str, appid, localeDir, resourceDir)
     return result, appLocale, locale
   end
 
