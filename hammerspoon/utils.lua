@@ -530,7 +530,7 @@ function getMatchedLocale(appLocale, localeSource, mode)
   return bestMatch.extra
 end
 
-function getQtMatchedLocale(appLocale, resourceDir)
+local function getQtMatchedLocale(appLocale, resourceDir)
   local localDetails = hs.host.locale.details(appLocale)
   local language = localDetails.languageCode
   local script = localDetails.scriptCode
@@ -592,7 +592,7 @@ function getQtMatchedLocale(appLocale, resourceDir)
 end
 
 local jimageLocales = {}
-function getJavaMatchedLocale(appid, appLocale, javehome, path)
+local function getJavaMatchedLocale(appid, appLocale, javehome, path)
   local tmpBaseDir = localeTmpDir .. appid
   local cmd = javehome .. '/bin/jimage'
   local modulePath = javehome .. '/lib/modules'
@@ -685,7 +685,7 @@ function getJavaMatchedLocale(appid, appLocale, javehome, path)
 end
 
 local electronLocales = {}
-function getElectronMatchedLocale(appid, appLocale, localesPath)
+local function getElectronMatchedLocale(appid, appLocale, localesPath)
   local locales = electronLocales[appid]
   local localeFiles = {}
   if locales == nil then
