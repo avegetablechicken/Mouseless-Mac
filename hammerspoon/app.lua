@@ -233,12 +233,12 @@ local function getFinderSidebarItemTitle(idx)
     local cnt = 0
     for _, row in ipairs(getc(outline, AX.Row)) do
       if row.AXChildren == nil then hs.timer.usleep(0.3 * 1000000) end
-      if getc(row, nil, 1, AX.StaticText, 1).AXIdentifier ~= nil then
-        header = getc(row, nil, 1, AX.StaticText, 1).AXValue
+      if getc(row, AX.Cell, 1, AX.StaticText, 1).AXIdentifier ~= nil then
+        header = getc(row, AX.Cell, 1, AX.StaticText, 1).AXValue
       else
         cnt = cnt + 1
         if cnt == idx then
-          local itemTitle = getc(row, nil, 1, AX.StaticText, 1).AXValue
+          local itemTitle = getc(row, AX.Cell, 1, AX.StaticText, 1).AXValue
           return header .. ' > ' .. itemTitle
         end
       end
@@ -255,11 +255,12 @@ local function getFinderSidebarItem(idx)
     if outline == nil then return false end
     local cnt = 0
     for _, row in ipairs(getc(outline, AX.Row)) do
-      if getc(row, nil, 1, AX.StaticText, 1).AXIdentifier == nil then
+      if getc(row, AX.Cell, 1, AX.StaticText, 1).AXIdentifier == nil then
         cnt = cnt + 1
       end
       if cnt == idx then
-        return true, row.AXChildren[1]
+        print(idx, row, getc(row, AX.Cell, 1, AX.StaticText, 1), getc(row, AX.Cell, 1))
+        return true, getc(row, AX.Cell, 1)
       end
     end
     return false
@@ -3424,7 +3425,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         local winUI = hs.axuielement.windowElement(win)
         local field = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-            AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, 2, nil, 1,
+            AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, 2, AX.Cell, 1,
             AX.StaticText, 2)
         assert(field)
         local position = {
@@ -3452,11 +3453,11 @@ appHotKeyCallbacks = {
         local outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
             AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1)
         local field
-        if getc(outline, AX.Row, 3, nil, 1, AX.StaticText, 1).AXValue
+        if getc(outline, AX.Row, 3, AX.Cell, 1, AX.StaticText, 1).AXValue
             == localizedString("Password", "com.apple.Passwords") then
-          field = getc(outline, AX.Row, 3, nil, 1, AX.StaticText, 2)
+          field = getc(outline, AX.Row, 3, AX.Cell, 1, AX.StaticText, 2)
         else
-          field = getc(outline, AX.Row, 4, nil, 1, AX.StaticText, 2)
+          field = getc(outline, AX.Row, 4, AX.Cell, 1, AX.StaticText, 2)
         end
         assert(field)
         local position = {
@@ -5559,10 +5560,13 @@ local specialConfirmFuncs = {
   end,
 
   ["JabRef"] = function(winUI)
-    if winUI.AXTitle == "Save before closing" then
+    if winUI.AXTitle == localizedString("Save before closing", "JabRef") then
       local button = getc(winUI, AX.Unknown, 1, nil, 1, AX.Button, 1)
-      if button ~= nil and button.AXDescription == 'Discard changes' then
-        return button
+      if button ~= nil then
+        local desc = localizedString("Discard changes", "JabRef")
+        if button.AXDescription == desc then
+          return button
+        end
       end
     end
   end,
