@@ -1968,7 +1968,7 @@ local function delocalizeByMono(str, localeDir)
     if file:sub(-3) == ".mo" then
       local output, status = hs.execute(string.format([[
           %s "%s" -o - \
-          | awk "/msgstr \"$2\"/ { sub(/^msgid \"/, \"\", prevline); sub(/\"\$/, \"\", prevline); print prevline; exit } { prevline = \$0 }" \
+          | awk "/msgstr \"%s\"/ { sub(/^msgid \"/, \"\", prevline); sub(/\"\$/, \"\", prevline); print prevline; exit } { prevline = \$0 }" \
           | tr -d "\n"
         ]], cmd, localeDir .. '/LC_MESSAGES/' .. file, str))
       if status and output ~= "" then return output end
