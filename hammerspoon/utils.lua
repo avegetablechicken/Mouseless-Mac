@@ -1288,10 +1288,11 @@ local function localizeByChromium(str, localeDir, appid)
 end
 
 local electronLocales = {}
-local function localizeByElectron(str, appid, appLocale, localesPath, file)
+local function localizeByElectron(str, appid, appLocale, localesPath)
   local path = hs.application.pathForBundleID(appid)
       .. '/Contents/Resources/app.asar'
   local locales = electronLocales[appid]
+  local localeFiles = {}
   if locales == nil then
     local tmpBaseDir = localeTmpDir .. appid
     local localesFile = tmpBaseDir .. '/locales.json'
@@ -1299,12 +1300,19 @@ local function localizeByElectron(str, appid, appLocale, localesPath, file)
       locales = hs.json.read(localesFile)
     else
       local result, ok = hs.execute(string.format(
-        [[npx @electron/asar list "%s" | grep "^/%s/" | cut -c17- | grep -v '/']],
+        [[npx @electron/asar list "%s" | grep "^/%s/" | cut -c17-]],
         path, localesPath),
       true)
       if ok then
         locales = hs.fnutils.split(result, '\n')
         locales[#locales] = nil
+        for _, p in ipairs(locales) do
+          if p:find('/') then
+            table.insert(localeFiles, p)
+          else
+            table.insert(locales, p)
+          end
+        end
         electronLocales[appid] = locales
         if dirNotExistOrEmpty(tmpBaseDir) then
           hs.execute(string.format("mkdir '%s'", tmpBaseDir))
@@ -1319,20 +1327,34 @@ local function localizeByElectron(str, appid, appLocale, localesPath, file)
   if locale == nil then return end
 
   local tmpdir = string.format(localeTmpDir .. '%s/%s', appid, locale)
-  local tmpfile = tmpdir .. '/' .. file .. '.json'
-  if hs.fs.attributes(tmpfile) == nil then
-    local localeFilePath = string.format("%s/%s/%s.json",
-        localesPath, locale, file)
-    hs.execute(string.format(
-      [[npx @electron/asar extract-file "%s" "%s"]], path, localeFilePath),
-    true)
-    if dirNotExistOrEmpty(tmpdir) then
-      hs.execute(string.format("mkdir -p '%s'", tmpdir))
+  if #localeFiles > 0 then
+    localeFiles = hs.fnutils.ifilter(localeFiles, function(file)
+      return file:sub(1, #locale) == locale
+    end)
+    for _, file in ipairs(localeFiles) do
+      local tmpfile = tmpdir .. '/' .. file .. '.json'
+      if hs.fs.attributes(tmpfile) == nil then
+        local localeFilePath = string.format("%s/%s/%s.json",
+            localesPath, locale, file)
+        hs.execute(string.format(
+          [[npx @electron/asar extract-file "%s" "%s"]], path, localeFilePath),
+        true)
+        if dirNotExistOrEmpty(tmpdir) then
+          hs.execute(string.format("mkdir -p '%s'", tmpdir))
+        end
+        hs.execute(string.format("mv '%s' '%s'", file .. '.json', tmpdir))
+      end
     end
-    hs.execute(string.format("mv '%s' '%s'", file .. '.json', tmpdir))
   end
-  local json = hs.json.read(tmpfile)
-  return json[str], locale
+  for file in hs.fs.dir(tmpdir) do
+    if file:sub(-5) == '.json' then
+      local json = hs.json.read(tmpdir .. '/' .. file)
+      if json[str] ~= nil then
+        return json[str], locale
+      end
+    end
+  end
+  return nil, locale
 end
 
 local function localizeByJava(str, appid, localeFiles, javehome)
@@ -1450,8 +1472,8 @@ local function localizeWPS(str, appLocale, localeFile)
 end
 
 local function localizeXmind(str, appLocale)
-  return localizeByElectron(str, 'net.xmind.vana.app', appLocale,
-      'static/locales', 'translation')
+  return localizeByElectron(str, 'net.xmind.vana.app',
+      appLocale,  'static/locales')
 end
 
 local function localizeChatGPT(str, appLocale)
@@ -2050,10 +2072,11 @@ local function delocalizeByChromium(str, localeDir, appid)
   end
 end
 
-local function delocalizeByElectron(str, appid, appLocale, localesPath, file)
+local function delocalizeByElectron(str, appid, appLocale, localesPath)
   local path = hs.application.pathForBundleID(appid)
       .. '/Contents/Resources/app.asar'
   local locales = electronLocales[appid]
+  local localeFiles = {}
   if locales == nil then
     local tmpBaseDir = localeTmpDir .. appid
     local localesFile = tmpBaseDir .. '/locales.json'
@@ -2061,12 +2084,19 @@ local function delocalizeByElectron(str, appid, appLocale, localesPath, file)
       locales = hs.json.read(localesFile)
     else
       local result, ok = hs.execute(string.format(
-        [[npx @electron/asar list "%s" | grep "^/%s/" | cut -c17- | grep -v '/']],
+        [[npx @electron/asar list "%s" | grep "^/%s/" | cut -c17-]],
         path, localesPath),
       true)
       if ok then
         locales = hs.fnutils.split(result, '\n')
         locales[#locales] = nil
+        for _, p in ipairs(locales) do
+          if p:find('/') then
+            table.insert(localeFiles, p)
+          else
+            table.insert(locales, p)
+          end
+        end
         electronLocales[appid] = locales
         if dirNotExistOrEmpty(tmpBaseDir) then
           hs.execute(string.format("mkdir '%s'", tmpBaseDir))
@@ -2081,20 +2111,33 @@ local function delocalizeByElectron(str, appid, appLocale, localesPath, file)
   if locale == nil then return end
 
   local tmpdir = string.format(localeTmpDir .. '%s/%s', appid, locale)
-  local tmpfile = tmpdir .. '/' .. file .. '.json'
-  if hs.fs.attributes(tmpfile) == nil then
-    local localeFilePath = string.format("%s/%s/%s.json",
-        localesPath, locale, file)
-    hs.execute(string.format(
-      [[npx @electron/asar extract-file "%s" "%s"]], path, localeFilePath),
-    true)
-    if dirNotExistOrEmpty(tmpdir) then
-      hs.execute(string.format("mkdir -p '%s'", tmpdir))
+  if #localeFiles > 0 then
+    localeFiles = hs.fnutils.ifilter(localeFiles, function(file)
+      return file:sub(1, #locale) == locale
+    end)
+    for _, file in ipairs(localeFiles) do
+      local tmpfile = tmpdir .. '/' .. file .. '.json'
+      if hs.fs.attributes(tmpfile) == nil then
+        local localeFilePath = string.format("%s/%s/%s.json",
+            localesPath, locale, file)
+        hs.execute(string.format(
+          [[npx @electron/asar extract-file "%s" "%s"]], path, localeFilePath),
+        true)
+        if dirNotExistOrEmpty(tmpdir) then
+          hs.execute(string.format("mkdir -p '%s'", tmpdir))
+        end
+        hs.execute(string.format("mv '%s' '%s'", file .. '.json', tmpdir))
+      end
     end
-    hs.execute(string.format("mv '%s' '%s'", file .. '.json', tmpdir))
   end
-  local json = hs.json.read(tmpfile)
-  return hs.fnutils.indexOf(json, str), locale
+  for file in hs.fs.dir(tmpdir) do
+    if file:sub(-5) == '.json' then
+      local json = hs.json.read(tmpdir .. '/' .. file)
+      local result = hs.fnutils.indexOf(json, str)
+      if result ~= nil then return result, locale end
+    end
+  end
+  return nil, locale
 end
 
 local function delocalizeByJava(str, appid, localeFiles, javehome)
@@ -2189,8 +2232,8 @@ local function delocalizeWPS(str, appLocale, localeFile)
 end
 
 local function delocalizeXmind(str, appLocale)
-  return delocalizeByElectron(str, 'net.xmind.vana.app', appLocale,
-      'static/locales', 'translation')
+  return delocalizeByElectron(str, 'net.xmind.vana.app',
+      appLocale, 'static/locales')
 end
 
 local function delocalizeZoteroMenu(str, appLocale)
