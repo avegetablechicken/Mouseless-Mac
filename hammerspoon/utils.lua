@@ -1138,22 +1138,6 @@ local function localizeByNIB(str, localeDir, localeFile, appid)
   end
 end
 
-local localeTools = {
-  Qt = "lconvert",
-  gettext = "msgunfmt",
-  npm = "npx",
-  LZFSE = "lzfse",
-}
-local function getCMD(framework)
-  local cmd = localeTools[framework]
-  for _, dir in ipairs { "/opt/local/bin/", "/opt/homebrew/bin/", "/usr/local/bin/" } do
-    if hs.fs.attributes(dir .. cmd) ~= nil then
-      return dir .. cmd
-    end
-  end
-  hs.alert.show(string.format('Command "%s" not found. Please install "%s".'), cmd, framework)
-end
-
 local function poIdToStr(str)
   return string.format([[
     awk "
@@ -1215,7 +1199,7 @@ local function poStrToCtxt(str)
 end
 
 local function localizeByQtImpl(str, file)
-  local cmd = getCMD("Qt")
+  local cmd = hs.execute("which lconvert | tr -d '\\n'", true)
   if cmd == nil then return end
   local output, status = hs.execute(string.format(
     '%s -i "%s" -of po | %s', cmd, file, poIdToStr(str)))
@@ -1241,7 +1225,7 @@ local function localizeByQt(str, localeDir)
 end
 
 local function localizeByMono(str, localeDir)
-  local cmd = getCMD("gettext")
+  local cmd = hs.execute("which msgunfmt | tr -d '\\n'", true)
   if cmd == nil then return end
   for file in hs.fs.dir(localeDir .. '/LC_MESSAGES') do
     if file:sub(-3) == ".mo" then
@@ -1314,11 +1298,9 @@ local function localizeByElectron(str, appid, appLocale, localesPath, file)
     if hs.fs.attributes(localesFile) ~= nil then
       locales = hs.json.read(localesFile)
     else
-      local cmd = getCMD("npm")
-      if cmd == nil then return end
       local result, ok = hs.execute(string.format(
-        [[%s @electron/asar list "%s" | grep "^/%s/" | cut -c17- | grep -v '/']],
-        cmd, path, localesPath),
+        [[npx @electron/asar list "%s" | grep "^/%s/" | cut -c17- | grep -v '/']],
+        path, localesPath),
       true)
       if ok then
         locales = hs.fnutils.split(result, '\n')
@@ -1340,9 +1322,8 @@ local function localizeByElectron(str, appid, appLocale, localesPath, file)
   if hs.fs.attributes(tmpfile) == nil then
     local localeFilePath = string.format("%s/%s/%s.json",
         localesPath, locale, file)
-    local cmd = getCMD("npm")
     hs.execute(string.format(
-      [[%s @electron/asar extract-file "%s" "%s"]], cmd, path, localeFilePath),
+      [[npx @electron/asar extract-file "%s" "%s"]], path, localeFilePath),
     true)
     if dirNotExistOrEmpty(tmpdir) then
       hs.execute(string.format("mkdir -p '%s'", tmpdir))
@@ -1406,7 +1387,7 @@ local function localizeQt(str, appid, appLocale)
 end
 
 local function getSTRInQtKso(str, file)
-  local cmd = getCMD("Qt")
+  local cmd = hs.execute("which lconvert | tr -d '\\n'", true)
   if cmd == nil then return end
   local output, status = hs.execute(string.format(
     '%s -i "%s" -of po | %s', cmd, file, poCtxtToStr(str)))
@@ -1414,10 +1395,10 @@ local function getSTRInQtKso(str, file)
 end
 
 local function getCTXTInQtKso(str, file)
-  local cmd = getCMD("Qt")
+  local cmd = hs.execute("which lconvert | tr -d '\\n'", true)
   if cmd == nil then return end
   local output, status = hs.execute(string.format(
-      '%s -i "%s" -of po | %s', cmd, file, poStrToCtxt(str)))
+    '%s -i "%s" -of po | %s', cmd, file, poStrToCtxt(str)))
   if status and output ~= "" then return output end
 end
 
@@ -1473,8 +1454,6 @@ local function localizeXmind(str, appLocale)
 end
 
 local function localizeChatGPT(str, appLocale)
-  local cmd = getCMD("LZFSE")
-  if cmd == nil then return end
   local resourceDir = hs.application.pathForBundleID("com.openai.chat")
       .. "/Contents/Frameworks/Assets.framework/Resources"
       .. "/Assets_Assets.bundle/Contents/Resources/CompressedStrings"
@@ -1494,7 +1473,7 @@ local function localizeChatGPT(str, appLocale)
       string.format("tail -c +9 '%s' > '%s'", localeFile, tmp))
   if not status then return nil end
   local jsonStr = hs.execute(
-      string.format("'%s' -decode -i '%s' -o /dev/stdout", cmd, tmp))
+      string.format("lzfse -decode -i '%s' -o /dev/stdout", tmp), true)
   os.remove(tmp)
   local jsonDict = hs.json.decode(jsonStr)
   return jsonDict[str], locale
@@ -1981,7 +1960,7 @@ local function delocalizeByNIB(str, localeDir, localeFile, appid)
 end
 
 local function delocalizeByQtImpl(str, file)
-  local cmd = getCMD("Qt")
+  local cmd = hs.execute("which lconvert | tr -d '\\n'", true)
   if cmd == nil then return end
   local output, status = hs.execute(string.format(
     '%s -i "%s" -of po | %s', cmd, file, poStrToId(str)))
@@ -2007,12 +1986,12 @@ local function delocalizeByQt(str, localeDir)
 end
 
 local function delocalizeByMono(str, localeDir)
-  local cmd = getCMD("gettext")
+  local cmd = hs.execute("which msgunfmt | tr -d '\\n'", true)
   if cmd == nil then return end
   for file in hs.fs.dir(localeDir .. '/LC_MESSAGES') do
     if file:sub(-3) == ".mo" then
       local output, status = hs.execute(string.format(
-        '%s -i "%s" -of po | %s',
+        '%s "%s" -o - | %s',
         cmd, localeDir .. '/LC_MESSAGES/' .. file, poStrToId(str)))
       if status and output ~= "" then return output end
     end
@@ -2077,11 +2056,9 @@ local function delocalizeByElectron(str, appid, appLocale, localesPath, file)
     if hs.fs.attributes(localesFile) ~= nil then
       locales = hs.json.read(localesFile)
     else
-      local cmd = getCMD("npm")
-      if cmd == nil then return end
       local result, ok = hs.execute(string.format(
-        [[%s @electron/asar list "%s" | grep "^/%s/" | cut -c17- | grep -v '/']],
-        cmd, path, localesPath),
+        [[npx @electron/asar list "%s" | grep "^/%s/" | cut -c17- | grep -v '/']],
+        path, localesPath),
       true)
       if ok then
         locales = hs.fnutils.split(result, '\n')
@@ -2103,9 +2080,8 @@ local function delocalizeByElectron(str, appid, appLocale, localesPath, file)
   if hs.fs.attributes(tmpfile) == nil then
     local localeFilePath = string.format("%s/%s/%s.json",
         localesPath, locale, file)
-    local cmd = getCMD("npm")
     hs.execute(string.format(
-      [[%s @electron/asar extract-file "%s" "%s"]], cmd, path, localeFilePath),
+      [[npx @electron/asar extract-file "%s" "%s"]], path, localeFilePath),
     true)
     if dirNotExistOrEmpty(tmpdir) then
       hs.execute(string.format("mkdir -p '%s'", tmpdir))
