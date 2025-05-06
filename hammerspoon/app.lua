@@ -256,7 +256,7 @@ local function getFinderSidebarItem(idx)
         "AXSplitGroup", 1, "AXScrollArea", 1, "AXOutline", 1)
     if outlineUIObj == nil then return false end
     local cnt = 0
-    for _, rowUIObj in ipairs(get(outlineUIObj, "AXRow")) do
+    for _, rowUIObj in ipairs(getc(outlineUIObj, "AXRow")) do
       if getc(rowUIObj, nil, 1, "AXStaticText", 1).AXIdentifier == nil then
         cnt = cnt + 1
       end
