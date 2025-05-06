@@ -122,8 +122,7 @@ local function toggleV2RayX(enable, alert)
   end
 
   local appUI = hs.axuielement.applicationElement(find(appid))
-  local menu = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", 1,
-      "AXMenu", 1)
+  local menu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1)
   if menu == nil then
     if alert then
       hs.alert("Error occurred while loading/unloading V2ray core in \"V2RayX\"")
@@ -133,31 +132,31 @@ local function toggleV2RayX(enable, alert)
 
   local set
   if enable == true then
-    local load = getc(menu, "AXMenuItem", "Load core")
+    local load = getc(menu, AX.MenuItem, "Load core")
     if load ~= nil then
-      load:performAction("AXPress")
+      load:performAction(AX.Press)
       set = true
     end
   elseif enable == false then
-    local unload = getc(menu, "AXMenuItem", "Unload core")
+    local unload = getc(menu, AX.MenuItem, "Unload core")
     if unload ~= nil then
-      unload:performAction("AXPress")
+      unload:performAction(AX.Press)
       set = false
     end
   else
-    local unload = getc(menu, "AXMenuItem", "Unload core")
+    local unload = getc(menu, AX.MenuItem, "Unload core")
     if unload ~= nil then
-      unload:performAction("AXPress")
+      unload:performAction(AX.Press)
       set = false
     else
-      local load = getc(menu, "AXMenuItem", "Load core")
-      load:performAction("AXPress")
+      local load = getc(menu, AX.MenuItem, "Load core")
+      load:performAction(AX.Press)
       set = true
     end
   end
 
   if enable == true or set then
-    local unload = getc(menu, "AXMenuItem", "Unload core")
+    local unload = getc(menu, AX.MenuItem, "Unload core")
     if unload == nil then
       if alert then
         hs.alert("Error occurred while loading V2ray core in \"V2RayX\"")
@@ -185,8 +184,7 @@ local function toggleV2RayU(enable, alert)
   end
 
   local appUI = hs.axuielement.applicationElement(find(appid))
-  local menu = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", 1,
-      "AXMenu", 1)
+  local menu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1)
   if menu == nil then
     if alert then
       hs.alert("Error occurred while loading/unloading V2ray core in \"V2rayU\"")
@@ -198,31 +196,31 @@ local function toggleV2RayU(enable, alert)
   local turnOnTitle = localizedString("Turn v2ray-core On", appid)
   local turnOffTitle = localizedString("Turn v2ray-core Off", appid)
   if enable == true then
-    local turnOn = getc(menu, "AXMenuItem", turnOnTitle)
+    local turnOn = getc(menu, AX.MenuItem, turnOnTitle)
     if turnOn ~= nil then
-      turnOn:performAction("AXPress")
+      turnOn:performAction(AX.Press)
       set = true
     end
   elseif enable == false then
-    local turnOff = getc(menu, "AXMenuItem", turnOffTitle)
+    local turnOff = getc(menu, AX.MenuItem, turnOffTitle)
     if turnOff ~= nil then
-      turnOff:performAction("AXPress")
+      turnOff:performAction(AX.Press)
       set = false
     end
   else
-    local turnOff = getc(menu, "AXMenuItem", turnOffTitle)
+    local turnOff = getc(menu, AX.MenuItem, turnOffTitle)
     if turnOff ~= nil then
-      turnOff:performAction("AXPress")
+      turnOff:performAction(AX.Press)
       set = false
     else
-      local turnOn = getc(menu, "AXMenuItem", turnOnTitle)
-      turnOn:performAction("AXPress")
+      local turnOn = getc(menu, AX.MenuItem, turnOnTitle)
+      turnOn:performAction(AX.Press)
       set = true
     end
   end
 
   if enable == true or set then
-    local turnOff = getc(menu, "AXMenuItem", turnOffTitle)
+    local turnOff = getc(menu, AX.MenuItem, turnOffTitle)
     if turnOff == nil then
       if alert then
         hs.alert("Error occurred while loading V2ray core in \"V2rayU\"")
@@ -250,8 +248,8 @@ local function toggleMonoCloud(enable, alert)
   end
 
   local appUI = hs.axuielement.applicationElement(find(appid))
-  local menuItem = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", 1,
-      "AXMenu", 1, "AXMenuItem", "Set As System Proxy")
+  local menuItem = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1,
+      AX.Menu, 1, AX.MenuItem, "Set As System Proxy")
   if menuItem == nil then
     if alert then
       hs.alert("Error occurred. Please retry")
@@ -263,16 +261,16 @@ local function toggleMonoCloud(enable, alert)
   local set
   if enable == true then
     if ticked ~= "✓" then
-      menuItem:performAction("AXPress")
+      menuItem:performAction(AX.Press)
       set = true
     end
   elseif enable == false then
     if ticked == "✓" then
-      menuItem:performAction("AXPress")
+      menuItem:performAction(AX.Press)
       set = false
     end
   else
-    menuItem:performAction("AXPress")
+    menuItem:performAction(AX.Press)
     set = ticked ~= "✓"
   end
 
@@ -597,12 +595,12 @@ local function parseProxyInfo(info, require_mode)
           local appid = proxyAppBundleIDs.MonoCloud
           if find(appid) ~= nil then
             local appUI = hs.axuielement.applicationElement(find(appid))
-            local outboundModeMenu = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", 1,
-              "AXMenu", 1, "AXMenuItem", "Outbound Mode", "AXMenu", 1)
+            local outboundModeMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1,
+              AX.Menu, 1, AX.MenuItem, "Outbound Mode", AX.Menu, 1)
             if outboundModeMenu ~= nil then
-              if getc(outboundModeMenu, "AXMenuItem", 2).AXMenuItemMarkChar == "✓" then
+              if getc(outboundModeMenu, AX.MenuItem, 2).AXMenuItemMarkChar == "✓" then
                 mode = "Global"
-              elseif getc(outboundModeMenu, "AXMenuItem", 3).AXMenuItemMarkChar == "✓" then
+              elseif getc(outboundModeMenu, AX.MenuItem, 3).AXMenuItemMarkChar == "✓" then
                 mode = "PAC"
               end
             end
@@ -929,9 +927,9 @@ function()
   else
     local app = find("org.hammerspoon.Hammerspoon")
     local appUI = hs.axuielement.applicationElement(app)
-    local menuBarMenu = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", proxy:title())
+    local menuBarMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, proxy:title())
     if menuBarMenu ~= nil then
-      menuBarMenu:performAction("AXPress")
+      menuBarMenu:performAction(AX.Press)
     end
   end
 end)
@@ -1282,11 +1280,11 @@ function registerControlCenterHotKeys(panel)
 
       local appUI = hs.axuielement.applicationElement(find("com.apple.controlcenter"))
       local ident = controlCenterMenuBarItemIdentifiers["Control Center"]
-      local menuBarItem = hs.fnutils.find(getc(appUI, "AXMenuBar", -1, "AXMenuBarItem"),
+      local menuBarItem = hs.fnutils.find(getc(appUI, AX.MenuBar, -1, AX.MenuBarItem),
         function(item)
           return item.AXIdentifier:find(ident) ~= nil
         end)
-      menuBarItem:performAction("AXPress")
+      menuBarItem:performAction(AX.Press)
       hotkeyMainForward = newControlCenter("⌘", "]", "Forward",
         function()
           assert(hotkeyMainForward) hotkeyMainForward:disable()
@@ -2294,7 +2292,7 @@ end
 
 if hs.window.focusedWindow() ~= nil
     and hs.window.focusedWindow():application():bundleID() == "com.apple.controlcenter"
-    and hs.window.focusedWindow():subrole() == "AXSystemDialog" then
+    and hs.window.focusedWindow():subrole() == AX.SystemDialog then
   registerControlCenterHotKeys(getActiveControlCenterPanel())
 end
 

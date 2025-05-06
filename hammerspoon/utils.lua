@@ -17,7 +17,7 @@ function getc(element, role, index, ...)
   elseif type(index) == 'number' then
     if index < 0 then index = #children + index + 1 end
     child = children[index]
-  elseif role == "AXStaticText" or role == "AXTextField" then
+  elseif role == AX.StaticText or role == AX.TextField then
     child = hs.fnutils.find(children, function(c)
       return c.AXValue == index
     end)
@@ -2797,7 +2797,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
     app = appid appid = app:bundleID()
   end
   local appUI = hs.axuielement.applicationElement(app)
-  local menuBarMenu = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", menuBarIdx)
+  local menuBarMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, menuBarIdx)
 
   if type(menuItemPath) ~= 'table' then
     menuItemPath = { menuItemPath }
@@ -2812,8 +2812,8 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
         tell application id "com.surteesstudios.Bartender" to activate "]] .. appid .. [[-Item-0"
       ]])
     else
-      -- note: some apps do not react to "AXPress", you have to click them.
-      menuBarMenu:performAction("AXPress")
+      -- note: some apps do not react to AX.Press, you have to click them.
+      menuBarMenu:performAction(AX.Press)
     end
   end
   if #menuItemPath == 0 then return true end
@@ -2821,16 +2821,16 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   local menu = menuBarMenu
   for _, item in ipairs(menuItemPath) do
     local parent = menu
-    menu = getc(parent, "AXMenu", 1, "AXMenuItem", item)
+    menu = getc(parent, AX.Menu, 1, AX.MenuItem, item)
     if menu == nil and type(item) == 'string' then
       local locItem = localizedString(item, appid)
       if locItem ~= nil then
-        menu = getc(parent, "AXMenu", 1, "AXMenuItem", locItem)
+        menu = getc(parent, AX.Menu, 1, AX.MenuItem, locItem)
       end
     end
     if menu == nil then return false end
   end
 
-  menu:performAction("AXPress")
+  menu:performAction(AX.Press)
   return true
 end

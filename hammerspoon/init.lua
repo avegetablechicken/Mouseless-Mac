@@ -47,6 +47,14 @@ HK = {
   WIN_OP_ = { MOVE = 1, RESIZE = 2, SPACE_SCREEN = 3 },
 }
 
+local function capitalize(str)
+  return str:sub(1, 1):upper() .. str:sub(2)
+end
+AX = { WebArea = "AXWebArea", Open = "AXOpen" }
+for k, v in pairs(hs.axuielement.roles) do AX[capitalize(k)] = v end
+for k, v in pairs(hs.axuielement.subroles) do AX[capitalize(k)] = v end
+for k, v in pairs(hs.axuielement.actions) do AX[capitalize(k)] = v end
+
 FLAGS = {}
 
 HYPER = nil
