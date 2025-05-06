@@ -1154,14 +1154,71 @@ local function getCMD(framework)
   hs.alert.show(string.format('"%s" not found. Please install "%s".'), cmd, framework)
 end
 
+local function poIdToStr(str)
+  return string.format([[
+    awk "
+      /msgid \"%s\"/ {
+        getline;
+        sub(/^msgstr \"/, \"\");
+        sub(/\"\$/, \"\");
+        print \$0;
+        exit
+      }
+    " | tr -d "\n"
+  ]], str)
+end
+
+local function poStrToId(str)
+  return string.format([[
+    awk "
+      /msgstr \"%s\"/ {
+        sub(/^msgid \"/, \"\", prevline);
+        sub(/\"\$/, \"\", prevline);
+        print prevline;
+        exit
+      }
+      { prevline = \$0 }
+    " | tr -d "\n"
+  ]], str)
+end
+
+local function poCtxtToStr(str)
+  return string.format([[
+    awk "
+      /msgctxt \"%s\"/ {
+        getline;
+        getline;
+        sub(/^msgstr \"/, \"\");
+        sub(/\"\$/, \"\");
+        print \$0;
+        exit
+      }
+    " | tr -d "\n"
+  ]], str:gsub('|', '\\|'))
+end
+
+local function poStrToCtxt(str)
+  return string.format([[
+    awk "
+      /msgstr \"%s\"/ {
+        sub(/^msgctxt \"/, \"\", prev2);
+        sub(/\"\$/, \"\", prev2);
+        print prev2;
+        exit
+      }
+      {
+        prev2 = prev1;
+        prev1 = \$0;
+      }
+    " | tr -d "\n"
+  ]], str)
+end
+
 local function localizeByQtImpl(str, file)
   local cmd = getCMD("Qt")
   if cmd == nil then return end
-  local output, status = hs.execute(string.format([[
-      %s -i "%s" -of po \
-      | awk "/msgid \"%s\"/ { getline; sub(/^msgstr \"/, \"\"); sub(/\"\$/, \"\"); print \$0; exit }" \
-      | tr -d "\n"
-    ]], cmd, file, str))
+  local output, status = hs.execute(string.format(
+    '%s -i "%s" -of po | %s', cmd, file, poIdToStr(str)))
   if status and output ~= "" then return output end
 end
 
@@ -1188,11 +1245,9 @@ local function localizeByMono(str, localeDir)
   if cmd == nil then return end
   for file in hs.fs.dir(localeDir .. '/LC_MESSAGES') do
     if file:sub(-3) == ".mo" then
-      local output, status = hs.execute(string.format([[
-          %s "%s" -o - \
-          | awk "/msgid \"%s\"/ { getline; sub(/^msgstr \"/, \"\"); sub(/\"\$/, \"\"); print \$0; exit }" \
-          | tr -d "\n"
-        ]], cmd, localeDir .. '/LC_MESSAGES/' .. file, str))
+      local output, status = hs.execute(string.format(
+        '%s "%s" -o - | %s',
+        cmd, localeDir .. '/LC_MESSAGES/' .. file, poIdToStr(str)))
       if status and output ~= "" then return output end
     end
   end
@@ -1353,23 +1408,16 @@ end
 local function getSTRInQtKso(str, file)
   local cmd = getCMD("Qt")
   if cmd == nil then return end
-  str = str:gsub('|', '\\|')
-  local output, status = hs.execute(string.format([[
-      %s -i "%s" -of po \
-      | awk "/msgctxt \"%s\"/ { getline; getline; sub(/^msgstr \"/, \"\"); sub(/\"\$/, \"\"); print \$0; exit }" \
-      | tr -d "\n"
-    ]], cmd, file, str))
+  local output, status = hs.execute(string.format(
+    '%s -i "%s" -of po | %s', cmd, file, poCtxtToStr(str)))
   if status and output ~= "" then return output end
 end
 
 local function getCTXTInQtKso(str, file)
   local cmd = getCMD("Qt")
   if cmd == nil then return end
-  local output, status = hs.execute(string.format([[
-      %s -i "%s" -of po \
-      | awk "/msgstr \"%s\"/ { sub(/^msgctxt \"/, \"\", prev2); sub(/\"\$/, \"\", prev2); print prev2; exit } { prev2 = prev1; prev1 = \$0; }" \
-      | tr -d "\n"
-    ]], cmd, file, str))
+  local output, status = hs.execute(string.format(
+      '%s -i "%s" -of po | %s', cmd, file, poStrToCtxt(str)))
   if status and output ~= "" then return output end
 end
 
@@ -1935,11 +1983,8 @@ end
 local function delocalizeByQtImpl(str, file)
   local cmd = getCMD("Qt")
   if cmd == nil then return end
-  local output, status = hs.execute(string.format([[
-      %s -i "%s" -of po \
-      | awk "/msgstr \"%s\"/ { sub(/^msgid \"/, \"\", prevline); sub(/\"\$/, \"\", prevline); print prevline; exit } { prevline = \$0 }" \
-      | tr -d "\n"
-    ]], cmd, file, str))
+  local output, status = hs.execute(string.format(
+    '%s -i "%s" -of po | %s', cmd, file, poStrToId(str)))
   if status and output ~= "" then return output end
 end
 
@@ -1966,11 +2011,9 @@ local function delocalizeByMono(str, localeDir)
   if cmd == nil then return end
   for file in hs.fs.dir(localeDir .. '/LC_MESSAGES') do
     if file:sub(-3) == ".mo" then
-      local output, status = hs.execute(string.format([[
-          %s "%s" -o - \
-          | awk "/msgstr \"%s\"/ { sub(/^msgid \"/, \"\", prevline); sub(/\"\$/, \"\", prevline); print prevline; exit } { prevline = \$0 }" \
-          | tr -d "\n"
-        ]], cmd, localeDir .. '/LC_MESSAGES/' .. file, str))
+      local output, status = hs.execute(string.format(
+        '%s -i "%s" -of po | %s',
+        cmd, localeDir .. '/LC_MESSAGES/' .. file, poStrToId(str)))
       if status and output ~= "" then return output end
     end
   end
