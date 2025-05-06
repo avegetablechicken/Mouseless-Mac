@@ -5767,8 +5767,8 @@ end
 
 altMenuBarItem = function(app, menuItems, reinvokeKey)
   -- delete previous hotkeys
-  for _, hotkeyObject in ipairs(AltMenuBarItemHotkeys) do
-    hotkeyObject:delete()
+  for _, hotkey in ipairs(AltMenuBarItemHotkeys) do
+    hotkey:delete()
   end
   AltMenuBarItemHotkeys = {}
   windowOnBindAltMenu = nil
@@ -5953,8 +5953,8 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
       local spec = invMap[menuBarItemTitles[i]]
       if spec ~= nil then
         local fn = hs.fnutils.partial(clickMenuCallback, menuBarItemTitles[i], spec[1])
-        local hotkeyObject = bindAltMenu(app, "⌥", spec[1], spec[2], fn)
-        table.insert(AltMenuBarItemHotkeys, hotkeyObject)
+        local hotkey = bindAltMenu(app, "⌥", spec[1], spec[2], fn)
+        table.insert(AltMenuBarItemHotkeys, hotkey)
         if reinvokeKey == spec[1] then
           clickMenuCallback(menuBarItemTitles[i])
         end
@@ -5971,10 +5971,10 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
     end
 
     local maxMenuBarItemHotkey = #menuBarItemTitles > 11 and 10 or (#menuBarItemTitles - 1)
-    local hotkeyObject = bindAltMenu(app, "⌥", "`", menuBarItemTitles[1],
+    local hotkey = bindAltMenu(app, "⌥", "`", menuBarItemTitles[1],
       function() app:selectMenuItem({ menuBarItemTitles[1] }) end)
-    hotkeyObject.subkind = 0
-    table.insert(AltMenuBarItemHotkeys, hotkeyObject)
+    hotkey.subkind = 0
+    table.insert(AltMenuBarItemHotkeys, hotkey)
 
     local itemTitles = {}
     for i=2,#menuBarItemTitles do
@@ -5993,8 +5993,8 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
     end
     for i=1,maxMenuBarItemHotkey do
       local fn = hs.fnutils.partial(clickMenuCallback, menuBarItemTitles[i + 1], i % 10)
-      hotkeyObject = bindAltMenu(app, "⌥", tostring(i % 10), itemTitles[i], fn)
-      table.insert(AltMenuBarItemHotkeys, hotkeyObject)
+      hotkey = bindAltMenu(app, "⌥", tostring(i % 10), itemTitles[i], fn)
+      table.insert(AltMenuBarItemHotkeys, hotkey)
       if reinvokeKey == i % 10 then
         clickMenuCallback(menuBarItemTitles[i + 1])
       end
@@ -6441,10 +6441,10 @@ if mountainDuckConfig ~= nil and mountainDuckConfig.connections ~= nil then
       connectMountainDuckEntries(app, connection)
     end
   end)
-  local mountainDuckObject = find("io.mountainduck")
-  if mountainDuckObject ~= nil then
+  local app = find("io.mountainduck")
+  if app ~= nil then
     for _, connection in ipairs(mountainDuckConfig.connections) do
-      connectMountainDuckEntries(mountainDuckObject, connection)
+      connectMountainDuckEntries(app, connection)
     end
   end
 end
