@@ -689,14 +689,12 @@ end
 
 local electronLocales = {}
 local function getElectronMatchedLocale(appid, appLocale, localesPath)
-  local locales = electronLocales[appid]
-  local localeFiles = {}
-  if locales == nil then
-    locales = {}
+  local locales, localeFiles = {}, {}
+  if electronLocales[appid] == nil then
     local tmpBaseDir = localeTmpDir .. appid
     local localesFile = tmpBaseDir .. '/locales.json'
     if hs.fs.attributes(localesFile) ~= nil then
-      locales = hs.json.read(localesFile)
+      electronLocales[appid] = hs.json.read(localesFile)
     else
       local path = hs.application.pathForBundleID(appid)
           .. '/Contents/Resources/app.asar'
@@ -709,30 +707,35 @@ local function getElectronMatchedLocale(appid, appLocale, localesPath)
         result[#result] = nil
         for _, p in ipairs(result) do
           if p:find('/') then
-            table.insert(localeFiles, p)
+            if p:sub(-5) == '.json' then
+              table.insert(localeFiles, p:sub(1, -6))
+            end
           else
             table.insert(locales, p)
           end
         end
+        electronLocales[appid] = { locale = locales, file = localeFiles }
         if dirNotExistOrEmpty(tmpBaseDir) then
           hs.execute(string.format("mkdir '%s'", tmpBaseDir))
         end
-        hs.json.write(locales, localesFile)
+        hs.json.write(electronLocales[appid], localesFile)
       else
         return
       end
     end
-    electronLocales[appid] = locales
   end
+  locales = electronLocales[appid]['locale']
+  localeFiles = electronLocales[appid]['file']
   local locale = getMatchedLocale(appLocale, locales)
   if locale == nil then return end
 
-  if #localeFiles > 0 then
-    localeFiles = hs.fnutils.ifilter(localeFiles, function(file)
-      return file:sub(1, #locale + 1) == locale .. '/'
-    end)
+  local matchedFiles = {}
+  for _, file in ipairs(localeFiles) do
+    if file:sub(1, #locale + 1) == locale .. '/' then
+      table.insert(matchedFiles, file:sub(#locale + 2))
+    end
   end
-  return locale, localeFiles
+  return locale, matchedFiles
 end
 
 -- assume base locale is English (not always the situation)
