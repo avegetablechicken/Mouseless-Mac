@@ -1146,7 +1146,7 @@ local localeTools = {
 }
 local function getCMD(framework)
   local cmd = localeTools[framework]
-  for _, dir in ipairs { "/usr/local/bin/", "/opt/homebrew/bin/", "/opt/local/bin/" } do
+  for _, dir in ipairs { "/opt/local/bin/", "/opt/homebrew/bin/", "/usr/local/bin/" } do
     if hs.fs.attributes(dir .. cmd) ~= nil then
       return dir .. cmd
     end
