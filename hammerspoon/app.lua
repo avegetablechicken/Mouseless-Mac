@@ -226,20 +226,19 @@ local function getFinderSidebarItemTitle(idx)
   return function(app)
     if app:focusedWindow() == nil
         or app:focusedWindow():role() == 'AXSheet' then return false end
-    local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-    local outlineUIObj = getc(winUIObj,
-        "AXSplitGroup", 1, "AXScrollArea", 1, "AXOutline", 1)
-    if outlineUIObj == nil then return end
+    local winUI = hs.axuielement.windowElement(app:focusedWindow())
+    local outline = getc(winUI, "AXSplitGroup", 1, "AXScrollArea", 1, "AXOutline", 1)
+    if outline == nil then return end
     local header
     local cnt = 0
-    for _, rowUIObj in ipairs(getc(outlineUIObj, "AXRow")) do
-      if rowUIObj.AXChildren == nil then hs.timer.usleep(0.3 * 1000000) end
-      if getc(rowUIObj, nil, 1, "AXStaticText", 1).AXIdentifier ~= nil then
-        header = getc(rowUIObj, nil, 1, "AXStaticText", 1).AXValue
+    for _, row in ipairs(getc(outline, "AXRow")) do
+      if row.AXChildren == nil then hs.timer.usleep(0.3 * 1000000) end
+      if getc(row, nil, 1, "AXStaticText", 1).AXIdentifier ~= nil then
+        header = getc(row, nil, 1, "AXStaticText", 1).AXValue
       else
         cnt = cnt + 1
         if cnt == idx then
-          local itemTitle = getc(rowUIObj, nil, 1, "AXStaticText", 1).AXValue
+          local itemTitle = getc(row, nil, 1, "AXStaticText", 1).AXValue
           return header .. ' > ' .. itemTitle
         end
       end
@@ -251,32 +250,31 @@ local function getFinderSidebarItem(idx)
   return function(app)
     if app:focusedWindow() == nil
         or app:focusedWindow():role() == 'AXSheet' then return false end
-    local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-    local outlineUIObj = getc(winUIObj,
-        "AXSplitGroup", 1, "AXScrollArea", 1, "AXOutline", 1)
-    if outlineUIObj == nil then return false end
+    local winUI = hs.axuielement.windowElement(app:focusedWindow())
+    local outline = getc(winUI, "AXSplitGroup", 1, "AXScrollArea", 1, "AXOutline", 1)
+    if outline == nil then return false end
     local cnt = 0
-    for _, rowUIObj in ipairs(getc(outlineUIObj, "AXRow")) do
-      if getc(rowUIObj, nil, 1, "AXStaticText", 1).AXIdentifier == nil then
+    for _, row in ipairs(getc(outline, "AXRow")) do
+      if getc(row, nil, 1, "AXStaticText", 1).AXIdentifier == nil then
         cnt = cnt + 1
       end
       if cnt == idx then
-        return true, rowUIObj.AXChildren[1]
+        return true, row.AXChildren[1]
       end
     end
     return false
   end
 end
 
-local function openFinderSidebarItem(cellUIObj, app)
+local function openFinderSidebarItem(cell, app)
   local go = localizedString("Go", app:bundleID())
-  local itemTitle = get(cellUIObj, "AXStaticText", 1).AXValue
+  local itemTitle = get(cell, "AXStaticText", 1).AXValue
   if app:findMenuItem({ go, itemTitle }) ~= nil then
     app:selectMenuItem({ go, itemTitle })
   else
     local flags = hs.eventtap.checkKeyboardModifiers()
     if not (flags['cmd'] or flags['alt'] or flags['ctrl']) then
-      cellUIObj:performAction("AXOpen")
+      cell:performAction("AXOpen")
     else
       local tapper
       tapper = hs.eventtap.new({ hs.eventtap.event.types.flagsChanged }, function(event)
@@ -286,10 +284,10 @@ local function openFinderSidebarItem(cellUIObj, app)
           if newFlags['cmd'] or newFlags['alt'] or newFlags['ctrl'] then
             event:setFlags({}):post()
             hs.timer.doAfter(0.01, function()
-              cellUIObj:performAction("AXOpen")
+              cell:performAction("AXOpen")
             end)
           else
-            cellUIObj:performAction("AXOpen")
+            cell:performAction("AXOpen")
           end
         end)
         return false
@@ -304,9 +302,9 @@ end
 -- ### Messages
 local function deleteSelectedMessage(app, menuItem, force)
   if app:focusedWindow() == nil then return end
-  local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-  local button = getc(winUIObj,
-      "AXGroup", 1, "AXGroup", 1, "AXGroup", 2, "AXGroup", 1, "AXButton", 2)
+  local winUI = hs.axuielement.windowElement(app:focusedWindow())
+  local button = getc(winUI, "AXGroup", 1, "AXGroup", 1,
+      "AXGroup", 2, "AXGroup", 1, "AXButton", 2)
   if button ~= nil then
     button:performAction("AXPress")
     if force ~= nil then
@@ -347,28 +345,28 @@ end
 
 -- ### FaceTime
 local function deleteMousePositionCall(win)
-  local winUIObj = hs.axuielement.windowElement(win)
-  local collection = getc(winUIObj, "AXGroup", 1, "AXGroup", 1, "AXGroup", 1, "AXGroup", 2)
+  local winUI = hs.axuielement.windowElement(win)
+  local collection = getc(winUI, "AXGroup", 1, "AXGroup", 1, "AXGroup", 1, "AXGroup", 2)
   if collection ~= nil and collection.AXDescription ==
       localizedString("Recent Calls", win:application():bundleID()) then
     local section = getc(collection, "AXButton", 1)
     if section ~= nil then
       if not rightClick(hs.mouse.absolutePosition(), win:application():name()) then return end
-      local popup = getc(winUIObj, "AXGroup", 1, "AXMenu", 1)
+      local popup = getc(winUI, "AXGroup", 1, "AXMenu", 1)
       local maxTime, time = 0.5, 0
       while popup == nil and time < maxTime do
         hs.timer.usleep(0.01 * 1000000)
         time = time + 0.01
-        popup = getc(winUIObj, "AXGroup", 1, "AXMenu", 1)
+        popup = getc(winUI, "AXGroup", 1, "AXMenu", 1)
       end
       if popup == nil then
         if not rightClick(hs.mouse.absolutePosition(), win:application():name()) then return end
-        popup = getc(winUIObj, "AXGroup", 1, "AXMenu", 1)
+        popup = getc(winUI, "AXGroup", 1, "AXMenu", 1)
         time = 0
         while popup == nil and time < maxTime do
           hs.timer.usleep(0.01 * 1000000)
           time = time + 0.01
-          popup = getc(winUIObj, "AXGroup", 1, "AXMenu", 1)
+          popup = getc(winUI, "AXGroup", 1, "AXMenu", 1)
         end
         if popup == nil then return end
       end
@@ -380,7 +378,7 @@ local function deleteMousePositionCall(win)
     end
     return
   end
-  winUIObj:elementSearch(
+  winUI:elementSearch(
     function(msg, results, count)
       if count == 0 then return end
 
@@ -415,29 +413,29 @@ local function deleteMousePositionCall(win)
 end
 
 local function deleteAllCalls(win)
-  local winUIObj = hs.axuielement.windowElement(win)
-  local collection = getc(winUIObj, "AXGroup", 1, "AXGroup", 1, "AXGroup", 1, "AXGroup", 2)
+  local winUI = hs.axuielement.windowElement(win)
+  local collection = getc(winUI, "AXGroup", 1, "AXGroup", 1, "AXGroup", 1, "AXGroup", 2)
   if collection ~= nil and collection.AXDescription ==
       localizedString("Recent Calls", win:application():bundleID()) then
     local section = getc(collection, "AXButton", 1)
     if section ~= nil then
       local position = { section.AXPosition.x + 50, section.AXPosition.y + 10 }
       if not rightClick(position, win:application():name()) then return end
-      local popup = getc(winUIObj, "AXGroup", 1, "AXMenu", 1)
+      local popup = getc(winUI, "AXGroup", 1, "AXMenu", 1)
       local maxTime, time = 0.5, 0
       while popup == nil and time < maxTime do
         hs.timer.usleep(0.01 * 1000000)
         time = time + 0.01
-        popup = getc(winUIObj, "AXGroup", 1, "AXMenu", 1)
+        popup = getc(winUI, "AXGroup", 1, "AXMenu", 1)
       end
       if popup == nil then
         if not rightClick(position, win:application():name()) then return end
-        popup = getc(winUIObj, "AXGroup", 1, "AXMenu", 1)
+        popup = getc(winUI, "AXGroup", 1, "AXMenu", 1)
         time = 0
         while popup == nil and time < maxTime do
           hs.timer.usleep(0.01 * 1000000)
           time = time + 0.01
-          popup = getc(winUIObj, "AXGroup", 1, "AXMenu", 1)
+          popup = getc(winUI, "AXGroup", 1, "AXMenu", 1)
         end
         if popup == nil then return end
       end
@@ -451,7 +449,7 @@ local function deleteAllCalls(win)
     end
     return
   end
-  winUIObj:elementSearch(
+  winUI:elementSearch(
     function(msg, results, count)
       if count == 0 then return end
 
@@ -478,7 +476,7 @@ local function deleteAllCalls(win)
           end
         end
       end
-      deleteAllCalls(winUIObj)
+      deleteAllCalls(winUI)
     end,
     function(element)
       return element.AXSubrole == "AXCollectionList"
@@ -567,8 +565,8 @@ end
 local function JabRefShowLibraryByIndex(idx)
   return function(app)
     if app:focusedWindow() == nil then return false end
-    local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-    local tab = getc(winUIObj, "AXTabGroup", 1, "AXRadioButton", idx)
+    local winUI = hs.axuielement.windowElement(app:focusedWindow())
+    local tab = getc(winUI, "AXTabGroup", 1, "AXRadioButton", idx)
     if tab ~= nil then
       return true, { x = tab.AXPosition.x + 10, y = tab.AXPosition.y + 10 }
     else
@@ -581,8 +579,8 @@ end
 local function buttonValidForAppCleanerUninstaller(title)
   return function(win)
     local locTitle = localizedString(title, win:application():bundleID())
-    local winUIObj = hs.axuielement.windowElement(win)
-    local sg = getc(winUIObj, "AXSplitGroup", 1)
+    local winUI = hs.axuielement.windowElement(win)
+    local sg = getc(winUI, "AXSplitGroup", 1)
     if sg == nil then return false end
     local button = hs.fnutils.find(getc(sg, "AXButton"), function(bt)
       return bt.AXIdentifier == "uaid:RemoveSelectedItemsButton"
@@ -595,12 +593,12 @@ end
 local function confirmButtonValidForAppCleanerUninstaller(title)
   return function(win)
     local locTitle = localizedString(title, win:application():bundleID())
-    local winUIObj = hs.axuielement.windowElement(win)
-    local cancel = hs.fnutils.find(getc(winUIObj, "AXButton"), function(bt)
+    local winUI = hs.axuielement.windowElement(win)
+    local cancel = hs.fnutils.find(getc(winUI, "AXButton"), function(bt)
       return bt.AXIdentifier == "uaid:RemoveDialogSecondButton" and bt.AXEnabled
     end)
     if cancel == nil then return false end
-    local button = getc(winUIObj, "AXStaticText", locTitle)
+    local button = getc(winUI, "AXStaticText", locTitle)
     return button ~= nil, button ~= nil and button.AXPosition
   end
 end
@@ -613,8 +611,8 @@ BartenderBarFilter = nil
 local function getBartenderBarItemTitle(index, rightClick)
   return function(app)
     if bartenderBarItemNames == nil then
-      local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-      local icons = getc(winUIObj, "AXScrollArea", 1, "AXList", 1, "AXList", 1)
+      local winUI = hs.axuielement.windowElement(app:focusedWindow())
+      local icons = getc(winUI, "AXScrollArea", 1, "AXList", 1, "AXList", 1)
       local appnames = hs.fnutils.map(getc(icons, "AXGroup"), function(g)
         return getc(g, "AXImage", 1).AXDescription
       end)
@@ -708,8 +706,9 @@ local function clickBartenderBarItem(index, rightClick)
         ]], appid))
       end)
     else
-      local winUIObj = hs.axuielement.windowElement(find(appid):focusedWindow())
-      local icon = getc(winUIObj, "AXScrollArea", 1, "AXList", 1, "AXList", 1, "AXGroup", itemID, "AXImage", 1)
+      local winUI = hs.axuielement.windowElement(find(appid):focusedWindow())
+      local icon = getc(winUI, "AXScrollArea", 1, "AXList", 1,
+          "AXList", 1, "AXGroup", itemID, "AXImage", 1)
       if icon ~= nil then
         local position = { icon.AXPosition.x + 10, icon.AXPosition.y + 10 }
         if rightClick then
@@ -724,8 +723,8 @@ end
 
 local function clickBartenderSidebarItem(index)
   return function(win)
-    local winUIObj = hs.axuielement.windowElement(win)
-    local row = getc(winUIObj, "AXSplitGroup", 1, "AXScrollArea", 1,
+    local winUI = hs.axuielement.windowElement(win)
+    local row = getc(winUI, "AXSplitGroup", 1, "AXScrollArea", 1,
         "AXOutline", 1, "AXRow", index, "AXCell", 1, "AXImage", 1)
     if row ~= nil then
       leftClickAndRestore(row.AXPosition, win:application():name())
@@ -736,10 +735,10 @@ end
 -- ### PasswordsMenuBarExtra
 local function getPasswordRecordPosition(index)
   return function(win)
-    local winUIObj = hs.axuielement.windowElement(win)
-    local searchField = getc(winUIObj, "AXGroup", 1, "AXTextField", 1)
+    local winUI = hs.axuielement.windowElement(win)
+    local searchField = getc(winUI, "AXGroup", 1, "AXTextField", 1)
     if searchField ~= nil then
-      local row = getc(winUIObj, "AXGroup", 1, "AXScrollArea", 1,
+      local row = getc(winUI, "AXGroup", 1, "AXScrollArea", 1,
         "AXGroup", 1, "AXScrollArea", 1, "AXOutline", 1, "AXRow", index)
       if row ~= nil then
         return true, { row.AXPosition.x + 10, row.AXPosition.y + 10 }
@@ -1061,13 +1060,13 @@ local COND_FAIL = {
 -- check whether the menu bar item is selected
 -- if a menu is extended, hotkeys with no modifiers are disabled
 local function noSelectedMenuBarItem(app)
-  local appUIObj = hs.axuielement.applicationElement(app)
+  local appUI = hs.axuielement.applicationElement(app)
   local menuBar
   local maxTryTime = 3
   local tryInterval = 0.05
   local tryTimes = 1
   while tryTimes <= maxTryTime / tryInterval do
-    menuBar = getc(appUIObj, "AXMenuBar", 1)
+    menuBar = getc(appUI, "AXMenuBar", 1)
     if menuBar ~= nil then break end
     hs.timer.usleep(tryInterval * 1000000)
     tryTimes = tryTimes + 1
@@ -1320,8 +1319,8 @@ appHotKeyCallbacks = {
       message = commonLocalizedMessage("Search"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-        local searchField = getc(winUIObj, "AXToolbar", 1, "AXGroup", 2, "AXTextField", 1)
+        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local searchField = getc(winUI, "AXToolbar", 1, "AXGroup", 2, "AXTextField", 1)
         if searchField == nil then return false end
         return true, searchField
       end,
@@ -1337,8 +1336,8 @@ appHotKeyCallbacks = {
     ["deleteConversation"] = {
       message = localizedMessage("Delete Conversation…"),
       condition = function(app)
-        local appUIObj = hs.axuielement.applicationElement(app)
-        local messageItems = getc(appUIObj, "AXWindow", 1, "AXGroup", 1, "AXGroup", 1,
+        local appUI = hs.axuielement.applicationElement(app)
+        local messageItems = getc(appUI, "AXWindow", 1, "AXGroup", 1, "AXGroup", 1,
             "AXGroup", 1, "AXGroup", 2, "AXGroup", 1, "AXGroup", 1, "AXStaticText")
         local selected = hs.fnutils.find(messageItems or {}, function(msg)
           return msg.AXSelected == true and msg.AXDescription:sub(4) ~=
@@ -1355,8 +1354,8 @@ appHotKeyCallbacks = {
     ["deleteAllConversations"] = {
       message = "Delete All Conversations",
       condition = function(app)
-        local appUIObj = hs.axuielement.applicationElement(app)
-        local messageItems = getc(appUIObj, "AXWindow", 1, "AXGroup", 1, "AXGroup", 1,
+        local appUI = hs.axuielement.applicationElement(app)
+        local messageItems = getc(appUI, "AXWindow", 1, "AXGroup", 1, "AXGroup", 1,
             "AXGroup", 1, "AXGroup", 2, "AXGroup", 1, "AXGroup", 1, "AXStaticText")
         if messageItems == nil or #messageItems == 0
             or (#messageItems == 1 and (messageItems[1].AXDescription == nil
@@ -1371,8 +1370,8 @@ appHotKeyCallbacks = {
     ["goToPreviousConversation"] = {
       message = menuItemMessage('⇧⌃', "⇥", 2),
       condition = function(app)
-        local appUIObj = hs.axuielement.applicationElement(app)
-        local messageItems = getc(appUIObj, "AXWindow", 1, "AXGroup", 1, "AXGroup", 1,
+        local appUI = hs.axuielement.applicationElement(app)
+        local messageItems = getc(appUI, "AXWindow", 1, "AXGroup", 1, "AXGroup", 1,
             "AXGroup", 1, "AXGroup", 2, "AXGroup", 1, "AXGroup", 1, "AXStaticText")
         if messageItems == nil or #messageItems == 0 then return false end
         if messageItems[1].AXSelected then
@@ -1397,8 +1396,8 @@ appHotKeyCallbacks = {
     ["goToNextConversation"] = {
       message = menuItemMessage('⌃', "⇥", 2),
       condition = function(app)
-        local appUIObj = hs.axuielement.applicationElement(app)
-        local messageItems = getc(appUIObj, "AXWindow", 1, "AXGroup", 1, "AXGroup", 1,
+        local appUI = hs.axuielement.applicationElement(app)
+        local messageItems = getc(appUI, "AXWindow", 1, "AXGroup", 1, "AXGroup", 1,
             "AXGroup", 1, "AXGroup", 2, "AXGroup", 1, "AXGroup", 1, "AXStaticText")
         if messageItems == nil or #messageItems == 0 then return false end
         if messageItems[#messageItems].AXSelected then
@@ -1441,8 +1440,8 @@ appHotKeyCallbacks = {
       message = localizedMessage("New FaceTime"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-        local button = getc(winUIObj, "AXGroup", 1, "AXGroup", 1,
+        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local button = getc(winUI, "AXGroup", 1, "AXGroup", 1,
             "AXGroup", 1, "AXGroup", 1, "AXButton", 2)
         return button ~= nil, button
       end,
@@ -1460,11 +1459,11 @@ appHotKeyCallbacks = {
           return true, menuItemTitle
         else
           if app:focusedWindow() == nil then return false end
-          local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
+          local winUI = hs.axuielement.windowElement(app:focusedWindow())
           local button
-          button = getc(winUIObj, "AXSplitGroup", 1, "AXGroup", 2, "AXButton", 1)
+          button = getc(winUI, "AXSplitGroup", 1, "AXGroup", 2, "AXButton", 1)
           if button ~= nil then return true, button end
-          local g = getc(winUIObj, "AXGroup", 1)
+          local g = getc(winUI, "AXGroup", 1)
           if g == nil then return false end
           button = hs.fnutils.find(getc(g, "AXButton"), function(b)
             return b.AXIdentifier == "UIA.AppStore.NavigationBackButton"
@@ -1552,8 +1551,8 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then
           return false
         else
-          local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-          return winUIObj.AXIdentifier ~= "open-panel"
+          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          return winUI.AXIdentifier ~= "open-panel"
         end
       end,
       repeatable = true,
@@ -1567,8 +1566,8 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then
           return false
         else
-          local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-          return winUIObj.AXIdentifier ~= "open-panel"
+          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          return winUI.AXIdentifier ~= "open-panel"
         end
       end,
       repeatable = true,
@@ -1602,8 +1601,8 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then
           return false
         else
-          local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-          return winUIObj.AXIdentifier ~= "open-panel"
+          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          return winUI.AXIdentifier ~= "open-panel"
         end
       end,
       repeatable = true,
@@ -1695,8 +1694,8 @@ appHotKeyCallbacks = {
       condition = function(app)
         local win = app:focusedWindow()
         if win == nil then return false end
-        local winUIObj = hs.axuielement.windowElement(win)
-        local buttons = getc(winUIObj, "AXButton")
+        local winUI = hs.axuielement.windowElement(win)
+        local buttons = getc(winUI, "AXButton")
         local title = localizedString("Don't Save", app:bundleID())
         for _, button in ipairs(buttons) do
           if button.AXTitle == title then
@@ -1777,8 +1776,8 @@ appHotKeyCallbacks = {
         return app:focusedWindow():title() == home, app:focusedWindow()
       end,
       fn = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local button = getc(winUIObj, "AXSplitGroup", 1, "AXGroup", 4, "AXGroup", 1)
+        local winUI = hs.axuielement.windowElement(win)
+        local button = getc(winUI, "AXSplitGroup", 1, "AXGroup", 4, "AXGroup", 1)
         local position = { button.AXPosition.x + 30, button.AXPosition.y + 10 }
         leftClickAndRestore(position, win:application():name())
       end
@@ -1788,11 +1787,11 @@ appHotKeyCallbacks = {
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local win = app:focusedWindow()
-        local winUIObj = hs.axuielement.windowElement(win)
-        for i=1,#winUIObj.AXChildren - 1 do
-          if winUIObj.AXChildren[i].AXRole == "AXButton"
-              and winUIObj.AXChildren[i + 1].AXRole == "AXGroup" then
-            return true, winUIObj.AXChildren[i].AXPosition
+        local winUI = hs.axuielement.windowElement(win)
+        for i=1,#winUI.AXChildren - 1 do
+          if winUI.AXChildren[i].AXRole == "AXButton"
+              and winUI.AXChildren[i + 1].AXRole == "AXGroup" then
+            return true, winUI.AXChildren[i].AXPosition
           end
         end
         return false
@@ -2051,8 +2050,8 @@ appHotKeyCallbacks = {
       message = localizedMessage("翻译写作"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-        local button = getc(winUIObj, "AXToolbar", 1, "AXButton", 3)
+        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local button = getc(winUI, "AXToolbar", 1, "AXButton", 3)
         return button ~= nil, button
       end,
       fn = receiveButton
@@ -2073,8 +2072,8 @@ appHotKeyCallbacks = {
       end,
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-        local button = getc(winUIObj, "AXToolbar", 1, "AXButton", 6)
+        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local button = getc(winUI, "AXToolbar", 1, "AXButton", 6)
         return button ~= nil, button
       end,
       fn = receiveButton
@@ -2102,11 +2101,11 @@ appHotKeyCallbacks = {
       message = localizedMessage("Back"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-        if winUIObj.AXIdentifier ~= "ChatGPTSettingsAppWindow" then
+        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        if winUI.AXIdentifier ~= "ChatGPTSettingsAppWindow" then
           return false
         end
-        local button = getc(winUIObj, "AXToolbar", 1, "AXButton", 1, "AXButton", 1)
+        local button = getc(winUI, "AXToolbar", 1, "AXButton", 1, "AXButton", 1)
         return button ~= nil and button.AXEnabled, button
       end,
       fn = receiveButton
@@ -2146,8 +2145,8 @@ appHotKeyCallbacks = {
       message = "设置",
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-        local webarea = getc(winUIObj, "AXGroup", 1, "AXGroup", 1,
+        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local webarea = getc(winUI, "AXGroup", 1, "AXGroup", 1,
           "AXScrollArea", 1, "AXWebArea", 1)
         if webarea == nil then return false end
         local button = hs.fnutils.find(getc(webarea, "AXGroup"), function(b)
@@ -2155,7 +2154,7 @@ appHotKeyCallbacks = {
             return c:find("side%-bar_name") ~= nil
           end) ~= nil
         end)
-        if button ~= nil and button.AXPosition.x ~= winUIObj.AXPosition.x then
+        if button ~= nil and button.AXPosition.x ~= winUI.AXPosition.x then
           return true, button.AXPosition
         else
           return false
@@ -2168,8 +2167,8 @@ appHotKeyCallbacks = {
       bindCondition = versionLessThan("1.6.0"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-        local webarea = getc(winUIObj, "AXGroup", 1, "AXGroup", 1,
+        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local webarea = getc(winUI, "AXGroup", 1, "AXGroup", 1,
             "AXScrollArea", 1, "AXWebArea", 1)
         if webarea == nil then return false end
         local button = hs.fnutils.find(getc(webarea, "AXGroup"), function(b)
@@ -2186,8 +2185,8 @@ appHotKeyCallbacks = {
       message = "切换侧栏",
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-        local webarea = getc(winUIObj, "AXGroup", 1, "AXGroup", 1,
+        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local webarea = getc(winUI, "AXGroup", 1, "AXGroup", 1,
             "AXScrollArea", 1, "AXWebArea", 1)
         if webarea == nil then return false end
         local button = hs.fnutils.find(getc(webarea, "AXGroup"), function(b)
@@ -2210,8 +2209,8 @@ appHotKeyCallbacks = {
       message = "返回",
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-        local webarea = getc(winUIObj, "AXGroup", 1, "AXGroup", 1,
+        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local webarea = getc(winUI, "AXGroup", 1, "AXGroup", 1,
             "AXScrollArea", 1, "AXWebArea", 1)
         if webarea == nil then return false end
         local button = hs.fnutils.find(getc(webarea, "AXGroup"), function(b)
@@ -2236,8 +2235,8 @@ appHotKeyCallbacks = {
             tell application id "com.surteesstudios.Bartender" to activate "]] .. app:bundleID() .. [[-Item-0"
           ]])
         else
-          local appUIObj = hs.axuielement.applicationElement(app)
-          local menuBarMenu = getc(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1)
+          local appUI = hs.axuielement.applicationElement(app)
+          local menuBarMenu = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", 1)
           local position = {
             menuBarMenu.AXPosition.x + menuBarMenu.AXSize.w / 2,
             menuBarMenu.AXPosition.y + menuBarMenu.AXSize.h / 2,
@@ -2254,8 +2253,8 @@ appHotKeyCallbacks = {
             tell application id "com.surteesstudios.Bartender" to activate "]] .. app:bundleID() .. [[-Item-0"
           ]])
         else
-          local appUIObj = hs.axuielement.applicationElement(app)
-          local menuBarMenu = getc(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1)
+          local appUI = hs.axuielement.applicationElement(app)
+          local menuBarMenu = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", 1)
           local position = {
             menuBarMenu.AXPosition.x + menuBarMenu.AXSize.w / 2,
             menuBarMenu.AXPosition.y + menuBarMenu.AXSize.h / 2,
@@ -2376,8 +2375,8 @@ appHotKeyCallbacks = {
         allowTitles = "^KLatexFormula$"
       },
       fn = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local button = getc(winUIObj, "AXSplitGroup", 1, "AXButton", 2)
+        local winUI = hs.axuielement.windowElement(win)
+        local button = getc(winUI, "AXSplitGroup", 1, "AXButton", 2)
         if button ~= nil then
           button:performAction("AXPress")
         end
@@ -2390,8 +2389,8 @@ appHotKeyCallbacks = {
         app:selectMenuItem({"Shortcuts", "Activate Editor and Select All"})
         hs.eventtap.keyStroke("⌘", "V", nil, app)
 
-        local winUIObj = hs.axuielement.windowElement(app:mainWindow())
-        local button = getc(winUIObj, "AXSplitGroup", 1, "AXButton", 2)
+        local winUI = hs.axuielement.windowElement(app:mainWindow())
+        local button = getc(winUI, "AXSplitGroup", 1, "AXButton", 2)
         if button ~= nil then
           button:performAction("AXPress")
         end
@@ -2436,7 +2435,7 @@ appHotKeyCallbacks = {
           end
         end
 
-        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = hs.axuielement.windowElement(app:focusedWindow())
         -- Moments
         if string.find(app:focusedWindow():title(), app:name()) == nil then
           local album = localizedString("Album_WindowTitle", appid)
@@ -2444,14 +2443,14 @@ appHotKeyCallbacks = {
           local detail = localizedString("SNS_Feed_Detail_Title", appid)
           if string.find(app:focusedWindow():title(), album .. '-') == 1
               or app:focusedWindow():title() == moments .. '-' .. detail then
-            return true, { 2, getc(winUIObj, "AXButton", 1).AXPosition }
+            return true, { 2, getc(winUI, "AXButton", 1).AXPosition }
           end
           return false
         end
 
         -- Official Accounts
         local back = localizedString("Common.Navigation.Back", appid)
-        local g = getc(winUIObj, "AXSplitGroup", 1, "AXSplitGroup", 1)
+        local g = getc(winUI, "AXSplitGroup", 1, "AXSplitGroup", 1)
         if g ~= nil then
           for _, bt in ipairs(getc(g, "AXButton")) do
             if bt.AXTitle == back then
@@ -2475,13 +2474,13 @@ appHotKeyCallbacks = {
       message = localizedMessage("Chats.Menu.Hide"),
       condition = function(app)
         if app:focusedWindow() == nil then return end
-        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-        local curChatTitle = getc(winUIObj, "AXSplitGroup", 1,
+        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local curChatTitle = getc(winUI, "AXSplitGroup", 1,
             "AXSplitGroup", 1, "AXStaticText", 1)
-            or getc(winUIObj, "AXSplitGroup", 1, "AXStaticText", 1)
+            or getc(winUI, "AXSplitGroup", 1, "AXStaticText", 1)
         if curChatTitle == nil then return false end
         local title = curChatTitle.AXValue
-        local chats = getc(winUIObj, "AXSplitGroup", 1,
+        local chats = getc(winUI, "AXSplitGroup", 1,
             "AXScrollArea", 1, "AXTable", 1, "AXRow")
         local curChat = hs.fnutils.find(chats, function(c)
           local row = getc(c, "AXCell", 1, "AXRow", 1)
@@ -2504,19 +2503,19 @@ appHotKeyCallbacks = {
       message = localizedMessage("Chats.Menu.Profile"),
       condition = function(app)
         if app:focusedWindow() == nil then return end
-        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-        local curChatTitle = getc(winUIObj, "AXSplitGroup", 1,
+        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local curChatTitle = getc(winUI, "AXSplitGroup", 1,
             "AXSplitGroup", 1, "AXStaticText", 1)
         if curChatTitle == nil then return false end
         local btTitle = localizedString("ComposeBar.VideoTooltip", app:bundleID())
-        local bt = getc(winUIObj, "AXSplitGroup", 1,
+        local bt = getc(winUI, "AXSplitGroup", 1,
             "AXSplitGroup", 1, "AXButton", btTitle)
         return bt ~= nil, curChatTitle.AXValue
       end,
       fn = function(title, app)
         if app:focusedWindow() == nil then return end
-        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-        local chats = getc(winUIObj, "AXSplitGroup", 1,
+        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local chats = getc(winUI, "AXSplitGroup", 1,
             "AXScrollArea", 1, "AXTable", 1, "AXRow")
         local curChat = hs.fnutils.find(chats, function(c)
           local row = getc(c, "AXCell", 1, "AXRow", 1)
@@ -2539,8 +2538,8 @@ appHotKeyCallbacks = {
       message = localizedMessage("Open in Default Browser"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-        local g = getc(winUIObj, "AXGroup", 1)
+        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local g = getc(winUI, "AXGroup", 1)
         return g ~= nil and g.AXDOMClassList ~= nil
       end,
       fn = function(app)
@@ -2557,17 +2556,17 @@ appHotKeyCallbacks = {
       message = "上一页",
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local titleBarUIObj
+        local titleBar
         if versionLessThan("10.3.0")(app) then
-          local appUIObj = hs.axuielement.applicationElement(app)
+          local appUI = hs.axuielement.applicationElement(app)
           local frame = app:focusedWindow():frame()
-          titleBarUIObj = appUIObj:elementAtPosition(frame.x + 100, frame.y + 10)
+          titleBar = appUI:elementAtPosition(frame.x + 100, frame.y + 10)
         else
-          local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-          titleBarUIObj = getc(winUIObj, "AXUnknown", 3)
-          if titleBarUIObj == nil then return false end
+          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          titleBar = getc(winUI, "AXUnknown", 3)
+          if titleBar == nil then return false end
         end
-        for _, button in ipairs(titleBarUIObj.AXChildren or {}) do
+        for _, button in ipairs(titleBar.AXChildren or {}) do
           if button.AXHelp == "后退" then
             return true, button.AXPosition
           end
@@ -2583,17 +2582,17 @@ appHotKeyCallbacks = {
       message = "下一页",
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local titleBarUIObj
+        local titleBar
         if versionLessThan("10.3.0")(app) then
-          local appUIObj = hs.axuielement.applicationElement(app)
+          local appUI = hs.axuielement.applicationElement(app)
           local frame = app:focusedWindow():frame()
-          titleBarUIObj = appUIObj:elementAtPosition(frame.x + 100, frame.y + 10)
+          titleBar = appUI:elementAtPosition(frame.x + 100, frame.y + 10)
         else
-          local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-          titleBarUIObj = getc(winUIObj, "AXUnknown", 3)
-          if titleBarUIObj == nil then return false end
+          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          titleBar = getc(winUI, "AXUnknown", 3)
+          if titleBar == nil then return false end
         end
-        for _, button in ipairs(titleBarUIObj.AXChildren or {}) do
+        for _, button in ipairs(titleBar.AXChildren or {}) do
           if button.AXHelp == "前进" then
             return true, button.AXPosition
           end
@@ -2609,18 +2608,18 @@ appHotKeyCallbacks = {
       message = "刷新",
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local titleBarUIObj
+        local titleBar
         if versionLessThan("10.3.0")(app) then
-          local appUIObj = hs.axuielement.applicationElement(app)
+          local appUI = hs.axuielement.applicationElement(app)
           local frame = app:focusedWindow():frame()
-          titleBarUIObj = appUIObj:elementAtPosition(frame.x + 100, frame.y + 10)
+          titleBar = appUI:elementAtPosition(frame.x + 100, frame.y + 10)
         else
-          local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-          titleBarUIObj = getc(winUIObj, "AXUnknown", 3)
-          if titleBarUIObj == nil then return false end
+          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          titleBar = getc(winUI, "AXUnknown", 3)
+          if titleBar == nil then return false end
         end
         local refreshButtonPosition, searchButtonPosition
-        for _, button in ipairs(titleBarUIObj.AXChildren or {}) do
+        for _, button in ipairs(titleBar.AXChildren or {}) do
           if button.AXHelp == "刷新" then
             refreshButtonPosition = button.AXPosition
           elseif button.AXHelp == nil then
@@ -2639,9 +2638,9 @@ appHotKeyCallbacks = {
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         if versionLessThan("9")(app) then
-          local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-          local buttons = getc(winUIObj, "AXButton")
-          return #buttons > 4 and getc(winUIObj, "AXButton", '歌曲详情') ~= nil
+          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          local buttons = getc(winUI, "AXButton")
+          return #buttons > 4 and getc(winUI, "AXButton", '歌曲详情') ~= nil
         else
           if #app:visibleWindows() < 2 then return false end
           local fWin, mWin = app:focusedWindow(), app:mainWindow()
@@ -2652,8 +2651,8 @@ appHotKeyCallbacks = {
         end
       end,
       fn = function(app)
-        local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-        local buttons = getc(winUIObj, "AXButton")
+        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local buttons = getc(winUI, "AXButton")
         buttons[#buttons - 2]:performAction("AXPress")
       end
     }
@@ -2667,8 +2666,8 @@ appHotKeyCallbacks = {
         -- in early version of macOS there was a duplicated menu bar item '文件'
         -- which does not have menu items. So we have to manually find out the
         -- right menu bar item '文件'
-        local appUIObj = hs.axuielement.applicationElement(app)
-        local menuBarItems = getc(appUIObj, 'AXMenuBar', 1,'AXMenuBarItem')
+        local appUI = hs.axuielement.applicationElement(app)
+        local menuBarItems = getc(appUI, 'AXMenuBar', 1,'AXMenuBarItem')
         local menuBarItem = hs.fnutils.find(menuBarItems, function(item)
           return item.AXChildren ~= nil and #item.AXChildren > 0 and item.AXTitle == '文件'
         end)
@@ -2697,9 +2696,9 @@ appHotKeyCallbacks = {
       background = true,
       nonFrontmost = true,
       fn = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        leftClickAndRestore({ x = winUIObj.AXPosition.x + winUIObj.AXSize.w/2,
-                              y = winUIObj.AXPosition.y })
+        local winUI = hs.axuielement.windowElement(win)
+        leftClickAndRestore({ x = winUI.AXPosition.x + winUI.AXSize.w/2,
+                              y = winUI.AXPosition.y })
       end
     }
   },
@@ -2825,11 +2824,11 @@ appHotKeyCallbacks = {
     ["toggleBarrierConnect"] = {
       message = "Toggle Barrier Connect",
       fn = function(app)
-        local appUIObj = hs.axuielement.applicationElement(app)
-        local menu = getc(appUIObj, "AXMenuBar", 2, "AXMenuBarItem", 1, "AXMenu", 1)
+        local appUI = hs.axuielement.applicationElement(app)
+        local menu = getc(appUI, "AXMenuBar", 2, "AXMenuBarItem", 1, "AXMenu", 1)
         if menu == nil then
           clickRightMenuBarItem(app)
-          menu = getc(appUIObj, "AXMenuBar", 2, "AXMenuBarItem", 1, "AXMenu", 1)
+          menu = getc(appUI, "AXMenuBar", 2, "AXMenuBarItem", 1, "AXMenu", 1)
         end
         local start = getc(menu, "AXMenuItem", "Start")
         assert(start)
@@ -2847,13 +2846,13 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then
           hs.alert("Error occurred")
         else
-          local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-          local start = getc(winUIObj, "AXButton", "Start")
+          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          local start = getc(winUI, "AXButton", "Start")
           assert(start)
           start:performAction("AXPress")
           hs.alert("Barrier started")
           hs.timer.doAfter(0.5, function()
-            local close = getc(winUIObj, "AXButton", 4)
+            local close = getc(winUI, "AXButton", 4)
             assert(close)
             close:performAction("AXPress")
           end)
@@ -2866,8 +2865,8 @@ appHotKeyCallbacks = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local reload = getc(winUIObj, "AXButton", "Reload")
+        local winUI = hs.axuielement.windowElement(win)
+        local reload = getc(winUI, "AXButton", "Reload")
         return reload ~= nil and #reload:actionNames() > 0, reload
       end,
       fn = receiveButton
@@ -2878,8 +2877,8 @@ appHotKeyCallbacks = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local start = getc(winUIObj, "AXButton", "Start")
+        local winUI = hs.axuielement.windowElement(win)
+        local start = getc(winUI, "AXButton", "Start")
         return start ~= nil and #start:actionNames() > 0, start
       end,
       fn = receiveButton
@@ -2890,8 +2889,8 @@ appHotKeyCallbacks = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local stop = getc(winUIObj, "AXButton", "Stop")
+        local winUI = hs.axuielement.windowElement(win)
+        local stop = getc(winUI, "AXButton", "Stop")
         return stop ~= nil and #stop:actionNames() > 0, stop
       end,
       fn = receiveButton
@@ -2902,8 +2901,8 @@ appHotKeyCallbacks = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local configure = getc(winUIObj, "AXCheckBox", 1, "AXButton", "Configure Server...")
+        local winUI = hs.axuielement.windowElement(win)
+        local configure = getc(winUI, "AXCheckBox", 1, "AXButton", "Configure Server...")
         return configure ~= nil and #configure:actionNames() > 0, configure
       end,
       fn = receiveButton
@@ -2914,8 +2913,8 @@ appHotKeyCallbacks = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local browse = getc(winUIObj, "AXCheckBox", 1, "AXButton", "Browse...")
+        local winUI = hs.axuielement.windowElement(win)
+        local browse = getc(winUI, "AXCheckBox", 1, "AXButton", "Browse...")
         return browse ~= nil and #browse:actionNames() > 0, browse
       end,
       fn = receiveButton
@@ -2932,8 +2931,8 @@ appHotKeyCallbacks = {
         allowTitles = "^LuLu Alert$"
       },
       condition = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local button = getc(winUIObj, "AXButton", "Allow")
+        local winUI = hs.axuielement.windowElement(win)
+        local button = getc(winUI, "AXButton", "Allow")
         return button ~= nil, button
       end,
       fn = receiveButton
@@ -2945,8 +2944,8 @@ appHotKeyCallbacks = {
         allowTitles = "^LuLu Alert$"
       },
       condition = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local button = getc(winUIObj, "AXButton", "Block")
+        local winUI = hs.axuielement.windowElement(win)
+        local button = getc(winUI, "AXButton", "Block")
         return button ~= nil, button
       end,
       fn = receiveButton
@@ -2961,8 +2960,8 @@ appHotKeyCallbacks = {
         allowSheet = true
       },
       condition = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local button = getc(winUIObj, "AXButton", "Save")
+        local winUI = hs.axuielement.windowElement(win)
+        local button = getc(winUI, "AXButton", "Save")
         return button ~= nil and button.AXEnabled == true, button
       end,
       fn = receiveButton
@@ -3235,8 +3234,8 @@ appHotKeyCallbacks = {
       menubar = true,
       fn = function(app)
         local prefString = localizedString('Preferences', app:bundleID())
-        local appUIObj = hs.axuielement.applicationElement(app)
-        local button = getc(appUIObj, "AXMenuBar", -1,
+        local appUI = hs.axuielement.applicationElement(app)
+        local button = getc(appUI, "AXMenuBar", -1,
             "AXMenuBarItem", 1, "AXMenu", 1, "AXMenuItem", 1, "AXGroup", 1,
             "AXStaticText", prefString)
         local position = {
@@ -3267,13 +3266,13 @@ appHotKeyCallbacks = {
       message = "Toggle Top Notch",
       fn = function(app)
         clickRightMenuBarItem(app)
-        local appUIObj = hs.axuielement.applicationElement(app)
+        local appUI = hs.axuielement.applicationElement(app)
         hs.timer.doAfter(1, function()
-          local switch = getc(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
+          local switch = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", 1,
               "AXPopover", 1, "AXGroup", 3, "AXButton", 1)
           if switch == nil then
             hs.timer.usleep(0.1 * 1000000)
-            switch = getc(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
+            switch = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", 1,
                 "AXPopover", 1, "AXGroup", 3, "AXButton", 2)
           end
           local state = switch.AXValue
@@ -3360,8 +3359,8 @@ appHotKeyCallbacks = {
         allowTitles = "^$"
       },
       condition = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local buttons = getc(winUIObj, "AXGroup", 1, "AXButton")
+        local winUI = hs.axuielement.windowElement(win)
+        local buttons = getc(winUI, "AXGroup", 1, "AXButton")
         local button = hs.fnutils.find(buttons, function(btn)
           return btn.AXIdentifier == 'plus'
         end)
@@ -3377,8 +3376,8 @@ appHotKeyCallbacks = {
         allowTitles = "^$"
       },
       condition = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local buttons = getc(winUIObj, "AXGroup", 1, "AXButton")
+        local winUI = hs.axuielement.windowElement(win)
+        local buttons = getc(winUI, "AXGroup", 1, "AXButton")
         local button = hs.fnutils.find(buttons, function(btn)
           return btn.AXIdentifier == 'macwindow'
         end)
@@ -3397,8 +3396,8 @@ appHotKeyCallbacks = {
         allowTitles = "^$"
       },
       condition = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local elem = getc(winUIObj, "AXGroup", 1, nil, 1)
+        local winUI = hs.axuielement.windowElement(win)
+        local elem = getc(winUI, "AXGroup", 1, nil, 1)
         return elem.AXRole == "AXButton", elem
       end,
       background = true,
@@ -3411,14 +3410,14 @@ appHotKeyCallbacks = {
         allowTitles = "^$"
       },
       condition = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local elem = getc(winUIObj, "AXGroup", 1, nil, 1)
+        local winUI = hs.axuielement.windowElement(win)
+        local elem = getc(winUI, "AXGroup", 1, nil, 1)
         return elem.AXRole == "AXButton"
       end,
       background = true,
       fn = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local field = getc(winUIObj, "AXGroup", 1, "AXScrollArea", 1,
+        local winUI = hs.axuielement.windowElement(win)
+        local field = getc(winUI, "AXGroup", 1, "AXScrollArea", 1,
             "AXGroup", 1, "AXScrollArea", 1, "AXOutline", 1, "AXRow", 2, nil, 1,
             "AXStaticText", 2)
         assert(field)
@@ -3437,14 +3436,14 @@ appHotKeyCallbacks = {
         allowTitles = "^$"
       },
       condition = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local elem = getc(winUIObj, "AXGroup", 1, nil, 1)
+        local winUI = hs.axuielement.windowElement(win)
+        local elem = getc(winUI, "AXGroup", 1, nil, 1)
         return elem.AXRole == "AXButton"
       end,
       background = true,
       fn = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local outline = getc(winUIObj, "AXGroup", 1, "AXScrollArea", 1,
+        local winUI = hs.axuielement.windowElement(win)
+        local outline = getc(winUI, "AXGroup", 1, "AXScrollArea", 1,
             "AXGroup", 1, "AXScrollArea", 1, "AXOutline", 1)
         local field
         if getc(outline, "AXRow", 3, nil, 1, "AXStaticText", 1).AXValue
@@ -3657,8 +3656,8 @@ appHotKeyCallbacks = {
         allowTitles = "^(Real)VNC Viewer$"
       },
       fn = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local searchField = getc(winUIObj, "AXTextField", 1)
+        local winUI = hs.axuielement.windowElement(win)
+        local searchField = getc(winUI, "AXTextField", 1)
         if searchField ~= nil then
           local position = {
             searchField.AXPosition.x + 5,
@@ -3987,10 +3986,10 @@ appHotKeyCallbacks = {
     ["newProject"] = {
       message = "New Project",
       fn = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local button = getc(winUIObj, "AXButton", 2, "AXButton", 1)
+        local winUI = hs.axuielement.windowElement(win)
+        local button = getc(winUI, "AXButton", 2, "AXButton", 1)
         if button == nil then
-          button = getc(winUIObj, "AXGroup", 2, "AXButton", 1, "AXButton", 1)
+          button = getc(winUI, "AXGroup", 2, "AXButton", 1, "AXButton", 1)
         end
         if button ~= nil then
           leftClickAndRestore(button.AXPosition, win:application():name())
@@ -4010,10 +4009,10 @@ appHotKeyCallbacks = {
     ["newProject"] = {
       message = "New Project",
       fn = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local button = getc(winUIObj, "AXButton", 2, "AXButton", 1)
+        local winUI = hs.axuielement.windowElement(win)
+        local button = getc(winUI, "AXButton", 2, "AXButton", 1)
         if button == nil then
-          button = getc(winUIObj, "AXGroup", 2, "AXButton", 1, "AXButton", 1)
+          button = getc(winUI, "AXGroup", 2, "AXButton", 1, "AXButton", 1)
         end
         if button ~= nil then
           leftClickAndRestore(button.AXPosition, win:application():name())
@@ -4033,10 +4032,10 @@ appHotKeyCallbacks = {
     ["newProject"] = {
       message = "New Project",
       fn = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local button = getc(winUIObj, "AXButton", 2, "AXButton", 1)
+        local winUI = hs.axuielement.windowElement(win)
+        local button = getc(winUI, "AXButton", 2, "AXButton", 1)
         if button == nil then
-          button = getc(winUIObj, "AXGroup", 2, "AXButton", 1, "AXButton", 1)
+          button = getc(winUI, "AXGroup", 2, "AXButton", 1, "AXButton", 1)
         end
         if button ~= nil then
           leftClickAndRestore(button.AXPosition, win:application():name())
@@ -4056,10 +4055,10 @@ appHotKeyCallbacks = {
     ["newProject"] = {
       message = "New Project",
       fn = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local button = getc(winUIObj, "AXButton", 2, "AXButton", 1)
+        local winUI = hs.axuielement.windowElement(win)
+        local button = getc(winUI, "AXButton", 2, "AXButton", 1)
         if button == nil then
-          button = getc(winUIObj, "AXGroup", 2, "AXButton", 1, "AXButton", 1)
+          button = getc(winUI, "AXGroup", 2, "AXButton", 1, "AXButton", 1)
         end
         if button ~= nil then
           leftClickAndRestore(button.AXPosition, win:application():name())
@@ -4131,8 +4130,8 @@ appHotKeyCallbacks = {
       message = localizedMessage("Setting"),
       windowFilter = iCopyWindowFilter,
       fn = function(win)
-        local winUIObj = hs.axuielement.windowElement(win)
-        local button = getc(winUIObj, "AXButton", 1)
+        local winUI = hs.axuielement.windowElement(win)
+        local button = getc(winUI, "AXButton", 1)
         if button ~= nil then button:performAction("AXPress") end
       end
     },
@@ -5014,18 +5013,16 @@ local execOnQuit, stopOnQuit
 local function registerSingleWinFilterForDaemonApp(app, filter)
   local appid = app:bundleID()
   if filter.allowSheet or filter.allowPopover or appid == "com.tencent.LemonMonitor" then
-    local appUIObj = hs.axuielement.applicationElement(app)
+    local appUI = hs.axuielement.applicationElement(app)
     local observer = hs.axuielement.observer.new(app:pid())
     observer:addWatcher(
-      appUIObj,
-      hs.axuielement.observer.notifications.focusedWindowChanged
+      appUI, hs.axuielement.observer.notifications.focusedWindowChanged
     )
     observer:callback(function(_, element, notification)
       registerDaemonAppInWinHotkeys(appid, filter)
       local closeObserver = hs.axuielement.observer.new(app:pid())
       closeObserver:addWatcher(
-        element,
-        hs.axuielement.observer.notifications.uIElementDestroyed
+        element, hs.axuielement.observer.notifications.uIElementDestroyed
       )
       closeObserver:callback(function(obs)
         if daemonAppFocusedWindowHotkeys[appid] ~= nil then -- fix weird bug
@@ -5156,20 +5153,18 @@ local function registerObserversForMenuBarMenu(app, appConfig)
     if hasKey and isMenuBarMenu and bindable() then
       local observer = MenuBarMenuObservers[appid]
       if observer == nil then
-        local appUIObj = hs.axuielement.applicationElement(app)
+        local appUI = hs.axuielement.applicationElement(app)
         observer = hs.axuielement.observer.new(app:pid())
         observer:addWatcher(
-          appUIObj,
-          hs.axuielement.observer.notifications.menuOpened
+          appUI, hs.axuielement.observer.notifications.menuOpened
         )
         observer:callback(function(_, element, notification)
-          local mbItem = getc(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1)
+          local mbItem = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", 1)
           if not mbItem.AXSelected then return end
           registerInMenuHotkeys(appid, appConfig)
           local closeObserver = hs.axuielement.observer.new(app:pid())
           closeObserver:addWatcher(
-            element,
-            hs.axuielement.observer.notifications.menuClosed
+            element, hs.axuielement.observer.notifications.menuClosed
           )
           closeObserver:callback(function(obs)
             if menuBarMenuHotkeys[appid] ~= nil then
@@ -5433,8 +5428,8 @@ local function registerOpenRecent(app)
     if localizedFile == nil then return end
     if app:findMenuItem({ localizedFile }) == nil then return end
   end
-  local appUIObj = hs.axuielement.applicationElement(app)
-  local findMenu = getc(appUIObj, "AXMenuBar", 1, "AXMenuBarItem", localizedFile, "AXMenu", 1)
+  local appUI = hs.axuielement.applicationElement(app)
+  local findMenu = getc(appUI, "AXMenuBar", 1, "AXMenuBarItem", localizedFile, "AXMenu", 1)
   if findMenu == nil then return end
   local extendableItems = hs.fnutils.ifilter(findMenu.AXChildren or {}, function(item)
     return #item.AXChildren > 0
@@ -5544,11 +5539,11 @@ local openSavePanelHotkeys = {}
 
 -- special buttons for no saving in some apps
 local specialConfirmFuncs = {
-  ["com.kingsoft.wpsoffice.mac"] = function(winUIObj)
-    if winUIObj.AXSubrole == "AXDialog" then
+  ["com.kingsoft.wpsoffice.mac"] = function(winUI)
+    if winUI.AXSubrole == "AXDialog" then
       local btnName = localizedString("Don't Save", "com.kingsoft.wpsoffice.mac")
       if btnName == nil then return end
-      local buttons = getc(winUIObj, "AXButton")
+      local buttons = getc(winUI, "AXButton")
       for _, button in ipairs(buttons) do
         if button.AXTitle == btnName then
           return button
@@ -5557,18 +5552,18 @@ local specialConfirmFuncs = {
     end
   end,
 
-  ["JabRef"] = function(winUIObj)
-    if winUIObj.AXTitle == "Save before closing" then
-      local button = getc(winUIObj, "AXUnknown", 1, nil, 1, 'AXButton', 1)
+  ["JabRef"] = function(winUI)
+    if winUI.AXTitle == "Save before closing" then
+      local button = getc(winUI, "AXUnknown", 1, nil, 1, 'AXButton', 1)
       if button ~= nil and button.AXDescription == 'Discard changes' then
         return button
       end
     end
   end,
 
-  ["re.rizin.cutter"] = function(winUIObj)
-    if winUIObj.AXSubrole == "AXDialog" then
-      local buttons = getc(winUIObj, "AXGroup", 1, "AXButton") or {}
+  ["re.rizin.cutter"] = function(winUI)
+    if winUI.AXSubrole == "AXDialog" then
+      local buttons = getc(winUI, "AXGroup", 1, "AXButton") or {}
       for _, button in ipairs(buttons) do
         if button.AXTitle == "Don't Save" then
           return button
@@ -5580,21 +5575,21 @@ local specialConfirmFuncs = {
 
 local function registerForOpenSavePanel(app)
   if app:bundleID() == "com.apple.finder" then return end
-  local appUIObj = hs.axuielement.applicationElement(app)
-  if not appUIObj:isValid() then
+  local appUI = hs.axuielement.applicationElement(app)
+  if not appUI:isValid() then
     hs.timer.doAfter(0.1, function() registerForOpenSavePanel(app) end)
     return
   end
 
-  local getUIObj = function(winUIObj)
-    local windowIdent = winUIObj.AXIdentifier
+  local getUIElements = function(winUI)
+    local windowIdent = winUI.AXIdentifier
     local dontSaveButton, sidebarCells = nil, {}
     if get(KeybindingConfigs.hotkeys, app:bundleID(), "confirmDelete") == nil then
       local specialConfirmFunc = specialConfirmFuncs[app:bundleID()]
       if specialConfirmFunc ~= nil then
-        dontSaveButton = specialConfirmFunc(winUIObj)
+        dontSaveButton = specialConfirmFunc(winUI)
       elseif windowIdent == "save-panel" then
-        for _, button in ipairs(getc(winUIObj, "AXButton")) do
+        for _, button in ipairs(getc(winUI, "AXButton")) do
           if button.AXIdentifier == "DontSaveButton" then
             dontSaveButton = button
             break
@@ -5603,12 +5598,11 @@ local function registerForOpenSavePanel(app)
       end
     end
     if windowIdent == "open-panel" or windowIdent == "save-panel" then
-      local outlineUIObj = getc(winUIObj,
-          "AXSplitGroup", 1, "AXScrollArea", 1, "AXOutline", 1)
-      if outlineUIObj ~= nil then
-        for _, rowUIObj in ipairs(getc(outlineUIObj, "AXRow")) do
-          if rowUIObj.AXChildren == nil then hs.timer.usleep(0.3 * 1000000) end
-          table.insert(sidebarCells, rowUIObj.AXChildren[1])
+      local outline = getc(winUI, "AXSplitGroup", 1, "AXScrollArea", 1, "AXOutline", 1)
+      if outline ~= nil then
+        for _, row in ipairs(getc(outline, "AXRow")) do
+          if row.AXChildren == nil then hs.timer.usleep(0.3 * 1000000) end
+          table.insert(sidebarCells, row.AXChildren[1])
         end
       end
     end
@@ -5616,8 +5610,8 @@ local function registerForOpenSavePanel(app)
   end
 
   local windowFilter
-  local actionFunc = function(winUIObj)
-    local dontSaveButton, sidebarCells = getUIObj(winUIObj)
+  local actionFunc = function(winUI)
+    local dontSaveButton, sidebarCells = getUIElements(winUI)
     local header
     local i = 1
     for _, cell in ipairs(sidebarCells) do
@@ -5799,11 +5793,11 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
   local menuBarItemTitles
   local useWindowMenuBar
   if app:focusedWindow() ~= nil then
-    local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-    if #getc(winUIObj, "AXMenuBar") > 0 then
-      local menuObj = getc(winUIObj, "AXMenuBar", 1, "AXMenu")
+    local winUI = hs.axuielement.windowElement(app:focusedWindow())
+    if #getc(winUI, "AXMenuBar") > 0 then
+      local menuObj = getc(winUI, "AXMenuBar", 1, "AXMenu")
       if #menuObj == 0 then
-        menuObj = getc(winUIObj, "AXMenuBar", 1, "AXMenuBar")
+        menuObj = getc(winUI, "AXMenuBar", 1, "AXMenuBar")
       end
       if #menuObj > 0 then
         useWindowMenuBar = true
@@ -5858,10 +5852,10 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
   local clickMenuCallback
   if useWindowMenuBar then
     clickMenuCallback = function(title, k)
-      local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
-      local menuObj = getc(winUIObj, "AXMenuBar", 1, "AXMenu")
+      local winUI = hs.axuielement.windowElement(app:focusedWindow())
+      local menuObj = getc(winUI, "AXMenuBar", 1, "AXMenu")
       if menuObj == nil or #menuObj == 0 then
-        menuObj = getc(winUIObj, "AXMenuBar", 1, "AXMenuBar")
+        menuObj = getc(winUI, "AXMenuBar", 1, "AXMenuBar")
       end
       local targetMenuObj = hs.fnutils.find(menuObj or {}, function(item)
         return item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "") == title
@@ -5884,8 +5878,8 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
     clickMenuCallback = function(title, k)
       local index = menuBarItemActualIndices[title]
       if index then
-        local appUIObj = hs.axuielement.applicationElement(app)
-        local menubarItem = getc(appUIObj, "AXMenuBar", 1, "AXMenuBarItem", index)
+        local appUI = hs.axuielement.applicationElement(app)
+        local menubarItem = getc(appUI, "AXMenuBar", 1, "AXMenuBarItem", index)
         if menubarItem then
           menubarItem:performAction("AXPress")
           return
@@ -6105,13 +6099,12 @@ registerObserverForMenuBarChange = function(app, menuItems)
 
   local observer, windowFilter
   observer = hs.axuielement.observer.new(app:pid())
+  local appUI = hs.axuielement.applicationElement(app)
   observer:addWatcher(
-    hs.axuielement.applicationElement(app),
-    hs.axuielement.observer.notifications.focusedWindowChanged
+    appUI, hs.axuielement.observer.notifications.focusedWindowChanged
   )
   observer:addWatcher(
-    hs.axuielement.applicationElement(app),
-    hs.axuielement.observer.notifications.windowMiniaturized
+    appUI, hs.axuielement.observer.notifications.windowMiniaturized
   )
   observer:callback(hs.fnutils.partial(appMenuBarChangeCallback, app))
   observer:start()
@@ -6190,12 +6183,11 @@ PseudoWindowDestroyObservers = {}
 local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
   local appid = app:bundleID()
   local observer = PseudoWindowDestroyObservers[appid]
-  local appUIObj = hs.axuielement.applicationElement(app)
+  local appUI = hs.axuielement.applicationElement(app)
   if observer ~= nil then observer:start() return end
   observer = hs.axuielement.observer.new(app:pid())
   observer:addWatcher(
-    appUIObj,
-    hs.axuielement.observer.notifications.focusedUIElementChanged
+    appUI, hs.axuielement.observer.notifications.focusedUIElementChanged
   )
   local windowFilterRules = quit and appsAutoQuitWithNoWindows or appsAutoHideWithNoWindows
   local windowFilter = hs.window.filter.new(false):setAppFilter(
@@ -6204,7 +6196,7 @@ local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
   local params = { count = 1, depth = 2 }
   local pseudoWindowObserver
   local observerCallback = function()
-    appUIObj:elementSearch(function(msg, results, count)
+    appUI:elementSearch(function(msg, results, count)
       if count > 0 then
         if pseudoWindowObserver ~= nil then
           pseudoWindowObserver:stop()
@@ -6213,11 +6205,10 @@ local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
         local role = results[1].AXRole
         pseudoWindowObserver = hs.axuielement.observer.new(app:pid())
         pseudoWindowObserver:addWatcher(
-          results[1],
-          hs.axuielement.observer.notifications.uIElementDestroyed
+          results[1], hs.axuielement.observer.notifications.uIElementDestroyed
         )
         local pseudoWindowObserverCallback = function(obs)
-          appUIObj:elementSearch(function(newMsg, newResults, newCount)
+          appUI:elementSearch(function(newMsg, newResults, newCount)
               if newCount == 0 then
                 local defaultRule = function()
                   local noWindow = hs.fnutils.find(app:visibleWindows(), function(win)
@@ -6225,7 +6216,7 @@ local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
                   end) == nil
                   local noMenuFromPopover = true
                   if role == "AXPopover" then
-                    local menuBarMenu = getc(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1)
+                    local menuBarMenu = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", 1)
                     noMenuFromPopover = menuBarMenu.AXSelected == false
                   end
                   return noWindow and noMenuFromPopover
@@ -6396,8 +6387,8 @@ end
 -- ### Mountain Duck
 -- connect to servers on launch
 local function connectMountainDuckEntries(app, connection)
-  local appUIObj = hs.axuielement.applicationElement(app)
-  local menuBar = getc(appUIObj, "AXMenuBar", -1, "AXMenu", 1)
+  local appUI = hs.axuielement.applicationElement(app)
+  local menuBar = getc(appUI, "AXMenuBar", -1, "AXMenu", 1)
 
   if type(connection) == 'string' then
     local menuItem = getc(menuBar, "AXMenuItem", connection, "AXMenu", 1, "AXMenuItem", 1)
@@ -6526,20 +6517,20 @@ end
 local function isDefaultRemoteDesktopWindow(window)
   local appid = window:application():bundleID()
   if appid == "com.realvnc.vncviewer" then
-    local winUIObj = hs.axuielement.windowElement(window)
-    return hs.fnutils.find(getc(winUIObj, "AXButton"),
+    local winUI = hs.axuielement.windowElement(window)
+    return hs.fnutils.find(getc(winUI, "AXButton"),
       function(child) return child.AXHelp == "Session information" end) ~= nil
   elseif appid == "com.microsoft.rdc.macos" then
     local wFilter = hs.window.filter.new(false):setAppFilter(
         window:application():name(), MicrosoftRemoteDesktopWindowFilter)
     local result = wFilter:isWindowAllowed(window)
     if result then
-      local winUIObj = hs.axuielement.windowElement(window)
+      local winUI = hs.axuielement.windowElement(window)
       local title = "Cancel"
       if window:application():name() == "Windows App" then
         title = localizedString(title, "com.microsoft.rdc.macos") or title
       end
-      for _, bt in ipairs(getc(winUIObj, "AXButton")) do
+      for _, bt in ipairs(getc(winUI, "AXButton")) do
         if bt.AXTitle == title then
           return false
         end
@@ -6639,11 +6630,10 @@ end
 
 RemoteDesktopObserver = nil
 local function watchForRemoteDesktopWindow(app)
-  local appUIObj = hs.axuielement.applicationElement(app)
+  local appUI = hs.axuielement.applicationElement(app)
   local observer = hs.axuielement.observer.new(app:pid())
   observer:addWatcher(
-    appUIObj,
-    hs.axuielement.observer.notifications.focusedWindowChanged
+    appUI, hs.axuielement.observer.notifications.focusedWindowChanged
   )
   observer:callback(
       hs.fnutils.partial(suspendHotkeysInRemoteDesktop, app))

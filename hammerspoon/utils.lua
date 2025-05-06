@@ -2796,8 +2796,8 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   else
     app = appid appid = app:bundleID()
   end
-  local appUIObj = hs.axuielement.applicationElement(app)
-  local menuBarMenu = getc(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", menuBarIdx)
+  local appUI = hs.axuielement.applicationElement(app)
+  local menuBarMenu = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", menuBarIdx)
 
   if type(menuItemPath) ~= 'table' then
     menuItemPath = { menuItemPath }

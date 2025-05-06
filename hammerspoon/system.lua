@@ -121,8 +121,8 @@ local function toggleV2RayX(enable, alert)
     hs.application.launchOrFocusByBundleID(appid)
   end
 
-  local appUIObj = hs.axuielement.applicationElement(find(appid))
-  local menu = getc(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
+  local appUI = hs.axuielement.applicationElement(find(appid))
+  local menu = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", 1,
       "AXMenu", 1)
   if menu == nil then
     if alert then
@@ -184,8 +184,8 @@ local function toggleV2RayU(enable, alert)
     hs.application.launchOrFocusByBundleID(appid)
   end
 
-  local appUIObj = hs.axuielement.applicationElement(find(appid))
-  local menu = getc(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
+  local appUI = hs.axuielement.applicationElement(find(appid))
+  local menu = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", 1,
       "AXMenu", 1)
   if menu == nil then
     if alert then
@@ -249,8 +249,8 @@ local function toggleMonoCloud(enable, alert)
     hs.application.launchOrFocusByBundleID(appid)
   end
 
-  local appUIObj = hs.axuielement.applicationElement(find(appid))
-  local menuItem = getc(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
+  local appUI = hs.axuielement.applicationElement(find(appid))
+  local menuItem = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", 1,
       "AXMenu", 1, "AXMenuItem", "Set As System Proxy")
   if menuItem == nil then
     if alert then
@@ -596,8 +596,8 @@ local function parseProxyInfo(info, require_mode)
         elseif require_mode then
           local appid = proxyAppBundleIDs.MonoCloud
           if find(appid) ~= nil then
-            local appUIObj = hs.axuielement.applicationElement(find(appid))
-            local outboundModeMenu = getc(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", 1,
+            local appUI = hs.axuielement.applicationElement(find(appid))
+            local outboundModeMenu = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", 1,
               "AXMenu", 1, "AXMenuItem", "Outbound Mode", "AXMenu", 1)
             if outboundModeMenu ~= nil then
               if getc(outboundModeMenu, "AXMenuItem", 2).AXMenuItemMarkChar == "✓" then
@@ -928,8 +928,8 @@ function()
     ]], proxy:autosaveName()))
   else
     local app = find("org.hammerspoon.Hammerspoon")
-    local appUIObj = hs.axuielement.applicationElement(app)
-    local menuBarMenu = getc(appUIObj, "AXMenuBar", -1, "AXMenuBarItem", proxy:title())
+    local appUI = hs.axuielement.applicationElement(app)
+    local menuBarMenu = getc(appUI, "AXMenuBar", -1, "AXMenuBarItem", proxy:title())
     if menuBarMenu ~= nil then
       menuBarMenu:performAction("AXPress")
     end
@@ -1280,9 +1280,9 @@ function registerControlCenterHotKeys(panel)
         controlCenterSubPanelWatcher = nil
       end
 
-      local appUIObj = hs.axuielement.applicationElement(find("com.apple.controlcenter"))
+      local appUI = hs.axuielement.applicationElement(find("com.apple.controlcenter"))
       local ident = controlCenterMenuBarItemIdentifiers["Control Center"]
-      local menuBarItem = hs.fnutils.find(getc(appUIObj, "AXMenuBar", -1, "AXMenuBarItem"),
+      local menuBarItem = hs.fnutils.find(getc(appUI, "AXMenuBar", -1, "AXMenuBarItem"),
         function(item)
           return item.AXIdentifier:find(ident) ~= nil
         end)
@@ -1918,15 +1918,15 @@ function registerControlCenterHotKeys(panel)
                     end
                   end,
                 })
-                local appUIObj = hs.axuielement.applicationElement(app)
-                local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
+                local appUI = hs.axuielement.applicationElement(app)
+                local winUI = hs.axuielement.windowElement(app:focusedWindow())
                 observer = hs.axuielement.observer.new(app:pid())
                 observer:addWatcher(
-                  appUIObj, hs.axuielement.observer.notifications.focusedUIElementChanged)
+                  appUI, hs.axuielement.observer.notifications.focusedUIElementChanged)
                 observer:addWatcher(
-                  winUIObj, hs.axuielement.observer.notifications.titleChanged)
+                  winUI, hs.axuielement.observer.notifications.titleChanged)
                 observer:addWatcher(
-                  appUIObj, hs.axuielement.observer.notifications.applicationDeactivated
+                  appUI, hs.axuielement.observer.notifications.applicationDeactivated
                 )
                 observer:callback(function()
                   local frontWinBundleID = hs.window.frontmostWindow():application():bundleID()

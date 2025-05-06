@@ -1037,17 +1037,17 @@ local function PDFChooser()
     local winTitles = {}
     local winPaths = {}
     for _, win in ipairs(allWindows) do
-      local winUIObj = hs.axuielement.windowElement(win)
+      local winUI = hs.axuielement.windowElement(win)
       local filePath = ""
-      if #getc(winUIObj, "AXUnknown") ~= 0 then
-        local winIdent = getc(winUIObj, "AXUnknown", 1).AXIdentifier
+      if #getc(winUI, "AXUnknown") ~= 0 then
+        local winIdent = getc(winUI, "AXUnknown", 1).AXIdentifier
         filePath = string.match(winIdent, "PDFTabContentView (.*%.pdf)$")
       end
       local toolbar = nil
       if win:isFullScreen() then
-        toolbar = getc(winUIObj, "AXGroup", 1, "AXToolbar", 1)
+        toolbar = getc(winUI, "AXGroup", 1, "AXToolbar", 1)
       else
-        toolbar = getc(winUIObj, "AXToolbar", 1)
+        toolbar = getc(winUI, "AXToolbar", 1)
       end
       local tabList = getc(
           toolbar, "AXGroup", 1, "AXTabGroup", 1, "AXScrollArea", 1, "AXGroup")
@@ -1215,11 +1215,12 @@ local function PDFChooser()
         local app = find(choice.app)
         local isFullScreen = allWindowsPDFExpert[choice.winID]:isFullScreen()
         if not isFullScreen or findMenuItem(app, { 'View', 'Always Show Toolbar' }).ticked then
-          local winUIObj = hs.axuielement.windowElement(app:focusedWindow())
+          local winUI = hs.axuielement.windowElement(app:focusedWindow())
           if isFullScreen then
-            winUIObj = getc(winUIObj, "AXGroup", 1)
+            winUI = getc(winUI, "AXGroup", 1)
           end
-          local aTab = getc(winUIObj, "AXToolbar", 1, "AXGroup", 1, "AXTabGroup", 1, "AXScrollArea", 1, nil, choice.id)
+          local aTab = getc(winUI, "AXToolbar", 1, "AXGroup", 1,
+              "AXTabGroup", 1, "AXScrollArea", 1, nil, choice.id)
           if aTab ~= nil then
             local position = aTab.AXPosition
             if leftClickAndRestore({ x = position.x + 10, y = position.y }, app:name()) then
