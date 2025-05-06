@@ -1569,12 +1569,16 @@ local function localizedStringImpl(str, appid, params, force)
 
   local setDefaultLocale = function()
     if appid == '__macos' then return false end
+    local oldLocale = locale
     resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
     framework = {}
     if hs.fs.attributes(resourceDir) == nil then return false end
     mode = 'lproj'
     locale = getMatchedLocale(appLocale, resourceDir, mode)
-    if locale == nil then return false end
+    if locale == nil then
+      locale = oldLocale
+      return false
+    end
     localeDir = resourceDir .. "/" .. locale .. ".lproj"
     return true
   end
@@ -2329,11 +2333,15 @@ local function delocalizedStringImpl(str, appid, params)
   end
 
   local setDefaultLocale = function()
+    local oldLocale = locale
     resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
     if hs.fs.attributes(resourceDir) == nil then return false end
     mode = 'lproj'
     locale = getMatchedLocale(appLocale, resourceDir, mode)
-    if locale == nil then return false end
+    if locale == nil then
+      locale = oldLocale
+      return false
+    end
     localeDir = resourceDir .. "/" .. locale .. ".lproj"
     return true
   end
