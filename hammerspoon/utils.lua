@@ -1316,6 +1316,7 @@ local function localizeByElectron(str, appid, appLocale, localesPath, file)
     end
   end
   local locale = getMatchedLocale(appLocale, locales)
+  if locale == nil then return end
 
   local tmpdir = string.format(localeTmpDir .. '%s/%s', appid, locale)
   local tmpfile = tmpdir .. '/' .. file .. '.json'
@@ -1382,8 +1383,8 @@ local function localizeQt(str, appid, appLocale)
   local result = localizeByQtImpl(str, resourceDir .. '/' .. prefix .. locale .. '.qm')
   if result ~= nil then
     result = result:gsub("%(&%a%)", ""):gsub('[^%s]-&(%a)', '%1')
-    return result, locale
   end
+  return result, locale
 end
 
 local function getSTRInQtKso(str, file)
@@ -1471,7 +1472,7 @@ local function localizeChatGPT(str, appLocale)
   local tmp = os:tmpname()
   local _, status = hs.execute(
       string.format("tail -c +9 '%s' > '%s'", localeFile, tmp))
-  if not status then return nil end
+  if not status then return nil, locale end
   local jsonStr = hs.execute(
       string.format("lzfse -decode -i '%s' -o /dev/stdout", tmp), true)
   os.remove(tmp)
@@ -2043,7 +2044,6 @@ local function delocalizeByChromium(str, localeDir, appid)
       end
     end
   end
-  return nil
 end
 
 local function delocalizeByElectron(str, appid, appLocale, localesPath, file)
@@ -2074,6 +2074,7 @@ local function delocalizeByElectron(str, appid, appLocale, localesPath, file)
     end
   end
   local locale = getMatchedLocale(appLocale, locales)
+  if locale == nil then return end
 
   local tmpdir = string.format(localeTmpDir .. '%s/%s', appid, locale)
   local tmpfile = tmpdir .. '/' .. file .. '.json'
@@ -2136,7 +2137,7 @@ local function delocalizeQt(str, appid, appLocale)
     end
   end
   local locale = getMatchedLocale(appLocale, locales)
-  if locale == nil then return nil end
+  if locale == nil then return end
   if locale == 'en' then return str, locale end
   local localeFile = resourceDir .. '/' .. prefix .. locale .. '.qm'
   local result = delocalizeByQtImpl(str .. '\\(&[A-Z]\\)', localeFile)
@@ -2144,13 +2145,14 @@ local function delocalizeQt(str, appid, appLocale)
     return result, locale
   end
   result = delocalizeByQtImpl(str, localeFile)
-  if result ~= nil then return result, locale end
+  return result, locale
 end
 
 local function delocalizeWPS(str, appLocale, localeFile)
   local resourceDir = hs.application.pathForBundleID("com.kingsoft.wpsoffice.mac")
       .. '/Contents/Resources/office6/mui'
   local locale = getMatchedLocale(appLocale, resourceDir)
+  if locale == nil then return end
   local localeDir = resourceDir .. '/' .. locale
 
   local ctxt
@@ -2169,7 +2171,7 @@ local function delocalizeWPS(str, appLocale, localeFile)
       end
     end
   end
-  if ctxt == nil then return end
+  if ctxt == nil then return nil, locale end
 
   local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
   local dirs = appendExtraEnglishLocaleDirs(resourceDir, baseLocaleDirs)
@@ -2179,6 +2181,7 @@ local function delocalizeWPS(str, appLocale, localeFile)
       if result ~= nil then return result, locale end
     end
   end
+  return nil, locale
 end
 
 local function delocalizeXmind(str, appLocale)
@@ -2189,26 +2192,24 @@ end
 local function delocalizeZoteroMenu(str, appLocale)
   local resourceDir = hs.application.pathForBundleID("org.zotero.zotero") .. "/Contents/Resources"
   local locales, status = hs.execute("unzip -l \"" .. resourceDir .. "/zotero.jar\" 'chrome/locale/*/' | grep -Eo 'chrome/locale/[^/]*' | grep -Eo '[a-zA-Z-]*$' | uniq")
-  if status ~= true then return nil end
+  if status ~= true then return end
   local locale = getMatchedLocale(appLocale, hs.fnutils.split(locales, '\n'))
-  if locale == nil then return nil end
+  if locale == nil then return end
   local localeFile = 'chrome/locale/' .. locale .. '/zotero/standalone.dtd'
   local enLocaleFile = 'chrome/locale/en-US/zotero/standalone.dtd'
   local key
   key, status = hs.execute("unzip -p \"" .. resourceDir .. "/zotero.jar\" \"" .. localeFile .. "\""
       .. " | awk '/<!ENTITY .* \"" .. str .. "\">/ { gsub(/<!ENTITY | \"" .. str .. "\">/, \"\"); printf \"%s\", $0 }'")
   if status ~= true then return nil end
-  local enValue, status = hs.execute("unzip -p \"" .. resourceDir .. "/zotero.jar\" \"" .. enLocaleFile .. "\""
+  local enValue = hs.execute("unzip -p \"" .. resourceDir .. "/zotero.jar\" \"" .. enLocaleFile .. "\""
       .. " | grep '" .. key .. "' | cut -d '\"' -f 2 | tr -d '\\n'")
-  if status ~= true then return nil end
-
   return enValue, locale
 end
 
 local function delocalizeMATLABFigureMenu(str, appLocale)
   local resourceDir = hs.application.pathForBundleID("com.mathworks.matlab") .. "/resources/MATLAB"
   local locale = getMatchedLocale(appLocale, resourceDir)
-  if locale == nil then return nil end
+  if locale == nil then return end
   local localeFile = resourceDir .. '/' .. locale .. '/uistring/figuremenu.xml'
   local enLocaleFile = resourceDir .. '/en/uistring/figuremenu.xml'
   local shell_pattern = 'key="([^"]*?)">' .. str .. '\\(&amp;[A-Z]\\)</entry>'
@@ -2220,7 +2221,7 @@ local function delocalizeMATLABFigureMenu(str, appLocale)
         "grep -Eo '%s' '%s' | cut -d ';' -f 2  | cut -d '<' -f 1 | tr -d '\\n'", inverse_pattern, enLocaleFile))
     if status and enValue ~= "" then return enValue, locale end
   end
-  return nil
+  return nil, locale
 end
 
 local deLocaleMap = {}
