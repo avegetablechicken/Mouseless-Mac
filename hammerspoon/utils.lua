@@ -584,6 +584,7 @@ local function getQtMatchedLocale(appLocale, resourceDir)
     end
   end
 
+  if #matchedLocales == 0 then return end
   local bestMatch = getBestMatchedLocale(localDetails, matchedLocales, true)
   local matchedLocale = language
   if bestMatch.script ~= nil then matchedLocale = matchedLocale .. '_' .. bestMatch.script end
@@ -676,6 +677,8 @@ local function getJavaMatchedLocale(appid, appLocale, javehome, path)
       end
     end
   end
+
+  if #matchedLocales == 0 then return end
   local bestMatch = getBestMatchedLocale(localDetails, matchedLocales, true)
   local matchedLocale = bestMatch.extra
   local matchedFiles = hs.fnutils.ifilter(localeFiles, function(f)
