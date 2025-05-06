@@ -618,7 +618,6 @@ local function getJavaMatchedLocale(appid, appLocale, javehome, path)
             table.insert(localeFiles, module .. '/' .. line:sub(1, -12):gsub('%s', ''))
           end
         end
-        jimageLocales[appid] = localeFiles
         if dirNotExistOrEmpty(tmpBaseDir) then
           hs.execute(string.format("mkdir '%s'", tmpBaseDir))
         end
@@ -627,6 +626,7 @@ local function getJavaMatchedLocale(appid, appLocale, javehome, path)
         return
       end
     end
+    jimageLocales[appid] = localeFiles
   end
 
   local localDetails = hs.host.locale.details(appLocale)
@@ -714,7 +714,6 @@ local function getElectronMatchedLocale(appid, appLocale, localesPath)
             table.insert(locales, p)
           end
         end
-        electronLocales[appid] = locales
         if dirNotExistOrEmpty(tmpBaseDir) then
           hs.execute(string.format("mkdir '%s'", tmpBaseDir))
         end
@@ -723,6 +722,7 @@ local function getElectronMatchedLocale(appid, appLocale, localesPath)
         return
       end
     end
+    electronLocales[appid] = locales
   end
   local locale = getMatchedLocale(appLocale, locales)
   if locale == nil then return end
