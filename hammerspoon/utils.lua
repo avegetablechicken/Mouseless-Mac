@@ -1151,7 +1151,7 @@ local function getCMD(framework)
       return dir .. cmd
     end
   end
-  hs.alert.show(string.format('"%s" not found. Please install "%s".'), cmd, framework)
+  hs.alert.show(string.format('Command "%s" not found. Please install "%s".'), cmd, framework)
 end
 
 local function poIdToStr(str)
