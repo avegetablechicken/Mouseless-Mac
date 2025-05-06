@@ -1615,8 +1615,10 @@ local function localizedStringImpl(str, appid, params, force)
 
   if framework.electron then
     locale, localeDir = getElectronMatchedLocale(appid, appLocale, framework.electron)
+    if locale == nil then return end
   elseif framework.java then
     locale, localeDir = getJavaMatchedLocale(appid, appLocale, resourceDir, framework.java)
+    if locale == nil then return end
   end
   if not framework.mono then
     mode = 'lproj'
@@ -2308,8 +2310,10 @@ local function delocalizedStringImpl(str, appid, params)
 
   if framework.electron then
     locale, localeDir = getElectronMatchedLocale(appid, appLocale, framework.electron)
+    if locale == nil then return end
   elseif framework.java then
     locale, localeDir = getJavaMatchedLocale(appid, appLocale, resourceDir, framework.java)
+    if locale == nil then return end
   end
   if not framework.mono then
     mode = 'lproj'
@@ -2666,8 +2670,10 @@ function applicationValidLocale(appid)
   local locale, mode
   if framework.electron then
     locale = getElectronMatchedLocale(appid, appLocale, framework.electron)
+    if locale == nil then return end
   elseif framework.java then
     locale = getJavaMatchedLocale(appid, appLocale, resourceDir, framework.java)
+    if locale == nil then return end
   end
   if not framework.mono then
     mode = 'lproj'
