@@ -2245,6 +2245,12 @@ appHotKeyCallbacks = {
         end
       end,
       onLaunch = function(app)
+        local retry = 0
+        while app:focusedWindow() == nil do
+          hs.timer.usleep(10000)
+          retry = retry + 1
+          if retry == 100 then return end
+        end
         app:focusedWindow():close()
         app:hide()
         hs.timer.usleep(1000000)
