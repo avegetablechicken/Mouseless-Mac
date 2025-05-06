@@ -359,6 +359,13 @@ local function getResourceDir(appid, frameworkName)
     if hs.fs.attributes(frameworkName) ~= nil then
       frameworkDir = frameworkName
     else
+      if appContentPath ~= nil
+          and hs.fs.attributes(appContentPath .. "/Resources/app.asar") ~= nil then
+        resourceDir = appContentPath .. "/Resources"
+        framework.electron = frameworkName
+        goto END_GET_RESOURCE_DIR
+      end
+
       local jimage, status = hs.execute(string.format(
         "find '%s' -type f -name jimage | tr -d '\\n'", appContentPath))
       if status and jimage ~= "" then
@@ -411,12 +418,6 @@ local function getResourceDir(appid, frameworkName)
     if hs.fs.attributes(appContentPath .. "/Resources/qt.conf") ~= nil then
       resourceDir = appContentPath .. "/Resources"
       framework.qt = true
-      goto END_GET_RESOURCE_DIR
-    end
-
-    if hs.fs.attributes(appContentPath .. "/Resources/app.asar") ~= nil then
-      resourceDir = appContentPath .. "/Resources"
-      framework.electron = true
       goto END_GET_RESOURCE_DIR
     end
 
@@ -681,6 +682,54 @@ function getJavaMatchedLocale(appid, appLocale, javehome, path)
     return f:sub(-#matchedLocale) == matchedLocale
   end)
   return matchedLocale, matchedFiles
+end
+
+local electronLocales = {}
+function getElectronMatchedLocale(appid, appLocale, localesPath)
+  local locales = electronLocales[appid]
+  local localeFiles = {}
+  if locales == nil then
+    locales = {}
+    local tmpBaseDir = localeTmpDir .. appid
+    local localesFile = tmpBaseDir .. '/locales.json'
+    if hs.fs.attributes(localesFile) ~= nil then
+      locales = hs.json.read(localesFile)
+    else
+      local path = hs.application.pathForBundleID(appid)
+          .. '/Contents/Resources/app.asar'
+      local result, ok = hs.execute(string.format(
+        [[npx @electron/asar list "%s" | grep "^/%s/" | cut -c%d-]],
+        path, localesPath, #localesPath + 3),
+      true)
+      if ok then
+        result = hs.fnutils.split(result, '\n')
+        result[#result] = nil
+        for _, p in ipairs(result) do
+          if p:find('/') then
+            table.insert(localeFiles, p)
+          else
+            table.insert(locales, p)
+          end
+        end
+        electronLocales[appid] = locales
+        if dirNotExistOrEmpty(tmpBaseDir) then
+          hs.execute(string.format("mkdir '%s'", tmpBaseDir))
+        end
+        hs.json.write(locales, localesFile)
+      else
+        return
+      end
+    end
+  end
+  local locale = getMatchedLocale(appLocale, locales)
+  if locale == nil then return end
+
+  if #localeFiles > 0 then
+    localeFiles = hs.fnutils.ifilter(localeFiles, function(file)
+      return file:sub(1, #locale + 1) == locale .. '/'
+    end)
+  end
+  return locale, localeFiles
 end
 
 -- assume base locale is English (not always the situation)
@@ -1287,53 +1336,14 @@ local function localizeByChromium(str, localeDir, appid)
   return nil
 end
 
-local electronLocales = {}
-local function localizeByElectron(str, appid, appLocale, localesPath)
-  local path = hs.application.pathForBundleID(appid)
-      .. '/Contents/Resources/app.asar'
-  local locales = electronLocales[appid]
-  local localeFiles = {}
-  if locales == nil then
-    local tmpBaseDir = localeTmpDir .. appid
-    local localesFile = tmpBaseDir .. '/locales.json'
-    if hs.fs.attributes(localesFile) ~= nil then
-      locales = hs.json.read(localesFile)
-    else
-      local result, ok = hs.execute(string.format(
-        [[npx @electron/asar list "%s" | grep "^/%s/" | cut -c17-]],
-        path, localesPath),
-      true)
-      if ok then
-        locales = hs.fnutils.split(result, '\n')
-        locales[#locales] = nil
-        for _, p in ipairs(locales) do
-          if p:find('/') then
-            table.insert(localeFiles, p)
-          else
-            table.insert(locales, p)
-          end
-        end
-        electronLocales[appid] = locales
-        if dirNotExistOrEmpty(tmpBaseDir) then
-          hs.execute(string.format("mkdir '%s'", tmpBaseDir))
-        end
-        hs.json.write(locales, localesFile)
-      else
-        return
-      end
-    end
-  end
-  local locale = getMatchedLocale(appLocale, locales)
-  if locale == nil then return end
-
+local function localizeByElectron(str, appid, locale, localeFiles, localesPath)
   local tmpdir = string.format(localeTmpDir .. '%s/%s', appid, locale)
   if #localeFiles > 0 then
-    localeFiles = hs.fnutils.ifilter(localeFiles, function(file)
-      return file:sub(1, #locale) == locale
-    end)
     for _, file in ipairs(localeFiles) do
       local tmpfile = tmpdir .. '/' .. file .. '.json'
       if hs.fs.attributes(tmpfile) == nil then
+        local path = hs.application.pathForBundleID(appid)
+            .. '/Contents/Resources/app.asar'
         local localeFilePath = string.format("%s/%s/%s.json",
             localesPath, locale, file)
         hs.execute(string.format(
@@ -1471,11 +1481,6 @@ local function localizeWPS(str, appLocale, localeFile)
   if result ~= nil then return result, locale end
 end
 
-local function localizeXmind(str, appLocale)
-  return localizeByElectron(str, 'net.xmind.vana.app',
-      appLocale,  'static/locales')
-end
-
 local function localizeChatGPT(str, appLocale)
   local resourceDir = hs.application.pathForBundleID("com.openai.chat")
       .. "/Contents/Frameworks/Assets.framework/Resources"
@@ -1566,9 +1571,6 @@ local function localizedStringImpl(str, appid, params, force)
   elseif appid == "com.kingsoft.wpsoffice.mac" then
     result, locale = localizeWPS(str, appLocale, localeFile)
     return result, appLocale, locale
-  elseif appid == "net.xmind.vana.app" then
-    result, locale = localizeXmind(str, appLocale)
-    return result, appLocale, locale
   end
 
   local resourceDir, framework = getResourceDir(appid, localeFramework)
@@ -1605,10 +1607,12 @@ local function localizedStringImpl(str, appid, params, force)
     return true
   end
 
-  if framework.java then
+  if framework.electron then
+    locale, localeDir = getElectronMatchedLocale(appid, appLocale, framework.electron)
+  elseif framework.java then
     locale, localeDir = getJavaMatchedLocale(appid, appLocale, resourceDir, framework.java)
   end
-  if not framework.mono and not framework.electron then
+  if not framework.mono then
     mode = 'lproj'
   end
   if locale == nil then
@@ -1647,7 +1651,7 @@ local function localizedStringImpl(str, appid, params, force)
       and hs.fs.attributes(localeDir) == nil then
     _, localeDir = getQtMatchedLocale(appLocale, resourceDir)
   end
-  if not framework.java then
+  if not framework.electron and not framework.java then
     local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
     for _, dir in ipairs(baseLocaleDirs) do
       if hs.fs.attributes(dir) ~= nil
@@ -1675,6 +1679,11 @@ local function localizedStringImpl(str, appid, params, force)
 
   if framework.qt then
     result = localizeByQt(str, localeDir)
+    return result, appLocale, locale
+  end
+
+  if framework.electron then
+    result = localizeByElectron(str, appid, locale, localeDir, framework.electron)
     return result, appLocale, locale
   end
 
@@ -2072,52 +2081,14 @@ local function delocalizeByChromium(str, localeDir, appid)
   end
 end
 
-local function delocalizeByElectron(str, appid, appLocale, localesPath)
-  local path = hs.application.pathForBundleID(appid)
-      .. '/Contents/Resources/app.asar'
-  local locales = electronLocales[appid]
-  local localeFiles = {}
-  if locales == nil then
-    local tmpBaseDir = localeTmpDir .. appid
-    local localesFile = tmpBaseDir .. '/locales.json'
-    if hs.fs.attributes(localesFile) ~= nil then
-      locales = hs.json.read(localesFile)
-    else
-      local result, ok = hs.execute(string.format(
-        [[npx @electron/asar list "%s" | grep "^/%s/" | cut -c17-]],
-        path, localesPath),
-      true)
-      if ok then
-        locales = hs.fnutils.split(result, '\n')
-        locales[#locales] = nil
-        for _, p in ipairs(locales) do
-          if p:find('/') then
-            table.insert(localeFiles, p)
-          else
-            table.insert(locales, p)
-          end
-        end
-        electronLocales[appid] = locales
-        if dirNotExistOrEmpty(tmpBaseDir) then
-          hs.execute(string.format("mkdir '%s'", tmpBaseDir))
-        end
-        hs.json.write(locales, localesFile)
-      else
-        return
-      end
-    end
-  end
-  local locale = getMatchedLocale(appLocale, locales)
-  if locale == nil then return end
-
+local function delocalizeByElectron(str, appid, locale, localeFiles, localesPath)
   local tmpdir = string.format(localeTmpDir .. '%s/%s', appid, locale)
   if #localeFiles > 0 then
-    localeFiles = hs.fnutils.ifilter(localeFiles, function(file)
-      return file:sub(1, #locale) == locale
-    end)
     for _, file in ipairs(localeFiles) do
       local tmpfile = tmpdir .. '/' .. file .. '.json'
       if hs.fs.attributes(tmpfile) == nil then
+        local path = hs.application.pathForBundleID(appid)
+            .. '/Contents/Resources/app.asar'
         local localeFilePath = string.format("%s/%s/%s.json",
             localesPath, locale, file)
         hs.execute(string.format(
@@ -2231,11 +2202,6 @@ local function delocalizeWPS(str, appLocale, localeFile)
   return nil, locale
 end
 
-local function delocalizeXmind(str, appLocale)
-  return delocalizeByElectron(str, 'net.xmind.vana.app',
-      appLocale, 'static/locales')
-end
-
 local function delocalizeZoteroMenu(str, appLocale)
   local resourceDir = hs.application.pathForBundleID("org.zotero.zotero") .. "/Contents/Resources"
   local locales, status = hs.execute("unzip -l \"" .. resourceDir .. "/zotero.jar\" 'chrome/locale/*/' | grep -Eo 'chrome/locale/[^/]*' | grep -Eo '[a-zA-Z-]*$' | uniq")
@@ -2314,9 +2280,6 @@ local function delocalizedStringImpl(str, appid, params)
   elseif appid == "com.kingsoft.wpsoffice.mac" then
     result, locale = delocalizeWPS(str, appLocale, localeFile)
     return result, appLocale, locale
-  elseif appid == "net.xmind.vana.app" then
-    result, locale = delocalizeXmind(str, appLocale)
-    return result, appLocale, locale
   end
 
   local resourceDir, framework = getResourceDir(appid, localeFramework)
@@ -2337,10 +2300,12 @@ local function delocalizedStringImpl(str, appid, params)
 
   local locale, localeDir, mode
 
-  if framework.java then
+  if framework.electron then
+    locale, localeDir = getElectronMatchedLocale(appid, appLocale, framework.electron)
+  elseif framework.java then
     locale, localeDir = getJavaMatchedLocale(appid, appLocale, resourceDir, framework.java)
   end
-  if not framework.mono and not framework.electron then
+  if not framework.mono then
     mode = 'lproj'
   end
   if locale == nil then
@@ -2365,7 +2330,7 @@ local function delocalizedStringImpl(str, appid, params)
       and hs.fs.attributes(localeDir) == nil then
     _, localeDir = getQtMatchedLocale(appLocale, resourceDir)
   end
-  if not framework.java then
+  if not framework.electron and not framework.java then
     local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
     for _, dir in ipairs(baseLocaleDirs) do
       if hs.fs.attributes(dir) ~= nil
@@ -2410,6 +2375,11 @@ local function delocalizedStringImpl(str, appid, params)
 
   if framework.qt then
     result = delocalizeByQt(str, localeDir)
+    return result, appLocale, locale
+  end
+
+  if framework.electron then
+    result = delocalizeByElectron(str, appid, locale, localeDir, framework.electron)
     return result, appLocale, locale
   end
 
@@ -2688,10 +2658,12 @@ function applicationValidLocale(appid)
   local appLocale = applicationLocale(appid)
   local resourceDir, framework = getResourceDir(appid)
   local locale, mode
-  if framework.java then
+  if framework.electron then
+    locale = getElectronMatchedLocale(appid, appLocale, framework.electron)
+  elseif framework.java then
     locale = getJavaMatchedLocale(appid, appLocale, resourceDir, framework.java)
   end
-  if not framework.mono and not framework.electron then
+  if not framework.mono then
     mode = 'lproj'
   end
   if locale == nil then
