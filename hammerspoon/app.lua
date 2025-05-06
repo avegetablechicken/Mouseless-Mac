@@ -268,7 +268,7 @@ end
 
 local function openFinderSidebarItem(cell, app)
   local go = localizedString("Go", app:bundleID())
-  local itemTitle = get(cell, AX.StaticText, 1).AXValue
+  local itemTitle = getc(cell, AX.StaticText, 1).AXValue
   if app:findMenuItem({ go, itemTitle }) ~= nil then
     app:selectMenuItem({ go, itemTitle })
   else
