@@ -1559,7 +1559,7 @@ local function localizedStringImpl(str, appid, params, force)
   end
   if locale == nil then
     locale = get(appLocaleDir, appid, appLocale)
-    if locale == false then return nil end
+    if locale == false then return end
     if locale ~= nil and localeDir == nil then
       if mode == 'lproj' then
         localeDir = resourceDir .. "/" .. locale .. ".lproj"
@@ -2278,14 +2278,14 @@ local function delocalizedStringImpl(str, appid, params)
   end
   if locale == nil then
     locale = get(appLocaleDir, appid, appLocale)
-    if locale == false then return nil end
+    if locale == false then return end
   end
   if locale == nil then
     locale = getMatchedLocale(appLocale, resourceDir, mode)
     if locale == nil and framework.qt then
       locale, localeDir = getQtMatchedLocale(appLocale, resourceDir)
     end
-    if locale == nil then return result, appLocale, locale end
+    if locale == nil then return end
   end
   if localeDir == nil then
     if mode == 'lproj' then
