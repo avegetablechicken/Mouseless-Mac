@@ -5289,14 +5289,16 @@ local appLocales = {} -- if app locale changes, it may change its menu bar items
 local function updateAppLocale(appid)
   local appLocale = applicationLocale(appid)
   local oldAppLocale = appLocales[appid] or SYSTEM_LOCALE
+  appLocales[appid] = appLocale
   if oldAppLocale ~= appLocale then
     if getMatchedLocale(oldAppLocale, { appLocale }) ~= appLocale then
       resetLocalizationMap(appid)
       localizeCommonMenuItemTitles(appLocale, appid)
       unregisterRunningAppHotKeys(appid, true)
+      return true
     end
   end
-  appLocales[appid] = appLocale
+  return false
 end
 
 local frontApp = hs.application.frontmostApplication()
@@ -6758,8 +6760,12 @@ local fullyLaunchCriterion, menuItemsPrepared
 local function onLaunchedAndActivated(app)
   fullyLaunchCriterion = nil
   local menuItems = app:getMenuItems()
-  updateAppLocale(app:bundleID())
+  local localeUpdated = updateAppLocale(app:bundleID())
   altMenuBarItem(app, menuItems)
+  if localeUpdated then
+    unregisterInAppHotKeys(app:bundleID(), true)
+    unregisterInWinHotKeys(app:bundleID(), true)
+  end
   registerInAppHotKeys(app)
   registerInWinHotKeys(app)
   remapPreviousTab(app, menuItems)
