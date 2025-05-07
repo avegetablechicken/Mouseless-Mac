@@ -5776,6 +5776,8 @@ local function processInvalidAltMenu(app, reinvokeKey)
   end
   local appid = app:bundleID()
   if isSameWin then
+    local _, framework = getResourceDir(app:bundleID())
+    if framework.electron then return end
     table.insert(appswatchMenuBarItems, appid)
     watchMenuBarItems(app, newMenuItems)
     if json["changing"] == nil then json["changing"] = {} end
