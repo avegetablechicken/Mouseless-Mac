@@ -6765,7 +6765,9 @@ local function onLaunchedAndActivated(app)
   remapPreviousTab(app, menuItems)
   registerOpenRecent(app)
   registerZoomHotkeys(app)
-  registerObserverForMenuBarChange(app, menuItems)
+  if menuItems ~= nil then
+    registerObserverForMenuBarChange(app, menuItems)
+  end
 
   if HSKeybindings ~= nil and HSKeybindings.isShowing then
     local validOnly = HSKeybindings.validOnly
