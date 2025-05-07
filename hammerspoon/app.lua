@@ -309,12 +309,14 @@ local function deleteSelectedMessage(app, menuItem, force)
   if button ~= nil then
     button:performAction(AX.Press)
     if force ~= nil then
-      hs.timer.doAfter(0.2, function()
-        hs.eventtap.keyStroke("", "Tab", nil, app)
-        hs.timer.doAfter(0.2, function()
-          hs.eventtap.keyStroke("", "Space", nil, app)
-        end)
-      end)
+      local confirm = function()
+        if app:focusedWindow():role() == AX.Sheet then
+          local sheet = hs.axuielement.windowElement(app:focusedWindow())
+          local delete = getc(sheet, AX.Button, 2)
+          delete:performAction(AX.Press)
+        end
+      end
+      hs.timer.doAfter(0.2, confirm)
     end
     return
   end
@@ -333,15 +335,38 @@ local function deleteSelectedMessage(app, menuItem, force)
   end
 end
 
+local function messageDeletable(app)
+  local appUI = hs.axuielement.applicationElement(app)
+  local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+    AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
+  if messageItems == nil or #messageItems == 0
+      or (#messageItems == 1 and (messageItems[1].AXDescription == nil
+        or messageItems[1].AXDescription:sub(4) ==
+        localizedString('New Message', app:bundleID()))) then
+    return false
+  end
+  return true, messageItems
+end
+
 local function deleteAllMessages(messageItems, app)
-  local messageItem = messageItems[1]
-  messageItem:performAction(AX.Press)
-  hs.timer.doAfter(0.1, function()
-    deleteSelectedMessage(app, nil, true)
-    hs.timer.doAfter(1.9, function()
-      deleteAllMessages(messageItems, app)
+  local cnt = #messageItems
+  for i=1,cnt do
+    hs.timer.doAfter(2 * (i - 1), function()
+      local messageItem = messageItems[1]
+      messageItem:performAction(AX.Press)
+      hs.timer.doAfter(0.1, function()
+        deleteSelectedMessage(app, nil, true)
+      end)
+      if i == cnt then
+        hs.timer.doAfter(2, function()
+          _, messageItems = messageDeletable(app)
+          if messageItems then
+            deleteAllMessages(messageItems, app)
+          end
+        end)
+      end
     end)
-  end)
+  end
 end
 
 -- ### FaceTime
@@ -1354,18 +1379,7 @@ appHotKeyCallbacks = {
     },
     ["deleteAllConversations"] = {
       message = "Delete All Conversations",
-      condition = function(app)
-        local appUI = hs.axuielement.applicationElement(app)
-        local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-            AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
-        if messageItems == nil or #messageItems == 0
-            or (#messageItems == 1 and (messageItems[1].AXDescription == nil
-              or messageItems[1].AXDescription:sub(4) ==
-                localizedString('New Message', app:bundleID()))) then
-          return false
-        end
-        return true, messageItems
-      end,
+      condition = messageDeletable,
       fn = deleteAllMessages
     },
     ["goToPreviousConversation"] = {
