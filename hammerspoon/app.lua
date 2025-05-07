@@ -4859,6 +4859,7 @@ local function registerInAppHotKeys(app)
 end
 
 local function unregisterInAppHotKeys(appid, delete)
+  if type(appid) ~= 'string' then appid = appid:bundleID() end
   if appHotKeyCallbacks[appid] == nil then return end
 
   if delete then
@@ -4936,6 +4937,7 @@ local function registerInWinHotKeys(app)
 end
 
 local function unregisterInWinHotKeys(appid, delete)
+  if type(appid) ~= 'string' then appid = appid:bundleID() end
   if appHotKeyCallbacks[appid] == nil or inWinHotKeys[appid] == nil then return end
 
   local hasDeleteOnDisable = hs.fnutils.some(inWinHotKeys[appid], function(_, hotkey)
@@ -5287,6 +5289,7 @@ end
 
 local appLocales = {} -- if app locale changes, it may change its menu bar items, so need to rebind
 local function updateAppLocale(appid)
+  if type(appid) ~= 'string' then appid = appid:bundleID() end
   local appLocale = applicationLocale(appid)
   local oldAppLocale = appLocales[appid] or SYSTEM_LOCALE
   appLocales[appid] = appLocale
@@ -5767,8 +5770,8 @@ local function processInvalidAltMenu(app, reinvokeKey)
   local curWin = app:focusedWindow() and app:focusedWindow():id() or false
   local isSameWin = curWin == windowOnBindAltMenu
   altMenuBarItem(app, menuItems, reinvokeKey)
-  unregisterInAppHotKeys(app:bundleID(), true)
-  unregisterInWinHotKeys(app:bundleID(), true)
+  unregisterInAppHotKeys(app, true)
+  unregisterInWinHotKeys(app, true)
   registerInAppHotKeys(app)
   registerInWinHotKeys(app)
   remapPreviousTab(app, menuItems)
@@ -6760,11 +6763,11 @@ local fullyLaunchCriterion, menuItemsPrepared
 local function onLaunchedAndActivated(app)
   fullyLaunchCriterion = nil
   local menuItems = app:getMenuItems()
-  local localeUpdated = updateAppLocale(app:bundleID())
+  local localeUpdated = updateAppLocale(app)
   altMenuBarItem(app, menuItems)
   if localeUpdated then
-    unregisterInAppHotKeys(app:bundleID(), true)
-    unregisterInWinHotKeys(app:bundleID(), true)
+    unregisterInAppHotKeys(app, true)
+    unregisterInWinHotKeys(app, true)
   end
   registerInAppHotKeys(app)
   registerInWinHotKeys(app)
