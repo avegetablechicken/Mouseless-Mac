@@ -1001,7 +1001,7 @@ function()
         end
       end
     elseif ev:getType() == hs.eventtap.event.types.keyDown then
-      if ev:getKeyCode() == hs.keycodes.map[HYPER] then
+      if HYPER and ev:getKeyCode() == hs.keycodes.map[HYPER] then
         evFlags.hyper = true
         if evFlags.fn and string.lower(HYPER):match('^f%d-$') then
           evFlags.fn = nil
@@ -1026,7 +1026,7 @@ function()
         return true
       end
     elseif ev:getType() == hs.eventtap.event.types.keyUp then
-      if ev:getKeyCode() == hs.keycodes.map[HYPER] then
+      if HYPER and ev:getKeyCode() == hs.keycodes.map[HYPER] then
         evFlags.hyper = nil
         if evFlags.fn and string.lower(HYPER):match('^f%d-$') then
           evFlags.fn = nil
