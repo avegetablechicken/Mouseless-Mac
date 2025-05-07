@@ -6749,6 +6749,7 @@ local fullyLaunchCriterion, menuItemsPrepared
 local function onLaunchedAndActivated(app)
   fullyLaunchCriterion = nil
   local menuItems = app:getMenuItems()
+  updateAppLocale(app:bundleID())
   altMenuBarItem(app, menuItems)
   registerInAppHotKeys(app)
   registerInWinHotKeys(app)
@@ -6790,7 +6791,6 @@ function App_applicationCallback(appname, eventType, app)
       proc(app)
     end
   elseif eventType == hs.application.watcher.activated then
-    updateAppLocale(appid)
     WindowCreatedSince = {}
     if appid == nil then return end
     if RemoteDesktopObserver ~= nil then

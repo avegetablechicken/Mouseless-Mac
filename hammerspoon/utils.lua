@@ -324,7 +324,17 @@ local function systemLocales()
 end
 SYSTEM_LOCALE = systemLocales()[1]
 
+local electronLocale
 function applicationLocale(appid)
+  -- locale of apps whose localization is enabled by Electron or Java
+  -- cannot be required by "defaults" command
+  if localizationFrameworks[appid] ~= nil and find(appid) then
+    local _, framework = getResourceDir(appid)
+    if framework.electron then  -- process Electron
+      local locale = electronLocale(appid)
+      if locale ~= nil then return locale end
+    end
+  end
   local locales = hs.execute(
       string.format("defaults read %s AppleLanguages | tr -d '()\" \\n'", appid))
   if locales ~= "" then
@@ -342,7 +352,7 @@ local function dirNotExistOrEmpty(dir)
   return true
 end
 
-local function getResourceDir(appid, frameworkName)
+function getResourceDir(appid, frameworkName)
   if frameworkName == nil then
     frameworkName = localizationFrameworks[appid]
   end
@@ -688,8 +698,7 @@ local function getJavaMatchedLocale(appid, appLocale, javehome, path)
 end
 
 local electronLocales = {}
-local function getElectronMatchedLocale(appid, appLocale, localesPath)
-  local locales, localeFiles = {}, {}
+local function getElectronLocales(appid, localesPath)
   if electronLocales[appid] == nil then
     local tmpBaseDir = localeTmpDir .. appid
     local localesFile = tmpBaseDir .. '/locales.json'
@@ -705,6 +714,7 @@ local function getElectronMatchedLocale(appid, appLocale, localesPath)
       if ok then
         result = hs.fnutils.split(result, '\n')
         result[#result] = nil
+        local locales, localeFiles = {}, {}
         for _, p in ipairs(result) do
           if p:find('/') then
             if p:sub(-5) == '.json' then
@@ -724,8 +734,14 @@ local function getElectronMatchedLocale(appid, appLocale, localesPath)
       end
     end
   end
-  locales = electronLocales[appid]['locale']
-  localeFiles = electronLocales[appid]['file']
+  return electronLocales[appid]
+end
+
+local function getElectronMatchedLocale(appid, appLocale, localesPath)
+  local localeInfo = getElectronLocales(appid, localesPath)
+  if localeInfo == nil then return end
+  local locales = localeInfo['locale']
+  local localeFiles = localeInfo['file']
   local locale = getMatchedLocale(appLocale, locales)
   if locale == nil then return end
 
@@ -2470,6 +2486,39 @@ function delocalizedString(str, appid, params)
   hs.json.write(appLocaleDir, localeMatchTmpFile, false, true)
   hs.json.write(deLocaleMap, menuItemTmpFile, false, true)
   return result
+end
+
+electronLocale = function(appid)
+  local app = find(appid)
+  local appUI = hs.axuielement.applicationElement(app)
+  local menubar = getc(appUI, AX.MenuBar, 1, AX.MenuBarItem)
+  if menubar == nil or #menubar < 3 then return end
+  table.remove(menubar, 1)
+  table.remove(menubar, 1)
+  local item = hs.fnutils.find(menubar, function(item)
+    return delocMap.common[item.AXTitle] == nil
+        and hs.fnutils.indexOf(delocMap.common, item.AXTitle) == nil
+  end)
+  if item == nil then
+    item = menubar[math.min(3, #menubar)]
+  end
+
+  local localesPath = localizationFrameworks[appid]
+  local localeInfo = getElectronLocales(appid, localesPath)
+  if localeInfo == nil then return end
+  local locales = localeInfo['locale']
+  local localeFiles = localeInfo['file']
+  for _, locale in ipairs(locales) do
+    local matchedFiles = {}
+    for _, file in ipairs(localeFiles) do
+      if file:sub(1, #locale + 1) == locale .. '/' then
+        table.insert(matchedFiles, file:sub(#locale + 2))
+      end
+    end
+    local result = delocalizeByElectron(
+        item.AXTitle, appid, locale, matchedFiles, localesPath)
+    if result ~= nil then return locale end
+  end
 end
 
 -- some menu items are managed by system framework
