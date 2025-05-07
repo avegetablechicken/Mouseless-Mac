@@ -324,14 +324,17 @@ local function systemLocales()
 end
 SYSTEM_LOCALE = systemLocales()[1]
 
-local electronLocale
+local electronLocale, javaLocale
 function applicationLocale(appid)
   -- locale of apps whose localization is enabled by Electron or Java
   -- cannot be required by "defaults" command
   if localizationFrameworks[appid] ~= nil and find(appid) then
-    local _, framework = getResourceDir(appid)
+    local resourceDir, framework = getResourceDir(appid)
     if framework.electron then  -- process Electron
-      local locale = electronLocale(appid)
+      local locale = electronLocale(appid, framework.electron)
+      if locale ~= nil then return locale end
+    elseif framework.java then  -- process Java
+      local locale = javaLocale(appid, resourceDir, framework.java)
       if locale ~= nil then return locale end
     end
   end
@@ -603,17 +606,16 @@ local function getQtMatchedLocale(appLocale, resourceDir)
 end
 
 local jimageLocales = {}
-local function getJavaMatchedLocale(appid, appLocale, javehome, path)
-  local tmpBaseDir = localeTmpDir .. appid
-  local cmd = javehome .. '/bin/jimage'
-  local modulePath = javehome .. '/lib/modules'
-  local localeFiles = jimageLocales[appid]
-  if localeFiles == nil then
-    localeFiles = {}
+local function getJavaLocales(appid, javahome, path)
+  if jimageLocales[appid] == nil then
+    local tmpBaseDir = localeTmpDir .. appid
     local localesFile = tmpBaseDir .. '/locales.json'
     if hs.fs.attributes(localesFile) ~= nil then
-      localeFiles = hs.json.read(localesFile)
+      jimageLocales[appid] = hs.json.read(localesFile)
     else
+      jimageLocales[appid] = {}
+      local cmd = javahome .. '/bin/jimage'
+      local modulePath = javahome .. '/lib/modules'
       local result, ok = hs.execute(string.format(
         [[%s list --include 'regex:.*%s/.*\.properties' '%s']],
         cmd, path, modulePath))
@@ -625,19 +627,25 @@ local function getJavaMatchedLocale(appid, appLocale, javehome, path)
           elseif line == "" then
             module = nil
           elseif module then
-            table.insert(localeFiles, module .. '/' .. line:sub(1, -12):gsub('%s', ''))
+            table.insert(jimageLocales[appid],
+                module .. '/' .. line:sub(1, -12):gsub('%s', ''))
           end
         end
         if dirNotExistOrEmpty(tmpBaseDir) then
           hs.execute(string.format("mkdir '%s'", tmpBaseDir))
         end
-        hs.json.write(localeFiles, localesFile)
+        hs.json.write(jimageLocales[appid], localesFile)
       else
         return
       end
     end
-    jimageLocales[appid] = localeFiles
   end
+  return jimageLocales[appid]
+end
+
+local function getJavaMatchedLocale(appid, appLocale, javahome, path)
+  local localeFiles = getJavaLocales(appid, javahome, path)
+  if localeFiles == nil then return end
 
   local localDetails = hs.host.locale.details(appLocale)
   local language = localDetails.languageCode
@@ -2488,7 +2496,7 @@ function delocalizedString(str, appid, params)
   return result
 end
 
-electronLocale = function(appid)
+electronLocale = function(appid, localesPath)
   local app = find(appid)
   local appUI = hs.axuielement.applicationElement(app)
   local menubar = getc(appUI, AX.MenuBar, 1, AX.MenuBarItem)
@@ -2503,7 +2511,6 @@ electronLocale = function(appid)
     item = menubar[math.min(3, #menubar)]
   end
 
-  local localesPath = localizationFrameworks[appid]
   local localeInfo = getElectronLocales(appid, localesPath)
   if localeInfo == nil then return end
   local locales = localeInfo['locale']
@@ -2518,6 +2525,39 @@ electronLocale = function(appid)
     local result = delocalizeByElectron(
         item.AXTitle, appid, locale, matchedFiles, localesPath)
     if result ~= nil then return locale end
+  end
+end
+
+javaLocale = function(appid, javahome, localesPath)
+  local app = find(appid)
+  local appUI = hs.axuielement.applicationElement(app)
+  local menubar = getc(appUI, AX.MenuBar, 1, AX.MenuBarItem)
+  if menubar == nil or #menubar < 3 then return end
+  table.remove(menubar, 1)
+  table.remove(menubar, 1)
+  local item = hs.fnutils.find(menubar, function(item)
+    return delocMap.common[item.AXTitle] == nil
+        and hs.fnutils.indexOf(delocMap.common, item.AXTitle) == nil
+  end)
+  if item == nil then
+    item = menubar[math.min(3, #menubar)]
+  end
+
+  local localeFiles = getJavaLocales(appid, javahome, localesPath)
+  if localeFiles == nil then return end
+  for _, file in ipairs(localeFiles) do
+    local result = delocalizeByJava(
+      item.AXTitle, appid, { file }, javahome)
+    if result ~= nil then
+      local paths = hs.fnutils.split(file, '/')
+      local filename = paths[#paths]:gsub('-', '_')
+      local splits = hs.fnutils.split(filename, '_')
+      if splits[#splits]:upper() == splits[#splits] then
+        return splits[#splits - 1] .. '_' .. splits[#splits]
+      else
+        return splits[#splits]
+      end
+    end
   end
 end
 
