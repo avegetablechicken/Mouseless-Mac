@@ -5761,10 +5761,10 @@ local windowOnBindAltMenu
 
 local altMenuBarItem, registerObserverForMenuBarChange, watchMenuBarItems
 local function processInvalidAltMenu(app, reinvokeKey)
-  local newMenuItems = app:getMenuItems()
+  local menuItems = app:getMenuItems()
   local curWin = app:focusedWindow() and app:focusedWindow():id() or false
   local isSameWin = curWin == windowOnBindAltMenu
-  altMenuBarItem(app, newMenuItems, reinvokeKey)
+  altMenuBarItem(app, menuItems, reinvokeKey)
   if hs.fs.attributes(appsMayChangeMenuBarTmpDir) == nil then
     hs.execute(string.format("mkdir -p '%s'", appsMayChangeMenuBarTmpDir))
   end
@@ -5779,12 +5779,12 @@ local function processInvalidAltMenu(app, reinvokeKey)
     local _, framework = getResourceDir(app:bundleID())
     if framework.electron then return end
     table.insert(appswatchMenuBarItems, appid)
-    watchMenuBarItems(app, newMenuItems)
+    watchMenuBarItems(app, menuItems)
     if json["changing"] == nil then json["changing"] = {} end
     table.insert(json["changing"], appid)
   else
     table.insert(appsMayChangeMenuBar, appid)
-    registerObserverForMenuBarChange(app, newMenuItems)
+    registerObserverForMenuBarChange(app, menuItems)
     if json["onWindow"] == nil then json["onWindow"] = {} end
     table.insert(json["onWindow"], appid)
   end
