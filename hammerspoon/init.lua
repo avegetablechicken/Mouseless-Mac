@@ -110,6 +110,11 @@ local function loadKeybindings(filePath)
 end
 loadKeybindings("config/keybindings.json")
 
+ApplicationConfigs = {}
+if hs.fs.attributes("config/application.json") ~= nil then
+  ApplicationConfigs = hs.json.read("config/application.json")
+end
+
 HyperModalList = {}
 DoubleTapModalList = {}
 
