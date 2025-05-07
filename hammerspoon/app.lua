@@ -5765,6 +5765,13 @@ local function processInvalidAltMenu(app, reinvokeKey)
   local curWin = app:focusedWindow() and app:focusedWindow():id() or false
   local isSameWin = curWin == windowOnBindAltMenu
   altMenuBarItem(app, menuItems, reinvokeKey)
+  unregisterInAppHotKeys(app:bundleID(), true)
+  unregisterInWinHotKeys(app:bundleID(), true)
+  registerInAppHotKeys(app)
+  registerInWinHotKeys(app)
+  remapPreviousTab(app, menuItems)
+  registerOpenRecent(app)
+  registerZoomHotkeys(app)
   if hs.fs.attributes(appsMayChangeMenuBarTmpDir) == nil then
     hs.execute(string.format("mkdir -p '%s'", appsMayChangeMenuBarTmpDir))
   end
