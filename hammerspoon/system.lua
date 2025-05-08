@@ -633,66 +633,63 @@ local function registerProxySettingsEntry(menu)
   tinsert(menu, {
     title = "Proxy Settings",
     fn = function()
-      local script = [[
-        tell application id "com.apple.systempreferences" to activate
-        tell application "System Events"
-          tell ]] .. aWinFor("com.apple.systempreferences") .. [[
-            if sheet 1 exists then
-              key code 53
-              repeat until not (sheet 1 exists)
-                delay 0.05
+      local app = hs.application.open("com.apple.systempreferences", 2, true)
+      local action = function()
+        if OS_VERSION < OS.Ventura then
+          local ok = hs.osascript.applescript([[
+            tell application id "com.apple.systempreferences"
+              set current pane to pane "com.apple.preference.network"
+              repeat until anchor "Proxies" of current pane exists
+                delay 0.1
               end repeat
-            end if
-          end tell
-        end tell
-      ]]
-      if OS_VERSION < OS.Ventura then
-        script = script .. [[
-          tell application id "com.apple.systempreferences"
-            set current pane to pane "com.apple.preference.network"
-            repeat until anchor "Proxies" of current pane exists
-              delay 0.1
-            end repeat
-            reveal anchor "Proxies" of current pane
-          end tell
-
-          delay 1
-          tell application "System Events"
-            tell ]] .. aWinFor("com.apple.systempreferences") .. [[
-              set tb to table 1 of scroll area 1 of group 1 of tab group 1 of sheet 1
-              repeat with r in every row of tb
-                if value of checkbox 1 of r is 1 then
-                  return {position of text field 1 of r, size of text field 1 of r}
-                end if
-              end repeat
-              return false
+              reveal anchor "Proxies" of current pane
             end tell
-          end tell
-        ]]
-      else
-        script = script .. [[
-          tell application id "com.apple.systempreferences"
-            reveal anchor "Proxies" of pane id "com.apple.Network-Settings.extension"
-          end tell
-
-          delay 1
-          tell application "System Events"
-            tell ]] .. aWinFor("com.apple.systempreferences") .. [[
-              set tb to scroll area 1 of group 2 of splitter group 1 of group 1 of sheet 1
-              repeat with r in every group of tb
-                if value of checkbox 1 of r is 1 then
-                  return {position of text field 1 of r, size of text field 1 of r}
-                end if
-              end repeat
-              return false
+          ]])
+          if not ok then return end
+        else
+          local ok = hs.osascript.applescript([[
+            tell application id "com.apple.systempreferences"
+              reveal anchor "Proxies" of pane id "com.apple.Network-Settings.extension"
             end tell
-          end tell
-        ]]
+          ]])
+          if not ok then return end
+        end
+        local observer = uiobserver.new(app:pid())
+        observer:addWatcher(toappui(app), uinotifications.sheetCreated)
+        observer:callback(function(obs, sheet)
+          local record
+          hs.timer.waitUntil(function()
+            local rows
+            if OS_VERSION < OS.Ventura then
+              rows = getc(sheet, AX.TabGroup, 1,
+                AX.Group, 1, AX.SrollArea, 1, AX.Table, 1, AX.Row)
+            else
+              rows = getc(sheet, AX.Group, 1,
+                AX.SplitGroup, 1, AX.Group, 2, AX.SrollArea, 1, AX.Group)
+            end
+            record = tfind(rows, function(r)
+              return getc(r, AX.CheckBox, 1).AXValue == 1
+            end)
+            return record ~= nil
+          end,
+          function()
+            local position = getc(record, AX.TextField, 1).AXPosition
+            local size = getc(record, AX.TextField, 1).AXSize
+            leftClickAndRestore({ position.x + size.w - 1, position.y }, app:name())
+          end)
+          obs:stop()
+          obs = nil
+        end)
+        observer:start()
       end
-      local ok, frame = hs.osascript.applescript(script)
-      if ok and type(frame) == "table" then
-        leftClickAndRestore({ frame[1][1] + frame[2][1] - 1, frame[1][2] },
-                            find("com.apple.systempreferences"):name())
+
+      if app:focusedWindow():role() == AX.Sheet then
+        hs.eventtap.keyStroke("", "Escape")
+        hs.timer.waitUntil(function()
+          return app:focusedWindow():role() ~= AX.Sheet
+        end, action)
+      else
+        action()
       end
     end,
     shortcut = 'p'
