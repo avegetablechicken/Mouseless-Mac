@@ -1387,7 +1387,7 @@ appHotKeyCallbacks = {
       fn = function(menuItemTitle, app) deleteSelectedMessage(app, menuItemTitle) end
     },
     ["deleteAllConversations"] = {
-      message = "Delete All Conversations",
+      message = localizedMessage("Delete All"),
       condition = messageDeletable,
       fn = deleteAllMessages
     },
