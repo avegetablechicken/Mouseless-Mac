@@ -1837,13 +1837,6 @@ function registerControlCenterHotKeys(panel)
             local appid = hs.application.frontmostApplication():bundleID()
             if tcontain({"com.google.Chrome", "com.microsoft.edgemac", "com.microsoft.edgemac.Dev"}, appid) then
               local scheme = appid == "com.google.Chrome" and "chrome" or "edge"
-              local darkMode = enableds[i] == 1 and "Enabled" or "Disabled"
-              local optionList = nil
-              if appid == "com.google.Chrome" then
-                optionList = "group 1 of group 4 of group 1 of group 2 of exp"
-              else
-                optionList = "group 1 of group 3 of group 1 of group 2 of group 1 of exp"
-              end
               local ok = hs.osascript.applescript([[
                 tell application id "]] .. appid .. [["
                   set tabCount to count of tabs of front window
@@ -1867,56 +1860,64 @@ function registerControlCenterHotKeys(panel)
                     end tell
                   end if
                 end tell
-
-                tell application "System Events"
-                  delay 0.5
-                  set win to ]] .. aWinFor(appid) .. [[
-                  set exp to (first UI element whose value of attribute "AXTitle" is not "") ¬
-                      of group 1 of group 1 of group 1 of group 1 of win
-                  if exists ]] .. optionList .. [[ then
-                    set g to ]] .. optionList .. [[
-
-                    set options to the value of attribute "AXChildren" of g
-                    repeat with opt in options
-                      set optTitle to UI element 1 of opt
-                      if title of optTitle contains "Auto Dark Mode" then
-                        set bt to pop up button 1 of group 2 of opt
-                        perform action 1 of bt
-                        exit repeat
-                      end if
-                    end repeat
-                  else
-                    set g to (first UI element whose value of attribute "AXSubRole" is "AXTabPanel") of group 4 of exp
-                    set cnt to count (UI elements of g)
-                    repeat with i from 1 to (cnt / 4)
-                      if title of UI element (i * 4 - 3) of g contains "Auto Dark Mode" then
-                        set bt to pop up button 1 of UI element (i * 4) of g
-                        perform action 1 of bt
-                        exit repeat
-                      end if
-                    end repeat
-                  end if
-
-                  set g to group 1 of group 1 of group 1 of group 1 of win
-                  perform action 2 of menu item "]] .. darkMode .. [[" of menu 1 of g
-                end tell
               ]])
               if ok then
                 local app = find(appid)
+                local appUI = toappui(app)
+                local winUI = towinui(app:focusedWindow())
+                local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
+                    AX.Group, 1, AX.Group, 1, AX.WebArea, 1)
+                local list, position, size
+                if appid == "com.google.Chrome" then
+                  list = getc(webarea, AX.Group, 2, AX.Group, 1, AX.Group, 4, AX.Group, 1)
+                else
+                  list = getc(webarea, AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 3, AX.Group, 1)
+                end
+                if list ~= nil then
+                  for _, c in ipairs(list.AXChildren) do
+                    if getc(c, nil, 1).AXTitle:find("Auto Dark Mode") then
+                      local button = getc(c, AX.Group, 2, AX.PopupButton, 1)
+                      position = button.AXPosition
+                      size = button.AXSize
+                    end
+                  end
+                else
+                  if list == nil then
+                    list = tfind(getc(webarea, AX.Group, 4).AXChildren, function(elem)
+                      return elem.AXSubrole == "AXTabPanel"
+                    end)
+                  end
+                  if list == nil then
+                    list = tfind(webarea.AXChildren, function(elem)
+                      return elem.AXSubrole == "AXTabPanel"
+                    end)
+                  end
+                  for c = 1, #list.AXChildren / 4 do
+                    if list.AXChildren[c * 4 - 3].AXTitle:find("Auto Dark Mode") then
+                      local button = getc(list, nil, c * 4, AX.PopupButton, 1)
+                      position = button.AXPosition
+                      size = button.AXSize
+                    end
+                  end
+                end
+                leftClickAndRestore({ position.x + size.w / 2, position.y + size.h / 2 })
+
+                local darkMode = enableds[i] == 1 and "Enabled" or "Disabled"
+                local menuItem = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+                    AX.Menu, 1, AX.MenuItem, darkMode)
+                menuItem:performAction(AX.Press)
                 local hotkey, observer
                 hotkey = AppWinBind(app, {
                   mods = "⌘", key = "Return",
                   message = "Relaunch",
                   fn = function()
-                    hs.osascript.applescript([[
-                      tell application "System Events"
-                        set win to ]] .. aWinFor(appid) .. [[
-                        set exp to (first UI element whose value of attribute "AXTitle" is not "") ¬
-                            of group 1 of group 1 of group 1 of group 1 of win
-                        set bt to button 1 of group 2 of last group of group 4 of exp
-                        perform action 1 of bt
-                      end tell
-                    ]])
+                    local button = getc(webarea, AX.Group, 4, AX.Group, -1,
+                        AX.Group, 2, AX.Button, 1)
+                    if button == nil then
+                      button = getc(webarea, AX.Group, 7, AX.Button, 1)
+                    end
+                    local position, size = button.AXPosition, button.AXSize
+                    leftClickAndRestore({position.x + size.w / 2, position.y + size.h / 2})
                     if hotkey ~= nil then
                       hotkey:delete()
                       hotkey = nil
@@ -1927,8 +1928,6 @@ function registerControlCenterHotKeys(panel)
                     end
                   end,
                 })
-                local appUI = toappui(app)
-                local winUI = towinui(app:focusedWindow())
                 observer = uiobserver.new(app:pid())
                 observer:addWatcher(appUI, uinotifications.focusedUIElementChanged)
                 observer:addWatcher(winUI, uinotifications.titleChanged)
