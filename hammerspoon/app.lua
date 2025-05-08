@@ -689,12 +689,12 @@ local function getBartenderBarItemTitle(index, rightClick)
               end
               tinsert(bartenderBarItemIDs, itemID)
             else
-              local app = find(appname)
-              if app == nil or app:bundleID() ~= itemID:sub(1, #app:bundleID()) then
+              local appByName = find(appname)
+              if appByName == nil or appByName:bundleID() ~= itemID:sub(1, #appByName:bundleID()) then
                 tinsert(bartenderBarItemNames, appname)
                 tinsert(bartenderBarItemIDs, itemID)
-              elseif app ~= nil then
-                local itemShortName = itemID:sub(#app:bundleID() + 2)
+              elseif appByName ~= nil then
+                local itemShortName = itemID:sub(#appByName:bundleID() + 2)
                 tinsert(bartenderBarItemNames, strfmt("%s (%s)", appname, itemShortName))
                 tinsert(bartenderBarItemIDs, itemID)
               end
