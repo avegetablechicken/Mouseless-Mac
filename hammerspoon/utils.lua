@@ -2964,9 +2964,9 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
 
   if show then
     if hiddenByBartender(appid) then
-      hs.osascript.applescript([[
-        tell application id "com.surteesstudios.Bartender" to activate "]] .. appid .. [[-Item-0"
-      ]])
+      hs.osascript.applescript(string.format([[
+        tell application id "com.surteesstudios.Bartender" to activate "%s-Item-%d"
+      ]], appid, menuBarIdx - 1))
     else
       -- note: some apps do not react to AX.Press, you have to click them.
       menuBarMenu:performAction(AX.Press)
