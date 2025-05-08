@@ -53,20 +53,6 @@ function inFullscreenSpace()
   return false
 end
 
-function aWinFor(app)
-  local appid = type(app) == 'string' and app or app:bundleID()
-  local aWinIdx = 1
-  if inFullscreenSpace() then
-    aWinIdx = #app:visibleWindows()
-    if appid == "com.apple.finder" then
-      aWinIdx = aWinIdx - 1
-    end
-  end
-  return strfmt(
-      'window %d of (first application process whose bundle identifier is "%s")\n',
-      aWinIdx, appid)
-end
-
 function menuBarVisible()
   if inFullscreenSpace() then
     local thisAppAutohide = hs.execute("defaults read "

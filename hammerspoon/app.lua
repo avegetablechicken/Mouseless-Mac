@@ -564,9 +564,14 @@ local function VSCodeToggleSideBarSection(app, sidebar, section)
         end if
       end repeat
   ]]
+  local aWinIdx = 1
+  if inFullscreenSpace() then
+    aWinIdx = #app:visibleWindows()
+  end
   hs.osascript.applescript([[
     tell application "System Events"
-      tell ]] .. aWinFor(app) .. [[
+      tell window ]] ..  aWinIdx .. [[ of (first application process ¬
+          whose bundle identifier is "]] .. app:bundleID() .. [[")
         if (exists UI element 1 of group 1 of group 1 of group 2 of ¬
               ]] .. commonPath .. [[) ¬
             and (title of UI element 1 of group 1 of group 1 of group 2 of ¬
