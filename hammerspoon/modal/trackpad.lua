@@ -1,3 +1,6 @@
+local tinsert = table.insert
+local tremove = table.remove
+
 local This = {}
 This.keys = {}
 This.eventtapper = nil
@@ -20,16 +23,16 @@ local function getModsCode(mods)
     for i = #mods, 1, -1 do
       if mods[i] == "top-left" then
         modsCode = modsCode + 1
-        table.remove(mods, i)
+        tremove(mods, i)
       elseif mods[i] == "top-right" then
         modsCode = modsCode + 2
-        table.remove(mods, i)
+        tremove(mods, i)
       elseif mods[i] == "bottom-left" then
         modsCode = modsCode + 4
-        table.remove(mods, i)
+        tremove(mods, i)
       elseif mods[i] == "bottom-right" then
         modsCode = modsCode + 8
-        table.remove(mods, i)
+        tremove(mods, i)
       end
     end
   elseif mods == "top-left" then
@@ -123,7 +126,7 @@ function This.bindNoSuspend(mods, ...)
   local hotkey = newHotkeyImpl(mods, ...)
   local modsRepr = getModsRepr(modsCode)
   hotkey.msg = modsRepr .. hotkey.msg
-  table.insert(This.keys[modsCode], hotkey)
+  tinsert(This.keys[modsCode], hotkey)
   This._startEventTapper()
   return hotkey
 end
@@ -136,7 +139,7 @@ function This.bind(mods, ...)
   local hotkey = newHotkey(mods, ...)
   local modsRepr = getModsRepr(modsCode)
   hotkey.msg = modsRepr .. hotkey.msg
-  table.insert(This.keys[modsCode], hotkey)
+  tinsert(This.keys[modsCode], hotkey)
   This._startEventTapper()
   return hotkey
 end

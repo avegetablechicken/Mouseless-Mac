@@ -1,4 +1,15 @@
 require "utils"
+local strfmt = string.format
+local tinsert = table.insert
+local tremove = table.remove
+local tcontain = hs.fnutils.contains
+local tfind = hs.fnutils.find
+local foreach = hs.fnutils.each
+local bind = hs.fnutils.partial
+local toappui = hs.axuielement.applicationElement
+local towinui = hs.axuielement.windowElement
+local uiobserver = hs.axuielement.observer
+local uinotifications = hs.axuielement.observer.notifications
 
 -- menubar for caffeine
 local caffeine = hs.menubar.new()
@@ -121,7 +132,7 @@ local function toggleV2RayX(enable, alert)
     hs.application.launchOrFocusByBundleID(appid)
   end
 
-  local appUI = hs.axuielement.applicationElement(find(appid))
+  local appUI = toappui(find(appid))
   local menu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1)
   if menu == nil then
     if alert then
@@ -183,7 +194,7 @@ local function toggleV2RayU(enable, alert)
     hs.application.launchOrFocusByBundleID(appid)
   end
 
-  local appUI = hs.axuielement.applicationElement(find(appid))
+  local appUI = toappui(find(appid))
   local menu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1)
   if menu == nil then
     if alert then
@@ -247,7 +258,7 @@ local function toggleMonoCloud(enable, alert)
     hs.application.launchOrFocusByBundleID(appid)
   end
 
-  local appUI = hs.axuielement.applicationElement(find(appid))
+  local appUI = toappui(find(appid))
   local menuItem = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1,
       AX.Menu, 1, AX.MenuItem, "Set As System Proxy")
   if menuItem == nil then
@@ -366,9 +377,9 @@ local function parseProxyConfigurations(configs)
           local spec = config[loc]
           ProxyConfigs[name][loc]["PAC"] = spec.pac
           if spec.global ~= nil then
-            local httpIp, httpPort = string.match(spec.global.http, "(.+):(%d+)")
-            local httpsIp, httpsPort = string.match(spec.global.https, "(.+):(%d+)")
-            local socksIp, socksPort = string.match(spec.global.socks5, "(.+):(%d+)")
+            local httpIp, httpPort = spec.global.http:match("(.+):(%d+)")
+            local httpsIp, httpsPort = spec.global.https:match("(.+):(%d+)")
+            local socksIp, socksPort = spec.global.socks5:match("(.+):(%d+)")
             ProxyConfigs[name][loc]["global"] = {
               httpIp, httpPort, httpsIp, httpsPort, socksIp, socksPort
             }
@@ -381,9 +392,9 @@ local function parseProxyConfigurations(configs)
       local spec = config
       ProxyConfigs[name]["PAC"] = spec.pac
       if spec.global ~= nil then
-        local httpIp, httpPort = string.match(spec.global.http, "(.+):(%d+)")
-        local httpsIp, httpsPort = string.match(spec.global.https, "(.+):(%d+)")
-        local socksIp, socksPort = string.match(spec.global.socks5, "(.+):(%d+)")
+        local httpIp, httpPort = spec.global.http:match("(.+):(%d+)")
+        local httpsIp, httpsPort = spec.global.https:match("(.+):(%d+)")
+        local socksIp, socksPort = spec.global.socks5:match("(.+):(%d+)")
         ProxyConfigs[name]["global"] = {
           httpIp, httpPort, httpsIp, httpsPort, socksIp, socksPort
         }
@@ -466,16 +477,16 @@ local function updateProxyWrapper(wrapped, appname)
     for _, _item in ipairs(proxyMenu) do
       _item.checked = false
       item.checked = true
-      if not string.find(_item.title, "Proxy:")
-          and not string.find(_item.title, "PAC File:")then
-        table.insert(newProxyMenu, _item)
+      if not _item.title:find("Proxy:")
+          and not _item.title:find("PAC File:")then
+        tinsert(newProxyMenu, _item)
       end
       if _item.title == appname then
         local networkservice = getCurNetworkService()
-        if string.match(item.title, "PAC") then
+        if item.title:match("PAC") then
           local PACFile = hs.execute("networksetup -getautoproxyurl " .. networkservice
                                      .. " | grep URL: | awk '{print $2}'")
-          table.insert(newProxyMenu, { title = "PAC File: " .. PACFile, disabled = true })
+          tinsert(newProxyMenu, { title = "PAC File: " .. PACFile, disabled = true })
         else
           local httpAddr = hs.execute("networksetup -getwebproxy " .. networkservice
                                       .. " | grep Server: | awk '{print $2}'")
@@ -485,8 +496,8 @@ local function updateProxyWrapper(wrapped, appname)
                                        .. " | grep Server: | awk '{print $2}'")
           local socksPort = hs.execute("networksetup -getsocksfirewallproxy " .. networkservice
                                        .. " | grep Port: | awk '{print $2}'")
-          table.insert(newProxyMenu, { title = "HTTP Proxy: " .. httpAddr .. ":" .. httpPort, disabled = true })
-          table.insert(newProxyMenu, { title = "SOCKS5 Proxy: " .. socksAddr .. ":" .. socksPort, disabled = true })
+          tinsert(newProxyMenu, { title = "HTTP Proxy: " .. httpAddr .. ":" .. httpPort, disabled = true })
+          tinsert(newProxyMenu, { title = "SOCKS5 Proxy: " .. socksAddr .. ":" .. socksPort, disabled = true })
         end
       end
     end
@@ -514,20 +525,20 @@ local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
     config = ProxyConfigs[name][loc]
   end
   if config ~= nil then
-    table.insert(proxyMenu, { title = "-" })
-    table.insert(proxyMenu, { title = name, disabled = true })
+    tinsert(proxyMenu, { title = "-" })
+    tinsert(proxyMenu, { title = name, disabled = true })
     if enabled and mode ~= nil then
       if mode == "PAC" then
         local PACFile = config.PAC
-        table.insert(proxyMenu, { title = "PAC File: " .. PACFile, disabled = true })
+        tinsert(proxyMenu, { title = "PAC File: " .. PACFile, disabled = true })
       else
         local addr = config.global
-        table.insert(proxyMenu, { title = "HTTP Proxy: " .. addr[1] .. ":" .. addr[2], disabled = true })
-        table.insert(proxyMenu, { title = "SOCKS5 Proxy: " .. addr[5] .. ":" .. addr[6], disabled = true })
+        tinsert(proxyMenu, { title = "HTTP Proxy: " .. addr[1] .. ":" .. addr[2], disabled = true })
+        tinsert(proxyMenu, { title = "SOCKS5 Proxy: " .. addr[5] .. ":" .. addr[6], disabled = true })
       end
     end
     if config.global ~= nil then
-      table.insert(proxyMenu, updateProxyWrapper({
+      tinsert(proxyMenu, updateProxyWrapper({
         title = "    Global Mode",
         fn = function() enable_proxy_global(name, nil, loc) end,
         shortcut = tostring(proxyMenuIdx),
@@ -536,7 +547,7 @@ local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
       proxyMenuIdx = proxyMenuIdx + 1
     end
     if config.PAC ~= nil then
-      table.insert(proxyMenu, updateProxyWrapper({
+      tinsert(proxyMenu, updateProxyWrapper({
         title = "    PAC Mode",
         fn = function() enable_proxy_PAC(name, nil, loc) end,
         shortcut = tostring(proxyMenuIdx),
@@ -552,17 +563,17 @@ local function parseProxyInfo(info, require_mode)
   if require_mode == nil then require_mode = true end
   local enabledProxy = ""
   local mode = nil
-  if string.match(info[2], "Enabled: Yes") then
+  if info[2]:match("Enabled: Yes") then
     for appname, config in pairs(ProxyConfigs) do
       if config.condition == nil then
-        if config.PAC ~= nil and string.match(info[2], config.PAC) then
+        if config.PAC ~= nil and info[2]:match(config.PAC) then
           enabledProxy = appname
           mode = "PAC"
         end
       else
         for _, loc in ipairs(config.locations) do
           local spec = config[loc]
-          if spec.PAC ~= nil and string.match(info[2], spec.PAC) then
+          if spec.PAC ~= nil and info[2]:match(spec.PAC) then
             enabledProxy = appname
             mode = "PAC"
             break
@@ -571,18 +582,18 @@ local function parseProxyInfo(info, require_mode)
       end
       if mode ~= nil then break end
     end
-  elseif string.match(info[3], "Enabled: Yes") then
+  elseif info[3]:match("Enabled: Yes") then
     for appname, config in pairs(ProxyConfigs) do
       if config.condition == nil then
-        if config.global ~= nil and string.match(info[3], config.global[1])
-            and string.match(info[3], tostring(config.global[2])) then
+        if config.global ~= nil and info[3]:match(config.global[1])
+            and info[3]:match(tostring(config.global[2])) then
           enabledProxy = appname
         end
       else
         for _, loc in pairs(config.locations) do
           local spec = config[loc]
-          if spec.global ~= nil and string.match(info[3], spec.global[1])
-              and string.match(info[3], tostring(spec.global[2])) then
+          if spec.global ~= nil and info[3]:match(spec.global[1])
+              and info[3]:match(tostring(spec.global[2])) then
             enabledProxy = appname
             break
           end
@@ -594,7 +605,7 @@ local function parseProxyInfo(info, require_mode)
         elseif require_mode then
           local appid = proxyAppBundleIDs.MonoCloud
           if find(appid) ~= nil then
-            local appUI = hs.axuielement.applicationElement(find(appid))
+            local appUI = toappui(find(appid))
             local outboundModeMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1,
               AX.Menu, 1, AX.MenuItem, "Outbound Mode", AX.Menu, 1)
             if outboundModeMenu ~= nil then
@@ -618,8 +629,8 @@ local function parseProxyInfo(info, require_mode)
 end
 
 local function registerProxySettingsEntry(menu)
-  table.insert(menu, { title = "-" })
-  table.insert(menu, {
+  tinsert(menu, { title = "-" })
+  tinsert(menu, {
     title = "Proxy Settings",
     fn = function()
       local script = [[
@@ -742,11 +753,11 @@ local function registerProxyMenuImpl()
   local proxyMenuIdx = 1
   local otherProxies = {}
   for name, _ in pairs(ProxyConfigs) do
-    if hs.fnutils.find(proxyMenuItemCandidates, function(item) return item.appname == name end) == nil then
+    if tfind(proxyMenuItemCandidates, function(item) return item.appname == name end) == nil then
       if name == "System" then
         proxyMenuIdx = registerProxyMenuEntry('System', enabledProxy == "System", mode, proxyMenuIdx)
       else
-        table.insert(otherProxies, name)
+        tinsert(otherProxies, name)
       end
     end
   end
@@ -756,8 +767,8 @@ local function registerProxyMenuImpl()
     if ProxyConfigs[candidate.appname] ~= nil
         and hs.application.pathForBundleID(appid) ~= nil
         and hs.application.pathForBundleID(appid) ~= "" then
-      table.insert(proxyMenu, { title = "-" })
-      table.insert(proxyMenu, {
+      tinsert(proxyMenu, { title = "-" })
+      tinsert(proxyMenu, {
         title = candidate.appname,
         fn = function()
           local actionFunc = function()
@@ -777,20 +788,20 @@ local function registerProxyMenuImpl()
       if candidate.appname == enabledProxy and mode ~= nil then
         if mode == "PAC" and ProxyConfigs[candidate.appname]["PAC"] ~= nil then
           local PACFile = ProxyConfigs[candidate.appname]["PAC"]
-          table.insert(proxyMenu, { title = "PAC File: " .. PACFile, disabled = true })
+          tinsert(proxyMenu, { title = "PAC File: " .. PACFile, disabled = true })
         elseif ProxyConfigs[candidate.appname]["global"] ~= nil then
           local addr = ProxyConfigs[candidate.appname]["global"]
-          table.insert(proxyMenu, { title = "HTTP Proxy: " .. addr[1] .. ":" .. addr[2], disabled = true })
-          table.insert(proxyMenu, { title = "SOCKS5 Proxy: " .. addr[5] .. ":" .. addr[6], disabled = true })
+          tinsert(proxyMenu, { title = "HTTP Proxy: " .. addr[1] .. ":" .. addr[2], disabled = true })
+          tinsert(proxyMenu, { title = "SOCKS5 Proxy: " .. addr[5] .. ":" .. addr[6], disabled = true })
         end
       end
 
       for _, menuItem in ipairs(candidate.items) do
         menuItem.shortcut = tostring(proxyMenuIdx)
         local checked = (candidate.appname == enabledProxy)
-            and mode and string.match(menuItem.title, mode) ~= nil
+            and mode and menuItem.title:match(mode) ~= nil
         menuItem.checked = checked
-        table.insert(proxyMenu, updateProxyWrapper(menuItem, candidate.appname))
+        tinsert(proxyMenu, updateProxyWrapper(menuItem, candidate.appname))
         proxyMenuIdx = proxyMenuIdx + 1
       end
     end
@@ -858,15 +869,15 @@ end
 local lastIpv4State
 local function registerProxyMenuWrapper(storeObj, changedKeys)
   for i = #NetworkMonitorKeys, 1, -1 do
-    local netID = string.match(NetworkMonitorKeys[i], "Setup:/Network/Service/(.-)/Proxies")
+    local netID = NetworkMonitorKeys[i]:match("Setup:/Network/Service/(.-)/Proxies")
     if netID ~= nil then
-      table.remove(NetworkMonitorKeys, i)
+      tremove(NetworkMonitorKeys, i)
     end
   end
   local Ipv4State = NetworkWatcher:contents("State:/Network/Global/IPv4")["State:/Network/Global/IPv4"]
   if Ipv4State ~= nil then
     local curNetID = Ipv4State["PrimaryService"]
-    table.insert(NetworkMonitorKeys, "Setup:/Network/Service/" .. curNetID .. "/Proxies")
+    tinsert(NetworkMonitorKeys, "Setup:/Network/Service/" .. curNetID .. "/Proxies")
     if lastIpv4State == nil and proxySettings ~= nil then
       refreshNetworkService()
       disable_proxy()
@@ -919,14 +930,14 @@ local menubarHK = KeybindingConfigs.hotkeys.global
 local proxyHotkey = bindHotkeySpec(menubarHK["showProxyMenu"], "Show Proxy Menu",
 function()
   if find("com.surteesstudios.Bartender") ~= nil then
-    hs.osascript.applescript(string.format([[
+    hs.osascript.applescript(strfmt([[
       tell application id "com.surteesstudios.Bartender"
         activate "org.hammerspoon.Hammerspoon-%s"
       end tell
     ]], proxy:autosaveName()))
   else
     local app = find("org.hammerspoon.Hammerspoon")
-    local appUI = hs.axuielement.applicationElement(app)
+    local appUI = toappui(app)
     local menuBarMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, proxy:title())
     if menuBarMenu ~= nil then
       menuBarMenu:performAction(AX.Press)
@@ -947,13 +958,13 @@ local function toggleSystemProxy(networkservice)
   local securewebproxy = hs.execute("networksetup -getsecurewebproxy " .. networkservice)
   local socksproxy = hs.execute("networksetup -getsocksfirewallproxy " .. networkservice)
 
-  if string.match(autodiscovery, "On")
-    or string.match(webproxy, "Yes")
-    or string.match(securewebproxy, "Yes")
-    or string.match(socksproxy, "Yes") then
+  if autodiscovery:match("On")
+    or webproxy:match("Yes")
+    or securewebproxy:match("Yes")
+    or socksproxy:match("Yes") then
     disable_proxy(networkservice)
     hs.alert("System proxy disabled")
-  elseif string.match(autoproxyurl, "Yes") then
+  elseif autoproxyurl:match("Yes") then
     enable_proxy_global(nil, networkservice)
     hs.alert("System proxy enabled (global mode)")
   else
@@ -1034,20 +1045,20 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       end if
     end repeat
   ]]
-  if hs.fnutils.contains({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop", "Music Recognition" }, panel) then
-    enter = string.format(enterTemplate, "checkbox", ident, 2)
+  if tcontain({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop", "Music Recognition" }, panel) then
+    enter = strfmt(enterTemplate, "checkbox", ident, 2)
   elseif panel == "Screen Mirroring" then
     if OS_VERSION < OS.Ventura then
-      enter = string.format(enterTemplate, "checkbox", ident, 2)
+      enter = strfmt(enterTemplate, "checkbox", ident, 2)
     else
-      enter = string.format(enterTemplate, "button", ident, 1)
+      enter = strfmt(enterTemplate, "button", ident, 1)
     end
   elseif panel == "Display" then
-    enter = string.format(enterTemplate, OS_VERSION < OS.Ventura and "static text" or "group", ident, 1)
+    enter = strfmt(enterTemplate, OS_VERSION < OS.Ventura and "static text" or "group", ident, 1)
   elseif panel == "Sound" then
-    enter = string.format(enterTemplate, "static text", ident, 1)
-  elseif hs.fnutils.contains({ "Accessibility Shortcuts", "Battery", "Hearing", "Users", "Keyboard Brightness" }, panel) then
-    enter = string.format(enterTemplate, "button", ident, 1)
+    enter = strfmt(enterTemplate, "static text", ident, 1)
+  elseif tcontain({ "Accessibility Shortcuts", "Battery", "Hearing", "Users", "Keyboard Brightness" }, panel) then
+    enter = strfmt(enterTemplate, "button", ident, 1)
   elseif panel == "Now Playing" then
     enter = [[
       set panelFound to true
@@ -1057,7 +1068,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
 
   local ok, result
   if win == nil then
-    local _ok, menuBarItemIndex = hs.osascript.applescript(string.format([[
+    local _ok, menuBarItemIndex = hs.osascript.applescript(strfmt([[
       tell application "System Events"
         set controlitems to menu bar 1 of application process "ControlCenter"
         repeat with i from 1 to (count of menu bar items of controlitems)
@@ -1071,13 +1082,13 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     if _ok and menuBarItemIndex ~= 0 then
       if find("com.surteesstudios.Bartender") ~= nil then
         local menuBarPanel = panel == "Focus" and "Focus Modes" or panel
-        ok, result = hs.osascript.applescript(string.format([[
+        ok, result = hs.osascript.applescript(strfmt([[
           tell application id "com.surteesstudios.Bartender"
             activate "com.apple.controlcenter-%s"
           end tell
         ]], menuBarPanel:gsub(" ", ""):gsub("‑", "")))
       else
-        ok, result = hs.osascript.applescript(string.format([[
+        ok, result = hs.osascript.applescript(strfmt([[
           tell application "System Events"
             click menu bar item %d of menu bar 1 ¬
               of application process "ControlCenter"
@@ -1116,24 +1127,24 @@ local function popupControlCenterSubPanel(panel, allowReentry)
         end if
       end repeat
     ]]
-    if hs.fnutils.contains({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop", "Keyboard Brightness", "Screen Mirroring",
+    if tcontain({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop", "Keyboard Brightness", "Screen Mirroring",
                              "Accessibility Shortcuts", "Battery" }, panel) then
-      already = string.format(alreadyTemplate, "static text", ident)
+      already = strfmt(alreadyTemplate, "static text", ident)
     elseif panel == "Display" then
       already = [[
         if exists scroll area 1 of pane then
-        ]] .. string.format(alreadyTemplate, "slider of scroll area 1", ident) .. [[
+        ]] .. strfmt(alreadyTemplate, "slider of scroll area 1", ident) .. [[
         end if
       ]]
     elseif panel == "Sound" then
-      already = string.format(alreadyTemplate, "slider", ident)
+      already = strfmt(alreadyTemplate, "slider", ident)
     elseif panel == "Music Recognition" then
-      already = string.format(alreadyTemplate, "group", ident)
+      already = strfmt(alreadyTemplate, "group", ident)
     elseif panel == "Hearing" then
-      already = string.format(alreadyTemplate, "static text", controlCenterMenuBarItemIdentifiers[panel])
+      already = strfmt(alreadyTemplate, "static text", controlCenterMenuBarItemIdentifiers[panel])
     elseif panel == "Now Playing" then
       if OS_VERSION < OS.Ventura then
-        local mayLocalize = hs.fnutils.partial(controlCenterLocalized, "Now Playing")
+        local mayLocalize = bind(controlCenterLocalized, "Now Playing")
         already = [[
           if (exists button "]] .. mayLocalize("rewind") .. [[" of pane) or  ¬
               (exists button "]] .. mayLocalize("previous") .. [[" of pane) or ¬
@@ -1212,7 +1223,7 @@ local function checkAndRegisterControlCenterHotKeys(hotkey)
     return false
   else
     hotkey:enable()
-    table.insert(controlCenterHotKeys, hotkey)
+    tinsert(controlCenterHotKeys, hotkey)
     return true
   end
 end
@@ -1278,9 +1289,9 @@ function registerControlCenterHotKeys(panel)
         controlCenterSubPanelWatcher = nil
       end
 
-      local appUI = hs.axuielement.applicationElement(find("com.apple.controlcenter"))
+      local appUI = toappui(find("com.apple.controlcenter"))
       local ident = controlCenterMenuBarItemIdentifiers["Control Center"]
-      local menuBarItem = hs.fnutils.find(getc(appUI, AX.MenuBar, -1, AX.MenuBarItem),
+      local menuBarItem = tfind(getc(appUI, AX.MenuBar, -1, AX.MenuBarItem),
         function(item)
           return item.AXIdentifier:find(ident) ~= nil
         end)
@@ -1295,7 +1306,7 @@ function registerControlCenterHotKeys(panel)
   if not checkAndRegisterControlCenterHotKeys(hotkeyMainBack) then return end
 
   -- jump to related panel in `System Preferences`
-  if hs.fnutils.contains({ "Wi‑Fi", "Bluetooth", "Focus", "Keyboard Brightness",
+  if tcontain({ "Wi‑Fi", "Bluetooth", "Focus", "Keyboard Brightness",
                            "Screen Mirroring", "Display", "Sound",
                            "Accessibility Shortcuts", "Battery",
                            "Hearing", "Users", }, panel) then
@@ -1361,7 +1372,7 @@ function registerControlCenterHotKeys(panel)
   end
 
   -- pandel with a switch-off button
-  if hs.fnutils.contains({"Wi‑Fi", "Bluetooth", "AirDrop"}, panel) then
+  if tcontain({"Wi‑Fi", "Bluetooth", "AirDrop"}, panel) then
     local hotkey = newControlCenter("", "Space", "Toggle " .. controlCenterLocalized(panel),
       function()
         hs.osascript.applescript([[
@@ -1388,7 +1399,7 @@ function registerControlCenterHotKeys(panel)
   end
 
   -- panel with a slider
-  if hs.fnutils.contains({"Display", "Sound", "Keyboard Brightness"}, panel) then
+  if tcontain({"Display", "Sound", "Keyboard Brightness"}, panel) then
     local specs = nil
     if panel == "Sound" then
       specs = {["="] = {"Volume Up", "increment slid\n"},
@@ -1432,7 +1443,7 @@ function registerControlCenterHotKeys(panel)
   end
 
   -- panel with a list of devices
-  if hs.fnutils.contains({"Bluetooth", "Sound", "Screen Mirroring"}, panel) then
+  if tcontain({"Bluetooth", "Sound", "Screen Mirroring"}, panel) then
     local cbField
     if OS_VERSION < OS.Ventura then
       cbField = "title"
@@ -1458,12 +1469,12 @@ function registerControlCenterHotKeys(panel)
       for i=1, math.min(#devices[1], 10) do
         local name, enabled = devices[1][i], devices[2][i]
         if cbField ~= "title" then
-          local _, nameIdx = string.find(name, "device-", 1, true)
-          name = string.sub(name, nameIdx + 1, -1)
+          local _, nameIdx = name:find("device-", 1, true)
+          name = name:sub(nameIdx + 1, -1)
         end
         local msg = "Connect to " .. name
         if enabled == nil or enabled == 1 then
-          local newName = string.match(name, "(.-), %d+%%$")
+          local newName = name:match("(.-), %d+%%$")
           if newName ~= nil then name = newName end
           msg = "Disconnect to " .. name
         end
@@ -1588,11 +1599,11 @@ function registerControlCenterHotKeys(panel)
           if idx > 10 then break end
           local title
           if OS_VERSION < OS.Ventura then
-            title = string.match(ft, "([^,]+)")
+            title = ft:match("([^,]+)")
           else
-            title = string.sub(ft, string.len("wifi-network-") + 1, -1)
+            title = ft:sub(string.len("wifi-network-") + 1, -1)
           end
-          table.insert(availableNetworks, title)
+          tinsert(availableNetworks, title)
         end
         local newAvailableNetworksString = table.concat(availableNetworks, "|")
         if newAvailableNetworksString ~= availableNetworksString then
@@ -1629,7 +1640,7 @@ function registerControlCenterHotKeys(panel)
                 ]])
               end)
             assert(hotkey) hotkey:enable()
-            table.insert(selectNetworkHotkeys, hotkey)
+            tinsert(selectNetworkHotkeys, hotkey)
           end
         end
       else
@@ -1669,9 +1680,9 @@ function registerControlCenterHotKeys(panel)
       ]])
       if ok then
         toggleNames = {}
-        hs.fnutils.each(toggleIdents, function(ele)
+        foreach(toggleIdents, function(ele)
           for k, v in pairs(controlCenterAccessibiliyIdentifiers["AirDrop"]) do
-            if v == ele then table.insert(toggleNames, mayLocalize(k)) end
+            if v == ele then tinsert(toggleNames, mayLocalize(k)) end
           end
         end)
       end
@@ -1716,9 +1727,9 @@ function registerControlCenterHotKeys(panel)
       ]])
       if ok then
         toggleNames = {}
-        hs.fnutils.each(toggleIdents, function(ele)
+        foreach(toggleIdents, function(ele)
           for k, v in pairs(controlCenterAccessibiliyIdentifiers[panel]) do
-            if v == ele then table.insert(toggleNames, mayLocalize(k) or k) break end
+            if v == ele then tinsert(toggleNames, mayLocalize(k) or k) break end
           end
         end)
       end
@@ -1805,7 +1816,7 @@ function registerControlCenterHotKeys(panel)
     local cbIdents, enableds = result[1], result[2]
     for i=1,3 do
       local cbIdent = cbIdents[i]
-      local checkbox = hs.fnutils.find({"Dark Mode", "Night Shift", "True Tone"},
+      local checkbox = tfind({"Dark Mode", "Night Shift", "True Tone"},
         function(ele)
           return cbIdent == controlCenterAccessibiliyIdentifiers["Display"][ele]
         end)
@@ -1824,7 +1835,7 @@ function registerControlCenterHotKeys(panel)
 
           if checkbox == "Dark Mode" then
             local appid = hs.application.frontmostApplication():bundleID()
-            if hs.fnutils.contains({"com.google.Chrome", "com.microsoft.edgemac", "com.microsoft.edgemac.Dev"}, appid) then
+            if tcontain({"com.google.Chrome", "com.microsoft.edgemac", "com.microsoft.edgemac.Dev"}, appid) then
               local scheme = appid == "com.google.Chrome" and "chrome" or "edge"
               local darkMode = enableds[i] == 1 and "Enabled" or "Disabled"
               local optionList = nil
@@ -1916,16 +1927,12 @@ function registerControlCenterHotKeys(panel)
                     end
                   end,
                 })
-                local appUI = hs.axuielement.applicationElement(app)
-                local winUI = hs.axuielement.windowElement(app:focusedWindow())
-                observer = hs.axuielement.observer.new(app:pid())
-                observer:addWatcher(
-                  appUI, hs.axuielement.observer.notifications.focusedUIElementChanged)
-                observer:addWatcher(
-                  winUI, hs.axuielement.observer.notifications.titleChanged)
-                observer:addWatcher(
-                  appUI, hs.axuielement.observer.notifications.applicationDeactivated
-                )
+                local appUI = toappui(app)
+                local winUI = towinui(app:focusedWindow())
+                observer = uiobserver.new(app:pid())
+                observer:addWatcher(appUI, uinotifications.focusedUIElementChanged)
+                observer:addWatcher(winUI, uinotifications.titleChanged)
+                observer:addWatcher(appUI, uinotifications.applicationDeactivated)
                 observer:callback(function()
                   local frontWinBundleID = hs.window.frontmostWindow():application():bundleID()
                   local ok, url = hs.osascript.applescript(
@@ -1950,8 +1957,8 @@ function registerControlCenterHotKeys(panel)
     end
     for i=4,#result[1] do
       if i - 3 > 10 then break end
-      local _, nameIdx = string.find(result[1][i], "device-", 1, true)
-      local device = string.sub(result[1][i], nameIdx + 1, -1)
+      local _, nameIdx = result[1][i]:find("device-", 1, true)
+      local device = result[1][i]:sub(nameIdx + 1, -1)
       local msg
       if result[2][i] == 0 then
         msg = "Connect to " .. device
@@ -2046,7 +2053,7 @@ function registerControlCenterHotKeys(panel)
               ]])
             end)
           assert(hotkey) hotkey:enable()
-          table.insert(backgroundSoundsHotkeys, hotkey)
+          tinsert(backgroundSoundsHotkeys, hotkey)
         end
       end
       ok, result = hs.osascript.applescript([[
@@ -2066,7 +2073,7 @@ function registerControlCenterHotKeys(panel)
           backgroundSoundsHotkeys = {}
         end
         for i, ident in ipairs(result) do
-          local name = string.match(ident, "hearing%-(.+)%-button%-identifier")
+          local name = ident:match("hearing%-(.+)%-button%-identifier")
           local hotkey = newControlCenter("", tostring(i % 10), "Play " .. name,
             function()
               hs.osascript.applescript([[
@@ -2078,7 +2085,7 @@ function registerControlCenterHotKeys(panel)
               ]])
             end)
           assert(hotkey) hotkey:enable()
-          table.insert(backgroundSoundsHotkeys, hotkey)
+          tinsert(backgroundSoundsHotkeys, hotkey)
         end
       end
     end
@@ -2214,7 +2221,7 @@ local localizedControlCenter = find("com.apple.controlcenter"):name()
 for panel, spec in pairs(controlCenterPanelConfigs) do
   local localizedPanel = controlCenterLocalized(panel)
   bindControlCenter(spec, localizedControlCenter .. " > " .. localizedPanel,
-      hs.fnutils.partial(popupControlCenterSubPanel, panel))
+      bind(popupControlCenterSubPanel, panel))
 end
 
 local function getActiveControlCenterPanel()
@@ -2239,21 +2246,21 @@ local function getActiveControlCenterPanel()
   ]]
   for panel, ident in pairs(controlCenterSubPanelIdentifiers) do
     local already = nil
-    if hs.fnutils.contains({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop", "Keyboard Brightness", "Screen Mirroring",
+    if tcontain({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop", "Keyboard Brightness", "Screen Mirroring",
           "Accessibility Shortcuts", "Battery" }, panel) then
-      already = string.format(alreadyTemplate, "static text", ident, panel)
+      already = strfmt(alreadyTemplate, "static text", ident, panel)
     elseif panel == "Display" then
       already = [[
         if exists scroll area 1 of pane then
-        ]] .. string.format(alreadyTemplate, "slider of scroll area 1", ident, panel) .. [[
+        ]] .. strfmt(alreadyTemplate, "slider of scroll area 1", ident, panel) .. [[
         end if
       ]]
     elseif panel == "Sound" then
-      already = string.format(alreadyTemplate, "slider", ident, panel)
+      already = strfmt(alreadyTemplate, "slider", ident, panel)
     elseif panel == "Music Recognition" then
-      already = string.format(alreadyTemplate, "group", ident, panel)
+      already = strfmt(alreadyTemplate, "group", ident, panel)
     elseif panel == "Hearing" then
-      already = string.format(alreadyTemplate, "static text", controlCenterMenuBarItemIdentifiers[panel], panel)
+      already = strfmt(alreadyTemplate, "static text", controlCenterMenuBarItemIdentifiers[panel], panel)
     end
     if already then
       script = script .. [[
@@ -2299,17 +2306,15 @@ end
 local tapperForExtraInfo
 local controlCenterPanelHotKeys = {}
 local controlCenter = find("com.apple.controlcenter")
-ControlCenterObserver = hs.axuielement.observer.new(controlCenter:pid())
-ControlCenterObserver:addWatcher(
-  hs.axuielement.applicationElement(controlCenter),
-  hs.axuielement.observer.notifications.windowCreated)
+ControlCenterObserver = uiobserver.new(controlCenter:pid())
+ControlCenterObserver:addWatcher(toappui(controlCenter), uinotifications.windowCreated)
 local function controlCenterObserverCallback()
   for panel, spec in pairs(controlCenterPanelConfigs) do
     local localizedPanel = controlCenterLocalized(panel)
     local hotkey = bindControlCenter({ mods = "", key = spec.key },
         localizedControlCenter .. " > " .. localizedPanel,
-        hs.fnutils.partial(popupControlCenterSubPanel, panel))
-    table.insert(controlCenterPanelHotKeys, hotkey)
+        bind(popupControlCenterSubPanel, panel))
+    tinsert(controlCenterPanelHotKeys, hotkey)
     local timeTapperForExtraInfo = os.time()
     tapperForExtraInfo = hs.eventtap.new({hs.eventtap.event.types.flagsChanged},
       function(event)
@@ -2323,10 +2328,10 @@ local function controlCenterObserverCallback()
         return false
       end):start()
   end
-  local controlCenterDestroyObserver = hs.axuielement.observer.new(controlCenter:pid())
+  local controlCenterDestroyObserver = uiobserver.new(controlCenter:pid())
   controlCenterDestroyObserver:addWatcher(
-    hs.axuielement.windowElement(controlCenter:focusedWindow()),
-    hs.axuielement.observer.notifications.uIElementDestroyed
+    towinui(controlCenter:focusedWindow()),
+    uinotifications.uIElementDestroyed
   )
   controlCenterDestroyObserver:callback(function()
     tapperForExtraInfo:stop()
@@ -2379,10 +2384,10 @@ ExecContinuously(function()
     hs.timer.doAfter(2, function()
       ControlCenterObserver:stop()
       controlCenter = find("com.apple.controlcenter")
-      ControlCenterObserver = hs.axuielement.observer.new(controlCenter:pid())
+      ControlCenterObserver = uiobserver.new(controlCenter:pid())
       ControlCenterObserver:addWatcher(
-        hs.axuielement.applicationElement(controlCenter),
-        hs.axuielement.observer.notifications.windowCreated)
+        toappui(controlCenter),
+        uinotifications.windowCreated)
       ControlCenterObserver:callback(controlCenterObserverCallback)
       ControlCenterObserver:start()
     end)
@@ -2412,9 +2417,9 @@ end
 -- application installation/uninstallation callbacks
 function System_applicationInstalledCallback(files, flagTables)
   for i=1,#files do
-    if string.match(files[i], "V2RayX")
-      or string.match(files[i], "V2rayU")
-      or string.match(files[i], "MonoProxyMac") then
+    if files[i]:match("V2RayX")
+      or files[i]:match("V2rayU")
+      or files[i]:match("MonoProxyMac") then
       if flagTables[i].itemCreated or flagTables[i].itemRemoved then
         registerProxyMenu(true)
       end

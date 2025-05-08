@@ -1,3 +1,8 @@
+local tinsert = table.insert
+local tindex = hs.fnutils.indexOf
+local tfilter = hs.fnutils.filter
+local bind = hs.fnutils.partial
+
 local function newWindow(...)
   local hotkey = newHotkeySpec(...)
   if hotkey == nil then return nil end
@@ -28,9 +33,7 @@ local function focusScreen(screen)
   -- Get windows within screen, ordered from front to back.
   -- If no windows exist, bring focus to desktop. Otherwise, set focus on
   -- front-most application window.
-  local windows = hs.fnutils.filter(
-      hs.window.orderedWindows(),
-      hs.fnutils.partial(isInScreen, screen))
+  local windows = tfilter(hs.window.orderedWindows(), bind(isInScreen, screen))
   local windowToFocus = #windows > 0 and windows[1] or hs.window.desktop()
   windowToFocus:focus()
 
@@ -97,18 +100,18 @@ end
 -- move cursor to next monitor
 local adjacentMonitorHotkeys = {}
 local image = hs.image.imageFromPath("static/display.png")
-table.insert(adjacentMonitorHotkeys, newHotkeySpec(ssHK["focusNextScreen"], "Focus on Next Monitor",
-    hs.fnutils.partial(checkAndMoveCursurToMonitor, "r")))
+tinsert(adjacentMonitorHotkeys, newHotkeySpec(ssHK["focusNextScreen"], "Focus on Next Monitor",
+    bind(checkAndMoveCursurToMonitor, "r")))
 -- move cursor to previous monitor
-table.insert(adjacentMonitorHotkeys, newHotkeySpec(ssHK["focusPrevScreen"], "Focus on Previous Monitor",
-    hs.fnutils.partial(checkAndMoveCursurToMonitor, "l")))
+tinsert(adjacentMonitorHotkeys, newHotkeySpec(ssHK["focusPrevScreen"], "Focus on Previous Monitor",
+    bind(checkAndMoveCursurToMonitor, "l")))
 
 -- move window to next monitor
-table.insert(adjacentMonitorHotkeys, newWindow(ssHK["moveToNextScreen"], "Move to Next Monitor",
-    hs.fnutils.partial(checkAndMoveWindowToMonitor, "r")))
+tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToNextScreen"], "Move to Next Monitor",
+    bind(checkAndMoveWindowToMonitor, "r")))
 -- move window to previous monitor
-table.insert(adjacentMonitorHotkeys, newWindow(ssHK["moveToPrevScreen"], "Move to Previous Monitor",
-    hs.fnutils.partial(checkAndMoveWindowToMonitor, "l")))
+tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToPrevScreen"], "Move to Previous Monitor",
+    bind(checkAndMoveWindowToMonitor, "l")))
 
 for _, hotkey in ipairs(adjacentMonitorHotkeys) do
   hotkey.icon = image
@@ -151,7 +154,7 @@ local function registerMonitorHotkeys()
             moveToScreen(win, hs.screen.allScreens()[i])
           end
         end)
-    table.insert(moveToScreenHotkeys, hotkey)
+    tinsert(moveToScreenHotkeys, hotkey)
     hotkey = bindHotkeySpec(ssHK["focusScreen" .. i], "Focus on Monitor " .. i,
         function()
           local win = hs.window.focusedWindow()
@@ -161,7 +164,7 @@ local function registerMonitorHotkeys()
           end
         end)
     hotkey.icon = image
-    table.insert(focusMonitorHotkeys, hotkey)
+    tinsert(focusMonitorHotkeys, hotkey)
   end
 end
 registerMonitorHotkeys()
@@ -175,7 +178,7 @@ local function getUserSpaces()
     local spaces = hs.spaces.spacesForScreen(screen) or {}
     for _, space in ipairs(spaces) do
       if hs.spaces.spaceType(space) == "user" then
-        table.insert(user_spaces, space)
+        tinsert(user_spaces, space)
       end
     end
   end
@@ -187,7 +190,7 @@ local function checkAndMoveWindowToSpace(space)
   local nspaces = #user_spaces
   if nspaces > 1 then
     local curSpaceID = hs.spaces.focusedSpace()
-    local index = hs.fnutils.indexOf(user_spaces, curSpaceID)
+    local index = tindex(user_spaces, curSpaceID)
     local targetIdx = space == "r" and index + 1 or index - 1
     if 1 <= targetIdx and targetIdx <= nspaces then
       local win = hs.window.focusedWindow()
@@ -207,11 +210,11 @@ end
 
 -- move window to next space
 local adjacentSpaceHotkeys = {}
-table.insert(adjacentSpaceHotkeys, newWindow(ssHK["moveToNextSpace"], "Move to Next Space",
-    hs.fnutils.partial(checkAndMoveWindowToSpace, "r")))
+tinsert(adjacentSpaceHotkeys, newWindow(ssHK["moveToNextSpace"], "Move to Next Space",
+    bind(checkAndMoveWindowToSpace, "r")))
 -- move window to previous space
-table.insert(adjacentSpaceHotkeys, newWindow(ssHK["moveToPrevSpace"], "Move to Previous Space",
-    hs.fnutils.partial(checkAndMoveWindowToSpace, "l")))
+tinsert(adjacentSpaceHotkeys, newWindow(ssHK["moveToPrevSpace"], "Move to Previous Space",
+    bind(checkAndMoveWindowToSpace, "l")))
 
 for _, hotkey in ipairs(adjacentSpaceHotkeys) do
   hotkey.icon = image
@@ -255,7 +258,7 @@ local function registerMoveToSpaceHotkeys()
         win:focus()
       end)
     hotkey.icon = image
-    table.insert(moveToSpaceHotkeys, hotkey)
+    tinsert(moveToSpaceHotkeys, hotkey)
   end
 end
 registerMoveToSpaceHotkeys()

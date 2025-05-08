@@ -1,3 +1,11 @@
+local strfmt = string.format
+local tinsert = table.insert
+local tcontain = hs.fnutils.contains
+local tfind = hs.fnutils.find
+local tindex = hs.fnutils.indexOf
+local tfilter = hs.fnutils.filter
+local foreach = hs.fnutils.each
+
 local misc = KeybindingConfigs.hotkeys.global
 
 -- call `ShortCuts` to copy to PC
@@ -52,7 +60,7 @@ function(ev)
   local nowKeyDown = ev:getType() == hs.eventtap.event.types.keyDown
   local nowKeyUp = ev:getType() == hs.eventtap.event.types.keyUp
   if not pasteboardKeyDown and not pasteboardKeyUp and nowKeyDown then
-    if hs.fnutils.contains(hs.pasteboard.contentTypes(), "public.utf8-plain-text") then
+    if tcontain(hs.pasteboard.contentTypes(), "public.utf8-plain-text") then
       pasteboardBuffer = hs.pasteboard.getContents()
       pasteboardKeyDown = true
       prependPasteboardTimer = hs.timer.doAfter(0.3, function()
@@ -72,7 +80,7 @@ function(ev)
     pasteboardKeyUp = false
     prependPasteboardTimer:stop()
     prependPasteboardTimer = nil
-    if hs.fnutils.contains(hs.pasteboard.contentTypes(), "public.utf8-plain-text") then
+    if tcontain(hs.pasteboard.contentTypes(), "public.utf8-plain-text") then
       hs.pasteboard.setContents(hs.pasteboard.getContents() .. " " .. pasteboardBuffer)
     end
     pasteboardBuffer = nil
@@ -97,9 +105,9 @@ end
 GeneralPBWatcher = hs.pasteboard.watcher.new(
 function(v)
   if v == nil then return end
-  if hs.fnutils.contains(hs.pasteboard.contentTypes(), "public.utf8-plain-text") then
+  if tcontain(hs.pasteboard.contentTypes(), "public.utf8-plain-text") then
     for _, pattern in ipairs(pasteboardFilterPatterns) do
-      local match = string.match(v, pattern)
+      local match = v:match(pattern)
       if match ~= nil then
         hs.pasteboard.setContents(match)
         break
@@ -120,7 +128,7 @@ local locDefaultVerificationPattern = localizedString(
     framework = 'AddressBookCore.framework',
   })
 if locDefaultVerificationPattern then
-  locDefaultVerificationPattern = string.lower(locDefaultVerificationPattern)
+  locDefaultVerificationPattern = locDefaultVerificationPattern:lower()
 else
   locDefaultVerificationPattern = defaultVerificationPattern
 end
@@ -137,20 +145,20 @@ local function parseVerificationCodeFromFirstMessage()
   if ok and content ~= '\n' then
     for _, pattern in ipairs(verificationPatterns) do
       if type(pattern.filter) == 'string' then
-        if string.find(content, pattern.filter) then
-          return string.match(content, pattern.extract)
+        if content:find(pattern.filter) then
+          return content:match(pattern.extract)
         end
       elseif type(pattern.filter) == 'table' then
         if hs.fnutils.every(pattern.filter,
-              function(f) return string.find(content, f) end) then
-          return string.match(content, pattern.extract)
+              function(f) return content:find(f) end) then
+          return content:match(pattern.extract)
         end
       end
     end
-    if string.find(string.lower(content), 'verify')
-        or string.find(string.lower(content), 'verification')
-        or string.find(string.lower(content), locDefaultVerificationPattern) then
-      return string.match(content, '%d%d%d%d+')
+    if content:lower():find('verify')
+        or content:lower():find('verification')
+        or content:lower():find(locDefaultVerificationPattern) then
+      return content:match('%d%d%d%d+')
     end
   end
 end
@@ -162,7 +170,7 @@ subscribe(hs.window.filter.windowCreated,
     local code = parseVerificationCodeFromFirstMessage()
     if code then
       hs.notify.new({
-        title = string.format("SMS Code Detected: %s", code),
+        title = strfmt("SMS Code Detected: %s", code),
         informativeText = 'Copied to pasteboard',
       }):send()
       hs.pasteboard.writeObjects(code)
@@ -227,10 +235,10 @@ local function loadKarabinerKeyBindings(filePath)
     if type(mods) == "string" then mods = {mods} end
     local modsRepr = ""
     for _, mod in ipairs(modifiersShowReverseOrder) do
-      if hs.fnutils.contains(mods, mod) then modsRepr = modsRepr .. modifierSymbolMap[mod] end
+      if tcontain(mods, mod) then modsRepr = modsRepr .. modifierSymbolMap[mod] end
     end
-    local key = string.upper(item.key) == HYPER and 'hyper' or item.key
-    key = modifierSymbolMap[key] or string.upper(key)
+    local key = item.key:upper() == HYPER and 'hyper' or item.key
+    key = modifierSymbolMap[key] or key:upper()
     local idx = modsRepr .. key
     local msg = idx .. ": " .. item.message
     local kind = HK[item.kind]
@@ -248,7 +256,7 @@ local function loadKarabinerKeyBindings(filePath)
       kind = kind,
       subkind = subkind,
     }
-    table.insert(keyBindings, keyBinding)
+    tinsert(keyBindings, keyBinding)
   end
   return keyBindings
 end
@@ -269,12 +277,12 @@ end
 local function menuItemHotkeyIdx(mods, key)
   local idx = ""
   for _, mod in ipairs{"cmd", "alt", "ctrl", "shift"} do
-    if hs.fnutils.contains(mods, mod) then idx = idx .. modifierSymbolMap[mod] end
+    if tcontain(mods, mod) then idx = idx .. modifierSymbolMap[mod] end
   end
-  if string.byte(key, 1) <= 32 or string.byte(key, 1) > 127 then
+  if key:byte(1) <= 32 or key:byte(1) > 127 then
     key = SPECIAL_KEY_SIMBOL_MAP[key] or key
   else
-    key = string.upper(key)
+    key = key:upper()
   end
   idx = idx .. key
   return idx
@@ -295,7 +303,7 @@ local windowMenuItemsSinceSequoia2 = {
 local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
   if menuItem.AXChildren == nil then return end
   if titleAsEntry == true then
-    table.insert(t, menuItem.AXTitle)
+    tinsert(t, menuItem.AXTitle)
   end
   for i, subItem in ipairs(menuItem.AXChildren[1]) do
     if i > 1 and menuItem.AXChildren[1][i - 1] == subItem then
@@ -312,7 +320,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
         and hs.application.menuGlyphs[subItem.AXMenuItemCmdGlyph] ~= nil then
       idx = menuItemHotkeyIdx(subItem.AXMenuItemCmdModifiers or {}, hs.application.menuGlyphs[subItem.AXMenuItemCmdGlyph])
     elseif subItem.AXMenuItemCmdChar ~= ""
-        and string.byte(subItem.AXMenuItemCmdChar, 1) ~= 3 then
+        and subItem.AXMenuItemCmdChar:byte(1) ~= 3 then
       if subItem.AXMenuItemCmdChar == 'E' and subItem.AXMenuItemCmdGlyph == ""
           and #subItem.AXMenuItemCmdModifiers == 0 and subItem.AXMenuItemMarkChar == ""
           and subItem.AXChildren == nil then
@@ -339,7 +347,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
             if lowerTitle:find("full screen") or lowerTitle:find("fullscreen") then
               idx = "🌐︎F"
             elseif enTitle ~= nil then
-              enTitle = string.lower(enTitle)
+              enTitle = enTitle:lower()
               if enTitle:find("full screen") or enTitle:find("fullscreen") then
                 idx = "🌐︎F"
               end
@@ -377,16 +385,16 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
         and (menuItem.AXTitle == 'Move & Resize'
         or delocalizedMenuItem(menuItem.AXTitle, appid, true) == 'Move & Resize')
         and subItem.AXMenuItemCmdModifiers[1] ~= 'cmd' then
-      idx = hs.fnutils.indexOf(windowMenuItemsSinceSequoia2, subItem.AXTitle)
+      idx = tindex(windowMenuItemsSinceSequoia2, subItem.AXTitle)
       if idx == nil then
         local delocTitle = delocalizedMenuItem(subItem.AXTitle, appid)
-        idx = hs.fnutils.indexOf(windowMenuItemsSinceSequoia2, delocTitle)
+        idx = tindex(windowMenuItemsSinceSequoia2, delocTitle)
       end
       if idx ~= nil then idx = "🌐︎" .. idx end
     end
     if idx ~= nil then
-      table.insert(t, { idx = idx, msg = idx .. ": " .. title,
-                        kind = HK.IN_APP, valid = subItem.AXEnabled })
+      tinsert(t, { idx = idx, msg = idx .. ": " .. title,
+                   kind = HK.IN_APP, valid = subItem.AXEnabled })
     end
     getSubMenuHotkeys(t, subItem, false, titlePrefix and title or nil, appid)
     ::L_CONTINUE::
@@ -416,7 +424,7 @@ local function loadAppHotkeys(t)
             and WindowCreatedSince[frontWin:id()]) then
           hotkey.valid = false
         end
-        if hotkey.valid and hs.fnutils.find(t, function(hk)
+        if hotkey.valid and tfind(t, function(hk)
             return hk.valid and hk.idx == hotkey.idx end) then
           hotkey.valid = false
         end
@@ -428,12 +436,12 @@ local function loadAppHotkeys(t)
     if hotkey.kind and hotkey.kind > HK.IN_APP then insertIdx = i break end
   end
   for i=#appHotkeys,1,-1 do
-    table.insert(t, insertIdx, appHotkeys[i])
+    tinsert(t, insertIdx, appHotkeys[i])
   end
 end
 
 local function testValid(entry)
-  local pos = string.find(entry.msg, ": ")
+  local pos = entry.msg:find(": ")
   local valid = pos ~= nil and not (entry.suspendable and FLAGS["SUSPEND"])
   local actualMsg
   if valid then
@@ -459,7 +467,7 @@ local function testValid(entry)
     end
     entry.valid = valid
     if actualMsg ~= nil then
-      entry.msg = string.sub(entry.msg, 1, pos - 1) .. ": " .. actualMsg
+      entry.msg = entry.msg:sub(1, pos - 1) .. ": " .. actualMsg
     end
   else
     entry.valid = false
@@ -475,27 +483,27 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
     goto L_endCollect
   end
 
-  for _, modal in ipairs(hs.fnutils.filter(DoubleTapModalList, function (m) return m:isEnabled() end)) do
-    table.insert(allKeys, { idx = modal.idx, msg = modal.msg,
-                            condition = modal.condition,
-                            kind = modal.kind, subkind = modal.subkind,
-                            suspendable = modal.suspendable, source = 1 })
+  for _, modal in ipairs(tfilter(DoubleTapModalList, function (m) return m:isEnabled() end)) do
+    tinsert(allKeys, { idx = modal.idx, msg = modal.msg,
+                       condition = modal.condition,
+                       kind = modal.kind, subkind = modal.subkind,
+                       suspendable = modal.suspendable, source = 1 })
   end
 
   for _, modal in ipairs(HyperModalList) do
     if modal.hyperMode.Entered == false then
       for _, hotkey in ipairs(modal.hyperMode.keys) do
-        table.insert(allKeys, { idx = hotkey.idx, msg = hotkey.msg,
-                                condition = hotkey.condition,
-                                kind = hotkey.kind, subkind = hotkey.subkind,
-                                suspendable = hotkey.suspendable, source = 1 })
+        tinsert(allKeys, { idx = hotkey.idx, msg = hotkey.msg,
+                           condition = hotkey.condition,
+                           kind = hotkey.kind, subkind = hotkey.subkind,
+                           suspendable = hotkey.suspendable, source = 1 })
       end
     end
   end
 
   for _, hotkeys in pairs(trackpad.keys) do
     for _, hotkey in ipairs(hotkeys) do
-      table.insert(allKeys, { idx = hotkey.idx, msg = hotkey.msg, source = 1 })
+      tinsert(allKeys, { idx = hotkey.idx, msg = hotkey.msg, source = 1 })
     end
   end
 
@@ -505,7 +513,7 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
                          condition = entry.condition,
                          kind = entry.kind, subkind = entry.subkind,
                          suspendable = entry.suspendable, source = 1 }
-      table.insert(allKeys, newEntry)
+      tinsert(allKeys, newEntry)
     end
   end
 
@@ -513,7 +521,7 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
     local _, karaIsRunning = hs.execute("pgrep Karabiner-VirtualHIDDevice-Daemon")
     if karaIsRunning then
       karaHotkeys = loadKarabinerKeyBindings("static/karabiner-keybindings.json")
-      hs.fnutils.each(karaHotkeys, function(hotkey) hotkey.source = 1 end)
+      foreach(karaHotkeys, function(hotkey) hotkey.source = 1 end)
     end
   end
   allKeys = hs.fnutils.concat(allKeys, karaHotkeys or {})
@@ -523,23 +531,23 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
   end
 
   for _, entry in ipairs(allKeys) do
-    local pos = string.find(entry.msg, ": ")
+    local pos = entry.msg:find(": ")
     if pos ~= nil then
-      local actualMsg = string.sub(entry.msg, pos + 2)
-      local hkRepr = string.sub(entry.msg, 1, pos - 1)
-      hkRepr = string.gsub(hkRepr, "ESCAPE", "⎋")
-      hkRepr = string.gsub(hkRepr, "TAB", "⇥")
-      hkRepr = string.gsub(hkRepr, "SPACE", "␣")
-      hkRepr = string.gsub(hkRepr, "DELETE", "⌫")
-      hkRepr = string.gsub(hkRepr, "RETURN", "⏎")
-      hkRepr = string.gsub(hkRepr, "LEFT", "←")
-      hkRepr = string.gsub(hkRepr, "RIGHT", "→")
-      hkRepr = string.gsub(hkRepr, "UP", "↑")
-      hkRepr = string.gsub(hkRepr, "DOWN", "↓")
-      hkRepr = string.gsub(hkRepr, "HOME", "↖")
-      hkRepr = string.gsub(hkRepr, "END", "↘")
-      hkRepr = string.gsub(hkRepr, "PAGEUP", "⇞")
-      hkRepr = string.gsub(hkRepr, "PAGEDOWN", "⇟")
+      local actualMsg = entry.msg:sub(pos + 2)
+      local hkRepr = entry.msg:sub(1, pos - 1)
+      hkRepr = hkRepr:gsub("ESCAPE", "⎋")
+      hkRepr = hkRepr:gsub("TAB", "⇥")
+      hkRepr = hkRepr:gsub("SPACE", "␣")
+      hkRepr = hkRepr:gsub("DELETE", "⌫")
+      hkRepr = hkRepr:gsub("RETURN", "⏎")
+      hkRepr = hkRepr:gsub("LEFT", "←")
+      hkRepr = hkRepr:gsub("RIGHT", "→")
+      hkRepr = hkRepr:gsub("UP", "↑")
+      hkRepr = hkRepr:gsub("DOWN", "↓")
+      hkRepr = hkRepr:gsub("HOME", "↖")
+      hkRepr = hkRepr:gsub("END", "↘")
+      hkRepr = hkRepr:gsub("PAGEUP", "⇞")
+      hkRepr = hkRepr:gsub("PAGEDOWN", "⇟")
       entry.msg = hkRepr .. ": " .. actualMsg
       entry.idx = hkRepr
     end
@@ -642,7 +650,7 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
         kind = HK.IN_APP
       end
     elseif ((entry.source == 1 and showHS) or (entry.source == 2 and showApp))
-        and (entry.valid or (not validOnly and string.find(entry.msg, ": ") ~= nil)) then
+        and (entry.valid or (not validOnly and entry.msg:find(": ") ~= nil)) then
       local msg
       if entry.kind ~= kind then
         if entry.kind == HK.SWITCH then
@@ -686,7 +694,7 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
       end
       local modsLen, modsByteLen = 0, 0
       for _, mod in ipairs(modifierSymbols) do
-        if string.find(entry.idx, mod) then
+        if entry.idx:find(mod) then
           modsLen = modsLen + 1
           if mod == "🌐︎" then
             modsByteLen = modsByteLen + 7
@@ -695,24 +703,24 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
           end
         end
       end
-      if modsByteLen == string.len(entry.idx) then
+      if modsByteLen == entry.idx:len() then
         modsByteLen = utf8.offset(entry.idx, modsLen) - 1
       end
-      local key = string.sub(entry.idx, modsByteLen + 1)
-      local mods = string.sub(entry.idx, 1, modsByteLen)
+      local key = entry.idx:sub(modsByteLen + 1)
+      local mods = entry.idx:sub(1, modsByteLen)
       local modsRepr = mods
       if utf8.len(modsRepr) == 0 then
         modsRepr = "&nbsp;"
       elseif utf8.len(modsRepr) ~= 1 then
         modsRepr = ""
         for _, repr in ipairs(modifierSymbols) do
-          if string.find(mods, repr) then
+          if mods:find(repr) then
             modsRepr = repr .. modsRepr
           end
         end
       end
-      local pos = string.find(entry.msg, ": ")
-      local actualMsg = string.sub(entry.msg, pos + 2)
+      local pos = entry.msg:find(": ")
+      local actualMsg = entry.msg:sub(pos + 2)
       if not entry.valid then
         if evFlagsRepr ~= modsRepr and (modsRepr ~= "&nbsp;" or evFlagsRepr ~= key) then
           menu = menu .. "<li><font color='grey'><div class='modstext'>" .. modsRepr .. "</div><div class='keytext'>" .. key .. "</div><div class='cmdtext'>" .. actualMsg .. "</div></font></li>"
@@ -966,7 +974,7 @@ function()
     hkKeybinding:enable()
   end
 
-  local enteredModal = hs.fnutils.find(HyperModalList,
+  local enteredModal = tfind(HyperModalList,
       function(modal) return modal.hyper == HYPER end)
   if enteredModal then
     enteredModal.hyperMode:exit()
@@ -1003,7 +1011,7 @@ function()
     elseif ev:getType() == hs.eventtap.event.types.keyDown then
       if HYPER and ev:getKeyCode() == hs.keycodes.map[HYPER] then
         evFlags.hyper = true
-        if evFlags.fn and string.lower(HYPER):match('^f%d-$') then
+        if evFlags.fn and HYPER:lower():match('^f%d-$') then
           evFlags.fn = nil
         end
       elseif ev:getKeyCode() == hs.keycodes.map["Space"] then
@@ -1028,7 +1036,7 @@ function()
     elseif ev:getType() == hs.eventtap.event.types.keyUp then
       if HYPER and ev:getKeyCode() == hs.keycodes.map[HYPER] then
         evFlags.hyper = nil
-        if evFlags.fn and string.lower(HYPER):match('^f%d-$') then
+        if evFlags.fn and HYPER:lower():match('^f%d-$') then
           evFlags.fn = nil
         end
       elseif ev:getKeyCode() == hs.keycodes.map["Space"] then
@@ -1070,7 +1078,7 @@ function()
   hs.timer.doAfter(0.3, function() hkHideKeybindingsWatcher:start() end)
 end)
 hkKeybinding.kind = HK.PRIVELLEGE
-table.insert(DoubleTapModalList, hkKeybinding)
+tinsert(DoubleTapModalList, hkKeybinding)
 
 
 local function getCurrentApplication()
@@ -1093,7 +1101,7 @@ bindHotkeySpec(misc["showCurrentWindowInfo"], "Show Info of Current Window", fun
   local app, appname, appid = getCurrentApplication()
   hs.focus()
   hs.dialog.blockAlert("Current Window",
-    string.format([[
+    strfmt([[
       Window: %s (#%d)
       Role: %s (%s)
       Process: #%s
@@ -1108,23 +1116,23 @@ end)
 local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", function()
   local allKeys = {}
 
-  for _, modal in ipairs(hs.fnutils.filter(DoubleTapModalList, function(m) return m:isEnabled() end)) do
-    table.insert(allKeys, { modalType = 2,
-                            idx = modal.idx, msg = modal.msg,
-                            condition = modal.condition,
-                            kind = modal.kind, subkind = modal.subkind,
-                            icon = modal.icon })
+  for _, modal in ipairs(tfilter(DoubleTapModalList, function(m) return m:isEnabled() end)) do
+    tinsert(allKeys, { modalType = 2,
+                       idx = modal.idx, msg = modal.msg,
+                       condition = modal.condition,
+                       kind = modal.kind, subkind = modal.subkind,
+                       icon = modal.icon })
   end
 
   for _, modal in ipairs(HyperModalList) do
     if modal.hyperMode.Entered == false then
       for _, hotkey in ipairs(modal.hyperMode.keys) do
-        table.insert(allKeys, { modalType = 1, hyper = _,
-                                idx = hotkey.idx, msg = hotkey.msg,
-                                condition = hotkey.condition,
-                                kind = hotkey.kind, subkind = hotkey.subkind,
-                                appid = hotkey.appid, appPath = hotkey.appPath,
-                                icon = hotkey.icon })
+        tinsert(allKeys, { modalType = 1, hyper = _,
+                           idx = hotkey.idx, msg = hotkey.msg,
+                           condition = hotkey.condition,
+                           kind = hotkey.kind, subkind = hotkey.subkind,
+                           appid = hotkey.appid, appPath = hotkey.appPath,
+                           icon = hotkey.icon })
       end
     end
   end
@@ -1137,7 +1145,7 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
                          kind = entry.kind, subkind = entry.subkind,
                          appid = entry.appid, appPath = entry.appPath,
                          icon = entry.icon }
-      table.insert(allKeys, newEntry)
+      tinsert(allKeys, newEntry)
     end
   end
 
@@ -1146,23 +1154,23 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
   end
 
   for _, entry in ipairs(allKeys) do
-    local pos = string.find(entry.msg, ": ")
+    local pos = entry.msg:find(": ")
     if pos ~= nil then
-      local actualMsg = string.sub(entry.msg, pos + 2)
-      local hkRepr = string.sub(entry.msg, 1, pos - 1)
-      hkRepr = string.gsub(hkRepr, "ESCAPE", "⎋")
-      hkRepr = string.gsub(hkRepr, "TAB", "⇥")
-      hkRepr = string.gsub(hkRepr, "SPACE", "␣")
-      hkRepr = string.gsub(hkRepr, "DELETE", "⌫")
-      hkRepr = string.gsub(hkRepr, "RETURN", "⏎")
-      hkRepr = string.gsub(hkRepr, "LEFT", "←")
-      hkRepr = string.gsub(hkRepr, "RIGHT", "→")
-      hkRepr = string.gsub(hkRepr, "UP", "↑")
-      hkRepr = string.gsub(hkRepr, "DOWN", "↓")
-      hkRepr = string.gsub(hkRepr, "HOME", "↖")
-      hkRepr = string.gsub(hkRepr, "END", "↘")
-      hkRepr = string.gsub(hkRepr, "PAGEUP", "⇞")
-      hkRepr = string.gsub(hkRepr, "PAGEDOWN", "⇟")
+      local actualMsg = entry.msg:sub(pos + 2)
+      local hkRepr = entry.msg:sub(1, pos - 1)
+      hkRepr = hkRepr:gsub("ESCAPE", "⎋")
+      hkRepr = hkRepr:gsub("TAB", "⇥")
+      hkRepr = hkRepr:gsub("SPACE", "␣")
+      hkRepr = hkRepr:gsub("DELETE", "⌫")
+      hkRepr = hkRepr:gsub("RETURN", "⏎")
+      hkRepr = hkRepr:gsub("LEFT", "←")
+      hkRepr = hkRepr:gsub("RIGHT", "→")
+      hkRepr = hkRepr:gsub("UP", "↑")
+      hkRepr = hkRepr:gsub("DOWN", "↓")
+      hkRepr = hkRepr:gsub("HOME", "↖")
+      hkRepr = hkRepr:gsub("END", "↘")
+      hkRepr = hkRepr:gsub("PAGEUP", "⇞")
+      hkRepr = hkRepr:gsub("PAGEDOWN", "⇟")
       entry.msg = hkRepr .. ": " .. actualMsg
       entry.pretty_idx = hkRepr
     else
@@ -1210,7 +1218,7 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
           and WindowCreatedSince[frontWin:id()]) then
         hotkey.valid = false
       end
-      if hotkey.valid and hs.fnutils.find(allKeys, function(hk)
+      if hotkey.valid and tfind(allKeys, function(hk)
           return hk.valid and hk.idx == hotkey.idx end) then
         hotkey.valid = false
       end
@@ -1221,7 +1229,7 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
     if hotkey.kind > HK.IN_APP then insertIdx = i break end
   end
   for i=#appHotkeys,1,-1 do
-    table.insert(allKeys, insertIdx, appHotkeys[i])
+    tinsert(allKeys, insertIdx, appHotkeys[i])
   end
 
   local choices = {}
@@ -1229,7 +1237,7 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
   local HSImage = hs.image.imageFromAppBundle("org.hammerspoon.Hammerspoon")
   local kind = HK.PRIVELLEGE
   for _, entry in ipairs(allKeys) do
-    if string.find(entry.msg, ": ") == nil then
+    if entry.msg:find(": ") == nil then
       goto continue
     end
 
@@ -1297,7 +1305,7 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
 
     local modsLen, modsByteLen = 0, 0
     for _, mod in ipairs(modifierSymbols) do
-      if string.find(entry.idx, mod) then
+      if entry.idx:find(mod) then
         modsLen = modsLen + 1
         if mod == "🌐︎" then
           modsByteLen = modsByteLen + 7
@@ -1306,16 +1314,16 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
         end
       end
     end
-    if modsByteLen == string.len(entry.idx) then
+    if modsByteLen == entry.idx:len() then
       modsByteLen = utf8.offset(entry.idx, modsLen) - 1
     end
-    local key = string.sub(entry.idx, modsByteLen + 1)
-    local mods = string.sub(entry.idx, 1, modsByteLen)
+    local key = entry.idx:sub(modsByteLen + 1)
+    local mods = entry.idx:sub(1, modsByteLen)
 
-    local pos = string.find(entry.msg, ": ")
+    local pos = entry.msg:find(": ")
     local actualMsg
     if pos ~= nil then
-      actualMsg = string.sub(entry.msg, pos + 2)
+      actualMsg = entry.msg:sub(pos + 2)
     else
       actualMsg = "(no message)"
     end
@@ -1330,13 +1338,13 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
         idx = thisHyper .. idx
       end
     elseif entry.modalType == 0 then
-      local pos = string.find(entry.msg, ": ")
-      idx = string.sub(entry.msg, 1, pos - 1)
-      if string.len(idx) ~= string.len(entry.idx) then
-        thisHyper = string.sub(idx, 1, string.len(idx) - string.len(entry.idx))
+      local pos = entry.msg:find(": ")
+      idx = entry.msg:sub(1, pos - 1)
+      if idx:len() ~= entry.idx:len() then
+        thisHyper = idx:sub(1, idx:len() - entry.idx:len())
       end
     end
-    table.insert(choices,
+    tinsert(choices,
         {
           text = actualMsg,
           subText = idx
@@ -1397,7 +1405,7 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
         end
       end)
     elseif choice.modalType == 2 then
-      if hs.fnutils.contains({ "⌘", "⌥", "⌃", "⇧" }, choice.key) then
+      if tcontain({ "⌘", "⌥", "⌃", "⇧" }, choice.key) then
         local flag
         if choice.key == "⌘" then
           flag = 'cmd'
@@ -1419,8 +1427,8 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
         if choice.key == "✧" then
           keycode = hs.keycodes.map[HYPER]
         else
-          local keyLen = string.len(choice.key)
-          keycode = string.sub(choice.key, 1, keyLen / 2)
+          local keyLen = choice.key:len()
+          keycode = choice.key:sub(1, keyLen / 2)
         end
         hs.eventtap.event.newKeyEvent("", keycode, true):post()
         hs.eventtap.event.newKeyEvent("", keycode, false):post()

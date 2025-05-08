@@ -1,3 +1,7 @@
+local tinsert = table.insert
+local tcontain = hs.fnutils.contains
+local tindex = hs.fnutils.indexOf
+local towinui = hs.axuielement.windowElement
 local windowParams = KeybindingConfigs["parameters"] or {}
 local moveStep = windowParams.windowMoveStep or 20
 local resizeStep = windowParams.windowResizeStep or 100
@@ -591,13 +595,13 @@ local function registerWindowSwitcher()
   local lastWindowMods = {}
   for _, mod in ipairs(_lastWindowMods) do
     if mod == 'command' then
-      table.insert(lastWindowMods, 'cmd')
+      tinsert(lastWindowMods, 'cmd')
     elseif mod == 'option' then
-      table.insert(lastWindowMods, 'alt')
+      tinsert(lastWindowMods, 'alt')
     elseif mod == 'control' then
-      table.insert(lastWindowMods, 'ctrl')
+      tinsert(lastWindowMods, 'ctrl')
     elseif mod == 'shift' then
-      table.insert(lastWindowMods, 'shift')
+      tinsert(lastWindowMods, 'shift')
     end
   end
 
@@ -775,13 +779,13 @@ if misc["switchBrowserWindow"] ~= nil then
   local lastBrowserWindowMods = {}
   for _, mod in ipairs(_lastBrowserWindowMods) do
     if mod == 'command' then
-      table.insert(lastBrowserWindowMods, 'cmd')
+      tinsert(lastBrowserWindowMods, 'cmd')
     elseif mod == 'option' then
-      table.insert(lastBrowserWindowMods, 'alt')
+      tinsert(lastBrowserWindowMods, 'alt')
     elseif mod == 'control' then
-      table.insert(lastBrowserWindowMods, 'ctrl')
+      tinsert(lastBrowserWindowMods, 'ctrl')
     elseif mod == 'shift' then
-      table.insert(lastBrowserWindowMods, 'shift')
+      tinsert(lastBrowserWindowMods, 'shift')
     end
   end
 
@@ -894,7 +898,7 @@ function()
   local allWindows = wFilter:getWindows()
   local choices = {}
   for _, window in ipairs(allWindows) do
-    table.insert(choices,
+    tinsert(choices,
         {
           text = window:title(),
           subText = window:application():name(),
@@ -954,8 +958,8 @@ local function browserChooser()
       local ok, result = hs.osascript.applescript(script)
       -- parse the result and add them to choices
       if ok then
-        for winID, id, url, title in string.gmatch(result, "(.-)%|%|%|(.-)%|%|%|(.-)%|%|%|(.-)%|%|%|") do
-          table.insert(choices,
+        for winID, id, url, title in result:gmatch("(.-)%|%|%|(.-)%|%|%|(.-)%|%|%|(.-)%|%|%|") do
+          tinsert(choices,
               {
                 text = title,
                 subText = url,
@@ -1037,11 +1041,11 @@ local function PDFChooser()
     local winTitles = {}
     local winPaths = {}
     for _, win in ipairs(allWindows) do
-      local winUI = hs.axuielement.windowElement(win)
+      local winUI = towinui(win)
       local filePath = ""
       if #getc(winUI, AX.Unknown) ~= 0 then
         local winIdent = getc(winUI, AX.Unknown, 1).AXIdentifier
-        filePath = string.match(winIdent, "PDFTabContentView (.*%.pdf)$")
+        filePath = winIdent:match("PDFTabContentView (.*%.pdf)$")
       end
       local toolbar = nil
       if win:isFullScreen() then
@@ -1053,11 +1057,11 @@ local function PDFChooser()
           toolbar, AX.Group, 1, AX.TabGroup, 1, AX.ScrollArea, 1, AX.Group)
       local tabTitles = {}
       for _, tab in ipairs(tabList) do
-        table.insert(tabTitles, tab.AXHelp)
+        tinsert(tabTitles, tab.AXHelp)
       end
-      table.insert(winTitles, win:title())
-      table.insert(winPaths, filePath)
-      table.insert(winTabTitles, tabTitles)
+      tinsert(winTitles, win:title())
+      tinsert(winPaths, filePath)
+      tinsert(winTabTitles, tabTitles)
     end
     for winID, winTitle in ipairs(winTitles) do
       local tabTitles = winTabTitles[winID]
@@ -1075,7 +1079,7 @@ local function PDFChooser()
         else
           choice.subText = 'INACTIVE in WINDOW: "' .. winTitle .. '"'
         end
-        table.insert(choices, choice)
+        tinsert(choices, choice)
       end
     end
     allWindowsPDFExpert = allWindows
@@ -1098,15 +1102,15 @@ local function PDFChooser()
           local subMenuItem = subMenuItems[i]
           if subMenuItem.AXTitle ~= "" then
             if subMenuItem.AXMenuItemMarkChar == "✓" then
-              table.insert(winTitles, subMenuItem.AXTitle)
+              tinsert(winTitles, subMenuItem.AXTitle)
             end
-            table.insert(tabTitles, subMenuItem.AXTitle)
+            tinsert(tabTitles, subMenuItem.AXTitle)
           else
-            table.insert(winTabTitles, tabTitles)
+            tinsert(winTabTitles, tabTitles)
             tabTitles = {}
           end
         end
-        table.insert(winTabTitles, tabTitles)
+        tinsert(winTabTitles, tabTitles)
         for i, winTitle in ipairs(winTitles) do
           tabTitles = winTabTitles[i]
           for _, tabTitle in ipairs(tabTitles) do
@@ -1120,7 +1124,7 @@ local function PDFChooser()
             if winTitle ~= tabTitle then
               choice.subText = 'INACTIVE in WINDOW: "' .. winTitle .. '"'
             end
-            table.insert(choices, choice)
+            tinsert(choices, choice)
           end
         end
       end
@@ -1136,7 +1140,7 @@ local function PDFChooser()
     ]])
     if ok and #results[1] > 0 then
       for i=1,#results[1] do
-        table.insert(choices,
+        tinsert(choices,
             {
               text = results[2][i],
               image = hs.image.imageFromAppBundle(app:bundleID()),
@@ -1183,8 +1187,8 @@ local function PDFChooser()
       local ok, result = hs.osascript.applescript(script)
       -- parse the result and add them to choices
       if ok then
-        for winID, id, url, title in string.gmatch(result, "(.-)%|%|%|(.-)%|%|%|(.-)%|%|%|(.-)%|%|%|") do
-          table.insert(choices,
+        for winID, id, url, title in result:gmatch("(.-)%|%|%|(.-)%|%|%|(.-)%|%|%|(.-)%|%|%|") do
+          tinsert(choices,
               {
                 text = title,
                 subText = url,
@@ -1207,7 +1211,7 @@ local function PDFChooser()
     if not choice then return end
     if choice.app == "com.readdle.PDFExpert-Mac" then
       allWindowsPDFExpert[choice.winID]:focus()
-      if not hs.fnutils.contains(hs.spaces.activeSpaces(),
+      if not tcontain(hs.spaces.activeSpaces(),
           hs.spaces.windowSpaces(allWindowsPDFExpert[choice.winID])[1]) then
         hs.timer.usleep(0.5 * 1000000)
       end
@@ -1215,7 +1219,7 @@ local function PDFChooser()
         local app = find(choice.app)
         local isFullScreen = allWindowsPDFExpert[choice.winID]:isFullScreen()
         if not isFullScreen or findMenuItem(app, { 'View', 'Always Show Toolbar' }).ticked then
-          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          local winUI = towinui(app:focusedWindow())
           if isFullScreen then
             winUI = getc(winUI, AX.Group, 1)
           end
@@ -1228,7 +1232,7 @@ local function PDFChooser()
             end
           end
         end
-        local activeIdx = hs.fnutils.indexOf(winTabTitlesPDFExpert[choice.winID],
+        local activeIdx = tindex(winTabTitlesPDFExpert[choice.winID],
             allWindowsPDFExpert[choice.winID]:title()) or 0
         if activeIdx < choice.id then
           for _=1,choice.id-activeIdx do
@@ -1315,7 +1319,7 @@ end
 bindWindowSwitch(misc["searchTab"], 'Switch to Tab',
 function()
   local appid = hs.application.frontmostApplication():bundleID()
-  if hs.fnutils.contains({ "com.readdle.PDFExpert-Mac", "com.superace.updf.mac" }, appid) then
+  if tcontain({ "com.readdle.PDFExpert-Mac", "com.superace.updf.mac" }, appid) then
     PDFChooser()
     return
   end

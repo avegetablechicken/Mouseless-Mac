@@ -1,7 +1,12 @@
+local strfmt = string.format
+local tinsert = table.insert
+local tcontain = hs.fnutils.contains
+local bind = hs.fnutils.partial
+
 local function syncFiles(targetDir, watchedDir, changedPaths, beforeFunc, workFunc, afterFunc)
   local relativePaths = {}
   for i, path in ipairs(changedPaths) do
-    relativePaths[i] = string.sub(path, string.len(hs.fs.pathToAbsolute(watchedDir)) + 1)
+    relativePaths[i] = path:sub(hs.fs.pathToAbsolute(watchedDir):len() + 1)
   end
 
   for i, path in ipairs(changedPaths) do
@@ -14,8 +19,8 @@ local function syncFiles(targetDir, watchedDir, changedPaths, beforeFunc, workFu
       _, status = workFunc(targetDir, watchedDir, path)
     else
       -- ignore git repo
-      if not string.find(path, "/.git/") then
-        _, status = hs.execute(string.format("cp -rp '%s' '%s'", path, targetDir .. "/" .. relativePaths[i]))
+      if not path:find("/.git/") then
+        _, status = hs.execute(strfmt("cp -rp '%s' '%s'", path, targetDir .. "/" .. relativePaths[i]))
       end
     end
 
@@ -29,7 +34,7 @@ end
 
 local function computePath(variables, path)
   local HOME_DIR = os.getenv("HOME")
-  path = string.gsub(path, "%${(.-)}", function(key)
+  path = path:gsub("%${(.-)}", function(key)
     if variables[key] then
       return variables[key]
     else
@@ -41,23 +46,23 @@ local function computePath(variables, path)
       end
     end
   end)
-  path = string.gsub(path, "%$%((.-)%)", function(key)
+  path = path:gsub("%$%((.-)%)", function(key)
     return hs.execute(key, true)
   end)
-  if string.sub(path, 1, 2) == "~/" then
-    path = HOME_DIR .. string.sub(path, 2)
+  if path:sub(1, 2) == "~/" then
+    path = HOME_DIR .. path:sub(2)
   end
   return path
 end
 
 
 local function getFileName(path)
-  return string.match(path, ".*/([^/]*)")
+  return path:match(".*/([^/]*)")
 end
 
 local function postprocessAfterFunc(command, targetDir, watchedDir, path)
   local target = targetDir .. "/" .. getFileName(path)
-  hs.execute(string.format([[
+  hs.execute(strfmt([[
 mv "%s" "%s";
 
 ]] .. command .. [[ "%s" > "%s";
@@ -87,10 +92,10 @@ for k, v in pairs(config.file or {}) do
   }
   if type(v) == "table" then
     if v[2].post_process ~= nil then
-      spec[5] = hs.fnutils.partial(postprocessAfterFunc, v[2].post_process)
+      spec[5] = bind(postprocessAfterFunc, v[2].post_process)
     end
   end
-  table.insert(filesToSync, spec)
+  tinsert(filesToSync, spec)
 end
 
 SyncPathWatchers = {}
@@ -112,16 +117,16 @@ for _, tuple in ipairs(filesToSync) do
     syncFiles(tuple[2], tuple[1], paths, beforeFunc, workFunc, afterFunc)
   end)
   watcher:start()
-  table.insert(SyncPathWatchers, watcher)
+  tinsert(SyncPathWatchers, watcher)
 end
 
 function File_applicationInstalledCallback(files, flagTables)
   for i=1,#files do
-    if string.match(files[i], "Google Docs")
-      or string.match(files[i], "Google Sheets")
-      or string.match(files[i], "Google Slides") then
+    if files[i]:match("Google Docs")
+      or files[i]:match("Google Sheets")
+      or files[i]:match("Google Slides") then
       if flagTables[i].itemCreated then
-        hs.execute(string.format("rm -rf \"%s\"", files[i]))
+        hs.execute(strfmt("rm -rf \"%s\"", files[i]))
       end
     end
   end
@@ -136,7 +141,7 @@ local function handleRequest(method, path, headers, body)
     local contentType, contentDisposition, content
     local types = hs.pasteboard.pasteboardTypes()
 
-    if hs.fnutils.contains(types, "public.file-url") then
+    if tcontain(types, "public.file-url") then
       contentType = "application/octet-stream"
       local filePath = hs.pasteboard.readURL().filePath
       contentDisposition = "attachment; filename=\"" .. hs.pasteboard.readString() .. "\""
@@ -144,16 +149,16 @@ local function handleRequest(method, path, headers, body)
       assert(file)
       content = file:read("*all")
       file:close()
-    elseif hs.fnutils.contains(types, "public.utf8-plain-text") then
+    elseif tcontain(types, "public.utf8-plain-text") then
       contentType = "text/plain"
       content = hs.pasteboard.readString()
-    elseif hs.fnutils.contains(types, "public.png") then
+    elseif tcontain(types, "public.png") then
       contentType = "image/png"
       content = hs.pasteboard.readImage():encodeAsURLString()
-    elseif hs.fnutils.contains(types, "public.jpeg") then
+    elseif tcontain(types, "public.jpeg") then
       contentType = "image/jpeg"
       content = hs.pasteboard.readImage():encodeAsURLString()
-    elseif hs.fnutils.contains(types, "public.tiff") then
+    elseif tcontain(types, "public.tiff") then
       contentType = "image/tiff"
       content = hs.pasteboard.readImage():encodeAsURLString()
     else
@@ -173,10 +178,10 @@ local function handleRequest(method, path, headers, body)
     return response.body, response.status, response.headers
   end
 
-  if string.find(headers["Content-Type"], "text/") then
+  if headers["Content-Type"]:find("text/") then
     hs.pasteboard.setContents(body)
     print("[LOG] Copied text to clipboard: " .. body)
-  elseif string.find(headers["Content-Type"], "image/") then
+  elseif headers["Content-Type"]:find("image/") then
     local file, tmpname
     while file == nil do
       tmpname = os.tmpname()
@@ -187,12 +192,12 @@ local function handleRequest(method, path, headers, body)
     os.remove(tmpname)
     hs.pasteboard.writeObjects(image)
     print("[LOG] Copied image to clipboard: " .. path)
-  elseif string.find(headers["Content-Type"], "application/") then
+  elseif headers["Content-Type"]:find("application/") then
     local filename
     if headers["Content-Disposition"] ~= nil then
       local disposition = headers["Content-Disposition"]
       local pattern = "filename=\"(.-)\""
-      filename = string.match(disposition, pattern)
+      filename = disposition:match(pattern)
       if filename == nil then pattern = "filename=(.-)" end
     end
 

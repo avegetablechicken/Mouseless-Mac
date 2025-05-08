@@ -1,5 +1,11 @@
 ---@diagnostic disable: lowercase-global
 
+local tinsert = table.insert
+local tremove = table.remove
+local tcontain = hs.fnutils.contains
+local tfind = hs.fnutils.find
+local tfilter = hs.fnutils.filter
+
 OS = {
   Cheetah = "10.00",
   Puma = "10.01",
@@ -63,17 +69,17 @@ local function loadKeybindings(filePath)
   KeybindingConfigs = hs.json.read(filePath)
   for k, hp in pairs(KeybindingConfigs.hyper or {}) do
     if type(hp) == "string" then
-      if hs.fnutils.contains({"fn", "shift", "option", "control", "command"}) then
+      if tcontain({"fn", "shift", "option", "control", "command"}) then
         hp = {hp}
       end
     end
     if type(hp) ~= "string" then
       local modsRepr = ""
-      if hs.fnutils.contains(hp, "command") then modsRepr = "⌘" end
-      if hs.fnutils.contains(hp, "control") then modsRepr = modsRepr .. "⌃" end
-      if hs.fnutils.contains(hp, "option") then modsRepr = modsRepr .. "⌥" end
-      if hs.fnutils.contains(hp, "shift") then modsRepr = modsRepr .. "⇧" end
-      if hs.fnutils.contains(hp, "fn") then modsRepr = "fn" .. modsRepr end
+      if tcontain(hp, "command") then modsRepr = "⌘" end
+      if tcontain(hp, "control") then modsRepr = modsRepr .. "⌃" end
+      if tcontain(hp, "option") then modsRepr = modsRepr .. "⌥" end
+      if tcontain(hp, "shift") then modsRepr = modsRepr .. "⇧" end
+      if tcontain(hp, "fn") then modsRepr = "fn" .. modsRepr end
       KeybindingConfigs.hyper[k] = modsRepr
     end
   end
@@ -88,15 +94,15 @@ local function loadKeybindings(filePath)
     if kind ~= "menubar" then
       for k, spec in pairs(cfg) do
         if type(spec.mods) == 'string' then
-          spec.mods = string.gsub(spec.mods, "%${(.-)}", function(key)
+          spec.mods = spec.mods:gsub("%${(.-)}", function(key)
             local pos = 0
             local buf = KeybindingConfigs
             while true do
-              local newPos = string.find(key, "%.", pos + 1)
+              local newPos = key:find("%.", pos + 1)
               if newPos then
-                buf = buf[string.sub(key, pos + 1, newPos - 1)]
+                buf = buf[key:sub(pos + 1, newPos - 1)]
               else
-                buf = buf[string.sub(key, pos + 1)]
+                buf = buf[key:sub(pos + 1)]
                 break
               end
               pos = newPos
@@ -120,31 +126,31 @@ DoubleTapModalList = {}
 
 local hyper = require('modal.hyper')
 HyperModal = hyper.install(HYPER)
-table.insert(HyperModalList, HyperModal)
+tinsert(HyperModalList, HyperModal)
 
 -- get hotkey idx like how Hammerspoon does that
 function hotkeyIdx(mods, key)
-  local idx = string.upper(key)
+  local idx = key:upper()
   if type(mods) == 'string' then
     if mods == "shift" then idx = "⇧" .. idx
     elseif mods == "option" or mods == "alt" then idx = "⌥" .. idx
     elseif mods == "control" or mods == "ctrl" then idx = "⌃" .. idx
     elseif mods == "command" or mods == "cmd" then idx = "⌘" .. idx
     else
-      if string.find(mods, "⇧") then idx = "⇧" .. idx end
-      if string.find(mods, "⌥") then idx = "⌥" .. idx end
-      if string.find(mods, "⌃") then idx = "⌃" .. idx end
-      if string.find(mods, "⌘") then idx = "⌘" .. idx end
+      if mods:find("⇧") then idx = "⇧" .. idx end
+      if mods:find("⌥") then idx = "⌥" .. idx end
+      if mods:find("⌃") then idx = "⌃" .. idx end
+      if mods:find("⌘") then idx = "⌘" .. idx end
     end
   else
-    if hs.fnutils.contains(mods, "shift") then idx = "⇧" .. idx end
-    if hs.fnutils.contains(mods, "option") or hs.fnutils.contains(mods, "alt") then
+    if tcontain(mods, "shift") then idx = "⇧" .. idx end
+    if tcontain(mods, "option") or tcontain(mods, "alt") then
       idx = "⌥" .. idx
     end
-    if hs.fnutils.contains(mods, "control") or hs.fnutils.contains(mods, "ctrl") then
+    if tcontain(mods, "control") or tcontain(mods, "ctrl") then
       idx = "⌃" .. idx
     end
-    if hs.fnutils.contains(mods, "command") or hs.fnutils.contains(mods, "cmd") then
+    if tcontain(mods, "command") or tcontain(mods, "cmd") then
       idx = "⌘" .. idx
     end
   end
@@ -154,7 +160,7 @@ end
 -- send key strokes to the system. but if the key binding is registered, disable it temporally
 function safeGlobalKeyStroke(mods, key)
   local idx = hotkeyIdx(mods, key)
-  local conflicted = hs.fnutils.filter(hs.hotkey.getHotkeys(), function(hk)
+  local conflicted = tfilter(hs.hotkey.getHotkeys(), function(hk)
     return hk.idx == idx
   end)
   if conflicted[1] ~= nil then
@@ -217,7 +223,7 @@ function newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
   releasedfn = getFunc(releasedfn)
   repeatfn = getFunc(repeatfn)
   local hotkey
-  local validHyperModal = hs.fnutils.find(HyperModalList, function(modal)
+  local validHyperModal = tfind(HyperModalList, function(modal)
     return modal.hyper == mods
   end)
   if validHyperModal ~= nil then
@@ -227,7 +233,7 @@ function newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
   end
   if message ~= nil then
     if mods == HYPER then
-      hotkey.msg = string.gsub(hotkey.msg, HyperModal.hyper, "✧", 1)
+      hotkey.msg = hotkey.msg:gsub(HyperModal.hyper, "✧", 1)
     else
       hotkey.msg = hotkey.idx .. ": " .. message
     end
@@ -259,7 +265,7 @@ end
 function bindHotkeySpecImpl(spec, ...)
   local hotkey = newHotkeyImpl(spec.mods, spec.key, ...)
   if hotkey ~= nil then
-    local validHyperModal = hs.fnutils.find(HyperModalList, function(modal)
+    local validHyperModal = tfind(HyperModalList, function(modal)
       return modal.hyper == spec.mods
     end)
     if validHyperModal == nil then
@@ -272,7 +278,7 @@ end
 function bindHotkey(mods, ...)
   local hotkey = newHotkey(mods, ...)
   if hotkey ~= nil then
-    local validHyperModal = hs.fnutils.find(HyperModalList, function(modal)
+    local validHyperModal = tfind(HyperModalList, function(modal)
       return modal.hyper == mods
     end)
     if validHyperModal == nil then
@@ -368,11 +374,11 @@ function ExecOnSilentLaunch(appid, action, onlyFirstTime)
     local oldAction = action
     action = function(app)
       oldAction(app)
-      table.remove(processesOnSilentLaunch[appid], idx)
+      tremove(processesOnSilentLaunch[appid], idx)
     end
   end
 
-  table.insert(processesOnSilentLaunch[appid], action)
+  tinsert(processesOnSilentLaunch[appid], action)
   hasLaunched[appid] = find(appid) ~= nil
 end
 
@@ -381,7 +387,7 @@ function ExecOnSilentQuit(appid, action)
   if processesOnSilentQuit[appid] == nil then
     processesOnSilentQuit[appid] = {}
   end
-  table.insert(processesOnSilentQuit[appid], action)
+  tinsert(processesOnSilentQuit[appid], action)
   hasLaunched[appid] = find(appid) ~= nil
 end
 
@@ -415,8 +421,8 @@ local function applicationInstalledCallback(files, flagTables)
   for i, file in ipairs(files) do
     if file:sub(-4) == ".app"
         and (flagTables[i].itemCreated or flagTables.itemRemoved) then
-      table.insert(newFiles, file)
-      table.insert(newFlagTables, flagTables[i])
+      tinsert(newFiles, file)
+      tinsert(newFlagTables, flagTables[i])
     end
   end
   if #newFiles ~= 0 then

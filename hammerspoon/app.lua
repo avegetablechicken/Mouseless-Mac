@@ -1,4 +1,19 @@
 require "utils"
+local strfmt = string.format
+local strsplit = hs.fnutils.split
+local tinsert = table.insert
+local tremove = table.remove
+local tcontain = hs.fnutils.contains
+local tfind = hs.fnutils.find
+local tindex = hs.fnutils.indexOf
+local tfilter = hs.fnutils.filter
+local tifilter = hs.fnutils.ifilter
+local tcopy = hs.fnutils.copy
+local bind = hs.fnutils.partial
+local toappui = hs.axuielement.applicationElement
+local towinui = hs.axuielement.windowElement
+local uiobserver = hs.axuielement.observer
+local uinotifications = hs.axuielement.observer.notifications
 
 hs.application.enableSpotlightForNameSearches(true)
 
@@ -9,7 +24,7 @@ hs.application.enableSpotlightForNameSearches(true)
 local function focusOrHideFinder(app)
   local windowFilter = hs.window.filter.new(false):setAppFilter(app:name())
   local windows = windowFilter:getWindows()
-  local nonDesktop = hs.fnutils.find(windows, function(win)
+  local nonDesktop = tfind(windows, function(win)
     return win:id() ~= hs.window.desktop():id()
   end) == nil
   if nonDesktop then
@@ -68,13 +83,13 @@ end
 
 local function getParallelsVMPath(osname)
   local PVMDir = os.getenv("HOME") .. "/Parallels"
-  local path = string.format(PVMDir .. "/%s.pvm/%s.app", osname, osname)
+  local path = strfmt(PVMDir .. "/%s.pvm/%s.app", osname, osname)
   if hs.fs.attributes(path) ~= nil then return path end
 
   for filename in hs.fs.dir(PVMDir) do
     if filename:sub(-4) == '.pvm' and filename:sub(1, osname:len()) == osname then
       local stem = filename:sub(1, -5)
-      path = string.format(PVMDir .. "/%s.pvm/%s.app", stem, stem)
+      path = strfmt(PVMDir .. "/%s.pvm/%s.app", stem, stem)
       if hs.fs.attributes(path) ~= nil then return path end
     end
   end
@@ -87,7 +102,7 @@ local function registerAppHotkeys()
     hotkey:delete()
   end
   appHotkeys = {}
-  HyperModal.hyperMode.keys = hs.fnutils.filter(HyperModal.hyperMode.keys,
+  HyperModal.hyperMode.keys = tfilter(HyperModal.hyperMode.keys,
       function(hotkey) return hotkey.idx ~= nil end)
 
   for _, config in ipairs(KeybindingConfigs.hotkeys.appkeys or {}) do
@@ -132,18 +147,18 @@ local function registerAppHotkeys()
       if appid ~= nil then
         appname = displayName(appid)
       else
-        appname = hs.execute(string.format("mdls -name kMDItemDisplayName -raw '%s'", appPath))
+        appname = hs.execute(strfmt("mdls -name kMDItemDisplayName -raw '%s'", appPath))
         appname = appname:sub(1, -5)
       end
       local hotkey = bindHotkeySpec(config, appname,
-          hs.fnutils.partial(config.fn or focusOrHide, appid or appname))
+          bind(config.fn or focusOrHide, appid or appname))
       hotkey.kind = HK.APPKEY
       if appid then
         hotkey.appid = appid
       else
         hotkey.appPath = appPath
       end
-      table.insert(appHotkeys, hotkey)
+      tinsert(appHotkeys, hotkey)
     end
   end
 end
@@ -156,13 +171,13 @@ local appHotKeyCallbacks
 
 local function applicationVersion(appid)
   local appPath = hs.application.pathForBundleID(appid)
-  local version = hs.execute(string.format([[mdls -r -name kMDItemVersion '%s']], appPath))
-  version = hs.fnutils.split(version, "%.")
+  local version = hs.execute(strfmt([[mdls -r -name kMDItemVersion '%s']], appPath))
+  version = strsplit(version, "%.")
   local major, minor, patch
   major = tonumber(version[1]:match("%d+"))
   if major == nil then
     version = hs.application.infoForBundleID(appid).CFBundleShortVersionString
-    version = hs.fnutils.split(version, "%.")
+    version = strsplit(version, "%.")
     major = tonumber(version[1]:match("%d+"))
   end
   minor = #version > 1 and tonumber(version[2]:match("%d+")) or 0
@@ -173,7 +188,7 @@ end
 local function versionCompare(versionStr, comp)
   return function(app)
     local appMajor, appMinor, appPatch = applicationVersion(app:bundleID())
-    local version = hs.fnutils.split(versionStr, "%.")
+    local version = strsplit(versionStr, "%.")
     local major, minor, patch
     major = tonumber(version[1]:match("%d+"))
     minor = #version > 1 and tonumber(version[2]:match("%d+")) or 0
@@ -221,7 +236,7 @@ local function getFinderSidebarItemTitle(idx)
   return function(app)
     if app:focusedWindow() == nil
         or app:focusedWindow():role() == AX.Sheet then return false end
-    local winUI = hs.axuielement.windowElement(app:focusedWindow())
+    local winUI = towinui(app:focusedWindow())
     local outline = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1, AX.Outline, 1)
     if outline == nil then return end
     local header
@@ -245,7 +260,7 @@ local function getFinderSidebarItem(idx)
   return function(app)
     if app:focusedWindow() == nil
         or app:focusedWindow():role() == AX.Sheet then return false end
-    local winUI = hs.axuielement.windowElement(app:focusedWindow())
+    local winUI = towinui(app:focusedWindow())
     local outline = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1, AX.Outline, 1)
     if outline == nil then return false end
     local cnt = 0
@@ -298,7 +313,7 @@ end
 -- ### Messages
 local function deleteSelectedMessage(app, menuItem, force)
   if app:focusedWindow() == nil then return end
-  local winUI = hs.axuielement.windowElement(app:focusedWindow())
+  local winUI = towinui(app:focusedWindow())
   local button = getc(winUI, AX.Group, 1, AX.Group, 1,
       AX.Group, 2, AX.Group, 1, AX.Button, 2)
   if button ~= nil then
@@ -306,7 +321,7 @@ local function deleteSelectedMessage(app, menuItem, force)
     if force ~= nil then
       local confirm = function()
         if app:focusedWindow():role() == AX.Sheet then
-          local sheet = hs.axuielement.windowElement(app:focusedWindow())
+          local sheet = towinui(app:focusedWindow())
           local delete = getc(sheet, AX.Button, 2)
           delete:performAction(AX.Press)
         end
@@ -331,7 +346,7 @@ local function deleteSelectedMessage(app, menuItem, force)
 end
 
 local function messageDeletable(app)
-  local appUI = hs.axuielement.applicationElement(app)
+  local appUI = toappui(app)
   local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
     AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
   if messageItems == nil or #messageItems == 0
@@ -366,7 +381,7 @@ end
 
 -- ### FaceTime
 local function deleteMousePositionCall(win)
-  local winUI = hs.axuielement.windowElement(win)
+  local winUI = towinui(win)
   local collection = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
   if collection ~= nil and collection.AXDescription ==
       localizedString("Recent Calls", win:application():bundleID()) then
@@ -434,7 +449,7 @@ local function deleteMousePositionCall(win)
 end
 
 local function deleteAllCalls(win)
-  local winUI = hs.axuielement.windowElement(win)
+  local winUI = towinui(win)
   local collection = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
   if collection ~= nil and collection.AXDescription ==
       localizedString("Recent Calls", win:application():bundleID()) then
@@ -557,25 +572,25 @@ local function VSCodeToggleSideBarSection(app, sidebar, section)
             and (title of UI element 1 of group 1 of group 1 of group 2 of ¬
               ]] .. commonPath .. [[ ¬
               starts with "]] .. sidebar .. [[") then
-          ]] .. string.format(sectionFold, commonPath) .. [[
+          ]] .. strfmt(sectionFold, commonPath) .. [[
         else if (exists UI element 1 of group 1 of group 1 of group 2 of ¬
               ]] .. commonPathOld .. [[) ¬
             and (title of UI element 1 of group 1 of group 1 of group 2 of ¬
               ]] .. commonPathOld .. [[ ¬
               starts with "]] .. sidebar .. [[") then
-          ]] .. string.format(sectionFold, commonPathOld) .. [[
+          ]] .. strfmt(sectionFold, commonPathOld) .. [[
         else if (not exists ]] .. commonPath .. [[) ¬
             or (title of UI element 1 of group 1 of group 1 of group 2 of ¬
               ]] .. commonPath .. [[ ¬
               does not start with "]] .. sidebar .. [[") then
-          ]] .. string.format(sidebarAction, commonPath) .. [[
-          ]] .. string.format(sectionExpand, commonPath) .. [[
+          ]] .. strfmt(sidebarAction, commonPath) .. [[
+          ]] .. strfmt(sectionExpand, commonPath) .. [[
         else if (not exists ]] .. commonPathOld .. [[) ¬
             or (title of UI element 1 of group 1 of group 1 of group 2 of ¬
               ]] .. commonPathOld .. [[ ¬
               does not start with "]] .. sidebar .. [[") then
-          ]] .. string.format(sidebarAction, commonPathOld) .. [[
-          ]] .. string.format(sectionExpand, commonPathOld) .. [[
+          ]] .. strfmt(sidebarAction, commonPathOld) .. [[
+          ]] .. strfmt(sectionExpand, commonPathOld) .. [[
         end if
       end tell
     end tell
@@ -586,7 +601,7 @@ end
 local function JabRefShowLibraryByIndex(idx)
   return function(app)
     if app:focusedWindow() == nil then return false end
-    local winUI = hs.axuielement.windowElement(app:focusedWindow())
+    local winUI = towinui(app:focusedWindow())
     local tab = getc(winUI, AX.TabGroup, 1, AX.RadioButton, idx)
     if tab ~= nil then
       return true, { x = tab.AXPosition.x + 10, y = tab.AXPosition.y + 10 }
@@ -600,10 +615,10 @@ end
 local function buttonValidForAppCleanerUninstaller(title)
   return function(win)
     local locTitle = localizedString(title, win:application():bundleID())
-    local winUI = hs.axuielement.windowElement(win)
+    local winUI = towinui(win)
     local sg = getc(winUI, AX.SplitGroup, 1)
     if sg == nil then return false end
-    local button = hs.fnutils.find(getc(sg, AX.Button), function(bt)
+    local button = tfind(getc(sg, AX.Button), function(bt)
       return bt.AXIdentifier == "uaid:RemoveSelectedItemsButton"
           and bt.AXTitle == locTitle and bt.AXEnabled
     end)
@@ -614,8 +629,8 @@ end
 local function confirmButtonValidForAppCleanerUninstaller(title)
   return function(win)
     local locTitle = localizedString(title, win:application():bundleID())
-    local winUI = hs.axuielement.windowElement(win)
-    local cancel = hs.fnutils.find(getc(winUI, AX.Button), function(bt)
+    local winUI = towinui(win)
+    local cancel = tfind(getc(winUI, AX.Button), function(bt)
       return bt.AXIdentifier == "uaid:RemoveDialogSecondButton" and bt.AXEnabled
     end)
     if cancel == nil then return false end
@@ -632,32 +647,31 @@ BartenderBarFilter = nil
 local function getBartenderBarItemTitle(index, rightClick)
   return function(app)
     if bartenderBarItemNames == nil then
-      local winUI = hs.axuielement.windowElement(app:focusedWindow())
+      local winUI = towinui(app:focusedWindow())
       local icons = getc(winUI, AX.ScrollArea, 1, AX.List, 1, AX.List, 1)
       local appnames = hs.fnutils.map(getc(icons, AX.Group), function(g)
         return getc(g, AX.Image, 1).AXDescription
       end)
       if #appnames > 0 then
         local appid = app:bundleID()
-        local _, items = hs.osascript.applescript(string.format([[
+        local _, items = hs.osascript.applescript(strfmt([[
           tell application id "%s" to list menu bar items
         ]], appid))
-        local itemList = hs.fnutils.split(items, "\n")
-        local splitterIndex = hs.fnutils.indexOf(itemList, appid .. "-statusItem")
-        local barSplitterIndex = hs.fnutils.indexOf(appnames, app:name())
+        local itemList = strsplit(items, "\n")
+        local splitterIndex = tindex(itemList, appid .. "-statusItem")
+        local barSplitterIndex = tindex(appnames, app:name())
         if barSplitterIndex ~= nil then
           splitterIndex = splitterIndex - (#appnames - (barSplitterIndex - 1))
         end
         bartenderBarItemNames = {}
         bartenderBarItemIDs = {}
         local missedItemCnt = 0
-        local plistPath = hs.fs.pathToAbsolute(string.format(
-            "~/Library/Preferences/%s.plist", appid))
+        local plistPath = hs.fs.pathToAbsolute(strfmt("~/Library/Preferences/%s.plist", appid))
         if plistPath ~= nil then
           local plist = hs.plist.read(plistPath)
           local allwaysHidden = get(plist, "ProfileSettings", "activeProfile", "AlwaysHide")
           local itemIDIdx = splitterIndex + #appnames
-          while hs.fnutils.contains(allwaysHidden, itemList[itemIDIdx]) and itemIDIdx > splitterIndex do
+          while tcontain(allwaysHidden, itemList[itemIDIdx]) and itemIDIdx > splitterIndex do
             itemIDIdx = itemIDIdx - 1
           end
           missedItemCnt = #appnames - (itemIDIdx - splitterIndex)
@@ -666,30 +680,30 @@ local function getBartenderBarItemTitle(index, rightClick)
           for i = 1, #appnames do
             local appname = appnames[i]
             local itemID = itemList[splitterIndex + 1 + #appnames - i]
-            local id, idx = string.match(itemID, "(.-)%-Item%-(%d+)$")
+            local id, idx = itemID:match("(.-)%-Item%-(%d+)$")
             if id ~= nil then
               if idx == "0" then
-                table.insert(bartenderBarItemNames, appname)
+                tinsert(bartenderBarItemNames, appname)
               else
-                table.insert(bartenderBarItemNames, string.format("%s (Item %s)", appname, idx))
+                tinsert(bartenderBarItemNames, strfmt("%s (Item %s)", appname, idx))
               end
-              table.insert(bartenderBarItemIDs, itemID)
+              tinsert(bartenderBarItemIDs, itemID)
             else
               local app = find(appname)
               if app == nil or app:bundleID() ~= itemID:sub(1, #app:bundleID()) then
-                table.insert(bartenderBarItemNames, appname)
-                table.insert(bartenderBarItemIDs, itemID)
+                tinsert(bartenderBarItemNames, appname)
+                tinsert(bartenderBarItemIDs, itemID)
               elseif app ~= nil then
                 local itemShortName = itemID:sub(#app:bundleID() + 2)
-                table.insert(bartenderBarItemNames, string.format("%s (%s)", appname, itemShortName))
-                table.insert(bartenderBarItemIDs, itemID)
+                tinsert(bartenderBarItemNames, strfmt("%s (%s)", appname, itemShortName))
+                tinsert(bartenderBarItemIDs, itemID)
               end
             end
           end
         else
           for i = 1, #appnames do
-            table.insert(bartenderBarItemNames, appnames[i])
-            table.insert(bartenderBarItemIDs, i)
+            tinsert(bartenderBarItemNames, appnames[i])
+            tinsert(bartenderBarItemIDs, i)
           end
         end
         BartenderBarFilter = hs.window.filter.new(false):setAppFilter(
@@ -715,19 +729,19 @@ local function clickBartenderBarItem(index, rightClick)
     local appid = win:application():bundleID()
     local itemID = bartenderBarItemIDs[index]
     if type(itemID) == 'string' then
-      local script = string.format('tell application id "%s" to activate "%s"',
+      local script = strfmt('tell application id "%s" to activate "%s"',
           appid, bartenderBarItemIDs[index])
       if rightClick then
         script = script .. " with right click"
       end
       hs.osascript.applescript(script)
       hs.timer.doAfter(0.1, function()
-        hs.osascript.applescript(string.format([[
+        hs.osascript.applescript(strfmt([[
           tell application id "%s" to toggle bartender
         ]], appid))
       end)
     else
-      local winUI = hs.axuielement.windowElement(find(appid):focusedWindow())
+      local winUI = towinui(find(appid):focusedWindow())
       local icon = getc(winUI, AX.ScrollArea, 1, AX.List, 1,
           AX.List, 1, AX.Group, itemID, AX.Image, 1)
       if icon ~= nil then
@@ -744,7 +758,7 @@ end
 
 local function clickBartenderSidebarItem(index)
   return function(win)
-    local winUI = hs.axuielement.windowElement(win)
+    local winUI = towinui(win)
     local row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
         AX.Outline, 1, AX.Row, index, AX.Cell, 1, AX.Image, 1)
     if row ~= nil then
@@ -756,7 +770,7 @@ end
 -- ### PasswordsMenuBarExtra
 local function getPasswordRecordPosition(index)
   return function(win)
-    local winUI = hs.axuielement.windowElement(win)
+    local winUI = towinui(win)
     local searchField = getc(winUI, AX.Group, 1, AX.TextField, 1)
     if searchField ~= nil then
       local row = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
@@ -802,7 +816,7 @@ local function getTabSource(app)
       end tell
     ]])
   else  -- assume chromium-based browsers
-    ok, source = hs.osascript.applescript(string.format([[
+    ok, source = hs.osascript.applescript(strfmt([[
       tell application id "%s"
         execute active tab of front window javascript "document.documentElement.outerHTML"
       end tell
@@ -818,7 +832,7 @@ local function getTabUrl(app)
       tell application id "com.apple.Safari" to get URL of front document
     ]])
   else  -- assume chromium-based browsers
-    ok, url = hs.osascript.applescript(string.format([[
+    ok, url = hs.osascript.applescript(strfmt([[
       tell application id "%s" to get URL of active tab of front window
     ]], app:bundleID()))
   end
@@ -860,7 +874,7 @@ local function weiboNavigateToSideBarCondition(idx, isCommon)
     end
     source = source:sub(start + 1, stop - 1)
     local cnt = isCommon and 1 or 0
-    for url in string.gmatch(source, [[<a class="ALink_none[^>]-href="/(mygroup.-)">]]) do
+    for url in source:gmatch([[<a class="ALink_none[^>]-href="/(mygroup.-)">]]) do
       cnt = cnt + 1
       if cnt == idx then return true, url end
     end
@@ -873,13 +887,13 @@ local function weiboNavigateToSideBar(result, url, app)
   local domainEnd = url:find("/", schemeEnd + 2)
   local fullUrl = url:sub(1, domainEnd) .. result
   if app:bundleID() == "com.apple.Safari" then
-    hs.osascript.applescript(string.format([[
+    hs.osascript.applescript(strfmt([[
       tell application id "com.apple.Safari"
         set URL of front document to "%s"
       end tell
     ]], fullUrl))
   else  -- assume chromium-based browsers
-    hs.osascript.applescript(string.format([[
+    hs.osascript.applescript(strfmt([[
       tell application id "%s"
         set URL of active tab of front window to "%s"
       end tell
@@ -901,7 +915,7 @@ local function douyinNavigateToTabCondition(idx)
     if source == nil then return end
     local cnt = 0
     local lastURL = ""
-    for url in string.gmatch(source, [[<div class="tab\-[^>]-><a href="(.-)"]]) do
+    for url in source:gmatch([[<div class="tab\-[^>]-><a href="(.-)"]]) do
       if url ~= lastURL then cnt = cnt + 1 end
       if cnt == idx then return true, url end
       lastURL = url
@@ -919,13 +933,13 @@ local function douyinNavigateToTab(result, url, app)
     fullUrl = result
   end
   if app:bundleID() == "com.apple.Safari" then
-    hs.osascript.applescript(string.format([[
+    hs.osascript.applescript(strfmt([[
       tell application id "com.apple.Safari"
         set URL of front document to "%s"
       end tell
     ]], fullUrl))
   else  -- assume chromium-based browsers
-    hs.osascript.applescript(string.format([[
+    hs.osascript.applescript(strfmt([[
       tell application id "%s"
         set URL of active tab of front window to "%s"
       end tell
@@ -943,16 +957,16 @@ local function parsePlistKeyBinding(mods, key)
   key = hs.keycodes.map[key]
   local modList = {}
   if mods >= (1 << 17) then
-    if mods >= (1 << 23) then table.insert(modList, "fn") end
-    if (mods % (1 << 23)) >= (1 << 20) then table.insert(modList, "command") end
-    if (mods % (1 << 20)) >= (1 << 19) then table.insert(modList, "option") end
-    if (mods % (1 << 19)) >= (1 << 18) then table.insert(modList, "control") end
-    if (mods % (1 << 18)) >= (1 << 17) then table.insert(modList, "shift") end
+    if mods >= (1 << 23) then tinsert(modList, "fn") end
+    if (mods % (1 << 23)) >= (1 << 20) then tinsert(modList, "command") end
+    if (mods % (1 << 20)) >= (1 << 19) then tinsert(modList, "option") end
+    if (mods % (1 << 19)) >= (1 << 18) then tinsert(modList, "control") end
+    if (mods % (1 << 18)) >= (1 << 17) then tinsert(modList, "shift") end
   else
-    if mods >= (1 << 12) then table.insert(modList, "control") end
-    if (mods % (1 << 12)) >= (1 << 11) then table.insert(modList, "option") end
-    if (mods % (1 << 11)) >= (1 << 9) then table.insert(modList, "shift") end
-    if (mods % (1 << 9)) >= (1 << 8) then table.insert(modList, "command") end
+    if mods >= (1 << 12) then tinsert(modList, "control") end
+    if (mods % (1 << 12)) >= (1 << 11) then tinsert(modList, "option") end
+    if (mods % (1 << 11)) >= (1 << 9) then tinsert(modList, "shift") end
+    if (mods % (1 << 9)) >= (1 << 8) then tinsert(modList, "command") end
   end
   return modList, key
 end
@@ -961,16 +975,16 @@ end
 local function dumpPlistKeyBinding(mode, mods, key)
   local modIdx = 0
   if mode == 1 then
-    if hs.fnutils.contains(mods, "command") then modIdx = (1 << 8) end
-    if hs.fnutils.contains(mods, "option") then modIdx = modIdx + (1 << 11) end
-    if hs.fnutils.contains(mods, "control") then modIdx = modIdx + (1 << 12) end
-    if hs.fnutils.contains(mods, "shift") then modIdx = modIdx + (1 << 9) end
+    if tcontain(mods, "command") then modIdx = (1 << 8) end
+    if tcontain(mods, "option") then modIdx = modIdx + (1 << 11) end
+    if tcontain(mods, "control") then modIdx = modIdx + (1 << 12) end
+    if tcontain(mods, "shift") then modIdx = modIdx + (1 << 9) end
   elseif mode == 2 then
     if key:lower():match("^f(%d+)$") then modIdx = 1 << 23 end
-    if hs.fnutils.contains(mods, "command") then modIdx = modIdx + (1 << 20) end
-    if hs.fnutils.contains(mods, "option") then modIdx = modIdx + (1 << 19) end
-    if hs.fnutils.contains(mods, "control") then modIdx = modIdx + (1 << 18) end
-    if hs.fnutils.contains(mods, "shift") then modIdx = modIdx + (1 << 17) end
+    if tcontain(mods, "command") then modIdx = modIdx + (1 << 20) end
+    if tcontain(mods, "option") then modIdx = modIdx + (1 << 19) end
+    if tcontain(mods, "control") then modIdx = modIdx + (1 << 18) end
+    if tcontain(mods, "shift") then modIdx = modIdx + (1 << 17) end
   end
   key = hs.keycodes.map[key]
   return modIdx, key
@@ -1081,7 +1095,7 @@ local COND_FAIL = {
 -- check whether the menu bar item is selected
 -- if a menu is extended, hotkeys with no modifiers are disabled
 local function noSelectedMenuBarItem(app)
-  local appUI = hs.axuielement.applicationElement(app)
+  local appUI = toappui(app)
   local menuBar
   local maxTryTime = 3
   local tryInterval = 0.05
@@ -1340,7 +1354,7 @@ appHotKeyCallbacks = {
       message = commonLocalizedMessage("Search"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = towinui(app:focusedWindow())
         local searchField = getc(winUI, AX.Toolbar, 1, AX.Group, 2, AX.TextField, 1)
         if searchField == nil then return false end
         return true, searchField
@@ -1357,10 +1371,10 @@ appHotKeyCallbacks = {
     ["deleteConversation"] = {
       message = localizedMessage("Delete Conversation…"),
       condition = function(app)
-        local appUI = hs.axuielement.applicationElement(app)
+        local appUI = toappui(app)
         local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
             AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
-        local selected = hs.fnutils.find(messageItems or {}, function(msg)
+        local selected = tfind(messageItems or {}, function(msg)
           return msg.AXSelected == true and msg.AXDescription:sub(4) ~=
               localizedString('New Message', app:bundleID())
         end)
@@ -1380,14 +1394,14 @@ appHotKeyCallbacks = {
     ["goToPreviousConversation"] = {
       message = menuItemMessage('⇧⌃', "⇥", 2),
       condition = function(app)
-        local appUI = hs.axuielement.applicationElement(app)
+        local appUI = toappui(app)
         local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
             AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
         if messageItems == nil or #messageItems == 0 then return false end
         if messageItems[1].AXSelected then
           return true, messageItems[#messageItems]
         else
-          local selected = hs.fnutils.find(messageItems, function(msg)
+          local selected = tfind(messageItems, function(msg)
             return msg.AXSelected == true
           end)
           if selected == nil then return true, messageItems[#messageItems] end
@@ -1406,14 +1420,14 @@ appHotKeyCallbacks = {
     ["goToNextConversation"] = {
       message = menuItemMessage('⌃', "⇥", 2),
       condition = function(app)
-        local appUI = hs.axuielement.applicationElement(app)
+        local appUI = toappui(app)
         local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
             AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
         if messageItems == nil or #messageItems == 0 then return false end
         if messageItems[#messageItems].AXSelected then
           return true, messageItems[1]
         else
-          local selected = hs.fnutils.find(messageItems, function(msg)
+          local selected = tfind(messageItems, function(msg)
             return msg.AXSelected == true
           end)
           if selected == nil then return true, messageItems[1] end
@@ -1450,7 +1464,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("New FaceTime"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = towinui(app:focusedWindow())
         local button = getc(winUI, AX.Group, 1, AX.Group, 1,
             AX.Group, 1, AX.Group, 1, AX.Button, 2)
         return button ~= nil, button
@@ -1469,13 +1483,13 @@ appHotKeyCallbacks = {
           return true, menuItemTitle
         else
           if app:focusedWindow() == nil then return false end
-          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          local winUI = towinui(app:focusedWindow())
           local button
           button = getc(winUI, AX.SplitGroup, 1, AX.Group, 2, AX.Button, 1)
           if button ~= nil then return true, button end
           local g = getc(winUI, AX.Group, 1)
           if g == nil then return false end
-          button = hs.fnutils.find(getc(g, AX.Button), function(b)
+          button = tfind(getc(g, AX.Button), function(b)
             return b.AXIdentifier == "UIA.AppStore.NavigationBackButton"
                 or b.AXIdentifier == "AppStore.backButton"
           end)
@@ -1502,7 +1516,7 @@ appHotKeyCallbacks = {
         local ok, url = hs.osascript.applescript([[
           tell application id "]] .. app:bundleID() .. [[" to return URL of front document
         ]])
-        if ok and string.sub(url, 1, 7) == "file://" then
+        if ok and url:sub(1, 7) == "file://" then
           return true, url
         else
           return false
@@ -1543,7 +1557,7 @@ appHotKeyCallbacks = {
         local ok, url = hs.osascript.applescript([[
           tell application id "]] .. app:bundleID() .. [[" to return URL of active tab of front window
         ]])
-        if ok and string.sub(url, 1, 7) == "file://" then
+        if ok and url:sub(1, 7) == "file://" then
           return true, url
         else
           return false
@@ -1561,7 +1575,7 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then
           return false
         else
-          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          local winUI = towinui(app:focusedWindow())
           return winUI.AXIdentifier ~= "open-panel"
         end
       end,
@@ -1576,7 +1590,7 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then
           return false
         else
-          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          local winUI = towinui(app:focusedWindow())
           return winUI.AXIdentifier ~= "open-panel"
         end
       end,
@@ -1611,7 +1625,7 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then
           return false
         else
-          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          local winUI = towinui(app:focusedWindow())
           return winUI.AXIdentifier ~= "open-panel"
         end
       end,
@@ -1704,7 +1718,7 @@ appHotKeyCallbacks = {
       condition = function(app)
         local win = app:focusedWindow()
         if win == nil then return false end
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local buttons = getc(winUI, AX.Button)
         local title = localizedString("Don't Save", app:bundleID())
         for _, button in ipairs(buttons) do
@@ -1786,7 +1800,7 @@ appHotKeyCallbacks = {
         return app:focusedWindow():title() == home, app:focusedWindow()
       end,
       fn = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local button = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group, 1)
         local position = { button.AXPosition.x + 30, button.AXPosition.y + 10 }
         leftClickAndRestore(position, win:application():name())
@@ -1797,7 +1811,7 @@ appHotKeyCallbacks = {
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local win = app:focusedWindow()
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         for i=1,#winUI.AXChildren - 1 do
           if winUI.AXChildren[i].AXRole == AX.Button
               and winUI.AXChildren[i + 1].AXRole == AX.Group then
@@ -1868,7 +1882,7 @@ appHotKeyCallbacks = {
         app:selectMenuItem(menuItemTitle)
         hs.timer.doAfter(0.5, function()
           local winTitle = localizedString("Build Order", app:bundleID())
-          local window = hs.fnutils.ifilter(app:visibleWindows(), function(win)
+          local window = tifilter(app:visibleWindows(), function(win)
             return win:title() == winTitle
           end)
           if #window ~= 0 then window[1]:raise() end
@@ -1907,10 +1921,10 @@ appHotKeyCallbacks = {
           tell application id "]] .. app:bundleID() .. [[" to get file of front document
         ]])
         if ok and filePath ~= nil then
-          local pos = string.find(filePath, ":", 1)
+          local pos = filePath:find(":", 1)
           assert(pos)
-          filePath = string.sub(filePath, pos)
-          filePath = string.gsub(filePath, ":", "/")
+          filePath = filePath:sub(pos)
+          filePath = filePath:gsub(":", "/")
           return true, filePath
         else
           return false
@@ -1962,10 +1976,10 @@ appHotKeyCallbacks = {
           tell application id "]] .. app:bundleID() .. [[" to get file of front document
         ]])
         if ok and filePath ~= nil then
-          local pos = string.find(filePath, ":", 1)
+          local pos = filePath:find(":", 1)
           assert(pos)
-          filePath = string.sub(filePath, pos)
-          filePath = string.gsub(filePath, ":", "/")
+          filePath = filePath:sub(pos)
+          filePath = filePath:gsub(":", "/")
           return true, filePath
         else
           return false
@@ -2017,10 +2031,10 @@ appHotKeyCallbacks = {
           tell application id "]] .. app:bundleID() .. [[" to get file of front document
         ]])
         if ok and filePath ~= nil then
-          local pos = string.find(filePath, ":", 1)
+          local pos = filePath:find(":", 1)
           assert(pos)
-          filePath = string.sub(filePath, pos)
-          filePath = string.gsub(filePath, ":", "/")
+          filePath = filePath:sub(pos)
+          filePath = filePath:gsub(":", "/")
           return true, filePath
         else
           return false
@@ -2060,7 +2074,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("翻译写作"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = towinui(app:focusedWindow())
         local button = getc(winUI, AX.Toolbar, 1, AX.Button, 3)
         return button ~= nil, button
       end,
@@ -2082,7 +2096,7 @@ appHotKeyCallbacks = {
       end,
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = towinui(app:focusedWindow())
         local button = getc(winUI, AX.Toolbar, 1, AX.Button, 6)
         return button ~= nil, button
       end,
@@ -2102,7 +2116,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Back"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = towinui(app:focusedWindow())
         if winUI.AXIdentifier ~= "ChatGPTSettingsAppWindow" then
           return false
         end
@@ -2115,17 +2129,17 @@ appHotKeyCallbacks = {
       message = "Toggle ChatGPT Launcher",
       fn = function(app)
         local appid = app:bundleID()
-        local output = hs.execute(string.format(
+        local output = hs.execute(strfmt(
             "defaults read '%s' KeyboardShortcuts_toggleLauncher | tr -d '\\n'", appid))
         if output == "0" then
           local spec = KeybindingConfigs.hotkeys[appid]["toggleLauncher"]
           local mods, key = dumpPlistKeyBinding(1, spec.mods, spec.key)
-          hs.execute(string.format(
+          hs.execute(strfmt(
               [[defaults write '%s' KeyboardShortcuts_toggleLauncher -string '{"carbonKeyCode":%d,"carbonModifiers":%d}']],
               appid, key, mods))
           app:kill()
           hs.timer.doAfter(1, function()
-            hs.execute(string.format("open -g -b '%s'", appid))
+            hs.execute(strfmt("open -g -b '%s'", appid))
             hs.timer.doAfter(1, function()
               safeGlobalKeyStroke(spec.mods, spec.key)
             end)
@@ -2146,12 +2160,12 @@ appHotKeyCallbacks = {
       message = "设置",
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = towinui(app:focusedWindow())
         local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
           AX.ScrollArea, 1, AX.WebArea, 1)
         if webarea == nil then return false end
-        local button = hs.fnutils.find(getc(webarea, AX.Group), function(b)
-          return hs.fnutils.find(b.AXDOMClassList or {}, function(c)
+        local button = tfind(getc(webarea, AX.Group), function(b)
+          return tfind(b.AXDOMClassList or {}, function(c)
             return c:find("side%-bar_name") ~= nil
           end) ~= nil
         end)
@@ -2168,12 +2182,12 @@ appHotKeyCallbacks = {
       bindCondition = versionLessThan("1.6.0"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = towinui(app:focusedWindow())
         local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
             AX.ScrollArea, 1, AX.WebArea, 1)
         if webarea == nil then return false end
-        local button = hs.fnutils.find(getc(webarea, AX.Group), function(b)
-          return hs.fnutils.find(b.AXDOMClassList or {}, function(c)
+        local button = tfind(getc(webarea, AX.Group), function(b)
+          return tfind(b.AXDOMClassList or {}, function(c)
             return c:find("chat_new%-chat%-close") ~= nil
                 or c:find("side%-bar_newChatIcon") ~= nil
           end) ~= nil
@@ -2186,12 +2200,12 @@ appHotKeyCallbacks = {
       message = "切换侧栏",
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = towinui(app:focusedWindow())
         local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
             AX.ScrollArea, 1, AX.WebArea, 1)
         if webarea == nil then return false end
-        local button = hs.fnutils.find(getc(webarea, AX.Group), function(b)
-          return hs.fnutils.find(b.AXDOMClassList or {}, function(c)
+        local button = tfind(getc(webarea, AX.Group), function(b)
+          return tfind(b.AXDOMClassList or {}, function(c)
             return c:find("folder_foldIcon") ~= nil
           end) ~= nil
         end)
@@ -2210,12 +2224,12 @@ appHotKeyCallbacks = {
       message = "返回",
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = towinui(app:focusedWindow())
         local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
             AX.ScrollArea, 1, AX.WebArea, 1)
         if webarea == nil then return false end
-        local button = hs.fnutils.find(getc(webarea, AX.Group), function(b)
-          return hs.fnutils.find(b.AXDOMClassList or {}, function(c)
+        local button = tfind(getc(webarea, AX.Group), function(b)
+          return tfind(b.AXDOMClassList or {}, function(c)
             return c:find("setting_arrowLeft") ~= nil
           end) ~= nil
         end)
@@ -2236,7 +2250,7 @@ appHotKeyCallbacks = {
             tell application id "com.surteesstudios.Bartender" to activate "]] .. app:bundleID() .. [[-Item-0"
           ]])
         else
-          local appUI = hs.axuielement.applicationElement(app)
+          local appUI = toappui(app)
           local menuBarMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1)
           local position = {
             menuBarMenu.AXPosition.x + menuBarMenu.AXSize.w / 2,
@@ -2260,7 +2274,7 @@ appHotKeyCallbacks = {
             tell application id "com.surteesstudios.Bartender" to activate "]] .. app:bundleID() .. [[-Item-0"
           ]])
         else
-          local appUI = hs.axuielement.applicationElement(app)
+          local appUI = toappui(app)
           local menuBarMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1)
           local position = {
             menuBarMenu.AXPosition.x + menuBarMenu.AXSize.w / 2,
@@ -2382,7 +2396,7 @@ appHotKeyCallbacks = {
         allowTitles = "^KLatexFormula$"
       },
       fn = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local button = getc(winUI, AX.SplitGroup, 1, AX.Button, 2)
         if button ~= nil then
           button:performAction(AX.Press)
@@ -2396,7 +2410,7 @@ appHotKeyCallbacks = {
         app:selectMenuItem({"Shortcuts", "Activate Editor and Select All"})
         hs.eventtap.keyStroke("⌘", "V", nil, app)
 
-        local winUI = hs.axuielement.windowElement(app:mainWindow())
+        local winUI = towinui(app:mainWindow())
         local button = getc(winUI, AX.SplitGroup, 1, AX.Button, 2)
         if button ~= nil then
           button:performAction(AX.Press)
@@ -2442,13 +2456,13 @@ appHotKeyCallbacks = {
           end
         end
 
-        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = towinui(app:focusedWindow())
         -- Moments
-        if string.find(app:focusedWindow():title(), app:name()) == nil then
+        if app:focusedWindow():title():find(app:name()) == nil then
           local album = localizedString("Album_WindowTitle", appid)
           local moments = localizedString("SNS_Feed_Window_Title", appid)
           local detail = localizedString("SNS_Feed_Detail_Title", appid)
-          if string.find(app:focusedWindow():title(), album .. '-') == 1
+          if app:focusedWindow():title():find(album .. '-') == 1
               or app:focusedWindow():title() == moments .. '-' .. detail then
             return true, { 2, getc(winUI, AX.Button, 1).AXPosition }
           end
@@ -2481,7 +2495,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Chats.Menu.Hide"),
       condition = function(app)
         if app:focusedWindow() == nil then return end
-        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = towinui(app:focusedWindow())
         local curChatTitle = getc(winUI, AX.SplitGroup, 1,
             AX.SplitGroup, 1, AX.StaticText, 1)
             or getc(winUI, AX.SplitGroup, 1, AX.StaticText, 1)
@@ -2489,7 +2503,7 @@ appHotKeyCallbacks = {
         local title = curChatTitle.AXValue
         local chats = getc(winUI, AX.SplitGroup, 1,
             AX.ScrollArea, 1, AX.Table, 1, AX.Row)
-        local curChat = hs.fnutils.find(chats, function(c)
+        local curChat = tfind(chats, function(c)
           local row = getc(c, AX.Cell, 1, AX.Row, 1)
           return row ~= nil and (row.AXTitle == title
               or row.AXTitle:sub(1, #title + 1) == title .. ",")
@@ -2500,7 +2514,7 @@ appHotKeyCallbacks = {
         getc(chat, AX.Cell, 1):performAction(AX.ShowMenu)
         local menu = getc(chat, AX.Cell, 1, AX.Row, 1, AX.Menu, 1)
         if menu then
-          local hide = hs.fnutils.find(getc(menu, AX.MenuItem),
+          local hide = tfind(getc(menu, AX.MenuItem),
               function(c) return c.AXIdentifier == "contextMenuHide:" end)
           if hide then hide:performAction(AX.Press) end
         end
@@ -2510,7 +2524,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Chats.Menu.Profile"),
       condition = function(app)
         if app:focusedWindow() == nil then return end
-        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = towinui(app:focusedWindow())
         local curChatTitle = getc(winUI, AX.SplitGroup, 1,
             AX.SplitGroup, 1, AX.StaticText, 1)
         if curChatTitle == nil then return false end
@@ -2521,10 +2535,10 @@ appHotKeyCallbacks = {
       end,
       fn = function(title, app)
         if app:focusedWindow() == nil then return end
-        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = towinui(app:focusedWindow())
         local chats = getc(winUI, AX.SplitGroup, 1,
             AX.ScrollArea, 1, AX.Table, 1, AX.Row)
-        local curChat = hs.fnutils.find(chats, function(c)
+        local curChat = tfind(chats, function(c)
           local row = getc(c, AX.Cell, 1, AX.Row, 1)
           return row ~= nil and (row.AXTitle == title
               or row.AXTitle:sub(1, #title + 1) == title .. ",")
@@ -2534,7 +2548,7 @@ appHotKeyCallbacks = {
           local menu = getc(curChat, AX.Cell, 1,
               AX.Row, 1, AX.Menu, 1)
           if menu then
-            local profile = hs.fnutils.find(getc(menu, AX.MenuItem),
+            local profile = tfind(getc(menu, AX.MenuItem),
                 function(c) return c.AXIdentifier == "contextMenuProfile:" end)
             if profile then profile:performAction(AX.Press) end
           end
@@ -2545,7 +2559,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Open in Default Browser"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = towinui(app:focusedWindow())
         local g = getc(winUI, AX.Group, 1)
         return g ~= nil and g.AXDOMClassList ~= nil
       end,
@@ -2565,11 +2579,11 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then return false end
         local titleBar
         if versionLessThan("10.3.0")(app) then
-          local appUI = hs.axuielement.applicationElement(app)
+          local appUI = toappui(app)
           local frame = app:focusedWindow():frame()
           titleBar = appUI:elementAtPosition(frame.x + 100, frame.y + 10)
         else
-          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          local winUI = towinui(app:focusedWindow())
           titleBar = getc(winUI, AX.Unknown, 3)
           if titleBar == nil then return false end
         end
@@ -2591,11 +2605,11 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then return false end
         local titleBar
         if versionLessThan("10.3.0")(app) then
-          local appUI = hs.axuielement.applicationElement(app)
+          local appUI = toappui(app)
           local frame = app:focusedWindow():frame()
           titleBar = appUI:elementAtPosition(frame.x + 100, frame.y + 10)
         else
-          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          local winUI = towinui(app:focusedWindow())
           titleBar = getc(winUI, AX.Unknown, 3)
           if titleBar == nil then return false end
         end
@@ -2617,11 +2631,11 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then return false end
         local titleBar
         if versionLessThan("10.3.0")(app) then
-          local appUI = hs.axuielement.applicationElement(app)
+          local appUI = toappui(app)
           local frame = app:focusedWindow():frame()
           titleBar = appUI:elementAtPosition(frame.x + 100, frame.y + 10)
         else
-          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          local winUI = towinui(app:focusedWindow())
           titleBar = getc(winUI, AX.Unknown, 3)
           if titleBar == nil then return false end
         end
@@ -2645,7 +2659,7 @@ appHotKeyCallbacks = {
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         if versionLessThan("9")(app) then
-          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          local winUI = towinui(app:focusedWindow())
           local buttons = getc(winUI, AX.Button)
           return #buttons > 4 and getc(winUI, AX.Button, '歌曲详情') ~= nil
         else
@@ -2658,7 +2672,7 @@ appHotKeyCallbacks = {
         end
       end,
       fn = function(app)
-        local winUI = hs.axuielement.windowElement(app:focusedWindow())
+        local winUI = towinui(app:focusedWindow())
         local buttons = getc(winUI, AX.Button)
         buttons[#buttons - 2]:performAction(AX.Press)
       end
@@ -2673,9 +2687,9 @@ appHotKeyCallbacks = {
         -- in early version of macOS there was a duplicated menu bar item '文件'
         -- which does not have menu items. So we have to manually find out the
         -- right menu bar item '文件'
-        local appUI = hs.axuielement.applicationElement(app)
+        local appUI = toappui(app)
         local menuBarItems = getc(appUI, AX.MenuBar, 1,AX.MenuBarItem)
-        local menuBarItem = hs.fnutils.find(menuBarItems, function(item)
+        local menuBarItem = tfind(menuBarItems, function(item)
           return item.AXChildren ~= nil and #item.AXChildren > 0 and item.AXTitle == '文件'
         end)
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, '最近打开')
@@ -2703,7 +2717,7 @@ appHotKeyCallbacks = {
       background = true,
       nonFrontmost = true,
       fn = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         leftClickAndRestore({ x = winUI.AXPosition.x + winUI.AXSize.w/2,
                               y = winUI.AXPosition.y })
       end
@@ -2831,7 +2845,7 @@ appHotKeyCallbacks = {
     ["toggleBarrierConnect"] = {
       message = "Toggle Barrier Connect",
       fn = function(app)
-        local appUI = hs.axuielement.applicationElement(app)
+        local appUI = toappui(app)
         local menu = getc(appUI, AX.MenuBar, 2, AX.MenuBarItem, 1, AX.Menu, 1)
         if menu == nil then
           clickRightMenuBarItem(app)
@@ -2853,7 +2867,7 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then
           hs.alert("Error occurred")
         else
-          local winUI = hs.axuielement.windowElement(app:focusedWindow())
+          local winUI = towinui(app:focusedWindow())
           local start = getc(winUI, AX.Button, "Start")
           assert(start)
           start:performAction(AX.Press)
@@ -2872,7 +2886,7 @@ appHotKeyCallbacks = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local reload = getc(winUI, AX.Button, "Reload")
         return reload ~= nil and #reload:actionNames() > 0, reload
       end,
@@ -2884,7 +2898,7 @@ appHotKeyCallbacks = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local start = getc(winUI, AX.Button, "Start")
         return start ~= nil and #start:actionNames() > 0, start
       end,
@@ -2896,7 +2910,7 @@ appHotKeyCallbacks = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local stop = getc(winUI, AX.Button, "Stop")
         return stop ~= nil and #stop:actionNames() > 0, stop
       end,
@@ -2908,7 +2922,7 @@ appHotKeyCallbacks = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local configure = getc(winUI, AX.CheckBox, 1, AX.Button, "Configure Server...")
         return configure ~= nil and #configure:actionNames() > 0, configure
       end,
@@ -2920,7 +2934,7 @@ appHotKeyCallbacks = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local browse = getc(winUI, AX.CheckBox, 1, AX.Button, "Browse...")
         return browse ~= nil and #browse:actionNames() > 0, browse
       end,
@@ -2938,7 +2952,7 @@ appHotKeyCallbacks = {
         allowTitles = "^LuLu Alert$"
       },
       condition = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local button = getc(winUI, AX.Button, "Allow")
         return button ~= nil, button
       end,
@@ -2951,7 +2965,7 @@ appHotKeyCallbacks = {
         allowTitles = "^LuLu Alert$"
       },
       condition = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local button = getc(winUI, AX.Button, "Block")
         return button ~= nil, button
       end,
@@ -2967,7 +2981,7 @@ appHotKeyCallbacks = {
         allowSheet = true
       },
       condition = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local button = getc(winUI, AX.Button, "Save")
         return button ~= nil and button.AXEnabled == true, button
       end,
@@ -2981,7 +2995,7 @@ appHotKeyCallbacks = {
       message = "Toggle Menu Bar",
       kind = HK.MENUBAR,
       fn = function(app)
-        hs.osascript.applescript(string.format([[
+        hs.osascript.applescript(strfmt([[
           tell application id "%s" to toggle bartender
         ]], app:bundleID()))
       end
@@ -3110,7 +3124,7 @@ appHotKeyCallbacks = {
       message = "Search Menu Bar",
       kind = HK.MENUBAR,
       fn = function(app)
-        hs.osascript.applescript(string.format([[
+        hs.osascript.applescript(strfmt([[
           tell application id "%s" to quick search
         ]], app:bundleID()))
       end
@@ -3120,16 +3134,16 @@ appHotKeyCallbacks = {
       kind = HK.MENUBAR,
       bindCondition = function(app)
         -- the property update in command line is not working
-        local _, ok = hs.execute(string.format(
+        local _, ok = hs.execute(strfmt(
             "defaults read '%s' hotkeyKeyboardNav", app:bundleID()))
         return ok
       end,
       fn = function(app)
-        local output = hs.execute(string.format(
+        local output = hs.execute(strfmt(
             "defaults read '%s' hotkeyKeyboardNav", app:bundleID()))
-        local spec = hs.fnutils.split(output, "\n")
-        local mods = string.match(spec[4], "modifierFlags = (%d+)")
-        local key = string.match(spec[3], "keyCode = (%d+)")
+        local spec = strsplit(output, "\n")
+        local mods = spec[4]:match("modifierFlags = (%d+)")
+        local key = spec[3]:match("keyCode = (%d+)")
         mods, key = parsePlistKeyBinding(mods, key)
         safeGlobalKeyStroke(mods, key)
       end
@@ -3201,17 +3215,17 @@ appHotKeyCallbacks = {
       kind = HK.MENUBAR,
       fn = function(app)
         local appid = app:bundleID()
-        local output = hs.execute(string.format(
+        local output = hs.execute(strfmt(
             "defaults read '%s' KeyboardShortcuts_toggleX | tr -d '\\n'", appid))
         if output == "0" then
           local spec = KeybindingConfigs.hotkeys[appid]["toggleMenuBarX"]
           local mods, key = dumpPlistKeyBinding(1, spec.mods, spec.key)
-          hs.execute(string.format(
+          hs.execute(strfmt(
               [[defaults write '%s' KeyboardShortcuts_toggleX -string '{"carbonKeyCode":%d,"carbonModifiers":%d}']],
               appid, key, mods))
           app:kill()
           hs.timer.doAfter(1, function()
-            hs.execute(string.format("open -g -b '%s'", appid))
+            hs.execute(strfmt("open -g -b '%s'", appid))
             hs.timer.doAfter(1, function()
               safeGlobalKeyStroke(spec.mods, spec.key)
             end)
@@ -3241,7 +3255,7 @@ appHotKeyCallbacks = {
       menubar = true,
       fn = function(app)
         local prefString = localizedString('Preferences', app:bundleID())
-        local appUI = hs.axuielement.applicationElement(app)
+        local appUI = toappui(app)
         local button = getc(appUI, AX.MenuBar, -1,
             AX.MenuBarItem, 1, AX.Menu, 1, AX.MenuItem, 1, AX.Group, 1,
             AX.StaticText, prefString)
@@ -3273,7 +3287,7 @@ appHotKeyCallbacks = {
       message = "Toggle Top Notch",
       fn = function(app)
         clickRightMenuBarItem(app)
-        local appUI = hs.axuielement.applicationElement(app)
+        local appUI = toappui(app)
         hs.timer.doAfter(1, function()
           local switch = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1,
               AX.Popover, 1, AX.Group, 3, AX.Button, 1)
@@ -3310,21 +3324,21 @@ appHotKeyCallbacks = {
       message = "OCR for LaTeX",
       fn = function(app)
         local appid = app:bundleID()
-        local mods = hs.execute(string.format(
+        local mods = hs.execute(strfmt(
             "defaults read '%s' getLatexHotKeyModifiersKey | tr -d '\\n'", appid))
-        local key = hs.execute(string.format(
+        local key = hs.execute(strfmt(
             "defaults read '%s' getLatexHotKeyKey | tr -d '\\n'", appid))
         mods, key = parsePlistKeyBinding(mods, key)
         -- the property update in command line is overridden when app quits
         if mods == nil or key == nil then return end
-        local enabled = hs.execute(string.format(
+        local enabled = hs.execute(strfmt(
             "defaults read '%s' getLatexShortcutEnabledKey | tr -d '\\n'", appid))
         if enabled == "0" then
-          hs.execute(string.format(
+          hs.execute(strfmt(
               "defaults write '%s' getLatexShortcutEnabledKey 1", appid))
           app:kill()
           hs.timer.doAfter(1, function()
-            hs.execute(string.format("open -g -b '%s'", appid))
+            hs.execute(strfmt("open -g -b '%s'", appid))
             hs.timer.doAfter(1, function()
               safeGlobalKeyStroke(mods, key)
             end)
@@ -3366,9 +3380,9 @@ appHotKeyCallbacks = {
         allowTitles = "^$"
       },
       condition = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local buttons = getc(winUI, AX.Group, 1, AX.Button)
-        local button = hs.fnutils.find(buttons, function(btn)
+        local button = tfind(buttons, function(btn)
           return btn.AXIdentifier == 'plus'
         end)
         return button ~= nil, button
@@ -3383,9 +3397,9 @@ appHotKeyCallbacks = {
         allowTitles = "^$"
       },
       condition = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local buttons = getc(winUI, AX.Group, 1, AX.Button)
-        local button = hs.fnutils.find(buttons, function(btn)
+        local button = tfind(buttons, function(btn)
           return btn.AXIdentifier == 'macwindow'
         end)
         return button ~= nil, button
@@ -3403,7 +3417,7 @@ appHotKeyCallbacks = {
         allowTitles = "^$"
       },
       condition = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local elem = getc(winUI, AX.Group, 1, nil, 1)
         return elem.AXRole == AX.Button, elem
       end,
@@ -3417,13 +3431,13 @@ appHotKeyCallbacks = {
         allowTitles = "^$"
       },
       condition = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local elem = getc(winUI, AX.Group, 1, nil, 1)
         return elem.AXRole == AX.Button
       end,
       background = true,
       fn = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local field = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
             AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, 2, AX.Cell, 1,
             AX.StaticText, 2)
@@ -3443,13 +3457,13 @@ appHotKeyCallbacks = {
         allowTitles = "^$"
       },
       condition = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local elem = getc(winUI, AX.Group, 1, nil, 1)
         return elem.AXRole == AX.Button
       end,
       background = true,
       fn = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
             AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1)
         local field
@@ -3663,7 +3677,7 @@ appHotKeyCallbacks = {
         allowTitles = "^(Real)VNC Viewer$"
       },
       fn = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local searchField = getc(winUI, AX.TextField, 1)
         if searchField ~= nil then
           local position = {
@@ -3993,7 +4007,7 @@ appHotKeyCallbacks = {
     ["newProject"] = {
       message = "New Project",
       fn = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
@@ -4016,7 +4030,7 @@ appHotKeyCallbacks = {
     ["newProject"] = {
       message = "New Project",
       fn = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
@@ -4039,7 +4053,7 @@ appHotKeyCallbacks = {
     ["newProject"] = {
       message = "New Project",
       fn = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
@@ -4062,7 +4076,7 @@ appHotKeyCallbacks = {
     ["newProject"] = {
       message = "New Project",
       fn = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
@@ -4105,17 +4119,17 @@ appHotKeyCallbacks = {
       bindCondition = function()
         -- the property update in command line is overridden when app quits
         local appid = "cn.better365.iShotProHelper"
-        local _, ok = hs.execute(string.format(
+        local _, ok = hs.execute(strfmt(
             "defaults read '%s' dicOfShortCutKey | grep OCRRecorder", appid))
         return ok
       end,
       fn = function(app)
-        local output = hs.execute(string.format(
+        local output = hs.execute(strfmt(
             "defaults read '%s' dicOfShortCutKey | grep OCRRecorder -A4",
             app:bundleID()))
-        local spec = hs.fnutils.split(output, "\n")
-        local mods = string.match(spec[5], "modifierFlags = (%d+);")
-        local key = string.match(spec[4], "keyCode = (%d+);")
+        local spec = strsplit(output, "\n")
+        local mods = spec[5]:match("modifierFlags = (%d+);")
+        local key = spec[4]:match("keyCode = (%d+);")
         mods, key = parsePlistKeyBinding(mods, key)
         if mods == nil or key == nil then return end
         safeGlobalKeyStroke(mods, key)
@@ -4137,7 +4151,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Setting"),
       windowFilter = iCopyWindowFilter,
       fn = function(win)
-        local winUI = hs.axuielement.windowElement(win)
+        local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 1)
         if button ~= nil then button:performAction(AX.Press) end
       end
@@ -4431,7 +4445,7 @@ local function registerRunningAppHotKeys(appid, app)
           if find(appid) then
             cfg.fn(find(appid))
           else
-            hs.execute(string.format("open -g -b '%s'", appid))
+            hs.execute(strfmt("open -g -b '%s'", appid))
             hs.timer.doAfter(1, function()
               if find(appid) then
                 local cb = cfg.onLaunch or cfg.fn
@@ -4441,7 +4455,7 @@ local function registerRunningAppHotKeys(appid, app)
           end
         end
       else
-        fn = hs.fnutils.partial(cfg.fn, app)
+        fn = bind(cfg.fn, app)
       end
       local repeatable = keybinding.repeatable ~= nil and keybinding.repeatable or cfg.repeatable
       local repeatedFn = repeatable and fn or nil
@@ -4642,7 +4656,7 @@ local function wrapCondition(app, config, mode)
           allowURLs = { allowURLs }
         end
         for _, v in ipairs(allowURLs) do
-          if string.match(url, v) ~= nil then
+          if url:match(v) ~= nil then
             if oldCond ~= nil then
               local satisfied, result = oldCond(obj)
               if not satisfied then
@@ -4830,7 +4844,7 @@ local function registerInAppHotKeys(app)
       if hasKey and not isBackground and not isForWindow and not isMenuBarMenu and bindable() then
         local msg = type(cfg.message) == 'string' and cfg.message or cfg.message(app)
         if msg ~= nil then
-          local config = hs.fnutils.copy(cfg)
+          local config = tcopy(cfg)
           config.mods = keybinding.mods
           config.key = keybinding.key
           config.message = msg
@@ -4906,7 +4920,7 @@ local function registerInWinHotKeys(app)
       if hasKey and isForWindow and not isBackground and bindable() then  -- only consider windows of active app
         local msg = type(cfg.message) == 'string' and cfg.message or cfg.message(app)
         if msg ~= nil then
-          local config = hs.fnutils.copy(cfg)
+          local config = tcopy(cfg)
           config.mods = keybinding.mods
           config.key = keybinding.key
           config.message = msg
@@ -5004,7 +5018,7 @@ local function registerDaemonAppInWinHotkeys(appid, filter, event)
     if hasKey and isForWindow and isBackground and bindable() and sameFilter(windowFilter, filter) then
       local msg = type(cfg.message) == 'string' and cfg.message or cfg.message(app)
       if msg ~= nil then
-        local config = hs.fnutils.copy(cfg)
+        local config = tcopy(cfg)
         config.mods = keybinding.mods
         config.key = keybinding.key
         config.message = msg
@@ -5012,7 +5026,7 @@ local function registerDaemonAppInWinHotkeys(appid, filter, event)
         config.repeatedFn = config.repeatable and cfg.fn or nil
         config.nonFrontmost = keybinding.nonFrontmost ~= nil and keybinding.nonFrontmost or cfg.nonFrontmost
         local hotkey = WinBind(app, config)
-        table.insert(daemonAppFocusedWindowHotkeys[appid], hotkey)
+        tinsert(daemonAppFocusedWindowHotkeys[appid], hotkey)
       end
     end
   end
@@ -5022,17 +5036,13 @@ local execOnQuit, stopOnQuit
 local function registerSingleWinFilterForDaemonApp(app, filter)
   local appid = app:bundleID()
   if filter.allowSheet or filter.allowPopover or appid == "com.tencent.LemonMonitor" then
-    local appUI = hs.axuielement.applicationElement(app)
-    local observer = hs.axuielement.observer.new(app:pid())
-    observer:addWatcher(
-      appUI, hs.axuielement.observer.notifications.focusedWindowChanged
-    )
+    local appUI = toappui(app)
+    local observer = uiobserver.new(app:pid())
+    observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
     observer:callback(function(_, element, notification)
       registerDaemonAppInWinHotkeys(appid, filter)
-      local closeObserver = hs.axuielement.observer.new(app:pid())
-      closeObserver:addWatcher(
-        element, hs.axuielement.observer.notifications.uIElementDestroyed
-      )
+      local closeObserver = uiobserver.new(app:pid())
+      closeObserver:addWatcher(element, uinotifications.uIElementDestroyed)
       closeObserver:callback(function(obs)
         if daemonAppFocusedWindowHotkeys[appid] ~= nil then -- fix weird bug
           for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[appid]) do
@@ -5133,7 +5143,7 @@ local function registerInMenuHotkeys(appid, appConfig)
     if hasKey and isMenuBarMenu and bindable() then
       local msg = type(cfg.message) == 'string' and cfg.message or cfg.message(app)
       if msg ~= nil then
-        local config = hs.fnutils.copy(cfg)
+        local config = tcopy(cfg)
         config.mods = keybinding.mods
         config.key = keybinding.key
         config.message = msg
@@ -5143,7 +5153,7 @@ local function registerInMenuHotkeys(appid, appConfig)
         local hotkey, cond = bindAppWinImpl(app, config)
         hotkey.condition = cond
         hotkey.kind = HK.MENUBAR
-        table.insert(menuBarMenuHotkeys[appid], hotkey)
+        tinsert(menuBarMenuHotkeys[appid], hotkey)
       end
     end
   end
@@ -5162,19 +5172,15 @@ local function registerObserversForMenuBarMenu(app, appConfig)
     if hasKey and isMenuBarMenu and bindable() then
       local observer = MenuBarMenuObservers[appid]
       if observer == nil then
-        local appUI = hs.axuielement.applicationElement(app)
-        observer = hs.axuielement.observer.new(app:pid())
-        observer:addWatcher(
-          appUI, hs.axuielement.observer.notifications.menuOpened
-        )
+        local appUI = toappui(app)
+        observer = uiobserver.new(app:pid())
+        observer:addWatcher(appUI, uinotifications.menuOpened)
         observer:callback(function(_, element, notification)
           local mbItem = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1)
           if not mbItem.AXSelected then return end
           registerInMenuHotkeys(appid, appConfig)
-          local closeObserver = hs.axuielement.observer.new(app:pid())
-          closeObserver:addWatcher(
-            element, hs.axuielement.observer.notifications.menuClosed
-          )
+          local closeObserver = uiobserver.new(app:pid())
+          closeObserver:addWatcher(element, uinotifications.menuClosed)
           closeObserver:callback(function(obs)
             if menuBarMenuHotkeys[appid] ~= nil then
               for i, hotkey in ipairs(menuBarMenuHotkeys[appid]) do
@@ -5209,7 +5215,7 @@ end
 local processesOnLaunch = {}
 local appsLaunchSilently = ApplicationConfigs["launchSilently"] or {}
 local function execOnLaunch(appid, action, onlyFirstTime)
-  if hs.fnutils.contains(appsLaunchSilently, appid) then
+  if tcontain(appsLaunchSilently, appid) then
     ExecOnSilentLaunch(appid, action)
   end
 
@@ -5222,11 +5228,11 @@ local function execOnLaunch(appid, action, onlyFirstTime)
     local oldAction = action
     action = function(app)
       oldAction(app)
-      table.remove(processesOnLaunch[appid], idx)
+      tremove(processesOnLaunch[appid], idx)
     end
   end
 
-  table.insert(processesOnLaunch[appid], action)
+  tinsert(processesOnLaunch[appid], action)
 end
 
 local processesOnActivated = {}
@@ -5234,7 +5240,7 @@ local function execOnActivated(appid, action)
   if processesOnActivated[appid] == nil then
     processesOnActivated[appid] = {}
   end
-  table.insert(processesOnActivated[appid], action)
+  tinsert(processesOnActivated[appid], action)
 end
 
 local processesOnDeactivated = {}
@@ -5242,19 +5248,19 @@ local function execOnDeactivated(appid, action)
   if processesOnDeactivated[appid] == nil then
     processesOnDeactivated[appid] = {}
   end
-  table.insert(processesOnDeactivated[appid], action)
+  tinsert(processesOnDeactivated[appid], action)
 end
 
 local processesOnQuit = {}
 function execOnQuit(appid, action)
-  if hs.fnutils.contains(appsLaunchSilently, appid) then
+  if tcontain(appsLaunchSilently, appid) then
     ExecOnSilentQuit(appid, action)
   end
 
   if processesOnQuit[appid] == nil then
     processesOnQuit[appid] = {}
   end
-  table.insert(processesOnQuit[appid], action)
+  tinsert(processesOnQuit[appid], action)
 end
 
 local observersStopOnDeactivated = {}
@@ -5262,7 +5268,7 @@ local function stopOnDeactivated(appid, observer, action)
   if observersStopOnDeactivated[appid] == nil then
     observersStopOnDeactivated[appid] = {}
   end
-  table.insert(observersStopOnDeactivated[appid], { observer, action })
+  tinsert(observersStopOnDeactivated[appid], { observer, action })
 end
 
 local observersStopOnQuit = {}
@@ -5270,7 +5276,7 @@ function stopOnQuit(appid, observer, action)
   if observersStopOnQuit[appid] == nil then
     observersStopOnQuit[appid] = {}
   end
-  table.insert(observersStopOnQuit[appid], { observer, action })
+  tinsert(observersStopOnQuit[appid], { observer, action })
 end
 
 local appLocales = {} -- if app locale changes, it may change its menu bar items, so need to rebind
@@ -5297,7 +5303,7 @@ if frontApp then
 end
 
 for _, appid in ipairs(appsLaunchSilently) do
-  ExecOnSilentLaunch(appid, hs.fnutils.partial(updateAppLocale, appid))
+  ExecOnSilentLaunch(appid, bind(updateAppLocale, appid))
 end
 
 -- register hotkeys for background apps
@@ -5311,8 +5317,8 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     local isPersistent = keybinding.persist ~= nil and keybinding.persist or cfg.persist
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     if hasKey and not isForWindow and isBackground and not isPersistent then
-      execOnLaunch(appid, hs.fnutils.partial(registerRunningAppHotKeys, appid))
-      execOnQuit(appid, hs.fnutils.partial(unregisterRunningAppHotKeys, appid, false))
+      execOnLaunch(appid, bind(registerRunningAppHotKeys, appid))
+      execOnQuit(appid, bind(unregisterRunningAppHotKeys, appid, false))
       break
     end
   end
@@ -5397,7 +5403,7 @@ local function remapPreviousTab(app, menuItems)
   local appid = app:bundleID()
   local spec = get(KeybindingConfigs.hotkeys.shared, "remapPreviousTab")
   local specApp = get(appHotKeyCallbacks[appid], "remapPreviousTab")
-  if specApp ~= nil or spec == nil or hs.fnutils.contains(spec.excluded or {}, appid) then
+  if specApp ~= nil or spec == nil or tcontain(spec.excluded or {}, appid) then
     return
   end
   local menuItemPath = findMenuItemByKeyBinding(app, '⇧⌃', '⇥', menuItems)
@@ -5431,7 +5437,7 @@ local function registerOpenRecent(app)
   local appid = app:bundleID()
   local spec = get(KeybindingConfigs.hotkeys.shared, "openRecent")
   local specApp = get(appHotKeyCallbacks[appid], "openRecent")
-  if specApp ~= nil or spec == nil or hs.fnutils.contains(spec.excluded or {}, appid) then
+  if specApp ~= nil or spec == nil or tcontain(spec.excluded or {}, appid) then
     return
   end
   local localizedFile = 'File'
@@ -5440,10 +5446,10 @@ local function registerOpenRecent(app)
     if localizedFile == nil then return end
     if app:findMenuItem({ localizedFile }) == nil then return end
   end
-  local appUI = hs.axuielement.applicationElement(app)
+  local appUI = toappui(app)
   local findMenu = getc(appUI, AX.MenuBar, 1, AX.MenuBarItem, localizedFile, AX.Menu, 1)
   if findMenu == nil then return end
-  local extendableItems = hs.fnutils.ifilter(findMenu.AXChildren or {}, function(item)
+  local extendableItems = tifilter(findMenu.AXChildren or {}, function(item)
     return #item.AXChildren > 0
   end)
   if #extendableItems == 0 then return end
@@ -5501,7 +5507,7 @@ local function registerZoomHotkeys(app)
   for i, hkID in ipairs { 'zoom', 'zoomAll' } do
     local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
     local specApp = get(appHotKeyCallbacks[appid], hkID)
-    if specApp ~= nil or spec == nil or hs.fnutils.contains(spec.excluded or {}, appid) then
+    if specApp ~= nil or spec == nil or tcontain(spec.excluded or {}, appid) then
       return
     end
 
@@ -5590,7 +5596,7 @@ local specialConfirmFuncs = {
 
 local function registerForOpenSavePanel(app)
   if app:bundleID() == "com.apple.finder" then return end
-  local appUI = hs.axuielement.applicationElement(app)
+  local appUI = toappui(app)
   if not appUI:isValid() then
     hs.timer.doAfter(0.1, function() registerForOpenSavePanel(app) end)
     return
@@ -5617,7 +5623,7 @@ local function registerForOpenSavePanel(app)
       if outline ~= nil then
         for _, row in ipairs(getc(outline, AX.Row)) do
           if row.AXChildren == nil then hs.timer.usleep(0.3 * 1000000) end
-          table.insert(sidebarCells, row.AXChildren[1])
+          tinsert(sidebarCells, row.AXChildren[1])
         end
       end
     end
@@ -5647,7 +5653,7 @@ local function registerForOpenSavePanel(app)
             spec = spec, message = header .. ' > ' .. folder,
             fn = function() cell:performAction(AX.Open) end,
           })
-          table.insert(openSavePanelHotkeys, hotkey)
+          tinsert(openSavePanelHotkeys, hotkey)
           i = i + 1
         end
       end
@@ -5674,20 +5680,17 @@ local function registerForOpenSavePanel(app)
           message = dontSaveButton.AXTitle or dontSaveButton.AXDescription,
           fn = function() dontSaveButton:performAction(AX.Press) end,
         })
-        table.insert(openSavePanelHotkeys, hotkey)
+        tinsert(openSavePanelHotkeys, hotkey)
       end
     end
   end
   if app:focusedWindow() ~= nil then
-    actionFunc(hs.axuielement.windowElement(app:focusedWindow()))
+    actionFunc(towinui(app:focusedWindow()))
   end
 
-  local observer = hs.axuielement.observer.new(app:pid())
-  observer:addWatcher(
-    hs.axuielement.applicationElement(app),
-    hs.axuielement.observer.notifications.focusedWindowChanged
-  )
-  observer:callback(function(observer, element, notifications)
+  local observer = uiobserver.new(app:pid())
+  observer:addWatcher(toappui(app), uinotifications.focusedWindowChanged)
+  observer:callback(function(_, element, notifications)
     for _, hotkey in ipairs(openSavePanelHotkeys) do
       hotkey:delete()
     end
@@ -5726,20 +5729,20 @@ local function searchHotkeyByNth(itemTitles, alreadySetHotkeys, index)
   local notSetItems = {}
   for _, title in pairs(itemTitles) do
     if index == nil then
-      index = string.find(title[2], " ")
+      index = title[2]:find(" ")
       if index ~= nil then
         index = index + 1
       end
     end
     local hotkey
     if index ~= nil then
-      hotkey = string.upper(string.sub(title[2], index, index))
+      hotkey = title[2]:sub(index, index):upper()
     end
 
     if hotkey ~= nil and alreadySetHotkeys[hotkey] == nil then
         alreadySetHotkeys[hotkey] = title[1]
     else
-      table.insert(notSetItems, title)
+      tinsert(notSetItems, title)
     end
   end
   return notSetItems, alreadySetHotkeys
@@ -5769,7 +5772,7 @@ local function processInvalidAltMenu(app, reinvokeKey)
   end
 
   if hs.fs.attributes(appsMayChangeMenuBarTmpDir) == nil then
-    hs.execute(string.format("mkdir -p '%s'", appsMayChangeMenuBarTmpDir))
+    hs.execute(strfmt("mkdir -p '%s'", appsMayChangeMenuBarTmpDir))
   end
   local json = {}
   if hs.fs.attributes(appsMayChangeMenuBarTmpFile) ~= nil then
@@ -5779,15 +5782,15 @@ local function processInvalidAltMenu(app, reinvokeKey)
   end
   local appid = app:bundleID()
   if isSameWin then
-    table.insert(appswatchMenuBarItems, appid)
+    tinsert(appswatchMenuBarItems, appid)
     watchMenuBarItems(app, menuItems)
     if json["changing"] == nil then json["changing"] = {} end
-    table.insert(json["changing"], appid)
+    tinsert(json["changing"], appid)
   else
-    table.insert(appsMayChangeMenuBar, appid)
+    tinsert(appsMayChangeMenuBar, appid)
     registerObserverForMenuBarChange(app, menuItems)
     if json["onWindow"] == nil then json["onWindow"] = {} end
-    table.insert(json["onWindow"], appid)
+    tinsert(json["onWindow"], appid)
   end
   hs.json.write(json, appsMayChangeMenuBarTmpFile, false, true)
 end
@@ -5812,7 +5815,7 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
   if enableIndex == nil then enableIndex = false end
   if enableLetter == nil then enableLetter = true end
   local excludedForLetter = get(KeybindingConfigs.hotkeys, "menubar", "letter", "exclude")
-  if excludedForLetter ~= nil and hs.fnutils.contains(excludedForLetter, appid) then
+  if excludedForLetter ~= nil and tcontain(excludedForLetter, appid) then
     enableLetter = false
   end
   if enableIndex == false and enableLetter == false then return end
@@ -5820,7 +5823,7 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
   local menuBarItemTitles
   local useWindowMenuBar
   if app:focusedWindow() ~= nil then
-    local winUI = hs.axuielement.windowElement(app:focusedWindow())
+    local winUI = towinui(app:focusedWindow())
     if #getc(winUI, AX.MenuBar) > 0 then
       local menuObj = getc(winUI, AX.MenuBar, 1, AX.Menu)
       if #menuObj == 0 then
@@ -5831,7 +5834,7 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
         menuBarItemTitles = hs.fnutils.map(menuObj, function(item)
           return item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "")
         end)
-        table.insert(menuBarItemTitles, 1, app:name())
+        tinsert(menuBarItemTitles, 1, app:name())
       end
     end
   end
@@ -5852,8 +5855,8 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
         elseif itemDict[item.AXTitle].AXChildren == nil then
           -- two ordinary menu bar items share the same title, but the former is invalid
           -- e.t.c. two "File" menus in `QQLive`
-          local idx = hs.fnutils.indexOf(menuBarItemTitles, item.AXTitle)
-          table.remove(menuBarItemTitles, idx)
+          local idx = tindex(menuBarItemTitles, item.AXTitle)
+          tremove(menuBarItemTitles, idx)
           menuBarItemActualIndices[item.AXTitle] = i + 1
         elseif item.AXChildren == nil then
           -- two ordinary menu bar items share the same title, but the latter is invalid
@@ -5862,10 +5865,10 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
         -- assume at most two menu bar items share the same title
       end
       itemDict[item.AXTitle] = item
-      table.insert(menuBarItemTitles, item.AXTitle)
+      tinsert(menuBarItemTitles, item.AXTitle)
       ::CHECK_MENU_ITEM_CONTINUE::
     end
-    menuBarItemTitles = hs.fnutils.filter(menuBarItemTitles, function(item)
+    menuBarItemTitles = tfilter(menuBarItemTitles, function(item)
       return item ~= nil and item ~= ""
     end)
   end
@@ -5879,12 +5882,12 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
   local clickMenuCallback
   if useWindowMenuBar then
     clickMenuCallback = function(title, k)
-      local winUI = hs.axuielement.windowElement(app:focusedWindow())
+      local winUI = towinui(app:focusedWindow())
       local menuObj = getc(winUI, AX.MenuBar, 1, AX.Menu)
       if menuObj == nil or #menuObj == 0 then
         menuObj = getc(winUI, AX.MenuBar, 1, AX.MenuBar)
       end
-      local targetMenuObj = hs.fnutils.find(menuObj or {}, function(item)
+      local targetMenuObj = tfind(menuObj or {}, function(item)
         return item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "") == title
       end)
       if targetMenuObj == nil then
@@ -5892,9 +5895,9 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
         return
       end
       local actionNames = targetMenuObj:actionNames()
-      if actionNames ~= nil and hs.fnutils.contains(actionNames, AX.Pick) then
+      if actionNames ~= nil and tcontain(actionNames, AX.Pick) then
         targetMenuObj:performAction(AX.Pick)
-      elseif actionNames ~= nil and hs.fnutils.contains(actionNames, AX.Press) then
+      elseif actionNames ~= nil and tcontain(actionNames, AX.Press) then
         targetMenuObj:performAction(AX.Press)
       else
         local position = { targetMenuObj.AXPosition.x + 5, targetMenuObj.AXPosition.y + 5 }
@@ -5905,7 +5908,7 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
     clickMenuCallback = function(title, k)
       local index = menuBarItemActualIndices[title]
       if index then
-        local appUI = hs.axuielement.applicationElement(app)
+        local appUI = toappui(app)
         local menubarItem = getc(appUI, AX.MenuBar, 1, AX.MenuBarItem, index)
         if menubarItem then
           menubarItem:performAction(AX.Press)
@@ -5926,14 +5929,14 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
     for i=2,#menuBarItemTitles do
       local title, letter = menuBarItemTitles[i]:match("(.-)%s*%((.-)%)")
       if letter then
-        alreadySetHotkeys[string.upper(letter)] = {menuBarItemTitles[i], title}
+        alreadySetHotkeys[letter:upper()] = {menuBarItemTitles[i], title}
       else
         letter = menuBarItemTitles[i]:match("[^%s]-&(%a)")
         if letter ~= nil then
           title = menuBarItemTitles[i]:gsub('([^%s]-)&(%a)', '%1%2')
-          alreadySetHotkeys[string.upper(letter)] = { menuBarItemTitles[i], title }
+          alreadySetHotkeys[letter:upper()] = { menuBarItemTitles[i], title }
         else
-          table.insert(itemTitles, menuBarItemTitles[i])
+          tinsert(itemTitles, menuBarItemTitles[i])
         end
       end
     end
@@ -5943,22 +5946,22 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
     for i=#itemTitles,1,-1 do
       local letter = itemTitles[i][2]:match("[^%s]-&(%a)")
       if letter ~= nil then
-        alreadySetHotkeys[string.upper(letter)] = itemTitles[i][1]
-        table.remove(itemTitles, i)
+        alreadySetHotkeys[letter:upper()] = itemTitles[i][1]
+        tremove(itemTitles, i)
       end
     end
 
     local notSetItems = {}
     for _, title in ipairs(itemTitles) do
-      if hs.fnutils.contains({ 'File', 'Edit', 'View', 'Window', 'Help' }, title[2]) then
-        local hotkey = string.sub(title[2], 1, 1)
+      if tcontain({ 'File', 'Edit', 'View', 'Window', 'Help' }, title[2]) then
+        local hotkey = title[2]:sub(1, 1)
         if alreadySetHotkeys[hotkey] == nil then
           alreadySetHotkeys[hotkey] = title[1]
         else
-          table.insert(notSetItems, title)
+          tinsert(notSetItems, title)
         end
       else
-        table.insert(notSetItems, title)
+        tinsert(notSetItems, title)
       end
     end
     notSetItems, alreadySetHotkeys = searchHotkeyByNth(notSetItems, alreadySetHotkeys, 1)
@@ -5979,9 +5982,9 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
     for i=2,#menuBarItemTitles do
       local spec = invMap[menuBarItemTitles[i]]
       if spec ~= nil then
-        local fn = hs.fnutils.partial(clickMenuCallback, menuBarItemTitles[i], spec[1])
+        local fn = bind(clickMenuCallback, menuBarItemTitles[i], spec[1])
         local hotkey = bindAltMenu(app, "⌥", spec[1], spec[2], fn)
-        table.insert(AltMenuBarItemHotkeys, hotkey)
+        tinsert(AltMenuBarItemHotkeys, hotkey)
         if reinvokeKey == spec[1] then
           clickMenuCallback(menuBarItemTitles[i])
         end
@@ -6001,27 +6004,27 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
     local hotkey = bindAltMenu(app, "⌥", "`", menuBarItemTitles[1],
       function() app:selectMenuItem({ menuBarItemTitles[1] }) end)
     hotkey.subkind = 0
-    table.insert(AltMenuBarItemHotkeys, hotkey)
+    tinsert(AltMenuBarItemHotkeys, hotkey)
 
     local itemTitles = {}
     for i=2,#menuBarItemTitles do
       local title, letter = menuBarItemTitles[i]:match("(.-)%s*%((.-)%)")
       if letter then
-        table.insert(itemTitles, title)
+        tinsert(itemTitles, title)
       else
         letter = menuBarItemTitles[i]:match("[^%s]-&(%a)")
         if letter ~= nil then
           title = menuBarItemTitles[i]:gsub('([^%s]-)&(%a)', '%1%2')
-          table.insert(itemTitles, title)
+          tinsert(itemTitles, title)
         else
-          table.insert(itemTitles, menuBarItemTitles[i])
+          tinsert(itemTitles, menuBarItemTitles[i])
         end
       end
     end
     for i=1,maxMenuBarItemHotkey do
-      local fn = hs.fnutils.partial(clickMenuCallback, menuBarItemTitles[i + 1], i % 10)
+      local fn = bind(clickMenuCallback, menuBarItemTitles[i + 1], i % 10)
       hotkey = bindAltMenu(app, "⌥", tostring(i % 10), itemTitles[i], fn)
-      table.insert(AltMenuBarItemHotkeys, hotkey)
+      tinsert(AltMenuBarItemHotkeys, hotkey)
       if reinvokeKey == i % 10 then
         clickMenuCallback(menuBarItemTitles[i + 1])
       end
@@ -6043,7 +6046,7 @@ local getMenuBarItemTitlesString = function(app, menuItems)
   if menuItems == nil or #menuItems == 0 then return "" end
   local menuBarItemTitles = {}
   for _, item in ipairs(menuItems) do
-    table.insert(menuBarItemTitles, item.AXTitle)
+    tinsert(menuBarItemTitles, item.AXTitle)
   end
   return table.concat(menuBarItemTitles, "|")
 end
@@ -6075,10 +6078,10 @@ appsMayChangeMenuBar = get(ApplicationConfigs, "menuBarItems", 'changeOnWindow')
 if hs.fs.attributes(appsMayChangeMenuBarTmpFile) ~= nil then
   local tmp = hs.json.read(appsMayChangeMenuBarTmpFile)
   for _, appid in ipairs(tmp['changing'] or {}) do
-    table.insert(appswatchMenuBarItems, appid)
+    tinsert(appswatchMenuBarItems, appid)
   end
   for _, appid in ipairs(tmp['onWindow'] or {}) do
-    table.insert(appsMayChangeMenuBar, appid)
+    tinsert(appsMayChangeMenuBar, appid)
   end
 end
 
@@ -6114,26 +6117,22 @@ registerObserverForMenuBarChange = function(app, menuItems)
   local appid = app:bundleID()
   if appid == nil then return end
 
-  if hs.fnutils.contains(appswatchMenuBarItems, appid) then
+  if tcontain(appswatchMenuBarItems, appid) then
     watchMenuBarItems(app, menuItems)
   end
 
-  if not hs.fnutils.contains(appsMayChangeMenuBar, appid) then
+  if not tcontain(appsMayChangeMenuBar, appid) then
     return
   end
 
   appsMenuBarItemTitlesString[appid] = getMenuBarItemTitlesString(app, menuItems)
 
   local observer, windowFilter
-  observer = hs.axuielement.observer.new(app:pid())
-  local appUI = hs.axuielement.applicationElement(app)
-  observer:addWatcher(
-    appUI, hs.axuielement.observer.notifications.focusedWindowChanged
-  )
-  observer:addWatcher(
-    appUI, hs.axuielement.observer.notifications.windowMiniaturized
-  )
-  observer:callback(hs.fnutils.partial(appMenuBarChangeCallback, app))
+  observer = uiobserver.new(app:pid())
+  local appUI = toappui(app)
+  observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
+  observer:addWatcher(appUI, uinotifications.windowMiniaturized)
+  observer:callback(bind(appMenuBarChangeCallback, app))
   observer:start()
 
   windowFilter = hs.window.filter.new(app:name())
@@ -6165,7 +6164,7 @@ local specialNoWindowsRules = {
       return false
     end
     local windows = app:visibleWindows()
-    return #hs.fnutils.ifilter(windows, function(win)
+    return #tifilter(windows, function(win)
         return win:id() ~= hs.window.desktop():id() end) == 0
   end
 }
@@ -6176,7 +6175,7 @@ local function processAppWithNoWindows(app, quit, delay)
       local windowFilterRules = quit and appsAutoQuitWithNoWindows or appsAutoHideWithNoWindows
       local windowFilter = hs.window.filter.new(false):setAppFilter(
         appid, windowFilterRules[appid])
-      return hs.fnutils.find(app:visibleWindows(), function(win)
+      return tfind(app:visibleWindows(), function(win)
         return windowFilter:isWindowAllowed(win)
       end) == nil
     end
@@ -6210,16 +6209,14 @@ PseudoWindowDestroyObservers = {}
 local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
   local appid = app:bundleID()
   local observer = PseudoWindowDestroyObservers[appid]
-  local appUI = hs.axuielement.applicationElement(app)
+  local appUI = toappui(app)
   if observer ~= nil then observer:start() return end
-  observer = hs.axuielement.observer.new(app:pid())
-  observer:addWatcher(
-    appUI, hs.axuielement.observer.notifications.focusedUIElementChanged
-  )
+  observer = uiobserver.new(app:pid())
+  observer:addWatcher(appUI, uinotifications.focusedUIElementChanged)
   local windowFilterRules = quit and appsAutoQuitWithNoWindows or appsAutoHideWithNoWindows
   local windowFilter = hs.window.filter.new(false):setAppFilter(
       app:name(), windowFilterRules[appid])
-  local criterion = function(element) return hs.fnutils.contains(roles, element.AXRole) end
+  local criterion = function(element) return tcontain(roles, element.AXRole) end
   local params = { count = 1, depth = 2 }
   local pseudoWindowObserver
   local observerCallback = function()
@@ -6230,15 +6227,13 @@ local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
           pseudoWindowObserver = nil
         end
         local role = results[1].AXRole
-        pseudoWindowObserver = hs.axuielement.observer.new(app:pid())
-        pseudoWindowObserver:addWatcher(
-          results[1], hs.axuielement.observer.notifications.uIElementDestroyed
-        )
+        pseudoWindowObserver = uiobserver.new(app:pid())
+        pseudoWindowObserver:addWatcher(results[1], uinotifications.uIElementDestroyed)
         local pseudoWindowObserverCallback = function(obs)
           appUI:elementSearch(function(newMsg, newResults, newCount)
               if newCount == 0 then
                 local defaultRule = function()
-                  local noWindow = hs.fnutils.find(app:visibleWindows(), function(win)
+                  local noWindow = tfind(app:visibleWindows(), function(win)
                     return windowFilter:isWindowAllowed(win)
                   end) == nil
                   local noMenuFromPopover = true
@@ -6302,10 +6297,10 @@ for _, item in ipairs(appsAutoHideWithNoWindowsLoaded) do
         if (k == "allowPopover" or k == "allowSheet") and v then
           appsAutoHideWithNoPseudoWindows[appid] = {}
           if k == "allowPopover" then
-            table.insert(appsAutoHideWithNoPseudoWindows[appid], AX.Popover)
+            tinsert(appsAutoHideWithNoPseudoWindows[appid], AX.Popover)
           end
           if k == "allowSheet" then
-            table.insert(appsAutoHideWithNoPseudoWindows[appid], AX.Sheet)
+            tinsert(appsAutoHideWithNoPseudoWindows[appid], AX.Sheet)
           end
         elseif k == "delay" then
           appsWithNoWindowsDelay[appid] = v
@@ -6328,10 +6323,10 @@ for _, item in ipairs(appsAutoQuitWithNoWindowsLoaded) do
         if (k == "allowPopover" or k == "allowSheet") and v then
           appsAutoQuitWithNoPseudoWindows[appid] = {}
           if k == "allowPopover" then
-            table.insert(appsAutoQuitWithNoPseudoWindows[appid], AX.Popover)
+            tinsert(appsAutoQuitWithNoPseudoWindows[appid], AX.Popover)
           end
           if k == "allowSheet" then
-            table.insert(appsAutoQuitWithNoPseudoWindows[appid], AX.Sheet)
+            tinsert(appsAutoQuitWithNoPseudoWindows[appid], AX.Sheet)
           end
         elseif k == "delay" then
           appsWithNoWindowsDelay[appid] = v
@@ -6414,7 +6409,7 @@ end
 -- ### Mountain Duck
 -- connect to servers on launch
 local function connectMountainDuckEntries(app, connection)
-  local appUI = hs.axuielement.applicationElement(app)
+  local appUI = toappui(app)
   local menuBar = getc(appUI, AX.MenuBar, -1, AX.Menu, 1)
 
   if type(connection) == 'string' then
@@ -6523,8 +6518,8 @@ if hs.application.nameForBundleID("com.microsoft.rdc.macos") == "Windows App" th
     for _, title in ipairs { "Favorites", "Devices", "Apps",
       "Settings", "About", "Device View Options", "App View Options" } do
       local locTitle = "^" .. localizedString(title, "com.microsoft.rdc.macos") .. "$"
-      if not hs.fnutils.contains(MicrosoftRemoteDesktopWindowFilter.rejectTitles, locTitle) then
-        table.insert(MicrosoftRemoteDesktopWindowFilter.rejectTitles, locTitle)
+      if not tcontain(MicrosoftRemoteDesktopWindowFilter.rejectTitles, locTitle) then
+        tinsert(MicrosoftRemoteDesktopWindowFilter.rejectTitles, locTitle)
       end
     end
   end
@@ -6544,15 +6539,15 @@ end
 local function isDefaultRemoteDesktopWindow(window)
   local appid = window:application():bundleID()
   if appid == "com.realvnc.vncviewer" then
-    local winUI = hs.axuielement.windowElement(window)
-    return hs.fnutils.find(getc(winUI, AX.Button),
+    local winUI = towinui(window)
+    return tfind(getc(winUI, AX.Button),
       function(child) return child.AXHelp == "Session information" end) ~= nil
   elseif appid == "com.microsoft.rdc.macos" then
     local wFilter = hs.window.filter.new(false):setAppFilter(
         window:application():name(), MicrosoftRemoteDesktopWindowFilter)
     local result = wFilter:isWindowAllowed(window)
     if result then
-      local winUI = hs.axuielement.windowElement(window)
+      local winUI = towinui(window)
       local title = "Cancel"
       if window:application():name() == "Windows App" then
         title = localizedString(title, "com.microsoft.rdc.macos") or title
@@ -6657,13 +6652,10 @@ end
 
 RemoteDesktopObserver = nil
 local function watchForRemoteDesktopWindow(app)
-  local appUI = hs.axuielement.applicationElement(app)
-  local observer = hs.axuielement.observer.new(app:pid())
-  observer:addWatcher(
-    appUI, hs.axuielement.observer.notifications.focusedWindowChanged
-  )
-  observer:callback(
-      hs.fnutils.partial(suspendHotkeysInRemoteDesktop, app))
+  local appUI = toappui(app)
+  local observer = uiobserver.new(app:pid())
+  observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
+  observer:callback(bind(suspendHotkeysInRemoteDesktop, app))
   observer:start()
   stopOnDeactivated(app:bundleID(), observer)
   stopOnQuit(app:bundleID(), observer)
@@ -6902,7 +6894,7 @@ function App_applicationInstalledCallback(files, flagTables)
       for j, appkey in ipairs(appHotkeys) do
         if appkey.appid == appid or appkey.appPath == file then
           appkey:delete()
-          table.remove(appHotkeys, j)
+          tremove(appHotkeys, j)
           break
         end
       end

@@ -1,4 +1,5 @@
-local timer  = require("hs.timer")
+local tinsert  = table.insert
+local timer    = require("hs.timer")
 local eventtap = require("hs.eventtap")
 local events   = eventtap.event.types
 
@@ -7,7 +8,7 @@ local module   = {}
 local function getIndex(keycode) -- key for hotkeys table
   if keycode == hs.keycodes.map[HYPER] then return "✧" end
   local key = hs.keycodes.map[keycode]
-  key = key and string.upper(key) or '[#'..keycode..']'
+  key = key and key:upper() or '[#'..keycode..']'
   return key
 end
 
@@ -25,7 +26,7 @@ local modifiers = {
 
 local functionKeycodes = {}
 for i=1,20 do
-  table.insert(functionKeycodes, hs.keycodes.map['f' .. tostring(i)])
+  tinsert(functionKeycodes, hs.keycodes.map['f' .. tostring(i)])
 end
 
 function module:_install(mods, key)
@@ -59,22 +60,22 @@ function module:_install(mods, key)
     local idx, modsRepr = "", {}
     if hs.fnutils.contains(mods, "command") then
       idx = modifiers.command
-      table.insert(modsRepr, 'cmd')
+      tinsert(modsRepr, 'cmd')
     end
     if hs.fnutils.contains(mods, "control") then
       idx = idx .. modifiers.control
-      table.insert(modsRepr, 'ctrl')
+      tinsert(modsRepr, 'ctrl')
     end
     if hs.fnutils.contains(mods, "option") then
       idx = idx .. modifiers.option
-      table.insert(modsRepr, 'alt')
+      tinsert(modsRepr, 'alt')
     end
     if hs.fnutils.contains(mods, "shift") then
       idx = idx .. modifiers.shift
-      table.insert(modsRepr, 'shift')
+      tinsert(modsRepr, 'shift')
     end
     if hs.fnutils.contains(functionKeycodes, self.key) then
-      table.insert(modsRepr, 'fn')
+      tinsert(modsRepr, 'fn')
     end
     self.key = hs.keycodes.map[key]
     self.mods = modsRepr
