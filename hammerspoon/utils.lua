@@ -53,25 +53,18 @@ function inFullscreenSpace()
   return false
 end
 
-function activatedWindowIndex()
-  if inFullscreenSpace() then
-    local cnt = #hs.application.frontmostApplication():visibleWindows()
-    if hs.application.frontmostApplication():bundleID() == "com.apple.finder" then
-      cnt = cnt - 1
-    end
-    return cnt
-  else
-    return 1
-  end
-end
-
 function aWinFor(app)
-  local appid
-  if type(app) == 'string' then appid = app
-  else appid = app:bundleID() end
+  local appid = type(app) == 'string' and app or app:bundleID()
+  local aWinIdx = 1
+  if inFullscreenSpace() then
+    aWinIdx = #app:visibleWindows()
+    if appid == "com.apple.finder" then
+      aWinIdx = aWinIdx - 1
+    end
+  end
   return strfmt(
       'window %d of (first application process whose bundle identifier is "%s")\n',
-      activatedWindowIndex(), appid)
+      aWinIdx, appid)
 end
 
 function menuBarVisible()
