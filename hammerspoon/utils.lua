@@ -876,6 +876,31 @@ local function parseStringsFile(file, keepOrder, keepAll)
 end
 
 local function localizeByLoctableImpl(str, filePath, locale)
+  local loctables = hs.plist.read(filePath)
+  local loctable = loctables[locale]
+  if loctable == nil then return end
+  local result = loctable[str]
+  if result ~= nil then return result end
+  if locale == 'en' then
+    local enLocales = tconcat({ 'English', 'Base' }, extraEnglishLocales)
+    for en in ipairs(enLocales) do
+      result = get(loctables, en, str)
+      if result ~= nil then return result end
+    end
+  end
+
+  local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
+  for en in ipairs(enLocales) do
+    if loctables[en] ~= nil then
+      local key = tindex(loctables[en], str)
+      if key ~= nil then
+        return loctable[key]
+      end
+    end
+  end
+end
+
+local function localizeByLoctableImplPython(str, filePath, locale)
   local output, status = hs.execute(strfmt(
       "/usr/bin/python3 scripts/loctable_localize.py '%s' '%s' %s",
       filePath, str, locale))
@@ -888,7 +913,7 @@ local function localizeByLoctable(str, resourceDir, localeFile, locale)
   if localeFile ~= nil then
     local fullPath = resourceDir .. '/' .. localeFile .. '.loctable'
     if hs.fs.attributes(fullPath) ~= nil then
-      return localizeByLoctableImpl(str, fullPath, locale)
+      return localizeByLoctableImplPython(str, fullPath, locale)
     end
   else
     local loctableFiles = collectLocaleFiles(resourceDir, { loctable = true })
@@ -898,12 +923,12 @@ local function localizeByLoctable(str, resourceDir, localeFile, locale)
     end
     for _, file in ipairs(preferentialLoctableFiles) do
       local fullPath = resourceDir .. '/' .. file .. '.loctable'
-      local result = localizeByLoctableImpl(str, fullPath, locale)
+      local result = localizeByLoctableImplPython(str, fullPath, locale)
       if result ~= nil then return result end
     end
     for _, file in ipairs(loctableFiles) do
       local fullPath = resourceDir .. '/' .. file .. '.loctable'
-      local result = localizeByLoctableImpl(str, fullPath, locale)
+      local result = localizeByLoctableImplPython(str, fullPath, locale)
       if result ~= nil then return result end
     end
   end
@@ -1813,6 +1838,20 @@ end
 
 
 local function delocalizeByLoctableImpl(str, filePath, locale)
+  local loctables = hs.plist.read(filePath)
+  local loctable = loctables[locale]
+  if loctable == nil then return end
+  local key = tindex(loctable, str)
+  if key == nil then return end
+  local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
+  for _, en in ipairs(enLocales) do
+    if loctables[en] ~= nil then
+      return loctables[en][key]
+    end
+  end
+end
+
+local function delocalizeByLoctableImplPython(str, filePath, locale)
   local output, status = hs.execute(strfmt(
       "/usr/bin/python3 scripts/loctable_delocalize.py '%s' '%s' %s",
       filePath, str, locale))
@@ -1823,7 +1862,7 @@ local function delocalizeByLoctable(str, resourceDir, localeFile, locale)
   if localeFile ~= nil then
     local fullPath = resourceDir .. '/' .. localeFile .. '.loctable'
     if hs.fs.attributes(fullPath) ~= nil then
-      return delocalizeByLoctableImpl(str, fullPath, locale)
+      return delocalizeByLoctableImplPython(str, fullPath, locale)
     end
   else
     local loctableFiles = collectLocaleFiles(resourceDir, { loctable = true })
@@ -1832,11 +1871,11 @@ local function delocalizeByLoctable(str, resourceDir, localeFile, locale)
       loctableFiles, preferentialLoctableFiles = filterPreferentialLocaleFiles(loctableFiles)
     end
     for _, file in ipairs(preferentialLoctableFiles) do
-      local result = delocalizeByLoctableImpl(str, resourceDir .. '/' .. file .. '.loctable', locale)
+      local result = delocalizeByLoctableImplPython(str, resourceDir .. '/' .. file .. '.loctable', locale)
       if result ~= nil then return result end
     end
     for _, file in ipairs(loctableFiles) do
-      local result = delocalizeByLoctableImpl(str, resourceDir .. '/' .. file .. '.loctable', locale)
+      local result = delocalizeByLoctableImplPython(str, resourceDir .. '/' .. file .. '.loctable', locale)
       if result ~= nil then return result end
     end
   end
