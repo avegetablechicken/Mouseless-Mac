@@ -875,26 +875,20 @@ local function parseStringsFile(file, keepOrder, keepAll)
   return localesDict
 end
 
-local function localizeByLoctableImpl(str, filePath, fileStem, locale, localesDict)
-  if localesDict[fileStem] == nil then localesDict[fileStem] = {} end
-  if localesDict[fileStem][str] ~= nil then
-    return localesDict[fileStem][str]
-  end
-
+local function localizeByLoctableImpl(str, filePath, locale)
   local output, status = hs.execute(strfmt(
       "/usr/bin/python3 scripts/loctable_localize.py '%s' '%s' %s",
       filePath, str, locale))
   if status and output ~= "" then
-    localesDict[fileStem][str] = output
     return output
   end
 end
 
-local function localizeByLoctable(str, resourceDir, localeFile, loc, localesDict)
+local function localizeByLoctable(str, resourceDir, localeFile, locale)
   if localeFile ~= nil then
     local fullPath = resourceDir .. '/' .. localeFile .. '.loctable'
     if hs.fs.attributes(fullPath) ~= nil then
-      return localizeByLoctableImpl(str, fullPath, localeFile, loc, localesDict)
+      return localizeByLoctableImpl(str, fullPath, locale)
     end
   else
     local loctableFiles = collectLocaleFiles(resourceDir, { loctable = true })
@@ -904,12 +898,12 @@ local function localizeByLoctable(str, resourceDir, localeFile, loc, localesDict
     end
     for _, file in ipairs(preferentialLoctableFiles) do
       local fullPath = resourceDir .. '/' .. file .. '.loctable'
-      local result = localizeByLoctableImpl(str, fullPath, file, loc, localesDict)
+      local result = localizeByLoctableImpl(str, fullPath, locale)
       if result ~= nil then return result end
     end
     for _, file in ipairs(loctableFiles) do
       local fullPath = resourceDir .. '/' .. file .. '.loctable'
-      local result = localizeByLoctableImpl(str, fullPath, file, loc, localesDict)
+      local result = localizeByLoctableImpl(str, fullPath, locale)
       if result ~= nil then return result end
     end
   end
@@ -1736,7 +1730,7 @@ local function localizedStringImpl(str, appid, params, force)
   end
 
   local defaultAction = function(emptyCache)
-    result = localizeByLoctable(str, resourceDir, localeFile, locale, localesDict)
+    result = localizeByLoctable(str, resourceDir, localeFile, locale)
     if result ~= nil then return result end
 
     if emptyCache or appLocaleAssetBufferInverse[appid] == nil
