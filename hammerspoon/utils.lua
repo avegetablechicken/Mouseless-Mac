@@ -2892,21 +2892,25 @@ function hasTopNotch(screen)
   return false
 end
 
-function hiddenByBartender(id)
+function hiddenByBartender(id, index)
   if find("com.surteesstudios.Bartender") == nil then
     return false
   end
-  local _, hiddenItems = hs.osascript.applescript([[
-    tell application id "com.surteesstudios.Bartender" to list menu bar items
-  ]])
-  local hiddenItemList = strsplit(hiddenItems, "\n")
-  for _, item in ipairs(hiddenItemList) do
-    if item:sub(1, id:len()) == id then
-      return false
-    elseif item == "com.surteesstudios.Bartender-statusItem" then
-      return true
+  if index == nil then index = 1 end
+  local plistPath = hs.fs.pathToAbsolute(
+        "~/Library/Preferences/com.surteesstudios.Bartender.plist")
+  if plistPath ~= nil then
+    local plist = hs.plist.read(plistPath)
+    local allwaysShown = get(plist, "ProfileSettings", "activeProfile", "Show")
+    local itemRepr
+    if type(index) == 'number' then
+      itemRepr = id .. '-Item-' .. (index - 1)
+    else
+      itemRepr = id .. '-' .. index
     end
+    return not tcontain(allwaysShown, itemRepr)
   end
+  return false
 end
 
 function leftClick(point, appname)
