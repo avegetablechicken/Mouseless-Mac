@@ -40,6 +40,23 @@ function getc(element, role, index, ...)
   return getc(child, ...)
 end
 
+function uicenter(elem)
+  return hs.geometry.point{
+    elem.AXPosition.x + elem.AXSize. w / 2,
+    elem.AXPosition.y + elem.AXSize. h / 2
+  }
+end
+
+function uioffset(point, offset)
+  if point.AXPosition then
+    point = point.AXPosition
+  end
+  return hs.geometry.point{
+    (point.x or point[1]) + (offset.x or offset[1]),
+    (point.y or point[2]) + (offset.y or offset[2]),
+  }
+end
+
 function inFullscreenSpace()
   local focusedWindow = hs.application.frontmostApplication():focusedWindow()
   if focusedWindow ~= nil and focusedWindow:id() ~= 0 then
@@ -2891,25 +2908,25 @@ function hiddenByBartender(id)
   end
 end
 
-function leftClick(position, appname)
-  if position.x == nil then position = hs.geometry.point(position) end
+function leftClick(point, appname)
+  if point.x == nil then point = hs.geometry.point(point) end
   if appname ~= nil then
-    local appHere = hs.axuielement.systemElementAtPosition(position)
+    local appHere = hs.axuielement.systemElementAtPosition(point)
     while appHere ~= nil and appHere.AXParent ~= nil do
       appHere = appHere.AXParent
     end
     if appHere.AXTitle ~= appname then return false end
   end
-  hs.eventtap.leftClick(position)
+  hs.eventtap.leftClick(point)
   return true
 end
 
-function leftClickAndRestore(position, appname, delay)
+function leftClickAndRestore(point, appname, delay)
   if type(appname) == 'number' then
     delay = appname appname = nil
   end
   local mousePosition = hs.mouse.absolutePosition()
-  if leftClick(position, appname) then
+  if leftClick(point, appname) then
     if delay then
       hs.timer.doAfter(delay, function()
         hs.mouse.absolutePosition(mousePosition)
@@ -2922,25 +2939,25 @@ function leftClickAndRestore(position, appname, delay)
   return false
 end
 
-function rightClick(position, appname)
-  if position.x == nil then position = hs.geometry.point(position) end
+function rightClick(point, appname)
+  if point.x == nil then point = hs.geometry.point(point) end
   if appname ~= nil then
-    local appHere = hs.axuielement.systemElementAtPosition(position)
+    local appHere = hs.axuielement.systemElementAtPosition(point)
     while appHere.AXParent ~= nil do
       appHere = appHere.AXParent
     end
     if appHere.AXTitle ~= appname then return false end
   end
-  hs.eventtap.rightClick(position)
+  hs.eventtap.rightClick(point)
   return true
 end
 
-function rightClickAndRestore(position, appname, delay)
+function rightClickAndRestore(point, appname, delay)
   if type(appname) == 'number' then
     delay = appname appname = nil
   end
   local mousePosition = hs.mouse.absolutePosition()
-  if rightClick(position, appname) then
+  if rightClick(point, appname) then
     if delay then
       hs.timer.doAfter(delay, function()
         hs.mouse.absolutePosition(mousePosition)

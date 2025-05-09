@@ -1864,7 +1864,7 @@ function registerControlCenterHotKeys(panel)
                 local winUI = towinui(app:focusedWindow())
                 local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
                     AX.Group, 1, AX.Group, 1, AX.WebArea, 1)
-                local list, position, size
+                local list, button
                 if appid == "com.google.Chrome" then
                   list = getc(webarea, AX.Group, 2, AX.Group, 1, AX.Group, 4, AX.Group, 1)
                 else
@@ -1873,9 +1873,7 @@ function registerControlCenterHotKeys(panel)
                 if list ~= nil then
                   for _, c in ipairs(list.AXChildren) do
                     if getc(c, nil, 1).AXTitle:find("Auto Dark Mode") then
-                      local button = getc(c, AX.Group, 2, AX.PopupButton, 1)
-                      position = button.AXPosition
-                      size = button.AXSize
+                      button = getc(c, AX.Group, 2, AX.PopupButton, 1)
                     end
                   end
                 else
@@ -1891,14 +1889,11 @@ function registerControlCenterHotKeys(panel)
                   end
                   for c = 1, #list.AXChildren / 4 do
                     if list.AXChildren[c * 4 - 3].AXTitle:find("Auto Dark Mode") then
-                      local button = getc(list, nil, c * 4, AX.PopupButton, 1)
-                      position = button.AXPosition
-                      size = button.AXSize
+                      button = getc(list, nil, c * 4, AX.PopupButton, 1)
                     end
                   end
                 end
-                leftClickAndRestore({ position.x + size.w / 2, position.y + size.h / 2 },
-                                    app:getMenuItems()[1].AXTitle)
+                leftClickAndRestore(uicenter(button), app:getMenuItems()[1].AXTitle)
 
                 local darkMode = enableds[i] == 1 and "Enabled" or "Disabled"
                 local menuItem = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
@@ -1914,9 +1909,7 @@ function registerControlCenterHotKeys(panel)
                     if button == nil then
                       button = getc(webarea, AX.Group, 7, AX.Button, 1)
                     end
-                    local position, size = button.AXPosition, button.AXSize
-                    leftClickAndRestore({position.x + size.w / 2, position.y + size.h / 2},
-                                         app:getMenuItems()[1].AXTitle)
+                    leftClickAndRestore(uicenter(button), app:getMenuItems()[1].AXTitle)
                     if hotkey ~= nil then
                       hotkey:delete()
                       hotkey = nil

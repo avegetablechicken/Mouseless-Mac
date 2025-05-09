@@ -722,12 +722,8 @@ local function clickBartenderBarItem(index, rightClick)
       local icon = getc(winUI, AX.ScrollArea, 1, AX.List, 1,
           AX.List, 1, AX.Group, itemID, AX.Image, 1)
       if icon ~= nil then
-        local position = { icon.AXPosition.x + 10, icon.AXPosition.y + 10 }
-        if rightClick then
-          rightClickAndRestore(position, win:application():name())
-        else
-          leftClickAndRestore(position, win:application():name())
-        end
+        local fn = rightClick and rightClickAndRestore or leftClickAndRestore
+        fn(uioffset(icon, { 10, 10 }), win:application():name())
       end
     end
   end
@@ -1337,8 +1333,7 @@ appHotKeyCallbacks = {
         return true, searchField
       end,
       fn = function(searchField, app)
-        local position = { searchField.AXPosition.x + 10, searchField.AXPosition.y + 2 }
-        leftClickAndRestore(position, app:name())
+        leftClickAndRestore(uioffset(searchField, { 10, 2 }), app:name())
       end
     }
   },
@@ -1779,8 +1774,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group, 1)
-        local position = { button.AXPosition.x + 30, button.AXPosition.y + 10 }
-        leftClickAndRestore(position, win:application():name())
+        leftClickAndRestore(uioffset(button, { 30, 10 }), win:application():name())
       end
     },
     ["openFileLocation"] = {
@@ -2238,11 +2232,7 @@ appHotKeyCallbacks = {
         else
           local appUI = toappui(app)
           local menuBarMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1)
-          local position = {
-            menuBarMenu.AXPosition.x + menuBarMenu.AXSize.w / 2,
-            menuBarMenu.AXPosition.y + menuBarMenu.AXSize.h / 2,
-          }
-          leftClickAndRestore(position, app:name())
+          leftClickAndRestore(uicenter(menuBarMenu), app:name())
         end
       end,
       onLaunch = function(app)
@@ -2262,11 +2252,7 @@ appHotKeyCallbacks = {
         else
           local appUI = toappui(app)
           local menuBarMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1)
-          local position = {
-            menuBarMenu.AXPosition.x + menuBarMenu.AXSize.w / 2,
-            menuBarMenu.AXPosition.y + menuBarMenu.AXSize.h / 2,
-          }
-          leftClickAndRestore(position, app:name())
+          leftClickAndRestore(uicenter(menuBarMenu), app:name())
         end
       end
     },
@@ -2582,7 +2568,7 @@ appHotKeyCallbacks = {
       end,
       repeatable = true,
       fn = function(position, app)
-        leftClickAndRestore({ position.x + 5, position.y + 5 }, app:name(), 0.1)
+        leftClickAndRestore(uioffset(position, { 5, 5 }), app:name(), 0.1)
       end
     },
     ["forward"] = {
@@ -2608,7 +2594,7 @@ appHotKeyCallbacks = {
       end,
       repeatable = true,
       fn = function(position, app)
-        leftClickAndRestore({ position.x + 5, position.y + 5 }, app:name(), 0.1)
+        leftClickAndRestore(uioffset(position, { 5, 5 }), app:name(), 0.1)
       end
     },
     ["refresh"] = {
@@ -2637,7 +2623,7 @@ appHotKeyCallbacks = {
             and refreshButtonPosition.x ~= searchButtonPosition.x, refreshButtonPosition
       end,
       fn = function(position, app)
-        leftClickAndRestore({ position.x + 5, position.y + 5 }, app:name(), 0.1)
+        leftClickAndRestore(uioffset(position, { 5, 5 }), app:name(), 0.1)
       end
     },
     ["playBarCloseSingleSong"] = {
@@ -2704,8 +2690,7 @@ appHotKeyCallbacks = {
       nonFrontmost = true,
       fn = function(win)
         local winUI = towinui(win)
-        leftClickAndRestore({ x = winUI.AXPosition.x + winUI.AXSize.w/2,
-                              y = winUI.AXPosition.y })
+        leftClickAndRestore(uioffset(winUI, { winUI.AXSize.w/2, 0 }))
       end
     }
   },
@@ -3245,11 +3230,7 @@ appHotKeyCallbacks = {
         local button = getc(appUI, AX.MenuBar, -1,
             AX.MenuBarItem, 1, AX.Menu, 1, AX.MenuItem, 1, AX.Group, 1,
             AX.StaticText, prefString)
-        local position = {
-          button.AXPosition.x + 5,
-          button.AXPosition.y + 5
-        }
-        leftClickAndRestore(position, app:name(), 0.2)
+        leftClickAndRestore(uioffset(button, { 5, 5 }), app:name(), 0.2)
       end
     }
   },
@@ -3428,11 +3409,7 @@ appHotKeyCallbacks = {
             AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, 2, AX.Cell, 1,
             AX.StaticText, 2)
         assert(field)
-        local position = {
-          field.AXPosition.x + field.AXSize.w / 2,
-          field.AXPosition.y + field.AXSize.h / 2
-        }
-        leftClickAndRestore(position, win:application():name())
+        leftClickAndRestore(uicenter(field), win:application():name())
         clickRightMenuBarItem(win:application())
       end
     },
@@ -3460,11 +3437,7 @@ appHotKeyCallbacks = {
           field = getc(outline, AX.Row, 4, AX.Cell, 1, AX.StaticText, 2)
         end
         assert(field)
-        local position = {
-          field.AXPosition.x + field.AXSize.w / 2,
-          field.AXPosition.y + field.AXSize.h / 2
-        }
-        leftClickAndRestore(position, win:application():name())
+        leftClickAndRestore(uicenter(field), win:application():name())
         clickRightMenuBarItem(win:application())
       end
     },
@@ -3666,11 +3639,7 @@ appHotKeyCallbacks = {
         local winUI = towinui(win)
         local searchField = getc(winUI, AX.TextField, 1)
         if searchField ~= nil then
-          local position = {
-            searchField.AXPosition.x + 5,
-            searchField.AXPosition.y + 5,
-          }
-          leftClickAndRestore(position, win:application():name())
+          leftClickAndRestore(uioffset(searchField, { 5, 5 }), win:application():name())
         end
       end
     },
