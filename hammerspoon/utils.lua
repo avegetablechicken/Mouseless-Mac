@@ -2607,13 +2607,13 @@ function localizeCommonMenuItemTitles(locale, appid)
   local targetLocMap = locMap[target]
   for _, title in ipairs { 'File', 'View', 'Window', 'Help' } do
     local escapedTitle = title:gsub('…', '\\U2026'):gsub('“', '\\U201C'):gsub('”', '\\U201D')
-    local localizedTitle = localizeByLoctable(escapedTitle, resourceDir, 'MenuCommands', matchedLocale, {})
+    local localizedTitle = localizeByLoctable(escapedTitle, resourceDir, 'MenuCommands', matchedLocale)
     if localizedTitle ~= nil then
       targetDelocMap[localizedTitle] = title
       targetLocMap[title] = localizedTitle
     end
   end
-  local localizedTitle = localizeByLoctable('Edit', resourceDir, 'InputManager', matchedLocale, {})
+  local localizedTitle = localizeByLoctable('Edit', resourceDir, 'InputManager', matchedLocale)
   if localizedTitle ~= nil then
     targetDelocMap[localizedTitle] = 'Edit'
     targetLocMap['Edit'] = localizedTitle
@@ -2632,12 +2632,12 @@ function localizeCommonMenuItemTitles(locale, appid)
   end
   for _, title in ipairs(titleList) do
     local escapedTitle = title:gsub('…', '\\U2026'):gsub('“', '\\U201C'):gsub('”', '\\U201D')
-    local localizedTitle = localizeByLoctable(escapedTitle, resourceDir, 'MenuCommands', matchedLocale, {})
+    local localizedTitle = localizeByLoctable(escapedTitle, resourceDir, 'MenuCommands', matchedLocale)
     if localizedTitle ~= nil then
       delocMap.common[localizedTitle] = title
     end
   end
-  local localizedTitle = localizeByLoctable('Emoji & Symbols', resourceDir, 'InputManager', matchedLocale, {})
+  local localizedTitle = localizeByLoctable('Emoji & Symbols', resourceDir, 'InputManager', matchedLocale)
   if localizedTitle ~= nil then
     delocMap.common[localizedTitle] = 'Emoji & Symbols'
   end
@@ -2832,10 +2832,10 @@ function displayName(app)
   end
   if hs.fs.attributes(resourceDir .. '/InfoPlist.loctable') ~= nil then
     appname = localizeByLoctable('CFBundleDisplayName',
-        resourceDir, 'InfoPlist', locale, {})
+        resourceDir, 'InfoPlist', locale)
     if appname == nil then
       appname = localizeByLoctable('CFBundleName',
-          resourceDir, 'InfoPlist', locale, {})
+          resourceDir, 'InfoPlist', locale)
     end
   else
     local localeDir = resourceDir .. "/" .. locale .. ".lproj"
