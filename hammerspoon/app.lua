@@ -524,82 +524,54 @@ local function deleteAllCalls(win)
 end
 
 -- ### Visual Studio Code
-local function VSCodeToggleSideBarSection(app, sidebar, section)
-  local commonPath = [[group 2 of group 1 of group 2 of group 2 of ¬
-    group 1 of group 1 of group 1 of group 1 of UI element 1 of ¬
-    group 1 of group 1 of group 1 of UI element 1]]
-  local commonPathOld = [[group 2 of group 1 of group 2 of group 2 of ¬
-    group 1 of group 1 of group 1 of group 1 of UI element 1]]
-  local sidebarAction = [[
-    set tabs to radio buttons of tab group 1 of group 1 of group 1 of ¬
-        %s
-    repeat with tab in tabs
-      if title of tab starts with "]] .. sidebar .. [["  ¬
-          or value of attribute "AXDescription" of tab starts with "]] .. sidebar .. [[" then
-        perform action 1 of tab
-        exit repeat
-      end if
-    end repeat
-    delay 0.1
-  ]]
-  local sectionExpand = [[
-    set sections to every group of group 2 of group 1 of group 2 of group 2 of ¬
-          %s
-      repeat with sec in sections
-        if title of UI element 2 of button 1 of group 1 of sec is "]] .. section .. [[" then
-          if (count value of attribute "AXChildren" of group 1 of sec) is 1 then
-            perform action 1 of button 1 of group 1 of sec
-          end if
-          exit repeat
-        end if
-      end repeat
-  ]]
-  local sectionFold = [[
-    set sections to every group of group 2 of group 1 of group 2 of group 2 of ¬
-          %s
-      repeat with sec in sections
-        if title of UI element 2 of button 1 of group 1 of sec is "]] .. section .. [[" then
-          perform action 1 of button 1 of group 1 of sec
-          exit repeat
-        end if
-      end repeat
-  ]]
-  local aWinIdx = 1
-  if inFullscreenSpace() then
-    aWinIdx = #app:visibleWindows()
+local function VSCodeToggleSideBarSection(winUI, sidebar, section)
+  local ancestor = getc(winUI,
+      nil, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+      nil, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+      AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 2)
+  if ancestor == nil then
+    ancestor = getc(winUI,
+        nil, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+        AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 2)
   end
-  hs.osascript.applescript([[
-    tell application "System Events"
-      tell window ]] ..  aWinIdx .. [[ of (first application process ¬
-          whose bundle identifier is "]] .. app:bundleID() .. [[")
-        if (exists UI element 1 of group 1 of group 1 of group 2 of ¬
-              ]] .. commonPath .. [[) ¬
-            and (title of UI element 1 of group 1 of group 1 of group 2 of ¬
-              ]] .. commonPath .. [[ ¬
-              starts with "]] .. sidebar .. [[") then
-          ]] .. strfmt(sectionFold, commonPath) .. [[
-        else if (exists UI element 1 of group 1 of group 1 of group 2 of ¬
-              ]] .. commonPathOld .. [[) ¬
-            and (title of UI element 1 of group 1 of group 1 of group 2 of ¬
-              ]] .. commonPathOld .. [[ ¬
-              starts with "]] .. sidebar .. [[") then
-          ]] .. strfmt(sectionFold, commonPathOld) .. [[
-        else if (not exists ]] .. commonPath .. [[) ¬
-            or (title of UI element 1 of group 1 of group 1 of group 2 of ¬
-              ]] .. commonPath .. [[ ¬
-              does not start with "]] .. sidebar .. [[") then
-          ]] .. strfmt(sidebarAction, commonPath) .. [[
-          ]] .. strfmt(sectionExpand, commonPath) .. [[
-        else if (not exists ]] .. commonPathOld .. [[) ¬
-            or (title of UI element 1 of group 1 of group 1 of group 2 of ¬
-              ]] .. commonPathOld .. [[ ¬
-              does not start with "]] .. sidebar .. [[") then
-          ]] .. strfmt(sidebarAction, commonPathOld) .. [[
-          ]] .. strfmt(sectionExpand, commonPathOld) .. [[
-        end if
-      end tell
-    end tell
-  ]])
+
+  local elem = getc(ancestor, AX.Group, 2, AX.Group, 1, AX.Group, 1, nil, 1)
+  if elem and elem.AXTitle:sub(1, #sidebar) == sidebar then
+    local sections = getc(ancestor, AX.Group, 2, AX.Group, 2,
+        AX.Group, 1, AX.Group, 2, AX.Group)
+    for _, sec in ipairs(sections) do
+      local button = getc(sec, AX.Group, 1, AX.Button, 1)
+      if getc(button, nil, 2).AXTitle == section then
+        button:performAction(AX.Press)
+        break
+      end
+    end
+  else
+    local tabs = getc(ancestor, AX.Group, 1,
+        AX.Group, 1, AX.TabGroup, 1, AX.RadioButton)
+    local tab = tfind(tabs, function(t)
+      return t.AXTitle:upper():sub(1, #sidebar) == sidebar
+          or t.AXDescription:upper():sub(1, #sidebar) == sidebar
+    end)
+    tab:performAction(AX.Press)
+
+    local sections = getc(ancestor, AX.Group, 2, AX.Group, 2,
+        AX.Group, 1, AX.Group, 2, AX.Group)
+    while sections == nil do
+      hs.timer.usleep(0.1 * 1000000)
+      sections = getc(ancestor, AX.Group, 2, AX.Group, 2,
+          AX.Group, 1, AX.Group, 2, AX.Group)
+    end
+    for _, sec in ipairs(sections) do
+      local button = getc(sec, AX.Group, 1, AX.Button, 1)
+      if getc(button, nil, 2).AXTitle == section then
+        if #getc(sec, AX.Group, 1).AXChildren == 1 then
+          button:performAction(AX.Press)
+          break
+        end
+      end
+    end
+  end
 end
 
 -- ### JabRef
@@ -1581,12 +1553,12 @@ appHotKeyCallbacks = {
           return false
         else
           local winUI = towinui(app:focusedWindow())
-          return winUI.AXIdentifier ~= "open-panel"
+          return winUI.AXIdentifier ~= "open-panel", winUI
         end
       end,
       repeatable = true,
-      fn = function(app)
-        VSCodeToggleSideBarSection(app, "EXPLORER", "OUTLINE")
+      fn = function(winUI)
+        VSCodeToggleSideBarSection(winUI, "EXPLORER", "OUTLINE")
       end
     },
     ["toggleSearchEditorWholeWord"] = {
