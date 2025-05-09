@@ -1485,9 +1485,9 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
       condition = function(app)
-        local ok, url = hs.osascript.applescript([[
-          tell application id "]] .. app:bundleID() .. [[" to return URL of front document
-        ]])
+        local ok, url = hs.osascript.applescript(strfmt([[
+          tell application id "%s" to return URL of front document
+        ]], app:bundleID()))
         if ok and url:sub(1, 7) == "file://" then
           return true, url
         else
@@ -1508,9 +1508,9 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
       condition = function(app)
-        local ok, filePath = hs.osascript.applescript([[
-          tell application id "]] .. app:bundleID() .. [[" to get path of front document
-        ]])
+        local ok, filePath = hs.osascript.applescript(strfmt([[
+          tell application id "%s" to get path of front document
+        ]], app:bundleID()))
         if ok then
           return true, filePath
         else
@@ -1526,9 +1526,9 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
       condition = function(app)
-        local ok, url = hs.osascript.applescript([[
-          tell application id "]] .. app:bundleID() .. [[" to return URL of active tab of front window
-        ]])
+        local ok, url = hs.osascript.applescript(strfmt([[
+          tell application id "%s" to return URL of active tab of front window
+        ]], app:bundleID()))
         if ok and url:sub(1, 7) == "file://" then
           return true, url
         else
@@ -1897,9 +1897,9 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
       condition = function(app)
-        local ok, filePath = hs.osascript.applescript([[
-          tell application id "]] .. app:bundleID() .. [[" to get file of front document
-        ]])
+        local ok, filePath = hs.osascript.applescript(strfmt([[
+          tell application id "%s" to get file of front document
+        ]], app:bundleID()))
         if ok and filePath ~= nil then
           local pos = filePath:find(":", 1)
           assert(pos)
@@ -1952,9 +1952,9 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
       condition = function(app)
-        local ok, filePath = hs.osascript.applescript([[
-          tell application id "]] .. app:bundleID() .. [[" to get file of front document
-        ]])
+        local ok, filePath = hs.osascript.applescript(strfmt([[
+          tell application id "%s" to get file of front document
+        ]], app:bundleID()))
         if ok and filePath ~= nil then
           local pos = filePath:find(":", 1)
           assert(pos)
@@ -2007,9 +2007,9 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
       condition = function(app)
-        local ok, filePath = hs.osascript.applescript([[
-          tell application id "]] .. app:bundleID() .. [[" to get file of front document
-        ]])
+        local ok, filePath = hs.osascript.applescript(strfmt([[
+          tell application id "%s" to get file of front document
+        ]], app:bundleID()))
         if ok and filePath ~= nil then
           local pos = filePath:find(":", 1)
           assert(pos)
@@ -2226,9 +2226,11 @@ appHotKeyCallbacks = {
         if find('com.surteesstudios.Bartender') then
           -- fixme: false invoke when `Bartender` try to show or hide menubar icon
           -- always show the icon to workaround it
-          hs.osascript.applescript([[
-            tell application id "com.surteesstudios.Bartender" to activate "]] .. app:bundleID() .. [[-Item-0"
-          ]])
+          hs.osascript.applescript(strfmt([[
+            tell application id "com.surteesstudios.Bartender"
+              activate "%s-Item-0"
+            end tell
+          ]], app:bundleID()))
         else
           local appUI = toappui(app)
           local menuBarMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1)
@@ -2246,9 +2248,11 @@ appHotKeyCallbacks = {
         app:hide()
         hs.timer.usleep(1000000)
         if find('com.surteesstudios.Bartender') then
-          hs.osascript.applescript([[
-            tell application id "com.surteesstudios.Bartender" to activate "]] .. app:bundleID() .. [[-Item-0"
-          ]])
+          hs.osascript.applescript(strfmt([[
+            tell application id "com.surteesstudios.Bartender"
+              activate "%s-Item-0"
+            end tell
+          ]], app:bundleID()))
         else
           local appUI = toappui(app)
           local menuBarMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1)

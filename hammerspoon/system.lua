@@ -530,11 +530,20 @@ local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
     if enabled and mode ~= nil then
       if mode == "PAC" then
         local PACFile = config.PAC
-        tinsert(proxyMenu, { title = "PAC File: " .. PACFile, disabled = true })
+        tinsert(proxyMenu, {
+          title = "PAC File: " .. PACFile,
+          disabled = true
+        })
       else
         local addr = config.global
-        tinsert(proxyMenu, { title = "HTTP Proxy: " .. addr[1] .. ":" .. addr[2], disabled = true })
-        tinsert(proxyMenu, { title = "SOCKS5 Proxy: " .. addr[5] .. ":" .. addr[6], disabled = true })
+        tinsert(proxyMenu, {
+          title = "HTTP Proxy: " .. addr[1] .. ":" .. addr[2],
+          disabled = true
+        })
+        tinsert(proxyMenu, {
+          title = "SOCKS5 Proxy: " .. addr[5] .. ":" .. addr[6],
+          disabled = true
+        })
       end
     end
     if config.global ~= nil then
@@ -606,12 +615,15 @@ local function parseProxyInfo(info, require_mode)
           local appid = proxyAppBundleIDs.MonoCloud
           if find(appid) ~= nil then
             local appUI = toappui(find(appid))
-            local outboundModeMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1,
-              AX.Menu, 1, AX.MenuItem, "Outbound Mode", AX.Menu, 1)
+            local outboundModeMenu = getc(appUI, AX.MenuBar, -1,
+                AX.MenuBarItem, 1, AX.Menu, 1,
+                AX.MenuItem, "Outbound Mode", AX.Menu, 1)
             if outboundModeMenu ~= nil then
-              if getc(outboundModeMenu, AX.MenuItem, 2).AXMenuItemMarkChar == "✓" then
+              if getc(outboundModeMenu, AX.MenuItem, 2)
+                  .AXMenuItemMarkChar == "✓" then
                 mode = "Global"
-              elseif getc(outboundModeMenu, AX.MenuItem, 3).AXMenuItemMarkChar == "✓" then
+              elseif getc(outboundModeMenu, AX.MenuItem, 3)
+                  .AXMenuItemMarkChar == "✓" then
                 mode = "PAC"
               end
             end
@@ -649,7 +661,8 @@ local function registerProxySettingsEntry(menu)
         else
           local ok = hs.osascript.applescript([[
             tell application id "com.apple.systempreferences"
-              reveal anchor "Proxies" of pane id "com.apple.Network-Settings.extension"
+              reveal anchor "Proxies" of pane ¬
+                  id "com.apple.Network-Settings.extension"
             end tell
           ]])
           if not ok then return end
@@ -675,7 +688,8 @@ local function registerProxySettingsEntry(menu)
           function()
             local position = getc(record, AX.TextField, 1).AXPosition
             local size = getc(record, AX.TextField, 1).AXSize
-            leftClickAndRestore({ position.x + size.w - 1, position.y }, app:name())
+            leftClickAndRestore({ position.x + size.w - 1, position.y },
+                                app:name())
           end)
           obs:stop()
           obs = nil
@@ -750,9 +764,13 @@ local function registerProxyMenuImpl()
   local proxyMenuIdx = 1
   local otherProxies = {}
   for name, _ in pairs(ProxyConfigs) do
-    if tfind(proxyMenuItemCandidates, function(item) return item.appname == name end) == nil then
+    if tfind(proxyMenuItemCandidates,
+          function(item)
+            return item.appname == name
+          end) == nil then
       if name == "System" then
-        proxyMenuIdx = registerProxyMenuEntry('System', enabledProxy == "System", mode, proxyMenuIdx)
+        proxyMenuIdx = registerProxyMenuEntry('System',
+            enabledProxy == "System", mode, proxyMenuIdx)
       else
         tinsert(otherProxies, name)
       end
@@ -783,13 +801,23 @@ local function registerProxyMenuImpl()
         shortcut = candidate.shortcut
       })
       if candidate.appname == enabledProxy and mode ~= nil then
-        if mode == "PAC" and ProxyConfigs[candidate.appname]["PAC"] ~= nil then
+        if mode == "PAC" and
+            ProxyConfigs[candidate.appname]["PAC"] ~= nil then
           local PACFile = ProxyConfigs[candidate.appname]["PAC"]
-          tinsert(proxyMenu, { title = "PAC File: " .. PACFile, disabled = true })
+          tinsert(proxyMenu, {
+            title = "PAC File: " .. PACFile,
+            disabled = true,
+          })
         elseif ProxyConfigs[candidate.appname]["global"] ~= nil then
           local addr = ProxyConfigs[candidate.appname]["global"]
-          tinsert(proxyMenu, { title = "HTTP Proxy: " .. addr[1] .. ":" .. addr[2], disabled = true })
-          tinsert(proxyMenu, { title = "SOCKS5 Proxy: " .. addr[5] .. ":" .. addr[6], disabled = true })
+          tinsert(proxyMenu, {
+            title = "HTTP Proxy: " .. addr[1] .. ":" .. addr[2],
+            disabled = true,
+          })
+          tinsert(proxyMenu, {
+            title = "SOCKS5 Proxy: " .. addr[5] .. ":" .. addr[6],
+            disabled = true,
+          })
         end
       end
 
@@ -805,7 +833,9 @@ local function registerProxyMenuImpl()
   end
 
   for _, name in ipairs(otherProxies) do
-    proxyMenuIdx = registerProxyMenuEntry(name, enabledProxy == name, mode, proxyMenuIdx)
+    proxyMenuIdx = registerProxyMenuEntry(
+        name, enabledProxy == name,
+        mode, proxyMenuIdx)
   end
 
   registerProxySettingsEntry(proxyMenu)
@@ -866,12 +896,15 @@ end
 local lastIpv4State
 local function registerProxyMenuWrapper(storeObj, changedKeys)
   for i = #NetworkMonitorKeys, 1, -1 do
-    local netID = NetworkMonitorKeys[i]:match("Setup:/Network/Service/(.-)/Proxies")
+    local netID = NetworkMonitorKeys[i]
+        :match("Setup:/Network/Service/(.-)/Proxies")
     if netID ~= nil then
       tremove(NetworkMonitorKeys, i)
     end
   end
-  local Ipv4State = NetworkWatcher:contents("State:/Network/Global/IPv4")["State:/Network/Global/IPv4"]
+  local Ipv4State = NetworkWatcher
+      :contents("State:/Network/Global/IPv4")
+      ["State:/Network/Global/IPv4"]
   if Ipv4State ~= nil then
     local curNetID = Ipv4State["PrimaryService"]
     tinsert(NetworkMonitorKeys, "Setup:/Network/Service/" .. curNetID .. "/Proxies")
@@ -924,7 +957,8 @@ registerProxyMenuWrapper()
 
 local menubarHK = KeybindingConfigs.hotkeys.global
 
-local proxyHotkey = bindHotkeySpec(menubarHK["showProxyMenu"], "Show Proxy Menu",
+local proxyHotkey = bindHotkeySpec(menubarHK["showProxyMenu"],
+"Show Proxy Menu",
 function()
   if find("com.surteesstudios.Bartender") ~= nil then
     hs.osascript.applescript(strfmt([[
@@ -935,7 +969,8 @@ function()
   else
     local app = find("org.hammerspoon.Hammerspoon")
     local appUI = toappui(app)
-    local menuBarMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, proxy:title())
+    local menuBarMenu = getc(appUI, AX.MenuBar, -1,
+        AX.MenuBarItem, proxy:title())
     if menuBarMenu ~= nil then
       menuBarMenu:performAction(AX.Press)
     end
@@ -1018,7 +1053,8 @@ end
 local function popupControlCenterSubPanel(panel, allowReentry)
   local ident = controlCenterSubPanelIdentifiers[panel]
   local win = find("com.apple.controlcenter"):mainWindow()
-  local pane = (OS_VERSION < OS.Ventura and "window 1" or "group 1 of window 1")
+  local pane =
+      (OS_VERSION < OS.Ventura and "window 1" or "group 1 of window 1")
       .. ' of application process "ControlCenter"'
 
   local enter = nil
@@ -1028,7 +1064,8 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     repeat until totalDelay > 0.9
       repeat with ele in (every %s of pane)
         if (exists attribute "AXIdentifier" of ele) ¬
-            and (the value of attribute "AXIdentifier" of ele contains "%s") then
+            and (the value of attribute "AXIdentifier" ¬
+                 of ele contains "%s") then
           set panelFound to true
           perform action %d of ele
           exit repeat
@@ -1042,7 +1079,9 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       end if
     end repeat
   ]]
-  if tcontain({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop", "Music Recognition" }, panel) then
+  if tcontain({ "Wi‑Fi", "Focus",
+                "Bluetooth", "AirDrop",
+                "Music Recognition" }, panel) then
     enter = strfmt(enterTemplate, "checkbox", ident, 2)
   elseif panel == "Screen Mirroring" then
     if OS_VERSION < OS.Ventura then
@@ -1051,10 +1090,13 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       enter = strfmt(enterTemplate, "button", ident, 1)
     end
   elseif panel == "Display" then
-    enter = strfmt(enterTemplate, OS_VERSION < OS.Ventura and "static text" or "group", ident, 1)
+    enter = strfmt(enterTemplate, OS_VERSION < OS.Ventura
+        and "static text" or "group", ident, 1)
   elseif panel == "Sound" then
     enter = strfmt(enterTemplate, "static text", ident, 1)
-  elseif tcontain({ "Accessibility Shortcuts", "Battery", "Hearing", "Users", "Keyboard Brightness" }, panel) then
+  elseif tcontain({ "Accessibility Shortcuts",
+                    "Battery", "Hearing", "Users",
+                    "Keyboard Brightness" }, panel) then
     enter = strfmt(enterTemplate, "button", ident, 1)
   elseif panel == "Now Playing" then
     enter = [[
@@ -1067,9 +1109,13 @@ local function popupControlCenterSubPanel(panel, allowReentry)
   if win == nil then
     local _ok, menuBarItemIndex = hs.osascript.applescript(strfmt([[
       tell application "System Events"
-        set controlitems to menu bar 1 of application process "ControlCenter"
-        repeat with i from 1 to (count of menu bar items of controlitems)
-          if value of attribute "AXIdentifier" of menu bar item i of controlitems contains "%s" then
+        set controlitems to menu bar 1 ¬
+            of application process "ControlCenter"
+        repeat with i from 1 to ¬
+            (count of menu bar items of controlitems)
+          if value of attribute "AXIdentifier" ¬
+              of menu bar item i ¬
+              of controlitems contains "%s" then
             return i
           end if
         end repeat
@@ -1096,14 +1142,16 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       local delayCmd = menuBarVisible() and "" or "delay 0.3"
       ok, result = hs.osascript.applescript([[
         tell application "System Events"
-          set controlitems to menu bar 1 of application process "ControlCenter"
+          set controlitems to menu bar 1 ¬
+              of application process "ControlCenter"
           set controlcenter to (first menu bar item whose ¬
-              value of attribute "AXIdentifier" contains "controlcenter") of controlitems
+              value of attribute "AXIdentifier" ¬
+              contains "controlcenter") of controlitems
           perform action 1 of controlcenter
 
           ]] .. delayCmd .. [[
 
-          set pane to ]] .. pane .. [[ 
+          set pane to ]]..pane..[[ 
           ]] .. enter .. [[
           if panelFound then
             return 1
@@ -1118,19 +1166,21 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     local alreadyTemplate = [[
       repeat with ele in (every %s of pane)
         if (exists attribute "AXIdentifier" of ele) ¬
-            and (the value of attribute "AXIdentifier" of ele contains "%s") then
+            and (the value of attribute "AXIdentifier" of ele ¬
+                 contains "%s") then
           set already to true
           exit repeat
         end if
       end repeat
     ]]
-    if tcontain({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop", "Keyboard Brightness", "Screen Mirroring",
-                             "Accessibility Shortcuts", "Battery" }, panel) then
+    if tcontain({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop",
+                  "Keyboard Brightness", "Screen Mirroring",
+                  "Accessibility Shortcuts", "Battery" }, panel) then
       already = strfmt(alreadyTemplate, "static text", ident)
     elseif panel == "Display" then
       already = [[
         if exists scroll area 1 of pane then
-        ]] .. strfmt(alreadyTemplate, "slider of scroll area 1", ident) .. [[
+      ]] .. strfmt(alreadyTemplate, "slider of scroll area 1", ident) .. [[
         end if
       ]]
     elseif panel == "Sound" then
@@ -1138,7 +1188,8 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     elseif panel == "Music Recognition" then
       already = strfmt(alreadyTemplate, "group", ident)
     elseif panel == "Hearing" then
-      already = strfmt(alreadyTemplate, "static text", controlCenterMenuBarItemIdentifiers[panel])
+      already = strfmt(alreadyTemplate, "static text",
+          controlCenterMenuBarItemIdentifiers[panel])
     elseif panel == "Now Playing" then
       if OS_VERSION < OS.Ventura then
         local mayLocalize = bind(controlCenterLocalized, "Now Playing")
@@ -1164,7 +1215,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     allowReentry = tostring(allowReentry)
     ok, result = hs.osascript.applescript([[
       tell application "System Events"
-        set pane to ]] .. pane .. [[ 
+        set pane to ]]..pane..[[ 
         set wifi to false
         set bluetooth to false
         repeat with ele in (every checkbox of pane)
@@ -1179,22 +1230,24 @@ local function popupControlCenterSubPanel(panel, allowReentry)
           end if
         end repeat
         if wifi and bluetooth then
-          ]] .. enter .. [[
+          ]] .. enter .. [[ 
           return 1
         else
           set already to false
-          ]] .. already .. [[
+          ]] .. already .. [[ 
           if already and not ]] .. allowReentry .. [[ then
             return 0
           else
-            set controlitems to menu bar 1 of application process "ControlCenter"
+            set controlitems to menu bar 1 ¬
+                of application process "ControlCenter"
             set controlcenter to (first menu bar item whose ¬
-                value of attribute "AXIdentifier" contains "controlcenter") of controlitems
+                value of attribute "AXIdentifier" ¬
+                contains "controlcenter") of controlitems
             perform action 1 of controlcenter
 
             delay 0.5
-            set pane to ]] .. pane .. [[ 
-            ]] .. enter .. [[
+            set pane to ]]..pane..[[ 
+            ]] .. enter .. [[ 
             if panelFound then
               return -1
             else
@@ -1231,7 +1284,8 @@ local backgroundSoundsHotkeys
 local selectNetworkHotkeys, selectNetworkWatcher
 ---@diagnostic disable-next-line: lowercase-global
 function registerControlCenterHotKeys(panel)
-  local pane = (OS_VERSION < OS.Ventura and "window 1" or "group 1 of window 1")
+  local pane =
+      (OS_VERSION < OS.Ventura and "window 1" or "group 1 of window 1")
       .. ' of application process "ControlCenter"'
 
   local function mayLocalize(value)
@@ -1298,9 +1352,13 @@ function registerControlCenterHotKeys(panel)
           assert(hotkeyMainForward) hotkeyMainForward:disable()
           popupControlCenterSubPanel(panel)
         end)
-      if not checkAndRegisterControlCenterHotKeys(hotkeyMainForward) then return end
+      if not checkAndRegisterControlCenterHotKeys(hotkeyMainForward) then
+        return
+      end
     end)
-  if not checkAndRegisterControlCenterHotKeys(hotkeyMainBack) then return end
+  if not checkAndRegisterControlCenterHotKeys(hotkeyMainBack) then
+    return
+  end
 
   -- jump to related panel in `System Preferences`
   if tcontain({ "Wi‑Fi", "Bluetooth", "Focus", "Keyboard Brightness",
@@ -1310,11 +1368,11 @@ function registerControlCenterHotKeys(panel)
     if OS_VERSION < OS.Ventura then
       local ok, result = hs.osascript.applescript([[
         tell application "System Events"
-          repeat until button 1 of ]] .. pane .. [[ ¬
+          repeat until button 1 of ]]..pane..[[ ¬
               whose title contains "…" exists
             delay 0.1
           end repeat
-          set bt to every button of ]] .. pane .. [[ ¬
+          set bt to every button of ]]..pane..[[ ¬
               whose title contains "…"
           if (count bt) is not 0 then
             return title of last item of bt
@@ -1328,13 +1386,15 @@ function registerControlCenterHotKeys(panel)
           function()
             hs.osascript.applescript([[
               tell application "System Events"
-                set bt to last button of ]] .. pane .. [[ ¬
+                set bt to last button of ]]..pane..[[ ¬
                     whose title contains "…"
                 perform action 1 of bt
               end tell
             ]])
           end)
-        if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
+        if not checkAndRegisterControlCenterHotKeys(hotkey) then
+          return
+        end
       end
     else
       local searchPanel = panel
@@ -1359,33 +1419,40 @@ function registerControlCenterHotKeys(panel)
         function()
           hs.osascript.applescript([[
             tell application "System Events"
-              set bt to last button of ]] .. pane .. [[ 
+              set bt to last button of ]]..pane..[[ 
               perform action 1 of bt
             end tell
           ]])
         end)
-      if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
+      if not checkAndRegisterControlCenterHotKeys(hotkey) then
+        return
+      end
     end
   end
 
   -- pandel with a switch-off button
   if tcontain({"Wi‑Fi", "Bluetooth", "AirDrop"}, panel) then
-    local hotkey = newControlCenter("", "Space", "Toggle " .. controlCenterLocalized(panel),
+    local hotkey = newControlCenter("", "Space",
+      "Toggle " .. controlCenterLocalized(panel),
       function()
         hs.osascript.applescript([[
           tell application "System Events"
-            if exists checkboxes of window 1 of application process "ControlCenter" then
-              repeat with cb in checkboxes of window 1 of application process "ControlCenter"
+            if exists checkboxes of window 1 ¬
+                of application process "ControlCenter" then
+              repeat with cb in checkboxes of window 1 ¬
+                  of application process "ControlCenter"
                 if (attribute "AXIdentifier" of cb exists) ¬
-                    and (value of attribute "AXIdentifier" of cb contains "-header") then
+                    and (value of attribute "AXIdentifier" of cb ¬
+                        contains "-header") then
                   perform action 1 of cb
                 end if
               end repeat
               return
             end if
-            repeat with cb in checkboxes of ]] .. pane .. [[ 
+            repeat with cb in checkboxes of ]]..pane..[[ 
               if (attribute "AXIdentifier" of cb exists) ¬
-                  and (value of attribute "AXIdentifier" of cb contains "-header") then
+                  and (value of attribute "AXIdentifier" of cb ¬
+                      contains "-header") then
                 perform action 1 of cb
               end if
             end repeat
@@ -1426,16 +1493,18 @@ function registerControlCenterHotKeys(panel)
         function()
           hs.osascript.applescript([[
             tell application "System Events"
-              set enabledSliders to sliders of ]] .. pos .. " " .. pane .. [[ ¬
+              set enabledSliders to sliders of ]]..pos.." "..pane..[[ ¬
                   whose value of attribute "AXEnabled" is true
               if (count enabledSliders) is 1 then
                 set slid to item 1 of enabledSliders
-                ]] .. spec[2] .. [[
+                ]] .. spec[2] .. [[ 
               end if
             end tell
           ]])
         end)
-      if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
+      if not checkAndRegisterControlCenterHotKeys(hotkey) then
+        return
+      end
     end
   end
 
@@ -1450,14 +1519,14 @@ function registerControlCenterHotKeys(panel)
     local ok, devices = hs.osascript.applescript([[
       tell application "System Events"
         set totalDelay to 0.0
-        repeat until checkbox 1 of scroll area 1 of ]] .. pane .. [[ exists
+        repeat until checkbox 1 of scroll area 1 of ]]..pane..[[ exists
           delay 0.1
           set totalDelay to totalDelay + 0.1
           if totalDelay > 0.5 then
             return 0
           end if
         end repeat
-        set sa to scroll area 1 of ]] .. pane .. [[ 
+        set sa to scroll area 1 of ]]..pane..[[ 
         return {]] .. cbField.. [[, value} of ¬
             (checkboxes whose value of attribute "AXEnabled" is true) of sa
       end tell
@@ -1479,14 +1548,17 @@ function registerControlCenterHotKeys(panel)
           function()
             hs.osascript.applescript([[
               tell application "System Events"
-                set sa to scroll area 1 of ]] .. pane .. [[ 
+                set sa to scroll area 1 of ]]..pane..[[ 
                 set cb to item ]] .. tostring(i) .. [[ of  ¬
-                    (checkboxes whose value of attribute "AXEnabled" is true) of sa
+                    (checkboxes whose value of attribute "AXEnabled" ¬
+                     is true) of sa
                 perform action 1 of cb
               end tell
             ]])
           end)
-        if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
+        if not checkAndRegisterControlCenterHotKeys(hotkey) then
+          return
+        end
       end
     end
   end
@@ -1532,14 +1604,16 @@ function registerControlCenterHotKeys(panel)
       tell application "System Events"
         set cnt to 0
         repeat until cnt >= 10
-          if exists scroll area 1 of ]] .. pane .. [[ then
-            set sa to scroll area 1 of ]] .. pane .. [[ 
-            if value of attribute "AXRole" of ui element 1 of sa is "AXOpaqueProviderGroup" then
+          if exists scroll area 1 of ]]..pane..[[ then
+            set sa to scroll area 1 of ]]..pane..[[ 
+            if value of attribute "AXRole" of ui element 1 of sa ¬
+                is "AXOpaqueProviderGroup" then
               set sa to ui element 1 of sa
             end if
             set uiitems to the value of attribute "AXChildren" of sa
             repeat with ele in (UI elements of sa)
-              if value of attribute "AXRole" of ele is "AXDisclosureTriangle" then
+              if value of attribute "AXRole" of ele ¬
+                  is "AXDisclosureTriangle" then
                 return value of ele
               end if
             end repeat
@@ -1554,12 +1628,14 @@ function registerControlCenterHotKeys(panel)
       local actionFunc = function()
         hs.osascript.applescript([[
           tell application "System Events"
-            set sa to scroll area 1 of ]] .. pane .. [[ 
-            if value of attribute "AXRole" of ui element 1 of sa is "AXOpaqueProviderGroup" then
+            set sa to scroll area 1 of ]]..pane..[[ 
+            if value of attribute "AXRole" of ui element 1 of sa ¬
+                is "AXOpaqueProviderGroup" then
               set sa to ui element 1 of sa
             end if
             repeat with ele in (UI elements of sa)
-              if value of attribute "AXRole" of ele is "AXDisclosureTriangle" then
+              if value of attribute "AXRole" of ele ¬
+                  is "AXDisclosureTriangle" then
                 perform last action of ele
                 exit repeat
               end if
@@ -1568,7 +1644,8 @@ function registerControlCenterHotKeys(panel)
         ]])
       end
       local localizedOtherNetworks = mayLocalize("Other Networks")
-      registerHotkeyForTraingleDisclosure(actionFunc, localizedOtherNetworks, result)
+      registerHotkeyForTraingleDisclosure(actionFunc,
+          localizedOtherNetworks, result)
     end
 
     -- select network
@@ -1583,8 +1660,9 @@ function registerControlCenterHotKeys(panel)
       end
       local ok, fullTitles = hs.osascript.applescript([[
         tell application "System Events"
-          set sa to scroll area 1 of ]] .. pane .. [[ 
-          if value of attribute "AXRole" of ui element 1 of sa is "AXOpaqueProviderGroup" then
+          set sa to scroll area 1 of ]]..pane..[[ 
+          if value of attribute "AXRole" of ui element 1 of sa ¬
+              is "AXOpaqueProviderGroup" then
             set sa to ui element 1 of sa
           end if
           return ]] .. cbField .. [[ of (every checkbox of sa)
@@ -1612,8 +1690,9 @@ function registerControlCenterHotKeys(panel)
           for idx, title in ipairs(availableNetworks) do
             local ok, selected = hs.osascript.applescript([[
               tell application "System Events"
-                set sa to scroll area 1 of ]] .. pane .. [[ 
-                if value of attribute "AXRole" of ui element 1 of sa is "AXOpaqueProviderGroup" then
+                set sa to scroll area 1 of ]]..pane..[[ 
+                if value of attribute "AXRole" of ui element 1 of sa ¬
+                    is "AXOpaqueProviderGroup" then
                   set sa to ui element 1 of sa
                 end if
                 set ret to value of checkbox ]] .. tostring(idx) .. [[ of sa
@@ -1627,8 +1706,9 @@ function registerControlCenterHotKeys(panel)
               function()
                 hs.osascript.applescript([[
                   tell application "System Events"
-                    set sa to scroll area 1 of ]] .. pane .. [[ 
-                    if value of attribute "AXRole" of ui element 1 of sa is "AXOpaqueProviderGroup" then
+                    set sa to scroll area 1 of ]]..pane..[[ 
+                    if value of attribute "AXRole" of ui element 1 of sa ¬
+                        is "AXOpaqueProviderGroup" then
                       set sa to ui element 1 of sa
                     end if
                     set cb to checkbox ]] .. tostring(idx) .. [[ of sa
@@ -1656,21 +1736,21 @@ function registerControlCenterHotKeys(panel)
     if OS_VERSION < OS.Ventura then
       ok, toggleNames = hs.osascript.applescript([[
         tell application "System Events"
-          repeat until checkbox 3 of ]] .. pane .. [[ exists
+          repeat until checkbox 3 of ]]..pane..[[ exists
             delay 0.1
           end repeat
-          return {title of checkbox 2 of ]] .. pane .. [[, ¬
-                  title of checkbox 3 of ]] .. pane .. [[}
+          return {title of checkbox 2 of ]]..pane..[[, ¬
+                  title of checkbox 3 of ]]..pane..[[}
         end tell
       ]])
     else
       local toggleIdents
       ok, toggleIdents = hs.osascript.applescript([[
         tell application "System Events"
-          repeat until checkbox 3 of ]] .. pane .. [[ exists
+          repeat until checkbox 3 of ]]..pane..[[ exists
             delay 0.1
           end repeat
-          set pane to ]] .. pane .. [[ 
+          set pane to ]]..pane..[[ 
           return {value of attribute "AXIdentifier" of checkbox 2 of pane, ¬
                   value of attribute "AXIdentifier" of checkbox 3 of pane}
         end tell
@@ -1690,12 +1770,14 @@ function registerControlCenterHotKeys(panel)
           function()
             hs.osascript.applescript([[
               tell application "System Events"
-                set cb to checkbox ]] .. tostring(i+1) .. [[ of ]] .. pane .. [[ 
+                set cb to checkbox ]] .. tostring(i+1) .. [[ of ]]..pane..[[ 
                 perform action 1 of cb
               end tell
             ]])
           end)
-        if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
+        if not checkAndRegisterControlCenterHotKeys(hotkey) then
+          return
+        end
       end
     end
   elseif panel == "Focus" then
@@ -1703,7 +1785,7 @@ function registerControlCenterHotKeys(panel)
     if OS_VERSION < OS.Ventura then
       ok, toggleNames = hs.osascript.applescript([[
         tell application "System Events"
-          set pane to ]] .. pane .. [[ 
+          set pane to ]]..pane..[[ 
           repeat until checkbox 2 of pane exists
             delay 0.1
           end repeat
@@ -1714,7 +1796,7 @@ function registerControlCenterHotKeys(panel)
       local toggleIdents
       ok, toggleIdents = hs.osascript.applescript([[
         tell application "System Events"
-          set pane to ]] .. pane .. [[ 
+          set pane to ]]..pane..[[ 
           repeat until checkbox 2 of pane exists
             delay 0.1
           end repeat
@@ -1726,7 +1808,10 @@ function registerControlCenterHotKeys(panel)
         toggleNames = {}
         foreach(toggleIdents, function(ele)
           for k, v in pairs(controlCenterAccessibiliyIdentifiers[panel]) do
-            if v == ele then tinsert(toggleNames, mayLocalize(k) or k) break end
+            if v == ele then
+              tinsert(toggleNames, mayLocalize(k) or k)
+              break
+            end
           end
         end)
       end
@@ -1734,23 +1819,27 @@ function registerControlCenterHotKeys(panel)
     if ok then
       for i=1,2 do
         local order = i == 1 and "first" or "last"
-        local hotkey = newControlCenter("", tostring(i), "Toggle " .. toggleNames[i == 1 and 1 or #toggleNames],
+        local hotkey = newControlCenter("", tostring(i),
+          "Toggle " .. toggleNames[i == 1 and 1 or #toggleNames],
           function()
             hs.osascript.applescript([[
               tell application "System Events"
-                set cb to ]] .. order .. [[ checkbox of ]] .. pane .. [[ 
+                set cb to ]] .. order .. [[ checkbox of ]]..pane..[[ 
                 perform action 1 of cb
               end tell
             ]])
           end)
-        if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
+        if not checkAndRegisterControlCenterHotKeys(hotkey) then
+          return
+        end
       end
       for i=2,3 do
-        local hotkey = newControlCenter("⌘", tostring(i-1), toggleNames[1] .. " " .. i - 1,
+        local hotkey = newControlCenter("⌘", tostring(i - 1),
+          toggleNames[1] .. " " .. i - 1,
           function()
             hs.osascript.applescript([[
               tell application "System Events"
-                set pane to ]] .. pane .. [[ 
+                set pane to ]]..pane..[[ 
                 if count of checkboxes of pane > 2 then
                   set cb to checkbox ]] .. tostring(i) .. [[ of pane
                   perform action 1 of cb
@@ -1758,7 +1847,9 @@ function registerControlCenterHotKeys(panel)
               end tell
             ]])
           end)
-        if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
+        if not checkAndRegisterControlCenterHotKeys(hotkey) then
+          return
+        end
       end
     end
   elseif panel == "Display" then
@@ -1766,20 +1857,21 @@ function registerControlCenterHotKeys(panel)
     local ok, idx = hs.osascript.applescript([[
       tell application "System Events"
         set totalDelay to 0.0
-        repeat until ]] .. role .. " 1 of " .. pane .. [[ exists
+        repeat until ]]..role.." 1 of "..pane..[[ exists
           set totalDelay to totalDelay + 0.1
           if totalDelay > 0.5 then
             return
           end
           delay 0.1
         end
-        repeat with i from 1 to count (]] .. role .. " of " .. pane .. [[)
-          set sa to ]] .. role .. " i of " .. pane .. [[ 
+        repeat with i from 1 to count (]]..role.." of "..pane..[[)
+          set sa to ]]..role.." i of "..pane..[[ 
           set c to count (UI elements of sa)
           repeat with jj from 1 to c
             set j to c - jj + 1
             set ele to ui element j of sa
-            if value of attribute "AXRole" of ele is "AXDisclosureTriangle" then
+            if value of attribute "AXRole" of ele ¬
+                is "AXDisclosureTriangle" then
               return {i, j}
             end if
           end repeat
@@ -1788,7 +1880,8 @@ function registerControlCenterHotKeys(panel)
     ]])
     if ok and idx ~= nil then
       local i, j = idx[1], idx[2]
-      local hotkey = newControlCenter("", "Space", "Toggle Showing Display Presets",
+      local hotkey = newControlCenter("", "Space",
+        "Toggle Showing Display Presets",
         function()
           hs.osascript.applescript([[
             tell application "System Events"
@@ -1797,17 +1890,23 @@ function registerControlCenterHotKeys(panel)
             end tell
           ]])
         end)
-      if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
+      if not checkAndRegisterControlCenterHotKeys(hotkey) then
+        return
+      end
     end
 
-    local area = OS_VERSION < OS.Ventura and "scroll area 1 of window 1" or "group 1 of window 1"
+    local area = OS_VERSION < OS.Ventura
+        and "scroll area 1 of window 1"
+        or "group 1 of window 1"
     local ok, result = hs.osascript.applescript([[
       tell application "System Events"
-        repeat until checkbox 3 of ]] .. area.. [[ of application process "ControlCenter" exists
+        repeat until checkbox 3 of ]]..area..[[ ¬
+            of application process "ControlCenter" exists
           delay 0.1
         end repeat
-        set sa to ]] .. area.. [[ of application process "ControlCenter"
-        return {value of attribute "AXIdentifier" of checkbox of sa, value of checkbox of sa}
+        set sa to ]]..area..[[ of application process "ControlCenter"
+        return {value of attribute "AXIdentifier" of checkbox of sa, ¬
+                value of checkbox of sa}
       end tell
     ]])
     local cbIdents, enableds = result[1], result[2]
@@ -1818,11 +1917,12 @@ function registerControlCenterHotKeys(panel)
           return cbIdent == controlCenterAccessibiliyIdentifiers["Display"][ele]
         end)
       local op = enableds[i] == 0 and "Enable" or "Disable"
-      local hotkey = newControlCenter("", tostring(i), op .. " " .. mayLocalize(checkbox),
+      local hotkey = newControlCenter("", tostring(i),
+        op .. " " .. mayLocalize(checkbox),
         function()
           hs.osascript.applescript([[
             tell application "System Events"
-              set sa to ]] .. area.. [[ of application process "ControlCenter"
+              set sa to ]]..area..[[ of application process "ControlCenter"
               set cb to (first checkbox of sa whose value of ¬
                   attribute "AXIdentifier" is "]] .. cbIdent ..[[")
               click cb
@@ -1832,15 +1932,17 @@ function registerControlCenterHotKeys(panel)
 
           if checkbox == "Dark Mode" then
             local appid = hs.application.frontmostApplication():bundleID()
-            if tcontain({"com.google.Chrome", "com.microsoft.edgemac", "com.microsoft.edgemac.Dev"}, appid) then
+            if tcontain({"com.google.Chrome",
+                         "com.microsoft.edgemac",
+                         "com.microsoft.edgemac.Dev"}, appid) then
               local scheme = appid == "com.google.Chrome" and "chrome" or "edge"
-              local ok = hs.osascript.applescript([[
-                tell application id "]] .. appid .. [["
+              local ok = hs.osascript.applescript(strfmt([[
+                tell application id "%s"
                   set tabCount to count of tabs of front window
                   set tabFound to false
                   repeat with i from 1 to tabCount
                     set tabURL to URL of tab i of front window
-                    if tabURL contains "]] .. scheme .. [[://flags/#enable-force-dark" then
+                    if tabURL contains "%s://flags/#enable-force-dark" then
                       set tabFound to true
                       exit repeat
                     end if
@@ -1848,7 +1950,7 @@ function registerControlCenterHotKeys(panel)
                   if tabFound is false then
                     tell front window
                       set newTab to make new tab at the end of tabs ¬
-                          with properties {URL:"]] .. scheme .. [[://flags/#enable-force-dark"}
+                          with properties {URL:"%s://flags/#enable-force-dark"}
                       delay 0.5
                     end tell
                   else
@@ -1857,7 +1959,7 @@ function registerControlCenterHotKeys(panel)
                     end tell
                   end if
                 end tell
-              ]])
+              ]], appid, scheme, scheme))
               if ok then
                 local app = find(appid)
                 local appUI = toappui(app)
@@ -1866,9 +1968,11 @@ function registerControlCenterHotKeys(panel)
                     AX.Group, 1, AX.Group, 1, AX.WebArea, 1)
                 local list, button
                 if appid == "com.google.Chrome" then
-                  list = getc(webarea, AX.Group, 2, AX.Group, 1, AX.Group, 4, AX.Group, 1)
+                  list = getc(webarea, AX.Group, 2, AX.Group, 1,
+                              AX.Group, 4, AX.Group, 1)
                 else
-                  list = getc(webarea, AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 3, AX.Group, 1)
+                  list = getc(webarea, AX.Group, 1, AX.Group, 2,
+                              AX.Group, 1, AX.Group, 3, AX.Group, 1)
                 end
                 if list ~= nil then
                   for _, c in ipairs(list.AXChildren) do
@@ -1878,9 +1982,10 @@ function registerControlCenterHotKeys(panel)
                   end
                 else
                   if list == nil then
-                    list = tfind(getc(webarea, AX.Group, 4).AXChildren, function(elem)
-                      return elem.AXSubrole == "AXTabPanel"
-                    end)
+                    list = tfind(getc(webarea, AX.Group, 4).AXChildren,
+                      function(elem)
+                        return elem.AXSubrole == "AXTabPanel"
+                      end)
                   end
                   if list == nil then
                     list = tfind(webarea.AXChildren, function(elem)
@@ -1888,16 +1993,17 @@ function registerControlCenterHotKeys(panel)
                     end)
                   end
                   for c = 1, #list.AXChildren / 4 do
-                    if list.AXChildren[c * 4 - 3].AXTitle:find("Auto Dark Mode") then
+                    if list.AXChildren[c*4-3].AXTitle:find("Auto Dark Mode") then
                       button = getc(list, nil, c * 4, AX.PopupButton, 1)
                     end
                   end
                 end
-                leftClickAndRestore(uicenter(button), app:getMenuItems()[1].AXTitle)
+                leftClickAndRestore(uicenter(button),
+                                    app:getMenuItems()[1].AXTitle)
 
                 local darkMode = enableds[i] == 1 and "Enabled" or "Disabled"
-                local menuItem = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-                    AX.Menu, 1, AX.MenuItem, darkMode)
+                local menuItem = getc(winUI, AX.Group, 1, AX.Group, 1,
+                    AX.Group, 1, AX.Group, 1, AX.Menu, 1, AX.MenuItem, darkMode)
                 menuItem:performAction(AX.Press)
                 local hotkey, observer
                 hotkey = AppWinBind(app, {
@@ -1909,7 +2015,8 @@ function registerControlCenterHotKeys(panel)
                     if button == nil then
                       button = getc(webarea, AX.Group, 7, AX.Button, 1)
                     end
-                    leftClickAndRestore(uicenter(button), app:getMenuItems()[1].AXTitle)
+                    leftClickAndRestore(uicenter(button),
+                                        app:getMenuItems()[1].AXTitle)
                     if hotkey ~= nil then
                       hotkey:delete()
                       hotkey = nil
@@ -1925,10 +2032,13 @@ function registerControlCenterHotKeys(panel)
                 observer:addWatcher(winUI, uinotifications.titleChanged)
                 observer:addWatcher(appUI, uinotifications.applicationDeactivated)
                 observer:callback(function()
-                  local frontWinBundleID = hs.window.frontmostWindow():application():bundleID()
-                  local ok, url = hs.osascript.applescript(
-                      [[tell application id "]] .. appid .. [[" to get URL of active tab of front window]])
-                  if frontWinBundleID ~= appid or not ok or url ~= scheme .. "://flags/#enable-force-dark" then
+                  local frontWinBundleID = hs.window.frontmostWindow()
+                      :application():bundleID()
+                  local ok, url = hs.osascript.applescript(strfmt([[
+                    tell application id "%s" to get URL of active tab of front window
+                  ]], appid))
+                  if frontWinBundleID ~= appid or not ok
+                      or url ~= scheme .. "://flags/#enable-force-dark" then
                     if hotkey ~= nil then
                       hotkey:delete()
                       hotkey = nil
@@ -1944,7 +2054,9 @@ function registerControlCenterHotKeys(panel)
             end
           end
         end)
-      if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
+      if not checkAndRegisterControlCenterHotKeys(hotkey) then
+        return
+      end
     end
     for i=4,#result[1] do
       if i - 3 > 10 then break end
@@ -1966,27 +2078,31 @@ function registerControlCenterHotKeys(panel)
             end tell
           ]])
         end)
-      if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
+      if not checkAndRegisterControlCenterHotKeys(hotkey) then
+        return
+      end
     end
   elseif panel == "Music Recognition" then
     local hotkey = newControlCenter("", "Space", "Toggle Listening",
       function()
         hs.osascript.applescript([[
           tell application "System Events"
-            set cb to checkbox 1 of group 1 of ]] .. pane .. [[ 
+            set cb to checkbox 1 of group 1 of ]]..pane..[[ 
             perform action 1 of cb
           end tell
         ]])
       end)
-    if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
+    if not checkAndRegisterControlCenterHotKeys(hotkey) then
+      return
+    end
   elseif panel == "Hearing" then
     local silderFunc = function()
       local ok, result = hs.osascript.applescript([[
         tell application "System Events"
           delay 0.5
-          if exists ui element 1 of ]] .. pane .. [[ ¬
+          if exists ui element 1 of ]]..pane..[[ ¬
               whose value of attribute "AXRole" is "AXDisclosureTriangle" then
-            set ele to ui element 1 of ]] .. pane .. [[ ¬
+            set ele to ui element 1 of ]]..pane..[[ ¬
                 whose value of attribute "AXRole" is "AXDisclosureTriangle"
               return value of ele
           end if
@@ -1997,7 +2113,7 @@ function registerControlCenterHotKeys(panel)
         local actionFunc = function()
           hs.osascript.applescript([[
           tell application "System Events"
-            set ele to ui element 1 of ]] .. pane .. [[ ¬
+            set ele to ui element 1 of ]]..pane..[[ ¬
                 whose value of attribute "AXRole" is "AXDisclosureTriangle"
             perform action 1 of ele
           end tell
@@ -2016,7 +2132,7 @@ function registerControlCenterHotKeys(panel)
       end
       ok, result = hs.osascript.applescript([[
         tell application "System Events"
-          set enabledSliders to sliders of ]] .. pane .. [[ ¬
+          set enabledSliders to sliders of ]]..pane..[[ ¬
               whose value of attribute "AXEnabled" is true
           return (count enabledSliders) is 1
         end tell
@@ -2034,11 +2150,11 @@ function registerControlCenterHotKeys(panel)
             function()
               hs.osascript.applescript([[
                 tell application "System Events"
-                  set enabledSliders to sliders of ]] .. pane .. [[ ¬
+                  set enabledSliders to sliders of ]]..pane..[[ ¬
                       whose value of attribute "AXEnabled" is true
                   if (count enabledSliders) is 1 then
                     set slid to item 1 of enabledSliders
-                    ]] .. spec[2] .. [[
+                    ]] .. spec[2] .. [[ 
                   end if
                 end tell
               ]])
@@ -2050,9 +2166,10 @@ function registerControlCenterHotKeys(panel)
       ok, result = hs.osascript.applescript([[
         tell application "System Events"
           set cbs to {}
-          repeat with cb in checkboxes of ]] .. pane .. [[ 
+          repeat with cb in checkboxes of ]]..pane..[[ 
             if (exists attribute "AXIdentifier" of cb) ¬
-                and (value of attribute "AXIdentifier" of cb contains "button-identifier") then
+                and (value of attribute "AXIdentifier" of cb ¬
+                     contains "button-identifier") then
               set cbs to cbs & value of attribute "AXIdentifier" of cb
             end if
           end repeat
@@ -2065,12 +2182,14 @@ function registerControlCenterHotKeys(panel)
         end
         for i, ident in ipairs(result) do
           local name = ident:match("hearing%-(.+)%-button%-identifier")
-          local hotkey = newControlCenter("", tostring(i % 10), "Play " .. name,
+          local hotkey = newControlCenter("", tostring(i % 10),
+            "Play " .. name,
             function()
               hs.osascript.applescript([[
                 tell application "System Events"
-                  set cb to checkbox 1 of ]] .. pane .. [[ ¬
-                      whose value of attribute "AXIdentifier" is "]] .. ident .. [["
+                  set cb to checkbox 1 of ]]..pane..[[ ¬
+                      whose value of attribute "AXIdentifier" is ¬
+                      "]] .. ident .. [["
                   perform action 1 of cb
                 end tell
               ]])
@@ -2081,11 +2200,12 @@ function registerControlCenterHotKeys(panel)
       end
     end
 
-    local hotkey = newControlCenter("", "Space", "Toggle " .. mayLocalize("Background Sounds"),
+    local hotkey = newControlCenter("", "Space",
+      "Toggle " .. mayLocalize("Background Sounds"),
       function()
         local ok = hs.osascript.applescript([[
           tell application "System Events"
-            set cb to checkbox 1 of ]] .. pane .. [[ 
+            set cb to checkbox 1 of ]]..pane..[[ 
             perform action 1 of cb
           end tell
         ]])
@@ -2098,7 +2218,9 @@ function registerControlCenterHotKeys(panel)
           backgroundSoundsHotkeys = nil
         end
       end)
-    if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
+    if not checkAndRegisterControlCenterHotKeys(hotkey) then
+      return
+    end
 
     silderFunc()
   elseif panel == "Now Playing" then
@@ -2106,23 +2228,24 @@ function registerControlCenterHotKeys(panel)
     if OS_VERSION < OS.Ventura then
       ok, result = hs.osascript.applescript([[
         tell application "System Events"
-          repeat until button 3 of ]] .. pane .. [[ exists
+          repeat until button 3 of ]]..pane..[[ exists
             delay 0.1
           end repeat
-          return title of (every button of ]] .. pane .. [[)
+          return title of (every button of ]]..pane..[[)
         end tell
       ]])
     else
       ok, result = hs.osascript.applescript([[
         tell application "System Events"
-          repeat until button 3 of ]] .. pane .. [[ exists
+          repeat until button 3 of ]]..pane..[[ exists
             delay 0.1
           end repeat
-          return number of buttons of ]] .. pane .. [[ 
+          return number of buttons of ]]..pane..[[ 
         end tell
       ]])
     end
-    if ok and ((type(result) == "number" and result == 3) or (type(result) == "table" and #result == 3)) then
+    if ok and ((type(result) == "number" and result == 3)
+                or (type(result) == "table" and #result == 3)) then
       if type(result) == "number" then
         result = {
           mayLocalize("previous"),
@@ -2137,13 +2260,14 @@ function registerControlCenterHotKeys(panel)
             local appname = displayName('com.apple.Music')
             local ok, isAppleMusic = hs.osascript.applescript([[
               tell application "System Events"
-                set appTitle to static text 1 of ]] .. pane .. [[ 
+                set appTitle to static text 1 of ]]..pane..[[ 
                 return value of appTitle is "]] .. appname .. [["
               end tell
             ]])
             if ok and isAppleMusic then
               if type(defaultMusicAppForControlCenter) == 'string' then
-                defaultMusicAppForControlCenter = { defaultMusicAppForControlCenter }
+                defaultMusicAppForControlCenter =
+                    { defaultMusicAppForControlCenter }
               end
               for _, appid in ipairs(defaultMusicAppForControlCenter) do
                 local appPath = hs.application.pathForBundleID(appid)
@@ -2156,33 +2280,40 @@ function registerControlCenterHotKeys(panel)
           end
           hs.osascript.applescript([[
             tell application "System Events"
-              set bt to button 2 of ]] .. pane .. [[ 
+              set bt to button 2 of ]]..pane..[[ 
               perform action 1 of bt
             end tell
           ]])
         end)
-      if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
+      if not checkAndRegisterControlCenterHotKeys(hotkey) then
+        return
+      end
       hotkey = newControlCenter("", "Left", result[1],
         function()
           hs.osascript.applescript([[
             tell application "System Events"
-              set bt to button 1 of ]] .. pane .. [[ 
+              set bt to button 1 of ]]..pane..[[ 
               perform action 1 of bt
             end tell
           ]])
         end)
-      if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
+      if not checkAndRegisterControlCenterHotKeys(hotkey) then
+        return
+      end
       hotkey = newControlCenter("", "Right", result[3],
         function()
           hs.osascript.applescript([[
             tell application "System Events"
-              set bt to button 3 of ]] .. pane .. [[ 
+              set bt to button 3 of ]]..pane..[[ 
               perform action 1 of bt
             end tell
           ]])
         end)
-      if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
-    elseif ok and ((type(result) == "number" and result > 3) or (type(result) == "table" and #result > 3)) then
+      if not checkAndRegisterControlCenterHotKeys(hotkey) then
+        return
+      end
+    elseif ok and ((type(result) == "number" and result > 3)
+                    or (type(result) == "table" and #result > 3)) then
       local nEntries
       if type(result) == "number" then
         nEntries = result / 2
@@ -2191,17 +2322,21 @@ function registerControlCenterHotKeys(panel)
       end
       local hotkey
       for i = 1, nEntries do
-        local buttonLabel = mayLocalize("play") .. "/" .. mayLocalize("pause")
-        hotkey = newControlCenter("", tostring(i), type(result) == "number" and buttonLabel or result[2 * i - 1],
+        local buttonLabel = mayLocalize("play")
+            .. "/" .. mayLocalize("pause")
+        hotkey = newControlCenter("", tostring(i),
+          type(result) == "number" and buttonLabel or result[2*i-1],
           function()
             hs.osascript.applescript([[
               tell application "System Events"
-                set bt to button ]] .. tostring(2 * i - 1) .. [[ of ]] .. pane .. [[ 
+                set bt to button ]] .. tostring(2*i-1) .. [[ of ]]..pane..[[ 
                 perform action 1 of bt
               end tell
             ]])
           end)
-        if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
+        if not checkAndRegisterControlCenterHotKeys(hotkey) then
+          return
+        end
       end
     end
   end
@@ -2216,7 +2351,8 @@ for panel, spec in pairs(controlCenterPanelConfigs) do
 end
 
 local function getActiveControlCenterPanel()
-  local pane = (OS_VERSION < OS.Ventura and "window 1" or "group 1 of window 1")
+  local pane =
+      (OS_VERSION < OS.Ventura and "window 1" or "group 1 of window 1")
       .. ' of application process "ControlCenter"'
 
   local function mayLocalize(value)
@@ -2226,24 +2362,27 @@ local function getActiveControlCenterPanel()
   local alreadyTemplate = [[
     repeat with ele in (every %s of pane)
       if (exists attribute "AXIdentifier" of ele) ¬
-          and (the value of attribute "AXIdentifier" of ele contains "%s") then
+          and (the value of attribute "AXIdentifier" ¬
+               of ele contains "%s") then
         return "%s"
       end if
     end repeat
   ]]
   local script = [[
     tell application "System Events"
-      set pane to ]] .. pane .. [[ 
+      set pane to ]]..pane..[[ 
   ]]
   for panel, ident in pairs(controlCenterSubPanelIdentifiers) do
     local already = nil
-    if tcontain({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop", "Keyboard Brightness", "Screen Mirroring",
+    if tcontain({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop",
+          "Keyboard Brightness", "Screen Mirroring",
           "Accessibility Shortcuts", "Battery" }, panel) then
       already = strfmt(alreadyTemplate, "static text", ident, panel)
     elseif panel == "Display" then
       already = [[
         if exists scroll area 1 of pane then
-        ]] .. strfmt(alreadyTemplate, "slider of scroll area 1", ident, panel) .. [[
+      ]] .. strfmt(alreadyTemplate,
+            "slider of scroll area 1", ident, panel) .. [[ 
         end if
       ]]
     elseif panel == "Sound" then
@@ -2251,7 +2390,8 @@ local function getActiveControlCenterPanel()
     elseif panel == "Music Recognition" then
       already = strfmt(alreadyTemplate, "group", ident, panel)
     elseif panel == "Hearing" then
-      already = strfmt(alreadyTemplate, "static text", controlCenterMenuBarItemIdentifiers[panel], panel)
+      already = strfmt(alreadyTemplate, "static text",
+          controlCenterMenuBarItemIdentifiers[panel], panel)
     end
     if already then
       script = script .. [[
@@ -2264,8 +2404,9 @@ local function getActiveControlCenterPanel()
     already = [[
       if (exists button "]] .. mayLocalize("rewind") .. [[" of pane) or  ¬
           (exists button "]] .. mayLocalize("previous") .. [[" of pane) or ¬
-          (number of (buttons of pane whose title is "]] .. mayLocalize("play") .. [[" or ¬
-              title is "]] .. mayLocalize("pause") .. [[") > 1) then
+          (number of (buttons of pane whose title ¬
+              is "]] .. mayLocalize("play") .. [[" ¬
+              or title is "]] .. mayLocalize("pause") .. [[") > 1) then
         return "Now Playing"
       end if
     ]]
@@ -2289,8 +2430,10 @@ local function getActiveControlCenterPanel()
 end
 
 if hs.window.focusedWindow() ~= nil
-    and hs.window.focusedWindow():application():bundleID() == "com.apple.controlcenter"
-    and hs.window.focusedWindow():subrole() == AX.SystemDialog then
+    and hs.window.focusedWindow():application():bundleID()
+        == "com.apple.controlcenter"
+    and hs.window.focusedWindow():subrole()
+        == AX.SystemDialog then
   registerControlCenterHotKeys(getActiveControlCenterPanel())
 end
 
@@ -2298,7 +2441,10 @@ local tapperForExtraInfo
 local controlCenterPanelHotKeys = {}
 local controlCenter = find("com.apple.controlcenter")
 ControlCenterObserver = uiobserver.new(controlCenter:pid())
-ControlCenterObserver:addWatcher(toappui(controlCenter), uinotifications.windowCreated)
+ControlCenterObserver:addWatcher(
+  toappui(controlCenter),
+  uinotifications.windowCreated
+)
 local function controlCenterObserverCallback()
   for panel, spec in pairs(controlCenterPanelConfigs) do
     local localizedPanel = controlCenterLocalized(panel)
@@ -2307,9 +2453,11 @@ local function controlCenterObserverCallback()
         bind(popupControlCenterSubPanel, panel))
     tinsert(controlCenterPanelHotKeys, hotkey)
     local timeTapperForExtraInfo = os.time()
-    tapperForExtraInfo = hs.eventtap.new({hs.eventtap.event.types.flagsChanged},
+    tapperForExtraInfo = hs.eventtap.new(
+      {hs.eventtap.event.types.flagsChanged},
       function(event)
-        if event:getFlags():containExactly({"alt"}) and os.time() - timeTapperForExtraInfo > 2 then
+        if event:getFlags():containExactly({"alt"})
+            and os.time() - timeTapperForExtraInfo > 2 then
           timeTapperForExtraInfo = os.time()
           local panel = getActiveControlCenterPanel()
           if panel == "Wi‑Fi" or panel == "Bluetooth" then
@@ -2319,7 +2467,8 @@ local function controlCenterObserverCallback()
         return false
       end):start()
   end
-  local controlCenterDestroyObserver = uiobserver.new(controlCenter:pid())
+  local controlCenterDestroyObserver =
+      uiobserver.new(controlCenter:pid())
   controlCenterDestroyObserver:addWatcher(
     towinui(controlCenter:focusedWindow()),
     uinotifications.uIElementDestroyed
@@ -2411,7 +2560,8 @@ function System_applicationInstalledCallback(files, flagTables)
     if files[i]:match("V2RayX")
       or files[i]:match("V2rayU")
       or files[i]:match("MonoProxyMac") then
-      if flagTables[i].itemCreated or flagTables[i].itemRemoved then
+      if flagTables[i].itemCreated
+          or flagTables[i].itemRemoved then
         registerProxyMenu(true)
       end
     end
@@ -2426,9 +2576,10 @@ function System_monitorChangedCallback()
   local screens = hs.screen.allScreens()
 
   -- only for built-in monitor
-  local builtinMonitorEnable = hs.fnutils.some(screens, function(screen)
-    return screen:name() == builtinMonitor
-  end)
+  local builtinMonitorEnable = hs.fnutils.some(screens,
+    function(screen)
+      return screen:name() == builtinMonitor
+    end)
 
   -- for external monitors
   if (builtinMonitorEnable and #screens > 1)
