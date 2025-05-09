@@ -1806,6 +1806,9 @@ appHotKeyCallbacks = {
             local menuItem = getc(elem, AX.Menu, 1, AX.MenuItem, title)
             if menuItem then
               menuItem:performAction(AX.Press)
+              if hs.application.frontmostApplication():bundleID() == app:bundleID() then
+                hs.eventtap.keyStroke("", "Escape", nil, app)
+              end
               obs:stop()
               obs = nil
             end
