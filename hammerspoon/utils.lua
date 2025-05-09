@@ -2997,13 +2997,21 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   end
 
   if show then
-    if hiddenByBartender(appid) then
+    if hiddenByBartender(appid, menuBarIdx) then
+      local itemRepr
+      if type(menuBarIdx) == 'number' then
+        itemRepr = appid .. '-Item-' .. (menuBarIdx - 1)
+      else
+        itemRepr = appid .. '-' .. menuBarIdx
+      end
       hs.osascript.applescript(string.format([[
-        tell application id "com.surteesstudios.Bartender" to activate "%s-Item-%d"
-      ]], appid, menuBarIdx - 1))
-    else
+        tell application id "com.surteesstudios.Bartender" to activate "%s"
+      ]], itemRepr))
+    elseif menuBarMenu then
       -- note: some apps do not react to AX.Press, you have to click them.
       menuBarMenu:performAction(AX.Press)
+    else
+      return false
     end
   end
   if #menuItemPath == 0 then return true end
