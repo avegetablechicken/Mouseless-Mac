@@ -254,6 +254,7 @@ end
 local function filterParallels(apps)
   return tfind(apps, function(app)
     return app:bundleID():find("com.parallels") == nil
+        or app:bundleID() == "com.parallels.desktop.console"
   end)
 end
 
