@@ -1897,7 +1897,8 @@ function registerControlCenterHotKeys(panel)
                     end
                   end
                 end
-                leftClickAndRestore({ position.x + size.w / 2, position.y + size.h / 2 })
+                leftClickAndRestore({ position.x + size.w / 2, position.y + size.h / 2 },
+                                    app:getMenuItems()[1].AXTitle)
 
                 local darkMode = enableds[i] == 1 and "Enabled" or "Disabled"
                 local menuItem = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
@@ -1914,7 +1915,8 @@ function registerControlCenterHotKeys(panel)
                       button = getc(webarea, AX.Group, 7, AX.Button, 1)
                     end
                     local position, size = button.AXPosition, button.AXSize
-                    leftClickAndRestore({position.x + size.w / 2, position.y + size.h / 2})
+                    leftClickAndRestore({position.x + size.w / 2, position.y + size.h / 2},
+                                         app:getMenuItems()[1].AXTitle)
                     if hotkey ~= nil then
                       hotkey:delete()
                       hotkey = nil
