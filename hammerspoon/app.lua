@@ -3961,6 +3961,9 @@ appHotKeyCallbacks = {
   {
     ["newProject"] = {
       message = "New Project",
+      windowFilter = {
+        allowTitles = "Welcome to CLion"
+      },
       fn = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
@@ -3974,6 +3977,9 @@ appHotKeyCallbacks = {
     },
     ["open..."] = {
       message = "Open...",
+      windowFilter = {
+        allowTitles = "Welcome to CLion"
+      },
       fn = function(win)
         win:application():selectMenuItem({"File", "Open..."})
       end
@@ -3984,6 +3990,9 @@ appHotKeyCallbacks = {
   {
     ["newProject"] = {
       message = "New Project",
+      windowFilter = {
+        allowTitles = "Welcome to CLion"
+      },
       fn = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
@@ -3997,6 +4006,9 @@ appHotKeyCallbacks = {
     },
     ["open..."] = {
       message = "Open...",
+      windowFilter = {
+        allowTitles = "Welcome to CLion"
+      },
       fn = function(win)
         win:application():selectMenuItem({"File", "Open..."})
       end
@@ -4007,6 +4019,9 @@ appHotKeyCallbacks = {
   {
     ["newProject"] = {
       message = "New Project",
+      windowFilter = {
+        allowTitles = "Welcome to IntelliJ IDEA"
+      },
       fn = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
@@ -4020,6 +4035,9 @@ appHotKeyCallbacks = {
     },
     ["open..."] = {
       message = "Open...",
+      windowFilter = {
+        allowTitles = "Welcome to IntelliJ IDEA"
+      },
       fn = function(win)
         win:application():selectMenuItem({"File", "Open..."})
       end
@@ -4030,6 +4048,9 @@ appHotKeyCallbacks = {
   {
     ["newProject"] = {
       message = "New Project",
+      windowFilter = {
+        allowTitles = "Welcome to PyCharm"
+      },
       fn = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
@@ -4043,6 +4064,9 @@ appHotKeyCallbacks = {
     },
     ["open..."] = {
       message = "Open...",
+      windowFilter = {
+        allowTitles = "Welcome to PyCharm"
+      },
       fn = function(win)
         win:application():selectMenuItem({"File", "Open..."})
       end

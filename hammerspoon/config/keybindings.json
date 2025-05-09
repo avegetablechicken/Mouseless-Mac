@@ -1527,65 +1527,41 @@
     "com.jetbrains.CLion": {
       "newProject": {
         "mods": "command",
-        "key": "N",
-        "windowFilter": {
-          "allowTitles": "Welcome to CLion"
-        }
+        "key": "N"
       },
       "open...": {
         "mods": "command",
-        "key": "O",
-        "windowFilter": {
-          "allowTitles": "Welcome to CLion"
-        }
+        "key": "O"
       }
     },
     "com.jetbrains.CLion-EAP": {
       "newProject": {
         "mods": "command",
-        "key": "N",
-        "windowFilter": {
-          "allowTitles": "Welcome to CLion"
-        }
+        "key": "N"
       },
       "open...": {
         "mods": "command",
-        "key": "O",
-        "windowFilter": {
-          "allowTitles": "Welcome to CLion"
-        }
+        "key": "O"
       }
     },
     "com.jetbrains.intellij": {
       "newProject": {
         "mods": "command",
-        "key": "N",
-        "windowFilter": {
-          "allowTitles": "Welcome to IntelliJ IDEA"
-        }
+        "key": "N"
       },
       "open...": {
         "mods": "command",
-        "key": "O",
-        "windowFilter": {
-          "allowTitles": "Welcome to IntelliJ IDEA"
-        }
+        "key": "O"
       }
     },
     "com.jetbrains.pycharm": {
       "newProject": {
         "mods": "command",
-        "key": "N",
-        "windowFilter": {
-          "allowTitles": "Welcome to PyCharm"
-        }
+        "key": "N"
       },
       "open...": {
         "mods": "command",
-        "key": "O",
-        "windowFilter": {
-          "allowTitles": "Welcome to PyCharm"
-        }
+        "key": "O"
       }
     },
     "browsers": {
