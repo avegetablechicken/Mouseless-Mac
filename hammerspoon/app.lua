@@ -1798,26 +1798,32 @@ appHotKeyCallbacks = {
         return false
       end,
       fn = function(position, app)
-        if not rightClickAndRestore(position, app:name()) then return end
         local title = localizedString("Open File Location", app:bundleID())
-        hs.osascript.applescript([[
-          tell application "System Events"
-            tell first application process whose bundle identifier is "]] .. app:bundleID() .. [["
-              set totalDelay to 0.0
-              repeat until totalDelay > 0.5
-                repeat with e in ui elements
-                  if exists menu item "]] .. title .. [[" of menu 1 of e then
-                    perform action 1 of menu item "]] .. title .. [[" of menu 1 of e
-                    return true
-                  end if
-                end repeat
-                delay 0.05
-                set totalDelay to totalDelay + 0.05
-              end repeat
-              return false
-            end tell
-          end tell
-        ]])
+        local observer = uiobserver.new(app:pid())
+        observer:addWatcher(toappui(app), uinotifications.created)
+        observer:callback(function(obs)
+          for _, elem in ipairs(toappui(app).AXChildren) do
+            local menuItem = getc(elem, AX.Menu, 1, AX.MenuItem, title)
+            if menuItem then
+              menuItem:performAction(AX.Press)
+              obs:stop()
+              obs = nil
+            end
+          end
+        end)
+        observer:start()
+        local clicked = rightClickAndRestore(position, app:name())
+        if clicked then
+          hs.timer.doAfter(2, function()
+            if observer ~= nil then
+              observer:stop()
+              observer = nil
+            end
+          end)
+        else
+          observer:stop()
+          observer = nil
+        end
       end
     }
   },
