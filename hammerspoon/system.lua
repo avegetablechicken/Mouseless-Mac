@@ -2261,7 +2261,7 @@ function registerControlCenterHotKeys(panel)
             local ok, isAppleMusic = hs.osascript.applescript([[
               tell application "System Events"
                 set appTitle to static text 1 of ]]..pane..[[ 
-                return value of appTitle is "]] .. appname .. [["
+                return value of appTitle is "]] .. appname .. [[.app"
               end tell
             ]])
             if ok and isAppleMusic then
