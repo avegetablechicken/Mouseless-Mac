@@ -1360,13 +1360,6 @@ local function localizeByChromium(str, localeDir, appid)
                               fullPath, enTmpdir))
           end
           local output, status = hs.execute("grep -lrE '^" .. str .. "$' '" .. enTmpdir .. "' | tr -d '\\n'")
-          if not (status and output ~= "") then
-            -- base locale of `Google Chrome` misses the 13515th item, which is supposed to be "Tab"
-            -- note "Tab" has multiple translations, all overridden by 13515
-            if str == "Tab" and appid == "com.google.Chrome" then
-              output = "13515" status = true
-            end
-          end
           if status and output ~= "" then
             local matchFile = output:match("^.*/(.*)$")
             local tmpBaseDir = strfmt(localeTmpDir .. '%s/%s', appid, locale)
@@ -2146,9 +2139,6 @@ local function delocalizeByChromium(str, localeDir, appid)
               end
             end
           end
-        end
-        if matchFile == "13515" and appid == "com.google.Chrome" then
-          return "Tab"
         end
       end
     end
