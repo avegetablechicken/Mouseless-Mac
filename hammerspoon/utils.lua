@@ -2347,7 +2347,7 @@ if hs.fs.attributes(menuItemTmpFile) ~= nil then
   end
 end
 
-local function delocalizedStringImpl(str, appid, params)
+local function delocalizedStringImpl(str, appid, params, force)
   local appLocale, localeFile, localeFramework
   if type(params) == "table" and #params == 0 then
     appLocale = params.locale
@@ -2356,14 +2356,17 @@ local function delocalizedStringImpl(str, appid, params)
   else
     localeFile = params
   end
+  if force == nil then force = false end
 
   if appLocale == nil then
     appLocale = applicationLocale(appid)
   end
 
-  local result = get(deLocaleMap, appid, appLocale, str)
-  if result == false then return nil
-  elseif result ~= nil then return result end
+  if not force then
+    local result = get(deLocaleMap, appid, appLocale, str)
+    if result == false then return nil
+    elseif result ~= nil then return result end
+  end
 
   if appid == "org.zotero.zotero" then
     result, locale = delocalizeZoteroMenu(str, appLocale)
@@ -2526,8 +2529,8 @@ local function delocalizedStringImpl(str, appid, params)
   return result, appLocale, locale
 end
 
-function delocalizedString(str, appid, params)
-  local result, appLocale, locale = delocalizedStringImpl(str, appid, params)
+function delocalizedString(str, appid, params, force)
+  local result, appLocale, locale = delocalizedStringImpl(str, appid, params, force)
   if appLocale == nil then return result end
 
   if appLocaleDir[appid] == nil then
