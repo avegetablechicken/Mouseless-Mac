@@ -1849,25 +1849,32 @@ local function delocalizeByLoctableImplPython(str, filePath, locale)
 end
 
 local function delocalizeByLoctable(str, resourceDir, localeFile, locale)
+  local loctableFiles = {}
   if localeFile ~= nil then
-    local fullPath = resourceDir .. '/' .. localeFile .. '.loctable'
-    if hs.fs.attributes(fullPath) ~= nil then
-      return delocalizeByLoctableImplPython(str, fullPath, locale)
+    if type(localeFile) == 'string' then
+      localeFile = { localeFile }
+    end
+    for file in hs.fs.dir(resourceDir) do
+      if file:sub(-9) == '.loctable' then
+        for _, p in ipairs(localeFile) do
+          if file:sub(1, -10):match('^' .. p .. '$') then
+            tinsert(loctableFiles, file:sub(1, -10))
+          end
+        end
+      end
     end
   else
-    local loctableFiles = collectLocaleFiles(resourceDir, { loctable = true })
+    loctableFiles = collectLocaleFiles(resourceDir, { loctable = true })
     local preferentialLoctableFiles = {}
     if #loctableFiles > 10 then
       loctableFiles, preferentialLoctableFiles = filterPreferentialLocaleFiles(loctableFiles)
     end
-    for _, file in ipairs(preferentialLoctableFiles) do
-      local result = delocalizeByLoctableImplPython(str, resourceDir .. '/' .. file .. '.loctable', locale)
-      if result ~= nil then return result end
-    end
-    for _, file in ipairs(loctableFiles) do
-      local result = delocalizeByLoctableImplPython(str, resourceDir .. '/' .. file .. '.loctable', locale)
-      if result ~= nil then return result end
-    end
+    tconcat(preferentialLoctableFiles, loctableFiles)
+    loctableFiles = preferentialLoctableFiles
+  end
+  for _, file in ipairs(loctableFiles) do
+    local result = delocalizeByLoctableImplPython(str, resourceDir .. '/' .. file .. '.loctable', locale)
+    if result ~= nil then return result end
   end
 end
 
@@ -1914,7 +1921,6 @@ local function delocalizeByStrings(str, localeDir, localeFile, deLocalesInvDict)
   end
 
   local invSearchFunc = function(str, files)
-    if type(files) == 'string' then files = { files } end
     for _, fileStem in ipairs(files) do
       local invDict = deLocalesInvDict[fileStem]
       if invDict == nil then
@@ -1942,17 +1948,28 @@ local function delocalizeByStrings(str, localeDir, localeFile, deLocalesInvDict)
     end
   end
 
+  local stringsFiles = {}
   if localeFile ~= nil then
-    local result = invSearchFunc(str, localeFile)
-    if result ~= nil then return result end
+    if type(localeFile) == 'string' then
+      localeFile = { localeFile }
+    end
+    for file in hs.fs.dir(localeDir) do
+      if file:sub(-8) == '.strings' then
+        for _, p in ipairs(localeFile) do
+          if file:sub(1, -9):match('^' .. p .. '$') then
+            tinsert(stringsFiles, file:sub(1, -9))
+          end
+        end
+      end
+    end
   else
-    local stringsFiles = collectLocaleFiles(localeDir, { strings = true })
+    stringsFiles = collectLocaleFiles(localeDir, { strings = true })
     if #stringsFiles > 10 then
       _, stringsFiles = filterPreferentialLocaleFiles(stringsFiles)
     end
-    local result = invSearchFunc(str, stringsFiles)
-    if result ~= nil then return result end
   end
+  local result = invSearchFunc(str, stringsFiles)
+  if result ~= nil then return result end
 end
 
 local function delocalizeByNIB(str, localeDir, localeFile, appid)
@@ -2048,18 +2065,29 @@ local function delocalizeByNIB(str, localeDir, localeFile, appid)
     return result ~= "" and result or nil
   end
 
+  local nibFiles = {}
   if localeFile ~= nil then
-    local result = compareNIBs(localeFile)
-    if result ~= nil then return result end
+    if type(localeFile) == 'string' then
+      localeFile = { localeFile }
+    end
+    for file in hs.fs.dir(localeDir) do
+      if file:sub(-4) == '.nib' then
+        for _, p in ipairs(localeFile) do
+          if file:sub(1, -5):match('^' .. p .. '$') then
+            tinsert(nibFiles, file:sub(1, -5))
+          end
+        end
+      end
+    end
   else
-    local nibFiles = collectLocaleFiles(localeDir, { nib = true })
+    nibFiles = collectLocaleFiles(localeDir, { nib = true })
     if #nibFiles > 10 then
       _, nibFiles = filterPreferentialLocaleFiles(nibFiles)
     end
-    for _, file in ipairs(nibFiles) do
-      local result = compareNIBs(file)
-      if result ~= nil then return result end
-    end
+  end
+  for _, file in ipairs(nibFiles) do
+    local result = compareNIBs(file)
+    if result ~= nil then return result end
   end
 end
 
@@ -2235,19 +2263,24 @@ local function delocalizeWPS(str, appLocale, localeFile)
       .. '/Contents/Resources/office6/mui'
   local locale = getMatchedLocale(appLocale, resourceDir)
   if locale == nil then return end
+  if type(localeFile) == 'string' then
+    localeFile = { localeFile }
+  end
   local localeDir = resourceDir .. '/' .. locale
 
-  local ctxt
-  if localeFile then
-    if hs.fs.attributes(localeDir .. '/' .. localeFile .. '.qm') ~= nil then
-      ctxt = getCTXTInQtKso(str, localeDir .. '/' .. localeFile .. '.qm')
-    end
-  else
-    for file in hs.fs.dir(localeDir) do
-      if file:sub(-3) == ".qm" then
+  local ctxt, matchedFile
+  for file in hs.fs.dir(localeDir) do
+    if file:sub(-3) == ".qm" then
+      local valid = true
+      if localeFile then
+        valid = hs.fnutils.some(localeFile, function(p)
+          return file:sub(1, -4):match('^' .. p .. '$')
+        end)
+      end
+      if valid then
         ctxt = getCTXTInQtKso(str, localeDir .. '/' .. file)
         if ctxt ~= nil then
-          localeFile = file:sub(1, -4)
+          matchedFile = file:sub(1, -4)
           break
         end
       end
@@ -2258,8 +2291,8 @@ local function delocalizeWPS(str, appLocale, localeFile)
   local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
   local dirs = appendExtraEnglishLocaleDirs(resourceDir, baseLocaleDirs)
   for _, dir in ipairs(dirs) do
-    if hs.fs.attributes(dir .. '/' .. localeFile .. '.qm') ~= nil then
-      local result = getSTRInQtKso(ctxt, dir .. '/' .. localeFile .. '.qm')
+    if hs.fs.attributes(dir .. '/' .. matchedFile .. '.qm') ~= nil then
+      local result = getSTRInQtKso(ctxt, dir .. '/' .. matchedFile .. '.qm')
       if result ~= nil then return result, locale end
     end
   end
@@ -2316,7 +2349,7 @@ end
 
 local function delocalizedStringImpl(str, appid, params)
   local appLocale, localeFile, localeFramework
-  if type(params) == "table" then
+  if type(params) == "table" and #params == 0 then
     appLocale = params.locale
     localeFile = params.localeFile
     localeFramework = params.framework
