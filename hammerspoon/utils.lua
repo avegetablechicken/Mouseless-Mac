@@ -1521,7 +1521,7 @@ local function localizeWPS(str, appLocale, localeFile)
         if file:sub(-3) == ".qm" then
           ctxt = getCTXTInQtKso(str, dir .. '/' .. file)
           if ctxt ~= nil then
-            localeFile = file:sub(-3)
+            localeFile = file:sub(1, -4)
           end
         end
       end
@@ -2247,7 +2247,7 @@ local function delocalizeWPS(str, appLocale, localeFile)
       if file:sub(-3) == ".qm" then
         ctxt = getCTXTInQtKso(str, localeDir .. '/' .. file)
         if ctxt ~= nil then
-          localeFile = file:sub(-3)
+          localeFile = file:sub(1, -4)
           break
         end
       end
