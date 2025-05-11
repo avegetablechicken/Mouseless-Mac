@@ -73,11 +73,14 @@ end
 function menuBarVisible()
   if inFullscreenSpace() then
     local thisAppAutohide = hs.execute("defaults read "
-        .. hs.application.frontmostApplication():bundleID() .. " AppleMenuBarVisibleInFullscreen | tr -d '\\n'")
+        .. hs.application.frontmostApplication():bundleID()
+        .. [[ AppleMenuBarVisibleInFullscreen | tr -d '\n']])
     if thisAppAutohide == "0" then
       return false
     elseif thisAppAutohide == "" then
-      local autohide = hs.execute("defaults read -globalDomain AppleMenuBarVisibleInFullscreen | tr -d '\\n'")
+      local autohide = hs.execute([[
+        defaults read -globalDomain AppleMenuBarVisibleInFullscreen \
+        | tr -d '\n']])
       if autohide == "0" then
         return false
       end
@@ -190,7 +193,8 @@ local function findMenuItemByKeyBindingImpl(mods, key, menuItem)
       cmdChar = SPECIAL_KEY_SIMBOL_MAP[key] or cmdChar
     end
     if (cmdChar == key
-        or (subItem.AXMenuItemCmdGlyph ~= "" and hs.application.menuGlyphs[subItem.AXMenuItemCmdGlyph] == key))
+        or (subItem.AXMenuItemCmdGlyph ~= ""
+            and hs.application.menuGlyphs[subItem.AXMenuItemCmdGlyph] == key))
         and #subItem.AXMenuItemCmdModifiers == #mods then
       local match = true
       for _, mod in ipairs(mods) do
@@ -203,7 +207,8 @@ local function findMenuItemByKeyBindingImpl(mods, key, menuItem)
         return { subItem.AXTitle }, subItem.AXEnabled
       end
     end
-    local menuItemPath, enabled = findMenuItemByKeyBindingImpl(mods, key, subItem)
+    local menuItemPath, enabled =
+        findMenuItemByKeyBindingImpl(mods, key, subItem)
     if menuItemPath ~= nil then
       tinsert(menuItemPath, 1, subItem.AXTitle)
       return menuItemPath, enabled
@@ -243,7 +248,8 @@ function findMenuItemByKeyBinding(app, mods, key, menuItems)
   end
   for i=#menuItems,1,-1 do
     local menuItem = menuItems[i]
-    local menuItemPath, enabled = findMenuItemByKeyBindingImpl(newMods, key, menuItem)
+    local menuItemPath, enabled =
+        findMenuItemByKeyBindingImpl(newMods, key, menuItem)
     if menuItemPath ~= nil then
       tinsert(menuItemPath, 1, menuItem.AXTitle)
       return menuItemPath, enabled
@@ -272,7 +278,8 @@ function quit(hint)
   return false
 end
 
-local localeTmpDir = hs.fs.temporaryDirectory() .. 'org.hammerspoon.Hammerspoon/locale/'
+local localeTmpDir = hs.fs.temporaryDirectory()
+    .. 'org.hammerspoon.Hammerspoon/locale/'
 
 local locMap, delocMap = {}, {}
 localizationMapLoaded = { menubar = {}, strings = {} }
@@ -327,7 +334,10 @@ delocMap.common = {}
 locMap.common = {}
 
 local function systemLocales()
-  local locales, ok = hs.execute("defaults read -globalDomain AppleLanguages | tr -d '()\" \\n'")
+  local locales, ok = hs.execute([[
+    defaults read -globalDomain AppleLanguages \
+    | tr -d '()" \n'
+  ]])
   return strsplit(locales, ',')
 end
 SYSTEM_LOCALE = systemLocales()[1]
@@ -387,16 +397,18 @@ function getResourceDir(appid, frameworkName)
         goto END_GET_RESOURCE_DIR
       end
 
-      local jimage, status = hs.execute(strfmt(
-        "find '%s' -type f -name jimage | tr -d '\\n'", appContentPath))
+      local jimage, status = hs.execute(strfmt([[
+        find '%s' -type f -name jimage | tr -d '\n'
+      ]], appContentPath))
       if status and jimage ~= "" then
         resourceDir = jimage:sub(1, #jimage - #'/bin/jimage')
         framework.java = frameworkName
         goto END_GET_RESOURCE_DIR
       end
 
-      frameworkDir = hs.execute(strfmt(
-          "find '%s' -type d -name '%s' | head -n 1 | tr -d '\\n'", appContentPath, frameworkName))
+      frameworkDir = hs.execute(strfmt([[
+        find '%s' -type d -name '%s' | head -n 1 | tr -d '\n'
+      ]], appContentPath, frameworkName))
       if frameworkDir == "" then
         for _, searchDir in ipairs {
           '/System/Library/Frameworks',
@@ -419,10 +431,10 @@ function getResourceDir(appid, frameworkName)
     framework.user = true
   else
     if hs.fs.attributes(appContentPath .. "/Frameworks") ~= nil then
-      local chromiumDirs, status = hs.execute(strfmt(
-        "find '%s' -type f -path '*/Resources/*/locale.pak'" ..
-        " | awk -F'/Versions/' '{print $1}' | uniq",
-        appContentPath .. "/Frameworks"))
+      local chromiumDirs, status = hs.execute(strfmt([[
+        find '%s' -type f -path '*/Resources/*/locale.pak' \
+        | awk -F'/Versions/' '{print $1}' | uniq
+      ]], appContentPath .. "/Frameworks"))
       if status and chromiumDirs:sub(1, -2) ~= "" then
         chromiumDirs = strsplit(chromiumDirs:sub(1, -2), '\n')
         if #chromiumDirs == 1 then
@@ -442,9 +454,10 @@ function getResourceDir(appid, frameworkName)
       goto END_GET_RESOURCE_DIR
     end
 
-    local monoLocaleDirs, status = hs.execute(strfmt(
-        "find '%s' -type f -path '*/locale/*/LC_MESSAGES/*.mo'" ..
-        " | awk -F'/locale/' '{print $1}' | uniq", appContentPath))
+    local monoLocaleDirs, status = hs.execute(strfmt([[
+      find '%s' -type f -path '*/locale/*/LC_MESSAGES/*.mo' \
+      | awk -F'/locale/' '{print $1}' | uniq
+    ]], appContentPath))
     if status and monoLocaleDirs:sub(1, -2) ~= "" then
       monoLocaleDirs = strsplit(monoLocaleDirs:sub(1, -2), '\n')
       if #monoLocaleDirs == 1 then
@@ -504,7 +517,8 @@ function getMatchedLocale(appLocale, localeSource, mode)
   local country = localDetails.countryCode
   if script == nil then
     local localeItems = strsplit(appLocale, '-')
-    if #localeItems == 3 or (#localeItems == 2 and localeItems[2] ~= country) then
+    if #localeItems == 3 or
+        (#localeItems == 2 and localeItems[2] ~= country) then
       script = localeItems[2]
     end
   end
@@ -527,21 +541,26 @@ function getMatchedLocale(appLocale, localeSource, mode)
       local thisCountry = thisLocale.countryCode
       if thisScript == nil then
         local localeItems = strsplit(newLocale, '-')
-        if #localeItems == 3 or (#localeItems == 2 and localeItems[2] ~= thisCountry) then
+        if #localeItems == 3 or
+            (#localeItems == 2 and localeItems[2] ~= thisCountry) then
           thisScript = localeItems[2]
         end
       end
       if thisLanguage == 'zh' or thisLanguage == 'yue' then
-        if thisCountry == 'HK' or thisCountry == 'MO' or thisCountry == 'TW' then
+        if thisCountry == 'HK' or thisCountry == 'MO'
+            or thisCountry == 'TW' then
           if thisScript == nil then thisScript = 'Hant' end
         elseif thisCountry == 'CN' or thisCountry == 'SG' then
           if thisScript == nil then thisScript = 'Hans' end
         end
       end
       if thisLanguage == language
-          and (script == nil or thisScript == nil or thisScript == script) then
+          and (script == nil or
+               thisScript == nil or thisScript == script) then
         tinsert(matchedLocales, {
-          scriptCode = thisScript, countryCode = thisCountry, extra = locale
+          scriptCode = thisScript,
+          countryCode = thisCountry,
+          extra = locale
         })
       end
     end
@@ -558,13 +577,15 @@ local function getQtMatchedLocale(appLocale, resourceDir)
   local country = localDetails.countryCode
   if script == nil then
     local localeItems = strsplit(appLocale, '-')
-    if #localeItems == 3 or (#localeItems == 2 and localeItems[2] ~= country) then
+    if #localeItems == 3 or
+        (#localeItems == 2 and localeItems[2] ~= country) then
       script = localeItems[2]
     end
   end
   local dirs = { resourceDir }
   for file in hs.fs.dir(resourceDir) do
-    if hs.fs.attributes(resourceDir .. '/' .. file, 'mode') == 'directory' then
+    if hs.fs.attributes(resourceDir .. '/' .. file, 'mode')
+        == 'directory' then
       tinsert(dirs, resourceDir .. '/' .. file)
     end
   end
@@ -589,14 +610,17 @@ local function getQtMatchedLocale(appLocale, resourceDir)
             end
             if script == nil or thisScript == nil or thisScript == script then
               if language == 'zh' or language == 'yue' then
-                if thisCountry == 'HK' or thisCountry == 'MO' or thisCountry == 'TW' then
+                if thisCountry == 'HK' or thisCountry == 'MO'
+                    or thisCountry == 'TW' then
                   if thisScript == nil then thisScript = 'Hant' end
                 elseif thisCountry == 'CN' or thisCountry == 'SG' then
                   if thisScript == nil then thisScript = 'Hans' end
                 end
               end
               tinsert(matchedLocales, {
-                scriptCode = thisScript, countryCode = thisCountry, extra = dir .. '/' .. file,
+                scriptCode = thisScript,
+                countryCode = thisCountry,
+                extra = dir .. '/' .. file,
               })
             end
           end
@@ -608,8 +632,12 @@ local function getQtMatchedLocale(appLocale, resourceDir)
   if #matchedLocales == 0 then return end
   local bestMatch = getBestMatchedLocale(localDetails, matchedLocales, true)
   local matchedLocale = language
-  if bestMatch.script ~= nil then matchedLocale = matchedLocale .. '_' .. bestMatch.script end
-  if bestMatch.country ~= nil then matchedLocale = matchedLocale .. '_' .. bestMatch.country end
+  if bestMatch.script ~= nil then
+    matchedLocale = matchedLocale .. '_' .. bestMatch.script
+  end
+  if bestMatch.country ~= nil then
+    matchedLocale = matchedLocale .. '_' .. bestMatch.country
+  end
   return matchedLocale, bestMatch.extra
 end
 
@@ -624,9 +652,9 @@ local function getJavaLocales(appid, javahome, path)
       jimageLocales[appid] = {}
       local cmd = javahome .. '/bin/jimage'
       local modulePath = javahome .. '/lib/modules'
-      local result, ok = hs.execute(strfmt(
-        [[%s list --include 'regex:.*%s/.*\.properties' '%s']],
-        cmd, path, modulePath))
+      local result, ok = hs.execute(strfmt([[
+        %s list --include 'regex:.*%s/.*\.properties' '%s'
+      ]], cmd, path, modulePath))
       if ok then
         local module
         for _, line in ipairs(strsplit(result, '\n')) do
@@ -661,7 +689,8 @@ local function getJavaMatchedLocale(appid, appLocale, javahome, path)
   local country = localDetails.countryCode
   if script == nil then
     local localeItems = strsplit(appLocale, '-')
-    if #localeItems == 3 or (#localeItems == 2 and localeItems[2] ~= country) then
+    if #localeItems == 3 or
+        (#localeItems == 2 and localeItems[2] ~= country) then
       script = localeItems[2]
     end
   end
@@ -683,9 +712,11 @@ local function getJavaMatchedLocale(appid, appLocale, javahome, path)
             thisScript = fileSplits[i + 1]
           end
         end
-        if script == nil or thisScript == nil or thisScript == script then
+        if script == nil or
+            thisScript == nil or thisScript == script then
           if language == 'zh' or language == 'yue' then
-            if thisCountry == 'HK' or thisCountry == 'MO' or thisCountry == 'TW' then
+            if thisCountry == 'HK' or thisCountry == 'MO'
+                or thisCountry == 'TW' then
               if thisScript == nil then thisScript = 'Hant' end
             elseif thisCountry == 'CN' or thisCountry == 'SG' then
               if thisScript == nil then thisScript = 'Hans' end
@@ -697,7 +728,9 @@ local function getJavaMatchedLocale(appid, appLocale, javahome, path)
           end
           locale = locale:sub(2)
           tinsert(matchedLocales, {
-            scriptCode = thisScript, countryCode = thisCountry, extra = locale
+            scriptCode = thisScript,
+            countryCode = thisCountry,
+            extra = locale
           })
         end
       end
@@ -723,10 +756,9 @@ local function getElectronLocales(appid, localesPath)
     else
       local path = hs.application.pathForBundleID(appid)
           .. '/Contents/Resources/app.asar'
-      local result, ok = hs.execute(strfmt(
-        [[npx @electron/asar list "%s" | grep "^/%s/" | cut -c%d-]],
-        path, localesPath, #localesPath + 3),
-      true)
+      local result, ok = hs.execute(strfmt([[
+        npx @electron/asar list "%s" | grep "^/%s/" | cut -c%d-
+      ]], path, localesPath, #localesPath + 3), true)
       if ok then
         result = strsplit(result, '\n')
         result[#result] = nil
@@ -814,7 +846,9 @@ end
 
 local function collectLocaleFiles(localeDir, option)
   local localeFiles = {}
-  if option == nil then option = { strings = true, nib = true, storyboardc = true } end
+  if option == nil then
+    option = { strings = true, nib = true, storyboardc = true }
+  end
   for file in hs.fs.dir(localeDir or {}) do
     if option.strings and file:sub(-8) == ".strings" then
       tinsert(localeFiles, file:sub(1, -9))
@@ -925,7 +959,8 @@ local function localizeByLoctable(str, resourceDir, localeFile, locale)
     loctableFiles = collectLocaleFiles(resourceDir, { loctable = true })
     local preferentialLoctableFiles = {}
     if #loctableFiles > 10 then
-      loctableFiles, preferentialLoctableFiles = filterPreferentialLocaleFiles(loctableFiles)
+      loctableFiles, preferentialLoctableFiles =
+          filterPreferentialLocaleFiles(loctableFiles)
     end
     tconcat(preferentialLoctableFiles, loctableFiles)
     loctableFiles = preferentialLoctableFiles
@@ -948,7 +983,7 @@ end
 local function parseBinaryPlistFile(file, keepOrder, keepAll)
   if keepOrder == nil then keepOrder = true end
   local jsonStr = hs.execute([[
-    plutil -convert xml1 ']] .. file .. [[' -o /dev/stdout | \
+    plutil -convert xml1 ']]..file..[[' -o /dev/stdout | \
     awk '
     BEGIN { printf("{"); first = 1 }
     /<string>.*\.(title|label)<\/string>/ {
@@ -993,7 +1028,8 @@ end
 local function parseNibFile(file, keepOrder, keepAll)
   if keepOrder == nil then keepOrder = true end
   local jsonStr = hs.execute([[
-    /usr/bin/python3 scripts/nib_parse.py dump-json ']] .. file .. [[' -o /dev/stdout | \
+    /usr/bin/python3 scripts/nib_parse.py \
+        dump-json ']]..file..[[' -o /dev/stdout | \
     grep '"data": "' | sed 's/^.*"data": "//;s/"$//' | \
     awk 'BEGIN { printf("{"); first = 1 } /\.(title|label)$/ {
       key = $0;
@@ -1003,7 +1039,8 @@ local function parseNibFile(file, keepOrder, keepAll)
       first = 0;
     }
     { prev = $0 }
-    END { print "}" }']])
+    END { print "}" }'
+  ]])
   local jsonDict = hs.json.decode(jsonStr)
   if keepOrder then return jsonDict end
   local localesDict = {}
@@ -1024,8 +1061,10 @@ end
 -- situation 1: "str" is a key in a strings file of target locale
 -- situation 2: both base and target locales use strings files
 -- situation 3: both base variant (e.g. en_US) and target locales use strings files
--- situation 4: both base and target locales use "*.title"-style keys, base locale uses NIB file & target locale uses strings files
--- situation 5: both base and target locales use "*.title"-style keys, base locale uses binary plist file & target locale uses strings files
+-- situation 4: both base and target locales use "*.title"-style keys,
+--              base locale uses NIB file & target locale uses strings files
+-- situation 5: both base and target locales use "*.title"-style keys,
+--              base locale uses binary plist file & target locale uses strings files
 local function localizeByStrings(str, localeDir, localeFile, localesDict, localesInvDict)
   local resourceDir = localeDir .. '/..'
   local searchFunc = function(str, files)
@@ -1061,7 +1100,8 @@ local function localizeByStrings(str, localeDir, localeFile, localesDict, locale
   else
     stringsFiles = collectLocaleFiles(localeDir, { strings = true })
     if #stringsFiles > 10 then
-      stringsFiles, preferentialStringsFiles = filterPreferentialLocaleFiles(stringsFiles)
+      stringsFiles, preferentialStringsFiles =
+          filterPreferentialLocaleFiles(stringsFiles)
     end
   end
   local result = searchFunc(str, preferentialStringsFiles)
@@ -1083,7 +1123,9 @@ local function localizeByStrings(str, localeDir, localeFile, localesDict, locale
               if hs.fs.attributes(fullPath .. '/keyedobjects.nib') ~= nil then
                 fullPath = fullPath .. '/keyedobjects.nib'
               else
-                fullPath = hs.execute(strfmt([[ls '%s'/keyedobjects* | tail -n 1 | tr -d '\n']], fullPath))
+                fullPath = hs.execute(strfmt([[
+                  ls '%s'/keyedobjects* | tail -n 1 | tr -d '\n'
+                ]], fullPath))
                 if fullPath == "" then return end
               end
             end
@@ -1139,7 +1181,8 @@ local function localizeByStrings(str, localeDir, localeFile, localesDict, locale
     end
     local basePreferentialStringsFiles = {}
     if #baseStringsFiles > 10 then
-      baseStringsFiles, basePreferentialStringsFiles = filterPreferentialLocaleFiles(baseStringsFiles)
+      baseStringsFiles, basePreferentialStringsFiles =
+          filterPreferentialLocaleFiles(baseStringsFiles)
     end
     local result = invSearchFunc(str, basePreferentialStringsFiles)
     if result ~= nil then return result end
@@ -1160,12 +1203,15 @@ local function localizeByNIB(str, localeDir, localeFile, appid)
   local compareNIBs = function(file)
     local NIBPath = localeDir .. '/' .. file .. '.nib'
     local baseNIBPath = baseLocaleDir .. '/' .. file .. '.nib'
-    if hs.fs.attributes(NIBPath) == nil or hs.fs.attributes(baseNIBPath) == nil then return end
+    if hs.fs.attributes(NIBPath) == nil
+        or hs.fs.attributes(baseNIBPath) == nil then return end
     if hs.fs.attributes(baseNIBPath, 'mode') == 'directory' then
       if hs.fs.attributes(baseNIBPath .. '/keyedobjects.nib') ~= nil then
         baseNIBPath = baseNIBPath .. '/keyedobjects.nib'
       else
-        baseNIBPath = hs.execute(strfmt([[ls '%s'/keyedobjects* | tail -n 1 | tr -d '\n']], baseNIBPath))
+        baseNIBPath = hs.execute(strfmt([[
+          ls '%s'/keyedobjects* | tail -n 1 | tr -d '\n'
+        ]], baseNIBPath))
         if baseNIBPath == "" then return end
       end
     end
@@ -1173,7 +1219,9 @@ local function localizeByNIB(str, localeDir, localeFile, appid)
       if hs.fs.attributes(NIBPath .. '/keyedobjects.nib') ~= nil then
         NIBPath = NIBPath .. '/keyedobjects.nib'
       else
-        NIBPath = hs.execute(strfmt([[ls '%s'/keyedobjects* | tail -n 1 | tr -d '\n']], NIBPath))
+        NIBPath = hs.execute(strfmt([[
+          ls '%s'/keyedobjects* | tail -n 1 | tr -d '\n'
+        ]], NIBPath))
         if NIBPath == "" then return end
       end
     end
@@ -1217,16 +1265,18 @@ local function localizeByNIB(str, localeDir, localeFile, appid)
     local baseJsonPath = baseJsonDir .. '/' .. file .. '.json'
     if hs.fs.attributes(baseJsonPath) == nil then
       hs.execute(strfmt("mkdir -p '%s'", baseJsonDir))
-      local _, status = hs.execute(strfmt("/usr/bin/python3 scripts/nib_parse.py dump-json '%s' -o '%s'",
-                                   baseNIBPath, baseJsonPath))
+      local _, status = hs.execute(strfmt([[
+        /usr/bin/python3 scripts/nib_parse.py dump-json '%s' -o '%s'
+      ]], baseNIBPath, baseJsonPath))
       if not status then return end
     end
     local jsonDir = localeTmpDir .. appid .. '/' .. locale
     local jsonPath = jsonDir .. '/' .. file .. '.json'
     if hs.fs.attributes(jsonPath) == nil then
       hs.execute(strfmt("mkdir -p '%s'", jsonDir))
-      local _, status = hs.execute(strfmt("/usr/bin/python3 scripts/nib_parse.py dump-json '%s' -o '%s'",
-                                   NIBPath, jsonPath))
+      local _, status = hs.execute(strfmt([[
+        /usr/bin/python3 scripts/nib_parse.py dump-json '%s' -o '%s'
+      ]], NIBPath, jsonPath))
       if not status then return end
     end
     local diffDir = localeTmpDir .. appid .. '/' .. baseLocale .. '-' .. locale
@@ -1236,10 +1286,13 @@ local function localizeByNIB(str, localeDir, localeFile, appid)
       hs.execute(strfmt("diff --suppress-common-lines '%s' '%s' > '%s'",
                         baseJsonPath, jsonPath, diffPath))
     end
-    local result = hs.execute(strfmt(
-        [[cat '%s' | awk '/^<.*"data": "%s"/ && !found {getline; if ($0 ~ "---") {getline; print $0; found=1}}' | \
-          sed 's/^>.*"data": "//;s/"$//' | tr -d '\n']],
-        diffPath, str))
+    local result = hs.execute(strfmt([[
+      cat '%s' | awk '/^<.*"data": "%s"/ && !found {
+        getline;
+        if ($0 ~ "---") {getline; print $0; found=1}
+      }' | \
+      sed 's/^>.*"data": "//;s/"$//' | tr -d '\n'
+    ]], diffPath, str))
     return result ~= "" and result or nil
   end
 
@@ -1384,7 +1437,9 @@ local function localizeByChromium(str, localeDir, appid)
             hs.execute(strfmt("scripts/pak -u '%s' '%s'",
                               fullPath, enTmpdir))
           end
-          local output, status = hs.execute("grep -lrE '^" .. str .. "$' '" .. enTmpdir .. "' | tr -d '\\n'")
+          local output, status = hs.execute(strfmt([[
+            grep -lrE '^%s$' '%s' | tr -d '\n'
+          ]], str, enTmpdir))
           if status and output ~= "" then
             local matchFile = output:match("^.*/(.*)$")
             local tmpBaseDir = strfmt(localeTmpDir .. '%s/%s', appid, locale)
@@ -1421,9 +1476,9 @@ local function localizeByElectron(str, appid, locale, localeFiles, localesPath)
             .. '/Contents/Resources/app.asar'
         local localeFilePath = strfmt("%s/%s/%s.json",
             localesPath, locale, file)
-        hs.execute(strfmt(
-          [[npx @electron/asar extract-file "%s" "%s"]], path, localeFilePath),
-        true)
+        hs.execute(strfmt([[
+          npx @electron/asar extract-file "%s" "%s"
+        ]], path, localeFilePath), true)
         if dirNotExistOrEmpty(tmpdir) then
           hs.execute(strfmt("mkdir -p '%s'", tmpdir))
         end
@@ -1474,7 +1529,8 @@ local function localizeQt(str, appid, appLocale)
   if hs.fs.attributes(resourceDir) == nil then return end
   local appname = appPath:match("^.*/([^/]+)%.app$")
   if appname == nil
-      or hs.fs.attributes(resourceDir .. "/" .. appname:lower() .. "_en.qm") == nil then
+      or hs.fs.attributes(resourceDir .. "/" .. appname:lower() .. "_en.qm")
+          == nil then
     return
   end
   local locales = {}
@@ -1487,7 +1543,8 @@ local function localizeQt(str, appid, appLocale)
   local locale = getMatchedLocale(appLocale, locales)
   if locale == nil then return nil end
   if locale == 'en' then return str:gsub('[^%s]-&(%a)', '%1'), locale end
-  local result = localizeByQtImpl(str, resourceDir .. '/' .. prefix .. locale .. '.qm')
+  local result = localizeByQtImpl(
+      str, resourceDir .. '/' .. prefix .. locale .. '.qm')
   if result ~= nil then
     result = result:gsub("%(&%a%)", ""):gsub('[^%s]-&(%a)', '%1')
   end
@@ -1511,7 +1568,8 @@ local function getCTXTInQtKso(str, file)
 end
 
 local function localizeWPS(str, appLocale, localeFile)
-  local resourceDir = hs.application.pathForBundleID("com.kingsoft.wpsoffice.mac")
+  local resourceDir =
+      hs.application.pathForBundleID("com.kingsoft.wpsoffice.mac")
       .. '/Contents/Resources/office6/mui'
   local locale = getMatchedLocale(appLocale, resourceDir)
   if type(localeFile) == 'string' then
@@ -1631,7 +1689,8 @@ local function localizedStringImpl(str, appid, params, force)
   end
 
   if appLocale == nil then
-    appLocale = appid ~= '__macos' and applicationLocale(appid) or SYSTEM_LOCALE
+    appLocale = appid ~= '__macos' and applicationLocale(appid)
+        or SYSTEM_LOCALE
   end
 
   local result
@@ -1642,8 +1701,9 @@ local function localizedStringImpl(str, appid, params, force)
     elseif result ~= nil then return result end
   end
 
-  if appid ~= '__macos' and (hs.application.pathForBundleID(appid) == nil
-      or hs.application.pathForBundleID(appid) == "") then
+  if appid ~= '__macos'
+      and (hs.application.pathForBundleID(appid) == nil
+           or hs.application.pathForBundleID(appid) == "") then
     return nil
   end
 
@@ -1666,7 +1726,10 @@ local function localizedStringImpl(str, appid, params, force)
       if menuItems ~= nil then
         tremove(menuItems, 1)
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
-          if tfind(menuItems, function(item) return item.AXTitle == title end) ~= nil then
+          if tfind(menuItems,
+              function(item)
+                return item.AXTitle == title
+              end) ~= nil then
             return str
           end
         end
@@ -1693,10 +1756,12 @@ local function localizedStringImpl(str, appid, params, force)
   end
 
   if framework.electron then
-    locale, localeDir = getElectronMatchedLocale(appid, appLocale, framework.electron)
+    locale, localeDir = getElectronMatchedLocale(
+        appid, appLocale, framework.electron)
     if locale == nil then return end
   elseif framework.java then
-    locale, localeDir = getJavaMatchedLocale(appid, appLocale, resourceDir, framework.java)
+    locale, localeDir = getJavaMatchedLocale(
+        appid, appLocale, resourceDir, framework.java)
     if locale == nil then return end
   end
   if not framework.mono then
@@ -1742,7 +1807,8 @@ local function localizedStringImpl(str, appid, params, force)
     local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
     for _, dir in ipairs(baseLocaleDirs) do
       if hs.fs.attributes(dir) ~= nil
-          and hs.fs.attributes(localeDir).ino == hs.fs.attributes(dir).ino then
+          and hs.fs.attributes(localeDir).ino
+              == hs.fs.attributes(dir).ino then
         return str
       end
     end
@@ -1756,12 +1822,16 @@ local function localizedStringImpl(str, appid, params, force)
 
   if framework.chromium then
     result = localizeByChromium(str, localeDir, appid)
-    if result ~= nil or not setDefaultLocale() then return result, appLocale, locale end
+    if result ~= nil or not setDefaultLocale() then
+      return result, appLocale, locale
+    end
   end
 
   if framework.mono then
     result = localizeByMono(str, localeDir)
-    if result ~= nil or not setDefaultLocale() then return result, appLocale, locale end
+    if result ~= nil or not setDefaultLocale() then
+      return result, appLocale, locale
+    end
   end
 
   if framework.qt then
@@ -1770,7 +1840,8 @@ local function localizedStringImpl(str, appid, params, force)
   end
 
   if framework.electron then
-    result = localizeByElectron(str, appid, locale, localeDir, framework.electron)
+    result = localizeByElectron(str, appid, locale, localeDir,
+                                framework.electron)
     return result, appLocale, locale
   end
 
@@ -1795,7 +1866,8 @@ local function localizedStringImpl(str, appid, params, force)
     if result ~= nil then return result end
 
     if str:sub(-3) == "..." or str:sub(-3) == "…" then
-      result, appLocale, locale = localizedStringImpl(str:sub(1, -4), appid, params)
+      result, appLocale, locale =
+          localizedStringImpl(str:sub(1, -4), appid, params)
       if result ~= nil then
         return result .. str:sub(-3), appLocale, locale
       end
@@ -1827,7 +1899,8 @@ function localizedString(str, appid, params, force)
     return
   end
   appid = appid or '__macos'
-  local result, appLocale, locale = localizedStringImpl(str, appid, params, force)
+  local result, appLocale, locale =
+      localizedStringImpl(str, appid, params, force)
   if appLocale == nil then return result end
 
   if appLocaleDir[appid] == nil then
@@ -1902,13 +1975,15 @@ local function delocalizeByLoctable(str, resourceDir, localeFile, locale)
     loctableFiles = collectLocaleFiles(resourceDir, { loctable = true })
     local preferentialLoctableFiles = {}
     if #loctableFiles > 10 then
-      loctableFiles, preferentialLoctableFiles = filterPreferentialLocaleFiles(loctableFiles)
+      loctableFiles, preferentialLoctableFiles =
+          filterPreferentialLocaleFiles(loctableFiles)
     end
     tconcat(preferentialLoctableFiles, loctableFiles)
     loctableFiles = preferentialLoctableFiles
   end
   for _, file in ipairs(loctableFiles) do
-    local result = delocalizeByLoctableImplPython(str, resourceDir .. '/' .. file .. '.loctable', locale)
+    local result = delocalizeByLoctableImplPython(
+          str, resourceDir .. '/' .. file .. '.loctable', locale)
     if result ~= nil then return result end
   end
 end
@@ -1928,7 +2003,9 @@ local function delocalizeByStrings(str, localeDir, localeFile, deLocalesInvDict)
           if hs.fs.attributes(fullPath .. '/keyedobjects.nib') ~= nil then
             fullPath = fullPath .. '/keyedobjects.nib'
           else
-            fullPath = hs.execute(strfmt([[ls '%s'/keyedobjects* | tail -n 1 | tr -d '\n']], fullPath))
+            fullPath = hs.execute(strfmt([[
+              ls '%s'/keyedobjects* | tail -n 1 | tr -d '\n'
+            ]], fullPath))
             if fullPath == "" then return end
           end
         end
@@ -2015,12 +2092,14 @@ local function delocalizeByNIB(str, localeDir, localeFile, appid)
   local compareNIBs = function(file)
     local NIBPath = localeDir .. '/' .. file .. '.nib'
     local baseNIBPath = baseLocaleDir .. '/' .. file .. '.nib'
-    if hs.fs.attributes(NIBPath) == nil or hs.fs.attributes(baseNIBPath) == nil then return end
+    if hs.fs.attributes(NIBPath) == nil
+        or hs.fs.attributes(baseNIBPath) == nil then return end
     if hs.fs.attributes(NIBPath, 'mode') == 'directory' then
       if hs.fs.attributes(NIBPath .. '/keyedobjects.nib') ~= nil then
         NIBPath = NIBPath .. '/keyedobjects.nib'
       else
-        NIBPath = hs.execute(strfmt([[ls '%s'/keyedobjects* | tail -n 1 | tr -d '\n']], NIBPath))
+        NIBPath = hs.execute(strfmt([[
+          ls '%s'/keyedobjects* | tail -n 1 | tr -d '\n']], NIBPath))
         if NIBPath == "" then return end
       end
     end
@@ -2028,7 +2107,9 @@ local function delocalizeByNIB(str, localeDir, localeFile, appid)
       if hs.fs.attributes(baseNIBPath .. '/keyedobjects.nib') ~= nil then
         baseNIBPath = baseNIBPath .. '/keyedobjects.nib'
       else
-        baseNIBPath = hs.execute(strfmt([[ls '%s'/keyedobjects* | tail -n 1 | tr -d '\n']], baseNIBPath))
+        baseNIBPath = hs.execute(strfmt([[
+          ls '%s'/keyedobjects* | tail -n 1 | tr -d '\n'
+        ]], baseNIBPath))
         if baseNIBPath == "" then return end
       end
     end
@@ -2093,10 +2174,13 @@ local function delocalizeByNIB(str, localeDir, localeFile, appid)
       hs.execute(strfmt("diff --suppress-common-lines '%s' '%s' > '%s'",
                         jsonPath, baseJsonPath, diffPath))
     end
-    local result = hs.execute(strfmt(
-        [[cat '%s' | awk '/^<.*"data": "%s"/ && !found {getline; if ($0 ~ "---") {getline; print $0; found=1}}' | \
-          sed 's/^>.*"data": "//;s/"$//' | tr -d '\n']],
-        diffPath, str))
+    local result = hs.execute(strfmt([[
+      cat '%s' | awk '/^<.*"data": "%s"/ && !found {
+        getline;
+        if ($0 ~ "---") {getline; print $0; found=1}
+      }' | \
+      sed 's/^>.*"data": "//;s/"$//' | tr -d '\n'
+    ]], diffPath, str))
     return result ~= "" and result or nil
   end
 
@@ -2179,8 +2263,9 @@ local function delocalizeByChromium(str, localeDir, appid)
                           localeDir .. '/' .. file, tmpdir))
       end
       local pattern = '^' .. str .. '$'
-      local output, status = hs.execute(strfmt(
-            "grep -lrE '%s' '%s' | tr -d '\\n'", pattern, tmpdir))
+      local output, status = hs.execute(strfmt([[
+        grep -lrE '%s' '%s' | tr -d '\n'
+      ]], pattern, tmpdir))
       if status and output ~= "" then
         local matchFile = output:match("^.*/(.*)$")
         for _, enLocale in ipairs{"en", "English", "Base", "en_US", "en_GB"} do
@@ -2218,9 +2303,9 @@ local function delocalizeByElectron(str, appid, locale, localeFiles, localesPath
             .. '/Contents/Resources/app.asar'
         local localeFilePath = strfmt("%s/%s/%s.json",
             localesPath, locale, file)
-        hs.execute(strfmt(
-          [[npx @electron/asar extract-file "%s" "%s"]], path, localeFilePath),
-        true)
+        hs.execute(strfmt([[
+          npx @electron/asar extract-file "%s" "%s"
+        ]], path, localeFilePath), true)
         if dirNotExistOrEmpty(tmpdir) then
           hs.execute(strfmt("mkdir -p '%s'", tmpdir))
         end
@@ -2294,7 +2379,8 @@ local function delocalizeQt(str, appid, appLocale)
 end
 
 local function delocalizeWPS(str, appLocale, localeFile)
-  local resourceDir = hs.application.pathForBundleID("com.kingsoft.wpsoffice.mac")
+  local resourceDir =
+      hs.application.pathForBundleID("com.kingsoft.wpsoffice.mac")
       .. '/Contents/Resources/office6/mui'
   local locale = getMatchedLocale(appLocale, resourceDir)
   if locale == nil then return end
@@ -2336,18 +2422,30 @@ end
 
 local function delocalizeZoteroMenu(str, appLocale)
   local resourceDir = hs.application.pathForBundleID("org.zotero.zotero") .. "/Contents/Resources"
-  local locales, status = hs.execute("unzip -l \"" .. resourceDir .. "/zotero.jar\" 'chrome/locale/*/' | grep -Eo 'chrome/locale/[^/]*' | grep -Eo '[a-zA-Z-]*$' | uniq")
+  local locales, status = hs.execute(strfmt([[
+    unzip -l '%s/zotero.jar' 'chrome/locale/*/' \
+    | grep -Eo 'chrome/locale/[^/]*' \
+    | grep -Eo '[a-zA-Z-]*$' \
+    | uniq
+  ]], resourceDir))
   if status ~= true then return end
   local locale = getMatchedLocale(appLocale, strsplit(locales, '\n'))
   if locale == nil then return end
   local localeFile = 'chrome/locale/' .. locale .. '/zotero/standalone.dtd'
   local enLocaleFile = 'chrome/locale/en-US/zotero/standalone.dtd'
   local key
-  key, status = hs.execute("unzip -p \"" .. resourceDir .. "/zotero.jar\" \"" .. localeFile .. "\""
-      .. " | awk '/<!ENTITY .* \"" .. str .. "\">/ { gsub(/<!ENTITY | \"" .. str .. "\">/, \"\"); printf \"%s\", $0 }'")
+  key, status = hs.execute(strfmt([[
+    unzip -p '%s/zotero.jar' '%s' \
+    | awk '/<!ENTITY .* "%s">/ {
+        gsub(/<!ENTITY | "%s">/, "");
+        printf "%%s", $0
+      }'
+  ]], resourceDir, localeFile, str, str))
   if status ~= true then return nil end
-  local enValue = hs.execute("unzip -p \"" .. resourceDir .. "/zotero.jar\" \"" .. enLocaleFile .. "\""
-      .. " | grep '" .. key .. "' | cut -d '\"' -f 2 | tr -d '\\n'")
+  local enValue = hs.execute(strfmt([[
+    unzip -p '%s/zotero.jar' '%s' \
+    | grep '%s' | cut -d '"' -f 2 | tr -d '\n'
+  ]], resourceDir, enLocaleFile, key))
   return enValue, locale
 end
 
@@ -2358,12 +2456,14 @@ local function delocalizeMATLABFigureMenu(str, appLocale)
   local localeFile = resourceDir .. '/' .. locale .. '/uistring/figuremenu.xml'
   local enLocaleFile = resourceDir .. '/en/uistring/figuremenu.xml'
   local shell_pattern = 'key="([^"]*?)">' .. str .. '\\(&amp;[A-Z]\\)</entry>'
-  local key, status = hs.execute(strfmt(
-      "grep -Eo '%s' '%s' | cut -d '\"' -f 2 | tr -d '\\n'", shell_pattern, localeFile))
+  local key, status = hs.execute(strfmt([[
+    grep -Eo '%s' '%s' | cut -d '"' -f 2 | tr -d '\n'
+  ]], shell_pattern, localeFile))
   if status and key ~= "" then
     local inverse_pattern = 'key="' .. key .. '">&amp;([^<]*?)</entry>'
-    local enValue, status = hs.execute(strfmt(
-        "grep -Eo '%s' '%s' | cut -d ';' -f 2  | cut -d '<' -f 1 | tr -d '\\n'", inverse_pattern, enLocaleFile))
+    local enValue, status = hs.execute(strfmt([[
+      grep -Eo '%s' '%s' | cut -d ';' -f 2  | cut -d '<' -f 1 | tr -d '\n'
+    ]], inverse_pattern, enLocaleFile))
     if status and enValue ~= "" then return enValue, locale end
   end
   return nil, locale
@@ -2425,7 +2525,10 @@ local function delocalizedStringImpl(str, appid, params, force)
       if menuItems ~= nil then
         tremove(menuItems, 1)
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
-          if tfind(menuItems, function(item) return item.AXTitle == title end) ~= nil then
+          if tfind(menuItems,
+              function(item)
+                return item.AXTitle == title
+              end) ~= nil then
             return str
           end
         end
@@ -2436,10 +2539,12 @@ local function delocalizedStringImpl(str, appid, params, force)
   local locale, localeDir, mode
 
   if framework.electron then
-    locale, localeDir = getElectronMatchedLocale(appid, appLocale, framework.electron)
+    locale, localeDir = getElectronMatchedLocale(
+        appid, appLocale, framework.electron)
     if locale == nil then return end
   elseif framework.java then
-    locale, localeDir = getJavaMatchedLocale(appid, appLocale, resourceDir, framework.java)
+    locale, localeDir = getJavaMatchedLocale(
+        appid, appLocale, resourceDir, framework.java)
     if locale == nil then return end
   end
   if not framework.mono then
@@ -2471,7 +2576,8 @@ local function delocalizedStringImpl(str, appid, params, force)
     local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
     for _, dir in ipairs(baseLocaleDirs) do
       if hs.fs.attributes(dir) ~= nil
-          and hs.fs.attributes(localeDir).ino == hs.fs.attributes(dir).ino then
+          and hs.fs.attributes(localeDir).ino
+              == hs.fs.attributes(dir).ino then
         return str
       end
     end
@@ -2516,7 +2622,8 @@ local function delocalizedStringImpl(str, appid, params, force)
   end
 
   if framework.electron then
-    result = delocalizeByElectron(str, appid, locale, localeDir, framework.electron)
+    result = delocalizeByElectron(str, appid, locale, localeDir,
+                                  framework.electron)
     return result, appLocale, locale
   end
 
@@ -2533,14 +2640,16 @@ local function delocalizedStringImpl(str, appid, params, force)
         or get(appLocaleDir, appid, appLocale) ~= locale then
       deLocaleInversedMap[appid] = {}
     end
-    result = delocalizeByStrings(str, localeDir, localeFile, deLocaleInversedMap[appid])
+    result = delocalizeByStrings(str, localeDir, localeFile,
+                                 deLocaleInversedMap[appid])
     if result ~= nil then return result end
 
     result = delocalizeByNIB(str, localeDir, localeFile, appid)
     if result ~= nil then return result end
 
     if str:sub(-3) == "..." or str:sub(-3) == "…" then
-      result, appLocale, locale = delocalizedStringImpl(str:sub(1, -4), appid, params)
+      result, appLocale, locale =
+          delocalizedStringImpl(str:sub(1, -4), appid, params)
       if result ~= nil then
         return result .. str:sub(-3), appLocale, locale
       end
@@ -2565,7 +2674,8 @@ local function delocalizedStringImpl(str, appid, params, force)
 end
 
 function delocalizedString(str, appid, params, force)
-  local result, appLocale, locale = delocalizedStringImpl(str, appid, params, force)
+  local result, appLocale, locale =
+      delocalizedStringImpl(str, appid, params, force)
   if appLocale == nil then return result end
 
   if appLocaleDir[appid] == nil then
@@ -2685,14 +2795,18 @@ function localizeCommonMenuItemTitles(locale, appid)
   local targetDelocMap = delocMap[target]
   local targetLocMap = locMap[target]
   for _, title in ipairs { 'File', 'View', 'Window', 'Help' } do
-    local escapedTitle = title:gsub('…', '\\U2026'):gsub('“', '\\U201C'):gsub('”', '\\U201D')
-    local localizedTitle = localizeByLoctable(escapedTitle, resourceDir, 'MenuCommands', matchedLocale)
+    local escapedTitle = title:gsub('…', '\\U2026')
+                              :gsub('“', '\\U201C')
+                              :gsub('”', '\\U201D')
+    local localizedTitle = localizeByLoctable(
+        escapedTitle, resourceDir, 'MenuCommands', matchedLocale)
     if localizedTitle ~= nil then
       targetDelocMap[localizedTitle] = title
       targetLocMap[title] = localizedTitle
     end
   end
-  local localizedTitle = localizeByLoctable('Edit', resourceDir, 'InputManager', matchedLocale)
+  local localizedTitle = localizeByLoctable(
+      'Edit', resourceDir, 'InputManager', matchedLocale)
   if localizedTitle ~= nil then
     targetDelocMap[localizedTitle] = 'Edit'
     targetLocMap['Edit'] = localizedTitle
@@ -2710,13 +2824,17 @@ function localizeCommonMenuItemTitles(locale, appid)
     })
   end
   for _, title in ipairs(titleList) do
-    local escapedTitle = title:gsub('…', '\\U2026'):gsub('“', '\\U201C'):gsub('”', '\\U201D')
-    local localizedTitle = localizeByLoctable(escapedTitle, resourceDir, 'MenuCommands', matchedLocale)
+    local escapedTitle = title:gsub('…', '\\U2026')
+                              :gsub('“', '\\U201C')
+                              :gsub('”', '\\U201D')
+    local localizedTitle = localizeByLoctable(
+        escapedTitle, resourceDir, 'MenuCommands', matchedLocale)
     if localizedTitle ~= nil then
       delocMap.common[localizedTitle] = title
     end
   end
-  local localizedTitle = localizeByLoctable('Emoji & Symbols', resourceDir, 'InputManager', matchedLocale)
+  local localizedTitle = localizeByLoctable(
+      'Emoji & Symbols', resourceDir, 'InputManager', matchedLocale)
   if localizedTitle ~= nil then
     delocMap.common[localizedTitle] = 'Emoji & Symbols'
   end
@@ -2753,7 +2871,8 @@ function delocalizedMenuItem(title, appid, params, system)
 
   local newTitle
   if params == nil then
-    newTitle = delocalizedString(title, appid, menuItemLocaleFilePatterns)
+    newTitle = delocalizedString(title, appid,
+                                 menuItemLocaleFilePatterns)
   elseif (#params == 0 and params.localeFile == nil) then
     local p = tcopy(params)
     p.localeFile = menuItemLocaleFilePatterns
@@ -2798,7 +2917,8 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
         delocTitle = defaultTitleMap[title]
         titleMap[title] = delocTitle
       elseif localeFile == nil then
-        delocTitle = delocalizedString(title, appid, menuItemLocaleFilePatterns)
+        delocTitle = delocalizedString(title, appid,
+                                       menuItemLocaleFilePatterns)
         if delocTitle == nil then
           delocTitle = delocalizedString(title, appid, nil, true)
         end
@@ -2811,7 +2931,8 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
         if not isValid(delocTitle) then
           if titleMap[delocTitle] ~= nil then
             delocTitle = titleMap[delocTitle]
-          elseif defaultTitleMap ~= nil and defaultTitleMap[delocTitle] ~= nil then
+          elseif defaultTitleMap ~= nil
+              and defaultTitleMap[delocTitle] ~= nil then
             delocTitle = defaultTitleMap[delocTitle]
           end
         end
@@ -2849,7 +2970,8 @@ function localizedMenuBarItem(title, appid, params)
   local appLocale = applicationLocale(appid)
   if find(appid) then
     if type(params) == 'table' and params.locale ~= nil
-        and params.locale == getMatchedLocale(appLocale, { params.locale }) then
+        and params.locale ==
+            getMatchedLocale(appLocale, { params.locale }) then
       if find(appid):findMenuItem({ title }) ~= nil then
         return title
       end
@@ -2870,7 +2992,8 @@ function localizedMenuBarItem(title, appid, params)
 
   local locTitle
   if params == nil then
-    locTitle = localizedString(title, appid, menuItemLocaleFilePatterns)
+    locTitle = localizedString(title, appid,
+                               menuItemLocaleFilePatterns)
   elseif (#params == 0 and params.localeFile == nil) then
     local p = tcopy(params)
     p.localeFile = menuItemLocaleFilePatterns
@@ -2901,10 +3024,12 @@ function applicationValidLocale(appid)
   local resourceDir, framework = getResourceDir(appid)
   local locale, mode
   if framework.electron then
-    locale = getElectronMatchedLocale(appid, appLocale, framework.electron)
+    locale = getElectronMatchedLocale(
+        appid, appLocale, framework.electron)
     if locale == nil then return end
   elseif framework.java then
-    locale = getJavaMatchedLocale(appid, appLocale, resourceDir, framework.java)
+    locale = getJavaMatchedLocale(
+        appid, appLocale, resourceDir, framework.java)
     if locale == nil then return end
   end
   if not framework.mono then
@@ -2942,7 +3067,8 @@ function displayName(app)
   local appname = get(appLocaleMap, appid, appLocale, basename)
   if appname ~= nil then return appname end
 
-  local resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
+  local resourceDir = hs.application.pathForBundleID(appid)
+      .. "/Contents/Resources"
   local locale = get(appLocaleDir, appid, appLocale)
   if locale == false then return basename end
   if locale == nil then
@@ -3002,7 +3128,8 @@ function hiddenByBartender(id, index)
         "~/Library/Preferences/com.surteesstudios.Bartender.plist")
   if plistPath ~= nil then
     local plist = hs.plist.read(plistPath)
-    local allwaysShown = get(plist, "ProfileSettings", "activeProfile", "Show")
+    local allwaysShown = get(plist, "ProfileSettings",
+                             "activeProfile", "Show")
     local itemRepr
     if type(index) == 'number' then
       itemRepr = id .. '-Item-' .. (index - 1)
