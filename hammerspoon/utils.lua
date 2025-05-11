@@ -2857,7 +2857,15 @@ function localizedMenuBarItem(title, appid, params)
   end
   if appLocale == getMatchedLocale(SYSTEM_LOCALE, { appLocale }) then
     local locTitle = locMap.common[title]
-    if locTitle ~= nil then return locTitle end
+    if locTitle ~= nil then
+      if (title == 'View' or title == 'Edit') and find(appid) then
+        if find(appid):findMenuItem({ locTitle }) ~= nil then
+          return locTitle
+        end
+      else
+        return locTitle
+      end
+    end
   end
 
   local locTitle
