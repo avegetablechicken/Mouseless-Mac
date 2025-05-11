@@ -2428,7 +2428,7 @@ local function delocalizeZoteroMenu(str, appLocale)
     resourceFile = resourceDir .. '/omni.ja'
   end
   local locales, status = hs.execute(strfmt([[
-    unzip -l '%s' 'chrome/locale/*/' \
+    unzip -l '%s' 'chrome/locale/*' \
     | grep -Eo 'chrome/locale/[^/]*' \
     | grep -Eo '[a-zA-Z-]*$' \
     | uniq
