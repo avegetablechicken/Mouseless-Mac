@@ -2422,12 +2422,17 @@ end
 
 local function delocalizeZoteroMenu(str, appLocale)
   local resourceDir = hs.application.pathForBundleID("org.zotero.zotero") .. "/Contents/Resources"
+  local resourceFile = resourceDir .. '/zotero.jar'
+  if hs.fs.attributes(resourceFile) == nil then
+    resourceDir = resourceDir .. '/app'
+    resourceFile = resourceDir .. '/omni.ja'
+  end
   local locales, status = hs.execute(strfmt([[
-    unzip -l '%s/zotero.jar' 'chrome/locale/*/' \
+    unzip -l '%s' 'chrome/locale/*/' \
     | grep -Eo 'chrome/locale/[^/]*' \
     | grep -Eo '[a-zA-Z-]*$' \
     | uniq
-  ]], resourceDir))
+  ]], resourceFile))
   if status ~= true then return end
   local locale = getMatchedLocale(appLocale, strsplit(locales, '\n'))
   if locale == nil then return end
@@ -2435,17 +2440,17 @@ local function delocalizeZoteroMenu(str, appLocale)
   local enLocaleFile = 'chrome/locale/en-US/zotero/standalone.dtd'
   local key
   key, status = hs.execute(strfmt([[
-    unzip -p '%s/zotero.jar' '%s' \
+    unzip -p '%s' '%s' \
     | awk '/<!ENTITY .* "%s">/ {
         gsub(/<!ENTITY | "%s">/, "");
         printf "%%s", $0
       }'
-  ]], resourceDir, localeFile, str, str))
+  ]], resourceFile, localeFile, str, str))
   if status ~= true then return nil end
   local enValue = hs.execute(strfmt([[
-    unzip -p '%s/zotero.jar' '%s' \
+    unzip -p '%s' '%s' \
     | grep '%s' | cut -d '"' -f 2 | tr -d '\n'
-  ]], resourceDir, enLocaleFile, key))
+  ]], resourceFile, enLocaleFile, key))
   return enValue, locale
 end
 
