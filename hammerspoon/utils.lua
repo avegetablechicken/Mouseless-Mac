@@ -2689,6 +2689,10 @@ end
 
 localizeCommonMenuItemTitles(SYSTEM_LOCALE)
 
+local menuItemLocaleFilePatterns = {
+  "(.-)MainMenu(.-)", "Menu", "MenuBar", "MenuItems",
+}
+
 function delocalizedMenuItem(title, appid, params, system)
   if type(params) == 'boolean' then
     system = params params = nil
@@ -2711,7 +2715,18 @@ function delocalizedMenuItem(title, appid, params, system)
     end
   end
   if system then return end
-  local newTitle = delocalizedString(title, appid, params)
+
+  local newTitle
+  if params == nil then
+    newTitle = delocalizedString(title, appid, menuItemLocaleFilePatterns)
+  elseif (#params == 0 and params.localeFile == nil) then
+    local p = tcopy(params)
+    p.localeFile = menuItemLocaleFilePatterns
+    newTitle = delocalizedString(title, appid, p)
+  end
+  if newTitle == nil then
+    newTitle = delocalizedString(title, appid, params, true)
+  end
   if newTitle ~= nil then
     if titleMap == nil then
       delocMap[appid] = {}
@@ -2746,6 +2761,12 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
         delocTitle = titleMap[title]
       elseif defaultTitleMap ~= nil and defaultTitleMap[title] ~= nil then
         delocTitle = defaultTitleMap[title]
+        titleMap[title] = delocTitle
+      elseif localeFile == nil then
+        delocTitle = delocalizedString(title, appid, menuItemLocaleFilePatterns)
+        if delocTitle == nil then
+          delocTitle = delocalizedString(title, appid, nil, true)
+        end
         titleMap[title] = delocTitle
       else
         delocTitle = delocalizedString(title, appid, localeFile)
