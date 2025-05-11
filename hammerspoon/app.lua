@@ -269,7 +269,6 @@ local function getFinderSidebarItem(idx)
         cnt = cnt + 1
       end
       if cnt == idx then
-        print(idx, row, getc(row, AX.Cell, 1, AX.StaticText, 1), getc(row, AX.Cell, 1))
         return true, getc(row, AX.Cell, 1)
       end
     end

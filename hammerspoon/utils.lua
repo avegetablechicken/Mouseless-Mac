@@ -915,7 +915,7 @@ local function localizeByLoctable(str, resourceDir, localeFile, locale)
     for file in hs.fs.dir(resourceDir) do
       if file:sub(-9) == '.loctable' then
         for _, p in ipairs(localeFile) do
-          if file:sub(1, -10):match('^' .. p:gsub('%-', '%%-') .. '$') then
+          if file:sub(1, -10):match('^' .. p .. '$') then
             tinsert(loctableFiles, file:sub(1, -10))
           end
         end
@@ -1052,7 +1052,7 @@ local function localizeByStrings(str, localeDir, localeFile, localesDict, locale
     for file in hs.fs.dir(localeDir) do
       if file:sub(-8) == '.strings' then
         for _, p in ipairs(localeFile) do
-          if file:sub(1, -9):match('^' .. p:gsub('%-', '%%-') .. '$') then
+          if file:sub(1, -9):match('^' .. p .. '$') then
             tinsert(preferentialStringsFiles, file:sub(1, -9))
           end
         end
@@ -1251,7 +1251,7 @@ local function localizeByNIB(str, localeDir, localeFile, appid)
     for file in hs.fs.dir(localeDir) do
       if file:sub(-4) == '.nib' then
         for _, p in ipairs(localeFile) do
-          if file:sub(1, -5):match('^' .. p:gsub('%-', '%%-') .. '$') then
+          if file:sub(1, -5):match('^' .. p .. '$') then
             tinsert(nibFiles, file:sub(1, -5))
           end
         end
@@ -1524,7 +1524,7 @@ local function localizeWPS(str, appLocale, localeFile)
       local valid = true
       if localeFile then
         valid = hs.fnutils.some(localeFile, function(p)
-          return file:sub(1, -4):match('^' .. p:gsub('%-', '%%-') .. '$')
+          return file:sub(1, -4):match('^' .. p .. '$')
         end)
       end
       if valid then
@@ -1544,7 +1544,7 @@ local function localizeWPS(str, appLocale, localeFile)
         local valid = true
         if localeFile then
           valid = hs.fnutils.some(localeFile, function(p)
-            return file:sub(1, -4):match('^' .. p:gsub('%-', '%%-') .. '$')
+            return file:sub(1, -4):match('^' .. p .. '$')
           end)
         end
         if valid then
@@ -1616,7 +1616,7 @@ end
 
 local function localizedStringImpl(str, appid, params, force)
   local appLocale, localeFile, localeFramework
-  if type(params) == "table" then
+  if type(params) == "table" and #params == 0 then
     appLocale = params.locale
     localeFile = params.localeFile
     localeFramework = params.framework

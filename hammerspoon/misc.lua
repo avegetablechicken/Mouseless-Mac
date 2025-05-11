@@ -124,7 +124,7 @@ end
 local defaultVerificationPattern = 'verification code'
 local locDefaultVerificationPattern = localizedString(
   defaultVerificationPattern, {
-    localeFile = 'AB-NARWHAL',
+    localeFile = 'AB%-NARWHAL',
     framework = 'AddressBookCore.framework',
   })
 if locDefaultVerificationPattern then
