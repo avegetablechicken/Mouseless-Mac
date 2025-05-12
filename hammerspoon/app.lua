@@ -6279,7 +6279,7 @@ local function processAppWithNoWindows(app, quit, delay)
       local windowFilterRules = quit and appsAutoQuitWithNoWindows
           or appsAutoHideWithNoWindows
       local windowFilter = hs.window.filter.new(false):setAppFilter(
-          appid, windowFilterRules[appid])
+          app:name(), windowFilterRules[appid])
       return tfind(app:visibleWindows(), function(win)
         return windowFilter:isWindowAllowed(win)
       end) == nil
