@@ -454,8 +454,7 @@ local function deleteAllCalls(win)
       localizedString("Recent Calls", win:application():bundleID()) then
     local section = getc(collection, AX.Button, 1)
     if section ~= nil then
-      local position = { section.AXPosition.x + 50, section.AXPosition.y + 10 }
-      if not rightClick(position, win:application():name()) then return end
+      if not rightClick(uioffset(section, { 50, 10 }), win:application():name()) then return end
       local popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
       local maxTime, time = 0.5, 0
       while popup == nil and time < maxTime do
@@ -464,7 +463,7 @@ local function deleteAllCalls(win)
         popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
       end
       if popup == nil then
-        if not rightClick(position, win:application():name()) then return end
+        if not rightClick(uioffset(section, { 50, 10 }), win:application():name()) then return end
         popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
         time = 0
         while popup == nil and time < maxTime do
@@ -5882,8 +5881,7 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
       elseif actionNames ~= nil and tcontain(actionNames, AX.Press) then
         menu:performAction(AX.Press)
       else
-        local position = { menu.AXPosition.x + 5, menu.AXPosition.y + 5 }
-        leftClick(position, app:name())
+        leftClick(uioffset(menu, { 5, 5 }), app:name())
       end
     end
   else
