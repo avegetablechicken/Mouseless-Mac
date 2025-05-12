@@ -7015,8 +7015,8 @@ function App_applicationCallback(appname, eventType, app)
     end
   end
   if eventType == hs.application.watcher.deactivated then
-    local frontWinAppBid = hs.application.frontmostApplication():bundleID()
-    if remoteDesktopsMappingModifiers[frontWinAppBid] == nil then
+    local frontAppID = hs.application.frontmostApplication():bundleID()
+    if remoteDesktopsMappingModifiers[frontAppID] == nil then
       if RemoteDesktopModifierTapper:isEnabled() then
         RemoteDesktopModifierTapper:stop()
       end
