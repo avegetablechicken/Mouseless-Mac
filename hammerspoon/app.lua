@@ -6847,6 +6847,9 @@ local appsLaunchSlow = {
   ["com.google.Chrome"] = function(app)
     return findMenuItem(app, { "Help" }) ~= nil
   end,
+  ["org.zotero.zotero"] = function(app)
+    return app:getMenuItems() ~= nil
+  end,
   ["com.microsoft.VSCode"] = function(app)
     return app:getMenuItems() ~= nil and #app:getMenuItems() > 1
   end,
