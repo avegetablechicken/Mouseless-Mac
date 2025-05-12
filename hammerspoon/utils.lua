@@ -1864,14 +1864,6 @@ local function localizedStringImpl(str, appid, params, force)
 
     result = localizeByNIB(str, localeDir, localeFile, appid)
     if result ~= nil then return result end
-
-    if str:sub(-3) == "..." or str:sub(-3) == "…" then
-      result, appLocale, locale =
-          localizedStringImpl(str:sub(1, -4), appid, params)
-      if result ~= nil then
-        return result .. str:sub(-3), appLocale, locale
-      end
-    end
   end
 
   if framework.user then
@@ -1888,7 +1880,15 @@ local function localizedStringImpl(str, appid, params, force)
     localeDir = userLocaleDir
   end
   result = defaultAction(framework.user)
-  return result, appLocale, locale
+  if result ~= nil then return result, appLocale, locale end
+
+  if str:sub(-3) == "..." or str:sub(-3) == "…" then
+    result, appLocale, locale =
+        localizedStringImpl(str:sub(1, -4), appid, params)
+    if result ~= nil then
+      return result .. str:sub(-3), appLocale, locale
+    end
+  end
 end
 
 function localizedString(str, appid, params, force)
@@ -2651,14 +2651,6 @@ local function delocalizedStringImpl(str, appid, params, force)
 
     result = delocalizeByNIB(str, localeDir, localeFile, appid)
     if result ~= nil then return result end
-
-    if str:sub(-3) == "..." or str:sub(-3) == "…" then
-      result, appLocale, locale =
-          delocalizedStringImpl(str:sub(1, -4), appid, params)
-      if result ~= nil then
-        return result .. str:sub(-3), appLocale, locale
-      end
-    end
   end
 
   if framework.user then
@@ -2675,7 +2667,15 @@ local function delocalizedStringImpl(str, appid, params, force)
     localeDir = userLocaleDir
   end
   result = defaultAction(framework.user)
-  return result, appLocale, locale
+  if result ~= nil then return result, appLocale, locale end
+
+  if str:sub(-3) == "..." or str:sub(-3) == "…" then
+    result, appLocale, locale =
+        delocalizedStringImpl(str:sub(1, -4), appid, params)
+    if result ~= nil then
+      return result .. str:sub(-3), appLocale, locale
+    end
+  end
 end
 
 function delocalizedString(str, appid, params, force)
