@@ -166,7 +166,75 @@ local function registerAppHotkeys()
 end
 
 registerAppHotkeys()
+-- ## function utilities for process management on app switching
 
+-- for apps whose launching can be detected by Hammerspoon
+local processesOnLaunch = {}
+local appsLaunchSilently = ApplicationConfigs["launchSilently"] or {}
+local function execOnLaunch(appid, action, onlyFirstTime)
+  if tcontain(appsLaunchSilently, appid) then
+    ExecOnSilentLaunch(appid, action)
+  end
+
+  if processesOnLaunch[appid] == nil then
+    processesOnLaunch[appid] = {}
+  end
+
+  if onlyFirstTime then
+    local idx = #processesOnLaunch[appid] + 1
+    local oldAction = action
+    action = function(app)
+      oldAction(app)
+      tremove(processesOnLaunch[appid], idx)
+    end
+  end
+
+  tinsert(processesOnLaunch[appid], action)
+end
+
+local processesOnActivated = {}
+local function execOnActivated(appid, action)
+  if processesOnActivated[appid] == nil then
+    processesOnActivated[appid] = {}
+  end
+  tinsert(processesOnActivated[appid], action)
+end
+
+local processesOnDeactivated = {}
+local function execOnDeactivated(appid, action)
+  if processesOnDeactivated[appid] == nil then
+    processesOnDeactivated[appid] = {}
+  end
+  tinsert(processesOnDeactivated[appid], action)
+end
+
+local processesOnQuit = {}
+local function execOnQuit(appid, action)
+  if tcontain(appsLaunchSilently, appid) then
+    ExecOnSilentQuit(appid, action)
+  end
+
+  if processesOnQuit[appid] == nil then
+    processesOnQuit[appid] = {}
+  end
+  tinsert(processesOnQuit[appid], action)
+end
+
+local observersStopOnDeactivated = {}
+local function stopOnDeactivated(appid, observer, action)
+  if observersStopOnDeactivated[appid] == nil then
+    observersStopOnDeactivated[appid] = {}
+  end
+  tinsert(observersStopOnDeactivated[appid], { observer, action })
+end
+
+local observersStopOnQuit = {}
+local function stopOnQuit(appid, observer, action)
+  if observersStopOnQuit[appid] == nil then
+    observersStopOnQuit[appid] = {}
+  end
+  tinsert(observersStopOnQuit[appid], { observer, action })
+end
 
 -- # hotkeys in specific application
 local appHotKeyCallbacks
@@ -5116,7 +5184,6 @@ local function registerDaemonAppInWinHotkeys(appid, filter, event)
   end
 end
 
-local execOnQuit, stopOnQuit
 local function registerSingleWinFilterForDaemonApp(app, filter)
   local appid = app:bundleID()
   if filter.allowSheet or filter.allowPopover
@@ -5306,76 +5373,6 @@ local function registerObserversForMenuBarMenu(app, appConfig)
   end
 end
 
--- ## function utilities for process management on app switching
-
--- for apps whose launching can be detected by Hammerspoon
-local processesOnLaunch = {}
-local appsLaunchSilently = ApplicationConfigs["launchSilently"] or {}
-local function execOnLaunch(appid, action, onlyFirstTime)
-  if tcontain(appsLaunchSilently, appid) then
-    ExecOnSilentLaunch(appid, action)
-  end
-
-  if processesOnLaunch[appid] == nil then
-    processesOnLaunch[appid] = {}
-  end
-
-  if onlyFirstTime then
-    local idx = #processesOnLaunch[appid] + 1
-    local oldAction = action
-    action = function(app)
-      oldAction(app)
-      tremove(processesOnLaunch[appid], idx)
-    end
-  end
-
-  tinsert(processesOnLaunch[appid], action)
-end
-
-local processesOnActivated = {}
-local function execOnActivated(appid, action)
-  if processesOnActivated[appid] == nil then
-    processesOnActivated[appid] = {}
-  end
-  tinsert(processesOnActivated[appid], action)
-end
-
-local processesOnDeactivated = {}
-local function execOnDeactivated(appid, action)
-  if processesOnDeactivated[appid] == nil then
-    processesOnDeactivated[appid] = {}
-  end
-  tinsert(processesOnDeactivated[appid], action)
-end
-
-local processesOnQuit = {}
-function execOnQuit(appid, action)
-  if tcontain(appsLaunchSilently, appid) then
-    ExecOnSilentQuit(appid, action)
-  end
-
-  if processesOnQuit[appid] == nil then
-    processesOnQuit[appid] = {}
-  end
-  tinsert(processesOnQuit[appid], action)
-end
-
-local observersStopOnDeactivated = {}
-local function stopOnDeactivated(appid, observer, action)
-  if observersStopOnDeactivated[appid] == nil then
-    observersStopOnDeactivated[appid] = {}
-  end
-  tinsert(observersStopOnDeactivated[appid], { observer, action })
-end
-
-local observersStopOnQuit = {}
-function stopOnQuit(appid, observer, action)
-  if observersStopOnQuit[appid] == nil then
-    observersStopOnQuit[appid] = {}
-  end
-  tinsert(observersStopOnQuit[appid], { observer, action })
-end
-
 local appLocales = {} -- if app locale changes, it may change its menu bar items, so need to rebind
 local function updateAppLocale(appid)
   if type(appid) ~= 'string' then appid = appid:bundleID() end
@@ -5393,107 +5390,8 @@ local function updateAppLocale(appid)
   return false
 end
 
-local frontApp = hs.application.frontmostApplication()
-if frontApp then
-  local appid = frontApp:bundleID()
-  appLocales[appid] = applicationLocale(appid)
-end
-
-for _, appid in ipairs(appsLaunchSilently) do
-  ExecOnSilentLaunch(appid, bind(updateAppLocale, appid))
-end
-
--- register hotkeys for background apps
-for appid, appConfig in pairs(appHotKeyCallbacks) do
-  registerRunningAppHotKeys(appid)
-  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
-  for hkID, cfg in pairs(appConfig) do
-    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
-    local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    local isBackground = keybinding.background ~= nil
-        and keybinding.background or cfg.background
-    local isPersistent = keybinding.persist ~= nil
-        and keybinding.persist or cfg.persist
-    local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
-    if hasKey and not isForWindow and isBackground and not isPersistent then
-      execOnLaunch(appid, bind(registerRunningAppHotKeys, appid))
-      execOnQuit(appid, bind(unregisterRunningAppHotKeys, appid, false))
-      break
-    end
-  end
-end
-
--- register hotkeys for active app
-if frontApp then
-  registerInAppHotKeys(frontApp)
-end
-
--- register hotkeys for focused window of active app
-if frontApp then
-  registerInWinHotKeys(frontApp)
-end
-
--- register watchers for focused window belonging to daemon app
-for appid, appConfig in pairs(appHotKeyCallbacks) do
-  local app = find(appid)
-  if app ~= nil then
-    registerWinFiltersForDaemonApp(app, appConfig)
-  end
-  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
-  for hkID, cfg in pairs(appConfig) do
-    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
-    local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
-    local isBackground = keybinding.background ~= nil
-        and keybinding.background or cfg.background
-    if hasKey and isForWindow and isBackground then
-      execOnLaunch(appid, function(app)
-        registerWinFiltersForDaemonApp(app, appConfig)
-      end)
-      break
-    end
-  end
-end
-
--- register watchers for menu of menubar app
-for appid, appConfig in pairs(appHotKeyCallbacks) do
-  local app = find(appid)
-  if app ~= nil then
-    registerObserversForMenuBarMenu(app, appConfig)
-  end
-  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
-  for hkID, cfg in pairs(appConfig) do
-    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
-    local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    local isMenuBarMenu = keybinding.menubar ~= nil
-        and keybinding.menubar or cfg.menubar
-    if hasKey and isMenuBarMenu then
-      execOnLaunch(appid, function(app)
-        registerObserversForMenuBarMenu(app, appConfig)
-      end)
-      break
-    end
-  end
-end
-
--- register hotkeys for focused window belonging to daemon app
-local frontWin = hs.window.frontmostWindow()
-if frontWin ~= nil then
-  local frontWinAppBid = frontWin:application():bundleID()
-  if DaemonAppFocusedWindowFilters[frontWinAppBid] ~= nil then
-    for filter, _ in pairs(DaemonAppFocusedWindowFilters[frontWinAppBid]) do
-      local filterEnable = hs.window.filter.new(false):setAppFilter(
-          frontWin:application():title(), filter)
-      if filterEnable:isWindowAllowed(frontWin) then
-        registerDaemonAppInWinHotkeys(frontWinAppBid, filter)
-      end
-    end
-  end
-end
-
 
 -- ## hotkeys or configs shared by multiple apps
-local frontAppMenuItems = frontApp and frontApp:getMenuItems() or nil
 
 -- basically aims to remap ctrl+` to shift+ctrl+tab to make it more convenient for fingers
 local remapPreviousTabHotkey
@@ -5522,10 +5420,6 @@ local function remapPreviousTab(app, menuItems)
       fn = fn, repeatedfn = fn, condition = cond
     })
   end
-end
-
-if frontApp then
-  remapPreviousTab(frontApp, frontAppMenuItems)
 end
 
 -- register hotkey to open recent when it is available
@@ -5595,9 +5489,6 @@ local function registerOpenRecent(app)
     })
   end
 end
-if frontApp then
-  registerOpenRecent(frontApp)
-end
 
 local zoomHotkeys = {}
 local function registerZoomHotkeys(app)
@@ -5649,9 +5540,6 @@ local function registerZoomHotkeys(app)
       })
     end
   end
-end
-if frontApp then
-  registerZoomHotkeys(frontApp)
 end
 
 -- bind hotkeys for open or save panel that are similar in `Finder`
@@ -5812,9 +5700,6 @@ local function registerForOpenSavePanel(app)
       windowFilter = nil
     end
   end)
-end
-if frontApp then
-  registerForOpenSavePanel(frontApp)
 end
 
 -- bind `alt+?` hotkeys to select left menu bar items
@@ -6144,9 +6029,6 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
     end
   end
 end
-if frontApp then
-  altMenuBarItem(frontApp, frontAppMenuItems)
-end
 
 -- some apps may change their menu bar items irregularly
 appswatchMenuBarItems = get(ApplicationConfigs,
@@ -6264,9 +6146,116 @@ registerObserverForMenuBarChange = function(app, menuItems)
       end
     end)
 end
-if frontApp then
-  registerObserverForMenuBarChange(frontApp, frontAppMenuItems)
+
+
+-- register hotekys & watchers for hotkeys
+
+local frontApp = hs.application.frontmostApplication()
+local frontAppID = frontApp and frontApp:bundleID() or nil
+local frontWin = hs.window.frontmostWindow()
+local frontWinAppID = frontWin and frontWin:application():bundleID() or nil
+
+-- update apps' locales
+if frontAppID then
+  appLocales[frontAppID] = applicationLocale(frontAppID)
 end
+for _, appid in ipairs(appsLaunchSilently) do
+  ExecOnSilentLaunch(appid, bind(updateAppLocale, appid))
+end
+
+-- register hotkeys for background apps
+for appid, appConfig in pairs(appHotKeyCallbacks) do
+  registerRunningAppHotKeys(appid)
+  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
+  for hkID, cfg in pairs(appConfig) do
+    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+    local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    local isBackground = keybinding.background ~= nil
+        and keybinding.background or cfg.background
+    local isPersistent = keybinding.persist ~= nil
+        and keybinding.persist or cfg.persist
+    local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
+    if hasKey and not isForWindow and isBackground and not isPersistent then
+      execOnLaunch(appid, bind(registerRunningAppHotKeys, appid))
+      execOnQuit(appid, bind(unregisterRunningAppHotKeys, appid, false))
+      break
+    end
+  end
+end
+
+-- register hotkeys for active app
+if frontApp then
+  local frontAppMenuItems = frontApp and frontApp:getMenuItems() or nil
+
+  registerForOpenSavePanel(frontApp)
+  altMenuBarItem(frontApp, frontAppMenuItems)
+  registerInAppHotKeys(frontApp)
+  registerInWinHotKeys(frontApp) -- for focused window
+
+  remapPreviousTab(frontApp, frontAppMenuItems)
+  registerOpenRecent(frontApp)
+  registerZoomHotkeys(frontApp)
+  if frontAppMenuItems then
+    registerObserverForMenuBarChange(frontApp, frontAppMenuItems)
+  end
+end
+
+-- register watchers for focused window belonging to daemon app
+for appid, appConfig in pairs(appHotKeyCallbacks) do
+  local app = find(appid)
+  if app ~= nil then
+    registerWinFiltersForDaemonApp(app, appConfig)
+  end
+  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
+  for hkID, cfg in pairs(appConfig) do
+    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+    local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
+    local isBackground = keybinding.background ~= nil
+        and keybinding.background or cfg.background
+    if hasKey and isForWindow and isBackground then
+      execOnLaunch(appid, function(app)
+        registerWinFiltersForDaemonApp(app, appConfig)
+      end)
+      break
+    end
+  end
+end
+
+-- register watchers for menu of menubar app
+for appid, appConfig in pairs(appHotKeyCallbacks) do
+  local app = find(appid)
+  if app ~= nil then
+    registerObserversForMenuBarMenu(app, appConfig)
+  end
+  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
+  for hkID, cfg in pairs(appConfig) do
+    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+    local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    local isMenuBarMenu = keybinding.menubar ~= nil
+        and keybinding.menubar or cfg.menubar
+    if hasKey and isMenuBarMenu then
+      execOnLaunch(appid, function(app)
+        registerObserversForMenuBarMenu(app, appConfig)
+      end)
+      break
+    end
+  end
+end
+
+-- register hotkeys for focused window belonging to daemon app
+if frontWin ~= nil then
+  if DaemonAppFocusedWindowFilters[frontWinAppID] ~= nil then
+    for filter, _ in pairs(DaemonAppFocusedWindowFilters[frontWinAppID]) do
+      local filterEnable = hs.window.filter.new(false):setAppFilter(
+          frontWin:application():name(), filter)
+      if filterEnable:isWindowAllowed(frontWin) then
+        registerDaemonAppInWinHotkeys(frontWinAppID, filter)
+      end
+    end
+  end
+end
+
 
 -- auto hide or quit apps with no windows (including pseudo windows suck as popover or sheet)
 local appsAutoHideWithNoWindows = {}
@@ -6750,7 +6739,7 @@ function(ev)
   return false
 end)
 
-if frontApp and remoteDesktopsMappingModifiers[frontApp:bundleID()] then
+if frontApp and remoteDesktopsMappingModifiers[frontAppID] then
   RemoteDesktopModifierTapper:start()
 end
 for appid, _ in pairs(remoteDesktopsMappingModifiers) do
@@ -6779,7 +6768,7 @@ end
 local remoteDesktopAppsRequireSuspendHotkeys =
     ApplicationConfigs["suspendHotkeysInRemoteDesktop"] or {}
 for _, appid in ipairs(remoteDesktopAppsRequireSuspendHotkeys) do
-  if frontApp and frontApp:bundleID() == appid then
+  if frontAppID == appid then
     suspendHotkeysInRemoteDesktop(frontApp)
   end
   execOnActivated(appid, suspendHotkeysInRemoteDesktop)
@@ -6798,7 +6787,7 @@ local function watchForRemoteDesktopWindow(app)
 end
 
 for _, appid in ipairs(remoteDesktopAppsRequireSuspendHotkeys) do
-  if frontApp and frontApp:bundleID() == appid then
+  if frontAppID == appid then
     watchForRemoteDesktopWindow(frontApp)
   end
   execOnActivated(appid, watchForRemoteDesktopWindow)
