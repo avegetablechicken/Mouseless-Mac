@@ -4906,7 +4906,8 @@ local function registerInAppHotKeys(app)
       local isBackground = keybinding.background ~= nil
           and keybinding.background or cfg.background
       local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
-      local isMenuBarMenu = keybinding.menubar ~= nil or cfg.menubar ~= nil
+      local isMenuBarMenu = keybinding.menubar ~= nil
+          and keybinding.menubar or cfg.menubar ~= nil
       local bindable = function()
         return cfg.bindCondition == nil or cfg.bindCondition(app)
       end
