@@ -20,10 +20,8 @@ function()
   hs.timer.doAfter(10, function()
     if task:isRunning() then task:terminate() end
     if not _ShortcutsLaunched then
-      local shortcutsObj = find("com.apple.shortcuts")
-      if shortcutsObj then
-          shortcutsObj:kill()
-      end
+      local app = find("com.apple.shortcuts")
+      if app then app:kill() end
     end
   end)
 end).icon = iconForShortcuts
@@ -39,10 +37,8 @@ function()
   hs.timer.doAfter(10, function()
     if task:isRunning() then task:terminate() end
     if not _ShortcutsLaunched then
-      local shortcutsObj = find("com.apple.shortcuts")
-      if shortcutsObj then
-          shortcutsObj:kill()
-      end
+      local app = find("com.apple.shortcuts")
+      if app then app:kill() end
     end
   end)
 end).icon = iconForShortcuts

@@ -5807,13 +5807,13 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
   if app:focusedWindow() ~= nil then
     local winUI = towinui(app:focusedWindow())
     if #getc(winUI, AX.MenuBar) > 0 then
-      local menuObj = getc(winUI, AX.MenuBar, 1, AX.Menu)
-      if #menuObj == 0 then
-        menuObj = getc(winUI, AX.MenuBar, 1, AX.MenuBar)
+      local menus = getc(winUI, AX.MenuBar, 1, AX.Menu)
+      if #menus == 0 then
+        menus = getc(winUI, AX.MenuBar, 1, AX.MenuBar)
       end
-      if #menuObj > 0 then
+      if #menus > 0 then
         useWindowMenuBar = true
-        menuBarItemTitles = hs.fnutils.map(menuObj, function(item)
+        menuBarItemTitles = hs.fnutils.map(menus, function(item)
           return item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "")
         end)
         tinsert(menuBarItemTitles, 1, app:name())
@@ -5865,24 +5865,24 @@ altMenuBarItem = function(app, menuItems, reinvokeKey)
   if useWindowMenuBar then
     clickMenuCallback = function(title, k)
       local winUI = towinui(app:focusedWindow())
-      local menuObj = getc(winUI, AX.MenuBar, 1, AX.Menu)
-      if menuObj == nil or #menuObj == 0 then
-        menuObj = getc(winUI, AX.MenuBar, 1, AX.MenuBar)
+      local menus = getc(winUI, AX.MenuBar, 1, AX.Menu)
+      if menus == nil or #menus == 0 then
+        menus = getc(winUI, AX.MenuBar, 1, AX.MenuBar)
       end
-      local targetMenuObj = tfind(menuObj or {}, function(item)
+      local menu = tfind(menus or {}, function(item)
         return item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "") == title
       end)
-      if targetMenuObj == nil then
+      if menu == nil then
         processInvalidAltMenu(app, k)
         return
       end
-      local actionNames = targetMenuObj:actionNames()
+      local actionNames = menu:actionNames()
       if actionNames ~= nil and tcontain(actionNames, AX.Pick) then
-        targetMenuObj:performAction(AX.Pick)
+        menu:performAction(AX.Pick)
       elseif actionNames ~= nil and tcontain(actionNames, AX.Press) then
-        targetMenuObj:performAction(AX.Press)
+        menu:performAction(AX.Press)
       else
-        local position = { targetMenuObj.AXPosition.x + 5, targetMenuObj.AXPosition.y + 5 }
+        local position = { menu.AXPosition.x + 5, menu.AXPosition.y + 5 }
         leftClick(position, app:name())
       end
     end
