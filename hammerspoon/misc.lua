@@ -223,6 +223,22 @@ local modifierSymbolMap = {
   ["trackpad:bottom-right"] = "⌟",
 }
 
+local keySymbolMap = {
+  ESCAPE = "⎋",
+  TAB = "⇥",
+  SPACE = "␣",
+  DELETE = "⌫",
+  RETURN = "⏎",
+  LEFT = "←",
+  RIGHT = "→",
+  UP = "↑",
+  DOWN = "↓",
+  HOME = "↖",
+  END = "↘",
+  PAGEUP = "⇞",
+  PAGEDOWN = "⇟",
+}
+
 local function loadKarabinerKeyBindings(filePath)
   local json = hs.json.read(filePath)
   local keyBindings = {}
@@ -531,19 +547,9 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
     if pos ~= nil then
       local actualMsg = entry.msg:sub(pos + 2)
       local hkRepr = entry.msg:sub(1, pos - 1)
-      hkRepr = hkRepr:gsub("ESCAPE", "⎋")
-      hkRepr = hkRepr:gsub("TAB", "⇥")
-      hkRepr = hkRepr:gsub("SPACE", "␣")
-      hkRepr = hkRepr:gsub("DELETE", "⌫")
-      hkRepr = hkRepr:gsub("RETURN", "⏎")
-      hkRepr = hkRepr:gsub("LEFT", "←")
-      hkRepr = hkRepr:gsub("RIGHT", "→")
-      hkRepr = hkRepr:gsub("UP", "↑")
-      hkRepr = hkRepr:gsub("DOWN", "↓")
-      hkRepr = hkRepr:gsub("HOME", "↖")
-      hkRepr = hkRepr:gsub("END", "↘")
-      hkRepr = hkRepr:gsub("PAGEUP", "⇞")
-      hkRepr = hkRepr:gsub("PAGEDOWN", "⇟")
+      for n, s in pairs(keySymbolMap) do
+        hkRepr = hkRepr:gsub(n, s)
+      end
       entry.msg = hkRepr .. ": " .. actualMsg
       entry.idx = hkRepr
     end
@@ -1154,19 +1160,9 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
     if pos ~= nil then
       local actualMsg = entry.msg:sub(pos + 2)
       local hkRepr = entry.msg:sub(1, pos - 1)
-      hkRepr = hkRepr:gsub("ESCAPE", "⎋")
-      hkRepr = hkRepr:gsub("TAB", "⇥")
-      hkRepr = hkRepr:gsub("SPACE", "␣")
-      hkRepr = hkRepr:gsub("DELETE", "⌫")
-      hkRepr = hkRepr:gsub("RETURN", "⏎")
-      hkRepr = hkRepr:gsub("LEFT", "←")
-      hkRepr = hkRepr:gsub("RIGHT", "→")
-      hkRepr = hkRepr:gsub("UP", "↑")
-      hkRepr = hkRepr:gsub("DOWN", "↓")
-      hkRepr = hkRepr:gsub("HOME", "↖")
-      hkRepr = hkRepr:gsub("END", "↘")
-      hkRepr = hkRepr:gsub("PAGEUP", "⇞")
-      hkRepr = hkRepr:gsub("PAGEDOWN", "⇟")
+      for n, s in pairs(keySymbolMap) do
+        hkRepr = hkRepr:gsub(n, s)
+      end
       entry.msg = hkRepr .. ": " .. actualMsg
       entry.pretty_idx = hkRepr
     else
