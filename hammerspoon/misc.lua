@@ -421,13 +421,19 @@ local function getMenuHotkeys(app, titleAsEntry, titlePrefix)
   return appHotkeys
 end
 
-local function loadAppHotkeys(t)
-  HSKeybindings.appHotkeysLoaded = true
+local function loadAppHotkeys(t, showOrSearch)
+  if showOrSearch then
+    HSKeybindings.appHotkeysLoaded = true
+  end
   local activeApp = hs.application.frontmostApplication()
-  local appHotkeys = getMenuHotkeys(activeApp, true, true)
+  local appHotkeys = getMenuHotkeys(activeApp, showOrSearch, true)
   for _, hotkey in ipairs(appHotkeys) do
     if type(hotkey) == 'table' then
-      hotkey.source = 2
+      if showOrSearch then
+        hotkey.source = 2
+      else
+        hotkey.modalType = 0
+      end
       if hotkey.valid then
         local frontWin = hs.window.frontmostWindow()
         if (frontWin ~= nil and activeApp:focusedWindow() ~= nil
@@ -612,7 +618,7 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
   ::L_endCollect::
 
   if (showApp and not HSKeybindings.appHotkeysLoaded) or reload == true then
-    loadAppHotkeys(HSKeybindings.buffer)
+    loadAppHotkeys(HSKeybindings.buffer, true)
   end
 
   local evFlagsRepr
@@ -956,7 +962,7 @@ function HSKeybindings:show()
     self.colRatio = 47
   end
   self:update(true, true, false, false)
-  loadAppHotkeys(self.buffer)
+  loadAppHotkeys(self.buffer, true)
 end
 
 function HSKeybindings:update(validOnly, showHS, showApp, reload)
@@ -1246,31 +1252,7 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
     enabledAltMenuHotkeys = nil
   end
 
-  local activeApp = hs.application.frontmostApplication()
-  local appHotkeys = getMenuHotkeys(activeApp, false, true)
-  for _, hotkey in ipairs(appHotkeys) do
-    hotkey.modalType = 0
-    if hotkey.valid then
-      local frontWin = hs.window.frontmostWindow()
-      if (frontWin ~= nil and activeApp:focusedWindow() ~= nil
-          and frontWin:application():bundleID() ~= activeApp:bundleID())
-          or (frontWin ~= nil and activeApp:focusedWindow() == nil
-          and WindowCreatedSince[frontWin:id()]) then
-        hotkey.valid = false
-      end
-      if hotkey.valid and tfind(allKeys, function(hk)
-          return hk.valid and hk.idx == hotkey.idx end) then
-        hotkey.valid = false
-      end
-    end
-  end
-  local insertIdx
-  for i, hotkey in ipairs(allKeys) do
-    if hotkey.kind > HK.IN_APP then insertIdx = i break end
-  end
-  for i=#appHotkeys,1,-1 do
-    tinsert(allKeys, insertIdx, appHotkeys[i])
-  end
+  loadAppHotkeys(allKeys, false)
 
   local choices = {}
   local msg = nil
