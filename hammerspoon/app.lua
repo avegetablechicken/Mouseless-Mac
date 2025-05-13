@@ -1466,7 +1466,7 @@ appHotKeyCallbacks = {
         local appUI = toappui(app)
         local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
             AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
-        if messageItems == nil or #messageItems == 0 then return false end
+        if messageItems == nil or #messageItems <= 1 then return false end
         if messageItems[1].AXSelected then
           return true, messageItems[#messageItems]
         else
@@ -1492,7 +1492,7 @@ appHotKeyCallbacks = {
         local appUI = toappui(app)
         local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
             AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
-        if messageItems == nil or #messageItems == 0 then return false end
+        if messageItems == nil or #messageItems <= 1 then return false end
         if messageItems[#messageItems].AXSelected then
           return true, messageItems[1]
         else
