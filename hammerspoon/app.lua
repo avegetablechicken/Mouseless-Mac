@@ -6886,9 +6886,7 @@ local function onLaunchedAndActivated(app)
   remapPreviousTab(app, menuItems)
   registerOpenRecent(app)
   registerZoomHotkeys(app)
-  if menuItems ~= nil then
-    registerObserverForMenuBarChange(app, menuItems)
-  end
+  registerObserverForMenuBarChange(app, menuItems)
 
   if HSKeybindings ~= nil and HSKeybindings.isShowing then
     local validOnly = HSKeybindings.validOnly
@@ -6904,10 +6902,10 @@ end
 function App_applicationCallback(appname, eventType, app)
   local appid = app:bundleID()
   if eventType == hs.application.watcher.launching then
-    fullyLaunchCriterion = appsLaunchSlow[appid]
+    fullyLaunchCriterion = appsLaunchSlow[appid] or false
   elseif eventType == hs.application.watcher.launched then
     local criterion = fullyLaunchCriterion
-    if criterion ~= nil then
+    if criterion then
       if not criterion(app) then
         hs.timer.waitUntil(function() return criterion(app) end,
                            function() onLaunchedAndActivated(app) end,
@@ -6946,6 +6944,8 @@ function App_applicationCallback(appname, eventType, app)
       registerForOpenSavePanel(app)
       if fullyLaunchCriterion == nil then
         menuItemsPrepared = onLaunchedAndActivated(app)
+      elseif fullyLaunchCriterion == false then
+        menuItemsPrepared = false
       end
     end)
   elseif eventType == hs.application.watcher.deactivated
