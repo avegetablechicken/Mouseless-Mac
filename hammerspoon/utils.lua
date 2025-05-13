@@ -2971,6 +2971,10 @@ function localizedMenuBarItem(title, appid, params)
       end
     end
   end
+  if delocMap[appid] ~= nil then
+    local locTitle = tindex(delocMap[appid], title)
+    if locTitle ~= nil then return locTitle end
+  end
   -- the app may pretend being localized (e.g. Visual Studio Code)
   local appLocale = applicationLocale(appid)
   if find(appid) then
