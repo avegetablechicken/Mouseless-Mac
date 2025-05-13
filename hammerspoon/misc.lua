@@ -30,7 +30,9 @@ end).icon = iconForShortcuts
 bindHotkeySpec(misc["pasteFromPC"], "Paste from PC",
 function()
   local task = hs.task.new("/usr/bin/osascript",
-      function(exitCode) if exitCode == 0 then hs.eventtap.keyStroke("⌘", "V") end end,
+      function(exitCode)
+        if exitCode == 0 then hs.eventtap.keyStroke("⌘", "V") end
+      end,
       { '-e', 'tell application "Shortcuts" to run shortcut "Copy from PC"' })
   local _ShortcutsLaunched = find("com.apple.shortcuts") ~= nil
   task:start()
@@ -48,9 +50,11 @@ local pasteboardKeyDown = false
 local pasteboardKeyUp = false
 local pasteboardBuffer = nil
 local prependPasteboardTimer
-PrependPasteboardTapper = hs.eventtap.new({ hs.eventtap.event.types.keyDown, hs.eventtap.event.types.keyUp },
+PrependPasteboardTapper = hs.eventtap.new(
+{ hs.eventtap.event.types.keyDown, hs.eventtap.event.types.keyUp },
 function(ev)
-  if ev:getKeyCode() ~= hs.keycodes.map["c"] or not ev:getFlags():containExactly({"cmd"}) then
+  if ev:getKeyCode() ~= hs.keycodes.map["c"]
+      or not ev:getFlags():containExactly({"cmd"}) then
     return false
   end
   local nowKeyDown = ev:getType() == hs.eventtap.event.types.keyDown
@@ -77,7 +81,8 @@ function(ev)
     prependPasteboardTimer:stop()
     prependPasteboardTimer = nil
     if tcontain(hs.pasteboard.contentTypes(), "public.utf8-plain-text") then
-      hs.pasteboard.setContents(hs.pasteboard.getContents() .. " " .. pasteboardBuffer)
+      hs.pasteboard.setContents(
+          hs.pasteboard.getContents() .. " " .. pasteboardBuffer)
     end
     pasteboardBuffer = nil
   else
@@ -95,7 +100,8 @@ end):start()
 -- detect clipboard change and remove suffix added by website
 local pasteboardFilterPatterns = {}
 if hs.fs.attributes("config/misc.json") ~= nil then
-  pasteboardFilterPatterns = hs.json.read("config/misc.json").pasteboardFilter or {}
+  pasteboardFilterPatterns =
+      hs.json.read("config/misc.json").pasteboardFilter or {}
 end
 
 GeneralPBWatcher = hs.pasteboard.watcher.new(
@@ -115,7 +121,8 @@ end)
 -- parse verification code from new message
 local verificationPatterns = {}
 if hs.fs.attributes("config/misc.json") ~= nil then
-  verificationPatterns = hs.json.read("config/misc.json").verificationFilter or {}
+  verificationPatterns =
+      hs.json.read("config/misc.json").verificationFilter or {}
 end
 local defaultVerificationPattern = 'verification code'
 local locDefaultVerificationPattern = localizedString(
@@ -205,7 +212,7 @@ local modifiersShowReverseOrder =
   "trackpad:top-left",
 }
 
-local modifierSymbols = { "🌐︎", "⌘", "⇧", "⌥", "⌃", "✧", "⌟", "⌞", "⌝", "⌜" }
+local modifierSymbols = {"🌐︎", "⌘", "⇧", "⌥", "⌃", "✧", "⌟", "⌞", "⌝", "⌜" }
 
 local modifierSymbolMap = {
   command = "⌘",
@@ -247,7 +254,9 @@ local function loadKarabinerKeyBindings(filePath)
     if type(mods) == "string" then mods = {mods} end
     local modsRepr = ""
     for _, mod in ipairs(modifiersShowReverseOrder) do
-      if tcontain(mods, mod) then modsRepr = modsRepr .. modifierSymbolMap[mod] end
+      if tcontain(mods, mod) then
+        modsRepr = modsRepr .. modifierSymbolMap[mod]
+      end
     end
     local key = item.key:upper() == HYPER and 'hyper' or item.key
     key = modifierSymbolMap[key] or key:upper()
@@ -289,7 +298,9 @@ end
 local function menuItemHotkeyIdx(mods, key)
   local idx = ""
   for _, mod in ipairs{"cmd", "alt", "ctrl", "shift"} do
-    if tcontain(mods, mod) then idx = idx .. modifierSymbolMap[mod] end
+    if tcontain(mods, mod) then
+      idx = idx .. modifierSymbolMap[mod]
+    end
   end
   if key:byte(1) <= 32 or key:byte(1) > 127 then
     key = SPECIAL_KEY_SIMBOL_MAP[key] or key
@@ -330,37 +341,47 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
     local idx
     if subItem.AXMenuItemCmdGlyph ~= ""
         and hs.application.menuGlyphs[subItem.AXMenuItemCmdGlyph] ~= nil then
-      idx = menuItemHotkeyIdx(subItem.AXMenuItemCmdModifiers or {}, hs.application.menuGlyphs[subItem.AXMenuItemCmdGlyph])
+      idx = menuItemHotkeyIdx(subItem.AXMenuItemCmdModifiers or {},
+                              hs.application.menuGlyphs[subItem.AXMenuItemCmdGlyph])
     elseif subItem.AXMenuItemCmdChar ~= ""
         and subItem.AXMenuItemCmdChar:byte(1) ~= 3 then
-      if subItem.AXMenuItemCmdChar == 'E' and subItem.AXMenuItemCmdGlyph == ""
-          and #subItem.AXMenuItemCmdModifiers == 0 and subItem.AXMenuItemMarkChar == ""
+      if subItem.AXMenuItemCmdChar == 'E'
+          and subItem.AXMenuItemCmdGlyph == ""
+          and #subItem.AXMenuItemCmdModifiers == 0
+          and subItem.AXMenuItemMarkChar == ""
           and subItem.AXChildren == nil then
         if i == #menuItem.AXChildren[1]
             and (menuItem.AXTitle == "Edit"
-            or delocalizedMenuItem(menuItem.AXTitle, appid, true) == 'Edit')
+                 or delocalizedMenuItem(menuItem.AXTitle, appid, true) == 'Edit')
             and (subItem.AXTitle == "Emoji & Symbols"
-            or delocalizedMenuItem(subItem.AXTitle, appid, true) == "Emoji & Symbols") then
+                 or delocalizedMenuItem(subItem.AXTitle, appid, true)
+                    == "Emoji & Symbols") then
           idx = "🌐︎E"
         end
-      elseif subItem.AXMenuItemCmdChar == 'F' and subItem.AXMenuItemCmdGlyph == ""
-          and #subItem.AXMenuItemCmdModifiers == 0 and subItem.AXMenuItemMarkChar == ""
+      elseif subItem.AXMenuItemCmdChar == 'F'
+          and subItem.AXMenuItemCmdGlyph == ""
+          and #subItem.AXMenuItemCmdModifiers == 0
+          and subItem.AXMenuItemMarkChar == ""
           and subItem.AXChildren == nil then
-        if subItem.AXTitle == "Enter Full Screen" or subItem.AXTitle == "Exit Full Screen"
+        if subItem.AXTitle == "Enter Full Screen"
+            or subItem.AXTitle == "Exit Full Screen"
             or subItem.AXTitle == "Zoom" then
           idx = "🌐︎F"
         else
           local enTitle = delocalizedMenuItem(subItem.AXTitle, appid)
-          if enTitle == "Enter Full Screen" or enTitle == "Exit Full Screen"
+          if enTitle == "Enter Full Screen"
+              or enTitle == "Exit Full Screen"
               or enTitle == "Zoom" then
             idx = "🌐︎F"
           else
             local lowerTitle = subItem.AXTitle:lower()
-            if lowerTitle:find("full screen") or lowerTitle:find("fullscreen") then
+            if lowerTitle:find("full screen")
+                or lowerTitle:find("fullscreen") then
               idx = "🌐︎F"
             elseif enTitle ~= nil then
               enTitle = enTitle:lower()
-              if enTitle:find("full screen") or enTitle:find("fullscreen") then
+              if enTitle:find("full screen")
+                  or enTitle:find("fullscreen") then
                 idx = "🌐︎F"
               end
             end
@@ -368,7 +389,8 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
         end
       end
       if idx == nil then
-        idx = menuItemHotkeyIdx(subItem.AXMenuItemCmdModifiers or {}, subItem.AXMenuItemCmdChar)
+        idx = menuItemHotkeyIdx(subItem.AXMenuItemCmdModifiers or {},
+                                subItem.AXMenuItemCmdChar)
       end
     end
     if idx ~= nil then
@@ -377,16 +399,19 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
             or delocalizedMenuItem(menuItem.AXTitle, appid, true) == 'Window' then
           for hkIdx, itemTitle in pairs(windowMenuItemsSinceSequoia1) do
             if idx == hkIdx and (subItem.AXTitle == itemTitle
-                or delocalizedMenuItem(subItem.AXTitle, appid, true) == itemTitle) then
+                or delocalizedMenuItem(subItem.AXTitle, appid, true)
+                   == itemTitle) then
               idx = "🌐︎" .. idx
               break
             end
           end
         elseif menuItem.AXTitle == 'Move & Resize'
-            or delocalizedMenuItem(menuItem.AXTitle, appid, true) == 'Move & Resize' then
+            or delocalizedMenuItem(menuItem.AXTitle, appid, true)
+               == 'Move & Resize' then
           for hkIdx, itemTitle in pairs(windowMenuItemsSinceSequoia2) do
             if idx == hkIdx and (subItem.AXTitle == itemTitle
-                or delocalizedMenuItem(subItem.AXTitle, appid, true) == itemTitle) then
+                or delocalizedMenuItem(subItem.AXTitle, appid, true)
+                   == itemTitle) then
               idx = "🌐︎" .. idx
               break
             end
@@ -416,7 +441,8 @@ end
 local function getMenuHotkeys(app, titleAsEntry, titlePrefix)
   local appHotkeys = {}
   for _, menuItem in ipairs(app:getMenuItems() or {}) do
-    getSubMenuHotkeys(appHotkeys, menuItem, titleAsEntry, titlePrefix, app:bundleID())
+    getSubMenuHotkeys(appHotkeys, menuItem,
+        titleAsEntry, titlePrefix, app:bundleID())
   end
   return appHotkeys
 end
@@ -451,7 +477,10 @@ local function loadAppHotkeys(t, showOrSearch)
   end
   local insertIdx = 1
   for i, hotkey in ipairs(t) do
-    if hotkey.kind and hotkey.kind > HK.IN_APP then insertIdx = i break end
+    if hotkey.kind and hotkey.kind > HK.IN_APP then
+      insertIdx = i
+      break
+    end
   end
   for i=#appHotkeys,1,-1 do
     tinsert(t, insertIdx, appHotkeys[i])
@@ -472,12 +501,14 @@ local function testValid(entry)
     end
     local app = hs.application.frontmostApplication()
     local appid = app:bundleID()
-    if valid and entry.kind == HK.IN_APP and entry.subkind == HK.IN_APP_.WEBSITE then
+    if valid and entry.kind == HK.IN_APP
+        and entry.subkind == HK.IN_APP_.WEBSITE then
       local hotkeyInfo = get(InWebsiteHotkeyInfoChain, appid, entry.idx)
       if hotkeyInfo ~= nil then
         valid, actualMsg = getValidMessage(hotkeyInfo, app)
       end
-    elseif valid and entry.kind == HK.IN_APP and entry.subkind == HK.IN_APP_.WINDOW then
+    elseif valid and entry.kind == HK.IN_APP
+        and entry.subkind == HK.IN_APP_.WINDOW then
       local hotkeyInfo = get(InWinHotkeyInfoChain, appid, entry.idx)
       if hotkeyInfo ~= nil then
         valid, actualMsg = getValidMessage(hotkeyInfo, app:focusedWindow())
@@ -502,7 +533,8 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
     goto L_endCollect
   end
 
-  for _, modal in ipairs(tfilter(DoubleTapModalList, function (m) return m:isEnabled() end)) do
+  for _, modal in ipairs(tfilter(DoubleTapModalList,
+                                 function (m) return m:isEnabled() end)) do
     tinsert(allKeys, { idx = modal.idx, msg = modal.msg,
                        condition = modal.condition,
                        kind = modal.kind, subkind = modal.subkind,
@@ -642,7 +674,8 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
     if type(entry) == 'string' and showApp then
       local canShow = false
       local j = i + 1
-      while j <= #HSKeybindings.buffer and type(HSKeybindings.buffer[j]) ~= 'string' do
+      while j <= #HSKeybindings.buffer
+          and type(HSKeybindings.buffer[j]) ~= 'string' do
         if HSKeybindings.buffer[j].kind == HK.IN_APP then
           if HSKeybindings.buffer[j].valid or not validOnly then
             canShow = true
@@ -662,23 +695,23 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
           ix = ix + 1
           if ((ix - 1) % 15) == 0 then
             if ix > 1 then
-              menu = menu .. "</ul>"
+              menu = menu.."</ul>"
             end
             col = col + 1
-            menu = menu .. "<ul class='col col" .. col .. "'>"
+            menu = menu.."<ul class='col col"..col.."'>"
           end
           local msg = hs.application.frontmostApplication():name()
-          menu = menu .. "<li><div class='typetext'>" .. " " .. msg .. "</div></li>"
+          menu = menu.."<li><div class='typetext'>".." "..msg.."</div></li>"
         end
         ix = ix + 1
         if ((ix - 1) % 15) == 0 then
           if ix > 1 then
-            menu = menu .. "</ul>"
+            menu = menu.."</ul>"
           end
           col = col + 1
-          menu = menu .. "<ul class='col col" .. col .. "'>"
+          menu = menu.."<ul class='col col"..col.."'>"
         end
-        menu = menu .. "<li><div class='menutext'>" .. " " .. entry .. "</div></li>"
+        menu = menu.."<li><div class='menutext'>".." "..entry.."</div></li>"
         kind = HK.IN_APP
       end
     elseif ((entry.source == 1 and showHS) or (entry.source == 2 and showApp))
@@ -707,22 +740,22 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
           ix = ix + 1
           if ((ix - 1) % 15) == 0 then
             if ix > 1 then
-              menu = menu .. "</ul>"
+              menu = menu.."</ul>"
             end
             col = col + 1
-            menu = menu .. "<ul class='col col" .. col .. "'>"
+            menu = menu.."<ul class='col col"..col.."'>"
           end
-          menu = menu .. "<li><div class='typetext'>" .. " " .. msg .. "</div></li>"
+          menu = menu.."<li><div class='typetext'>".." "..msg.."</div></li>"
         end
       end
 
       ix = ix + 1
       if ((ix - 1) % 15) == 0 then
         if ix > 1 then
-          menu = menu .. "</ul>"
+          menu = menu.."</ul>"
         end
         col = col + 1
-        menu = menu .. "<ul class='col col" .. col .. "'>"
+        menu = menu.."<ul class='col col"..col.."'>"
       end
       local modsLen, modsByteLen = 0, 0
       for _, mod in ipairs(modifierSymbols) do
@@ -754,16 +787,30 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
       local pos = entry.msg:find(": ")
       local actualMsg = entry.msg:sub(pos + 2)
       if not entry.valid then
-        if evFlagsRepr ~= modsRepr and (modsRepr ~= "&nbsp;" or evFlagsRepr ~= key) then
-          menu = menu .. "<li><font color='grey'><div class='modstext'>" .. modsRepr .. "</div><div class='keytext'>" .. key .. "</div><div class='cmdtext'>" .. actualMsg .. "</div></font></li>"
+        if evFlagsRepr ~= modsRepr
+            and (modsRepr ~= "&nbsp;" or evFlagsRepr ~= key) then
+          menu = menu .. "<li><font color='grey'><div class='modstext'>"
+              .. modsRepr .. "</div><div class='keytext'>"
+              .. key .. "</div><div class='cmdtext'>"
+              .. actualMsg .. "</div></font></li>"
         else
-          menu = menu .. "<li><font color='grey'><div class='modstext highlight'>" .. modsRepr .. "</div><div class='keytext highlight'>" .. key .. "</div><div class='cmdtext highlightcmd'>" .. actualMsg .. "</div></font></li>"
+          menu = menu .. "<li><font color='grey'><div class='modstext highlight'>"
+              .. modsRepr .. "</div><div class='keytext highlight'>"
+              .. key .. "</div><div class='cmdtext highlightcmd'>"
+              .. actualMsg .. "</div></font></li>"
         end
       else
-        if evFlagsRepr ~= modsRepr and (modsRepr ~= "&nbsp;" or evFlagsRepr ~= key) then
-          menu = menu .. "<li><div class='modstext'>" .. modsRepr .. "</div><div class='keytext'>" .. key .. "</div><div class='cmdtext'>" .. actualMsg .. "</div></li>"
+        if evFlagsRepr ~= modsRepr
+            and (modsRepr ~= "&nbsp;" or evFlagsRepr ~= key) then
+          menu = menu .. "<li><div class='modstext'>"
+              .. modsRepr .. "</div><div class='keytext'>"
+              .. key .. "</div><div class='cmdtext'>"
+              .. actualMsg .. "</div></li>"
         else
-          menu = menu .. "<li><div class='modstext highlight'>" .. modsRepr .. "</div><div class='keytext highlight'>" .. key .. "</div><div class='cmdtext highlightcmd'>" .. actualMsg .. "</div></li>"
+          menu = menu .. "<li><div class='modstext highlight'>"
+              .. modsRepr .. "</div><div class='keytext highlight'>"
+              .. key .. "</div><div class='cmdtext highlightcmd'>"
+              .. actualMsg .. "</div></li>"
         end
       end
     end
@@ -789,7 +836,8 @@ local function generateHtml(validOnly, showHS, showApp, evFlags, reload)
   if showHS == true and showApp == false then
     title = "Keybindings of Hammerspoon & Karabiner-Elements"
   elseif showHS == false and showApp == true then
-    title = "Keybindings of Activated Application: " .. hs.application.frontmostApplication():name()
+    title = "Keybindings of Activated Application: "
+        .. hs.application.frontmostApplication():name()
   else
     title = "Keybindings of Hammerspoon, Karabiner-Elements and Activated Application"
   end
@@ -969,7 +1017,8 @@ function HSKeybindings:update(validOnly, showHS, showApp, reload)
   if validOnly ~= nil then self.validOnly = validOnly end
   if showHS ~= nil then self.showHS = showHS end
   if showApp ~= nil then self.showApp = showApp end
-  local webcontent = generateHtml(self.validOnly, self.showHS, self.showApp, self.evFlags, reload)
+  local webcontent = generateHtml(
+      self.validOnly, self.showHS, self.showApp, self.evFlags, reload)
   self.sheetView:html(webcontent)
   self.sheetView:show()
   self.isShowing = true
@@ -1026,7 +1075,8 @@ function()
       else
         local touches = ev:getTouches()
         if touches ~= nil and #touches == 1
-          and touches[1].touching == true and touches[1].type == 'indirect' then
+          and touches[1].touching == true
+          and touches[1].type == 'indirect' then
           local tpos = touches[1].normalizedPosition
           local s1, s2 = trackpad.CORNER_SIZE, 1 - trackpad.CORNER_SIZE
           if tpos.x < s1 and tpos.y > s2 then
@@ -1049,7 +1099,9 @@ function()
       elseif ev:getKeyCode() == hs.keycodes.map["Space"] then
         if not hkKeybindingsSpacePressed then
           hkKeybindingsSpacePressed = true
-          HSKeybindings:update(false, HSKeybindings.showHS, HSKeybindings.showApp)
+          HSKeybindings:update(false,
+                               HSKeybindings.showHS,
+                               HSKeybindings.showApp)
         end
         return true
       elseif ev:getKeyCode() == hs.keycodes.map["Escape"] then
@@ -1073,7 +1125,9 @@ function()
         end
       elseif ev:getKeyCode() == hs.keycodes.map["Space"] then
         hkKeybindingsSpacePressed = false
-        HSKeybindings:update(true, HSKeybindings.showHS, HSKeybindings.showApp)
+        HSKeybindings:update(true,
+                             HSKeybindings.showHS,
+                             HSKeybindings.showApp)
         return true
       end
     end
@@ -1097,14 +1151,17 @@ function()
     return false
   end
   if hkKeybindingsWatcher == nil then
-    hkKeybindingsWatcher = hs.eventtap.new({hs.eventtap.event.types.flagsChanged,
-        hs.eventtap.event.types.keyDown, hs.eventtap.event.types.keyUp,
+    hkKeybindingsWatcher = hs.eventtap.new({
+        hs.eventtap.event.types.flagsChanged,
+        hs.eventtap.event.types.keyDown,
+        hs.eventtap.event.types.keyUp,
         hs.eventtap.event.types.gesture},
         callback)
   end
   hkKeybindingsWatcher:start()
   if hkHideKeybindingsWatcher == nil then
-    hkHideKeybindingsWatcher = hs.eventtap.new({hs.eventtap.event.types.leftMouseDown},
+    hkHideKeybindingsWatcher = hs.eventtap.new(
+        {hs.eventtap.event.types.leftMouseDown},
         function() cancelFunc() return false end)
   end
   hs.timer.doAfter(0.3, function() hkHideKeybindingsWatcher:start() end)
@@ -1121,7 +1178,8 @@ local function getCurrentApplication()
 end
 
 -- show info of current window
-bindHotkeySpec(misc["showCurrentWindowInfo"], "Show Info of Current Window", function()
+bindHotkeySpec(misc["showCurrentWindowInfo"], "Show Info of Current Window",
+function()
   local win = hs.window.frontmostWindow()
   if not win then return false end
   local title = win:title()
@@ -1145,11 +1203,13 @@ bindHotkeySpec(misc["showCurrentWindowInfo"], "Show Info of Current Window", fun
     appname, appid))
 end)
 
-local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", function()
+local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey",
+function()
   local allKeys = {}
   local enabledAltMenuHotkeys = {}
 
-  for _, modal in ipairs(tfilter(DoubleTapModalList, function(m) return m:isEnabled() end)) do
+  for _, modal in ipairs(tfilter(DoubleTapModalList,
+                                 function(m) return m:isEnabled() end)) do
     tinsert(allKeys, { modalType = 2,
                        idx = modal.idx, msg = modal.msg,
                        condition = modal.condition,
@@ -1242,9 +1302,10 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
       if hotkey.kind >= HK.IN_APP then insertIdx = i break end
     end
     for i, hk in ipairs(AltMenuBarItemHotkeys) do
-      local entry = hs.fnutils.find(enabledAltMenuHotkeys, function(menuHK)
-        return menuHK.idx == hk.idx
-      end)
+      local entry = hs.fnutils.find(enabledAltMenuHotkeys,
+        function(menuHK)
+          return menuHK.idx == hk.idx
+        end)
       if entry ~= nil then
         table.insert(allKeys, insertIdx + i - 1, entry)
       end
@@ -1270,33 +1331,42 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
       elseif entry.appid then
         image = hs.image.imageFromAppBundle(entry.appid)
       elseif entry.appPath then
-        local iconFile = hs.application.infoForBundlePath(entry.appPath).CFBundleIconFile
+        local iconFile = 
+            hs.application.infoForBundlePath(entry.appPath).CFBundleIconFile
         if iconFile then
-          image = hs.image.imageFromPath(entry.appPath .. "/Contents/Resources/" .. iconFile)
+          image = hs.image.imageFromPath(
+              entry.appPath .. "/Contents/Resources/" .. iconFile)
         else
-          iconFile = get(hs.application.infoForBundlePath(entry.appPath).CFBundleIcons,
+          iconFile = get(
+              hs.application.infoForBundlePath(entry.appPath).CFBundleIcons,
               'CFBundlePrimaryIcon', 'CFBundleIconFiles', 1)
           if iconFile then
             for file in hs.fs.dir(entry.appPath .. "/WrappedBundle") do
               if file:sub(1, #iconFile) == iconFile then
-                image = hs.image.imageFromPath(entry.appPath .. "/WrappedBundle/" .. file)
+                image = hs.image.imageFromPath(
+                    entry.appPath .. "/WrappedBundle/" .. file)
                 if image then break end
               end
             end
           end
         end
       elseif entry.kind == HK.IN_APP then
-        image = hs.image.imageFromAppBundle(hs.application.frontmostApplication():bundleID())
+        image = hs.image.imageFromAppBundle(
+            hs.application.frontmostApplication():bundleID())
       elseif entry.kind == HK.IN_WIN then
         if hs.window.frontmostWindow() then
-          image = hs.image.imageFromAppBundle(hs.window.frontmostWindow():application():bundleID())
+          image = hs.image.imageFromAppBundle(
+              hs.window.frontmostWindow():application():bundleID())
         else
-          image = hs.image.imageFromAppBundle(hs.application.frontmostApplication():bundleID())
+          image = hs.image.imageFromAppBundle(
+              hs.application.frontmostApplication():bundleID())
         end
-      elseif entry.kind == HK.MENUBAR and entry.subkind == HK.MENUBAR_.CONTROL_CENTER then
+      elseif entry.kind == HK.MENUBAR
+          and entry.subkind == HK.MENUBAR_.CONTROL_CENTER then
         image = hs.image.imageFromAppBundle("com.apple.controlcenter")
       elseif entry.kind == HK.WIN_OP then
-        if entry.subkind == 0 or entry.subkind == HK.WIN_OP_.MOVE or entry.subkind == HK.WIN_OP_.RESIZE then
+        if entry.subkind == 0 or entry.subkind == HK.WIN_OP_.MOVE
+            or entry.subkind == HK.WIN_OP_.RESIZE then
           image = hs.image.imageFromPath("static/rectangle.png")
         elseif entry.subkind == HK.WIN_OP_.SPACE_SCREEN then
           image = hs.image.imageFromPath("static/display.png")
