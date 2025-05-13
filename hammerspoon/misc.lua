@@ -490,6 +490,7 @@ local trackpad = require('modal.trackpad')
 local karaHotkeys
 local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
   local allKeys = {}
+  local enabledAltMenuHotkeys = {}
 
   if reload ~= true and HSKeybindings.buffer ~= nil then
     goto L_endCollect
@@ -525,7 +526,11 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
                          condition = entry.condition,
                          kind = entry.kind, subkind = entry.subkind,
                          suspendable = entry.suspendable, source = 1 }
-      tinsert(allKeys, newEntry)
+      if entry.kind == HK.IN_APP and entry.subkind == HK.IN_APP_.MENU then
+        table.insert(enabledAltMenuHotkeys, newEntry)
+      else
+        table.insert(allKeys, newEntry)
+      end
     end
   end
 
@@ -539,6 +544,9 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
   allKeys = hs.fnutils.concat(allKeys, karaHotkeys or {})
 
   for _, entry in ipairs(allKeys) do
+    testValid(entry)
+  end
+  for _, entry in ipairs(enabledAltMenuHotkeys) do
     testValid(entry)
   end
 
@@ -582,6 +590,22 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
       return a.idx < b.idx
     end
   end)
+
+  if #enabledAltMenuHotkeys ~= 0 then
+    local insertIdx = 1
+    for i, hotkey in ipairs(allKeys) do
+      if hotkey.kind >= HK.IN_APP then insertIdx = i break end
+    end
+    for i, hk in ipairs(AltMenuBarItemHotkeys) do
+      local entry = tfind(enabledAltMenuHotkeys, function(menuHK)
+        return menuHK.idx == hk.idx
+      end)
+      if entry ~= nil then
+        table.insert(allKeys, insertIdx + i - 1, entry)
+      end
+    end
+    enabledAltMenuHotkeys = nil
+  end
 
   HSKeybindings.buffer = allKeys
 
@@ -1117,6 +1141,7 @@ end)
 
 local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", function()
   local allKeys = {}
+  local enabledAltMenuHotkeys = {}
 
   for _, modal in ipairs(tfilter(DoubleTapModalList, function(m) return m:isEnabled() end)) do
     tinsert(allKeys, { modalType = 2,
@@ -1147,11 +1172,18 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
                          kind = entry.kind, subkind = entry.subkind,
                          appid = entry.appid, appPath = entry.appPath,
                          icon = entry.icon }
-      tinsert(allKeys, newEntry)
+      if entry.kind == HK.IN_APP and entry.subkind == HK.IN_APP_.MENU then
+        table.insert(enabledAltMenuHotkeys, newEntry)
+      else
+        table.insert(allKeys, newEntry)
+      end
     end
   end
 
   for _, entry in ipairs(allKeys) do
+    testValid(entry)
+  end
+  for _, entry in ipairs(enabledAltMenuHotkeys) do
     testValid(entry)
   end
 
@@ -1197,6 +1229,22 @@ local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey", func
       return a.pretty_idx < b.pretty_idx
     end
   end)
+
+  if #enabledAltMenuHotkeys ~= 0 then
+    local insertIdx = 1
+    for i, hotkey in ipairs(allKeys) do
+      if hotkey.kind >= HK.IN_APP then insertIdx = i break end
+    end
+    for i, hk in ipairs(AltMenuBarItemHotkeys) do
+      local entry = hs.fnutils.find(enabledAltMenuHotkeys, function(menuHK)
+        return menuHK.idx == hk.idx
+      end)
+      if entry ~= nil then
+        table.insert(allKeys, insertIdx + i - 1, entry)
+      end
+    end
+    enabledAltMenuHotkeys = nil
+  end
 
   local activeApp = hs.application.frontmostApplication()
   local appHotkeys = getMenuHotkeys(activeApp, false, true)
