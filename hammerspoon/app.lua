@@ -434,10 +434,14 @@ local function deleteAllMessages(messageItems, app)
   for i=1,cnt do
     hs.timer.doAfter(2 * (i - 1), function()
       local messageItem = messageItems[1]
-      messageItem:performAction(AX.Press)
-      hs.timer.doAfter(0.1, function()
+      if messageItem.AXSelected then
         deleteSelectedMessage(app, nil, true)
-      end)
+      else
+        messageItem:performAction(AX.Press)
+        hs.timer.doAfter(0.1, function()
+          deleteSelectedMessage(app, nil, true)
+        end)
+      end
       if i == cnt then
         hs.timer.doAfter(2, function()
           _, messageItems = messageDeletable(app)
