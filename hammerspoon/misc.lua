@@ -560,9 +560,9 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
                          kind = entry.kind, subkind = entry.subkind,
                          suspendable = entry.suspendable, source = 1 }
       if entry.kind == HK.IN_APP and entry.subkind == HK.IN_APP_.MENU then
-        table.insert(enabledAltMenuHotkeys, newEntry)
+        tinsert(enabledAltMenuHotkeys, newEntry)
       else
-        table.insert(allKeys, newEntry)
+        tinsert(allKeys, newEntry)
       end
     end
   end
@@ -634,7 +634,7 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
         return menuHK.idx == hk.idx
       end)
       if entry ~= nil then
-        table.insert(allKeys, insertIdx + i - 1, entry)
+        tinsert(allKeys, insertIdx + i - 1, entry)
       end
     end
     enabledAltMenuHotkeys = nil
@@ -1232,9 +1232,9 @@ function()
                          appid = entry.appid, appPath = entry.appPath,
                          icon = entry.icon }
       if entry.kind == HK.IN_APP and entry.subkind == HK.IN_APP_.MENU then
-        table.insert(enabledAltMenuHotkeys, newEntry)
+        tinsert(enabledAltMenuHotkeys, newEntry)
       else
-        table.insert(allKeys, newEntry)
+        tinsert(allKeys, newEntry)
       end
     end
   end
@@ -1298,7 +1298,7 @@ function()
           return menuHK.idx == hk.idx
         end)
       if entry ~= nil then
-        table.insert(allKeys, insertIdx + i - 1, entry)
+        tinsert(allKeys, insertIdx + i - 1, entry)
       end
     end
     enabledAltMenuHotkeys = nil
