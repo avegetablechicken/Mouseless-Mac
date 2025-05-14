@@ -1,3 +1,5 @@
+local tinsert = table.insert
+
 local module = {}
 
 -- Leave Hyper Mode when Hyper is pressed
@@ -34,14 +36,14 @@ end
 function module:bindNoSuspend(mods, key, message, pressedfn, releasedfn, repeatfn)
   local hotkey = hs.hotkey.new(mods, key, pressedfn, releasedfn, repeatfn)
   hotkey.msg = self.hyper .. hotkey.idx .. ": " .. message
-  table.insert(self.hyperMode.keys, hotkey)
+  tinsert(self.hyperMode.keys, hotkey)
   return hotkey
 end
 
 function module:bind(...)
   local hotkey = newHotkey(...)
   hotkey.msg = self.hyper .. hotkey.msg
-  table.insert(self.hyperMode.keys, hotkey)
+  tinsert(self.hyperMode.keys, hotkey)
   return hotkey
 end
 

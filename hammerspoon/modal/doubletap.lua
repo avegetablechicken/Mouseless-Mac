@@ -1,4 +1,5 @@
 local tinsert  = table.insert
+local tcontain = hs.fnutils.contains
 local timer    = require("hs.timer")
 local eventtap = require("hs.eventtap")
 local events   = eventtap.event.types
@@ -51,30 +52,30 @@ function module:_install(mods, key)
       self.key = hs.keycodes.map[key]
       local keyRepr = getIndex(self.key)
       self.idx = keyRepr .. keyRepr
-      if hs.fnutils.contains(functionKeycodes, self.key) then
+      if tcontain(functionKeycodes, self.key) then
         self.mods = { 'fn' }
       end
     end
   else
     if type(mods) == 'string' then mods = { mods } end
     local idx, modsRepr = "", {}
-    if hs.fnutils.contains(mods, "command") then
+    if tcontain(mods, "command") then
       idx = modifiers.command
       tinsert(modsRepr, 'cmd')
     end
-    if hs.fnutils.contains(mods, "control") then
+    if tcontain(mods, "control") then
       idx = idx .. modifiers.control
       tinsert(modsRepr, 'ctrl')
     end
-    if hs.fnutils.contains(mods, "option") then
+    if tcontain(mods, "option") then
       idx = idx .. modifiers.option
       tinsert(modsRepr, 'alt')
     end
-    if hs.fnutils.contains(mods, "shift") then
+    if tcontain(mods, "shift") then
       idx = idx .. modifiers.shift
       tinsert(modsRepr, 'shift')
     end
-    if hs.fnutils.contains(functionKeycodes, self.key) then
+    if tcontain(functionKeycodes, self.key) then
       tinsert(modsRepr, 'fn')
     end
     self.key = hs.keycodes.map[key]
@@ -100,7 +101,7 @@ end
 
 -- verify that *only* the **KEY** key flag is being pressed
 function module:_onlyTargetKey(ev)
-  if hs.fnutils.contains({'cmd', 'ctrl', 'alt', 'shift'}, self.key) then
+  if tcontain({'cmd', 'ctrl', 'alt', 'shift'}, self.key) then
     return ev:getFlags():containExactly({self.key})
   else
     return ev:getFlags():containExactly(self.mods) and ev:getKeyCode() == self.key
@@ -123,7 +124,7 @@ function module:_new(mods, key, msg, func)
       self.timeFirstKeyDown, self.firstDown, self.secondDown = 0, false, false
     end
 
-    if hs.fnutils.contains({ 'cmd', 'ctrl', 'alt', 'shift' }, self.key) then
+    if tcontain({ 'cmd', 'ctrl', 'alt', 'shift' }, self.key) then
       if ev:getType() == events.flagsChanged then
         if noFlags(ev) and self.firstDown and self.secondDown then -- **KEY** up and we've seen two, so do action
           if self.action then self.action() end

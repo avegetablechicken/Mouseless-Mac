@@ -48,21 +48,21 @@ local function getModsCode(mods)
     modsCode = 8
     mods = ""
   else
-    if string.find(mods, "⌜") then
+    if mods:find("⌜") then
       modsCode = modsCode + 1
-      mods = string.gsub(mods, "⌜", "")
+      mods = mods:gsub("⌜", "")
     end
-    if string.find(mods, "⌝") then
+    if mods:find("⌝") then
       modsCode = modsCode + 2
-      mods = string.gsub(mods, "⌝", "")
+      mods = mods:gsub("⌝", "")
     end
-    if string.find(mods, "⌞") then
+    if mods:find("⌞") then
       modsCode = modsCode + 4
-      mods = string.gsub(mods, "⌞", "")
+      mods = mods:gsub("⌞", "")
     end
-    if string.find(mods, "⌟") then
+    if mods:find("⌟") then
       modsCode = modsCode + 8
-      mods = string.gsub(mods, "⌟", "")
+      mods = mods:gsub("⌟", "")
     end
   end
   return modsCode
