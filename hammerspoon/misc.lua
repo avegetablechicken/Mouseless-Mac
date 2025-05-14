@@ -7,6 +7,10 @@ local tfilter = hs.fnutils.filter
 local foreach = hs.fnutils.each
 
 local misc = KeybindingConfigs.hotkeys.global
+local miscConfig = {}
+if exists("config/misc.json") then
+  miscConfig = hs.json.read("config/misc.json")
+end
 
 -- call `ShortCuts` to copy to PC
 local iconForShortcuts = hs.image.imageFromAppBundle("com.apple.shortcuts")
@@ -98,12 +102,7 @@ function(ev)
 end):start()
 
 -- detect clipboard change and remove suffix added by website
-local pasteboardFilterPatterns = {}
-if exists("config/misc.json") then
-  pasteboardFilterPatterns =
-      hs.json.read("config/misc.json").pasteboardFilter or {}
-end
-
+local pasteboardFilterPatterns = miscConfig.pasteboardFilter or {}
 GeneralPBWatcher = hs.pasteboard.watcher.new(
 function(v)
   if v == nil then return end
@@ -119,11 +118,7 @@ function(v)
 end)
 
 -- parse verification code from new message
-local verificationPatterns = {}
-if exists("config/misc.json") then
-  verificationPatterns =
-      hs.json.read("config/misc.json").verificationFilter or {}
-end
+local verificationPatterns = miscConfig.verificationFilter or {}
 local defaultVerificationPattern = 'verification code'
 local locDefaultVerificationPattern = localizedString(
   defaultVerificationPattern, {
