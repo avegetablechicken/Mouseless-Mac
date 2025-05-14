@@ -84,14 +84,14 @@ end
 local function getParallelsVMPath(osname)
   local PVMDir = os.getenv("HOME") .. "/Parallels"
   local path = strfmt(PVMDir .. "/%s.pvm/%s.app", osname, osname)
-  if hs.fs.attributes(path) ~= nil then return path end
+  if exists(path) then return path end
 
   for filename in hs.fs.dir(PVMDir) do
     if filename:sub(-4) == '.pvm'
         and filename:sub(1, osname:len()) == osname then
       local stem = filename:sub(1, -5)
       path = strfmt(PVMDir .. "/%s.pvm/%s.app", stem, stem)
-      if hs.fs.attributes(path) ~= nil then return path end
+      if exists(path) then return path end
     end
   end
 end
@@ -136,7 +136,7 @@ local function registerAppHotkeys()
         appPath = config.path
       else
         for _, path in ipairs(config.path) do
-          if hs.fs.attributes(path) ~= nil then
+          if exists(path) then
             appPath = path
             break
           end
@@ -5769,11 +5769,11 @@ local function processInvalidAltMenu(app, reinvokeKey)
     if framework.electron then return end
   end
 
-  if hs.fs.attributes(appsMayChangeMenuBarTmpDir) == nil then
+  if not exists(appsMayChangeMenuBarTmpDir) then
     hs.execute(strfmt("mkdir -p '%s'", appsMayChangeMenuBarTmpDir))
   end
   local json = {}
-  if hs.fs.attributes(appsMayChangeMenuBarTmpFile) ~= nil then
+  if exists(appsMayChangeMenuBarTmpFile) then
     json = hs.json.read(appsMayChangeMenuBarTmpFile)
   else
     json = {}
@@ -6079,7 +6079,7 @@ end
 -- some apps may change their menu bar items based on the focused window
 appsMayChangeMenuBar = get(ApplicationConfigs,
     "menuBarItems", 'changeOnWindow') or {}
-if hs.fs.attributes(appsMayChangeMenuBarTmpFile) ~= nil then
+if exists(appsMayChangeMenuBarTmpFile) then
   local tmp = hs.json.read(appsMayChangeMenuBarTmpFile)
   for _, appid in ipairs(tmp['changing'] or {}) do
     tinsert(appswatchMenuBarItems, appid)
@@ -6805,8 +6805,8 @@ end
 local iOSAppHotkey
 local function deactivateCloseWindowForIOSApps(app)
   if app:bundleID() == nil then return end
-  if hs.fs.attributes(hs.application.pathForBundleID(
-      app:bundleID()) .. '/WrappedBundle') ~= nil then
+  if exists(hs.application.pathForBundleID(
+      app:bundleID()) .. '/WrappedBundle') then
     if iOSAppHotkey == nil then
       iOSAppHotkey = newHotkey("⌘", "w", "Cancel ⌘W", function() end)
       iOSAppHotkey.kind = HK.IN_APP

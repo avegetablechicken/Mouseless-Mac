@@ -404,7 +404,7 @@ local function parseProxyConfigurations(configs)
 end
 
 local proxyConfigs
-if hs.fs.attributes("config/proxy.json") ~= nil then
+if exists("config/proxy.json") then
   proxyConfigs = hs.json.read("config/proxy.json")
 end
 if proxyConfigs ~= nil then
@@ -412,7 +412,7 @@ if proxyConfigs ~= nil then
 end
 
 local privateProxyConfigs
-if hs.fs.attributes("config/private-proxy.json") ~= nil then
+if exists("config/private-proxy.json") then
   privateProxyConfigs = hs.json.read("config/private-proxy.json")
 end
 if privateProxyConfigs ~= nil then
@@ -878,7 +878,7 @@ local function registerProxyMenu(retry)
 end
 
 local proxySettings
-if hs.fs.attributes("config/misc.json") ~= nil then
+if exists("config/misc.json") then
   proxySettings = hs.json.read("config/misc.json").proxy
   for _, cfg in ipairs(proxySettings) do
     if cfg.condition ~= nil then

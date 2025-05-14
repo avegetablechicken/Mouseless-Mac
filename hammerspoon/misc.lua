@@ -99,7 +99,7 @@ end):start()
 
 -- detect clipboard change and remove suffix added by website
 local pasteboardFilterPatterns = {}
-if hs.fs.attributes("config/misc.json") ~= nil then
+if exists("config/misc.json") then
   pasteboardFilterPatterns =
       hs.json.read("config/misc.json").pasteboardFilter or {}
 end
@@ -120,7 +120,7 @@ end)
 
 -- parse verification code from new message
 local verificationPatterns = {}
-if hs.fs.attributes("config/misc.json") ~= nil then
+if exists("config/misc.json") then
   verificationPatterns =
       hs.json.read("config/misc.json").verificationFilter or {}
 end
