@@ -1212,16 +1212,14 @@ function()
                        icon = modal.icon })
   end
 
-  for i, modal in ipairs(HyperModalList) do
-    if modal.hyperMode.Entered == false then
-      for _, hotkey in ipairs(modal.hyperMode.keys) do
-        tinsert(allKeys, { modalType = 1, hyper = i,
-                           idx = hotkey.idx, msg = hotkey.msg,
-                           condition = hotkey.condition,
-                           kind = hotkey.kind, subkind = hotkey.subkind,
-                           appid = hotkey.appid, appPath = hotkey.appPath,
-                           icon = hotkey.icon })
-      end
+  for _, modal in ipairs(HyperModalList) do
+    for _, hotkey in ipairs(modal.hyperMode.keys) do
+      tinsert(allKeys, { modalType = 1, hyper = modal.hyper,
+                         idx = hotkey.idx, msg = hotkey.msg,
+                         condition = hotkey.condition,
+                         kind = hotkey.kind, subkind = hotkey.subkind,
+                         appid = hotkey.appid, appPath = hotkey.appPath,
+                         icon = hotkey.icon })
     end
   end
 
@@ -1251,12 +1249,10 @@ function()
   for _, entry in ipairs(allKeys) do
     local pos = entry.msg:find(": ")
     if pos ~= nil then
-      local actualMsg = entry.msg:sub(pos + 2)
       local hkRepr = entry.msg:sub(1, pos - 1)
       for n, s in pairs(keySymbolMap) do
         hkRepr = hkRepr:gsub(n, s)
       end
-      entry.msg = hkRepr .. ": " .. actualMsg
       entry.pretty_idx = hkRepr
     else
       entry.pretty_idx = entry.idx
@@ -1414,21 +1410,10 @@ function()
     else
       actualMsg = "(no message)"
     end
-    local idx = entry.idx
-    local thisHyper
-    if entry.modalType == 1 then
-      if HyperModalList[entry.hyper].hyper == HYPER then
-        thisHyper = "✧"
-        idx = thisHyper .. idx
-      else
-        thisHyper = HyperModalList[entry.hyper].hyper
-        idx = thisHyper .. idx
-      end
-    elseif entry.modalType == 0 then
-      local pos = entry.msg:find(": ")
-      idx = entry.msg:sub(1, pos - 1)
-      if idx:len() ~= entry.idx:len() then
-        thisHyper = idx:sub(1, idx:len() - entry.idx:len())
+    local idx = entry.pretty_idx or entry.idx
+    if entry.modalType == 0 then
+      if entry.msg:find(": ") - 1 ~= entry.idx:len() then
+        goto continue
       end
     end
     tinsert(choices,
@@ -1441,8 +1426,7 @@ function()
           mods = mods,
           key = key,
           modalType = entry.modalType,
-          hyper = thisHyper,
-          hyperModalIdx = entry.hyper,
+          hyper = entry.hyper,
           valid = entry.valid
         })
 
@@ -1452,28 +1436,11 @@ function()
     if not choice then return end
     if not choice.valid then return end
     if choice.modalType == 0 then
-      if choice.hyper ~= nil then
-        local hyper = choice.hyper
-        if hyper == "✧" then hyper = HYPER end
-        for _, modal in ipairs(HyperModalList) do
-          if modal.hyper == hyper then
-            for _, hotkey in ipairs(modal.hyperMode.keys) do
-              hotkey:enable()
-            end
-            hs.eventtap.keyStroke(choice.mods, choice.key)
-            hs.timer.doAfter(0.2, function()
-              for _, hotkey in ipairs(modal.hyperMode.keys) do
-                hotkey:disable()
-              end
-            end)
-            break
-          end
-        end
-      else
-        hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', 'fn'), choice.key)
-      end
+      hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', 'fn'), choice.key)
     elseif choice.modalType == 1 then
-      local modal = HyperModalList[choice.hyperModalIdx]
+      local modal = tfind(HyperModalList, function(modal)
+        return modal.hyper == choice.hyper
+      end)
       for _, hotkey in ipairs(modal.hyperMode.keys) do
         hotkey:enable()
       end
