@@ -1443,12 +1443,14 @@ function()
           modalType = entry.modalType,
           hyper = thisHyper,
           hyperModalIdx = entry.hyper,
+          valid = entry.valid
         })
 
     ::continue::
   end
   local chooser = hs.chooser.new(function(choice)
     if not choice then return end
+    if not choice.valid then return end
     if choice.modalType == 0 then
       if choice.hyper ~= nil then
         if choice.hyper == "✧" then
