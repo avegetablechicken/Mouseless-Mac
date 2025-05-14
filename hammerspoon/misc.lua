@@ -1453,30 +1453,20 @@ function()
     if not choice.valid then return end
     if choice.modalType == 0 then
       if choice.hyper ~= nil then
-        if choice.hyper == "✧" then
-          for _, hotkey in ipairs(HyperModal.hyperMode.keys) do
-            hotkey:enable()
-          end
-          hs.eventtap.keyStroke(choice.mods, choice.key)
-          hs.timer.doAfter(0.2, function()
-            for _, hotkey in ipairs(HyperModal.hyperMode.keys) do
-              hotkey:disable()
+        local hyper = choice.hyper
+        if hyper == "✧" then hyper = HYPER end
+        for _, modal in ipairs(HyperModalList) do
+          if modal.hyper == hyper then
+            for _, hotkey in ipairs(modal.hyperMode.keys) do
+              hotkey:enable()
             end
-          end)
-        else
-          for _, modal in ipairs(HyperModalList) do
-            if modal.hyper == choice.hyper then
+            hs.eventtap.keyStroke(choice.mods, choice.key)
+            hs.timer.doAfter(0.2, function()
               for _, hotkey in ipairs(modal.hyperMode.keys) do
-                hotkey:enable()
+                hotkey:disable()
               end
-              hs.eventtap.keyStroke(choice.mods, choice.key)
-              hs.timer.doAfter(0.2, function()
-                for _, hotkey in ipairs(modal.hyperMode.keys) do
-                  hotkey:disable()
-                end
-              end)
-              break
-            end
+            end)
+            break
           end
         end
       else
