@@ -1212,10 +1212,10 @@ function()
                        icon = modal.icon })
   end
 
-  for _, modal in ipairs(HyperModalList) do
+  for i, modal in ipairs(HyperModalList) do
     if modal.hyperMode.Entered == false then
       for _, hotkey in ipairs(modal.hyperMode.keys) do
-        tinsert(allKeys, { modalType = 1, hyper = _,
+        tinsert(allKeys, { modalType = 1, hyper = i,
                            idx = hotkey.idx, msg = hotkey.msg,
                            condition = hotkey.condition,
                            kind = hotkey.kind, subkind = hotkey.subkind,
