@@ -4653,15 +4653,18 @@ local function resendToFrontmostWindow(cond, nonFrontmost)
     end
     local app = obj.application ~= nil and obj:application() or obj
     local frontWin = hs.window.frontmostWindow()
-    if frontWin ~= nil and app:focusedWindow() ~= nil
+    if nonFrontmost then
+      if frontWin ~= nil and WindowCreatedSince[frontWin:id()] then
+        return false, COND_FAIL.NOT_FRONTMOST_WINDOW
+      end
+    else
+      if app:focusedWindow() ~= nil and frontWin ~= nil
         and frontWin:application():bundleID() ~= app:bundleID() then
-      return false, COND_FAIL.NOT_FRONTMOST_WINDOW
-    elseif frontWin ~= nil and app:focusedWindow() == nil
-        and WindowCreatedSince[frontWin:id()] then
-      return false, COND_FAIL.NOT_FRONTMOST_WINDOW
-    elseif nonFrontmost and frontWin ~= nil
-        and WindowCreatedSince[frontWin:id()] then
-      return false, COND_FAIL.NOT_FRONTMOST_WINDOW
+        return false, COND_FAIL.NOT_FRONTMOST_WINDOW
+      elseif app:focusedWindow() == nil and frontWin ~= nil
+          and WindowCreatedSince[frontWin:id()] then
+        return false, COND_FAIL.NOT_FRONTMOST_WINDOW
+      end
     end
     if cond ~= nil then
       return cond(obj)
