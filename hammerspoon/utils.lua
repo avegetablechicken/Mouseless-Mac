@@ -1126,7 +1126,8 @@ local function localizeByStrings(str, localeDir, localeFile, localesDict, locale
         local invDict = localesInvDict[fileStem]
         if invDict == nil then
           if exists(baseLocaleDir .. '/' .. fileStem .. '.strings') then
-            invDict = parseStringsFile(baseLocaleDir .. '/' .. fileStem .. '.strings', false, true)
+            invDict = parseStringsFile(baseLocaleDir .. '/' .. fileStem .. '.strings',
+                                       false, true)
           elseif exists(baseLocaleDir .. '/' .. fileStem .. '.nib')
               and exists(localeDir .. '/' .. fileStem .. '.strings') then
             local fullPath = baseLocaleDir .. '/' .. fileStem .. '.nib'
@@ -2050,7 +2051,8 @@ local function delocalizeByStrings(str, localeDir, localeFile, deLocalesInvDict)
       local invDict = deLocalesInvDict[fileStem]
       if invDict == nil then
         if exists(localeDir .. '/' .. fileStem .. '.strings') then
-          invDict = parseStringsFile(localeDir .. '/' .. fileStem .. '.strings', false, true)
+          invDict = parseStringsFile(localeDir .. '/' .. fileStem .. '.strings',
+                                     false, true)
         end
       end
       if invDict ~= nil and invDict[str] ~= nil then
@@ -2438,7 +2440,8 @@ local function delocalizeWPS(str, appLocale, localeFile)
 end
 
 local function delocalizeZoteroMenu(str, appLocale)
-  local resourceDir = hs.application.pathForBundleID("org.zotero.zotero") .. "/Contents/Resources"
+  local resourceDir = hs.application.pathForBundleID("org.zotero.zotero")
+                      .. "/Contents/Resources"
   local resourceFile = resourceDir .. '/zotero.jar'
   if not exists(resourceFile) then
     resourceDir = resourceDir .. '/app'
@@ -2472,7 +2475,8 @@ local function delocalizeZoteroMenu(str, appLocale)
 end
 
 local function delocalizeMATLABFigureMenu(str, appLocale)
-  local resourceDir = hs.application.pathForBundleID("com.mathworks.matlab") .. "/resources/MATLAB"
+  local resourceDir = hs.application.pathForBundleID("com.mathworks.matlab")
+                      .. "/resources/MATLAB"
   local locale = getMatchedLocale(appLocale, resourceDir)
   if locale == nil then return end
   local localeFile = resourceDir .. '/' .. locale .. '/uistring/figuremenu.xml'
@@ -2800,7 +2804,9 @@ end
 -- should be use when localizing / delocalizing menu bar items
 -- and delocalizing menu items whose keybindings contain 'fn'
 function localizeCommonMenuItemTitles(locale, appid)
-  if locale == 'en' or locale:find('en_') or locale == 'English' then return end
+  if locale == 'en' or locale:find('en_') or locale == 'English' then
+    return
+  end
   if locale == SYSTEM_LOCALE and appid ~= nil then return end
 
   local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
