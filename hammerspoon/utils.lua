@@ -3132,20 +3132,26 @@ function hiddenByBartender(id, index)
   if find("com.surteesstudios.Bartender") == nil then
     return false
   end
-  if index == nil then index = 1 end
   local plistPath = hs.fs.pathToAbsolute(
-        "~/Library/Preferences/com.surteesstudios.Bartender.plist")
+      "~/Library/Preferences/com.surteesstudios.Bartender.plist")
   if plistPath ~= nil then
     local plist = hs.plist.read(plistPath)
     local allwaysShown = get(plist, "ProfileSettings",
                              "activeProfile", "Show")
     local itemRepr
-    if type(index) == 'number' then
-      itemRepr = id .. '-Item-' .. (index - 1)
-    else
+    if type(index) == 'string' then
       itemRepr = id .. '-' .. index
+    else
+      itemRepr = id .. '-Item-' .. (index or 1) - 1
     end
-    return not tcontain(allwaysShown, itemRepr)
+    if tcontain(allwaysShown, itemRepr) then
+      return false
+    end
+    if index == nil then
+      return tfind(allwaysShown, function(item)
+        return item:sub(1, #id + 1) == id .. '-'
+      end) == nil
+    end
   end
   return false
 end
@@ -3213,7 +3219,7 @@ function rightClickAndRestore(point, appname, delay)
 end
 
 function clickRightMenuBarItem(appid, menuItemPath, show)
-  local menuBarIdx, app = 1, nil
+  local menuBarIdx, app
   if type(appid) == 'table' then
     menuBarIdx = appid[2] appid = appid[1]
   end
@@ -3224,7 +3230,8 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
     app = appid appid = app:bundleID()
   end
   local appUI = toappui(app)
-  local menuBarMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, menuBarIdx)
+  local menuBarMenu = getc(appUI, AX.MenuBar, -1,
+                           AX.MenuBarItem, menuBarIdx or 1)
 
   if type(menuItemPath) ~= 'table' then
     menuItemPath = { menuItemPath }
@@ -3235,11 +3242,10 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
 
   if show then
     if hiddenByBartender(appid, menuBarIdx) then
-      local itemRepr
-      if type(menuBarIdx) == 'number' then
-        itemRepr = appid .. '-Item-' .. (menuBarIdx - 1)
-      else
+      if type(menuBarIdx) == 'string' then
         itemRepr = appid .. '-' .. menuBarIdx
+      else
+        itemRepr = appid .. '-Item-' .. (menuBarIdx or 1) - 1
       end
       hs.osascript.applescript(string.format([[
         tell application id "com.surteesstudios.Bartender" to activate "%s"
