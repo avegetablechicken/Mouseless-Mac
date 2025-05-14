@@ -52,6 +52,10 @@ function isdir(path)
   return hs.fs.attributes(path, 'mode') == 'directory'
 end
 
+function mkdir(path)
+  if not exists(path) then hs.fs.mkdir(path) end
+end
+
 function uicenter(elem)
   return hs.geometry.point{
     elem.AXPosition.x + elem.AXSize. w / 2,
@@ -678,9 +682,7 @@ local function getJavaLocales(appid, javahome, path)
                 module .. '/' .. line:sub(1, -12):gsub('%s', ''))
           end
         end
-        if dirNotExistOrEmpty(tmpBaseDir) then
-          hs.execute(strfmt("mkdir '%s'", tmpBaseDir))
-        end
+        mkdir(tmpBaseDir)
         hs.json.write(jimageLocales[appid], localesFile)
       else
         return
@@ -784,9 +786,7 @@ local function getElectronLocales(appid, localesPath)
           end
         end
         electronLocales[appid] = { locale = locales, file = localeFiles }
-        if dirNotExistOrEmpty(tmpBaseDir) then
-          hs.execute(strfmt("mkdir '%s'", tmpBaseDir))
-        end
+        mkdir(tmpBaseDir)
         hs.json.write(electronLocales[appid], localesFile)
       else
         return
@@ -1236,27 +1236,30 @@ local function localizeByNIB(str, localeDir, localeFile, appid)
       end
     end
 
+    local tmpBaseDir = localeTmpDir .. appid
+    mkdir(tmpBaseDir)
+
     if isBinarayPlist(NIBPath) and isBinarayPlist(baseNIBPath) then
-      local xmlDir = localeTmpDir .. appid .. '/' .. locale
+      local xmlDir = tmpBaseDir .. '/' .. locale
       local xmlPath = xmlDir .. '/' .. file .. '.xml'
       if not exists(xmlPath) then
-        hs.execute(strfmt("mkdir -p '%s'", xmlDir))
+        mkdir(xmlDir)
         local _, status = hs.execute(strfmt(
             "plutil -convert xml1 '%s' -o '%s'", NIBPath, xmlPath))
         if not status then return end
       end
-      local baseXmlDir = localeTmpDir .. appid .. '/' .. baseLocale
+      local baseXmlDir = tmpBaseDir .. '/' .. baseLocale
       local baseXmlPath = baseXmlDir .. '/' .. file .. '.xml'
       if not exists(baseXmlPath) then
-        hs.execute(strfmt("mkdir -p '%s'", baseXmlDir))
+        mkdir(baseXmlDir)
         local _, status = hs.execute(strfmt(
             "plutil -convert xml1 '%s' -o '%s'", baseNIBPath, baseXmlPath))
         if not status then return end
       end
-      local diffDir = localeTmpDir .. appid .. '/' .. baseLocale .. '-' .. locale
+      local diffDir = tmpBaseDir .. '/' .. baseLocale .. '-' .. locale
       local diffPath = diffDir .. '/' .. file .. '.diff'
       if not exists(diffPath) then
-        hs.execute(strfmt("mkdir -p '%s'", diffDir))
+        mkdir(diffDir)
         hs.execute(strfmt("diff --suppress-common-lines '%s' '%s' > '%s'",
                           baseXmlPath, xmlPath, diffPath))
       end
@@ -1271,28 +1274,28 @@ local function localizeByNIB(str, localeDir, localeFile, appid)
       return result ~= "" and result or nil
     end
 
-    local baseJsonDir = localeTmpDir .. appid .. '/' .. baseLocale
+    local baseJsonDir = tmpBaseDir .. '/' .. baseLocale
     local baseJsonPath = baseJsonDir .. '/' .. file .. '.json'
     if not exists(baseJsonPath) then
-      hs.execute(strfmt("mkdir -p '%s'", baseJsonDir))
+      mkdir(baseJsonDir)
       local _, status = hs.execute(strfmt([[
         /usr/bin/python3 scripts/nib_parse.py dump-json '%s' -o '%s'
       ]], baseNIBPath, baseJsonPath))
       if not status then return end
     end
-    local jsonDir = localeTmpDir .. appid .. '/' .. locale
+    local jsonDir = tmpBaseDir .. '/' .. locale
     local jsonPath = jsonDir .. '/' .. file .. '.json'
     if not exists(jsonPath) then
-      hs.execute(strfmt("mkdir -p '%s'", jsonDir))
+      mkdir(jsonDir)
       local _, status = hs.execute(strfmt([[
         /usr/bin/python3 scripts/nib_parse.py dump-json '%s' -o '%s'
       ]], NIBPath, jsonPath))
       if not status then return end
     end
-    local diffDir = localeTmpDir .. appid .. '/' .. baseLocale .. '-' .. locale
+    local diffDir = tmpBaseDir .. '/' .. baseLocale .. '-' .. locale
     local diffPath = diffDir .. '/' .. file .. '.diff'
     if not exists(diffPath) then
-      hs.execute(strfmt("mkdir -p '%s'", diffDir))
+      mkdir(diffDir)
       hs.execute(strfmt("diff --suppress-common-lines '%s' '%s' > '%s'",
                         baseJsonPath, jsonPath, diffPath))
     end
@@ -1440,10 +1443,12 @@ local function localizeByChromium(str, localeDir, appid)
         if file:sub(-4) == ".pak" and exists(localeDir .. '/' .. file) then
           local fullPath = resourceDir .. '/' .. enLocale .. '.lproj/' .. file
           local fileStem = file:sub(1, -5)
-          local enTmpBaseDir = strfmt(localeTmpDir .. '%s/%s', appid, enLocale)
+          local baseDir = localeTmpDir .. appid
+          mkdir(baseDir)
+          local enTmpBaseDir = baseDir .. '/' .. enLocale
           local enTmpdir = enTmpBaseDir .. '/' .. fileStem
           if dirNotExistOrEmpty(enTmpdir) then
-            hs.execute(strfmt("mkdir -p '%s'", enTmpBaseDir))
+            mkdir(enTmpBaseDir)
             hs.execute(strfmt("scripts/pak -u '%s' '%s'",
                               fullPath, enTmpdir))
           end
@@ -1452,10 +1457,10 @@ local function localizeByChromium(str, localeDir, appid)
           ]], str, enTmpdir))
           if status and output ~= "" then
             local matchFile = output:match("^.*/(.*)$")
-            local tmpBaseDir = strfmt(localeTmpDir .. '%s/%s', appid, locale)
+            local tmpBaseDir = baseDir .. locale
             local tmpdir = tmpBaseDir .. '/' .. fileStem
             if dirNotExistOrEmpty(tmpdir) then
-              hs.execute(strfmt("mkdir -p '%s'", tmpBaseDir))
+              mkdir(tmpBaseDir)
               hs.execute(strfmt("scripts/pak -u '%s' '%s'",
                                 localeDir .. '/' .. file, tmpdir))
             end
@@ -1477,7 +1482,8 @@ local function localizeByChromium(str, localeDir, appid)
 end
 
 local function localizeByElectron(str, appid, locale, localeFiles, localesPath)
-  local tmpdir = strfmt(localeTmpDir .. '%s/%s', appid, locale)
+  local baseDir = localeTmpDir .. appid
+  local tmpdir = baseDir .. '/' .. locale
   if #localeFiles > 0 then
     for _, file in ipairs(localeFiles) do
       local tmpfile = tmpdir .. '/' .. file .. '.json'
@@ -1489,9 +1495,8 @@ local function localizeByElectron(str, appid, locale, localeFiles, localesPath)
         hs.execute(strfmt([[
           npx @electron/asar extract-file "%s" "%s"
         ]], path, localeFilePath), true)
-        if dirNotExistOrEmpty(tmpdir) then
-          hs.execute(strfmt("mkdir -p '%s'", tmpdir))
-        end
+        mkdir(baseDir)
+        mkdir(tmpdir)
         hs.execute(strfmt("mv '%s' '%s'", file .. '.json', tmpdir))
       end
     end
@@ -2121,27 +2126,30 @@ local function delocalizeByNIB(str, localeDir, localeFile, appid)
       end
     end
 
+    local tmpBaseDir = localeTmpDir .. appid
+    mkdir(tmpBaseDir)
+
     if isBinarayPlist(NIBPath) and isBinarayPlist(baseNIBPath) then
-      local xmlDir = localeTmpDir .. appid .. '/' .. locale
+      local xmlDir = tmpBaseDir .. '/' .. locale
       local xmlPath = xmlDir .. '/' .. file .. '.xml'
       if not exists(xmlPath) then
-        hs.execute(strfmt("mkdir -p '%s'", xmlDir))
+        mkdir(xmlDir)
         local _, status = hs.execute(strfmt(
             "plutil -convert xml1 '%s' -o '%s'", NIBPath, xmlPath))
         if not status then return end
       end
-      local baseXmlDir = localeTmpDir .. appid .. '/' .. baseLocale
+      local baseXmlDir = tmpBaseDir .. '/' .. baseLocale
       local baseXmlPath = baseXmlDir .. '/' .. file .. '.xml'
       if not exists(baseXmlPath) then
-        hs.execute(strfmt("mkdir -p '%s'", baseXmlDir))
+        mkdir(baseXmlDir)
         local _, status = hs.execute(strfmt(
             "plutil -convert xml1 '%s' -o '%s'", baseNIBPath, baseXmlPath))
         if not status then return end
       end
-      local diffDir = localeTmpDir .. appid .. '/' .. locale .. '-' .. baseLocale
+      local diffDir = tmpBaseDir .. '/' .. locale .. '-' .. baseLocale
       local diffPath = diffDir .. '/' .. file .. '.diff'
       if not exists(diffPath) then
-        hs.execute(strfmt("mkdir -p '%s'", diffDir))
+        mkdir(diffDir)
         hs.execute(strfmt("diff --suppress-common-lines '%s' '%s' > '%s'",
                           xmlPath, baseXmlPath, diffPath))
       end
@@ -2156,28 +2164,28 @@ local function delocalizeByNIB(str, localeDir, localeFile, appid)
       return result ~= "" and result or nil
     end
 
-    local jsonDir = localeTmpDir .. appid .. '/' .. locale
+    local jsonDir = tmpBaseDir .. '/' .. locale
     local jsonPath = jsonDir .. '/' .. file .. '.json'
     if not exists(jsonPath) then
-      hs.execute(strfmt("mkdir -p '%s'", jsonDir))
+      mkdir(jsonDir)
       local _, status = hs.execute(strfmt(
           "/usr/bin/python3 scripts/nib_parse.py dump-json '%s' -o '%s'",
           NIBPath, jsonPath))
       if not status then return end
     end
-    local baseJsonDir = localeTmpDir .. appid .. '/' .. baseLocale
+    local baseJsonDir = tmpBaseDir .. '/' .. baseLocale
     local baseJsonPath = baseJsonDir .. '/' .. file .. '.json'
-      if not exists(baseJsonPath) then
-      hs.execute(strfmt("mkdir -p '%s'", baseJsonDir))
+    if not exists(baseJsonPath) then
+      mkdir(baseJsonDir)
       local _, status = hs.execute(strfmt(
           "/usr/bin/python3 scripts/nib_parse.py dump-json '%s' -o '%s'",
           baseLocaleDir .. '/' .. file .. '.nib', baseJsonPath))
       if not status then return end
     end
-    local diffDir = localeTmpDir .. appid .. '/' .. locale .. '-' .. baseLocale
+    local diffDir = tmpBaseDir .. '/' .. locale .. '-' .. baseLocale
     local diffPath = diffDir .. '/' .. file .. '.diff'
     if not exists(diffPath) then
-      hs.execute(strfmt("mkdir -p '%s'", diffDir))
+      mkdir(diffDir)
       hs.execute(strfmt("diff --suppress-common-lines '%s' '%s' > '%s'",
                         jsonPath, baseJsonPath, diffPath))
     end
@@ -2262,10 +2270,12 @@ local function delocalizeByChromium(str, localeDir, appid)
   for file in hs.fs.dir(localeDir) do
     if file:sub(-4) == ".pak" then
       local fileStem = file:sub(1, -5)
-      local tmpBaseDir = strfmt(localeTmpDir .. '%s/%s', appid, locale)
+      local baseDir = localeTmpDir .. appid
+      mkdir(baseDir)
+      local tmpBaseDir = baseDir .. '/' .. locale
       local tmpdir = tmpBaseDir .. '/' .. fileStem
       if dirNotExistOrEmpty(tmpdir) then
-        hs.execute(strfmt("mkdir -p '%s'", tmpBaseDir))
+        mkdir(tmpBaseDir)
         hs.execute(strfmt("scripts/pak  -u '%s' '%s'",
                           localeDir .. '/' .. file, tmpdir))
       end
@@ -2278,10 +2288,10 @@ local function delocalizeByChromium(str, localeDir, appid)
         for _, enLocale in ipairs{"en", "English", "Base", "en_US", "en_GB"} do
           local fullPath = resourceDir .. '/' .. enLocale .. '.lproj/' .. file
           if exists(fullPath) then
-            local enTmpBaseDir = strfmt(localeTmpDir .. '%s/%s', appid, enLocale)
+            local enTmpBaseDir = baseDir .. '/' .. enLocale
             local enTmpdir = enTmpBaseDir .. '/' .. fileStem
             if dirNotExistOrEmpty(enTmpdir) then
-              hs.execute(strfmt("mkdir -p '%s'", enTmpBaseDir))
+              mkdir(enTmpBaseDir)
               hs.execute(strfmt("scripts/pak  -u '%s' '%s'", fullPath, enTmpdir))
             end
             local matchFullPath = enTmpdir .. '/' .. matchFile
@@ -2301,7 +2311,8 @@ local function delocalizeByChromium(str, localeDir, appid)
 end
 
 local function delocalizeByElectron(str, appid, locale, localeFiles, localesPath)
-  local tmpdir = strfmt(localeTmpDir .. '%s/%s', appid, locale)
+  local tmpBaseDir = localeTmpDir .. appid
+  local tmpdir = tmpBaseDir .. '/' .. locale
   if #localeFiles > 0 then
     for _, file in ipairs(localeFiles) do
       local tmpfile = tmpdir .. '/' .. file .. '.json'
@@ -2313,9 +2324,8 @@ local function delocalizeByElectron(str, appid, locale, localeFiles, localesPath
         hs.execute(strfmt([[
           npx @electron/asar extract-file "%s" "%s"
         ]], path, localeFilePath), true)
-        if dirNotExistOrEmpty(tmpdir) then
-          hs.execute(strfmt("mkdir -p '%s'", tmpdir))
-        end
+        mkdir(tmpBaseDir)
+        mkdir(tmpdir)
         hs.execute(strfmt("mv '%s' '%s'", file .. '.json', tmpdir))
       end
     end
