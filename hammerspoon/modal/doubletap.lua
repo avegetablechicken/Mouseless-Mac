@@ -25,11 +25,6 @@ local modifiers = {
   hyper = "✧"
 }
 
-local functionKeycodes = {}
-for i=1,20 do
-  tinsert(functionKeycodes, hs.keycodes.map['f' .. tostring(i)])
-end
-
 function module:_install(mods, key)
   if key == nil or key == "" then
     key = mods
@@ -52,7 +47,7 @@ function module:_install(mods, key)
       self.key = hs.keycodes.map[key]
       local keyRepr = getIndex(self.key)
       self.idx = keyRepr .. keyRepr
-      if tcontain(functionKeycodes, self.key) then
+      if key:lower():match('^f%d+$') then
         self.mods = { 'fn' }
       end
     end
@@ -75,7 +70,7 @@ function module:_install(mods, key)
       idx = idx .. modifiers.shift
       tinsert(modsRepr, 'shift')
     end
-    if tcontain(functionKeycodes, self.key) then
+    if key:lower():match('^f%d+$') then
       tinsert(modsRepr, 'fn')
     end
     self.key = hs.keycodes.map[key]
