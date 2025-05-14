@@ -1386,22 +1386,32 @@ function()
       end
     end
 
-    local modsLen, modsByteLen = 0, 0
-    for _, mod in ipairs(modifierSymbols) do
-      if entry.idx:find(mod) then
-        modsLen = modsLen + 1
-        if mod == "🌐︎" then
-          modsByteLen = modsByteLen + 7
-        else
-          modsByteLen = modsByteLen + 3
+    local mods, key
+    if entry.modalType == 2 then
+      mods = ""
+      key = entry.idx
+      if key == "✧✧" then
+        key = HYPER .. HYPER
+      end
+    else
+      local modsLen, modsByteLen = 0, 0
+      for _, mod in ipairs(modifierSymbols) do
+        if entry.idx:find(mod) then
+          modsLen = modsLen + 1
+          if mod == "🌐︎" then
+            modsByteLen = modsByteLen + 7
+          else
+            modsByteLen = modsByteLen + 3
+          end
         end
       end
+      if modsByteLen == entry.idx:len() then
+        modsByteLen = utf8.offset(entry.idx, modsLen) - 1
+      end
+      key = entry.idx:sub(modsByteLen + 1)
+      if key == "✧" then key = HYPER end
+      mods = entry.idx:sub(1, modsByteLen)
     end
-    if modsByteLen == entry.idx:len() then
-      modsByteLen = utf8.offset(entry.idx, modsLen) - 1
-    end
-    local key = entry.idx:sub(modsByteLen + 1)
-    local mods = entry.idx:sub(1, modsByteLen)
 
     local pos = entry.msg:find(": ")
     local actualMsg
@@ -1469,17 +1479,14 @@ function()
         event:setFlags({ [flag] = true }):post()
         event:setFlags({}):post()
       else
-        local keycode
-        if choice.key == "✧" then
-          keycode = hs.keycodes.map[HYPER]
-        else
-          local keyLen = choice.key:len()
-          keycode = choice.key:sub(1, keyLen / 2)
-        end
-        hs.eventtap.event.newKeyEvent("", keycode, true):post()
-        hs.eventtap.event.newKeyEvent("", keycode, false):post()
-        hs.eventtap.event.newKeyEvent("", keycode, true):post()
-        hs.eventtap.event.newKeyEvent("", keycode, false):post()
+        local keyLen = choice.key:len()
+        local key = choice.key:sub(1, keyLen / 2)
+        local keycode = hs.keycodes.map[key]
+        local mods = key:lower():match('^f%d+$') and 'fn' or ''
+        hs.eventtap.event.newKeyEvent(mods, keycode, true):post()
+        hs.eventtap.event.newKeyEvent(mods, keycode, false):post()
+        hs.eventtap.event.newKeyEvent(mods, keycode, true):post()
+        hs.eventtap.event.newKeyEvent(mods, keycode, false):post()
       end
     end
   end)
