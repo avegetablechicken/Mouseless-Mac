@@ -442,6 +442,18 @@ local function getMenuHotkeys(app, titleAsEntry, titlePrefix)
   return appHotkeys
 end
 
+local HK_SOURCE = {
+  HS = 0,
+  KARABINER = 1,
+  APP = 2
+}
+
+local HK_MODAL = {
+  REGULAR = 0,
+  HYPER = 1,
+  DOUBLE_TAP = 2
+}
+
 local function loadAppHotkeys(t, showOrSearch)
   if showOrSearch then
     HSKeybindings.appHotkeysLoaded = true
@@ -450,8 +462,8 @@ local function loadAppHotkeys(t, showOrSearch)
   local appHotkeys = getMenuHotkeys(activeApp, showOrSearch, true)
   for _, hotkey in ipairs(appHotkeys) do
     if type(hotkey) == 'table' then
-      hotkey.source = 2
-      hotkey.modalType = 0
+      hotkey.source = HK_SOURCE.APP
+      hotkey.modal = HK_MODAL.REGULAR
       if hotkey.valid then
         local frontWin = hs.window.frontmostWindow()
         if (frontWin ~= nil and activeApp:focusedWindow() ~= nil
@@ -568,7 +580,9 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
     local _, karaIsRunning = hs.execute("pgrep Karabiner-VirtualHIDDevice-Daemon")
     if karaIsRunning then
       karaHotkeys = loadKarabinerKeyBindings("static/karabiner-keybindings.json")
-      foreach(karaHotkeys, function(hotkey) hotkey.source = 1 end)
+      foreach(karaHotkeys, function(hotkey)
+        hotkey.source = HK_SOURCE.KARABINER
+      end)
     end
   end
   allKeys = hs.fnutils.concat(allKeys, karaHotkeys or {})
@@ -706,7 +720,8 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
         menu = menu.."<li><div class='menutext'>".." "..entry.."</div></li>"
         kind = HK.IN_APP
       end
-    elseif ((entry.source == 1 and showHS) or (entry.source == 2 and showApp))
+    elseif ((entry.source == HK_SOURCE.KARABINER and showHS)
+             or (entry.source == HK_SOURCE.APP and showApp))
         and (entry.valid or (not validOnly and entry.msg:find(": ") ~= nil)) then
       local msg
       if entry.kind ~= kind then
@@ -807,7 +822,8 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
       end
     end
     if entry.kind ~= nil and entry.valid
-        and ((entry.source == 1 and showHS) or (entry.source == 2 and showApp)) then
+        and ((entry.source == HK_SOURCE.HS and showHS)
+             or (entry.source == HK_SOURCE.APP and showApp)) then
       kind = entry.kind
     end
   end
@@ -1202,7 +1218,7 @@ function()
 
   for _, modal in ipairs(tfilter(DoubleTapModalList,
                                  function(m) return m:isEnabled() end)) do
-    tinsert(allKeys, { modalType = 2, source = 0,
+    tinsert(allKeys, { modal = 2, source = 0,
                        idx = modal.idx, msg = modal.msg,
                        condition = modal.condition,
                        kind = modal.kind, subkind = modal.subkind,
@@ -1211,7 +1227,7 @@ function()
 
   for _, modal in ipairs(HyperModalList) do
     for _, hotkey in ipairs(modal.hyperMode.keys) do
-      tinsert(allKeys, { modalType = 1, source = 0,
+      tinsert(allKeys, { modal = 1, source = 0,
                          hyper = modal.hyper,
                          idx = hotkey.idx, msg = hotkey.msg,
                          condition = hotkey.condition,
@@ -1223,7 +1239,7 @@ function()
 
   for _, entry in ipairs(hs.hotkey.getHotkeys()) do
     if entry.idx ~= nil then  -- weird bug
-      local newEntry = { modalType = 0, source = 0,
+      local newEntry = { modal = 0, source = 0,
                          idx = entry.idx, msg = entry.msg,
                          condition = entry.condition,
                          kind = entry.kind, subkind = entry.subkind,
@@ -1385,7 +1401,7 @@ function()
     end
 
     local mods, key
-    if entry.modalType == 2 then
+    if entry.modal == HK_MODAL.DOUBLE_TAP then
       mods = ""
       key = entry.idx
       if key == "✧✧" then
@@ -1419,7 +1435,7 @@ function()
       actualMsg = "(no message)"
     end
     local idx = entry.pretty_idx or entry.idx
-    if entry.modalType == 0 then
+    if entry.modal == HK_MODAL.REGULAR then
       if entry.msg:find(": ") - 1 ~= entry.idx:len() then
         goto continue
       end
@@ -1433,7 +1449,7 @@ function()
           image = image,
           mods = mods,
           key = key,
-          modalType = entry.modalType,
+          modal = entry.modal,
           hyper = entry.hyper,
           valid = entry.valid
         })
@@ -1443,14 +1459,14 @@ function()
   local chooser = hs.chooser.new(function(choice)
     if not choice then return end
     if not choice.valid then return end
-    if choice.modalType == 0 then
-      if choice.source == 2 then
+    if choice.modal == HK_MODAL.REGULAR then
+      if choice.source == HK_SOURCE.APP then
         hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', 'fn'), choice.key,
                               nil, hs.application.frontmostApplication())
       else
         hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', 'fn'), choice.key)
       end
-    elseif choice.modalType == 1 then
+    elseif choice.modal == HK_MODAL.HYPER then
       local modal = tfind(HyperModalList, function(modal)
         return modal.hyper == choice.hyper
       end)
@@ -1463,7 +1479,7 @@ function()
           hotkey:disable()
         end
       end)
-    elseif choice.modalType == 2 then
+    elseif choice.modal == HK_MODAL.DOUBLE_TAP then
       if tcontain({ "⌘", "⌥", "⌃", "⇧" }, choice.key) then
         local flag
         if choice.key == "⌘" then
