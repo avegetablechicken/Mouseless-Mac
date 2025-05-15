@@ -1480,8 +1480,22 @@ function()
         end
       end)
     elseif choice.modal == HK_MODAL.DOUBLE_TAP then
-      local keyLen = choice.key:len()
-      local key = choice.key:sub(1, keyLen / 2)
+      local modsByteLen = 0
+      for _, mod in ipairs(modifierSymbols) do
+        while choice.key:find(mod, modsByteLen + 1) do
+          if mod == "🌐︎" then
+            modsByteLen = modsByteLen + 7
+          else
+            modsByteLen = modsByteLen + 3
+          end
+        end
+      end
+      local key = choice.key:sub(modsByteLen + 1)
+      local mods = choice.key:sub(1, modsByteLen)
+      if key == "" then
+        key = mods mods = ""
+      end
+      key = key:sub(1, key:len() / 2)
       if tcontain({ "⌘", "⌥", "⌃", "⇧" }, key) then
         local flag
         if key == "⌘" then
@@ -1499,13 +1513,29 @@ function()
         event:setFlags({}):post()
         event:setFlags({ [flag] = true }):post()
         event:setFlags({}):post()
+      elseif mods == "" then
+        local keycode = hs.keycodes.map[key]
+        mods = key:lower():match('^f%d+$') and 'fn' or ''
+        hs.eventtap.event.newKeyEvent(mods, keycode, true):post()
+        hs.eventtap.event.newKeyEvent(mods, keycode, false):post()
+        hs.eventtap.event.newKeyEvent(mods, keycode, true):post()
+        hs.eventtap.event.newKeyEvent(mods, keycode, false):post()
       else
         local keycode = hs.keycodes.map[key]
-        local mods = key:lower():match('^f%d+$') and 'fn' or ''
-        hs.eventtap.event.newKeyEvent(mods, keycode, true):post()
-        hs.eventtap.event.newKeyEvent(mods, keycode, false):post()
-        hs.eventtap.event.newKeyEvent(mods, keycode, true):post()
-        hs.eventtap.event.newKeyEvent(mods, keycode, false):post()
+        local modsList = {}
+        if mods:find("⌘") then tinsert(modsList, 'cmd') end
+        if mods:find("⌥") then tinsert(modsList, 'alt') end
+        if mods:find("⌃") then tinsert(modsList, 'ctrl') end
+        if mods:find("⇧") then tinsert(modsList, 'shift') end
+        if key:lower():match('^f%d+$') then
+          tinsert(modsList, 'fn')
+        end
+        hs.eventtap.event.newKeyEvent(modsList, keycode, true):post()
+        hs.eventtap.event.newKeyEvent(modsList, keycode, false):post()
+        hs.timer.doAfter(0.01, function()
+          hs.eventtap.event.newKeyEvent(modsList, keycode, true):post()
+          hs.eventtap.event.newKeyEvent(modsList, keycode, false):post()
+        end)
       end
     end
   end)
