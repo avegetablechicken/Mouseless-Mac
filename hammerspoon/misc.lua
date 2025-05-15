@@ -450,11 +450,8 @@ local function loadAppHotkeys(t, showOrSearch)
   local appHotkeys = getMenuHotkeys(activeApp, showOrSearch, true)
   for _, hotkey in ipairs(appHotkeys) do
     if type(hotkey) == 'table' then
-      if showOrSearch then
-        hotkey.source = 2
-      else
-        hotkey.modalType = 0
-      end
+      hotkey.source = 2
+      hotkey.modalType = 0
       if hotkey.valid then
         local frontWin = hs.window.frontmostWindow()
         if (frontWin ~= nil and activeApp:focusedWindow() ~= nil
@@ -1205,7 +1202,7 @@ function()
 
   for _, modal in ipairs(tfilter(DoubleTapModalList,
                                  function(m) return m:isEnabled() end)) do
-    tinsert(allKeys, { modalType = 2,
+    tinsert(allKeys, { modalType = 2, source = 0,
                        idx = modal.idx, msg = modal.msg,
                        condition = modal.condition,
                        kind = modal.kind, subkind = modal.subkind,
@@ -1214,7 +1211,8 @@ function()
 
   for _, modal in ipairs(HyperModalList) do
     for _, hotkey in ipairs(modal.hyperMode.keys) do
-      tinsert(allKeys, { modalType = 1, hyper = modal.hyper,
+      tinsert(allKeys, { modalType = 1, source = 0,
+                         hyper = modal.hyper,
                          idx = hotkey.idx, msg = hotkey.msg,
                          condition = hotkey.condition,
                          kind = hotkey.kind, subkind = hotkey.subkind,
@@ -1225,7 +1223,7 @@ function()
 
   for _, entry in ipairs(hs.hotkey.getHotkeys()) do
     if entry.idx ~= nil then  -- weird bug
-      local newEntry = { modalType = 0,
+      local newEntry = { modalType = 0, source = 0,
                          idx = entry.idx, msg = entry.msg,
                          condition = entry.condition,
                          kind = entry.kind, subkind = entry.subkind,
@@ -1446,7 +1444,12 @@ function()
     if not choice then return end
     if not choice.valid then return end
     if choice.modalType == 0 then
-      hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', 'fn'), choice.key)
+      if choice.source == 2 then
+        hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', 'fn'), choice.key,
+                              nil, hs.application.frontmostApplication())
+      else
+        hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', 'fn'), choice.key)
+      end
     elseif choice.modalType == 1 then
       local modal = tfind(HyperModalList, function(modal)
         return modal.hyper == choice.hyper
