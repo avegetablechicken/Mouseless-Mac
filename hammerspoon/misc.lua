@@ -1480,15 +1480,17 @@ function()
         end
       end)
     elseif choice.modal == HK_MODAL.DOUBLE_TAP then
-      if tcontain({ "⌘", "⌥", "⌃", "⇧" }, choice.key) then
+      local keyLen = choice.key:len()
+      local key = choice.key:sub(1, keyLen / 2)
+      if tcontain({ "⌘", "⌥", "⌃", "⇧" }, key) then
         local flag
-        if choice.key == "⌘" then
+        if key == "⌘" then
           flag = 'cmd'
-        elseif choice.key == "⌥" then
+        elseif key == "⌥" then
           flag = 'alt'
-        elseif choice.key == "⌃" then
+        elseif key == "⌃" then
           flag = 'ctrl'
-        elseif choice.key == "⇧" then
+        elseif key == "⇧" then
           flag = 'shift'
         end
         local event = hs.eventtap.event.newEvent()
@@ -1498,8 +1500,6 @@ function()
         event:setFlags({ [flag] = true }):post()
         event:setFlags({}):post()
       else
-        local keyLen = choice.key:len()
-        local key = choice.key:sub(1, keyLen / 2)
         local keycode = hs.keycodes.map[key]
         local mods = key:lower():match('^f%d+$') and 'fn' or ''
         hs.eventtap.event.newKeyEvent(mods, keycode, true):post()
