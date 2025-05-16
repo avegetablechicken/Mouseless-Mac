@@ -1164,6 +1164,17 @@
                         "description": "Right Option + F10/F11/F12 to volume mute/down/up",
                         "manipulators": [
                             {
+                                "conditions": [
+                                    {
+                                        "identifiers": [
+                                            {
+                                                "product_id": 45915,
+                                                "vendor_id": 1133
+                                            }
+                                        ],
+                                        "type": "device_unless"
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "f10",
                                     "modifiers": { "mandatory": ["right_option"] }
@@ -1172,6 +1183,17 @@
                                 "type": "basic"
                             },
                             {
+                                "conditions": [
+                                    {
+                                        "identifiers": [
+                                            {
+                                                "product_id": 45915,
+                                                "vendor_id": 1133
+                                            }
+                                        ],
+                                        "type": "device_unless"
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "f11",
                                     "modifiers": { "mandatory": ["right_option"] }
@@ -1180,6 +1202,17 @@
                                 "type": "basic"
                             },
                             {
+                                "conditions": [
+                                    {
+                                        "identifiers": [
+                                            {
+                                                "product_id": 45915,
+                                                "vendor_id": 1133
+                                            }
+                                        ],
+                                        "type": "device_unless"
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "f12",
                                     "modifiers": { "mandatory": ["right_option"] }
