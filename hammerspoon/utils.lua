@@ -3274,7 +3274,11 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
       ]], itemRepr))
     elseif menuBarMenu then
       -- note: some apps do not react to AX.Press, you have to click them.
-      menuBarMenu:performAction(AX.Press)
+      if show == "click" then
+        leftClickAndRestore(uicenter(menuBarMenu), app:name())
+      else
+        menuBarMenu:performAction(AX.Press)
+      end
     else
       return false
     end
