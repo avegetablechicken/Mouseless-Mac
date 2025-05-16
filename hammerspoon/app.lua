@@ -420,10 +420,10 @@ local function messageDeletable(app)
   local appUI = toappui(app)
   local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
     AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
+  local desc = localizedString('New Message', app:bundleID())
   if messageItems == nil or #messageItems == 0
       or (#messageItems == 1 and (messageItems[1].AXDescription == nil
-        or messageItems[1].AXDescription:sub(4) ==
-        localizedString('New Message', app:bundleID()))) then
+        or messageItems[1].AXDescription:sub(4) == desc)) then
     return false
   end
   return true, messageItems
@@ -1445,9 +1445,9 @@ appHotKeyCallbacks = {
         local appUI = toappui(app)
         local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
             AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
+        local desc = localizedString('New Message', app:bundleID())
         local selected = tfind(messageItems or {}, function(msg)
-          return msg.AXSelected == true and msg.AXDescription:sub(4) ~=
-              localizedString('New Message', app:bundleID())
+          return msg.AXSelected == true and msg.AXDescription:sub(4) ~= desc
         end)
         if selected == nil then return false end
         return checkMenuItem({
@@ -1470,25 +1470,24 @@ appHotKeyCallbacks = {
         local appUI = toappui(app)
         local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
             AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
-        if messageItems == nil or #messageItems <= 1 then return false end
-        if messageItems[1].AXSelected then
-          return true, messageItems[#messageItems]
-        else
-          local selected = tfind(messageItems, function(msg)
-            return msg.AXSelected == true
-          end)
-          if selected == nil then return true, messageItems[#messageItems] end
+        local desc = localizedString('New Message', app:bundleID())
+        if messageItems == nil or #messageItems == 0
+            or (#messageItems == 1 and (messageItems[1].AXDescription == nil
+              or messageItems[1].AXDescription:sub(4) == desc)) then
+          return false
         end
-        return checkMenuItemByKeybinding('⇧⌃', "⇥")(app)
+        if #messageItems == 1 and messageItems[1].AXSelected then
+          return false
+        end
+        for i=2,#messageItems do
+          if messageItems[i].AXSelected then
+            return true, messageItems[i-1]
+          end
+        end
+        return true, messageItems[#messageItems]
       end,
       repeatable = true,
-      fn = function(result, app)
-        if type(result) ~= 'table' then
-          result:performAction(AX.Press)
-        else
-          app:selectMenuItem(result)
-        end
-      end
+      fn = receiveButton
     },
     ["goToNextConversation"] = {
       message = menuItemMessage('⌃', "⇥", 2),
@@ -1496,25 +1495,24 @@ appHotKeyCallbacks = {
         local appUI = toappui(app)
         local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
             AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
-        if messageItems == nil or #messageItems <= 1 then return false end
-        if messageItems[#messageItems].AXSelected then
-          return true, messageItems[1]
-        else
-          local selected = tfind(messageItems, function(msg)
-            return msg.AXSelected == true
-          end)
-          if selected == nil then return true, messageItems[1] end
+        local desc = localizedString('New Message', app:bundleID())
+        if messageItems == nil or #messageItems == 0
+            or (#messageItems == 1 and (messageItems[1].AXDescription == nil
+              or messageItems[1].AXDescription:sub(4) == desc)) then
+          return false
         end
-        return checkMenuItemByKeybinding('⌃', "⇥")(app)
+        if #messageItems == 1 and messageItems[1].AXSelected then
+          return false
+        end
+        for i=#messageItems-1,1,-1 do
+          if messageItems[i].AXSelected then
+            return true, messageItems[i+1]
+          end
+        end
+        return true, messageItems[1]
       end,
       repeatable = true,
-      fn = function(result, app)
-        if type(result) ~= 'table' then
-          result:performAction(AX.Press)
-        else
-          app:selectMenuItem(result)
-        end
-      end
+      fn = receiveButton
     }
   },
 
