@@ -2338,19 +2338,9 @@ appHotKeyCallbacks = {
         return "Toggle " .. appname .. " Launcher"
       end,
       fn = function(app)
-        if find('com.surteesstudios.Bartender') then
-          -- fixme: false invoke when `Bartender` try to show or hide menubar icon
-          -- always show the icon to workaround it
-          hs.osascript.applescript(strfmt([[
-            tell application id "com.surteesstudios.Bartender"
-              activate "%s-Item-0"
-            end tell
-          ]], app:bundleID()))
-        else
-          local appUI = toappui(app)
-          local menuBarMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1)
-          leftClickAndRestore(uicenter(menuBarMenu), app:name())
-        end
+        -- fixme: false invoke when `Bartender` try to show or hide menubar icon
+        -- always show the icon to workaround it
+        clickRightMenuBarItem(app, {}, "click")
       end,
       onLaunch = function(app)
         local retry = 0
@@ -2362,17 +2352,7 @@ appHotKeyCallbacks = {
         app:focusedWindow():close()
         app:hide()
         hs.timer.usleep(1000000)
-        if find('com.surteesstudios.Bartender') then
-          hs.osascript.applescript(strfmt([[
-            tell application id "com.surteesstudios.Bartender"
-              activate "%s-Item-0"
-            end tell
-          ]], app:bundleID()))
-        else
-          local appUI = toappui(app)
-          local menuBarMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1)
-          leftClickAndRestore(uicenter(menuBarMenu), app:name())
-        end
+        clickRightMenuBarItem(app, {}, "click")
       end
     },
     ["showMainWindow"] = {

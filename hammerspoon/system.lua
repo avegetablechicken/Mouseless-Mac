@@ -957,25 +957,8 @@ registerProxyMenuWrapper()
 
 local menubarHK = KeybindingConfigs.hotkeys.global
 
-local proxyHotkey = bindHotkeySpec(menubarHK["showProxyMenu"],
-"Show Proxy Menu",
-function()
-  if find("com.surteesstudios.Bartender") ~= nil then
-    hs.osascript.applescript(strfmt([[
-      tell application id "com.surteesstudios.Bartender"
-        activate "org.hammerspoon.Hammerspoon-%s"
-      end tell
-    ]], proxy:autosaveName()))
-  else
-    local app = find("org.hammerspoon.Hammerspoon")
-    local appUI = toappui(app)
-    local menuBarMenu = getc(appUI, AX.MenuBar, -1,
-        AX.MenuBarItem, proxy:title())
-    if menuBarMenu ~= nil then
-      menuBarMenu:performAction(AX.Press)
-    end
-  end
-end)
+local proxyHotkey = bindHotkeySpec(menubarHK["showProxyMenu"], "Show Proxy Menu",
+    bind(clickRightMenuBarItem, {"org.hammerspoon.Hammerspoon", proxy:title()}))
 proxyHotkey.kind = HK.MENUBAR
 proxyHotkey.icon = hs.image.imageFromAppBundle("com.apple.systempreferences")
 
