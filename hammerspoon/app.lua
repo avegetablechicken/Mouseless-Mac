@@ -2836,6 +2836,12 @@ appHotKeyCallbacks = {
         app:selectMenuItem({ app:name(), "设置" })
       end
     },
+    ["showMainWindow"] = {
+      message = "抖音窗口",
+      fn = function(app)
+        app:selectMenuItem({ "窗口", "抖音窗口" })
+      end
+    },
     ["tab1"] = {
       message = douyinDesktopTabTitle(1),
       condition = douyinDesktopTab(1),
