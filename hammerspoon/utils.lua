@@ -10,6 +10,8 @@ local tifilter = hs.fnutils.ifilter
 local tconcat = hs.fnutils.concat
 local tcopy = hs.fnutils.copy
 local toappui = hs.axuielement.applicationElement
+local towinui = hs.axuielement.windowElement
+local bind = hs.fnutils.partial
 
 function get(table, key, ...)
   if table == nil or key == nil then return table end
@@ -3150,35 +3152,6 @@ function hasTopNotch(screen)
   return false
 end
 
-function hiddenByBartender(id, index)
-  if find("com.surteesstudios.Bartender") == nil then
-    return false
-  end
-  local plistPath = hs.fs.pathToAbsolute(
-      "~/Library/Preferences/com.surteesstudios.Bartender.plist")
-  if plistPath ~= nil then
-    local plist = hs.plist.read(plistPath)
-    local allwaysShown = get(plist, "ProfileSettings",
-                             "activeProfile", "Show")
-    local itemRepr
-    if type(index) == 'string' then
-      itemRepr = id .. '-' .. index
-    else
-      itemRepr = id .. '-Item-' .. (index or 1) - 1
-    end
-    if tcontain(allwaysShown, itemRepr) then
-      return false
-    end
-    if index == nil then
-      return tfind(allwaysShown, function(item)
-        return item:sub(1, #id + 1) == id .. '-'
-      end) == nil
-    end
-    return true
-  end
-  return false
-end
-
 function leftClick(point, appname)
   if point.x == nil then point = hs.geometry.point(point) end
   if appname ~= nil then
@@ -3241,6 +3214,191 @@ function rightClickAndRestore(point, appname, delay)
   return false
 end
 
+local function showHiddenMenuBarItems(appid)
+  local app = find(appid)
+  local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
+  if icon then
+    leftClickAndRestore(uicenter(icon), app:name())
+  end
+  return false
+end
+
+MENUBAR_MANAGER_SHOW = {
+  ["com.surteesstudios.Bartender"] = function(appid, index)
+    if type(index) == 'string' then
+      itemRepr = appid .. '-' .. index
+    else
+      itemRepr = appid .. '-Item-' .. (index or 1) - 1
+    end
+    hs.osascript.applescript(string.format([[
+      tell application id "com.surteesstudios.Bartender"
+        activate "%s"
+      end
+    ]], itemRepr))
+    return true
+  end,
+
+  ["com.jordanbaird.Ice"] = function(appid, index)
+    local app = find("com.jordanbaird.Ice")
+    local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
+    if icon then
+      leftClickAndRestore(uicenter(icon), app:name())
+    end
+
+    local useIceBar = hs.execute(
+      [[defaults read com.jordanbaird.Ice UseIceBar | tr -d '\n']])
+    if useIceBar == "0" then
+      return false
+    end
+
+    -- fixme: search and click
+    return true
+  end,
+
+  ["cn.better365.iBar"] = function(appid, index)
+    local isAdvancedMode = hs.execute(
+      [[defaults read cn.better365.iBar advancedMode | tr -d '\n']])
+    if isAdvancedMode == "0" then
+      -- fixme: show hidden items
+      return false
+    end
+
+    local app = find("cn.better365.iBar")
+    local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
+    if icon then
+      leftClickAndRestore(uicenter(icon), app:name())
+    end
+    if type(index) == 'number' then
+      index = 'Item-' .. tostring(index - 1)
+    end
+    local itemRepr
+    if type(index) == 'string' then
+      itemRepr = index .. ' >>> ' .. appid .. '$'
+    else
+      itemRepr = strfmt('Item-%d >>> %s$', (index or 1) - 1, appid)
+    end
+    hs.timer.waitUntil(
+      function()
+        local win = app:focusedWindow()
+        return win ~= nil and win:title() == "iBarmenu"
+            and win:subrole() == AX.SystemFloatingWindow
+      end,
+      function()
+        local winUI = towinui(app:focusedWindow())
+        for _, bt in ipairs(getc(winUI, AX.Button)) do
+          if bt.AXIdentifier:match(itemRepr) then
+            bt:performAction(AX.Press)
+            break
+          end
+        end
+        if index == nil then
+          local appItems = {}
+          for i, bt in ipairs(getc(winUI, AX.Button)) do
+            if bt.AXIdentifier:find(appid) then
+              tinsert(appItems, i)
+            end
+          end
+          if #appItems == 1 then
+            local bt = getc(winUI, AX.Button, appItems[1])
+            bt:performAction(AX.Press)
+          end
+        end
+      end
+    )
+    return true
+  end,
+
+  ["com.dwarvesv.minimalbar"] = bind(showHiddenMenuBarItems,
+                                     "com.dwarvesv.minimalbar"),
+
+  ["com.mortennn.Dozer"] = bind(showHiddenMenuBarItems,
+                                "com.mortennn.Dozer"),
+
+  ["net.matthewpalmer.Vanilla"] = function()
+    local app = find("net.matthewpalmer.Vanilla")
+    local icon = tfind(getc(toappui(app), AX.Window), function(win)
+      return win.AXChildren ~= nil and #win.AXChildren == 1
+          and win.AXChildren[1].AXRole == AX.Image
+    end)
+    if icon then
+      leftClickAndRestore(uicenter(icon), app:name())
+    end
+    return false
+  end
+}
+
+local function getValidMenuBarManager()
+  local leftmostHorizontal = 0
+  hs.fnutils.each(hs.screen.allScreens(), function(screen)
+    leftmostHorizontal = math.min(screen:fullFrame().x, leftmostHorizontal)
+  end)
+  for appid, _ in pairs(MENUBAR_MANAGER_SHOW) do
+    local app = find(appid)
+    if app then
+      local maxX  -- incase it is hidden by other menu bar managers
+      if appid == "net.matthewpalmer.Vanilla" then
+        local icon = tfind(getc(toappui(app), AX.Window), function(win)
+          return win.AXChildren ~= nil and #win.AXChildren == 1
+              and win.AXChildren[1].AXRole == AX.Image
+        end)
+        maxX = icon.AXPosition.x
+      else
+        maxX = leftmostHorizontal - 1
+        hs.fnutils.each(getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem),
+            function(item) maxX = math.max(maxX, item.AXPosition.x) end)
+      end
+      if maxX > leftmostHorizontal then
+        return appid
+      end
+    end
+  end
+end
+
+local function hiddenByBartender(appid, index)
+  local plistPath = hs.fs.pathToAbsolute(
+      "~/Library/Preferences/com.surteesstudios.Bartender.plist")
+  if plistPath ~= nil then
+    local plist = hs.plist.read(plistPath)
+    local allwaysShown = get(plist, "ProfileSettings",
+                             "activeProfile", "Show")
+    local itemRepr
+    if type(index) == 'string' then
+      itemRepr = appid .. '-' .. index
+    else
+      itemRepr = appid .. '-Item-' .. (index or 1) - 1
+    end
+    if tcontain(allwaysShown, itemRepr) then
+      return false
+    end
+    if index == nil then
+      return tfind(allwaysShown, function(item)
+        return item:sub(1, #appid + 1) == appid .. '-'
+      end) == nil
+    end
+    return true
+  end
+  return false
+end
+
+function hiddenByMenuBarManager(appid, index)
+  local manager = getValidMenuBarManager()
+  if manager == nil then return false end
+  if manager == "com.surteesstudios.Bartender" then
+    if hiddenByBartender(appid, index) then
+      return true, manager
+    end
+  else
+    local menuBarItem = getc(toappui(find(appid)), AX.MenuBar, -1,
+      AX.MenuBarItem, index or 1)
+    local leftmostHorizontal = 0
+    hs.fnutils.each(hs.screen.allScreens(), function(screen)
+      leftmostHorizontal = math.min(screen:fullFrame().x, leftmostHorizontal)
+    end)
+    return menuBarItem.AXPosition.x < leftmostHorizontal, manager
+  end
+  return false
+end
+
 function clickRightMenuBarItem(appid, menuItemPath, show)
   local menuBarIdx, app
   if type(appid) == 'table' then
@@ -3264,15 +3422,23 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   end
 
   if show then
-    if hiddenByBartender(appid, menuBarIdx) then
-      if type(menuBarIdx) == 'string' then
-        itemRepr = appid .. '-' .. menuBarIdx
-      else
-        itemRepr = appid .. '-Item-' .. (menuBarIdx or 1) - 1
+    local hidden, manager = hiddenByMenuBarManager(appid, menuBarIdx)
+    if hidden then
+      local done = MENUBAR_MANAGER_SHOW[manager](appid, menuBarIdx)
+      if done ~= true then
+        hs.timer.doAfter(0.2, function()
+          if menuBarMenu then
+            -- note: some apps do not react to AX.Press, you have to click them.
+            if show == "click" then
+              leftClickAndRestore(uicenter(menuBarMenu), app:name())
+            else
+              menuBarMenu:performAction(AX.Press)
+            end
+          else
+            return false
+          end
+        end)
       end
-      hs.osascript.applescript(string.format([[
-        tell application id "com.surteesstudios.Bartender" to activate "%s"
-      ]], itemRepr))
     elseif menuBarMenu then
       -- note: some apps do not react to AX.Press, you have to click them.
       if show == "click" then
