@@ -707,6 +707,51 @@ local function confirmButtonValidForAppCleanerUninstaller(title)
   end
 end
 
+--- ### Douyin Desktop
+local function douyinDesktopPage(app)
+  local winUI = towinui(app:focusedWindow())
+  if getc(winUI, AX.WebArea, 2, AX.Group, 2) == nil then
+    return getc(towinui(app:focusedWindow()), AX.WebArea, 2, AX.Group, 1)
+  else
+    return getc(towinui(app:focusedWindow()), AX.WebArea, 2)
+  end
+end
+
+local function douyinDesktopTabTitle(idx)
+  return function(app)
+    if app:focusedWindow() == nil then return "tab " .. idx end
+    local webarea = douyinDesktopPage(app)
+    local link = getc(webarea,
+        AX.Group, 2, AX.Group, 1, AX.Group, 2, AX.Group, 1,
+        AX.Group, 2, AX.Group, 1, AX.Group, idx, AX.Link, 1)
+      or getc(webarea,
+        AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+        AX.Group, 2, AX.Group, 1, AX.Group, idx, AX.Link, 1)
+      or getc(webarea,
+        AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+        AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, idx, AX.Link, 1)
+    if link == nil then return "tab " .. idx end
+    return link.AXDescription
+  end
+end
+
+local function douyinDesktopTab(idx)
+  return function(app)
+    if app:focusedWindow() == nil then return false end
+    local webarea = douyinDesktopPage(app)
+    local link = getc(webarea,
+        AX.Group, 2, AX.Group, 1, AX.Group, 2, AX.Group, 1,
+        AX.Group, 2, AX.Group, 1, AX.Group, idx, AX.Link, 1)
+      or getc(webarea,
+        AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+        AX.Group, 2, AX.Group, 1, AX.Group, idx, AX.Link, 1)
+      or getc(webarea,
+        AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+        AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, idx, AX.Link, 1)
+    return link ~= nil, link
+  end
+end
+
 -- ### Bartender
 local bartenderBarItemNames
 local bartenderBarItemIDs
@@ -2780,6 +2825,61 @@ appHotKeyCallbacks = {
     ["preferences"] = {
       message = "偏好设置",
       fn = function(app) app:selectMenuItem({ app:name(), "偏好设置" }) end
+    }
+  },
+
+  ["com.bytedance.douyin.desktop"] =
+  {
+    ["settings"] = {
+      message = "设置",
+      fn = function(app)
+        app:selectMenuItem({ app:name(), "设置" })
+      end
+    },
+    ["tab1"] = {
+      message = douyinDesktopTabTitle(1),
+      condition = douyinDesktopTab(1),
+      fn = receiveButton
+    },
+    ["tab2"] = {
+      message = douyinDesktopTabTitle(2),
+      condition = douyinDesktopTab(2),
+      fn = receiveButton
+    },
+    ["tab3"] = {
+      message = douyinDesktopTabTitle(3),
+      condition = douyinDesktopTab(3),
+      fn = receiveButton
+    },
+    ["tab4"] = {
+      message = douyinDesktopTabTitle(4),
+      condition = douyinDesktopTab(4),
+      fn = receiveButton
+    },
+    ["tab5"] = {
+      message = douyinDesktopTabTitle(5),
+      condition = douyinDesktopTab(5),
+      fn = receiveButton
+    },
+    ["tab6"] = {
+      message = douyinDesktopTabTitle(6),
+      condition = douyinDesktopTab(6),
+      fn = receiveButton
+    },
+    ["tab7"] = {
+      message = douyinDesktopTabTitle(7),
+      condition = douyinDesktopTab(7),
+      fn = receiveButton
+    },
+    ["tab8"] = {
+      message = douyinDesktopTabTitle(8),
+      condition = douyinDesktopTab(8),
+      fn = receiveButton
+    },
+    ["tab9"] = {
+      message = douyinDesktopTabTitle(9),
+      condition = douyinDesktopTab(9),
+      fn = receiveButton
     }
   },
 
