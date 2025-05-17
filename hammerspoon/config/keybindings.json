@@ -783,6 +783,22 @@
       "showMainWindow": {
         "mods": "command",
         "key": "0"
+      },
+      "moveFocusToSidebar": {
+        "mods": ["control", "command"],
+        "key": "1"
+      },
+      "moveFocusToSnippetsList": {
+        "mods": ["control", "command"],
+        "key": "2"
+      },
+      "moveFocusToEditor": {
+        "mods": ["control", "command"],
+        "key": "3"
+      },
+      "moveFocusToPreview": {
+        "mods": ["control", "command"],
+        "key": "4"
       }
     },
     "com.readdle.PDFExpert-Mac": {

@@ -1762,6 +1762,26 @@ appHotKeyCallbacks = {
       message = localizedMessage("Show Main Window"),
       condition = checkMenuItem({ "Window", "Show Main Window" }),
       fn = receiveMenuItem
+    },
+    ["moveFocusToSidebar"] = {
+      message = localizedMessage("Move Focus to Sidebar"),
+      condition = checkMenuItem({ "View", "Move Focus to Sidebar" }),
+      fn = receiveMenuItem
+    },
+    ["moveFocusToSnippetsList"] = {
+      message = localizedMessage("Move Focus to Snippets List"),
+      condition = checkMenuItem({ "View", "Move Focus to Snippets List" }),
+      fn = receiveMenuItem
+    },
+    ["moveFocusToEditor"] = {
+      message = localizedMessage("Move Focus to Editor"),
+      condition = checkMenuItem({ "View", "Move Focus to Editor" }),
+      fn = receiveMenuItem
+    },
+    ["moveFocusToPreview"] = {
+      message = localizedMessage("Move Focus to Preview"),
+      condition = checkMenuItem({ "View", "Move Focus to Preview" }),
+      fn = receiveMenuItem
     }
   },
 
