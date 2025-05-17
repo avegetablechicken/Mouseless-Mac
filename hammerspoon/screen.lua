@@ -19,6 +19,42 @@ local function bindWindow(...)
   return hotkey
 end
 
+local moveToSpaceFuncs, adjacentSpaceFuncs = {}, {}
+local moveToScreenFuncs, adjacentMonitorFuncs = {}, {}
+local function bindWindowURL(mode, directionOrIndex, fn)
+  if mode == "space" then
+    if type(directionOrIndex) == 'number' then
+      moveToSpaceFuncs[directionOrIndex] = fn
+    else
+      adjacentSpaceFuncs[directionOrIndex] = fn
+    end
+  elseif mode == "screen" then
+    if type(directionOrIndex) == 'number' then
+      moveToScreenFuncs[directionOrIndex] = fn
+    else
+      adjacentMonitorFuncs[directionOrIndex] = fn
+    end
+  end
+end
+
+hs.urlevent.bind("windowmove", function(eventName, params)
+  local fn
+  if params["mode"] == "space" then
+    if params["index"] then
+      fn = moveToSpaceFuncs[tonumber(params["index"])]
+    else
+      fn = adjacentSpaceFuncs[params["direction"]]
+    end
+  elseif params["mode"] == "screen" then
+    if params["index"] then
+      fn = moveToScreenFuncs[tonumber(params["index"])]
+    else
+      fn = adjacentMonitorFuncs[params["direction"]]
+    end
+  end
+  if fn then fn() end
+end)
+
 local ssHK = KeybindingConfigs.hotkeys.global
 
 -- # monitor ops
@@ -100,36 +136,29 @@ end
 -- move cursor to next monitor
 local adjacentMonitorHotkeys = {}
 local image = hs.image.imageFromPath("static/display.png")
-tinsert(adjacentMonitorHotkeys, newHotkeySpec(ssHK["focusNextScreen"], "Focus on Next Monitor",
+tinsert(adjacentMonitorHotkeys, newHotkeySpec(ssHK["focusNextScreen"], "Focus on Next Screen",
     bind(checkAndMoveCursurToMonitor, "r")))
 -- move cursor to previous monitor
-tinsert(adjacentMonitorHotkeys, newHotkeySpec(ssHK["focusPrevScreen"], "Focus on Previous Monitor",
+tinsert(adjacentMonitorHotkeys, newHotkeySpec(ssHK["focusPrevScreen"], "Focus on Previous Screen",
     bind(checkAndMoveCursurToMonitor, "l")))
 
 -- move window to next monitor
-tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToNextScreen"], "Move to Next Monitor",
-    bind(checkAndMoveWindowToMonitor, "r")))
+bindWindowURL("screen", "right", bind(checkAndMoveWindowToMonitor, "r"))
 -- move window to previous monitor
-tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToPrevScreen"], "Move to Previous Monitor",
-    bind(checkAndMoveWindowToMonitor, "l")))
+bindWindowURL("screen", "left", bind(checkAndMoveWindowToMonitor, "l"))
 
 for _, hotkey in ipairs(adjacentMonitorHotkeys) do
   hotkey.icon = image
 end
 
 local focusMonitorHotkeys = {}
-local moveToScreenHotkeys = {}
 local function registerMonitorHotkeys()
-  if #moveToScreenHotkeys > 0 or #focusMonitorHotkeys > 0 then
+  if #moveToScreenFuncs > 0 or #focusMonitorHotkeys > 0 then
     for _, hotkey in ipairs(focusMonitorHotkeys) do
-      hotkey:delete()
-    end
-    for _, hotkey in ipairs(moveToScreenHotkeys) do
       hotkey:delete()
     end
   end
   focusMonitorHotkeys = {}
-  moveToScreenHotkeys = {}
 
   local nscreens = #hs.screen.allScreens()
   if nscreens <= 1 then
@@ -145,8 +174,7 @@ local function registerMonitorHotkeys()
 
   -- move window to screen by idx
   for i=1,nscreens do
-    local hotkey
-    hotkey = bindWindow(ssHK["moveToScreen" .. i], "Move to Monitor " .. i,
+    bindWindowURL("screen", i,
         function()
           local win = hs.window.focusedWindow()
           if win == nil then return end
@@ -154,8 +182,7 @@ local function registerMonitorHotkeys()
             moveToScreen(win, hs.screen.allScreens()[i])
           end
         end)
-    tinsert(moveToScreenHotkeys, hotkey)
-    hotkey = bindHotkeySpec(ssHK["focusScreen" .. i], "Focus on Monitor " .. i,
+    local hotkey = bindHotkeySpec(ssHK["focusScreen" .. i], "Focus on Monitor " .. i,
         function()
           local win = hs.window.focusedWindow()
           if win == nil then return end
@@ -209,46 +236,22 @@ local function checkAndMoveWindowToSpace(space)
 end
 
 -- move window to next space
-local adjacentSpaceHotkeys = {}
-tinsert(adjacentSpaceHotkeys, newWindow(ssHK["moveToNextSpace"], "Move to Next Space",
-    bind(checkAndMoveWindowToSpace, "r")))
+bindWindowURL("space", "right", bind(checkAndMoveWindowToSpace, "r"))
 -- move window to previous space
-tinsert(adjacentSpaceHotkeys, newWindow(ssHK["moveToPrevSpace"], "Move to Previous Space",
-    bind(checkAndMoveWindowToSpace, "l")))
+bindWindowURL("space", "left", bind(checkAndMoveWindowToSpace, "l"))
 
-for _, hotkey in ipairs(adjacentSpaceHotkeys) do
-  hotkey.icon = image
-end
-
-local moveToSpaceHotkeys = {}
 local function registerMoveToSpaceHotkeys()
-  if #moveToSpaceHotkeys > 0 then
-    for _, hotkey in ipairs(moveToSpaceHotkeys) do
-      hotkey:delete()
-    end
-  end
-  moveToSpaceHotkeys = {}
-
-  local user_spaces = getUserSpaces()
-  local nspaces = #user_spaces
-  if nspaces <= 1 then
-    for _, hotkey in ipairs(adjacentSpaceHotkeys) do
-      hotkey:disable()
-    end
-    return
-  end
-
-  for _, hotkey in ipairs(adjacentSpaceHotkeys) do
-    hotkey:enable()
-  end
+  moveToSpaceFuncs = {}
 
   -- move window to space by idx
-  for i=1,nspaces do
-    local hotkey = bindWindow(ssHK["moveToSpace" .. i], "Move to Space " .. i,
+  for i = 1, #getUserSpaces() do
+    bindWindowURL("space", i,
       function()
         local win = hs.window.focusedWindow()
         if win == nil then return end
         local user_spaces = getUserSpaces()
+        local curSpaceID = hs.spaces.focusedSpace()
+        if curSpaceID == user_spaces[i] then return end
         hs.spaces.moveWindowToSpace(win, user_spaces[i])
         hs.spaces.gotoSpace(user_spaces[i])
         local screenUUID = hs.spaces.spaceDisplay(user_spaces[i])
@@ -257,8 +260,6 @@ local function registerMoveToSpaceHotkeys()
         end
         win:focus()
       end)
-    hotkey.icon = image
-    tinsert(moveToSpaceHotkeys, hotkey)
   end
 end
 registerMoveToSpaceHotkeys()
@@ -277,7 +278,7 @@ end
 ExecContinuously(function()
   local user_spaces = getUserSpaces()
   local nspaces = #user_spaces
-  if nspaces ~= #moveToSpaceHotkeys then
+  if nspaces ~= #moveToSpaceFuncs then
     registerMoveToSpaceHotkeys()
   end
 end)

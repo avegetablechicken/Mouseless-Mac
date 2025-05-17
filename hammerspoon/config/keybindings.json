@@ -4,8 +4,6 @@
     "app": ["option", "command"],
     "daemon": ["shift", "option"],
     "controlCenter": ["shift", "control"],
-    "moveToSpace": ["control", "command"],
-    "moveToScreen": ["shift", "control", "command"],
     "focusScreen": ["shift", "control"]
   },
 
@@ -81,94 +79,6 @@
       "showProxyMenu": {
         "mods": "${hyper.daemon}",
         "key": "X"
-      },
-      "moveToSpace1": {
-        "mods": "${hyper.moveToSpace}",
-        "key": "1"
-      },
-      "moveToSpace2": {
-        "mods": "${hyper.moveToSpace}",
-        "key": "2"
-      },
-      "moveToSpace3": {
-        "mods": "${hyper.moveToSpace}",
-        "key": "3"
-      },
-      "moveToSpace4": {
-        "mods": "${hyper.moveToSpace}",
-        "key": "4"
-      },
-      "moveToSpace5": {
-        "mods": "${hyper.moveToSpace}",
-        "key": "5"
-      },
-      "moveToSpace6": {
-        "mods": "${hyper.moveToSpace}",
-        "key": "6"
-      },
-      "moveToSpace7": {
-        "mods": "${hyper.moveToSpace}",
-        "key": "7"
-      },
-      "moveToSpace8": {
-        "mods": "${hyper.moveToSpace}",
-        "key": "8"
-      },
-      "moveToSpace9": {
-        "mods": "${hyper.moveToSpace}",
-        "key": "9"
-      },
-      "moveToNextSpace": {
-        "mods": "${hyper.moveToSpace}",
-        "key": "right"
-      },
-      "moveToPrevSpace": {
-        "mods": "${hyper.moveToSpace}",
-        "key": "left"
-      },
-      "moveToScreen1": {
-        "mods": "${hyper.moveToScreen}",
-        "key": "1"
-      },
-      "moveToScreen2": {
-        "mods": "${hyper.moveToScreen}",
-        "key": "2"
-      },
-      "moveToScreen3": {
-        "mods": "${hyper.moveToScreen}",
-        "key": "3"
-      },
-      "moveToScreen4": {
-        "mods": "${hyper.moveToScreen}",
-        "key": "4"
-      },
-      "moveToScreen5": {
-        "mods": "${hyper.moveToScreen}",
-        "key": "5"
-      },
-      "moveToScreen6": {
-        "mods": "${hyper.moveToScreen}",
-        "key": "6"
-      },
-      "moveToScreen7": {
-        "mods": "${hyper.moveToScreen}",
-        "key": "7"
-      },
-      "moveToScreen8": {
-        "mods": "${hyper.moveToScreen}",
-        "key": "8"
-      },
-      "moveToScreen9": {
-        "mods": "${hyper.moveToScreen}",
-        "key": "9"
-      },
-      "moveToPrevScreen": {
-        "mods": "${hyper.moveToScreen}",
-        "key": "left"
-      },
-      "moveToNextScreen": {
-        "mods": "${hyper.moveToScreen}",
-        "key": "right"
       },
       "focusScreen1": {
         "mods": "${hyper.focusScreen}",
