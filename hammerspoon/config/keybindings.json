@@ -1120,6 +1120,10 @@
         "mods": "command",
         "key": "0"
       },
+      "back": {
+        "mods": "command",
+        "key": "["
+      },
       "tab1": {
         "mods": "command",
         "key": "1"

@@ -2842,6 +2842,26 @@ appHotKeyCallbacks = {
         app:selectMenuItem({ "窗口", "抖音窗口" })
       end
     },
+    ["back"] = {
+      message = "返回",
+      condition = function(app)
+        if app:focusedWindow() == nil then return false end
+        local webarea = douyinDesktopPage(app)
+        local btImage = getc(webarea, AX.Group, 2, AX.Group, 2,
+            AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+            AX.Group, 1, AX.Group, 2, AX.Image, 1)
+        if btImage ~= nil then
+          return true, btImage.AXPosition
+        end
+        local banner = getc(webarea, AX.Group, 2, AX.Group, 1,
+            AX.Group, 2, AX.Group, 1, AX.Group, 1)
+        if banner == nil or banner.AXSubrole ~= "AXLandmarkBanner" then
+          return false
+        end
+        return true, getc(banner, AX.Group, 2, AX.Group, 1, AX.Image, 1).AXPosition
+      end,
+      fn = receivePosition
+    },
     ["tab1"] = {
       message = douyinDesktopTabTitle(1),
       condition = douyinDesktopTab(1),
