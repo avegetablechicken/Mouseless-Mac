@@ -3174,6 +3174,7 @@ function hiddenByBartender(id, index)
         return item:sub(1, #id + 1) == id .. '-'
       end) == nil
     end
+    return true
   end
   return false
 end
