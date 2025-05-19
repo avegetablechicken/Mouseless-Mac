@@ -1120,7 +1120,7 @@
                         ]
                     },
                     {
-                        "description": "Fn + Tab/` to Foward/Back",
+                        "description": "Fn + Tab/` to Forward/Back",
                         "manipulators": [
                             {
                                 "from": {
