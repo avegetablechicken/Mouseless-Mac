@@ -420,38 +420,41 @@ local function messageDeletable(app)
   local appUI = toappui(app)
   local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
     AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
-  local desc = localizedString('New Message', app:bundleID())
-  if messageItems == nil or #messageItems == 0
-      or (#messageItems == 1 and (messageItems[1].AXDescription == nil
-        or messageItems[1].AXDescription:sub(4) == desc)) then
+  if messageItems == nil or #messageItems == 0 then
     return false
+  end
+  local desc = localizedString('New Message', app:bundleID())
+  if messageItems[1].AXDescription == nil
+      or messageItems[1].AXDescription:sub(4) == desc then
+    tremove(messageItems, 1)
   end
   return true, messageItems
 end
 
-local function deleteAllMessages(messageItems, app)
-  local cnt = #messageItems
-  for i=1,cnt do
-    hs.timer.doAfter(2 * (i - 1), function()
-      local messageItem = messageItems[1]
-      if messageItem.AXSelected then
-        deleteSelectedMessage(app, nil, true)
-      else
-        messageItem:performAction(AX.Press)
-        hs.timer.doAfter(0.1, function()
-          deleteSelectedMessage(app, nil, true)
-        end)
-      end
-      if i == cnt then
-        hs.timer.doAfter(2, function()
-          _, messageItems = messageDeletable(app)
-          if messageItems then
-            deleteAllMessages(messageItems, app)
-          end
-        end)
-      end
+local function deleteAllMessages(messageItems, app, first)
+  if first == nil then first = true end
+  local messageItem = messageItems[1]
+  if messageItem.AXSelected then
+    if first then
+      tremove(messageItems, 1)
+      deleteAllMessages(messageItems, app, false)
+      return
+    end
+    deleteSelectedMessage(app, nil, true)
+  else
+    messageItem:performAction(AX.Press)
+    hs.timer.doAfter(0.1, function()
+      deleteSelectedMessage(app, nil, true)
     end)
   end
+
+  hs.timer.doAfter(2, function()
+    local continue
+    continue, messageItems = messageDeletable(app)
+    if continue then
+      deleteAllMessages(messageItems, app, false)
+    end
+  end)
 end
 
 -- ### FaceTime
