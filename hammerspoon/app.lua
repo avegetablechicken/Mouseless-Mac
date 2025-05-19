@@ -4998,7 +4998,7 @@ local function unregisterInAppHotKeys(appid, delete)
     inAppHotKeys[appid] = nil
   else
     local allDeleted = true
-    for hkID, hotkey in pairs(inAppHotKeys[appid]) do
+    for hkID, hotkey in pairs(inAppHotKeys[appid] or {}) do
       hotkey:disable()
       if hotkey.deleteOnDisable then
         hotkey:delete()
