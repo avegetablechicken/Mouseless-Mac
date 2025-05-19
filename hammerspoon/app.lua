@@ -502,10 +502,9 @@ local function deleteMousePositionCall(win)
     function(msg, results, count)
       if count == 0 then return end
 
-      local sectionList = getc(results[1], nil, 1, AX.Group)
-      if #sectionList == 0 then return end
+      local section = getc(results[1][1], AX.Group, 1)
+      if section == nil then return end
 
-      local section = sectionList[1]
       if not rightClick(hs.mouse.absolutePosition(), appname) then
         return
       end
@@ -578,10 +577,9 @@ local function deleteAllCalls(win)
     function(msg, results, count)
       if count == 0 then return end
 
-      local sectionList = getc(results[1], nil, 1, AX.Group)
-      if #sectionList == 0 then return end
+      local section = getc(results[1][1], AX.Group, 1)
+      if section == nil then return end
 
-      local section = sectionList[1]
       if not rightClickAndRestore(section.AXPosition, appname) then
         return
       end
@@ -628,7 +626,7 @@ local function VSCodeToggleSideBarSection(winUI, sidebar, section)
         AX.Group, 1, AX.Group, 2, AX.Group)
     for _, sec in ipairs(sections) do
       local button = getc(sec, AX.Group, 1, AX.Button, 1)
-      if getc(button, nil, 2).AXTitle == section then
+      if button[2].AXTitle == section then
         button:performAction(AX.Press)
         break
       end
@@ -651,7 +649,7 @@ local function VSCodeToggleSideBarSection(winUI, sidebar, section)
     end
     for _, sec in ipairs(sections) do
       local button = getc(sec, AX.Group, 1, AX.Button, 1)
-      if getc(button, nil, 2).AXTitle == section then
+      if button[2].AXTitle == section then
         if #getc(sec, AX.Group, 1) == 1 then
           button:performAction(AX.Press)
           break
@@ -3622,7 +3620,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local elem = getc(winUI, AX.Group, 1, nil, 1)
+        local elem = getc(winUI, AX.Group, 1)[1]
         return elem.AXRole == AX.Button, elem
       end,
       background = true,
@@ -3636,7 +3634,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local elem = getc(winUI, AX.Group, 1, nil, 1)
+        local elem = getc(winUI, AX.Group, 1)[1]
         return elem.AXRole == AX.Button
       end,
       background = true,
@@ -3658,7 +3656,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local elem = getc(winUI, AX.Group, 1, nil, 1)
+        local elem = getc(winUI, AX.Group, 1)[1]
         return elem.AXRole == AX.Button
       end,
       background = true,

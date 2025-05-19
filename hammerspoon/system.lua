@@ -1959,7 +1959,7 @@ function registerControlCenterHotKeys(panel)
                 end
                 if list ~= nil then
                   for _, c in ipairs(list) do
-                    if getc(c, nil, 1).AXTitle:find("Auto Dark Mode") then
+                    if c[1].AXTitle:find("Auto Dark Mode") then
                       button = getc(c, AX.Group, 2, AX.PopupButton, 1)
                     end
                   end
@@ -1975,7 +1975,7 @@ function registerControlCenterHotKeys(panel)
                   end
                   for c = 1, #list / 4 do
                     if list[c*4-3].AXTitle:find("Auto Dark Mode") then
-                      button = getc(list, nil, c * 4, AX.PopupButton, 1)
+                      button = getc(list[c * 4], AX.PopupButton, 1)
                     end
                   end
                 end
