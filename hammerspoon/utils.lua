@@ -1915,6 +1915,8 @@ local function localizedStringImpl(str, appid, params, force)
       return result .. str:sub(-3), appLocale, locale
     end
   end
+
+  return nil, appLocale, locale
 end
 
 function localizedString(str, appid, params, force)
@@ -2708,6 +2710,8 @@ local function delocalizedStringImpl(str, appid, params, force)
       return result .. str:sub(-3), appLocale, locale
     end
   end
+
+  return nil, appLocale, locale
 end
 
 function delocalizedString(str, appid, params, force)
