@@ -189,7 +189,7 @@
                                 ],
                                 "from": {
                                     "key_code": "w",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=to&direction=top'" }],
                                 "type": "basic"
@@ -206,7 +206,7 @@
                                 ],
                                 "from": {
                                     "key_code": "s",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=to&direction=bottom'" }],
                                 "type": "basic"
@@ -223,7 +223,7 @@
                                 ],
                                 "from": {
                                     "key_code": "a",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=to&direction=left'" }],
                                 "type": "basic"
@@ -240,7 +240,7 @@
                                 ],
                                 "from": {
                                     "key_code": "d",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=to&direction=right'" }],
                                 "type": "basic"
@@ -258,8 +258,8 @@
                                 "from": {
                                     "key_code": "q",
                                     "modifiers": {
-                                        "mandatory": ["fn", "left_control"],
-                                        "optional": ["left_shift"]
+                                        "mandatory": ["fn", "control"],
+                                        "optional": ["shift"]
                                     }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=to&direction=top-left'" }],
@@ -277,7 +277,7 @@
                                 ],
                                 "from": {
                                     "key_code": "e",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=to&direction=top-right'" }],
                                 "type": "basic"
@@ -294,7 +294,7 @@
                                 ],
                                 "from": {
                                     "key_code": "z",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=to&direction=bottom-left'" }],
                                 "type": "basic"
@@ -311,7 +311,7 @@
                                 ],
                                 "from": {
                                     "key_code": "x",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=to&direction=bottom-right'" }],
                                 "type": "basic"
@@ -328,7 +328,7 @@
                                 ],
                                 "from": {
                                     "key_code": "w",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=towards&direction=top'" }],
                                 "type": "basic"
@@ -345,7 +345,7 @@
                                 ],
                                 "from": {
                                     "key_code": "s",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=towards&direction=bottom'" }],
                                 "type": "basic"
@@ -362,7 +362,7 @@
                                 ],
                                 "from": {
                                     "key_code": "a",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=towards&direction=left'" }],
                                 "type": "basic"
@@ -379,7 +379,7 @@
                                 ],
                                 "from": {
                                     "key_code": "d",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=towards&direction=right'" }],
                                 "type": "basic"
@@ -396,7 +396,7 @@
                                 ],
                                 "from": {
                                     "key_code": "q",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=towards&direction=top-left'" }],
                                 "type": "basic"
@@ -413,7 +413,7 @@
                                 ],
                                 "from": {
                                     "key_code": "e",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=towards&direction=top-right'" }],
                                 "type": "basic"
@@ -430,7 +430,7 @@
                                 ],
                                 "from": {
                                     "key_code": "z",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=towards&direction=bottom-left'" }],
                                 "type": "basic"
@@ -447,7 +447,7 @@
                                 ],
                                 "from": {
                                     "key_code": "x",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=towards&direction=bottom-right'" }],
                                 "type": "basic"
@@ -470,7 +470,7 @@
                                 ],
                                 "from": {
                                     "key_code": "left_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=left1/2'" }],
                                 "type": "basic"
@@ -487,7 +487,7 @@
                                 ],
                                 "from": {
                                     "key_code": "right_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=right1/2'" }],
                                 "type": "basic"
@@ -504,7 +504,7 @@
                                 ],
                                 "from": {
                                     "key_code": "up_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=top1/2'" }],
                                 "type": "basic"
@@ -521,7 +521,7 @@
                                 ],
                                 "from": {
                                     "key_code": "down_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=bottom1/2'" }],
                                 "type": "basic"
@@ -543,7 +543,7 @@
                                 ],
                                 "from": {
                                     "key_code": "open_bracket",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=top-left'" }],
                                 "type": "basic"
@@ -560,7 +560,7 @@
                                 ],
                                 "from": {
                                     "key_code": "close_bracket",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=top-right'" }],
                                 "type": "basic"
@@ -577,7 +577,7 @@
                                 ],
                                 "from": {
                                     "key_code": "semicolon",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=bottom-left'" }],
                                 "type": "basic"
@@ -594,7 +594,7 @@
                                 ],
                                 "from": {
                                     "key_code": "quote",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=bottom-right'" }],
                                 "type": "basic"
@@ -616,7 +616,7 @@
                                 ],
                                 "from": {
                                     "key_code": "left_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_option"] }
+                                    "modifiers": { "mandatory": ["fn", "option"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=left-expand'" }],
                                 "type": "basic"
@@ -633,7 +633,7 @@
                                 ],
                                 "from": {
                                     "key_code": "right_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_option"] }
+                                    "modifiers": { "mandatory": ["fn", "option"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=right-expand'" }],
                                 "type": "basic"
@@ -650,7 +650,7 @@
                                 ],
                                 "from": {
                                     "key_code": "up_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_option"] }
+                                    "modifiers": { "mandatory": ["fn", "option"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=top-expand'" }],
                                 "type": "basic"
@@ -667,7 +667,7 @@
                                 ],
                                 "from": {
                                     "key_code": "down_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_option"] }
+                                    "modifiers": { "mandatory": ["fn", "option"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=bottom-expand'" }],
                                 "type": "basic"
@@ -684,7 +684,7 @@
                                 ],
                                 "from": {
                                     "key_code": "left_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_option"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "option"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=left-shrink'" }],
                                 "type": "basic"
@@ -701,7 +701,7 @@
                                 ],
                                 "from": {
                                     "key_code": "right_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_option"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "option"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=right-shrink'" }],
                                 "type": "basic"
@@ -718,7 +718,7 @@
                                 ],
                                 "from": {
                                     "key_code": "up_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_option"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "option"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=top-shrink'" }],
                                 "type": "basic"
@@ -735,7 +735,7 @@
                                 ],
                                 "from": {
                                     "key_code": "down_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_option"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "option"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=bottom-shrink'" }],
                                 "type": "basic"
@@ -757,7 +757,7 @@
                                 ],
                                 "from": {
                                     "key_code": "left_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_control", "left_option"] }
+                                    "modifiers": { "mandatory": ["fn", "control", "option"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=left2/3'" }],
                                 "type": "basic"
@@ -774,7 +774,7 @@
                                 ],
                                 "from": {
                                     "key_code": "right_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_control", "left_option"] }
+                                    "modifiers": { "mandatory": ["fn", "control", "option"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=right2/3'" }],
                                 "type": "basic"
@@ -797,7 +797,7 @@
                                 ],
                                 "from": {
                                     "key_code": "c",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=to&direction=center'" }],
                                 "type": "basic"
@@ -841,7 +841,7 @@
                                 ],
                                 "from": {
                                     "key_code": "c",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=center'" }],
                                 "type": "basic"
@@ -864,7 +864,7 @@
                                 ],
                                 "from": {
                                     "key_code": "f",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=fill'" }],
                                 "type": "basic"
@@ -886,7 +886,7 @@
                                 ],
                                 "from": {
                                     "key_code": "1",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=space&index=1'" }],
                                 "type": "basic"
@@ -903,7 +903,7 @@
                                 ],
                                 "from": {
                                     "key_code": "2",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=space&index=2'" }],
                                 "type": "basic"
@@ -920,7 +920,7 @@
                                 ],
                                 "from": {
                                     "key_code": "3",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=space&index=3'" }],
                                 "type": "basic"
@@ -937,7 +937,7 @@
                                 ],
                                 "from": {
                                     "key_code": "4",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=space&index=4'" }],
                                 "type": "basic"
@@ -954,7 +954,7 @@
                                 ],
                                 "from": {
                                     "key_code": "5",
-                                    "modifiers": { "mandatory": ["fn", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=space&index=5'" }],
                                 "type": "basic"
@@ -971,7 +971,7 @@
                                 ],
                                 "from": {
                                     "key_code": "left_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_control", "left_command"] }
+                                    "modifiers": { "mandatory": ["fn", "control", "command"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=space&direction=left'" }],
                                 "type": "basic"
@@ -988,7 +988,7 @@
                                 ],
                                 "from": {
                                     "key_code": "right_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_control", "left_command"] }
+                                    "modifiers": { "mandatory": ["fn", "control", "command"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=space&direction=right'" }],
                                 "type": "basic"
@@ -1010,7 +1010,7 @@
                                 ],
                                 "from": {
                                     "key_code": "1",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=screen&index=1'" }],
                                 "type": "basic"
@@ -1027,7 +1027,7 @@
                                 ],
                                 "from": {
                                     "key_code": "2",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=screen&index=2'" }],
                                 "type": "basic"
@@ -1044,7 +1044,7 @@
                                 ],
                                 "from": {
                                     "key_code": "3",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=screen&index=3'" }],
                                 "type": "basic"
@@ -1061,7 +1061,7 @@
                                 ],
                                 "from": {
                                     "key_code": "4",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=screen&index=4'" }],
                                 "type": "basic"
@@ -1078,7 +1078,7 @@
                                 ],
                                 "from": {
                                     "key_code": "5",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=screen&index=5'" }],
                                 "type": "basic"
@@ -1095,7 +1095,7 @@
                                 ],
                                 "from": {
                                     "key_code": "left_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control", "left_command"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control", "command"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=screen&direction=left'" }],
                                 "type": "basic"
@@ -1112,7 +1112,7 @@
                                 ],
                                 "from": {
                                     "key_code": "right_arrow",
-                                    "modifiers": { "mandatory": ["fn", "left_shift", "left_control", "left_command"] }
+                                    "modifiers": { "mandatory": ["fn", "shift", "control", "command"] }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=screen&direction=right'" }],
                                 "type": "basic"
@@ -1531,7 +1531,7 @@
                                 ],
                                 "from": {
                                     "key_code": "w",
-                                    "modifiers": { "optional": ["left_shift"] }
+                                    "modifiers": { "optional": ["shift"] }
                                 },
                                 "to": [{ "key_code": "up_arrow" }],
                                 "type": "basic"
@@ -1556,7 +1556,7 @@
                                 ],
                                 "from": {
                                     "key_code": "s",
-                                    "modifiers": { "optional": ["left_shift"] }
+                                    "modifiers": { "optional": ["shift"] }
                                 },
                                 "to": [{ "key_code": "down_arrow" }],
                                 "type": "basic"
@@ -1581,7 +1581,7 @@
                                 ],
                                 "from": {
                                     "key_code": "a",
-                                    "modifiers": { "optional": ["left_shift"] }
+                                    "modifiers": { "optional": ["shift"] }
                                 },
                                 "to": [{ "key_code": "left_arrow" }],
                                 "type": "basic"
@@ -1606,7 +1606,7 @@
                                 ],
                                 "from": {
                                     "key_code": "d",
-                                    "modifiers": { "optional": ["left_shift"] }
+                                    "modifiers": { "optional": ["shift"] }
                                 },
                                 "to": [{ "key_code": "right_arrow" }],
                                 "type": "basic"
@@ -1631,7 +1631,7 @@
                                 ],
                                 "from": {
                                     "key_code": "z",
-                                    "modifiers": { "optional": ["left_shift"] }
+                                    "modifiers": { "optional": ["shift"] }
                                 },
                                 "to": [{ "key_code": "page_up" }],
                                 "type": "basic"
@@ -1656,7 +1656,7 @@
                                 ],
                                 "from": {
                                     "key_code": "x",
-                                    "modifiers": { "optional": ["left_shift"] }
+                                    "modifiers": { "optional": ["shift"] }
                                 },
                                 "to": [{ "key_code": "page_down" }],
                                 "type": "basic"
@@ -1681,7 +1681,7 @@
                                 ],
                                 "from": {
                                     "key_code": "q",
-                                    "modifiers": { "optional": ["left_shift"] }
+                                    "modifiers": { "optional": ["shift"] }
                                 },
                                 "to": [{ "key_code": "home" }],
                                 "type": "basic"
@@ -1706,7 +1706,7 @@
                                 ],
                                 "from": {
                                     "key_code": "e",
-                                    "modifiers": { "optional": ["left_shift"] }
+                                    "modifiers": { "optional": ["shift"] }
                                 },
                                 "to": [{ "key_code": "end" }],
                                 "type": "basic"
