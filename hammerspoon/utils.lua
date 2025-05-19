@@ -109,6 +109,14 @@ function menuBarVisible()
   return true
 end
 
+function getMenuBarItems(app)
+  local menuBarItems = getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem) or {}
+  if #menuBarItems > 0 then
+    tremove(menuBarItems, 1)
+  end
+  return menuBarItems
+end
+
 function showMenuItemWrapper(fn)
   return function()
     if menuBarVisible() then
@@ -1741,11 +1749,11 @@ local function localizedStringImpl(str, appid, params, force)
   if resourceDir == nil then return nil end
   if framework.chromium then
     if find(appid) then
-      local menuItems = find(appid):getMenuItems()
-      if menuItems ~= nil then
-        tremove(menuItems, 1)
+      local menuBarItems = getMenuBarItems(find(appid))
+      tremove(menuBarItems, 1)
+      if menuBarItems ~= nil then
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
-          if tfind(menuItems,
+          if tfind(menuBarItems,
               function(item)
                 return item.AXTitle == title
               end) ~= nil then
@@ -2551,11 +2559,11 @@ local function delocalizedStringImpl(str, appid, params, force)
   if resourceDir == nil then return nil end
   if framework.chromium then
     if find(appid) then
-      local menuItems = find(appid):getMenuItems()
-      if menuItems ~= nil then
-        tremove(menuItems, 1)
+      local menuBarItems = getMenuBarItems(find(appid))
+      if menuBarItems ~= nil then
+        tremove(menuBarItems, 1)
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
-          if tfind(menuItems,
+          if tfind(menuBarItems,
               function(item)
                 return item.AXTitle == title
               end) ~= nil then
