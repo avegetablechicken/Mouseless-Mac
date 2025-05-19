@@ -517,11 +517,9 @@ local function deleteMousePositionCall(win)
         popups = get(section, AX.Menu)
       end
       for _, popup in ipairs(popups) do
-        for _, menuItem in ipairs(getc(popup, AX.MenuItem)) do
-          if menuItem.AXIdentifier == "menuRemovePersonFromRecents:" then
-            menuItem:performAction(AX.Press)
-            break
-          end
+        local menuItem = getc(popup, AX.MenuItem, "menuRemovePersonFromRecents:")
+        if menuItem then
+          menuItem:performAction(AX.Press)
         end
       end
     end,
@@ -595,12 +593,10 @@ local function deleteAllCalls(win)
         popups = getc(section, AX.Menu)
       end
       for _, popup in ipairs(popups) do
-        for _, menuItem in ipairs(getc(popup, AX.MenuItem)) do
-          if menuItem.AXIdentifier == "menuRemovePersonFromRecents:" then
-            menuItem:performAction(AX.Press)
-            hs.timer.usleep(0.1 * 1000000)
-            break
-          end
+        local menuItem  = getc(popup, AX.MenuItem, "menuRemovePersonFromRecents:")
+        if menuItem then
+          menuItem:performAction(AX.Press)
+          hs.timer.usleep(0.1 * 1000000)
         end
       end
       deleteAllCalls(winUI)
@@ -1608,10 +1604,8 @@ appHotKeyCallbacks = {
           if button ~= nil then return true, button end
           local g = getc(winUI, AX.Group, 1)
           if g == nil then return false end
-          button = tfind(getc(g, AX.Button), function(b)
-            return b.AXIdentifier == "UIA.AppStore.NavigationBackButton"
-                or b.AXIdentifier == "AppStore.backButton"
-          end)
+          button = getc(g, AX.Button, "UIA.AppStore.NavigationBackButton")
+              or getc(g, AX.Button, "AppStore.backButton")
           return button ~= nil, button
         end
       end,
@@ -2651,8 +2645,7 @@ appHotKeyCallbacks = {
         getc(chat, AX.Cell, 1):performAction(AX.ShowMenu)
         local menu = getc(chat, AX.Cell, 1, AX.Row, 1, AX.Menu, 1)
         if menu then
-          local hide = tfind(getc(menu, AX.MenuItem),
-              function(c) return c.AXIdentifier == "contextMenuHide:" end)
+          local hide = getc(menu, AX.MenuItem, "contextMenuHide:")
           if hide then hide:performAction(AX.Press) end
         end
       end
@@ -2685,8 +2678,7 @@ appHotKeyCallbacks = {
           local menu = getc(curChat, AX.Cell, 1,
               AX.Row, 1, AX.Menu, 1)
           if menu then
-            local profile = tfind(getc(menu, AX.MenuItem),
-                function(c) return c.AXIdentifier == "contextMenuProfile:" end)
+            local profile = getc(menu, AX.MenuItem, "contextMenuProfile:")
             if profile then profile:performAction(AX.Press) end
           end
         end
@@ -3599,10 +3591,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local buttons = getc(winUI, AX.Group, 1, AX.Button)
-        local button = tfind(buttons, function(btn)
-          return btn.AXIdentifier == 'plus'
-        end)
+        local button = getc(winUI, AX.Group, 1, AX.Button, 'plus')
         return button ~= nil, button
       end,
       background = true,
@@ -3616,10 +3605,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local buttons = getc(winUI, AX.Group, 1, AX.Button)
-        local button = tfind(buttons, function(btn)
-          return btn.AXIdentifier == 'macwindow'
-        end)
+        local button = getc(winUI, AX.Group, 1, AX.Button, 'macwindow')
         return button ~= nil, button
       end,
       background = true,
