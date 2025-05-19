@@ -1964,12 +1964,10 @@ function registerControlCenterHotKeys(panel)
                     end
                   end
                 else
-                  if list == nil then
-                    list = tfind(getc(webarea, AX.Group, 4).AXChildren,
-                      function(elem)
-                        return elem.AXSubrole == "AXTabPanel"
-                      end)
-                  end
+                  list = tfind(getc(webarea, AX.Group, 4).AXChildren,
+                    function(elem)
+                      return elem.AXSubrole == "AXTabPanel"
+                    end)
                   if list == nil then
                     list = tfind(webarea.AXChildren, function(elem)
                       return elem.AXSubrole == "AXTabPanel"
