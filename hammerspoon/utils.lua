@@ -21,22 +21,23 @@ end
 function getc(element, role, index, ...)
   if element == nil or (role == nil and index == nil) then return element end
   local children, child
-  if role == nil and element.AXChildren ~= nil then
+  if role == nil then
     children = element.AXChildren
   else
     children = element:childrenWithRole(role)
+    if index == nil then return children end
   end
-  if index == nil then return children
-  elseif type(index) == 'number' then
+  if type(index) == 'number' then
     if index < 0 then index = #children + index + 1 end
     child = children[index]
-  elseif role == AX.StaticText or role == AX.TextField then
-    child = tfind(children, function(c)
-      return c.AXValue == index
-    end)
   else
     child = tfind(children, function(c)
-      return c.AXTitle == index
+      local cRole = role or c.AXRole
+      if cRole == AX.StaticText or cRole == AX.TextField then
+        return c.AXValue == index
+      else
+        return c.AXTitle == index
+      end
     end)
   end
   return getc(child, ...)
