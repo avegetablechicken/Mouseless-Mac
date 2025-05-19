@@ -3317,8 +3317,7 @@ MENUBAR_MANAGER_SHOW = {
   ["net.matthewpalmer.Vanilla"] = function()
     local app = find("net.matthewpalmer.Vanilla")
     local icon = tfind(getc(toappui(app), AX.Window), function(win)
-      return win.AXChildren ~= nil and #win.AXChildren == 1
-          and win.AXChildren[1].AXRole == AX.Image
+      return #win == 1 and win[1].AXRole == AX.Image
     end)
     if icon then
       leftClickAndRestore(uicenter(icon), app:name())
@@ -3338,8 +3337,7 @@ local function getValidMenuBarManager()
       local maxX  -- incase it is hidden by other menu bar managers
       if appid == "net.matthewpalmer.Vanilla" then
         local icon = tfind(getc(toappui(app), AX.Window), function(win)
-          return win.AXChildren ~= nil and #win.AXChildren == 1
-              and win.AXChildren[1].AXRole == AX.Image
+          return #win == 1 and win[1].AXRole == AX.Image
         end)
         maxX = icon.AXPosition.x
       else

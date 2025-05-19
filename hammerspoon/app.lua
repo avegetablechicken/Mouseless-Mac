@@ -313,7 +313,7 @@ local function getFinderSidebarItemTitle(idx)
     local header
     local cnt = 0
     for _, row in ipairs(getc(outline, AX.Row)) do
-      if row.AXChildren == nil then hs.timer.usleep(0.3 * 1000000) end
+      if #row == 0 then hs.timer.usleep(0.3 * 1000000) end
       if getc(row, AX.Cell, 1, AX.StaticText, 1).AXIdentifier ~= nil then
         header = getc(row, AX.Cell, 1, AX.StaticText, 1).AXValue
       else
@@ -527,8 +527,8 @@ local function deleteMousePositionCall(win)
     end,
     function(element)
       return element.AXSubrole == AX.CollectionList
-          and element.AXChildren ~= nil and #element.AXChildren > 0
-          and element.AXChildren[1].AXSubrole == AX.SectionList
+          and #element > 0
+          and element[1].AXSubrole == AX.SectionList
     end,
     { count = 1 }
   )
@@ -607,8 +607,8 @@ local function deleteAllCalls(win)
     end,
     function(element)
       return element.AXSubrole == AX.CollectionList
-          and element.AXChildren ~= nil and #element.AXChildren > 0
-          and element.AXChildren[1].AXSubrole == AX.SectionList
+          and #element > 0
+          and element[1].AXSubrole == AX.SectionList
     end,
     { count = 1 }
   )
@@ -656,7 +656,7 @@ local function VSCodeToggleSideBarSection(winUI, sidebar, section)
     for _, sec in ipairs(sections) do
       local button = getc(sec, AX.Group, 1, AX.Button, 1)
       if getc(button, nil, 2).AXTitle == section then
-        if #getc(sec, AX.Group, 1).AXChildren == 1 then
+        if #getc(sec, AX.Group, 1) == 1 then
           button:performAction(AX.Press)
           break
         end
@@ -1955,10 +1955,10 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then return false end
         local win = app:focusedWindow()
         local winUI = towinui(win)
-        for i=1,#winUI.AXChildren - 1 do
-          if winUI.AXChildren[i].AXRole == AX.Button
-              and winUI.AXChildren[i + 1].AXRole == AX.Group then
-            return true, winUI.AXChildren[i].AXPosition
+        for i=1,#winUI - 1 do
+          if winUI[i].AXRole == AX.Button
+              and winUI[i + 1].AXRole == AX.Group then
+            return true, winUI[i].AXPosition
           end
         end
         return false
@@ -1968,7 +1968,7 @@ appHotKeyCallbacks = {
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.created)
         observer:callback(function(obs)
-          for _, elem in ipairs(toappui(app).AXChildren) do
+          for _, elem in ipairs(toappui(app)) do
             local menuItem = getc(elem, AX.Menu, 1, AX.MenuItem, title)
             if menuItem then
               menuItem:performAction(AX.Press)
@@ -2724,7 +2724,7 @@ appHotKeyCallbacks = {
           titleBar = getc(winUI, AX.Unknown, 3)
           if titleBar == nil then return false end
         end
-        for _, button in ipairs(titleBar.AXChildren or {}) do
+        for _, button in ipairs(titleBar) do
           if button.AXHelp == "后退" then
             return true, button.AXPosition
           end
@@ -2750,7 +2750,7 @@ appHotKeyCallbacks = {
           titleBar = getc(winUI, AX.Unknown, 3)
           if titleBar == nil then return false end
         end
-        for _, button in ipairs(titleBar.AXChildren or {}) do
+        for _, button in ipairs(titleBar) do
           if button.AXHelp == "前进" then
             return true, button.AXPosition
           end
@@ -2777,7 +2777,7 @@ appHotKeyCallbacks = {
           if titleBar == nil then return false end
         end
         local refreshButtonPosition, searchButtonPosition
-        for _, button in ipairs(titleBar.AXChildren or {}) do
+        for _, button in ipairs(titleBar) do
           if button.AXHelp == "刷新" then
             refreshButtonPosition = button.AXPosition
           elseif button.AXHelp == nil then
@@ -2828,8 +2828,7 @@ appHotKeyCallbacks = {
         local appUI = toappui(app)
         local menuBarItems = getc(appUI, AX.MenuBar, 1,AX.MenuBarItem)
         local menuBarItem = tfind(menuBarItems, function(item)
-          return item.AXChildren ~= nil and #item.AXChildren > 0
-              and item.AXTitle == '文件'
+          return #item > 0 and item.AXTitle == '文件'
         end)
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, '最近打开')
         if menuItem ~= nil then
@@ -5580,8 +5579,8 @@ local function registerOpenRecent(app)
   local findMenu = getc(appUI, AX.MenuBar, 1,
       AX.MenuBarItem, localizedFile, AX.Menu, 1)
   if findMenu == nil then return end
-  local extendableItems = tifilter(findMenu.AXChildren or {}, function(item)
-    return #item.AXChildren > 0
+  local extendableItems = tifilter(findMenu, function(item)
+    return #item > 0
   end)
   if #extendableItems == 0 then return end
   local menuItemPath = { 'File', 'Open Recent' }
@@ -5747,8 +5746,8 @@ local function registerForOpenSavePanel(app)
       local outline = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1, AX.Outline, 1)
       if outline ~= nil then
         for _, row in ipairs(getc(outline, AX.Row)) do
-          if row.AXChildren == nil then hs.timer.usleep(0.3 * 1000000) end
-          tinsert(sidebarCells, row.AXChildren[1])
+          if #row == 0 then hs.timer.usleep(0.3 * 1000000) end
+          tinsert(sidebarCells, row[1])
         end
       end
     end
