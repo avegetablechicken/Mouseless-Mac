@@ -2066,26 +2066,28 @@ function registerControlCenterHotKeys(panel)
   elseif panel == "Music Recognition" then
     local hotkey = newControlCenter("", "Space", "Toggle Listening",
       function()
-        hs.osascript.applescript([[
-          tell application "System Events"
-            set cb to checkbox 1 of group 1 of ]]..pane..[[ 
-            perform action 1 of cb
-          end tell
-        ]])
+        local cb = getc(paneUI, AX.Group, 1, AX.CheckBox, 1)
+        if cb then cb:performAction(AX.Press) end
       end)
     if not checkAndRegisterControlCenterHotKeys(hotkey) then
       return
     end
   elseif panel == "Hearing" then
-    local silderFunc = function()
+    local hearingFunc
+    hearingFunc = function()
       local ok, result = hs.osascript.applescript([[
         tell application "System Events"
           delay 0.5
-          if exists ui element 1 of ]]..pane..[[ ¬
+          if exists ui element 1 of scroll area 1 of ]]..pane..[[ ¬
+              whose value of attribute "AXRole" is "AXDisclosureTriangle" then
+            set ele to ui element 1 of scroll area 1 of ]]..pane..[[ ¬
+                whose value of attribute "AXRole" is "AXDisclosureTriangle"
+            return value of ele
+          else if exists ui element 1 of ]]..pane..[[ ¬
               whose value of attribute "AXRole" is "AXDisclosureTriangle" then
             set ele to ui element 1 of ]]..pane..[[ ¬
                 whose value of attribute "AXRole" is "AXDisclosureTriangle"
-              return value of ele
+            return value of ele
           end if
           return false
         end tell
@@ -2093,12 +2095,24 @@ function registerControlCenterHotKeys(panel)
       if ok and result ~= false then
         local actionFunc = function()
           hs.osascript.applescript([[
-          tell application "System Events"
-            set ele to ui element 1 of ]]..pane..[[ ¬
-                whose value of attribute "AXRole" is "AXDisclosureTriangle"
-            perform action 1 of ele
-          end tell
-        ]])
+            tell application "System Events"
+              if exists ui element 1 of scroll area 1 of ]]..pane..[[ ¬
+                  whose value of attribute "AXRole" is "AXDisclosureTriangle" then
+                set ele to ui element 1 of scroll area 1 of ]]..pane..[[ ¬
+                  whose value of attribute "AXRole" is "AXDisclosureTriangle"
+                perform action 2 of ele
+              else
+                set ele to ui element 1 of ]]..pane..[[ ¬
+                    whose value of attribute "AXRole" is "AXDisclosureTriangle"
+                perform action 1 of ele
+              end if
+            end tell
+          ]])
+          for _, hotkey in ipairs(backgroundSoundsHotkeys or {}) do
+            hotkey:delete()
+          end
+          backgroundSoundsHotkeys = nil
+          hearingFunc()
         end
         registerHotkeyForTraingleDisclosure(actionFunc, "Sounds", result)
       else
@@ -2113,8 +2127,14 @@ function registerControlCenterHotKeys(panel)
       end
       ok, result = hs.osascript.applescript([[
         tell application "System Events"
-          set enabledSliders to sliders of ]]..pane..[[ ¬
+          if exists sliders of scroll area 1 of ]]..pane..[[ ¬
               whose value of attribute "AXEnabled" is true
+            set enabledSliders to sliders of scroll area 1 of ]]..pane..[[ ¬
+                whose value of attribute "AXEnabled" is true
+          else
+            set enabledSliders to sliders of ]]..pane..[[ ¬
+                whose value of attribute "AXEnabled" is true
+          end if
           return (count enabledSliders) is 1
         end tell
       ]])
@@ -2131,8 +2151,14 @@ function registerControlCenterHotKeys(panel)
             function()
               hs.osascript.applescript([[
                 tell application "System Events"
-                  set enabledSliders to sliders of ]]..pane..[[ ¬
+                  if exists sliders of scroll area 1 of ]]..pane..[[ ¬
                       whose value of attribute "AXEnabled" is true
+                    set enabledSliders to sliders of scroll area 1 of ]]..pane..[[ ¬
+                        whose value of attribute "AXEnabled" is true
+                  else
+                    set enabledSliders to sliders of ]]..pane..[[ ¬
+                        whose value of attribute "AXEnabled" is true
+                  end if
                   if (count enabledSliders) is 1 then
                     set slid to item 1 of enabledSliders
                     ]] .. spec[2] .. [[ 
@@ -2147,36 +2173,57 @@ function registerControlCenterHotKeys(panel)
       ok, result = hs.osascript.applescript([[
         tell application "System Events"
           set cbs to {}
-          repeat with cb in checkboxes of ]]..pane..[[ 
-            if (exists attribute "AXIdentifier" of cb) ¬
-                and (value of attribute "AXIdentifier" of cb ¬
-                     contains "button-identifier") then
-              set cbs to cbs & value of attribute "AXIdentifier" of cb
-            end if
-          end repeat
+          if exists checkboxes of scroll area 1 of ]]..pane..[[ then
+            return count (checkboxes of scroll area 1 of ]]..pane..[[)
+          else
+            repeat with cb in checkboxes of ]]..pane..[[ 
+              if (exists attribute "AXIdentifier" of cb) ¬
+                  and (value of attribute "AXIdentifier" of cb ¬
+                      contains "button-identifier") then
+                set cbs to cbs & value of attribute "AXIdentifier" of cb
+              end if
+            end repeat
           return cbs
+          end if
         end tell
       ]])
       if ok and result ~= false then
         if backgroundSoundsHotkeys == nil then
           backgroundSoundsHotkeys = {}
         end
-        for i, ident in ipairs(result) do
-          local name = ident:match("hearing%-(.+)%-button%-identifier")
-          local hotkey = newControlCenter("", tostring(i % 10),
-            "Play " .. name,
-            function()
-              hs.osascript.applescript([[
-                tell application "System Events"
-                  set cb to checkbox 1 of ]]..pane..[[ ¬
-                      whose value of attribute "AXIdentifier" is ¬
-                      "]] .. ident .. [["
-                  perform action 1 of cb
-                end tell
-              ]])
-            end)
-          assert(hotkey) hotkey:enable()
-          tinsert(backgroundSoundsHotkeys, hotkey)
+        if type(result) == 'number' and result > 1 then
+          for i=1,result do
+            local hotkey = newControlCenter("", tostring(i % 10),
+              "Play No." .. i,
+              function()
+                hs.osascript.applescript([[
+                  tell application "System Events"
+                    set cb to checkbox ]]..tostring(i).. [[ of scroll area 1 of ]]..pane..[[ 
+                    perform action 1 of cb
+                  end tell
+                ]])
+              end)
+            assert(hotkey) hotkey:enable()
+            tinsert(backgroundSoundsHotkeys, hotkey)
+          end
+        elseif type(result) == 'table' then
+          for i, ident in ipairs(result) do
+            local name = ident:match("hearing%-(.+)%-button%-identifier")
+            local hotkey = newControlCenter("", tostring(i % 10),
+              "Play " .. name,
+              function()
+                hs.osascript.applescript([[
+                  tell application "System Events"
+                    set cb to checkbox 1 of ]]..pane..[[ ¬
+                        whose value of attribute "AXIdentifier" is ¬
+                        "]] .. ident .. [["
+                    perform action 1 of cb
+                  end tell
+                ]])
+              end)
+            assert(hotkey) hotkey:enable()
+            tinsert(backgroundSoundsHotkeys, hotkey)
+          end
         end
       end
     end
@@ -2186,12 +2233,20 @@ function registerControlCenterHotKeys(panel)
       function()
         local ok = hs.osascript.applescript([[
           tell application "System Events"
-            set cb to checkbox 1 of ]]..pane..[[ 
+            if exists ui element 1 of scroll area 1 of ]]..pane..[[ ¬
+                whose value of attribute "AXRole" is "AXDisclosureTriangle" then
+              set cb to ui element 1 of scroll area 1 of ]]..pane..[[ ¬
+                whose value of attribute "AXRole" is "AXDisclosureTriangle"
+            else if exists checkbox 1 of scroll area 1 of ]]..pane..[[ then
+              set cb to checkbox 1 of scroll area 1 of ]]..pane..[[ 
+            else
+              set cb to checkbox 1 of ]]..pane..[[ 
+            end if
             perform action 1 of cb
           end tell
         ]])
         if ok then
-          silderFunc()
+          hearingFunc()
         else
           for _, hotkey in ipairs(backgroundSoundsHotkeys or {}) do
             hotkey:delete()
@@ -2203,7 +2258,7 @@ function registerControlCenterHotKeys(panel)
       return
     end
 
-    silderFunc()
+    hearingFunc()
   elseif panel == "Now Playing" then
     local ok, result
     if OS_VERSION < OS.Ventura then
