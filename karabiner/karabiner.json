@@ -888,7 +888,7 @@
                                     "key_code": "1",
                                     "modifiers": { "mandatory": ["fn", "control"] }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=space&index=1'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowspace?mode=space&index=1'" }],
                                 "type": "basic"
                             },
                             {
@@ -905,7 +905,7 @@
                                     "key_code": "2",
                                     "modifiers": { "mandatory": ["fn", "control"] }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=space&index=2'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowspace?mode=space&index=2'" }],
                                 "type": "basic"
                             },
                             {
@@ -922,7 +922,7 @@
                                     "key_code": "3",
                                     "modifiers": { "mandatory": ["fn", "control"] }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=space&index=3'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowspace?mode=space&index=3'" }],
                                 "type": "basic"
                             },
                             {
@@ -939,7 +939,7 @@
                                     "key_code": "4",
                                     "modifiers": { "mandatory": ["fn", "control"] }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=space&index=4'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowspace?mode=space&index=4'" }],
                                 "type": "basic"
                             },
                             {
@@ -956,7 +956,7 @@
                                     "key_code": "5",
                                     "modifiers": { "mandatory": ["fn", "control"] }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=space&index=5'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowspace?mode=space&index=5'" }],
                                 "type": "basic"
                             },
                             {
@@ -973,7 +973,7 @@
                                     "key_code": "left_arrow",
                                     "modifiers": { "mandatory": ["fn", "control", "command"] }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=space&direction=left'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowspace?mode=space&direction=left'" }],
                                 "type": "basic"
                             },
                             {
@@ -990,7 +990,7 @@
                                     "key_code": "right_arrow",
                                     "modifiers": { "mandatory": ["fn", "control", "command"] }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=space&direction=right'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowspace?mode=space&direction=right'" }],
                                 "type": "basic"
                             }
                         ]
@@ -1012,7 +1012,7 @@
                                     "key_code": "1",
                                     "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=screen&index=1'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowspace?mode=screen&index=1'" }],
                                 "type": "basic"
                             },
                             {
@@ -1029,7 +1029,7 @@
                                     "key_code": "2",
                                     "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=screen&index=2'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowspace?mode=screen&index=2'" }],
                                 "type": "basic"
                             },
                             {
@@ -1046,7 +1046,7 @@
                                     "key_code": "3",
                                     "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=screen&index=3'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowspace?mode=screen&index=3'" }],
                                 "type": "basic"
                             },
                             {
@@ -1063,7 +1063,7 @@
                                     "key_code": "4",
                                     "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=screen&index=4'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowspace?mode=screen&index=4'" }],
                                 "type": "basic"
                             },
                             {
@@ -1080,7 +1080,7 @@
                                     "key_code": "5",
                                     "modifiers": { "mandatory": ["fn", "shift", "control"] }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=screen&index=5'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowspace?mode=screen&index=5'" }],
                                 "type": "basic"
                             },
                             {
@@ -1097,7 +1097,7 @@
                                     "key_code": "left_arrow",
                                     "modifiers": { "mandatory": ["fn", "shift", "control", "command"] }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=screen&direction=left'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowspace?mode=screen&direction=left'" }],
                                 "type": "basic"
                             },
                             {
@@ -1114,7 +1114,7 @@
                                     "key_code": "right_arrow",
                                     "modifiers": { "mandatory": ["fn", "shift", "control", "command"] }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://windowmove?mode=screen&direction=right'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://windowspace?mode=screen&direction=right'" }],
                                 "type": "basic"
                             }
                         ]

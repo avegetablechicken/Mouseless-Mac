@@ -37,7 +37,7 @@ local function bindWindowURL(mode, directionOrIndex, fn)
   end
 end
 
-hs.urlevent.bind("windowmove", function(eventName, params)
+hs.urlevent.bind("windowspace", function(eventName, params)
   local fn
   if params["mode"] == "space" then
     if params["index"] then
