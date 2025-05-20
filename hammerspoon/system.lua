@@ -1459,8 +1459,13 @@ function registerControlCenterHotKeys(panel)
       totalDelay = totalDelay + 0.05
       cbs = tifilter(getc(paneUI, AX.ScrollArea, 1, AX.CheckBox) or {},
           function(cb) return cb.AXEnabled end)
-    until (cbs and #cbs > 0) or totalDelay > 5 or not paneUI:isValid()
-    if cbs and #cbs > 0 then
+      if #cbs == 0 and panel == "Screen Mirroring" then
+        cbs = tifilter(getc(paneUI, AX.ScrollArea, 1,
+            AX.Group, 1, AX.CheckBox) or {},
+          function(cb) return cb.AXEnabled end)
+      end
+    until #cbs > 0 or totalDelay > 1 or not paneUI:isValid()
+    if #cbs > 0 then
       for i=1, math.min(#cbs, 10) do
         local enabled = cbs[i].AXValue
         local name
