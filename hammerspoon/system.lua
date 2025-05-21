@@ -1266,6 +1266,14 @@ function registerControlCenterHotKeys(panel)
   local paneUI = getc(appUI, AX.Window, 1)
   if OS_VERSION >= OS.Ventura then
     paneUI = getc(paneUI, AX.Group, 1)
+    if panel == "Hearing" then
+      while #paneUI == 0 do
+        hs.timer.usleep(0.05 * 1000000)
+      end
+      if #paneUI == 1 and paneUI[1].AXRole == AX.ScrollArea then
+        paneUI = paneUI[1]
+      end
+    end
   end
   local pane =
       (OS_VERSION < OS.Ventura and "window 1" or "group 1 of window 1")
@@ -1387,12 +1395,7 @@ function registerControlCenterHotKeys(panel)
       btnName = controlCenterLocalized(searchPanel, btnName)
       local hotkey = newControlCenter("⌘", ",", btnName,
         function()
-          local button
-          if panel == "Hearing" then
-            button = getc(paneUI, AX.ScrollArea, 1, AX.Button, -1)
-          else
-            button = getc(paneUI, AX.Button, -1)
-          end
+          local button = getc(paneUI, AX.Button, -1)
           if button then
             button:performAction(AX.Press)
           end
@@ -1935,19 +1938,17 @@ function registerControlCenterHotKeys(panel)
       repeat
         hs.timer.usleep(0.05 * 1000000)
         totalDelay = totalDelay + 0.05
-        slid = getc(paneUI, AX.ScrollArea, 1, AX.Slider, 1)
-            or getc(paneUI, AX.Slider, 1)
+        slid = getc(paneUI, AX.Slider, 1)
       until slid or totalDelay > 1 or not paneUI:isValid()
       if slid == nil then
-        local triangle = getc(paneUI, AX.ScrollArea, 1, AX.DisclosureTriangle, 1)
-            or getc(paneUI, AX.DisclosureTriangle, 1)
+        local triangle = getc(paneUI, AX.DisclosureTriangle, 1)
         if triangle == nil then
           return
         end
       end
 
       local actionFunc
-      local triangle = getc(paneUI, AX.ScrollArea, 1, AX.DisclosureTriangle, 1)
+      local triangle = getc(paneUI, AX.DisclosureTriangle, 1)
       if triangle then
         actionFunc = function()
           local actions = triangle:actionNames()
@@ -1966,7 +1967,7 @@ function registerControlCenterHotKeys(panel)
                                           slid and 1 or 0)
       if slid == nil then return end
 
-      local sliders = getc(paneUI, AX.ScrollArea, 1, AX.Slider)
+      local sliders = getc(paneUI, AX.Slider)
           or getc(paneUI, AX.Slider)
       local enabledSliders = tifilter(sliders,
           function(slid) return slid.AXEnabled end)
@@ -1998,7 +1999,7 @@ function registerControlCenterHotKeys(panel)
       local cbs
       repeat
         hs.timer.usleep(0.05 * 1000000)
-        cbs = getc(paneUI, AX.ScrollArea, 1, AX.CheckBox)
+        cbs = getc(paneUI, AX.CheckBox)
         if cbs == nil then
           cbs = tifilter(getc(paneUI, AX.CheckBox) or {}, function(cb)
             return cb.AXIdentifier and cb.AXIdentifier:find("button%-identifier") end)
@@ -2031,8 +2032,7 @@ function registerControlCenterHotKeys(panel)
       "Toggle " .. mayLocalize("Background Sounds"),
       function()
         backgroundSoundsHotkeys = nil
-        local cb = getc(paneUI, AX.ScrollArea, 1, AX.DisclosureTriangle, 1)
-            or getc(paneUI, AX.ScrollArea, 1, AX.CheckBox, 1)
+        local cb = getc(paneUI, AX.DisclosureTriangle, 1)
             or getc(paneUI, AX.CheckBox, 1)
         if cb then
           cb:performAction(AX.Press)
