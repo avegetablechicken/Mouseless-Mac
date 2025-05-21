@@ -1159,8 +1159,15 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     elseif panel == "Music Recognition" then
       already = strfmt(alreadyTemplate, "group", ident)
     elseif panel == "Hearing" then
-      already = strfmt(alreadyTemplate, "static text",
-          controlCenterMenuBarItemIdentifiers[panel])
+      already = [[
+        if value of attribute "AXRole" of ui element 1 of pane is "AXScrollArea" then
+      ]] .. strfmt(alreadyTemplate, "static text of scroll area 1 ",
+                   controlCenterMenuBarItemIdentifiers[panel], panel) .. [[ 
+        else
+      ]] .. strfmt(alreadyTemplate, "static text ",
+                   controlCenterMenuBarItemIdentifiers[panel], panel) .. [[ 
+        end if
+      ]]
     elseif panel == "Now Playing" then
       if OS_VERSION < OS.Ventura then
         local mayLocalize = bind(controlCenterLocalized, "Now Playing")
@@ -1380,7 +1387,12 @@ function registerControlCenterHotKeys(panel)
       btnName = controlCenterLocalized(searchPanel, btnName)
       local hotkey = newControlCenter("⌘", ",", btnName,
         function()
-          local button = getc(paneUI, AX.Button, -1)
+          local button
+          if panel == "Hearing" then
+            button = getc(paneUI, AX.ScrollArea, 1, AX.Button, -1)
+          else
+            button = getc(paneUI, AX.Button, -1)
+          end
           if button then
             button:performAction(AX.Press)
           end
@@ -2172,8 +2184,15 @@ local function getActiveControlCenterPanel()
     elseif panel == "Music Recognition" then
       already = strfmt(alreadyTemplate, "group", ident, panel)
     elseif panel == "Hearing" then
-      already = strfmt(alreadyTemplate, "static text",
-          controlCenterMenuBarItemIdentifiers[panel], panel)
+      already = [[
+        if value of attribute "AXRole" of ui element 1 of pane is "AXScrollArea" then
+      ]] .. strfmt(alreadyTemplate, "static text of scroll area 1 ",
+                   controlCenterMenuBarItemIdentifiers[panel], panel) .. [[ 
+        else
+      ]] .. strfmt(alreadyTemplate, "static text ",
+                   controlCenterMenuBarItemIdentifiers[panel], panel) .. [[ 
+        end if
+      ]]
     end
     if already then
       script = script .. [[
