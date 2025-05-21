@@ -482,6 +482,19 @@ function getResourceDir(appid, frameworkName)
       goto END_GET_RESOURCE_DIR
     end
 
+    local ftlLocaleDirs, status = hs.execute(strfmt([[
+      find '%s' -type f -path '*/*/*.ftl' \
+      | xargs -I{} dirname {} | xargs -I{} dirname {} | uniq
+    ]], appContentPath))
+    if status and ftlLocaleDirs:sub(1, -2) ~= "" then
+      ftlLocaleDirs= strsplit(ftlLocaleDirs:sub(1, -2), '\n')
+      if #ftlLocaleDirs == 1 then
+        resourceDir = ftlLocaleDirs[1]
+        framework.ftl = true
+        goto END_GET_RESOURCE_DIR
+      end
+    end
+
     local monoLocaleDirs, status = hs.execute(strfmt([[
       find '%s' -type f -path '*/locale/*/LC_MESSAGES/*.mo' \
       | awk -F'/locale/' '{print $1}' | uniq
@@ -1434,6 +1447,46 @@ local function localizeByQt(str, localeDir)
   end
 end
 
+local function localizeByFTL(str, localeDir)
+  for file in hs.fs.dir(localeDir) do
+    local result, status = hs.execute(strfmt([[
+      grep -E '^%s = ([^=]*?)$' '%s' | awk -F' = ' '{print $2}' | tr -d '\n'
+    ]], str, localeDir .. '/' .. file))
+    if status and result ~= "" then
+      return result
+    end
+  end
+
+  local resourceDir = localeDir .. '/..'
+  local baseLocale = getMatchedLocale('en', resourceDir)
+      or getMatchedLocale('English', resourceDir)
+  if baseLocale == nil then return end
+  local baseLocaleDir = resourceDir .. '/' .. baseLocale
+
+  local key, matchedFile
+  for file in hs.fs.dir(baseLocaleDir) do
+    if file:sub(-4) == '.ftl' then
+      key, status = hs.execute(strfmt([[
+        grep -E '^\w+ = %s$' '%s' | awk -F' = ' '{print $1}' | tr -d '\n'
+      ]], str, baseLocaleDir .. '/' .. file))
+      if status then
+        matchedFile = file
+        break
+      end
+    end
+  end
+  if key and matchedFile then
+    if exists(localeDir .. '/' .. matchedFile) then
+      local result, status = hs.execute(strfmt([[
+        grep -E '^%s = ([^=]*?)$' '%s' | awk -F' = ' '{print $2}' | tr -d '\n'
+      ]], key, localeDir .. '/' .. matchedFile))
+      if status and result ~= "" then
+        return result
+      end
+    end
+  end
+end
+
 local function localizeByMono(str, localeDir)
   local cmd = hs.execute("which msgunfmt | tr -d '\\n'", true)
   if cmd == nil then return end
@@ -1791,7 +1844,7 @@ local function localizedStringImpl(str, appid, params, force)
         appid, appLocale, resourceDir, framework.java)
     if locale == nil then return end
   end
-  if not framework.mono then
+  if not framework.mono and not framework.ftl then
     mode = 'lproj'
   end
   if locale == nil then
@@ -1849,6 +1902,13 @@ local function localizedStringImpl(str, appid, params, force)
 
   if framework.chromium then
     result = localizeByChromium(str, localeDir, appid)
+    if result ~= nil or not setDefaultLocale() then
+      return result, appLocale, locale
+    end
+  end
+
+  if framework.ftl then
+    result = localizeByFTL(str, localeDir)
     if result ~= nil or not setDefaultLocale() then
       return result, appLocale, locale
     end
@@ -2268,6 +2328,37 @@ local function delocalizeByQt(str, localeDir)
   end
 end
 
+local function delocalizeByFTL(str, localeDir)
+  local resourceDir = localeDir .. '/..'
+  local baseLocale = getMatchedLocale('en', resourceDir)
+      or getMatchedLocale('English', resourceDir)
+  local baseLocaleDir = resourceDir .. '/' .. baseLocale
+  if baseLocale == nil then return end
+
+  local key, matchedFile
+  for file in hs.fs.dir(localeDir) do
+    if file:sub(-4) == '.ftl' then
+      key, status = hs.execute(strfmt([[
+        grep -E '^\w+ = %s$' '%s' | awk -F' = ' '{print $1}' | tr -d '\n'
+      ]], str, localeDir .. '/' .. file))
+      if status then
+        matchedFile = file
+        break
+      end
+    end
+  end
+  if key and matchedFile then
+    if exists(baseLocaleDir .. '/' .. matchedFile) then
+      local result, status = hs.execute(strfmt([[
+        grep -E '^%s = ([^=]*?)$' '%s' | awk -F' = ' '{print $2}' | tr -d '\n'
+      ]], key, baseLocaleDir .. '/' .. matchedFile))
+      if status and result ~= "" then
+        return result
+      end
+    end
+  end
+end
+
 local function delocalizeByMono(str, localeDir)
   local cmd = hs.execute("which msgunfmt | tr -d '\\n'", true)
   if cmd == nil then return end
@@ -2588,7 +2679,7 @@ local function delocalizedStringImpl(str, appid, params, force)
         appid, appLocale, resourceDir, framework.java)
     if locale == nil then return end
   end
-  if not framework.mono then
+  if not framework.mono and not framework.ftl then
     mode = 'lproj'
   end
   if locale == nil then
@@ -2650,6 +2741,13 @@ local function delocalizedStringImpl(str, appid, params, force)
 
   if framework.chromium then
     result = delocalizeByChromium(str, localeDir, appid)
+    if result ~= nil or not setDefaultLocale() then
+      return result, appLocale, locale
+    end
+  end
+
+  if framework.ftl then
+    result = delocalizeByFTL(str, localeDir)
     if result ~= nil or not setDefaultLocale() then
       return result, appLocale, locale
     end
@@ -3091,7 +3189,7 @@ function applicationValidLocale(appid)
         appid, appLocale, resourceDir, framework.java)
     if locale == nil then return end
   end
-  if not framework.mono then
+  if not framework.mono and not framework.ftl then
     mode = 'lproj'
   end
   if locale == nil then
