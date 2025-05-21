@@ -3229,7 +3229,7 @@ function leftClick(point, appname)
     while appHere ~= nil and appHere.AXParent ~= nil do
       appHere = appHere.AXParent
     end
-    if appHere.AXTitle ~= appname then return false end
+    if appHere and appHere.AXTitle ~= appname then return false end
   end
   hs.eventtap.leftClick(point)
   return true
