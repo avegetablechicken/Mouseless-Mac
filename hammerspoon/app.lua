@@ -3774,6 +3774,35 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["com.apple.weather.menu"] = {
+    ["openWeather"] = {
+      message = localizedMessage("Open Weather"),
+      windowFilter = {
+        allowRoles = AX.SystemDialog
+      },
+      background = true,
+      fn = function(win)
+        local button = getc(towinui(win), AX.Group, 1,
+            AX.Group, 1, AX.Button, -1)
+        if button then button:performAction(AX.Press) end
+      end
+    },
+    ["closeWindow"] = {
+      message = commonLocalizedMessage("Close Window"),
+      windowFilter = {
+        allowRoles = AX.SystemDialog
+      },
+      background = true,
+      fn = function(win)
+        local menuBarItem = getc(toappui(win:application()),
+            AX.MenuBar, -1, AX.MenuBarItem, 1)
+        if menuBarItem then
+          menuBarItem:performAction(AX.Press)
+        end
+      end
+    }
+  },
+
   ["com.macosgame.iwallpaper"] =
   {
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
