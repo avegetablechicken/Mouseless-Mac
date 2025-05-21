@@ -1586,6 +1586,22 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["com.apple.weather"] = {
+    ["toggleSidebar"] = {
+      message = "Toggle Sidebar",
+      condition = function(app)
+        if app:focusedWindow() == nil then return false end
+        local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
+        if toolbar and #toolbar == 2 and toolbar[1].AXRole == AX.Button
+            and toolbar[2].AXSubrole == AX.SearchField then
+          return true, toolbar[1]
+        end
+        return false
+      end,
+      fn = receiveButton
+    }
+  },
+
   ["com.apple.AppStore"] =
   {
     ["back"] = {

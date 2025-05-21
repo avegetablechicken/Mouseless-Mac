@@ -655,6 +655,12 @@
         "key": "["
       }
     },
+    "com.apple.weather": {
+      "toggleSidebar": {
+        "mods": ["control", "command"],
+        "key": "S"
+      }
+    },
     "com.apple.Safari": {
       "showInFinder": {
         "mods": ["shift", "command"],
