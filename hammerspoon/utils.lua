@@ -546,7 +546,7 @@ function getMatchedLocale(appLocale, localeSource, mode)
   if script == nil then
     local localeItems = strsplit(appLocale, '-')
     if #localeItems == 3 or
-        (#localeItems == 2 and localeItems[2] ~= country) then
+        (#localeItems == 2 and localeItems[2]:upper() ~= country) then
       script = localeItems[2]
     end
   end
@@ -570,7 +570,7 @@ function getMatchedLocale(appLocale, localeSource, mode)
       if thisScript == nil then
         local localeItems = strsplit(newLocale, '-')
         if #localeItems == 3 or
-            (#localeItems == 2 and localeItems[2] ~= thisCountry) then
+            (#localeItems == 2 and localeItems[2]:upper() ~= thisCountry) then
           thisScript = localeItems[2]
         end
       end
@@ -606,7 +606,7 @@ local function getQtMatchedLocale(appLocale, resourceDir)
   if script == nil then
     local localeItems = strsplit(appLocale, '-')
     if #localeItems == 3 or
-        (#localeItems == 2 and localeItems[2] ~= country) then
+        (#localeItems == 2 and localeItems[2]:upper() ~= country) then
       script = localeItems[2]
     end
   end
@@ -715,7 +715,7 @@ local function getJavaMatchedLocale(appid, appLocale, javahome, path)
   if script == nil then
     local localeItems = strsplit(appLocale, '-')
     if #localeItems == 3 or
-        (#localeItems == 2 and localeItems[2] ~= country) then
+        (#localeItems == 2 and localeItems[2]:upper() ~= country) then
       script = localeItems[2]
     end
   end
