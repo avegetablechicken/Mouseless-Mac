@@ -2431,7 +2431,7 @@ appHotKeyCallbacks = {
       end
     },
     ["showMainWindow"] = {
-      message = "Show Main Window",
+      message = localizedMessage("Open Yuanbao"),
       windowFilter = {
         allowRoles = AX.SystemDialog
       },
