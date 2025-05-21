@@ -2367,6 +2367,7 @@ appHotKeyCallbacks = {
     },
     ["toggleSidebar"] = {
       message = "切换侧栏",
+      bindCondition = versionLessThan("1.15.0"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
