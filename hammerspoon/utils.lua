@@ -551,7 +551,7 @@ local function getBestMatchedLocale(appLocale, locales, combineExtras)
   return bestMatch
 end
 
-function getMatchedLocale(appLocale, localeSource, mode)
+local function getDefaultMatchedLocale(appLocale, localeSource, mode)
   local localDetails = hs.host.locale.details(appLocale)
   local language = localDetails.languageCode
   local script = localDetails.scriptCode
@@ -609,6 +609,10 @@ function getMatchedLocale(appLocale, localeSource, mode)
 
   local bestMatch = getBestMatchedLocale(localDetails, matchedLocales)
   return bestMatch.extra
+end
+
+function matchLocale(locale, candicates)
+  return getDefaultMatchedLocale(locale, candicates)
 end
 
 local function getQtMatchedLocale(appLocale, resourceDir)
@@ -826,7 +830,7 @@ local function getElectronMatchedLocale(appid, appLocale, localesPath)
   if localeInfo == nil then return end
   local locales = localeInfo['locale']
   local localeFiles = localeInfo['file']
-  local locale = getMatchedLocale(appLocale, locales)
+  local locale = matchLocale(appLocale, locales)
   if locale == nil then return end
 
   local matchedFiles = {}
@@ -836,6 +840,70 @@ local function getElectronMatchedLocale(appid, appLocale, localesPath)
     end
   end
   return locale, matchedFiles
+end
+
+local function getMatchedLocale(appid, appLocale, resourceDir, framework, buffer)
+  local locale, localeDir, mode
+
+  if framework.electron then
+    locale, localeDir = getElectronMatchedLocale(
+        appid, appLocale, framework.electron)
+    if locale == nil then return end
+  elseif framework.java then
+    locale, localeDir = getJavaMatchedLocale(
+        appid, appLocale, resourceDir, framework.java)
+    if locale == nil then return end
+  end
+  if not framework.mono and not framework.ftl then
+    mode = 'lproj'
+  end
+  if locale == nil then
+    locale = get(buffer, appid, appLocale)
+    if locale == false then return end
+    if locale ~= nil and localeDir == nil then
+      if mode == 'lproj' then
+        localeDir = resourceDir .. "/" .. locale .. ".lproj"
+      else
+        localeDir = resourceDir .. "/" .. locale
+      end
+      if not exists(localeDir) then
+        locale = nil
+        localeDir = nil
+      end
+    end
+  end
+  if locale == nil then
+    locale = getDefaultMatchedLocale(appLocale, resourceDir, mode)
+    if locale == nil and framework.qt then
+      locale, localeDir = getQtMatchedLocale(appLocale, resourceDir)
+    end
+    if locale == nil then
+      local fw = tindex(framework, true)
+      if fw then
+        resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
+        if not exists(resourceDir) then return end
+        mode = 'lproj'
+        locale = getDefaultMatchedLocale(appLocale, resourceDir, mode)
+        if locale then
+          framework[fw] = nil
+        end
+      end
+    end
+    if locale == nil then return end
+  end
+  if localeDir == nil then
+    if mode == 'lproj' then
+      localeDir = resourceDir .. "/" .. locale .. ".lproj"
+    else
+      localeDir = resourceDir .. "/" .. locale
+    end
+  end
+  if framework.qt and type(localeDir) == 'string'
+      and not exists(localeDir) then
+    _, localeDir = getQtMatchedLocale(appLocale, resourceDir)
+  end
+
+  return locale, localeDir, resourceDir, framework
 end
 
 -- assume base locale is English (not always the situation)
@@ -1458,8 +1526,8 @@ local function localizeByFTL(str, localeDir)
   end
 
   local resourceDir = localeDir .. '/..'
-  local baseLocale = getMatchedLocale('en', resourceDir)
-      or getMatchedLocale('English', resourceDir)
+  local baseLocale = getDefaultMatchedLocale('en', resourceDir)
+      or getDefaultMatchedLocale('English', resourceDir)
   if baseLocale == nil then return end
   local baseLocaleDir = resourceDir .. '/' .. baseLocale
 
@@ -1620,7 +1688,7 @@ local function localizeQt(str, appid, appLocale)
       tinsert(locales, file:sub(#prefix + 1, -4))
     end
   end
-  local locale = getMatchedLocale(appLocale, locales)
+  local locale = matchLocale(appLocale, locales)
   if locale == nil then return nil end
   if locale == 'en' then return str:gsub('[^%s]-&(%a)', '%1'), locale end
   local result = localizeByQtImpl(
@@ -1651,7 +1719,7 @@ local function localizeWPS(str, appLocale, localeFile)
   local resourceDir =
       hs.application.pathForBundleID("com.kingsoft.wpsoffice.mac")
       .. '/Contents/Resources/office6/mui'
-  local locale = getMatchedLocale(appLocale, resourceDir)
+  local locale = getDefaultMatchedLocale(appLocale, resourceDir)
   if type(localeFile) == 'string' then
     localeFile = { localeFile }
   end
@@ -1715,7 +1783,7 @@ local function localizeChatGPT(str, appLocale)
       tinsert(localeSources, fileStem)
     end
   end
-  local locale = getMatchedLocale(appLocale, localeSources)
+  local locale = matchLocale(appLocale, localeSources)
   if locale == nil then return nil end
   local localeFile = resourceDir .. '/' .. locale .. '.json.lzfse'
   -- remove first 8 bytes of the file
@@ -1817,73 +1885,11 @@ local function localizedStringImpl(str, appid, params, force)
     end
   end
 
-  local locale, localeDir, mode
-
-  local setDefaultLocale = function()
-    if appid == '__macos' then return false end
-    local oldLocale = locale
-    resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
-    framework = {}
-    if not exists(resourceDir) then return false end
-    mode = 'lproj'
-    locale = getMatchedLocale(appLocale, resourceDir, mode)
-    if locale == nil then
-      locale = oldLocale
-      return false
-    end
-    localeDir = resourceDir .. "/" .. locale .. ".lproj"
-    return true
-  end
-
-  if framework.electron then
-    locale, localeDir = getElectronMatchedLocale(
-        appid, appLocale, framework.electron)
-    if locale == nil then return end
-  elseif framework.java then
-    locale, localeDir = getJavaMatchedLocale(
-        appid, appLocale, resourceDir, framework.java)
-    if locale == nil then return end
-  end
-  if not framework.mono and not framework.ftl then
-    mode = 'lproj'
-  end
-  if locale == nil then
-    locale = get(appLocaleDir, appid, appLocale)
-    if locale == false then return end
-    if locale ~= nil and localeDir == nil then
-      if mode == 'lproj' then
-        localeDir = resourceDir .. "/" .. locale .. ".lproj"
-      else
-        localeDir = resourceDir .. "/" .. locale
-      end
-      if not exists(localeDir) then
-        locale = nil
-        localeDir = nil
-      end
-    end
-  end
-  if locale == nil then
-    locale = getMatchedLocale(appLocale, resourceDir, mode)
-    if locale == nil and framework.qt then
-      locale, localeDir = getQtMatchedLocale(appLocale, resourceDir)
-    end
-    if locale == nil and tfind(framework,
-        function (v) return v == true end) and not setDefaultLocale() then
-      return result, appLocale, locale
-    end
-    if locale == nil then return end
-  end
-  if localeDir == nil then
-    if mode == 'lproj' then
-      localeDir = resourceDir .. "/" .. locale .. ".lproj"
-    else
-      localeDir = resourceDir .. "/" .. locale
-    end
-  end
-  if framework.qt and type(localeDir) == 'string'
-      and not exists(localeDir) then
-    _, localeDir = getQtMatchedLocale(appLocale, resourceDir)
-  end
+  local locale, localeDir
+  locale, localeDir, resourceDir, framework =
+      getMatchedLocale(appid, appLocale, resourceDir, framework, appLocaleDir)
+  if locale == nil then return end
+  assert(framework)
   if not framework.electron and not framework.java then
     local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
     for _, dir in ipairs(baseLocaleDirs) do
@@ -1892,6 +1898,21 @@ local function localizedStringImpl(str, appid, params, force)
         return str
       end
     end
+  end
+
+  local setDefaultLocale = function()
+    if appid == '__macos' then return false end
+    local oldLocale = locale
+    resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
+    framework = {}
+    if not exists(resourceDir) then return false end
+    locale = getDefaultMatchedLocale(appLocale, resourceDir, 'lproj')
+    if locale == nil then
+      locale = oldLocale
+      return false
+    end
+    localeDir = resourceDir .. "/" .. locale .. ".lproj"
+    return true
   end
 
   if appLocaleAssetBuffer[appid] == nil
@@ -2330,8 +2351,8 @@ end
 
 local function delocalizeByFTL(str, localeDir)
   local resourceDir = localeDir .. '/..'
-  local baseLocale = getMatchedLocale('en', resourceDir)
-      or getMatchedLocale('English', resourceDir)
+  local baseLocale = getDefaultMatchedLocale('en', resourceDir)
+      or getDefaultMatchedLocale('English', resourceDir)
   local baseLocaleDir = resourceDir .. '/' .. baseLocale
   if baseLocale == nil then return end
 
@@ -2491,7 +2512,7 @@ local function delocalizeQt(str, appid, appLocale)
       tinsert(locales, file:sub(#prefix + 1, -4))
     end
   end
-  local locale = getMatchedLocale(appLocale, locales)
+  local locale = matchLocale(appLocale, locales)
   if locale == nil then return end
   if locale == 'en' then return str, locale end
   local localeFile = resourceDir .. '/' .. prefix .. locale .. '.qm'
@@ -2507,7 +2528,7 @@ local function delocalizeWPS(str, appLocale, localeFile)
   local resourceDir =
       hs.application.pathForBundleID("com.kingsoft.wpsoffice.mac")
       .. '/Contents/Resources/office6/mui'
-  local locale = getMatchedLocale(appLocale, resourceDir)
+  local locale = getDefaultMatchedLocale(appLocale, resourceDir)
   if locale == nil then return end
   if type(localeFile) == 'string' then
     localeFile = { localeFile }
@@ -2560,7 +2581,7 @@ local function delocalizeZoteroMenu(str, appLocale)
     | uniq
   ]], resourceFile))
   if status ~= true then return end
-  local locale = getMatchedLocale(appLocale, strsplit(locales, '\n'))
+  local locale = matchLocale(appLocale, strsplit(locales, '\n'))
   if locale == nil then return end
   local localeFile = 'chrome/locale/' .. locale .. '/zotero/standalone.dtd'
   local enLocaleFile = 'chrome/locale/en-US/zotero/standalone.dtd'
@@ -2583,7 +2604,7 @@ end
 local function delocalizeMATLABFigureMenu(str, appLocale)
   local resourceDir = hs.application.pathForBundleID("com.mathworks.matlab")
                       .. "/resources/MATLAB"
-  local locale = getMatchedLocale(appLocale, resourceDir)
+  local locale = getDefaultMatchedLocale(appLocale, resourceDir)
   if locale == nil then return end
   local localeFile = resourceDir .. '/' .. locale .. '/uistring/figuremenu.xml'
   local enLocaleFile = resourceDir .. '/en/uistring/figuremenu.xml'
@@ -2668,53 +2689,11 @@ local function delocalizedStringImpl(str, appid, params, force)
     end
   end
 
-  local locale, localeDir, mode
-
-  if framework.electron then
-    locale, localeDir = getElectronMatchedLocale(
-        appid, appLocale, framework.electron)
-    if locale == nil then return end
-  elseif framework.java then
-    locale, localeDir = getJavaMatchedLocale(
-        appid, appLocale, resourceDir, framework.java)
-    if locale == nil then return end
-  end
-  if not framework.mono and not framework.ftl then
-    mode = 'lproj'
-  end
-  if locale == nil then
-    locale = get(appLocaleDir, appid, appLocale)
-    if locale == false then return end
-    if locale ~= nil and localeDir == nil then
-      if mode == 'lproj' then
-        localeDir = resourceDir .. "/" .. locale .. ".lproj"
-      else
-        localeDir = resourceDir .. "/" .. locale
-      end
-      if not exists(localeDir) then
-        locale = nil
-        localeDir = nil
-      end
-    end
-  end
-  if locale == nil then
-    locale = getMatchedLocale(appLocale, resourceDir, mode)
-    if locale == nil and framework.qt then
-      locale, localeDir = getQtMatchedLocale(appLocale, resourceDir)
-    end
-    if locale == nil then return end
-  end
-  if localeDir == nil then
-    if mode == 'lproj' then
-      localeDir = resourceDir .. "/" .. locale .. ".lproj"
-    else
-      localeDir = resourceDir .. "/" .. locale
-    end
-  end
-  if framework.qt and type(localeDir) == 'string'
-      and not exists(localeDir) then
-    _, localeDir = getQtMatchedLocale(appLocale, resourceDir)
-  end
+  local locale, localeDir
+  locale, localeDir, resourceDir, framework =
+      getMatchedLocale(appid, appLocale, resourceDir, framework, appLocaleDir)
+  if locale == nil then return end
+  assert(framework)
   if not framework.electron and not framework.java then
     local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
     for _, dir in ipairs(baseLocaleDirs) do
@@ -2729,8 +2708,7 @@ local function delocalizedStringImpl(str, appid, params, force)
     local oldLocale = locale
     resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
     if not exists(resourceDir) then return false end
-    mode = 'lproj'
-    locale = getMatchedLocale(appLocale, resourceDir, mode)
+    locale = getDefaultMatchedLocale(appLocale, resourceDir, 'lproj')
     if locale == nil then
       locale = oldLocale
       return false
@@ -2936,7 +2914,7 @@ function localizeCommonMenuItemTitles(locale, appid)
   if locale == SYSTEM_LOCALE and appid ~= nil then return end
 
   local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
-  local matchedLocale = getMatchedLocale(locale, resourceDir, 'lproj')
+  local matchedLocale = getDefaultMatchedLocale(locale, resourceDir, 'lproj')
 
   local target = appid or 'common'
   if delocMap[target] == nil then
@@ -3128,13 +3106,13 @@ function localizedMenuBarItem(title, appid, params)
   if find(appid) then
     if type(params) == 'table' and params.locale ~= nil
         and params.locale ==
-            getMatchedLocale(appLocale, { params.locale }) then
+            matchLocale(appLocale, { params.locale }) then
       if find(appid):findMenuItem({ title }) ~= nil then
         return title
       end
     end
   end
-  if appLocale == getMatchedLocale(SYSTEM_LOCALE, { appLocale }) then
+  if appLocale == matchLocale(SYSTEM_LOCALE, { appLocale }) then
     local locTitle = locMap.common[title]
     if locTitle ~= nil then
       if (title == 'View' or title == 'Edit') and find(appid) then
@@ -3179,40 +3157,8 @@ end
 function applicationValidLocale(appid)
   local appLocale = applicationLocale(appid)
   local resourceDir, framework = getResourceDir(appid)
-  local locale, mode
-  if framework.electron then
-    locale = getElectronMatchedLocale(
-        appid, appLocale, framework.electron)
-    if locale == nil then return end
-  elseif framework.java then
-    locale = getJavaMatchedLocale(
-        appid, appLocale, resourceDir, framework.java)
-    if locale == nil then return end
-  end
-  if not framework.mono and not framework.ftl then
-    mode = 'lproj'
-  end
-  if locale == nil then
-    locale = get(appLocaleDir, appid, appLocale)
-    if locale == false then return nil end
-    if locale ~= nil then
-      local localeDir
-      if mode == 'lproj' then
-        localeDir = resourceDir .. "/" .. locale .. ".lproj"
-      else
-        localeDir = resourceDir .. "/" .. locale
-      end
-      if not exists(localeDir) then
-        locale = nil
-      end
-    end
-  end
-  if locale == nil then
-    locale = getMatchedLocale(appLocale, resourceDir, mode)
-    if locale == nil and framework.qt then
-      locale = getQtMatchedLocale(appLocale, resourceDir)
-    end
-  end
+  local locale = getMatchedLocale(appid, appLocale,
+      resourceDir, framework, appLocaleDir)
   return locale
 end
 
@@ -3229,7 +3175,7 @@ function displayName(app)
   local locale = get(appLocaleDir, appid, appLocale)
   if locale == false then return basename end
   if locale == nil then
-    locale = getMatchedLocale(appLocale, resourceDir, 'lproj')
+    locale = getDefaultMatchedLocale(appLocale, resourceDir, 'lproj')
     if locale == nil then return basename end
   end
   if exists(resourceDir .. '/InfoPlist.loctable') then

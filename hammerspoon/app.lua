@@ -5543,7 +5543,7 @@ local function updateAppLocale(appid)
   local oldAppLocale = appLocales[appid] or SYSTEM_LOCALE
   appLocales[appid] = appLocale
   if oldAppLocale ~= appLocale then
-    if getMatchedLocale(oldAppLocale, { appLocale }) ~= appLocale then
+    if matchLocale(oldAppLocale, { appLocale }) ~= appLocale then
       resetLocalizationMap(appid)
       localizeCommonMenuItemTitles(appLocale, appid)
       unregisterRunningAppHotKeys(appid, true)
