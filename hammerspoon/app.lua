@@ -2326,7 +2326,7 @@ appHotKeyCallbacks = {
   ["com.tencent.yuanbao"] =
   {
     ["settings"] = {
-      message = "设置",
+      message = localizedMessage("Tencent Yuanbao Setting"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
@@ -2385,12 +2385,12 @@ appHotKeyCallbacks = {
     ["maximize"] = {
       mods = get(KeybindingConfigs.hotkeys.shared, "zoom", "mods"),
       key = get(KeybindingConfigs.hotkeys.shared, "zoom", "key"),
-      message = "最大化",
-      condition = checkMenuItem({"窗口", "最大化"}),
+      message = localizedMessage("Maximize"),
+      condition = checkMenuItem({ "Window", "Maximize" }),
       fn = receiveMenuItem
     },
     ["back"] = {
-      message = "返回",
+      message = commonLocalizedMessage("Back"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
