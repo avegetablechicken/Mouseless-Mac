@@ -1805,6 +1805,7 @@ local function localizedStringImpl(str, appid, params, force)
       end
       if not exists(localeDir) then
         locale = nil
+        localeDir = nil
       end
     end
   end
@@ -2593,6 +2594,17 @@ local function delocalizedStringImpl(str, appid, params, force)
   if locale == nil then
     locale = get(appLocaleDir, appid, appLocale)
     if locale == false then return end
+    if locale ~= nil and localeDir == nil then
+      if mode == 'lproj' then
+        localeDir = resourceDir .. "/" .. locale .. ".lproj"
+      else
+        localeDir = resourceDir .. "/" .. locale
+      end
+      if not exists(localeDir) then
+        locale = nil
+        localeDir = nil
+      end
+    end
   end
   if locale == nil then
     locale = getMatchedLocale(appLocale, resourceDir, mode)
