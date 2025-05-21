@@ -1591,7 +1591,7 @@ local function localizeByChromium(str, localeDir, appid)
           ]], str, enTmpdir))
           if status and output ~= "" then
             local matchFile = output:match("^.*/(.*)$")
-            local tmpBaseDir = baseDir .. locale
+            local tmpBaseDir = baseDir .. '/' .. locale
             local tmpdir = tmpBaseDir .. '/' .. fileStem
             if dirNotExistOrEmpty(tmpdir) then
               mkdir(tmpBaseDir)
