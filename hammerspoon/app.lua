@@ -1588,7 +1588,7 @@ appHotKeyCallbacks = {
 
   ["com.apple.weather"] = {
     ["toggleSidebar"] = {
-      message = "Toggle Sidebar",
+      message = commonLocalizedMessage("Show Sidebar"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
@@ -2366,7 +2366,7 @@ appHotKeyCallbacks = {
       fn = receiveButton
     },
     ["toggleSidebar"] = {
-      message = "切换侧栏",
+      message = commonLocalizedMessage("Show Sidebar"),
       bindCondition = versionLessThan("1.15.0"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
