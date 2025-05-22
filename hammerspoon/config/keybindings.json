@@ -951,7 +951,7 @@
         "key": ","
       },
       "newLibrary": {
-        "mods": "option",
+        "mods": ["option", "command"],
         "key": "N"
       },
       "1stLibrary": {
