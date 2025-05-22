@@ -547,7 +547,7 @@ local function getBestMatchedLocale(appLocale, locales, combineExtras)
   return bestMatch
 end
 
-local function getDefaultMatchedLocale(appLocale, localeSource, mode)
+local function getDefaultMatchedLocale(appLocale, localeSource, dirExt)
   local localDetails = hs.host.locale.details(appLocale)
   local language = localDetails.languageCode
   local script = localDetails.scriptCode
@@ -568,9 +568,9 @@ local function getDefaultMatchedLocale(appLocale, localeSource, mode)
   end
   local matchedLocales = {}
   for _, loc in ipairs(localeSource) do
-    if (mode == 'lproj' and loc:sub(-6) == ".lproj")
-        or mode == nil then
-      local locale = mode and loc:sub(1, -7) or loc
+    if (dirExt and loc:sub(#loc - #dirExt) == "." .. dirExt)
+        or dirExt == nil then
+      local locale = dirExt and loc:sub(1, #loc - #dirExt - 1) or loc
       local newLocale = locale:gsub('_', '-')
       local thisLocale = hs.host.locale.details(newLocale)
       local thisLanguage = thisLocale.languageCode
@@ -839,7 +839,7 @@ local function getElectronMatchedLocale(appid, appLocale, localesPath)
 end
 
 local function getMatchedLocale(appid, appLocale, resourceDir, framework, buffer)
-  local locale, localeDir, mode
+  local locale, localeDir, dirExt
 
   if framework.electron then
     locale, localeDir = getElectronMatchedLocale(
@@ -850,17 +850,16 @@ local function getMatchedLocale(appid, appLocale, resourceDir, framework, buffer
         appid, appLocale, resourceDir, framework.java)
     if locale == nil then return end
   end
-  if not framework.mono and not framework.ftl then
-    mode = 'lproj'
+  if not tindex(framework, true) or framework.user or framework.chromium then
+    dirExt = 'lproj'
   end
   if locale == nil then
     locale = get(buffer, appid, appLocale)
     if locale == false then return end
     if locale ~= nil and localeDir == nil then
-      if mode == 'lproj' then
-        localeDir = resourceDir .. "/" .. locale .. ".lproj"
-      else
-        localeDir = resourceDir .. "/" .. locale
+      localeDir = resourceDir .. "/" .. locale
+      if dirExt then
+        localeDir = localeDir .. "." .. dirExt
       end
       if not exists(localeDir) then
         locale = nil
@@ -869,7 +868,7 @@ local function getMatchedLocale(appid, appLocale, resourceDir, framework, buffer
     end
   end
   if locale == nil then
-    locale = getDefaultMatchedLocale(appLocale, resourceDir, mode)
+    locale = getDefaultMatchedLocale(appLocale, resourceDir, dirExt)
     if locale == nil and framework.qt then
       locale, localeDir = getQtMatchedLocale(appLocale, resourceDir)
     end
@@ -878,8 +877,8 @@ local function getMatchedLocale(appid, appLocale, resourceDir, framework, buffer
       if fw then
         resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
         if not exists(resourceDir) then return end
-        mode = 'lproj'
-        locale = getDefaultMatchedLocale(appLocale, resourceDir, mode)
+        dirExt = 'lproj'
+        locale = getDefaultMatchedLocale(appLocale, resourceDir, dirExt)
         if locale then
           framework[fw] = nil
         end
@@ -888,10 +887,9 @@ local function getMatchedLocale(appid, appLocale, resourceDir, framework, buffer
     if locale == nil then return end
   end
   if localeDir == nil then
-    if mode == 'lproj' then
-      localeDir = resourceDir .. "/" .. locale .. ".lproj"
-    else
-      localeDir = resourceDir .. "/" .. locale
+    localeDir = resourceDir .. "/" .. locale
+    if dirExt then
+      localeDir = localeDir .. "." .. dirExt
     end
   end
   if framework.qt and type(localeDir) == 'string'
