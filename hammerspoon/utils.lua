@@ -1515,42 +1515,39 @@ local function localizeByQt(str, localeDir)
   end
 end
 
-local function localizeByFTL(str, localeDir)
-  for file in hs.fs.dir(localeDir) do
-    local result, status = hs.execute(strfmt([[
-      grep -E '^%s = ([^=]*?)$' '%s' | awk -F' = ' '{print $2}' | tr -d '\n'
-    ]], str, localeDir .. '/' .. file))
-    if status and result ~= "" then
-      return result
-    end
-  end
-
+local function localizeByFTL(str, localeDir, baseLocale)
   local resourceDir = localeDir .. '/..'
-  local baseLocale = getDefaultMatchedLocale('en', resourceDir)
-      or getDefaultMatchedLocale('English', resourceDir)
-  if baseLocale == nil then return end
+  if baseLocale == nil then
+    baseLocale = getDefaultMatchedLocale('en', resourceDir)
+        or getDefaultMatchedLocale('English', resourceDir)
+    if baseLocale == nil then return end
+  end
   local baseLocaleDir = resourceDir .. '/' .. baseLocale
 
-  local key, matchedFile
-  for file in hs.fs.dir(baseLocaleDir) do
-    if file:sub(-4) == '.ftl' then
-      key, status = hs.execute(strfmt([[
-        grep -E '^\w+ = %s$' '%s' | awk -F' = ' '{print $1}' | tr -d '\n'
-      ]], str, baseLocaleDir .. '/' .. file))
-      if status then
-        matchedFile = file
-        break
-      end
-    end
-  end
-  if key and matchedFile then
-    if exists(localeDir .. '/' .. matchedFile) then
-      local result, status = hs.execute(strfmt([[
-        grep -E '^%s = ([^=]*?)$' '%s' | awk -F' = ' '{print $2}' | tr -d '\n'
-      ]], key, localeDir .. '/' .. matchedFile))
-      if status and result ~= "" then
-        return result
-      end
+  local lines = hs.execute(strfmt([[
+    find '%s' -type f -path '*.ftl' \
+    | xargs -I{} grep -E '([^=]*?) = %s$' -H {}
+  ]], baseLocaleDir, str))
+  lines = strsplit(lines, '\n')
+  lines[#lines] = nil
+  if #lines == 0 then return end
+  local firstColon = lines[1]:find(':')
+  local filepath = lines[1]:sub(1, firstColon - 1)
+  local pair = lines[1]:sub(firstColon + 1)
+  local firstEqual = pair:find(' = ')
+  local key = pair:sub(1, firstEqual - 1)
+  local pathItems = strsplit(localeDir, '/')
+  local locale = pathItems[#pathItems]
+  baseLocale = baseLocale:gsub('%-', '%%-')
+  local localeFile = filepath:gsub('/'..baseLocale..'/', '/'..locale..'/')
+  if exists(localeFile) then
+    local result, status = hs.execute(strfmt([[
+      grep -E '^%s = (.*?)$' '%s'
+    ]], key, localeFile))
+    if status and result ~= "\n" then
+      local line = strsplit(result, '\n')[1]
+      local firstEqual = pair:find(' = ')
+      return line:sub(firstEqual + 3)
     end
   end
 end
@@ -2349,33 +2346,37 @@ local function delocalizeByQt(str, localeDir)
   end
 end
 
-local function delocalizeByFTL(str, localeDir)
-  local resourceDir = localeDir .. '/..'
-  local baseLocale = getDefaultMatchedLocale('en', resourceDir)
-      or getDefaultMatchedLocale('English', resourceDir)
-  local baseLocaleDir = resourceDir .. '/' .. baseLocale
-  if baseLocale == nil then return end
-
-  local key, matchedFile
-  for file in hs.fs.dir(localeDir) do
-    if file:sub(-4) == '.ftl' then
-      key, status = hs.execute(strfmt([[
-        grep -E '^\w+ = %s$' '%s' | awk -F' = ' '{print $1}' | tr -d '\n'
-      ]], str, localeDir .. '/' .. file))
-      if status then
-        matchedFile = file
-        break
-      end
-    end
+local function delocalizeByFTL(str, localeDir, baseLocale)
+  if baseLocale == nil then
+    local resourceDir = localeDir .. '/..'
+    baseLocale = getDefaultMatchedLocale('en', resourceDir)
+        or getDefaultMatchedLocale('English', resourceDir)
+    if baseLocale == nil then return end
   end
-  if key and matchedFile then
-    if exists(baseLocaleDir .. '/' .. matchedFile) then
-      local result, status = hs.execute(strfmt([[
-        grep -E '^%s = ([^=]*?)$' '%s' | awk -F' = ' '{print $2}' | tr -d '\n'
-      ]], key, baseLocaleDir .. '/' .. matchedFile))
-      if status and result ~= "" then
-        return result
-      end
+
+  local lines = hs.execute(strfmt([[
+    find '%s' -type f -path '*.ftl' \
+    | xargs -I{} grep -E '([^=]*?) = %s$' -H {}
+  ]], localeDir, str))
+  lines = strsplit(lines, '\n')
+  lines[#lines] = nil
+  if #lines == 0 then return end
+  local firstColon = lines[1]:find(':')
+  local filepath = lines[1]:sub(1, firstColon - 1)
+  local pair = lines[1]:sub(firstColon + 1)
+  local firstEqual = pair:find(' = ')
+  local key = pair:sub(1, firstEqual - 1)
+  local pathItems = strsplit(localeDir, '/')
+  local locale = pathItems[#pathItems]:gsub('%-', '%%-')
+  local baseLocaleFile = filepath:gsub('/'..locale..'/', '/'..baseLocale..'/')
+  if exists(baseLocaleFile) then
+    local result, status = hs.execute(strfmt([[
+      grep -E '^%s = (.*?)$' '%s'
+    ]], key, baseLocaleFile))
+    if status and result ~= "\n" then
+      local line = strsplit(result, '\n')[1]
+      local firstEqual = pair:find(' = ')
+      return line:sub(firstEqual + 3)
     end
   end
 end
