@@ -434,6 +434,15 @@ function getResourceDir(appid, frameworkName)
         goto END_GET_RESOURCE_DIR
       end
 
+      _, status = hs.execute(strfmt([[
+        find '%s' -type f -path '%s/Resources/%s/*.ftl'
+      ]], appContentPath, appContentPath, frameworkName))
+      if status then
+        resourceDir = appContentPath .. '/Resources/' .. frameworkName
+        framework.ftl = true
+        goto END_GET_RESOURCE_DIR
+      end
+
       frameworkDir = hs.execute(strfmt([[
         find '%s' -type d -name '%s' | head -n 1 | tr -d '\n'
       ]], appContentPath, frameworkName))
@@ -480,19 +489,6 @@ function getResourceDir(appid, frameworkName)
       resourceDir = appContentPath .. "/Resources"
       framework.qt = true
       goto END_GET_RESOURCE_DIR
-    end
-
-    local ftlLocaleDirs, status = hs.execute(strfmt([[
-      find '%s' -type f -path '*/*/*.ftl' \
-      | xargs -I{} dirname {} | xargs -I{} dirname {} | uniq
-    ]], appContentPath))
-    if status and ftlLocaleDirs:sub(1, -2) ~= "" then
-      ftlLocaleDirs= strsplit(ftlLocaleDirs:sub(1, -2), '\n')
-      if #ftlLocaleDirs == 1 then
-        resourceDir = ftlLocaleDirs[1]
-        framework.ftl = true
-        goto END_GET_RESOURCE_DIR
-      end
     end
 
     local monoLocaleDirs, status = hs.execute(strfmt([[

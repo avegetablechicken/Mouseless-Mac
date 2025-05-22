@@ -8,6 +8,7 @@
     "com.apple.iMovieApp": "Flexo.framework",
     "com.charliemonroe.Downie-4": "XUCore.framework",
     "com.charliemonroe.Permute-3": "XUCore.framework",
+    "com.tencent.yuanbao": "locales",
     "net.xmind.vana.app": "static/locales",
     "JabRef": "org.jabref/l10n"
   },
