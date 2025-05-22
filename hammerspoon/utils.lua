@@ -2790,6 +2790,32 @@ local function delocalizeZotero(str, appLocale)
   return result, locale
 end
 
+local function delocalizeChatGPT(str, appLocale)
+  local resourceDir = hs.application.pathForBundleID("com.openai.chat")
+      .. "/Contents/Frameworks/Assets.framework/Resources"
+      .. "/Assets_Assets.bundle/Contents/Resources/CompressedStrings"
+  local localeSources = {}
+  for file in hs.fs.dir(resourceDir) do
+    if file:sub(-11) == ".json.lzfse" then
+      local fileStem = file:sub(1, -12)
+      tinsert(localeSources, fileStem)
+    end
+  end
+  local locale = matchLocale(appLocale, localeSources)
+  if locale == nil then return nil end
+  local localeFile = resourceDir .. '/' .. locale .. '.json.lzfse'
+  -- remove first 8 bytes of the file
+  local tmp = os:tmpname()
+  local _, status = hs.execute(
+      strfmt("tail -c +9 '%s' > '%s'", localeFile, tmp))
+  if not status then return nil, locale end
+  local jsonStr = hs.execute(
+      strfmt("lzfse -decode -i '%s' -o /dev/stdout", tmp), true)
+  os.remove(tmp)
+  local jsonDict = hs.json.decode(jsonStr)
+  return tindex(jsonDict, str), locale
+end
+
 local function delocalizeMATLABFigureMenu(str, appLocale)
   local resourceDir = hs.application.pathForBundleID("com.mathworks.matlab")
                       .. "/resources/MATLAB"
@@ -2845,7 +2871,10 @@ local function delocalizedStringImpl(str, appid, params, force)
     elseif result ~= nil then return result end
   end
 
-  if appid == "org.zotero.zotero" then
+  if appid == "com.openai.chat" then
+    result, locale = delocalizeChatGPT(str, appLocale)
+    return result, appLocale, locale
+  elseif appid == "org.zotero.zotero" then
     result, locale = delocalizeZotero(str, appLocale)
     return result, appLocale, locale
   elseif appid == "com.mathworks.matlab" then
