@@ -435,13 +435,29 @@ function getResourceDir(appid, frameworkName)
       end
 
       _, status = hs.execute(strfmt([[
+        find '%s' -type f -path '%s/Resources/%s/*.properties'
+      ]], appContentPath, appContentPath, frameworkName))
+      if status then
+        resourceDir = appContentPath .. '/Resources/' .. frameworkName
+        framework.properties = true
+      end
+
+      _, status = hs.execute(strfmt([[
+        find '%s' -type f -path '%s/Resources/%s/*.dtd'
+      ]], appContentPath, appContentPath, frameworkName))
+      if status then
+        resourceDir = appContentPath .. '/Resources/' .. frameworkName
+        framework.dtd = true
+      end
+
+      _, status = hs.execute(strfmt([[
         find '%s' -type f -path '%s/Resources/%s/*.ftl'
       ]], appContentPath, appContentPath, frameworkName))
       if status then
         resourceDir = appContentPath .. '/Resources/' .. frameworkName
         framework.ftl = true
-        goto END_GET_RESOURCE_DIR
       end
+      if resourceDir then goto END_GET_RESOURCE_DIR end
 
       frameworkDir = hs.execute(strfmt([[
         find '%s' -type d -name '%s' | head -n 1 | tr -d '\n'
@@ -2041,6 +2057,20 @@ local function localizedStringImpl(str, appid, params, force)
     end
   end
 
+  if framework.dtd then
+    result = localizeByDTD(str, localeDir)
+    if result ~= nil or not setDefaultLocale() then
+      return result, appLocale, locale
+    end
+  end
+
+  if framework.properties then
+    result = localizeByProperties(str, localeDir)
+    if result ~= nil or not setDefaultLocale() then
+      return result, appLocale, locale
+    end
+  end
+
   if framework.mono then
     result = localizeByMono(str, localeDir)
     if result ~= nil or not setDefaultLocale() then
@@ -2938,6 +2968,20 @@ local function delocalizedStringImpl(str, appid, params, force)
 
   if framework.ftl then
     result = delocalizeByFTL(str, localeDir)
+    if result ~= nil or not setDefaultLocale() then
+      return result, appLocale, locale
+    end
+  end
+
+  if framework.dtd then
+    result = delocalizeByDTD(str, localeDir)
+    if result ~= nil or not setDefaultLocale() then
+      return result, appLocale, locale
+    end
+  end
+
+  if framework.properties then
+    result = delocalizeByProperties(str, localeDir)
     if result ~= nil or not setDefaultLocale() then
       return result, appLocale, locale
     end
