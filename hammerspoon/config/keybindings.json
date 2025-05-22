@@ -995,6 +995,12 @@
         "key": "0"
       }
     },
+    "org.zotero.zotero": {
+      "newCollection": {
+        "mods": ["option", "command"],
+        "key": "N"
+      }
+    },
     "com.apple.iMovieApp": {
       "export": {
         "mods": "command",

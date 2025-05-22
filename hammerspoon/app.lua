@@ -2534,6 +2534,14 @@ appHotKeyCallbacks = {
     ["minimize"] = specialCommonHotkeyConfigs["minimize"]
   },
 
+  ["org.zotero.zotero"] = {
+    ["newCollection"] = {
+      message = localizedMessage("New Collection…"),
+      condition = checkMenuItem({ "File", "New Collection…" }),
+      fn = receiveMenuItem
+    }
+  },
+
   ["org.klatexformula.klatexformula"] =
   {
     ["render"] = {
