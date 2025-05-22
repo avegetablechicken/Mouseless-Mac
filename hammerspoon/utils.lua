@@ -1842,6 +1842,45 @@ local function localizeWPS(str, appLocale, localeFile)
   if result ~= nil then return result, locale end
 end
 
+local function localizeZotero(str, appLocale)
+  local resourceDir = hs.application.pathForBundleID("org.zotero.zotero")
+                      .. "/Contents/Resources"
+  local resourceFile = resourceDir .. '/zotero.jar'
+  if not exists(resourceFile) then
+    resourceDir = resourceDir .. '/app'
+    resourceFile = resourceDir .. '/omni.ja'
+  end
+  local localePath = 'chrome/locale'
+  local locales, status = hs.execute(strfmt([[
+    unzip -l '%s' '%s/*' \
+    | grep -Eo 'chrome/locale/[^/]*' \
+    | grep -Eo '[a-zA-Z-]*$' \
+    | uniq
+  ]], resourceFile, localePath))
+  if status ~= true then return end
+  local locale = matchLocale(appLocale, strsplit(locales, '\n'))
+  if locale == nil then return end
+  local baseLocale = matchLocale('en_US', strsplit(locales, '\n'))
+  if baseLocale == nil then return end
+  local tmpdir = localeTmpDir .. "org.zotero.zotero"
+  mkdir(tmpdir)
+  if not exists(tmpdir .. '/' .. localePath .. '/' .. locale) then
+    hs.execute(strfmt([[unzip '%s' %s/%s/* -d '%s']],
+        resourceFile, localePath, locale, tmpdir))
+  end
+  if not exists(tmpdir .. '/' .. localePath .. '/' .. baseLocale) then
+    hs.execute(strfmt([[unzip '%s' %s/%s/* -d '%s']],
+        resourceFile, localePath, baseLocale, tmpdir))
+  end
+  local localeDir = tmpdir .. '/' .. localePath .. '/' .. locale
+  local result = localizeByDTD(str, localeDir, baseLocale)
+  if result then return result, locale end
+  result = localizeByFTL(str, localeDir, baseLocale)
+  if result then return result, locale end
+  result = localizeByProperties(str, localeDir, baseLocale)
+  return result, locale
+end
+
 local function localizeChatGPT(str, appLocale)
   local resourceDir = hs.application.pathForBundleID("com.openai.chat")
       .. "/Contents/Frameworks/Assets.framework/Resources"
@@ -1927,6 +1966,9 @@ local function localizedStringImpl(str, appid, params, force)
 
   if appid == "com.openai.chat" then
     result, locale = localizeChatGPT(str, appLocale)
+    return result, appLocale, locale
+  elseif appid == "org.zotero.zotero" then
+    result, locale = localizeZotero(str, appLocale)
     return result, appLocale, locale
   elseif appid:find("org.qt%-project") ~= nil then
     result, locale = localizeQt(str, appid, appLocale)
@@ -2709,7 +2751,7 @@ local function delocalizeWPS(str, appLocale, localeFile)
   return nil, locale
 end
 
-local function delocalizeZoteroMenu(str, appLocale)
+local function delocalizeZotero(str, appLocale)
   local resourceDir = hs.application.pathForBundleID("org.zotero.zotero")
                       .. "/Contents/Resources"
   local resourceFile = resourceDir .. '/zotero.jar'
@@ -2717,31 +2759,35 @@ local function delocalizeZoteroMenu(str, appLocale)
     resourceDir = resourceDir .. '/app'
     resourceFile = resourceDir .. '/omni.ja'
   end
+  local localePath = 'chrome/locale'
   local locales, status = hs.execute(strfmt([[
-    unzip -l '%s' 'chrome/locale/*' \
+    unzip -l '%s' '%s/*' \
     | grep -Eo 'chrome/locale/[^/]*' \
     | grep -Eo '[a-zA-Z-]*$' \
     | uniq
-  ]], resourceFile))
+  ]], resourceFile, localePath))
   if status ~= true then return end
   local locale = matchLocale(appLocale, strsplit(locales, '\n'))
   if locale == nil then return end
-  local localeFile = 'chrome/locale/' .. locale .. '/zotero/standalone.dtd'
-  local enLocaleFile = 'chrome/locale/en-US/zotero/standalone.dtd'
-  local key
-  key, status = hs.execute(strfmt([[
-    unzip -p '%s' '%s' \
-    | awk '/<!ENTITY .* "%s">/ {
-        gsub(/<!ENTITY | "%s">/, "");
-        printf "%%s", $0
-      }'
-  ]], resourceFile, localeFile, str, str))
-  if status ~= true then return nil end
-  local enValue = hs.execute(strfmt([[
-    unzip -p '%s' '%s' \
-    | grep '%s' | cut -d '"' -f 2 | tr -d '\n'
-  ]], resourceFile, enLocaleFile, key))
-  return enValue, locale
+  local baseLocale = matchLocale('en_US', strsplit(locales, '\n'))
+  if baseLocale == nil then return end
+  local tmpdir = localeTmpDir .. "org.zotero.zotero"
+  mkdir(tmpdir)
+  if not exists(tmpdir .. '/' .. localePath .. '/' .. locale) then
+    hs.execute(strfmt([[unzip '%s' %s/%s/* -d '%s']],
+        resourceFile, localePath, locale, tmpdir))
+  end
+  if not exists(tmpdir .. '/' .. localePath .. '/' .. baseLocale) then
+    hs.execute(strfmt([[unzip '%s' %s/%s/* -d '%s']],
+        resourceFile, localePath, baseLocale, tmpdir))
+  end
+  local localeDir = tmpdir .. '/' .. localePath .. '/' .. locale
+  local result = delocalizeByDTD(str, localeDir, baseLocale)
+  if result then return result, locale end
+  result = delocalizeByFTL(str, localeDir, baseLocale)
+  if result then return result, locale end
+  result = delocalizeByProperties(str, localeDir, baseLocale)
+  return result, locale
 end
 
 local function delocalizeMATLABFigureMenu(str, appLocale)
@@ -2800,7 +2846,7 @@ local function delocalizedStringImpl(str, appid, params, force)
   end
 
   if appid == "org.zotero.zotero" then
-    result, locale = delocalizeZoteroMenu(str, appLocale)
+    result, locale = delocalizeZotero(str, appLocale)
     return result, appLocale, locale
   elseif appid == "com.mathworks.matlab" then
     result, locale = delocalizeMATLABFigureMenu(str, appLocale)
