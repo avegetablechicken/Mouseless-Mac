@@ -1552,6 +1552,79 @@ local function localizeByFTL(str, localeDir, baseLocale)
   end
 end
 
+local function localizeByProperties(str, localeDir, baseLocale)
+  local resourceDir = localeDir .. '/..'
+  if baseLocale == nil then
+    baseLocale = getDefaultMatchedLocale('en', resourceDir)
+        or getDefaultMatchedLocale('English', resourceDir)
+    if baseLocale == nil then return end
+  end
+  local baseLocaleDir = resourceDir .. '/' .. baseLocale
+
+  local lines = hs.execute(strfmt([[
+    find '%s' -type f -path '*.properties' \
+    | xargs -I{} grep -E '([^=\s]*?)(\s*?)=(\s*?)%s$' -H {}
+  ]], baseLocaleDir, str))
+  lines = strsplit(lines, '\n')
+  lines[#lines] = nil
+  if #lines == 0 then return end
+  local firstColon = lines[1]:find(':')
+  local filepath = lines[1]:sub(1, firstColon - 1)
+  local pair = lines[1]:sub(firstColon + 1)
+  local equalStart = pair:find('%s-=%s-')
+  local key = pair:sub(1, equalStart - 1)
+  local pathItems = strsplit(localeDir, '/')
+  local locale = pathItems[#pathItems]
+  baseLocale = baseLocale:gsub('%-', '%%-')
+  local localeFile = filepath:gsub('/'..baseLocale..'/', '/'..locale..'/')
+  if exists(localeFile) then
+    local result, status = hs.execute(strfmt([[
+      grep -E '^%s(\s*?)=(\s*?)([^\s]*?)$' '%s'
+    ]], key, localeFile))
+    if status and result ~= "\n" then
+      local line = strsplit(result, '\n')[1]
+      local _, equalEnd = line:find('%s-=%s-')
+      return line:sub(equalEnd + 1)
+    end
+  end
+end
+
+local function localizeByDTD(str, localeDir, baseLocale)
+  local resourceDir = localeDir .. '/..'
+  if baseLocale == nil then
+    baseLocale = getDefaultMatchedLocale('en', resourceDir)
+        or getDefaultMatchedLocale('English', resourceDir)
+    if baseLocale == nil then return end
+  end
+  local baseLocaleDir = resourceDir .. '/' .. baseLocale
+
+  local lines = hs.execute(strfmt([[
+    find '%s' -type f -path '*.dtd' \
+    | xargs -I{} grep -E '^<!ENTITY.*"%s">' -H {}
+  ]], baseLocaleDir, str))
+  lines = strsplit(lines, '\n')
+  lines[#lines] = nil
+  if #lines == 0 then return end
+  local firstColon = lines[1]:find(':')
+  local filepath = lines[1]:sub(1, firstColon - 1)
+  local pair = lines[1]:sub(firstColon + 1)
+  local firstQuote = pair:find(' "')
+  local key = pair:sub(10, firstQuote - 1)
+  local pathItems = strsplit(localeDir, '/')
+  local locale = pathItems[#pathItems]
+  baseLocale = baseLocale:gsub('%-', '%%-')
+  local localeFile = filepath:gsub('/'..baseLocale..'/', '/'..locale..'/')
+  if exists(localeFile) then
+    local result, status = hs.execute(strfmt([[
+      grep -E '^<!ENTITY %s(\s*?)"(.*?)">' '%s'
+    ]], key, localeFile))
+    if status and result ~= "\n" then
+      local line = strsplit(result, '\n')[1]
+      return line:sub(9 + #key + 1):match('"(.-)"')
+    end
+  end
+end
+
 local function localizeByMono(str, localeDir)
   local cmd = hs.execute("which msgunfmt | tr -d '\\n'", true)
   if cmd == nil then return end
@@ -2377,6 +2450,75 @@ local function delocalizeByFTL(str, localeDir, baseLocale)
       local line = strsplit(result, '\n')[1]
       local firstEqual = pair:find(' = ')
       return line:sub(firstEqual + 3)
+    end
+  end
+end
+
+local function delocalizeByProperties(str, localeDir, baseLocale)
+  if baseLocale == nil then
+    local resourceDir = localeDir .. '/..'
+    baseLocale = getDefaultMatchedLocale('en', resourceDir)
+        or getDefaultMatchedLocale('English', resourceDir)
+    if baseLocale == nil then return end
+  end
+
+  local lines = hs.execute(strfmt([[
+    find '%s' -type f -path '*.properties' \
+    | xargs -I{} grep -E '([^=\s]*?)(\s*?)=(\s*?)%s$' -H {}
+  ]], localeDir, str))
+  lines = strsplit(lines, '\n')
+  lines[#lines] = nil
+  if #lines == 0 then return end
+  local firstColon = lines[1]:find(':')
+  local filepath = lines[1]:sub(1, firstColon - 1)
+  local pair = lines[1]:sub(firstColon + 1)
+  local equalStart = pair:find('%s-=%s-')
+  local key = pair:sub(1, equalStart - 1)
+  local pathItems = strsplit(localeDir, '/')
+  local locale = pathItems[#pathItems]:gsub('%-', '%%-')
+  local baseLocaleFile = filepath:gsub('/'..locale..'/', '/'..baseLocale..'/')
+  if exists(baseLocaleFile) then
+    local result, status = hs.execute(strfmt([[
+      grep -E '^%s\s+=\s+(.*?)$' '%s'
+    ]], key, baseLocaleFile))
+    if status and result ~= "\n" then
+      local line = strsplit(result, '\n')[1]
+      local _, equalEnd = line:find('%s-=%s-')
+      return line:sub(equalEnd + 1)
+    end
+  end
+end
+
+local function delocalizeByDTD(str, localeDir, baseLocale)
+  if baseLocale == nil then
+    local resourceDir = localeDir .. '/..'
+    baseLocale = getDefaultMatchedLocale('en', resourceDir)
+        or getDefaultMatchedLocale('English', resourceDir)
+    if baseLocale == nil then return end
+  end
+
+  local lines = hs.execute(strfmt([[
+    find '%s' -type f -path '*.dtd' \
+    | xargs -I{} grep -E '^<!ENTITY.*"%s">' -H {}
+  ]], localeDir, str))
+  lines = strsplit(lines, '\n')
+  lines[#lines] = nil
+  if #lines == 0 then return end
+  local firstColon = lines[1]:find(':')
+  local filepath = lines[1]:sub(1, firstColon - 1)
+  local pair = lines[1]:sub(firstColon + 1)
+  local firstQuote = pair:find(' "')
+  local key = pair:sub(10, firstQuote - 1)
+  local pathItems = strsplit(localeDir, '/')
+  local locale = pathItems[#pathItems]:gsub('%-', '%%-')
+  local baseLocaleFile = filepath:gsub('/'..locale..'/', '/'..baseLocale..'/')
+  if exists(baseLocaleFile) then
+    local result, status = hs.execute(strfmt([[
+      grep -E '^<!ENTITY %s(\s*?)"(.*?)">' '%s'
+    ]], key, baseLocaleFile))
+    if status and result ~= "\n" then
+      local line = strsplit(result, '\n')[1]
+      return line:sub(9 + #key + 1):match('"(.-)"')
     end
   end
 end
