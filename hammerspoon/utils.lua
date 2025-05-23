@@ -3502,6 +3502,40 @@ function rightClickAndRestore(point, appname, delay)
   return false
 end
 
+local function loadStatusItemsAutosaveName(app)
+  local records = hs.execute(strfmt([[
+    defaults read %s | grep '"NSStatusItem Preferred Position '
+  ]], app:bundleID()))
+  records = strsplit(records, '\n')
+  records[#records] = nil
+  local preferredPositions = {}
+  for _, r in ipairs(records) do
+    r = r:sub(r:find('"') + 1)
+    local items = strsplit(r, ' ')
+    local name = items[4]:sub(1, #items[4] - 1)
+    local position = tonumber(items[6]:sub(1, #items[6] - 1))
+    tinsert(preferredPositions, { name, position })
+  end
+  table.sort(preferredPositions, function(r1, r2)
+    return r1[2] < r2[2]
+  end)
+
+  local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+  local positions = {}
+  for i, item in ipairs(menuBarItems) do
+    tinsert(positions, { i, item.AXPosition.x })
+  end
+  table.sort(positions, function(r1, r2)
+    return r1[2] > r2[2]
+  end)
+
+  local map = {}
+  for i, r in ipairs(positions) do
+    map[r[1]] = preferredPositions[i][1]
+  end
+  return map
+end
+
 local function showHiddenMenuBarItems(appid)
   local app = find(appid)
   local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
@@ -3513,16 +3547,15 @@ end
 
 MENUBAR_MANAGER_SHOW = {
   ["com.surteesstudios.Bartender"] = function(appid, index)
-    if type(index) == 'string' then
-      itemRepr = appid .. '-' .. index
-    else
-      itemRepr = appid .. '-Item-' .. (index or 1) - 1
+    if type(index) == 'number' then
+      local map = loadStatusItemsAutosaveName(find(appid))
+      index = map[index]
     end
     hs.osascript.applescript(string.format([[
       tell application id "com.surteesstudios.Bartender"
-        activate "%s"
+        activate "%s-%s"
       end
-    ]], itemRepr))
+    ]], appid, index))
     return true
   end,
 
@@ -3557,13 +3590,8 @@ MENUBAR_MANAGER_SHOW = {
       leftClickAndRestore(uicenter(icon), app:name())
     end
     if type(index) == 'number' then
-      index = 'Item-' .. tostring(index - 1)
-    end
-    local itemRepr
-    if type(index) == 'string' then
-      itemRepr = index .. ' >>> ' .. appid .. '$'
-    else
-      itemRepr = strfmt('Item-%d >>> %s$', (index or 1) - 1, appid)
+      local map = loadStatusItemsAutosaveName(find(appid))
+      index = map[index]
     end
     hs.timer.waitUntil(
       function()
@@ -3573,13 +3601,16 @@ MENUBAR_MANAGER_SHOW = {
       end,
       function()
         local winUI = towinui(app:focusedWindow())
-        for _, bt in ipairs(getc(winUI, AX.Button)) do
-          if bt.AXIdentifier:match(itemRepr) then
-            bt:performAction(AX.Press)
-            break
+        if index ~= nil then
+          local itemRepr = index .. ' >>> ' .. appid
+          for _, bt in ipairs(getc(winUI, AX.Button)) do
+            if bt.AXIdentifier:sub(#bt.AXIdentifier - #itemRepr + 1)
+                == itemRepr then
+              bt:performAction(AX.Press)
+              break
+            end
           end
-        end
-        if index == nil then
+        else
           local appItems = {}
           for i, bt in ipairs(getc(winUI, AX.Button)) do
             if bt.AXIdentifier:find(appid) then
@@ -3640,42 +3671,45 @@ local function getValidMenuBarManager()
   end
 end
 
-local function hiddenByBartender(appid, index)
+local function hiddenByBartender(app, index)
+  local appid = app:bundleID()
   local plistPath = hs.fs.pathToAbsolute(
       "~/Library/Preferences/com.surteesstudios.Bartender.plist")
   if plistPath ~= nil then
     local plist = hs.plist.read(plistPath)
     local allwaysShown = get(plist, "ProfileSettings",
                              "activeProfile", "Show")
-    local itemRepr
-    if type(index) == 'string' then
-      itemRepr = appid .. '-' .. index
+    if type(index) == 'number' then
+      local map = loadStatusItemsAutosaveName(app)
+      index = map[index]
+      if index == nil then return false end
+    end
+    if index then
+      return not tcontain(allwaysShown, appid .. '-' .. index)
     else
-      itemRepr = appid .. '-Item-' .. (index or 1) - 1
-    end
-    if tcontain(allwaysShown, itemRepr) then
-      return false
-    end
-    if index == nil then
       return tfind(allwaysShown, function(item)
         return item:sub(1, #appid + 1) == appid .. '-'
       end) == nil
     end
-    return true
   end
   return false
 end
 
-function hiddenByMenuBarManager(appid, index)
+function hiddenByMenuBarManager(app, index)
   local manager = getValidMenuBarManager()
   if manager == nil then return false end
   if manager == "com.surteesstudios.Bartender" then
-    if hiddenByBartender(appid, index) then
+    if hiddenByBartender(app, index) then
       return true, manager
     end
   else
-    local menuBarItem = getc(toappui(find(appid)), AX.MenuBar, -1,
-      AX.MenuBarItem, index or 1)
+    if type(index) == 'string' then
+      local map = loadStatusItemsAutosaveName(app)
+      index = tindex(map, index)
+      if index == nil then return false end
+    end
+    local menuBarItem = getc(toappui(app), AX.MenuBar, -1,
+        AX.MenuBarItem, index or 1)
     local leftmostHorizontal = 0
     hs.fnutils.each(hs.screen.allScreens(), function(screen)
       leftmostHorizontal = math.min(screen:fullFrame().x, leftmostHorizontal)
@@ -3686,9 +3720,9 @@ function hiddenByMenuBarManager(appid, index)
 end
 
 function clickRightMenuBarItem(appid, menuItemPath, show)
-  local menuBarIdx, app
+  local menuBarId, app
   if type(appid) == 'table' then
-    menuBarIdx = appid[2] appid = appid[1]
+    menuBarId = appid[2] appid = appid[1]
   end
   if type(appid) == 'string' then
     app = find(appid)
@@ -3696,9 +3730,6 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   else
     app = appid appid = app:bundleID()
   end
-  local appUI = toappui(app)
-  local menuBarMenu = getc(appUI, AX.MenuBar, -1,
-                           AX.MenuBarItem, menuBarIdx or 1)
 
   if type(menuItemPath) ~= 'table' then
     menuItemPath = { menuItemPath }
@@ -3707,10 +3738,20 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
     show = true
   end
 
+  local menuBarIdx = menuBarId
+  if type(menuBarIdx) == 'string' then
+    local map = loadStatusItemsAutosaveName(app)
+    menuBarIdx = tindex(map, menuBarIdx)
+    if menuBarIdx == nil then return false end
+  end
+  local menuBarMenu = getc(toappui(app), AX.MenuBar, -1,
+      AX.MenuBarItem, menuBarIdx or 1)
+  if menuBarMenu == nil then return false end
+
   if show then
-    local hidden, manager = hiddenByMenuBarManager(appid, menuBarIdx)
+    local hidden, manager = hiddenByMenuBarManager(app, menuBarId)
     if hidden then
-      local done = MENUBAR_MANAGER_SHOW[manager](appid, menuBarIdx)
+      local done = MENUBAR_MANAGER_SHOW[manager](appid, menuBarId)
       if done ~= true then
         hs.timer.doAfter(0.2, function()
           if menuBarMenu then
