@@ -5538,8 +5538,9 @@ local function registerObserversForMenuBarMenu(app, appConfig)
         observer = uiobserver.new(app:pid())
         observer:addWatcher(appUI, uinotifications.menuOpened)
         observer:callback(function(_, element, notification)
-          local mbItem = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1)
-          if not mbItem.AXSelected then return end
+          local mbItem = tfind(getc(appUI, AX.MenuBar, -1, AX.MenuBarItem),
+              function(item) return item.AXSelected end)
+          if mbItem == nil then return end
           registerInMenuHotkeys(appid, appConfig)
           local closeObserver = uiobserver.new(app:pid())
           closeObserver:addWatcher(element, uinotifications.menuClosed)
