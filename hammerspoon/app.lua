@@ -3174,7 +3174,17 @@ appHotKeyCallbacks = {
       end,
       fn = receiveButton
     },
-    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"]
+    ["showMainWindow"] = {
+      message = "Show",
+      menubar = true,
+      condition = function(app)
+        local menuItem = getc(toappui(app), AX.MenuBar, -1,
+          AX.MenuBarItem, 1, AX.Menu, 1, AX.MenuItem, "Show")
+        return menuItem and menuItem.AXEnabled, menuItem
+      end,
+      fn = receiveButton
+    },
+    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
   },
 
   ["com.objective-see.lulu.app"] =

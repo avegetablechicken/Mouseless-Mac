@@ -1408,6 +1408,10 @@
       "browse": {
         "mods": "command",
         "key": "O"
+      },
+      "showMainWindow": {
+        "mods": "command",
+        "key": "O"
       }
     },
     "pl.maketheweb.TopNotch": {
