@@ -3918,6 +3918,23 @@ appHotKeyCallbacks = {
     },
   },
 
+  ["com.microsoft.rdc.macos"] = {
+    ["toggleSidebar"] = {
+      message = commonLocalizedMessage("Show Sidebar"),
+      condition = function(app)
+        if app:focusedWindow() == nil then return end
+        local buttons = getc(towinui(app:focusedWindow()), AX.Toolbar, 1, AX.Button)
+        if buttons == nil then return end
+        local btTitle = localizedString("Sidebar", app:bundleID())
+        local button = tfind(buttons, function(bt)
+          return bt.AXDescription == btTitle
+        end)
+        return button ~= nil, button
+      end,
+      fn = receiveButton
+    },
+  },
+
   ["com.realvnc.vncviewer"] = {
     ["search"] = {
       message = "Search",

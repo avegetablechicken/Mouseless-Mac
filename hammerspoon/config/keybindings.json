@@ -1163,6 +1163,12 @@
         "key": "Return"
       }
     },
+    "com.microsoft.rdc.macos": {
+      "toggleSidebar": {
+        "mods": ["control", "command"],
+        "key": "S"
+      }
+    },
     "com.realvnc.vncviewer": {
       "search": {
         "mods": "command",
