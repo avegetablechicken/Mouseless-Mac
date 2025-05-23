@@ -3671,52 +3671,21 @@ local function getValidMenuBarManager()
   end
 end
 
-local function hiddenByBartender(app, index)
-  local appid = app:bundleID()
-  local plistPath = hs.fs.pathToAbsolute(
-      "~/Library/Preferences/com.surteesstudios.Bartender.plist")
-  if plistPath ~= nil then
-    local plist = hs.plist.read(plistPath)
-    local allwaysShown = get(plist, "ProfileSettings",
-                             "activeProfile", "Show")
-    if type(index) == 'number' then
-      local map = loadStatusItemsAutosaveName(app)
-      index = map[index]
-      if index == nil then return false end
-    end
-    if index then
-      return not tcontain(allwaysShown, appid .. '-' .. index)
-    else
-      return tfind(allwaysShown, function(item)
-        return item:sub(1, #appid + 1) == appid .. '-'
-      end) == nil
-    end
-  end
-  return false
-end
-
 function hiddenByMenuBarManager(app, index)
   local manager = getValidMenuBarManager()
   if manager == nil then return false end
-  if manager == "com.surteesstudios.Bartender" then
-    if hiddenByBartender(app, index) then
-      return true, manager
-    end
-  else
-    if type(index) == 'string' then
-      local map = loadStatusItemsAutosaveName(app)
-      index = tindex(map, index)
-      if index == nil then return false end
-    end
-    local menuBarItem = getc(toappui(app), AX.MenuBar, -1,
-        AX.MenuBarItem, index or 1)
-    local leftmostHorizontal = 0
-    hs.fnutils.each(hs.screen.allScreens(), function(screen)
-      leftmostHorizontal = math.min(screen:fullFrame().x, leftmostHorizontal)
-    end)
-    return menuBarItem.AXPosition.x < leftmostHorizontal, manager
+  if type(index) == 'string' then
+    local map = loadStatusItemsAutosaveName(app)
+    index = tindex(map, index)
+    if index == nil then return false end
   end
-  return false
+  local menuBarItem = getc(toappui(app), AX.MenuBar, -1,
+      AX.MenuBarItem, index or 1)
+  local leftmostHorizontal = 0
+  hs.fnutils.each(hs.screen.allScreens(), function(screen)
+    leftmostHorizontal = math.min(screen:fullFrame().x, leftmostHorizontal)
+  end)
+  return menuBarItem.AXPosition.x < leftmostHorizontal, manager
 end
 
 function clickRightMenuBarItem(appid, menuItemPath, show)
