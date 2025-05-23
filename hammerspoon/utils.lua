@@ -3502,7 +3502,7 @@ function rightClickAndRestore(point, appname, delay)
   return false
 end
 
-local function loadStatusItemsAutosaveName(app)
+function loadStatusItemsAutosaveName(app)
   local records = hs.execute(strfmt([[
     defaults read %s | grep '"NSStatusItem Preferred Position '
   ]], app:bundleID()))
