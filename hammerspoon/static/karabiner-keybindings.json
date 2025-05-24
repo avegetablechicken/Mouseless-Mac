@@ -10,8 +10,8 @@
         "message": "Toggle Input Source"
     },
     {
-        "mods": "fn",
-        "key": "S",
+        "mods": ["fn", "control"],
+        "key": "C",
         "message": "Center",
         "kind": "WIN_OP",
         "subkind": 0
