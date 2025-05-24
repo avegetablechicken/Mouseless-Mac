@@ -1636,6 +1636,42 @@ appHotKeyCallbacks = {
         return false
       end,
       fn = press
+    },
+    ["previousLocation"] = {
+      message = "Previous Location",
+      repeatable = true,
+      condition = function(app)
+        if app:focusedWindow() == nil then return false end
+        local list = getc(towinui(app:focusedWindow()), AX.Group, 1,
+            AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
+        if list.AXDescription == localizedString("Location List", app:bundleID()) then
+          for i = 1, #list do
+            if list[i].AXSelected then
+              return true, list[(i - 2) % #list + 1][1]
+            end
+          end
+        end
+        return false
+      end,
+      fn = press
+    },
+    ["nextLocation"] = {
+      message = "Next Location",
+      repeatable = true,
+      condition = function(app)
+        if app:focusedWindow() == nil then return false end
+        local list = getc(towinui(app:focusedWindow()), AX.Group, 1,
+          AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
+        if list.AXDescription == localizedString("Location List", app:bundleID()) then
+          for i = 1, #list do
+            if list[i].AXSelected then
+              return true, list[i % #list + 1][1]
+            end
+          end
+        end
+        return false
+      end,
+      fn = press
     }
   },
 

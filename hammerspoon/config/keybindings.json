@@ -665,6 +665,14 @@
       "toggleSidebar": {
         "mods": ["control", "command"],
         "key": "S"
+      },
+      "previousLocation": {
+        "mods": "control",
+        "key": "`"
+      },
+      "nextLocation": {
+        "mods": "control",
+        "key": "Tab"
       }
     },
     "com.apple.Safari": {
