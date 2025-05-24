@@ -300,6 +300,36 @@ local function versionLessEqual(version)
   return versionCompare(version, "<=")
 end
 
+local function press(pressable)
+  local flags = hs.eventtap.checkKeyboardModifiers()
+  if not flags['ctrl'] then
+    pressable:performAction(AX.Press)
+  else
+    flags['ctrl'] = nil
+    local tapper
+    tapper = hs.eventtap.new({ hs.eventtap.event.types.flagsChanged },
+      function(event)
+        tapper:stop()
+        hs.timer.doAfter(0.01, function()
+          local newFlags = hs.eventtap.checkKeyboardModifiers()
+          if newFlags['ctrl'] then
+            newFlags['ctrl'] = nil
+            event:setFlags(newFlags):post()
+            hs.timer.doAfter(0.01, function()
+              pressable:performAction(AX.Press)
+            end)
+          else
+            pressable:performAction(AX.Press)
+          end
+        end)
+        return false
+      end):start()
+    local event = hs.eventtap.event.newEvent()
+    event:setType(hs.eventtap.event.types.flagsChanged)
+    event:setFlags(flags):post()
+  end
+end
+
 -- ## function utilities for hotkey configs of specific application
 
 -- ### Finder
@@ -388,13 +418,13 @@ local function deleteSelectedMessage(app, menuItem, force)
   local button = getc(winUI, AX.Group, 1, AX.Group, 1,
       AX.Group, 2, AX.Group, 1, AX.Button, 2)
   if button ~= nil then
-    button:performAction(AX.Press)
+    press(button)
     if force ~= nil then
       local confirm = function()
         if app:focusedWindow():role() == AX.Sheet then
           local sheet = towinui(app:focusedWindow())
           local delete = getc(sheet, AX.Button, 2)
-          delete:performAction(AX.Press)
+          press(delete)
         end
       end
       hs.timer.doAfter(0.2, confirm)
@@ -442,7 +472,7 @@ local function deleteAllMessages(messageItems, app, first)
     end
     deleteSelectedMessage(app, nil, true)
   else
-    messageItem:performAction(AX.Press)
+    press(messageItem)
     hs.timer.doAfter(0.1, function()
       deleteSelectedMessage(app, nil, true)
     end)
@@ -493,7 +523,7 @@ local function deleteMousePositionCall(win)
       local locTitle = localizedString("Remove from Recents", appid)
       local menuItem = getc(popup, AX.MenuItem, locTitle)
       if menuItem ~= nil then
-        menuItem:performAction(AX.Press)
+        press(menuItem)
       end
     end
     return
@@ -518,7 +548,7 @@ local function deleteMousePositionCall(win)
       for _, popup in ipairs(popups) do
         local menuItem = getc(popup, AX.MenuItem, "menuRemovePersonFromRecents:")
         if menuItem then
-          menuItem:performAction(AX.Press)
+          press(menuItem)
         end
       end
     end,
@@ -566,7 +596,7 @@ local function deleteAllCalls(win)
       local locTitle = localizedString("Remove from Recents", appid)
       local menuItem = getc(popup, AX.MenuItem, locTitle)
       if menuItem ~= nil then
-        menuItem:performAction(AX.Press)
+        press(menuItem)
       end
       hs.timer.usleep(0.1 * 1000000)
       deleteAllCalls(win)
@@ -593,7 +623,7 @@ local function deleteAllCalls(win)
       for _, popup in ipairs(popups) do
         local menuItem  = getc(popup, AX.MenuItem, "menuRemovePersonFromRecents:")
         if menuItem then
-          menuItem:performAction(AX.Press)
+          press(menuItem)
           hs.timer.usleep(0.1 * 1000000)
         end
       end
@@ -627,7 +657,7 @@ local function VSCodeToggleSideBarSection(winUI, sidebar, section)
     for _, sec in ipairs(sections) do
       local button = getc(sec, AX.Group, 1, AX.Button, 1)
       if button[2].AXTitle == section then
-        button:performAction(AX.Press)
+        press(button)
         break
       end
     end
@@ -638,7 +668,7 @@ local function VSCodeToggleSideBarSection(winUI, sidebar, section)
       return t.AXTitle:upper():sub(1, #sidebar) == sidebar
           or t.AXDescription:upper():sub(1, #sidebar) == sidebar
     end)
-    tab:performAction(AX.Press)
+    press(tab)
 
     local sections = getc(ancestor, AX.Group, 2, AX.Group, 2,
         AX.Group, 1, AX.Group, 2, AX.Group)
@@ -651,7 +681,7 @@ local function VSCodeToggleSideBarSection(winUI, sidebar, section)
       local button = getc(sec, AX.Group, 1, AX.Button, 1)
       if button[2].AXTitle == section then
         if #getc(sec, AX.Group, 1) == 1 then
-          button:performAction(AX.Press)
+          press(button)
           break
         end
       end
@@ -1283,11 +1313,6 @@ local function receivePosition(position, app)
   leftClickAndRestore(position, app:name())
 end
 
--- click the button returned by the condition
--- work as hotkey callback
-local function receiveButton(button)
-  button:performAction(AX.Press)
-end
 
 -- send key strokes to the app. but if the key binding is found, select corresponding menu item
 local function selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
@@ -1529,7 +1554,7 @@ appHotKeyCallbacks = {
         return true, messageItems[#messageItems]
       end,
       repeatable = true,
-      fn = receiveButton
+      fn = press
     },
     ["goToNextConversation"] = {
       message = menuItemMessage('⌃', "⇥", 2),
@@ -1554,7 +1579,7 @@ appHotKeyCallbacks = {
         return true, messageItems[1]
       end,
       repeatable = true,
-      fn = receiveButton
+      fn = press
     }
   },
 
@@ -1582,7 +1607,7 @@ appHotKeyCallbacks = {
             AX.Group, 1, AX.Group, 1, AX.Button, 2)
         return button ~= nil, button
       end,
-      fn = receiveButton
+      fn = press
     }
   },
 
@@ -1598,7 +1623,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = receiveButton
+      fn = press
     }
   },
 
@@ -1629,7 +1654,7 @@ appHotKeyCallbacks = {
           app:selectMenuItem(result)
         else
           local button = result
-          button:performAction(AX.Press)
+          press(button)
         end
       end
     }
@@ -1880,7 +1905,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = receiveButton
+      fn = press
     }
   },
 
@@ -1979,7 +2004,7 @@ appHotKeyCallbacks = {
           for _, elem in ipairs(toappui(app)) do
             local menuItem = getc(elem, AX.Menu, 1, AX.MenuItem, title)
             if menuItem then
-              menuItem:performAction(AX.Press)
+              press(menuItem)
               if hs.application.frontmostApplication():bundleID() == app:bundleID() then
                 hs.eventtap.keyStroke("", "Escape", nil, app)
               end
@@ -2244,7 +2269,7 @@ appHotKeyCallbacks = {
         local button = getc(winUI, AX.Toolbar, 1, AX.Button, 3)
         return button ~= nil, button
       end,
-      fn = receiveButton
+      fn = press
     },
     ["function4"] = {
       message = localizedMessage("生词笔记"),
@@ -2266,7 +2291,7 @@ appHotKeyCallbacks = {
         local button = getc(winUI, AX.Toolbar, 1, AX.Button, 6)
         return button ~= nil, button
       end,
-      fn = receiveButton
+      fn = press
     }
   },
 
@@ -2289,7 +2314,7 @@ appHotKeyCallbacks = {
         local button = getc(winUI, AX.Toolbar, 1, AX.Button, 1, AX.Button, 1)
         return button ~= nil and button.AXEnabled, button
       end,
-      fn = receiveButton
+      fn = press
     },
     ["toggleLauncher"] = {
       message = "Toggle ChatGPT Launcher",
@@ -2363,7 +2388,7 @@ appHotKeyCallbacks = {
         end)
         return button ~= nil, button
       end,
-      fn = receiveButton
+      fn = press
     },
     ["toggleSidebar"] = {
       message = commonLocalizedMessage("Show Sidebar"),
@@ -2381,7 +2406,7 @@ appHotKeyCallbacks = {
         end)
         return button ~= nil, button
       end,
-      fn = receiveButton
+      fn = press
     },
     ["maximize"] = {
       mods = get(KeybindingConfigs.hotkeys.shared, "zoom", "mods"),
@@ -2405,7 +2430,7 @@ appHotKeyCallbacks = {
         end)
         return button ~= nil, button
       end,
-      fn = receiveButton
+      fn = press
     },
     ["toggleLauncher"] = {
       message = function(app)
@@ -2553,7 +2578,7 @@ appHotKeyCallbacks = {
         local winUI = towinui(win)
         local button = getc(winUI, AX.SplitGroup, 1, AX.Button, 2)
         if button ~= nil then
-          button:performAction(AX.Press)
+          press(button)
         end
       end
     },
@@ -2567,7 +2592,7 @@ appHotKeyCallbacks = {
         local winUI = towinui(app:mainWindow())
         local button = getc(winUI, AX.SplitGroup, 1, AX.Button, 2)
         if button ~= nil then
-          button:performAction(AX.Press)
+          press(button)
         end
       end
     },
@@ -2669,7 +2694,7 @@ appHotKeyCallbacks = {
         local menu = getc(chat, AX.Cell, 1, AX.Row, 1, AX.Menu, 1)
         if menu then
           local hide = getc(menu, AX.MenuItem, "contextMenuHide:")
-          if hide then hide:performAction(AX.Press) end
+          if hide then press(hide) end
         end
       end
     },
@@ -2702,7 +2727,7 @@ appHotKeyCallbacks = {
               AX.Row, 1, AX.Menu, 1)
           if menu then
             local profile = getc(menu, AX.MenuItem, "contextMenuProfile:")
-            if profile then profile:performAction(AX.Press) end
+            if profile then press(profile) end
           end
         end
       end
@@ -2847,8 +2872,8 @@ appHotKeyCallbacks = {
         end)
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, '最近打开')
         if menuItem ~= nil then
-          menuBarItem:performAction(AX.Press)
-          menuItem:performAction(AX.Press)
+          press(menuBarItem)
+          press(menuItem)
         end
       end
     }
@@ -2899,47 +2924,47 @@ appHotKeyCallbacks = {
     ["tab1"] = {
       message = douyinDesktopTabTitle(1),
       condition = douyinDesktopTab(1),
-      fn = receiveButton
+      fn = press
     },
     ["tab2"] = {
       message = douyinDesktopTabTitle(2),
       condition = douyinDesktopTab(2),
-      fn = receiveButton
+      fn = press
     },
     ["tab3"] = {
       message = douyinDesktopTabTitle(3),
       condition = douyinDesktopTab(3),
-      fn = receiveButton
+      fn = press
     },
     ["tab4"] = {
       message = douyinDesktopTabTitle(4),
       condition = douyinDesktopTab(4),
-      fn = receiveButton
+      fn = press
     },
     ["tab5"] = {
       message = douyinDesktopTabTitle(5),
       condition = douyinDesktopTab(5),
-      fn = receiveButton
+      fn = press
     },
     ["tab6"] = {
       message = douyinDesktopTabTitle(6),
       condition = douyinDesktopTab(6),
-      fn = receiveButton
+      fn = press
     },
     ["tab7"] = {
       message = douyinDesktopTabTitle(7),
       condition = douyinDesktopTab(7),
-      fn = receiveButton
+      fn = press
     },
     ["tab8"] = {
       message = douyinDesktopTabTitle(8),
       condition = douyinDesktopTab(8),
-      fn = receiveButton
+      fn = press
     },
     ["tab9"] = {
       message = douyinDesktopTabTitle(9),
       condition = douyinDesktopTab(9),
-      fn = receiveButton
+      fn = press
     }
   },
 
@@ -2963,31 +2988,31 @@ appHotKeyCallbacks = {
       message = localizedMessage('Uninstall'),
       windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('Uninstall'),
-      fn = receiveButton
+      fn = press
     },
     ["remove"] = {
       message = localizedMessage('Remove'),
       windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('Remove'),
-      fn = receiveButton
+      fn = press
     },
     ["enable"] = {
       message = localizedMessage('Enable'),
       windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('Enable'),
-      fn = receiveButton
+      fn = press
     },
     ["disable"] = {
       message = localizedMessage('Disable'),
       windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('Disable'),
-      fn = receiveButton
+      fn = press
     },
     ["update"] = {
       message = localizedMessage('Update'),
       windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('Update'),
-      fn = receiveButton
+      fn = press
     },
     ["confirmRemove"] = {
       message = localizedMessage('Remove'),
@@ -3024,25 +3049,25 @@ appHotKeyCallbacks = {
       message = localizedMessage('Remove_Button_Title'),
       windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('Remove_Button_Title'),
-      fn = receiveButton
+      fn = press
     },
     ["enable"] = {
       message = localizedMessage('EnableMenuItemTitle'),
       windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('EnableMenuItemTitle'),
-      fn = receiveButton
+      fn = press
     },
     ["disable"] = {
       message = localizedMessage('DisableMenuItemTitle'),
       windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('DisableMenuItemTitle'),
-      fn = receiveButton
+      fn = press
     },
     ["update"] = {
       message = localizedMessage('UpdateButtonTitle'),
       windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('UpdateButtonTitle'),
-      fn = receiveButton
+      fn = press
     },
     ["confirmRemove"] = {
       message = localizedMessage('PartialRemove_Remove'),
@@ -3087,12 +3112,12 @@ appHotKeyCallbacks = {
         local start = getc(menu, AX.MenuItem, "Start")
         assert(start)
         if start.AXEnabled then
-          start:performAction(AX.Press)
+          press(start)
           hs.alert("Barrier started")
         else
           local stop = getc(menu, AX.MenuItem, "Stop")
           assert(stop)
-          stop:performAction(AX.Press)
+          press(stop)
           hs.alert("Barrier stopped")
         end
       end,
@@ -3103,12 +3128,12 @@ appHotKeyCallbacks = {
           local winUI = towinui(app:focusedWindow())
           local start = getc(winUI, AX.Button, "Start")
           assert(start)
-          start:performAction(AX.Press)
+          press(start)
           hs.alert("Barrier started")
           hs.timer.doAfter(0.5, function()
             local close = getc(winUI, AX.Button, 4)
             assert(close)
-            close:performAction(AX.Press)
+            press(close)
           end)
         end
       end
@@ -3123,7 +3148,7 @@ appHotKeyCallbacks = {
         local reload = getc(winUI, AX.Button, "Reload")
         return reload ~= nil and #reload:actionNames() > 0, reload
       end,
-      fn = receiveButton
+      fn = press
     },
     ["start"] = {
       message = "Start",
@@ -3135,7 +3160,7 @@ appHotKeyCallbacks = {
         local start = getc(winUI, AX.Button, "Start")
         return start ~= nil and #start:actionNames() > 0, start
       end,
-      fn = receiveButton
+      fn = press
     },
     ["stop"] = {
       message = "Stop",
@@ -3147,7 +3172,7 @@ appHotKeyCallbacks = {
         local stop = getc(winUI, AX.Button, "Stop")
         return stop ~= nil and #stop:actionNames() > 0, stop
       end,
-      fn = receiveButton
+      fn = press
     },
     ["configureServer"] = {
       message = "Configure Server...",
@@ -3160,7 +3185,7 @@ appHotKeyCallbacks = {
             AX.Button, "Configure Server...")
         return configure ~= nil and #configure:actionNames() > 0, configure
       end,
-      fn = receiveButton
+      fn = press
     },
     ["browse"] = {
       message = "Browse",
@@ -3172,7 +3197,7 @@ appHotKeyCallbacks = {
         local browse = getc(winUI, AX.CheckBox, 1, AX.Button, "Browse...")
         return browse ~= nil and #browse:actionNames() > 0, browse
       end,
-      fn = receiveButton
+      fn = press
     },
     ["showMainWindow"] = {
       message = "Show",
@@ -3181,7 +3206,7 @@ appHotKeyCallbacks = {
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, "Show")
         return menuItem and menuItem.AXEnabled, menuItem
       end,
-      fn = receiveButton
+      fn = press
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
   },
@@ -3199,7 +3224,7 @@ appHotKeyCallbacks = {
         local button = getc(winUI, AX.Button, "Allow")
         return button ~= nil, button
       end,
-      fn = receiveButton
+      fn = press
     },
     ["blockConnection"] = {
       message = "Block Connection",
@@ -3212,7 +3237,7 @@ appHotKeyCallbacks = {
         local button = getc(winUI, AX.Button, "Block")
         return button ~= nil, button
       end,
-      fn = receiveButton
+      fn = press
     }
   },
 
@@ -3228,7 +3253,7 @@ appHotKeyCallbacks = {
         local button = getc(winUI, AX.Button, "Save")
         return button ~= nil and button.AXEnabled == true, button
       end,
-      fn = receiveButton
+      fn = press
     }
   },
 
@@ -3539,7 +3564,7 @@ appHotKeyCallbacks = {
                 AX.Popover, 1, AX.Group, 3, AX.Button, 2)
           end
           local state = switch.AXValue
-          switch:performAction(AX.Press)
+          press(switch)
           if state == 'off' then
             hs.eventtap.keyStroke("", "Escape", nil, app)
           else
@@ -3627,7 +3652,7 @@ appHotKeyCallbacks = {
         return button ~= nil, button
       end,
       background = true,
-      fn = receiveButton
+      fn = press
     },
     ["showAllPasswords"] = {
       message = "Show All Passwords",
@@ -3641,7 +3666,7 @@ appHotKeyCallbacks = {
         return button ~= nil, button
       end,
       background = true,
-      fn = receiveButton
+      fn = press
     },
     ["back"] = {
       message = localizedString("Back", {
@@ -3658,7 +3683,7 @@ appHotKeyCallbacks = {
         return elem.AXRole == AX.Button, elem
       end,
       background = true,
-      fn = receiveButton
+      fn = press
     },
     ["copyUsername"] = {
       message = localizedString("Username", "com.apple.Passwords"),
@@ -3818,7 +3843,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         local button = getc(towinui(win), AX.Group, 1,
             AX.Group, 1, AX.Button, -1)
-        if button then button:performAction(AX.Press) end
+        if button then press(button) end
       end
     },
     ["closeWindow"] = {
@@ -3831,7 +3856,7 @@ appHotKeyCallbacks = {
         local menuBarItem = getc(toappui(win:application()),
             AX.MenuBar, -1, AX.MenuBarItem, 1)
         if menuBarItem then
-          menuBarItem:performAction(AX.Press)
+          press(menuBarItem)
         end
       end
     }
@@ -3940,7 +3965,7 @@ appHotKeyCallbacks = {
         end)
         return button ~= nil, button
       end,
-      fn = receiveButton
+      fn = press
     },
   },
 
@@ -4450,7 +4475,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 1)
-        if button ~= nil then button:performAction(AX.Press) end
+        if button ~= nil then press(button) end
       end
     },
     ["select1stItem"] = {
@@ -5904,7 +5929,7 @@ local function registerForOpenSavePanel(app)
         local hotkey = AppWinBind(app, {
           spec = spec,
           message = dontSaveButton.AXTitle or dontSaveButton.AXDescription,
-          fn = function() dontSaveButton:performAction(AX.Press) end,
+          fn = function() press(dontSaveButton) end,
         })
         tinsert(openSavePanelHotkeys, hotkey)
       end
@@ -6125,7 +6150,7 @@ altMenuBarItem = function(app, menuBarItems, reinvokeKey)
       if actionNames ~= nil and tcontain(actionNames, AX.Pick) then
         menu:performAction(AX.Pick)
       elseif actionNames ~= nil and tcontain(actionNames, AX.Press) then
-        menu:performAction(AX.Press)
+        press(menu)
       else
         leftClick(uioffset(menu, { 5, 5 }), app:name())
       end
@@ -6137,7 +6162,7 @@ altMenuBarItem = function(app, menuBarItems, reinvokeKey)
         local appUI = toappui(app)
         local menubarItem = getc(appUI, AX.MenuBar, 1, AX.MenuBarItem, index)
         if menubarItem then
-          menubarItem:performAction(AX.Press)
+          press(menubarItem)
           return
         end
       else
@@ -6758,7 +6783,7 @@ local function connectMountainDuckEntries(app, connection)
     local menuItem = getc(menuBar, AX.MenuItem, connection,
         AX.Menu, 1, AX.MenuItem, 1)
     if menuItem ~= nil then
-      menuItem:performAction(AX.Press)
+      press(menuItem)
     end
   else
     local fullfilled = connection.condition(app)
@@ -6769,7 +6794,7 @@ local function connectMountainDuckEntries(app, connection)
       local menuItem = getc(menuBar, AX.MenuItem, item,
           AX.Menu, 1, AX.MenuItem, 1)
       if menuItem ~= nil then
-        menuItem:performAction(AX.Press)
+        press(menuItem)
       end
     end
     local disconnect = localizedString('Disconnect', app:bundleID())
@@ -6777,7 +6802,7 @@ local function connectMountainDuckEntries(app, connection)
       local menuItem = getc(menuBar, AX.MenuItem, item,
           AX.Menu, 1, AX.MenuItem, disconnect)
       if menuItem ~= nil then
-        menuItem:performAction(AX.Press)
+        press(menuItem)
       end
     end
   end
