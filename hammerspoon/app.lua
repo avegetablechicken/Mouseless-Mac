@@ -1611,6 +1611,18 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["com.apple.Notes"] = {
+    ["toggleFolders"] = {
+      message = localizedMessage("Show Folders"),
+      condition = function(app)
+        local enabled, menuItem = checkMenuItem({ "View", "Show Folders" })(app)
+        if enabled then return true, menuItem end
+        return checkMenuItem({ "View", "Hide Folders" })(app)
+      end,
+      fn = receiveMenuItem
+    }
+  },
+
   ["com.apple.weather"] = {
     ["toggleSidebar"] = {
       message = commonLocalizedMessage("Show Sidebar"),

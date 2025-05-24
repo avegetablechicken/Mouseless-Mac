@@ -649,6 +649,12 @@
         "key": "N"
       }
     },
+    "com.apple.Notes": {
+      "toggleFolders": {
+        "mods": ["control", "command"],
+        "key": "S"
+      }
+    },
     "com.apple.AppStore": {
       "back": {
         "mods": "command",
