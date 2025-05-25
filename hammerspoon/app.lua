@@ -5633,6 +5633,26 @@ end
 
 local function registerSingleWinFilterForDaemonApp(app, filter)
   local appid = app:bundleID()
+  local registerCloseObserver = function(winUI)
+    local closeObserver = uiobserver.new(app:pid())
+    closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
+    closeObserver:callback(function(obs)
+      if daemonAppFocusedWindowHotkeys[appid] ~= nil then -- fix weird bug
+        for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[appid]) do
+          if hotkey.idx ~= nil then
+            hotkey:delete()
+            daemonAppFocusedWindowHotkeys[appid][i] = nil
+          end
+        end
+        if #daemonAppFocusedWindowHotkeys[appid] == 0 then
+          daemonAppFocusedWindowHotkeys[appid] = nil
+        end
+      end
+      obs:stop()
+      obs = nil
+    end)
+    closeObserver:start()
+  end
   if (type(filter) == 'table' and (filter.allowSheet or filter.allowPopover))
       or appid == "com.tencent.LemonMonitor" then
     local appUI = toappui(app)
@@ -5641,24 +5661,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
     observer:callback(function(_, element, notification)
       if filter.fn and not filter.fn(app:focusedWindow()) then return end
       registerDaemonAppInWinHotkeys(app, appid, filter)
-      local closeObserver = uiobserver.new(app:pid())
-      closeObserver:addWatcher(element, uinotifications.uIElementDestroyed)
-      closeObserver:callback(function(obs)
-        if daemonAppFocusedWindowHotkeys[appid] ~= nil then -- fix weird bug
-          for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[appid]) do
-            if hotkey.idx ~= nil then
-              hotkey:delete()
-              daemonAppFocusedWindowHotkeys[appid][i] = nil
-            end
-          end
-          if #daemonAppFocusedWindowHotkeys[appid] == 0 then
-            daemonAppFocusedWindowHotkeys[appid] = nil
-          end
-        end
-        obs:stop()
-        obs = nil
-      end)
-      closeObserver:start()
+      registerCloseObserver(element)
     end)
     observer:start()
     DaemonAppFocusedWindowFilters[appid][filter] = observer
@@ -5680,28 +5683,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
   function(win, appname, event)
     if fn ~= nil and not fn(win) then return end
     registerDaemonAppInWinHotkeys(win, appid, filter, event)
-  end)
-  :subscribe({
-    hs.window.filter.windowDestroyed, hs.window.filter.windowUnfocused
-  },
-  function(win, appname, event)
-    if fn ~= nil and tfind(app:visibleWindows(), fn) ~= nil then
-      return
-    end
-    if event == hs.window.filter.windowUnfocused
-        and hs.window.frontmostWindow() ~= nil
-        and hs.window.frontmostWindow():id() == win:id() then
-      return
-    end
-    if daemonAppFocusedWindowHotkeys[appid] ~= nil then  -- fix weird bug
-      for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[appid]) do
-        if hotkey.idx ~= nil then
-          hotkey:delete()
-          daemonAppFocusedWindowHotkeys[appid][i] = nil
-        end
-      end
-      daemonAppFocusedWindowHotkeys[appid] = nil
-    end
+    registerCloseObserver(towinui(win))
   end)
   DaemonAppFocusedWindowFilters[appid][filter] = windowFilter
   execOnQuit(appid, function()
