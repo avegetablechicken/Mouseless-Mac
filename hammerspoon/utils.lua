@@ -3758,7 +3758,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   if show then
     local hidden, manager = hiddenByMenuBarManager(app, menuBarId)
     if hidden then
-      local done = MENUBAR_MANAGER_SHOW[manager](appid, menuBarId)
+      local done = MENUBAR_MANAGER_SHOW[manager](appid, menuBarId or 1)
       if done ~= true then
         hs.timer.doAfter(0.2, function()
           if menuBarMenu then
