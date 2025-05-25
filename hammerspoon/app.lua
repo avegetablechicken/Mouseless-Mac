@@ -5397,7 +5397,9 @@ local function sameFilter(a, b)
   if a == b then return true end
   for k, av in pairs(a) do
     local bv = b[k]
-    if type(av) == 'table' then
+    if av == bv then
+      return true
+    elseif type(av) == 'table' then
       if type(bv) ~= 'table' then return false end
       for i=1,#av do
         if av[i].equals then
@@ -5478,6 +5480,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
     local observer = uiobserver.new(app:pid())
     observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
     observer:callback(function(_, element, notification)
+      if filter.fn and not filter.fn(app:focusedWindow()) then return end
       registerDaemonAppInWinHotkeys(app, appid, filter)
       local closeObserver = uiobserver.new(app:pid())
       closeObserver:addWatcher(element, uinotifications.uIElementDestroyed)
@@ -5505,17 +5508,27 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
     end)
     return
   end
-  local windowFilter = hs.window.filter.new(false):setAppFilter(app:name(), filter)
+  local actualFilter = filter
+  local fn = filter.fn
+  if fn then
+    actualFilter = hs.fnutils.copy(filter)
+    actualFilter.fn = nil
+  end
+  local windowFilter = hs.window.filter.new(false):setAppFilter(app:name(), actualFilter)
   :subscribe({
     hs.window.filter.windowCreated, hs.window.filter.windowFocused
   },
   function(win, appname, event)
+    if fn ~= nil and not fn(win) then return end
     registerDaemonAppInWinHotkeys(win, appid, filter, event)
   end)
   :subscribe({
     hs.window.filter.windowDestroyed, hs.window.filter.windowUnfocused
   },
   function(win, appname, event)
+    if fn ~= nil and tfind(app:visibleWindows(), fn) ~= nil then
+      return
+    end
     if event == hs.window.filter.windowUnfocused
         and hs.window.frontmostWindow() ~= nil
         and hs.window.frontmostWindow():id() == win:id() then
