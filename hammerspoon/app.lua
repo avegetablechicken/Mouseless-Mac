@@ -4984,6 +4984,12 @@ local prevWebsiteCallbacks = {}
 local prevWindowCallbacks = {}
 local function wrapCondition(app, config, mode)
   local prevWebsiteCallback, prevWindowCallback
+  local win
+  if app.application ~= nil then
+    win = app app = win:application()
+  else
+    win = app:focusedWindow()
+  end
   local appid = app:bundleID()
 
   local mods, key = config.mods, config.key
@@ -5090,7 +5096,7 @@ local function wrapCondition(app, config, mode)
   cond = resendToFrontmostWindow(cond, config.nonFrontmost or config.menubar)
   local fn = func
   fn = function(...)
-    local obj = windowFilter == nil and app or app:focusedWindow()
+    local obj = windowFilter == nil and app or win
     if obj == nil then  -- no window focused when triggering window-specific hotkeys
       selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
       return
@@ -5414,9 +5420,9 @@ local function sameFilter(a, b)
   return true
 end
 
-function WinBind(app, config, ...)
+function WinBind(win, config, ...)
   config.windowFilter = 'background'
-  local hotkey, cond = bindAppWinImpl(app, config, ...)
+  local hotkey, cond = bindAppWinImpl(win, config, ...)
   hotkey.kind = HK.IN_WIN
   hotkey.condition = cond
   return hotkey
@@ -5426,7 +5432,7 @@ end
 -- the window is frontmost unless specified "nonFrontmost"
 local daemonAppFocusedWindowHotkeys = {}
 DaemonAppFocusedWindowFilters = {}
-local function registerDaemonAppInWinHotkeys(appid, filter, event)
+local function registerDaemonAppInWinHotkeys(win, appid, filter, event)
   if daemonAppFocusedWindowHotkeys[appid] == nil then
     daemonAppFocusedWindowHotkeys[appid] = {}
   elseif event == hs.window.filter.windowFocused then
@@ -5457,7 +5463,7 @@ local function registerDaemonAppInWinHotkeys(appid, filter, event)
         config.repeatedFn = config.repeatable and cfg.fn or nil
         config.nonFrontmost = keybinding.nonFrontmost ~= nil
             and keybinding.nonFrontmost or cfg.nonFrontmost
-        local hotkey = WinBind(app, config)
+        local hotkey = WinBind(win, config)
         tinsert(daemonAppFocusedWindowHotkeys[appid], hotkey)
       end
     end
@@ -5466,13 +5472,13 @@ end
 
 local function registerSingleWinFilterForDaemonApp(app, filter)
   local appid = app:bundleID()
-  if filter.allowSheet or filter.allowPopover
+  if (type(filter) == 'table' and (filter.allowSheet or filter.allowPopover))
       or appid == "com.tencent.LemonMonitor" then
     local appUI = toappui(app)
     local observer = uiobserver.new(app:pid())
     observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
     observer:callback(function(_, element, notification)
-      registerDaemonAppInWinHotkeys(appid, filter)
+      registerDaemonAppInWinHotkeys(app, appid, filter)
       local closeObserver = uiobserver.new(app:pid())
       closeObserver:addWatcher(element, uinotifications.uIElementDestroyed)
       closeObserver:callback(function(obs)
@@ -5504,7 +5510,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
     hs.window.filter.windowCreated, hs.window.filter.windowFocused
   },
   function(win, appname, event)
-    registerDaemonAppInWinHotkeys(appid, filter, event)
+    registerDaemonAppInWinHotkeys(win, appid, filter, event)
   end)
   :subscribe({
     hs.window.filter.windowDestroyed, hs.window.filter.windowUnfocused
