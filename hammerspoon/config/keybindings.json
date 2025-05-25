@@ -1352,6 +1352,57 @@
         "key": "9"
       }
     },
+    "com.HyperartFlow.Barbee": {
+      "toggleMenuBar": {
+        "mods": "${hyper.daemon}",
+        "key": "E",
+        "background": true
+      },
+      "toggleSidebar": {
+        "mods": ["control", "command"],
+        "key": "S"
+      },
+      "click1stBarbeeBarItem": {
+        "mods": "",
+        "key": "1"
+      },
+      "click2ndBarbeeBarItem": {
+        "mods": "",
+        "key": "2"
+      },
+      "click3rdBarbeeBarItem": {
+        "mods": "",
+        "key": "3"
+      },
+      "click4thBarbeeBarItem": {
+        "mods": "",
+        "key": "4"
+      },
+      "click5thBarbeeBarItem": {
+        "mods": "",
+        "key": "5"
+      },
+      "click6thBarbeeBarItem": {
+        "mods": "",
+        "key": "6"
+      },
+      "click7thBarbeeBarItem": {
+        "mods": "",
+        "key": "7"
+      },
+      "click8thBarbeeBarItem": {
+        "mods": "",
+        "key": "8"
+      },
+      "click9thBarbeeBarItem": {
+        "mods": "",
+        "key": "9"
+      },
+      "click10thBarbeeBarItem": {
+        "mods": "",
+        "key": "0"
+      }
+    },
     "com.app.menubarx": {
       "toggleMenuBarX": {
         "mods": ["shift", "option", "command"],

@@ -907,6 +907,54 @@ local function clickBartenderSidebarItem(index)
   end
 end
 
+-- ### Barbee
+local barbeeBarItemNames
+local barbeeBarWindowFilter = {
+  allowRoles = AX.SystemDialog,
+  allowTitles = "^$",
+  fn = function(win)
+    local winUI = towinui(win)
+    if #winUI == 1 and winUI[1].AXRole == AX.Group
+        and #winUI[1] == #(getc(winUI[1], AX.Button) or {}) then
+      return true
+    end
+    return false
+  end
+}
+BarbeeBarObserver = nil
+local function getBarbeeBarItemTitle(index)
+  return function(app)
+    if barbeeBarItemNames == nil then
+      local win = tfind(app:visibleWindows(), barbeeBarWindowFilter.fn)
+      if win == nil then return end
+      local winUI = towinui(win)
+      local buttons = getc(winUI, AX.Group, 1, AX.Button)
+      barbeeBarItemNames = hs.fnutils.map(buttons, function(bt)
+        return bt.AXHelp
+      end)
+      BarbeeBarObserver = uiobserver.new(app:pid())
+      BarbeeBarObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
+      BarbeeBarObserver:callback(
+          function()
+            barbeeBarItemNames = nil
+            BarbeeBarObserver:stop()
+            BarbeeBarObserver = nil
+          end)
+    end
+    if barbeeBarItemNames ~= nil and index <= #barbeeBarItemNames then
+      return "Click "
+          .. barbeeBarItemNames[#barbeeBarItemNames + 1 - index]
+    end
+  end
+end
+
+local function clickBarbeeBarItem(index)
+  return function(win)
+    local button = getc(towinui(win), AX.Group, 1, AX.Button, -index)
+    if button then press(button) end
+  end
+end
+
 -- ### PasswordsMenuBarExtra
 local function getPasswordRecordPosition(index)
   return function(win)
@@ -3517,6 +3565,117 @@ appHotKeyCallbacks = {
       message = "About",
       windowFilter = { allowTitles = "^Bartender 5$" },
       fn = clickBartenderSidebarItem(9)
+    },
+    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
+    ["minimize"] = specialCommonHotkeyConfigs["minimize"],
+    ["quit"] = specialCommonHotkeyConfigs["quit"],
+    ["hide"] = specialCommonHotkeyConfigs["hide"],
+  },
+
+  ["com.HyperartFlow.Barbee"] =
+  {
+    ["toggleMenuBar"] = {
+      message = "Toggle Menu Bar",
+      kind = HK.MENUBAR,
+      fn = function(app)
+        local barShown = false
+        for _, e in ipairs(getc(toappui(app), AX.Window)) do
+          if #e == 1 and e[1].AXRole == AX.Group
+              and #e[1] == #(getc(e[1], AX.Button) or {}) then
+            barShown = true
+          end
+        end
+        if barShown then
+          hs.osascript.applescript(strfmt([[
+            tell application id "%s" to hide items
+          ]], app:bundleID()))
+        else
+          hs.osascript.applescript(strfmt([[
+            tell application id "%s" to show items
+          ]], app:bundleID()))
+        end
+      end
+    },
+    ["toggleSidebar"] = {
+      message = commonLocalizedMessage("Show Sidebar"),
+      condition = function(app)
+        if app:focusedWindow() == nil then return false end
+        local button = tfind(getc(towinui(app:focusedWindow()),
+                                  AX.Toolbar, 1, AX.Button) or {},
+            function(bt) return bt.AXDescription == "Sidebar" end)
+        return button ~= nil, button
+      end,
+      fn = press
+    },
+    ["click1stBarbeeBarItem"] = {
+      message = getBarbeeBarItemTitle(1),
+      windowFilter = barbeeBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickBarbeeBarItem(1)
+    },
+    ["click2ndBarbeeBarItem"] = {
+      message = getBarbeeBarItemTitle(2),
+      windowFilter = barbeeBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickBarbeeBarItem(2)
+    },
+    ["click3rdBarbeeBarItem"] = {
+      message = getBarbeeBarItemTitle(3),
+      windowFilter = barbeeBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickBarbeeBarItem(3)
+    },
+    ["click4thBarbeeBarItem"] = {
+      message = getBarbeeBarItemTitle(4),
+      windowFilter = barbeeBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickBarbeeBarItem(4)
+    },
+    ["click5thBarbeeBarItem"] = {
+      message = getBarbeeBarItemTitle(5),
+      windowFilter = barbeeBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickBarbeeBarItem(5)
+    },
+    ["click6thBarbeeBarItem"] = {
+      message = getBarbeeBarItemTitle(6),
+      windowFilter = barbeeBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickBarbeeBarItem(6)
+    },
+    ["click7thBarbeeBarItem"] = {
+      message = getBarbeeBarItemTitle(7),
+      windowFilter = barbeeBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickBarbeeBarItem(7)
+    },
+    ["click8thBarbeeBarItem"] = {
+      message = getBarbeeBarItemTitle(8),
+      windowFilter = barbeeBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickBarbeeBarItem(8)
+    },
+    ["click9thBarbeeBarItem"] = {
+      message = getBarbeeBarItemTitle(9),
+      windowFilter = barbeeBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickBarbeeBarItem(9)
+    },
+    ["click10thBarbeeBarItem"] = {
+      message = getBarbeeBarItemTitle(10),
+      windowFilter = barbeeBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickBarbeeBarItem(10)
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
     ["minimize"] = specialCommonHotkeyConfigs["minimize"],

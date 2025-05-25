@@ -23,6 +23,7 @@
 
   "launchSilently": [
     "com.surteesstudios.Bartender",
+    "com.HyperartFlow.Barbee",
     "com.mathpix.snipping-tool-noappstore",
     "whbalzac.Dongtaizhuomian",
     "com.tencent.LemonMonitor"
