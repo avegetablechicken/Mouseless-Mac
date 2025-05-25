@@ -955,6 +955,32 @@ local function clickBarbeeBarItem(index)
   end
 end
 
+-- ### Ice
+local iceBarWindowFilter = { allowTitles = "^Ice Bar$" }
+local function getIceBarItemTitle(index)
+  return function(app)
+    local win = tfind(app:visibleWindows(), function(win)
+      return win:title():match(iceBarWindowFilter.allowTitles)
+    end)
+    if win == nil then return end
+    local buttons = getc(towinui(win), AX.Group, 1,
+        AX.ScrollArea, 1, AX.Image)
+    if #buttons >= index then
+      return "Click Item " .. index
+    end
+  end
+end
+
+local function clickIceBarItem(index)
+  return function(win)
+    local button = getc(towinui(win), AX.Group, 1,
+        AX.ScrollArea, 1, AX.Image, index)
+    if button then
+      leftClickAndRestore(uicenter(button), win:application():name(), 0.1)
+    end
+  end
+end
+
 -- ### PasswordsMenuBarExtra
 local function getPasswordRecordPosition(index)
   return function(win)
@@ -3681,6 +3707,80 @@ appHotKeyCallbacks = {
     ["minimize"] = specialCommonHotkeyConfigs["minimize"],
     ["quit"] = specialCommonHotkeyConfigs["quit"],
     ["hide"] = specialCommonHotkeyConfigs["hide"],
+  },
+
+  ["com.jordanbaird.Ice"] =
+  {
+    ["click1stIceBarItem"] = {
+      message = getIceBarItemTitle(1),
+      windowFilter = iceBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickIceBarItem(1)
+    },
+    ["click2ndIceBarItem"] = {
+      message = getIceBarItemTitle(2),
+      windowFilter = iceBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickIceBarItem(2)
+    },
+    ["click3rdIceBarItem"] = {
+      message = getIceBarItemTitle(3),
+      windowFilter = iceBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickIceBarItem(3)
+    },
+    ["click4thIceBarItem"] = {
+      message = getIceBarItemTitle(4),
+      windowFilter = iceBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickIceBarItem(4)
+    },
+    ["click5thIceBarItem"] = {
+      message = getIceBarItemTitle(5),
+      windowFilter = iceBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickIceBarItem(5)
+    },
+    ["click6thIceBarItem"] = {
+      message = getIceBarItemTitle(6),
+      windowFilter = iceBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickIceBarItem(6)
+    },
+    ["click7thIceBarItem"] = {
+      message = getIceBarItemTitle(7),
+      windowFilter = iceBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickIceBarItem(7)
+    },
+    ["click8thIceBarItem"] = {
+      message = getIceBarItemTitle(8),
+      windowFilter = iceBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickIceBarItem(8)
+    },
+    ["click9thIceBarItem"] = {
+      message = getIceBarItemTitle(9),
+      windowFilter = iceBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickIceBarItem(9)
+    },
+    ["click10thIceBarItem"] = {
+      message = getIceBarItemTitle(10),
+      windowFilter = iceBarWindowFilter,
+      background = true,
+      nonFrontmost = true,
+      fn = clickIceBarItem(10)
+    }
   },
 
   ["com.app.menubarx"] =

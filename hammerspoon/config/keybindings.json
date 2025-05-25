@@ -1403,6 +1403,48 @@
         "key": "0"
       }
     },
+    "com.jordanbaird.Ice": {
+      "click1stIceBarItem": {
+        "mods": "",
+        "key": "1"
+      },
+      "click2ndIceBarItem": {
+        "mods": "",
+        "key": "2"
+      },
+      "click3rdIceBarItem": {
+        "mods": "",
+        "key": "3"
+      },
+      "click4thIceBarItem": {
+        "mods": "",
+        "key": "4"
+      },
+      "click5thIceBarItem": {
+        "mods": "",
+        "key": "5"
+      },
+      "click6thIceBarItem": {
+        "mods": "",
+        "key": "6"
+      },
+      "click7thIceBarItem": {
+        "mods": "",
+        "key": "7"
+      },
+      "click8thIceBarItem": {
+        "mods": "",
+        "key": "8"
+      },
+      "click9thIceBarItem": {
+        "mods": "",
+        "key": "9"
+      },
+      "click10thIceBarItem": {
+        "mods": "",
+        "key": "0"
+      }
+    },
     "com.app.menubarx": {
       "toggleMenuBarX": {
         "mods": ["shift", "option", "command"],
