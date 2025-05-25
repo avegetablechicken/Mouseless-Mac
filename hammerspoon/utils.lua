@@ -3597,6 +3597,20 @@ MENUBAR_MANAGER_SHOW = {
     return true
   end,
 
+  ["com.HyperartFlow.Barbee"] = function(appid, index)
+    if type(index) == 'number' then
+      local map = loadStatusItemsAutosaveName(find(appid))
+      index = map[index]
+    end
+    -- fixme: below script will force `Barbee` to kill itself
+    hs.osascript.applescript(string.format([[
+      tell application id "com.HyperartFlow.Barbee"
+        show item "%s-%s"
+      end
+    ]], appid, index))
+    return true
+  end,
+
   ["com.jordanbaird.Ice"] = function(appid, index)
     local app = find("com.jordanbaird.Ice")
     local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
