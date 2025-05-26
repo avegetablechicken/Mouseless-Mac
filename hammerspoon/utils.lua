@@ -3628,22 +3628,47 @@ MENUBAR_MANAGER_SHOW = {
     return true
   end,
 
-  ["cn.better365.iBar"] = function(appid, index)
-    local isAdvancedMode = hs.execute(
-      [[defaults read cn.better365.iBar advancedMode | tr -d '\n']])
-    if isAdvancedMode == "0" then
-      -- fixme: show hidden items
-      return false
-    end
-
+  ["cn.better365.iBar"] = function(appid, index, click)
     local app = find("cn.better365.iBar")
     local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
-    if icon then
-      leftClickAndRestore(uicenter(icon), app:name())
+    if not icon then return end
+    local targetApp = find(appid)
+
+    local isAdvancedMode = hs.execute(
+      [[defaults read cn.better365.iBar advancedMode | tr -d '\n']])
+    if isAdvancedMode ~= "1" then
+      if type(index) == 'string' then
+        local map = loadStatusItemsAutosaveName(targetApp)
+        index = tindex(map, index)
+        if index == nil then return true end
+      end
+      hs.eventtap.event.newMouseEvent(
+          hs.eventtap.event.types.mouseMoved, uioffset(icon, {-10, 10})):post()
+      hs.timer.doAfter(0.2, function()
+        hs.eventtap.event.newMouseEvent(
+            hs.eventtap.event.types.mouseMoved, uioffset(icon, {-20, 10})):post()
+        hs.timer.doAfter(3, function()
+          local menuBarMenu = getc(toappui(targetApp), AX.MenuBar, -1,
+              AX.MenuBarItem, index or 1)
+          if menuBarMenu then
+            hs.timer.doAfter(0, function()
+              if click then
+                leftClickAndRestore(uicenter(menuBarMenu), targetApp:name())
+              else
+                menuBarMenu:performAction(AX.Press)
+              end
+            end)
+          end
+        end)
+      end)
+      return true
     end
+
+    leftClickAndRestore(uicenter(icon), app:name())
     if type(index) == 'number' then
       local map = loadStatusItemsAutosaveName(find(appid))
       index = map[index]
+      if index == nil then return true end
     end
     hs.timer.waitUntil(
       function()
@@ -3772,7 +3797,8 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   if show then
     local hidden, manager = hiddenByMenuBarManager(app, menuBarId)
     if hidden then
-      local done = MENUBAR_MANAGER_SHOW[manager](appid, menuBarId or 1)
+      local done = MENUBAR_MANAGER_SHOW[manager](appid,
+          menuBarId or 1, show == "click")
       if done ~= true then
         hs.timer.doAfter(0.2, function()
           if menuBarMenu then
