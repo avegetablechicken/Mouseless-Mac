@@ -1445,6 +1445,53 @@
         "key": "0"
       }
     },
+    "cn.better365.iBar": {
+      "toggleMenuBar": {
+        "mods": "${hyper.daemon}",
+        "key": "E",
+        "background": true
+      },
+      "click1stiBarItem": {
+        "mods": "",
+        "key": "1"
+      },
+      "click2ndiBarItem": {
+        "mods": "",
+        "key": "2"
+      },
+      "click3rdiBarItem": {
+        "mods": "",
+        "key": "3"
+      },
+      "click4thiBarItem": {
+        "mods": "",
+        "key": "4"
+      },
+      "click5thiBarItem": {
+        "mods": "",
+        "key": "5"
+      },
+      "click6thiBarItem": {
+        "mods": "",
+        "key": "6"
+      },
+      "click7thiBarItem": {
+        "mods": "",
+        "key": "7"
+      },
+      "click8thiBarItem": {
+        "mods": "",
+        "key": "8"
+      },
+      "click9thiBarItem": {
+        "mods": "",
+        "key": "9"
+      },
+      "click10thiBarItem": {
+        "mods": "",
+        "key": "0"
+      }
+    },
     "com.app.menubarx": {
       "toggleMenuBarX": {
         "mods": ["shift", "option", "command"],

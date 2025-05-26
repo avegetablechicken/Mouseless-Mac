@@ -981,6 +981,39 @@ local function clickIceBarItem(index)
   end
 end
 
+-- ### iBar
+local iBarWindowFilter = {
+  allowRoles = AX.SystemFloatingWindow,
+  allowTitles = "^iBarmenu$"
+}
+local function getiBarItemTitle(index)
+  return function(app)
+    if app:focusedWindow() == nil then return end
+    local buttons = getc(towinui(app:focusedWindow()), AX.Button)
+    if buttons and #buttons >= index then
+      local ident = buttons[index].AXIdentifier
+      local items = strsplit(ident, '/')
+      local info = items[#items]
+      items = strsplit(info, ' >>> ')
+      local itemIdx, appid = items[1], items[2]
+      local msg = find(appid):name()
+      if itemIdx ~= "Item-0" then
+        msg = msg .. ' (' .. itemIdx .. ')'
+      end
+      return "Click " .. msg
+    end
+  end
+end
+
+local function clickiBarItem(index)
+  return function(win)
+    local button = getc(towinui(win), AX.Button, index)
+    if button then
+      press(button)
+    end
+  end
+end
+
 -- ### PasswordsMenuBarExtra
 local function getPasswordRecordPosition(index)
   return function(win)
@@ -3780,6 +3813,94 @@ appHotKeyCallbacks = {
       background = true,
       nonFrontmost = true,
       fn = clickIceBarItem(10)
+    }
+  },
+
+  ["cn.better365.iBar"] =
+  {
+    ["toggleMenuBar"] = {
+      message = "Toggle Menu Bar",
+      kind = HK.MENUBAR,
+      fn = function(app)
+        local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
+        local isAdvancedMode = hs.execute(
+          [[defaults read cn.better365.iBar advancedMode | tr -d '\n']])
+        if isAdvancedMode ~= "1" then
+          local position = hs.mouse.absolutePosition()
+          hs.eventtap.event.newMouseEvent(
+              hs.eventtap.event.types.mouseMoved, uioffset(icon, {-10, 10})):post()
+          hs.timer.doAfter(0.2, function()
+            hs.eventtap.event.newMouseEvent(
+                hs.eventtap.event.types.mouseMoved, uioffset(icon, {-20, 10})):post()
+            hs.timer.doAfter(0.2, function()
+              hs.eventtap.event.newMouseEvent(
+                  hs.eventtap.event.types.mouseMoved, position):post()
+            end)
+          end)
+        else
+          leftClickAndRestore(uicenter(icon), app:name())
+        end
+      end
+    },
+    ["click1stiBarItem"] = {
+      message = getiBarItemTitle(1),
+      windowFilter = iBarWindowFilter,
+      background = true,
+      fn = clickiBarItem(1)
+    },
+    ["click2ndiBarItem"] = {
+      message = getiBarItemTitle(2),
+      windowFilter = iBarWindowFilter,
+      background = true,
+      fn = clickiBarItem(2)
+    },
+    ["click3rdiBarItem"] = {
+      message = getiBarItemTitle(3),
+      windowFilter = iBarWindowFilter,
+      background = true,
+      fn = clickiBarItem(3)
+    },
+    ["click4thiBarItem"] = {
+      message = getiBarItemTitle(4),
+      windowFilter = iBarWindowFilter,
+      background = true,
+      fn = clickiBarItem(4)
+    },
+    ["click5thiBarItem"] = {
+      message = getiBarItemTitle(5),
+      windowFilter = iBarWindowFilter,
+      background = true,
+      fn = clickiBarItem(5)
+    },
+    ["click6thiBarItem"] = {
+      message = getiBarItemTitle(6),
+      windowFilter = iBarWindowFilter,
+      background = true,
+      fn = clickiBarItem(6)
+    },
+    ["click7thiBarItem"] = {
+      message = getiBarItemTitle(7),
+      windowFilter = iBarWindowFilter,
+      background = true,
+      fn = clickiBarItem(7)
+    },
+    ["click8thiBarItem"] = {
+      message = getiBarItemTitle(8),
+      windowFilter = iBarWindowFilter,
+      background = true,
+      fn = clickiBarItem(8)
+    },
+    ["click9thiBarItem"] = {
+      message = getiBarItemTitle(9),
+      windowFilter = iBarWindowFilter,
+      background = true,
+      fn = clickiBarItem(9)
+    },
+    ["click10thiBarItem"] = {
+      message = getiBarItemTitle(10),
+      windowFilter = iBarWindowFilter,
+      background = true,
+      fn = clickiBarItem(10)
     }
   },
 
