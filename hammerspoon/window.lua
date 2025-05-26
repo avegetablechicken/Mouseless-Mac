@@ -1,6 +1,7 @@
 local tinsert = table.insert
 local tcontain = hs.fnutils.contains
 local tindex = hs.fnutils.indexOf
+local toappui = hs.axuielement.applicationElement
 local towinui = hs.axuielement.windowElement
 local windowParams = KeybindingConfigs["parameters"] or {}
 local moveStep = windowParams.windowMoveStep or 20
@@ -1092,15 +1093,20 @@ local function PDFChooser()
     local app = find("com.superace.updf.mac")
     local allWindows = hs.window.filter.new(false):allowApp(app:name()):getWindows()
     local winTabTitles = {}
-    local menuItems = app:getMenuItems()
-    for _, menuItem in ipairs(menuItems or {}) do
-      if menuItem.AXTitle == localizedMenuBarItem('Tab', app:bundleID()) then
-        local subMenuItems = menuItem.AXChildren[1]
-        local winTitles = {}
-        local tabTitles = {}
-        for i=5,#subMenuItems do
-          local subMenuItem = subMenuItems[i]
-          if subMenuItem.AXTitle ~= "" then
+    local title = localizedMenuBarItem('Tab', app:bundleID())
+    local menuBarItem = getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem, title)
+    if menuBarItem then
+      local subMenuItems = menuBarItem.AXChildren[1]
+      local winTitles = {}
+      local tabTitles = {}
+      if #subMenuItems < 5 then
+        menuBarItem:performAction(AX.Press)
+        menuBarItem:performAction(AX.Cancel)
+      end
+      for i=5,#subMenuItems do
+        local subMenuItem = subMenuItems[i]
+        if subMenuItem.AXEnabled then
+          if  subMenuItem.AXTitle ~= "" then
             if subMenuItem.AXMenuItemMarkChar == "✓" then
               tinsert(winTitles, subMenuItem.AXTitle)
             end
@@ -1110,22 +1116,22 @@ local function PDFChooser()
             tabTitles = {}
           end
         end
-        tinsert(winTabTitles, tabTitles)
-        for i, winTitle in ipairs(winTitles) do
-          tabTitles = winTabTitles[i]
-          for _, tabTitle in ipairs(tabTitles) do
-            local choice =
-                {
-                  text = tabTitle,
-                  image = hs.image.imageFromAppBundle(app:bundleID()),
-                  winTitle = winTitle,
-                  app = app:bundleID()
-                }
-            if winTitle ~= tabTitle then
-              choice.subText = 'INACTIVE in WINDOW: "' .. winTitle .. '"'
-            end
-            tinsert(choices, choice)
+      end
+      tinsert(winTabTitles, tabTitles)
+      for i, winTitle in ipairs(winTitles) do
+        tabTitles = winTabTitles[i]
+        for _, tabTitle in ipairs(tabTitles) do
+          local choice =
+              {
+                text = tabTitle,
+                image = hs.image.imageFromAppBundle(app:bundleID()),
+                winTitle = winTitle,
+                app = app:bundleID()
+              }
+          if winTitle ~= tabTitle then
+            choice.subText = 'INACTIVE in WINDOW: "' .. winTitle .. '"'
           end
+          tinsert(choices, choice)
         end
       end
     end
@@ -1246,17 +1252,23 @@ local function PDFChooser()
       end
     elseif choice.app == "com.superace.updf.mac" then
       local app = find(choice.app)
+      local title = localizedMenuBarItem('Tab', app:bundleID())
+      local menuBarItem = getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem, title)
+      if #menuBarItem.AXChildren[1] < 5 then
+        menuBarItem:performAction(AX.Press)
+        menuBarItem:performAction(AX.Cancel)
+      end
       for _, window in ipairs(allWindowsUPDF) do
         if window:title() == choice.winTitle then
           window:focus()
-          selectMenuItem(app, { 'Tab', choice.text })
+          app:selectMenuItem({ title, choice.text })
           return
         end
       end
       app:activate()
       hs.timer.doAfter(0.1, function()
         hs.eventtap.keyStroke('fn⌃', 'F2')
-        selectMenuItem(app, { 'Tab', choice.text })
+        app:selectMenuItem({ title, choice.text })
       end)
     elseif choice.app == "com.apple.Preview" then
       hs.osascript.applescript([[
