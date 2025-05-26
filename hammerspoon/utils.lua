@@ -435,25 +435,25 @@ function getResourceDir(appid, frameworkName)
       end
 
       _, status = hs.execute(strfmt([[
-        find '%s' -type f -path '%s/Resources/%s/*.properties'
+        find '%s' -type f -path '%s/Resources/%s/*.properties' | tr -d '\n'
       ]], appContentPath, appContentPath, frameworkName))
-      if status then
+      if status and _ ~= "" then
         resourceDir = appContentPath .. '/Resources/' .. frameworkName
         framework.properties = true
       end
 
       _, status = hs.execute(strfmt([[
-        find '%s' -type f -path '%s/Resources/%s/*.dtd'
+        find '%s' -type f -path '%s/Resources/%s/*.dtd' | tr -d '\n'
       ]], appContentPath, appContentPath, frameworkName))
-      if status then
+      if status and _ ~= "" then
         resourceDir = appContentPath .. '/Resources/' .. frameworkName
         framework.dtd = true
       end
 
       _, status = hs.execute(strfmt([[
-        find '%s' -type f -path '%s/Resources/%s/*.ftl'
+        find '%s' -type f -path '%s/Resources/%s/*.ftl' | tr -d '\n'
       ]], appContentPath, appContentPath, frameworkName))
-      if status then
+      if status and _ ~= "" then
         resourceDir = appContentPath .. '/Resources/' .. frameworkName
         framework.ftl = true
       end
