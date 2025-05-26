@@ -103,7 +103,7 @@ function showMenuItemWrapper(fn)
       fn()
     else
       hs.eventtap.keyStroke('fn⌃', 'F2')
-      hs.timer.doAfter(0.1, function() fn() end)
+      hs.timer.doAfter(0.1, fn)
     end
   end
 end
