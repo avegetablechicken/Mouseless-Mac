@@ -1021,8 +1021,12 @@ local function browserChooser()
     local windowMenuItem = localizedMenuBarItem('Window', app:bundleID())
     if windowMenuItem == nil then return end
     hs.timer.doAfter(0.1, function()
-      hs.eventtap.keyStroke('fn⌃', 'F2')
-      app:selectMenuItem({ windowMenuItem, result })
+      if menuBarVisible() then
+        app:selectMenuItem({ windowMenuItem, result })
+      else
+        hs.eventtap.keyStroke('fn⌃', 'F2')
+        app:selectMenuItem({ windowMenuItem, result })
+      end
     end)
   end)
   chooser:searchSubText(true)
@@ -1327,8 +1331,12 @@ local function PDFChooser()
       local windowMenuItem = localizedMenuBarItem('Window', app:bundleID())
       if windowMenuItem == nil then return end
       hs.timer.doAfter(0.1, function()
-        hs.eventtap.keyStroke('fn⌃', 'F2')
-        app:selectMenuItem({ windowMenuItem, result })
+        if menuBarVisible() then
+          app:selectMenuItem({ windowMenuItem, result })
+        else
+          hs.eventtap.keyStroke('fn⌃', 'F2')
+          app:selectMenuItem({ windowMenuItem, result })
+        end
       end)
     end
   end)
