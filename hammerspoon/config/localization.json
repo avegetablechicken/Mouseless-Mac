@@ -46,8 +46,13 @@
     "页面": "Page",
     "工作区": "Workspace"
   }, {
-    "Recent": "最近",
     "Home": "首页",
+    "Recent": "最近",
+    "Share": "共享",
+    "My Cloud Documents": "我的云文档",
+    "My Desktop": "桌面",
+    "Documents": "文稿",
+    "Downloads": "下载",
     "Properties...": "属性...",
     "Text Box": "文本框",
     "Horizontal Text Box": ["横向", "横向文本框"],

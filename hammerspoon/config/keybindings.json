@@ -782,6 +782,34 @@
         "mods": ["option", "command"],
         "key": "E"
       },
+      "goToHome": {
+        "mods": ["shift", "command"],
+        "key": "H"
+      },
+      "openRecent": {
+        "mods": ["shift", "command"],
+        "key": "F"
+      },
+      "goToShare": {
+        "mods": ["shift", "command"],
+        "key": "S"
+      },
+      "goToMyCloudDocuments": {
+        "mods": ["shift", "command"],
+        "key": "I"
+      },
+      "goToMyDesktop": {
+        "mods": ["shift", "command"],
+        "key": "D"
+      },
+      "goToDocuments": {
+        "mods": ["shift", "command"],
+        "key": "O"
+      },
+      "goToDownloads": {
+        "mods": ["option", "command"],
+        "key": "L"
+      },
       "openFileLocation": {
         "mods": ["shift", "command"],
         "key": "O"

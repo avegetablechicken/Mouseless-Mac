@@ -703,6 +703,12 @@ local function JabRefShowLibraryByIndex(idx)
   end
 end
 
+-- ### WPS
+local localizedWPSHome = '^'..localizedString("Home", "com.kingsoft.wpsoffice.mac")..'$'
+execOnLaunch("com.kingsoft.wpsoffice.mac", function()
+  localizedWPSHome = '^'..localizedString("Home", "com.kingsoft.wpsoffice.mac")..'$'
+end)
+
 -- ### App Cleaner & Uninstaller
 local function buttonValidForAppCleanerUninstaller(title)
   return function(win)
@@ -2124,25 +2130,192 @@ appHotKeyCallbacks = {
       condition = checkMenuItem({ "Comment", "Strikethrough" }),
       fn = receiveMenuItem
     },
-    ["openRecent"] = {
-      message = localizedMessage("Recent"),
-      condition = function(app)
-        if app:focusedWindow() == nil then return false end
-        local home = localizedString("Home", app:bundleID())
-        return app:focusedWindow():title() == home, app:focusedWindow()
-      end,
+    ["goToHome"] = {
+      message = localizedWPSHome,
+      windowFilter = { rejectTitles = localizedWPSHome },
       fn = function(win)
         local winUI = towinui(win)
-        local button = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group, 1)
-            or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group, 1)
+        local buttons = getc(winUI, AX.Button)
+        local maxX = buttons[#buttons].AXPosition.x
+        maxX = math.max(maxX, buttons[#buttons - 1].AXPosition.x)
+        maxX = math.max(maxX, buttons[#buttons - 2].AXPosition.x)
+        leftClickAndRestore({ maxX + 100, buttons[#buttons].AXPosition.y })
+      end
+    },
+    ["openRecent"] = {
+      message = localizedMessage("Recent"),
+      fn = function(app)
+        if app:focusedWindow() == nil then return false end
+        local winUI = towinui(app:focusedWindow())
+        if app:focusedWindow():title():match(localizedWPSHome) == nil then
+          local buttons = getc(winUI, AX.Button)
+          local maxX = buttons[#buttons].AXPosition.x
+          maxX = math.max(maxX, buttons[#buttons - 1].AXPosition.x)
+          maxX = math.max(maxX, buttons[#buttons - 2].AXPosition.x)
+          local mousePosition = hs.mouse.absolutePosition()
+          local position = hs.geometry.point{ maxX + 100, buttons[#buttons].AXPosition.y }
+          hs.eventtap.event.newMouseEvent(
+              hs.eventtap.event.types.leftMouseDown, position):post()
+          hs.eventtap.event.newMouseEvent(
+              hs.eventtap.event.types.leftMouseUp, position):post()
+          hs.eventtap.event.newMouseEvent(
+              hs.eventtap.event.types.mouseMoved, mousePosition):post()
+          hs.timer.usleep(1000000)
+        end
+        local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+            or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+        local firstSplitLine
+        for i, g in ipairs(groups or {}) do
+          if g.AXSize.h == 16 then
+            firstSplitLine = i
+            break
+          end
+        end
+        if firstSplitLine == 4 then
+          leftClickAndRestore(groups[1], app:name())
+        end
+        return false
+      end,
+    },
+    ["goToShare"] = {
+      message = localizedMessage("Share"),
+      windowFilter = { allowTitles = localizedWPSHome },
+      condition = function(win)
+        local winUI = towinui(win)
+        local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+            or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+        local firstSplitLine
+        for i, g in ipairs(groups) do
+          if g.AXSize.h == 16 then
+            firstSplitLine = i
+            break
+          end
+        end
+        if firstSplitLine == 4 then return true, groups[3] end
+        return false
+      end,
+      fn = function(button, win)
+        leftClickAndRestore(button, win:application():name())
+      end
+    },
+    ["goToMyCloudDocuments"] = {
+      message = localizedMessage("My Cloud Documents"),
+      windowFilter = { allowTitles = localizedWPSHome },
+      condition = function(win)
+        local winUI = towinui(win)
+        local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+            or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+        local firstSplitLine, secondSplitLine
+        for i, g in ipairs(groups) do
+          if g.AXSize.h == 16 then
+            if firstSplitLine == nil then
+              firstSplitLine = i
+            elseif secondSplitLine == nil then
+              secondSplitLine = i
+              break
+            end
+          end
+        end
+        if secondSplitLine == nil or (secondSplitLine - firstSplitLine > 2) then
+          return true, groups[firstSplitLine + 2]
+        end
+        return false
+      end,
+      fn = function(button, win)
+        leftClickAndRestore(button, win:application():name())
+      end
+    },
+    ["goToMyDesktop"] = {
+      message = localizedMessage("My Desktop"),
+      windowFilter = { allowTitles = localizedWPSHome },
+      condition = function(win)
+        local winUI = towinui(win)
+        local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+            or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+        local firstSplitLine, secondSplitLine, thirdSplitLine
+        for i, g in ipairs(groups) do
+          if g.AXSize.h == 16 then
+            if firstSplitLine == nil then
+              firstSplitLine = i
+            elseif secondSplitLine == nil then
+              secondSplitLine = i
+            elseif thirdSplitLine == nil then
+              thirdSplitLine = i
+              break
+            end
+          end
+        end
+        if thirdSplitLine ~= nil and thirdSplitLine - secondSplitLine > 2 then
+          return true, groups[secondSplitLine + 2]
+        end
+        return false
+      end,
+      fn = function(button, win)
+        leftClickAndRestore(button, win:application():name())
+      end
+    },
+    ["goToDocuments"] = {
+      message = localizedMessage("Documents"),
+      windowFilter = { allowTitles = localizedWPSHome },
+      condition = function(win)
+        local winUI = towinui(win)
+        local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+            or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+        local firstSplitLine, secondSplitLine, thirdSplitLine
+        for i, g in ipairs(groups) do
+          if g.AXSize.h == 16 then
+            if firstSplitLine == nil then
+              firstSplitLine = i
+            elseif secondSplitLine == nil then
+              secondSplitLine = i
+            elseif thirdSplitLine == nil then
+              thirdSplitLine = i
+              break
+            end
+          end
+        end
+        if thirdSplitLine ~= nil and thirdSplitLine - secondSplitLine > 3 then
+          return true, groups[secondSplitLine + 3]
+        end
+        return false
+      end,
+      fn = function(button, win)
+        leftClickAndRestore(button, win:application():name())
+      end
+    },
+    ["goToDownloads"] = {
+      message = localizedMessage("Downloads"),
+      windowFilter = { allowTitles = localizedWPSHome },
+      condition = function(win)
+        local winUI = towinui(win)
+        local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+            or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+        local firstSplitLine, secondSplitLine, thirdSplitLine
+        for i, g in ipairs(groups) do
+          if g.AXSize.h == 16 then
+            if firstSplitLine == nil then
+              firstSplitLine = i
+            elseif secondSplitLine == nil then
+              secondSplitLine = i
+            elseif thirdSplitLine == nil then
+              thirdSplitLine = i
+              break
+            end
+          end
+        end
+        if thirdSplitLine ~= nil and thirdSplitLine - secondSplitLine > 4 then
+          return true, groups[secondSplitLine + 4]
+        end
+        return false
+      end,
+      fn = function(button, win)
         leftClickAndRestore(button, win:application():name())
       end
     },
     ["openFileLocation"] = {
       message = localizedMessage("Open File Location"),
-      condition = function(app)
-        if app:focusedWindow() == nil then return false end
-        local win = app:focusedWindow()
+      windowFilter = { rejectTitles = localizedWPSHome },
+      condition = function(win)
         local winUI = towinui(win)
         for i=1,#winUI - 1 do
           if winUI[i].AXRole == AX.Button
@@ -2152,7 +2325,8 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = function(position, app)
+      fn = function(position, win)
+        local app = win:application()
         local title = localizedString("Open File Location", app:bundleID())
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.created)
