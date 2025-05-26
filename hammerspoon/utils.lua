@@ -84,22 +84,9 @@ function inFullscreenSpace()
 end
 
 function menuBarVisible()
-  if inFullscreenSpace() then
-    local thisAppAutohide = hs.execute("defaults read "
-        .. hs.application.frontmostApplication():bundleID()
-        .. [[ AppleMenuBarVisibleInFullscreen | tr -d '\n']])
-    if thisAppAutohide == "0" then
-      return false
-    elseif thisAppAutohide == "" then
-      local autohide = hs.execute([[
-        defaults read -globalDomain AppleMenuBarVisibleInFullscreen \
-        | tr -d '\n']])
-      if autohide == "0" then
-        return false
-      end
-    end
-  end
-  return true
+  local frame = hs.screen.mainScreen():fullFrame()
+  local elem = hs.axuielement.systemElementAtPosition(frame.x, frame.y)
+  return elem.AXRole == AX.MenuBar
 end
 
 function getMenuBarItems(app)
