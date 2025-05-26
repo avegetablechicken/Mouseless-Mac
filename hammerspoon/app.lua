@@ -6480,6 +6480,20 @@ local function registerForOpenSavePanel(app)
           tinsert(sidebarCells, row[1])
         end
       end
+    elseif appid == "com.kingsoft.wpsoffice.mac" then
+      if winUI.AXSubrole == AX.Dialog then
+        local windowTitle = localizedString("Open File", appid)
+        if getc(winUI, AX.SplitGroup, 1, AX.StaticText, windowTitle) ~= nil then
+          local outline = getc(winUI, AX.SplitGroup, 1, AX.List, 1)
+          if outline ~= nil then
+            for _, row in ipairs(getc(outline, AX.StaticText)) do
+              if row.AXSize.h > 20 then
+                tinsert(sidebarCells, row)
+              end
+            end
+          end
+        end
+      end
     end
     return dontSaveButton, sidebarCells
   end
@@ -6491,7 +6505,38 @@ local function registerForOpenSavePanel(app)
     local i = 1
     for _, cell in ipairs(sidebarCells) do
       if i > 10 then break end
-      if getc(cell, AX.StaticText, 1).AXIdentifier ~= nil then
+      if getc(cell, AX.StaticText, 1) == nil
+          and appid == "com.kingsoft.wpsoffice.mac" then
+        local suffix
+        if i == 1 then suffix = "st"
+        elseif i == 2 then suffix = "nd"
+        elseif i == 3 then suffix = "rd"
+        else suffix = "th" end
+        local hkID = strfmt("open%d%sSidebarItemOnOpenSavePanel", i, suffix)
+        local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
+        if spec ~= nil then
+          local idx = i
+          local hotkey = AppWinBind(app, {
+            spec = spec, message = 'Location ' .. i,
+            fn = function()
+              local outline = getc(winUI, AX.SplitGroup, 1, AX.List, 1)
+              local cnt = 0
+              if outline ~= nil then
+                for _, row in ipairs(getc(outline, AX.StaticText)) do
+                  if row.AXSize.h > 20 then
+                    cnt = cnt + 1
+                    if cnt == idx then
+                      leftClickAndRestore(row, app:name())
+                    end
+                  end
+                end
+              end
+            end,
+          })
+          tinsert(openSavePanelHotkeys, hotkey)
+          i = i + 1
+        end
+      elseif getc(cell, AX.StaticText, 1).AXIdentifier ~= nil then
         header = getc(cell, AX.StaticText, 1).AXValue
       else
         local suffix

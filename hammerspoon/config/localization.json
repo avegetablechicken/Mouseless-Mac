@@ -62,6 +62,7 @@
     "Export to PDF...": ["输出为PDF...", "输出为PDF格式..."],
     "LaTeXEquation...": "LaTeX公式...",
     "Zoom": "显示比例",
+    "Open File": "打开文件",
     "Open File Location": "打开文件位置",
     "Don't Save": "不保存"
   }]
