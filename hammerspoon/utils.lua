@@ -3448,16 +3448,6 @@ end
 
 -- helpers for click menubar to the right
 
-function hasTopNotch(screen)
-  if screen:name() == "Built-in Retina Display" then
-    local displaySize = screen:fullFrame()
-    if displaySize.w * 10 < displaySize.h * 16 then
-      return true
-    end
-  end
-  return false
-end
-
 function leftClick(point, appname)
   if point.AXPosition ~= nil then
     point = hs.geometry.point {
