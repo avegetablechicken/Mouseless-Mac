@@ -60,13 +60,6 @@ function mkdir(path)
   if not exists(path) then hs.fs.mkdir(path) end
 end
 
-function uicenter(elem)
-  return hs.geometry.point{
-    elem.AXPosition.x + elem.AXSize. w / 2,
-    elem.AXPosition.y + elem.AXSize. h / 2
-  }
-end
-
 function uioffset(point, offset)
   if point.AXPosition then
     point = point.AXPosition
@@ -3479,7 +3472,14 @@ function hasTopNotch(screen)
 end
 
 function leftClick(point, appname)
-  if point.x == nil then point = hs.geometry.point(point) end
+  if point.AXPosition ~= nil then
+    point = hs.geometry.point {
+      point.AXPosition.x + point.AXSize.w / 2,
+      point.AXPosition.y + point.AXSize.h / 2
+    }
+  elseif point.x == nil then
+    point = hs.geometry.point(point)
+  end
   if appname ~= nil then
     local appHere = hs.axuielement.systemElementAtPosition(point)
     while appHere ~= nil and appHere.AXParent ~= nil do
@@ -3578,7 +3578,7 @@ local function showHiddenMenuBarItems(appid)
   local app = find(appid)
   local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
   if icon then
-    leftClickAndRestore(uicenter(icon), app:name())
+    leftClickAndRestore(icon, app:name())
   end
   return false
 end
@@ -3615,7 +3615,7 @@ MENUBAR_MANAGER_SHOW = {
     local app = find("com.jordanbaird.Ice")
     local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
     if icon then
-      leftClickAndRestore(uicenter(icon), app:name())
+      leftClickAndRestore(icon, app:name())
     end
 
     local useIceBar = hs.execute(
@@ -3653,7 +3653,7 @@ MENUBAR_MANAGER_SHOW = {
           if menuBarMenu then
             hs.timer.doAfter(0, function()
               if click then
-                leftClickAndRestore(uicenter(menuBarMenu), targetApp:name())
+                leftClickAndRestore(menuBarMenu, targetApp:name())
               else
                 menuBarMenu:performAction(AX.Press)
               end
@@ -3664,7 +3664,7 @@ MENUBAR_MANAGER_SHOW = {
       return true
     end
 
-    leftClickAndRestore(uicenter(icon), app:name())
+    leftClickAndRestore(icon, app:name())
     if type(index) == 'number' then
       local map = loadStatusItemsAutosaveName(find(appid))
       index = map[index]
@@ -3716,7 +3716,7 @@ MENUBAR_MANAGER_SHOW = {
       return #win == 1 and win[1].AXRole == AX.Image
     end)
     if icon then
-      leftClickAndRestore(uicenter(icon), app:name())
+      leftClickAndRestore(icon, app:name())
     end
     return false
   end
@@ -3804,7 +3804,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
           if menuBarMenu then
             -- note: some apps do not react to AX.Press, you have to click them.
             if show == "click" then
-              leftClickAndRestore(uicenter(menuBarMenu), app:name())
+              leftClickAndRestore(menuBarMenu, app:name())
             else
               menuBarMenu:performAction(AX.Press)
             end
@@ -3816,7 +3816,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
     elseif menuBarMenu then
       -- note: some apps do not react to AX.Press, you have to click them.
       if show == "click" then
-        leftClickAndRestore(uicenter(menuBarMenu), app:name())
+        leftClickAndRestore(menuBarMenu, app:name())
       else
         menuBarMenu:performAction(AX.Press)
       end

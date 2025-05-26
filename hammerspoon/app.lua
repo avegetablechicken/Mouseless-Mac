@@ -570,7 +570,7 @@ local function deleteAllCalls(win)
       localizedString("Recent Calls", appid) then
     local section = getc(collection, AX.Button, 1)
     if section ~= nil then
-      if not rightClick(uioffset(section, { 50, 10 }), appname) then
+      if not rightClick(section, appname) then
         return
       end
       local popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
@@ -581,7 +581,7 @@ local function deleteAllCalls(win)
         popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
       end
       if popup == nil then
-        if not rightClick(uioffset(section, { 50, 10 }), appname) then
+        if not rightClick(section, appname) then
           return
         end
         popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
@@ -890,7 +890,7 @@ local function clickBartenderBarItem(index, rightClick)
           AX.List, 1, AX.Group, itemID, AX.Image, 1)
       if icon ~= nil then
         local fn = rightClick and rightClickAndRestore or leftClickAndRestore
-        fn(uioffset(icon, { 10, 10 }), win:application():name())
+        fn(icon, win:application():name())
       end
     end
   end
@@ -902,7 +902,7 @@ local function clickBartenderSidebarItem(index)
     local row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
         AX.Outline, 1, AX.Row, index, AX.Cell, 1, AX.Image, 1)
     if row ~= nil then
-      leftClickAndRestore(row.AXPosition, win:application():name())
+      leftClickAndRestore(row, win:application():name())
     end
   end
 end
@@ -976,7 +976,7 @@ local function clickIceBarItem(index)
     local button = getc(towinui(win), AX.Group, 1,
         AX.ScrollArea, 1, AX.Image, index)
     if button then
-      leftClickAndRestore(uicenter(button), win:application():name(), 0.1)
+      leftClickAndRestore(button, win:application():name(), 0.1)
     end
   end
 end
@@ -2135,7 +2135,7 @@ appHotKeyCallbacks = {
         local winUI = towinui(win)
         local button = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group, 1)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group, 1)
-        leftClickAndRestore(uioffset(button, { 30, 10 }), win:application():name())
+        leftClickAndRestore(button, win:application():name())
       end
     },
     ["openFileLocation"] = {
@@ -2922,14 +2922,14 @@ appHotKeyCallbacks = {
         end
         for _, button in ipairs(titleBar) do
           if button.AXHelp == "后退" then
-            return true, button.AXPosition
+            return true, button
           end
         end
         return false
       end,
       repeatable = true,
-      fn = function(position, app)
-        leftClickAndRestore(uioffset(position, { 5, 5 }), app:name(), 0.1)
+      fn = function(button, app)
+        leftClickAndRestore(button, app:name(), 0.1)
       end
     },
     ["forward"] = {
@@ -2948,14 +2948,14 @@ appHotKeyCallbacks = {
         end
         for _, button in ipairs(titleBar) do
           if button.AXHelp == "前进" then
-            return true, button.AXPosition
+            return true, button
           end
         end
         return false
       end,
       repeatable = true,
-      fn = function(position, app)
-        leftClickAndRestore(uioffset(position, { 5, 5 }), app:name(), 0.1)
+      fn = function(button, app)
+        leftClickAndRestore(button, app:name(), 0.1)
       end
     },
     ["refresh"] = {
@@ -2972,20 +2972,20 @@ appHotKeyCallbacks = {
           titleBar = getc(winUI, AX.Unknown, 3)
           if titleBar == nil then return false end
         end
-        local refreshButtonPosition, searchButtonPosition
+        local refreshButton, searchButton
         for _, button in ipairs(titleBar) do
           if button.AXHelp == "刷新" then
-            refreshButtonPosition = button.AXPosition
+            refreshButton = button
           elseif button.AXHelp == nil then
-            searchButtonPosition = button.AXPosition
+            searchButton = button
           end
         end
-        return refreshButtonPosition ~= nil and searchButtonPosition ~= nil
-            and refreshButtonPosition.x ~= searchButtonPosition.x,
-            refreshButtonPosition
+        return refreshButton ~= nil and searchButton ~= nil
+            and refreshButton.AXPosition.x ~= searchButton.AXPosition.x,
+            refreshButton
       end,
-      fn = function(position, app)
-        leftClickAndRestore(uioffset(position, { 5, 5 }), app:name(), 0.1)
+      fn = function(button, app)
+        leftClickAndRestore(button, app:name(), 0.1)
       end
     },
     ["playBarCloseSingleSong"] = {
@@ -3839,7 +3839,7 @@ appHotKeyCallbacks = {
             end)
           end)
         else
-          leftClickAndRestore(uicenter(icon), app:name())
+          leftClickAndRestore(icon, app:name())
         end
       end
     },
@@ -3959,7 +3959,7 @@ appHotKeyCallbacks = {
         local prefString = localizedString('Preferences', app:bundleID())
         local button = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, 1, AX.Group, 1,
             AX.StaticText, prefString)
-        leftClickAndRestore(uioffset(button, { 5, 5 }), app:name(), 0.2)
+        leftClickAndRestore(button, app:name(), 0.2)
       end
     }
   },
@@ -4132,7 +4132,7 @@ appHotKeyCallbacks = {
             AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, 2,
             AX.Cell, 1, AX.StaticText, 2)
         assert(field)
-        leftClickAndRestore(uicenter(field), win:application():name())
+        leftClickAndRestore(field, win:application():name())
         clickRightMenuBarItem(win:application())
       end
     },
@@ -4160,7 +4160,7 @@ appHotKeyCallbacks = {
           field = getc(outline, AX.Row, 4, AX.Cell, 1, AX.StaticText, 2)
         end
         assert(field)
-        leftClickAndRestore(uicenter(field), win:application():name())
+        leftClickAndRestore(field, win:application():name())
         clickRightMenuBarItem(win:application())
       end
     },
@@ -4743,7 +4743,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          leftClickAndRestore(button.AXPosition, win:application():name())
+          leftClickAndRestore(button, win:application():name())
         end
       end
     },
@@ -4772,7 +4772,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          leftClickAndRestore(button.AXPosition, win:application():name())
+          leftClickAndRestore(button, win:application():name())
         end
       end
     },
@@ -4801,7 +4801,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          leftClickAndRestore(button.AXPosition, win:application():name())
+          leftClickAndRestore(button, win:application():name())
         end
       end
     },
@@ -4830,7 +4830,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          leftClickAndRestore(button.AXPosition, win:application():name())
+          leftClickAndRestore(button, win:application():name())
         end
       end
     },
@@ -6582,7 +6582,7 @@ altMenuBarItem = function(app, menuBarItems, reinvokeKey)
       elseif actionNames ~= nil and tcontain(actionNames, AX.Press) then
         press(menu)
       else
-        leftClick(uioffset(menu, { 5, 5 }), app:name())
+        leftClick(menu, app:name())
       end
     end
   else
