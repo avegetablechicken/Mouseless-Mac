@@ -2134,6 +2134,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group, 1)
+            or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group, 1)
         leftClickAndRestore(uioffset(button, { 30, 10 }), win:application():name())
       end
     },
