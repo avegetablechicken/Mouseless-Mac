@@ -1254,21 +1254,31 @@ local function PDFChooser()
       local app = find(choice.app)
       local title = localizedMenuBarItem('Tab', app:bundleID())
       local menuBarItem = getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem, title)
-      if #menuBarItem.AXChildren[1] < 5 then
-        menuBarItem:performAction(AX.Press)
-        menuBarItem:performAction(AX.Cancel)
-      end
       for _, window in ipairs(allWindowsUPDF) do
         if window:title() == choice.winTitle then
           window:focus()
-          app:selectMenuItem({ title, choice.text })
+          if window:isFullScreen() then
+            hs.timer.usleep(1000000)
+          end
+          if choice.winTitle ~= choice.text then
+            if #menuBarItem.AXChildren[1] < 5 then
+              menuBarItem:performAction(AX.Press)
+              menuBarItem:performAction(AX.Cancel)
+            end
+            app:selectMenuItem({ title, choice.text })
+          end
           return
         end
       end
       app:activate()
       hs.timer.doAfter(0.1, function()
-        hs.eventtap.keyStroke('fn⌃', 'F2')
-        app:selectMenuItem({ title, choice.text })
+        if choice.winTitle ~= choice.text then
+          if #menuBarItem.AXChildren[1] < 5 then
+            menuBarItem:performAction(AX.Press)
+            menuBarItem:performAction(AX.Cancel)
+          end
+          app:selectMenuItem({ title, choice.text })
+        end
       end)
     elseif choice.app == "com.apple.Preview" then
       hs.osascript.applescript([[
