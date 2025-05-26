@@ -933,10 +933,10 @@ local function browserChooser()
       local field, tabIDCmd
       if browser == "com.apple.Safari" then
         field = 'name'
-        tabIDCmd = 'set theID to j\n'
+        tabIDCmd = 'set theID to j'
       else
         field = 'title'
-        tabIDCmd = 'set theID to id of atab\n'
+        tabIDCmd = 'set theID to id of atab'
       end
       local script = [[
         set theResult to ""
@@ -947,7 +947,7 @@ local function browserChooser()
             set tabList to every tab of aWindow
             repeat with j from 1 to count tabList
               set atab to item j of tabList
-              ]] .. tabIDCmd .. [[
+              ]] .. tabIDCmd .. [[ 
               set theUrl to URL of atab
               set theTitle to ]] .. field .. [[ of atab
               set theResult to theResult & theWinID & "|||" & theID & "|||" & theUrl & "|||" & theTitle & "|||"
@@ -1288,8 +1288,7 @@ local function PDFChooser()
       hs.osascript.applescript([[
         tell application id "]] .. choice.app .. [["
           activate
-          set aWindow to window id ]] .. choice.id .. [[
-
+          set aWindow to window id ]] .. choice.id .. [[ 
           set index of aWindow to 1
         end tell
       ]])
@@ -1312,8 +1311,7 @@ local function PDFChooser()
       end
       local script = [[
         tell application id "]] .. choice.app .. [["
-          set aWindow to window id ]] .. choice.winID .. [[
-
+          set aWindow to window id ]] .. choice.winID .. [[ 
           set tabList to every tab of aWindow
           repeat with j from 1 to count of tabList
             if ]] .. findTabCmd .. [[ then

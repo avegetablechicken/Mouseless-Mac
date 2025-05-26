@@ -1120,8 +1120,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
               contains "controlcenter") of controlitems
           perform action 1 of controlcenter
 
-          ]] .. delayCmd .. [[
-
+          ]] .. delayCmd .. [[ 
           set pane to ]]..pane..[[ 
           ]] .. enter .. [[
           if panelFound then
