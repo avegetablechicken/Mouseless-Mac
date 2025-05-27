@@ -171,6 +171,7 @@ registerAppHotkeys()
 -- for apps whose launching can be detected by Hammerspoon
 local processesOnLaunch = {}
 local appsLaunchSilently = ApplicationConfigs["launchSilently"] or {}
+local appsTerminateSilently = ApplicationConfigs["terminateSilently"] or {}
 local function execOnLaunch(appid, action, onlyFirstTime)
   if tcontain(appsLaunchSilently, appid) then
     ExecOnSilentLaunch(appid, action)
@@ -210,8 +211,9 @@ end
 
 local processesOnQuit = {}
 local function execOnQuit(appid, action)
-  if tcontain(appsLaunchSilently, appid) then
+  if tcontain(appsTerminateSilently, appid) then
     ExecOnSilentQuit(appid, action)
+    return
   end
 
   if processesOnQuit[appid] == nil then
@@ -230,6 +232,14 @@ end
 
 local observersStopOnQuit = {}
 local function stopOnQuit(appid, observer, action)
+  if tcontain(appsTerminateSilently, appid) then
+    ExecOnSilentQuit(appid, function()
+      observer:stop()
+      action(appid, observer)
+    end)
+    return
+  end
+
   if observersStopOnQuit[appid] == nil then
     observersStopOnQuit[appid] = {}
   end
@@ -7909,6 +7919,13 @@ function App_applicationCallback(appname, eventType, app)
     end
   end
 end
+
+hs.fnutils.each(appsTerminateSilently, function(appid)
+  ExecOnSilentQuit(appid, function()
+    unregisterInAppHotKeys(appid, true)
+    unregisterInWinHotKeys(appid, true)
+  end)
+end)
 
 function App_applicationInstalledCallback(files, flagTables)
   for i, file in ipairs(files) do
