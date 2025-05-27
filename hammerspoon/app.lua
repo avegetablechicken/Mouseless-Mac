@@ -5418,25 +5418,13 @@ local function registerRunningAppHotKeys(appid, app)
   end
 end
 
-local function unregisterRunningAppHotKeys(appid, force)
+local function unregisterRunningAppHotKeys(appid)
   if appHotKeyCallbacks[appid] == nil then return end
 
-  if force then
-    for _, hotkey in pairs(runningAppHotKeys[appid] or {}) do
-      hotkey:delete()
-    end
-    runningAppHotKeys[appid] = nil
-  else
-    for _, hotkey in pairs(runningAppHotKeys[appid] or {}) do
-      if hotkey.persist ~= true then
-        hotkey:disable()
-        if hotkey.deleteOnDisable then
-          hotkey:delete()
-          runningAppHotKeys[appid][hotkey] = nil
-        end
-      end
-    end
+  for _, hotkey in pairs(runningAppHotKeys[appid] or {}) do
+    hotkey:delete()
   end
+  runningAppHotKeys[appid] = nil
 end
 
 -- record windows created and alive since last app switch
@@ -6249,7 +6237,7 @@ local function updateAppLocale(appid)
     if matchLocale(oldAppLocale, { appLocale }) ~= appLocale then
       resetLocalizationMap(appid)
       localizeCommonMenuItemTitles(appLocale, appid)
-      unregisterRunningAppHotKeys(appid, true)
+      unregisterRunningAppHotKeys(appid)
       return true
     end
   end
@@ -7087,7 +7075,7 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     if hasKey and not isForWindow and isBackground and not isPersistent then
       execOnLaunch(appid, bind(registerRunningAppHotKeys, appid))
-      execOnQuit(appid, bind(unregisterRunningAppHotKeys, appid, false))
+      execOnQuit(appid, bind(unregisterRunningAppHotKeys, appid))
       break
     end
   end
