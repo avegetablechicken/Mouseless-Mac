@@ -467,7 +467,7 @@ local function deleteAllMessages(messageItems, app, first)
   if first == nil then first = true end
   local messageItem = messageItems[1]
   if messageItem.AXSelected then
-    if first then
+    if first and #messageItems > 1 then
       tremove(messageItems, 1)
       deleteAllMessages(messageItems, app, false)
       return
