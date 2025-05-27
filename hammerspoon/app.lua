@@ -4279,7 +4279,11 @@ appHotKeyCallbacks = {
       fn = clickRightMenuBarItem
     },
     ["newPassword"] = {
-      message = localizedString("New Password", "com.apple.Passwords"),
+      message = function(app)
+        local winUI = towinui(app:focusedWindow())
+        local button = getc(winUI, AX.Group, 1, AX.Button, 'plus')
+        if button then return button.AXHelp end
+      end,
       windowFilter = {
         allowRoles = AX.SystemDialog,
         allowTitles = "^$"
@@ -4293,7 +4297,11 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["showAllPasswords"] = {
-      message = "Show All Passwords",
+      message = function(app)
+        local winUI = towinui(app:focusedWindow())
+        local button = getc(winUI, AX.Group, 1, AX.Button, 'macwindow')
+        if button then return button.AXHelp end
+      end,
       windowFilter = {
         allowRoles = AX.SystemDialog,
         allowTitles = "^$"
