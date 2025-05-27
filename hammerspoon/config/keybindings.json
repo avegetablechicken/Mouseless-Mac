@@ -1680,6 +1680,12 @@
         "key": "8"
       }
     },
+    "com.apple.TextInputMenuAgent": {
+      "openKeyboardSettings": {
+        "mods": "command",
+        "key": ","
+      }
+    },
     "com.apple.weather.menu": {
       "openWeather": {
         "mods": "command",

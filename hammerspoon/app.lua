@@ -4245,6 +4245,19 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["com.apple.TextInputMenuAgent"] =
+  {
+    ["openKeyboardSettings"] = {
+      message = localizedMessage("Open Keyboard Settings…"),
+      menubarFilter = { allowIndices = 1 },
+      fn = function(menuBarItem, app)
+        local menuTitle = localizedString("Open Keyboard Settings…", app:bundleID())
+        local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, menuTitle)
+        if menuItem then press(menuItem) end
+      end
+    }
+  },
+
   ["com.apple.Passwords.MenuBarExtra"] =
   {
     ["showPasswordsDialog"] = {
