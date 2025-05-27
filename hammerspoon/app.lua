@@ -4161,6 +4161,15 @@ appHotKeyCallbacks = {
             localizedString("In-app Screensaver", app:bundleID(),
                             { localeFile = "HotkeyWindowController" }))
       end
+    },
+    ["preferences"] = {
+      message = localizedMessage("Preferences..."),
+      menubarFilter = { allowIndices = 1 },
+      fn = function(menuBarItem, app)
+        local menuTitle = localizedString("Preferences...", app:bundleID())
+        local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, menuTitle)
+        if menuItem then press(menuItem) end
+      end
     }
   },
 
