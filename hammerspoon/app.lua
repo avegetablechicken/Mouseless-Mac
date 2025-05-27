@@ -7888,8 +7888,31 @@ function App_applicationCallback(appname, eventType, app)
       end
       observersStopOnDeactivated[appid] = nil
     end
-  elseif eventType == hs.application.watcher.deactivated
-      or eventType == hs.application.watcher.terminated then
+  elseif eventType == hs.application.watcher.terminated
+      and appname ~= nil then
+    for _, proc in ipairs(processesOnDeactivated[appid] or {}) do
+      proc()
+    end
+    processesOnDeactivated[appid] = nil
+    for _, proc in ipairs(processesOnQuit[appid] or {}) do
+      proc()
+    end
+    processesOnQuit[appid] = nil
+    for _, ob in ipairs(observersStopOnDeactivated[appid] or {}) do
+      local observer, func = ob[1], ob[2]
+      observer:stop()
+      if func ~= nil then func(appid, observer) end
+    end
+    observersStopOnDeactivated[appid] = nil
+    for _, ob in ipairs(observersStopOnQuit[appid] or {}) do
+      local observer, func = ob[1], ob[2]
+      observer:stop()
+      if func ~= nil then func(appid, observer) end
+    end
+    observersStopOnQuit[appid] = nil
+    unregisterInAppHotKeys(appid, true)
+    unregisterInWinHotKeys(appid, true)
+  elseif eventType == hs.application.watcher.deactivated then
     for id, processes in pairs(processesOnDeactivated) do
       if find(id) == nil then
         for _, proc in ipairs(processes) do
