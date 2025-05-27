@@ -3487,13 +3487,20 @@ function leftClickAndRestore(point, appname, delay)
 end
 
 function rightClick(point, appname)
-  if point.x == nil then point = hs.geometry.point(point) end
+  if point.AXPosition ~= nil then
+    point = hs.geometry.point {
+      point.AXPosition.x + point.AXSize.w / 2,
+      point.AXPosition.y + point.AXSize.h / 2
+    }
+  elseif point.x == nil then
+    point = hs.geometry.point(point)
+  end
   if appname ~= nil then
     local appHere = hs.axuielement.systemElementAtPosition(point)
-    while appHere.AXParent ~= nil do
+    while appHere ~= nil and appHere.AXParent ~= nil do
       appHere = appHere.AXParent
     end
-    if appHere.AXTitle ~= appname then return false end
+    if appHere and appHere.AXTitle ~= appname then return false end
   end
   hs.eventtap.rightClick(point)
   return true
