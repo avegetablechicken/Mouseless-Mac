@@ -6058,7 +6058,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
   local registerCloseObserver = function(winUI)
     local closeObserver = uiobserver.new(app:pid())
     closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
-    closeObserver:callback(function(obs)
+    local callback = function(obs)
       if daemonAppFocusedWindowHotkeys[appid] ~= nil then -- fix weird bug
         for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[appid]) do
           if hotkey.idx ~= nil then
@@ -6072,8 +6072,10 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
       end
       obs:stop()
       obs = nil
-    end)
+    end
+    closeObserver:callback(callback)
     closeObserver:start()
+    stopOnQuit(appid, closeObserver, callback)
   end
   if (type(filter) == 'table' and (filter.allowSheet or filter.allowPopover))
       or appid == "com.tencent.LemonMonitor" then
@@ -6234,7 +6236,7 @@ local function registerObserversForMenuBarMenu(app, appConfig)
           registerInMenuHotkeys(appid, appConfig, menubarFilter, mbItem)
           local closeObserver = uiobserver.new(app:pid())
           closeObserver:addWatcher(element, uinotifications.menuClosed)
-          closeObserver:callback(function(obs)
+          local callback = function(obs)
             if menuBarMenuHotkeys[appid] ~= nil then
               for i, hotkey in ipairs(menuBarMenuHotkeys[appid]) do
                 if hotkey.idx ~= nil then
@@ -6248,8 +6250,10 @@ local function registerObserversForMenuBarMenu(app, appConfig)
             end
             obs:stop()
             obs = nil
-          end)
+          end
+          closeObserver:callback(callback)
           closeObserver:start()
+          stopOnQuit(appid, closeObserver, callback)
         end)
       end
       observer:start()
