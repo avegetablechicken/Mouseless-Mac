@@ -7895,6 +7895,7 @@ function App_applicationCallback(appname, eventType, app)
         for _, proc in ipairs(processes) do
           proc()
         end
+        processesOnDeactivated[id] = nil
       end
     end
     for id, processes in pairs(processesOnQuit) do
@@ -7902,6 +7903,7 @@ function App_applicationCallback(appname, eventType, app)
         for _, proc in ipairs(processes) do
           proc()
         end
+        processesOnQuit[appid] = nil
       end
     end
     for id, obs in pairs(observersStopOnDeactivated) do
