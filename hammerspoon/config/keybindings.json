@@ -1694,16 +1694,6 @@
       "openWeather": {
         "mods": "command",
         "key": "O"
-      },
-      "closeWindow": {
-        "mods": "",
-        "key": "escape"
-      }
-    },
-    "com.tencent.LemonMonitor": {
-      "closeWindow": {
-        "mods": "",
-        "key": "escape"
       }
     },
     "cn.better365.iCopy": {

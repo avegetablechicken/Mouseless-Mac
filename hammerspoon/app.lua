@@ -3318,6 +3318,7 @@ appHotKeyCallbacks = {
   ["com.tencent.LemonMonitor"] =
   {
     ["closeWindow"] = {
+      mods = "", key = "Escape",
       message = commonLocalizedMessage("Close Window"),
       windowFilter = {},
       background = true,
@@ -4492,6 +4493,7 @@ appHotKeyCallbacks = {
       end
     },
     ["closeWindow"] = {
+      mods = "", key = "Escape",
       message = commonLocalizedMessage("Close Window"),
       windowFilter = {
         allowRoles = AX.SystemDialog
