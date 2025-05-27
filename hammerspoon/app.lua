@@ -421,6 +421,7 @@ local function deleteSelectedMessage(app, menuItem, force)
     press(button)
     if force ~= nil then
       local confirm = function()
+        if not app:isRunning() then return end
         if app:focusedWindow():role() == AX.Sheet then
           local sheet = towinui(app:focusedWindow())
           local delete = getc(sheet, AX.Button, 2)
@@ -441,6 +442,7 @@ local function deleteSelectedMessage(app, menuItem, force)
   app:selectMenuItem(menuItem)
   if force ~= nil then
     hs.timer.doAfter(0.1, function()
+      if not app:isRunning() then return end
       hs.eventtap.keyStroke("", "Return", nil, app)
     end)
   end
@@ -479,6 +481,7 @@ local function deleteAllMessages(messageItems, app, first)
   end
 
   hs.timer.doAfter(2, function()
+    if not app:isRunning() then return end
     local continue
     continue, messageItems = messageDeletable(app)
     if continue then
