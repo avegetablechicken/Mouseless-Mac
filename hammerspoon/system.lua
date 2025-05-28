@@ -1100,9 +1100,9 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     ]]
   end
 
+  local foundInMenuBar = false
   local ok, result
   if win == nil then
-    local foundInMenuBar = false
     for _, item in ipairs(getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem)) do
       if item.AXIdentifier:find(controlCenterMenuBarItemIdentifiers[panel]) then
         if find("com.surteesstudios.Bartender") ~= nil then
@@ -1247,7 +1247,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
   end
 
   if ok and result ~= 0 then
-    registerControlCenterHotKeys(panel)
+    registerControlCenterHotKeys(panel, foundInMenuBar)
   end
 end
 
@@ -1280,7 +1280,7 @@ local hotkeyShow, hotkeyHide
 local backgroundSoundsHotkeys
 local selectNetworkHotkeys, selectNetworkWatcher
 ---@diagnostic disable-next-line: lowercase-global
-function registerControlCenterHotKeys(panel)
+function registerControlCenterHotKeys(panel, inMenuBar)
   local appUI = toappui(find('com.apple.controlcenter'))
   local paneUI = getc(appUI, AX.Window, 1)
   if OS_VERSION >= OS.Ventura then
@@ -1321,7 +1321,8 @@ function registerControlCenterHotKeys(panel)
   end
 
   -- back to main panel
-  hotkeyMainBack = newControlCenter("⌘", "[", "Back",
+  if not inMenuBar then
+    hotkeyMainBack = newControlCenter("⌘", "[", "Back",
     function()
       assert(hotkeyMainBack) hotkeyMainBack:disable()
       for _, hotkey in ipairs(controlCenterHotKeys) do
@@ -1354,8 +1355,9 @@ function registerControlCenterHotKeys(panel)
         end)
       menuBarItem:performAction(AX.Press)
     end)
-  if not checkAndRegisterControlCenterHotKeys(hotkeyMainBack) then
-    return
+    if not checkAndRegisterControlCenterHotKeys(hotkeyMainBack) then
+      return
+    end
   end
 
   -- jump to related panel in `System Preferences`
@@ -2233,7 +2235,11 @@ if hs.window.focusedWindow() ~= nil
         == "com.apple.controlcenter"
     and hs.window.focusedWindow():subrole()
         == AX.SystemDialog then
-  registerControlCenterHotKeys(getActiveControlCenterPanel())
+  local frame = hs.window.focusedWindow():frame()
+  local scrFrame = hs.screen.mainScreen():fullFrame()
+  local inMenuBar = frame.x + frame.w ~= scrFrame.x + scrFrame.w
+  registerControlCenterHotKeys(getActiveControlCenterPanel(),
+                               inMenuBar)
 end
 
 local controlCenter = find("com.apple.controlcenter")
