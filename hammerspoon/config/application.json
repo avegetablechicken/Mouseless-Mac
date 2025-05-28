@@ -65,8 +65,14 @@
     "com.apple.controlcenter",
     "com.apple.notificationcenterui",
     "com.pigigaldi.pock",
-    "whbalzac.Dongtaizhuomian",
-    "com.macosgame.iwallpaper"
+    {
+      "whbalzac.Dongtaizhuomian": {
+        "rejectTitles": "^$"
+      },
+      "com.macosgame.iwallpaper": {
+        "rejectTitles": "^$"
+      }
+    }
   ],
 
   "suspendHotkeysInRemoteDesktop": [

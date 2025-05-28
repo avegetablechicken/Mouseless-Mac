@@ -1,6 +1,8 @@
 local tinsert = table.insert
 local tcontain = hs.fnutils.contains
+local tfind = hs.fnutils.find
 local tindex = hs.fnutils.indexOf
+local tcopy = hs.fnutils.copy
 local toappui = hs.axuielement.applicationElement
 local towinui = hs.axuielement.windowElement
 local windowParams = KeybindingConfigs["parameters"] or {}
@@ -555,7 +557,19 @@ end
 
 -- visible windows on all user spaces (wallpaper apps excluded)
 -- fixme: full screen space will be ignored if not once focused
-local ignoredApps = ApplicationConfigs["windowSwitcherIgnore"] or {}
+local ignoredAppsLoaded = ApplicationConfigs["windowSwitcherIgnore"] or {}
+local ignoredApps = tfind(ignoredAppsLoaded,
+    function(item) return type(item) == 'table' end)
+if ignoredApps then
+  ignoredApps = tcopy(ignoredApps)
+else
+  ignoredApps = {}
+end
+for _, appid in ipairs(ignoredAppsLoaded) do
+  if type(appid) == 'string' then
+    ignoredApps[appid] = false
+  end
+end
 local switcher
 
 local hotkeyEnabledByWindowSwitcher = false
@@ -635,8 +649,8 @@ local function registerWindowSwitcher()
     end
     if switcher == nil then
       local filter = hs.window.filter.new()
-      for _, appname in ipairs(runningAppDisplayNames(ignoredApps)) do
-        filter:rejectApp(appname)
+      for appid, rule in pairs(ignoredApps) do
+        filter:setAppFilter(find(appid):name(), rule)
       end
       switcher = hs.window.switcher.new(filter)
     end
@@ -679,8 +693,8 @@ local function registerWindowSwitcher()
     end
     if switcher == nil then
       local filter = hs.window.filter.new()
-      for _, appname in ipairs(runningAppDisplayNames(ignoredApps)) do
-        filter:rejectApp(appname)
+      for appid, rule in pairs(ignoredApps) do
+        filter:setAppFilter(find(appid):name(), rule)
       end
       switcher = hs.window.switcher.new(filter)
     end
@@ -893,8 +907,8 @@ end
 bindWindowSwitch(misc["searchWindow"], 'Switch to Window',
 function()
   local wFilter = hs.window.filter.new()
-  for _, appname in ipairs(runningAppDisplayNames(ignoredApps)) do
-    wFilter:rejectApp(appname)
+  for appid, rule in pairs(ignoredApps) do
+    wFilter:setAppFilter(find(appid):name(), rule)
   end
   local allWindows = wFilter:getWindows()
   local choices = {}
