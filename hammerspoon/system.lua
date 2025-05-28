@@ -4,6 +4,7 @@ local tinsert = table.insert
 local tremove = table.remove
 local tcontain = hs.fnutils.contains
 local tfind = hs.fnutils.find
+local tindex = hs.fnutils.indexOf
 local tifilter = hs.fnutils.ifilter
 local foreach = hs.fnutils.each
 local bind = hs.fnutils.partial
@@ -1279,6 +1280,7 @@ local hotkeyMainBack
 local hotkeyShow, hotkeyHide
 local backgroundSoundsHotkeys
 local selectNetworkHotkeys, selectNetworkWatcher
+local focusOptionHotkeys, focusOptionWatcher
 ---@diagnostic disable-next-line: lowercase-global
 function registerControlCenterHotKeys(panel, inMenuBar)
   local appUI = toappui(find('com.apple.controlcenter'))
@@ -1678,29 +1680,31 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       end
     end
   elseif panel == "Focus" then
-    local cb
+    local cb2
     repeat
       hs.timer.usleep(0.05 * 1000000)
-      cb = getc(paneUI, AX.CheckBox, 2)
-    until cb or not paneUI:isValid()
-    if cb then
-      local cbs = { getc(paneUI, AX.CheckBox, 1), getc(paneUI, AX.CheckBox, -1) }
+      cb2 = getc(paneUI, AX.CheckBox, 2)
+    until cb2 or not paneUI:isValid()
+    if cb2 then
+      local h = getc(paneUI, AX.CheckBox, 1).AXSize.h
+      local cbs = tifilter(getc(paneUI, AX.CheckBox),
+          function(cb) return cb.AXSize.h == h end)
       local toggleNames
       if OS_VERSION < OS.Ventura then
-        toggleNames = { cbs[1].AXTitle, cbs[2].AXTitle }
+        toggleNames = hs.fnutils.imap(cbs,
+            function(cb) return cb.AXTitle end)
       else
-        local toggleIdents = { cbs[1].AXIdentifier, cbs[2].AXIdentifier }
         toggleNames = {}
-        foreach(toggleIdents, function(ele)
+        foreach(cbs, function(cb)
           for k, v in pairs(controlCenterAccessibiliyIdentifiers[panel]) do
-            if v == ele then
+            if v == cb.AXIdentifier then
               tinsert(toggleNames, mayLocalize(k) or k)
               break
             end
           end
         end)
       end
-      for i=1,2 do
+      for i=1,#toggleNames do
         local hotkey = newControlCenter("", tostring(i),
             "Toggle " .. toggleNames[i],
             function() cbs[i]:performAction(AX.Press) end)
@@ -1708,19 +1712,40 @@ function registerControlCenterHotKeys(panel, inMenuBar)
           return
         end
       end
-      for i=2,3 do
-        local hotkey = newControlCenter("⌘", tostring(i - 1),
-          toggleNames[1] .. " " .. i - 1,
-          function()
-            local _cbs = getc(paneUI, AX.CheckBox)
-            if #_cbs > 2 then
-              _cbs[i]:performAction(AX.Press)
-            end
-          end)
-        if not checkAndRegisterControlCenterHotKeys(hotkey) then
-          return
+      local focusOptionIndex
+      local registerFocusOptionsFunc = function()
+        if not paneUI:isValid() then return end
+        local index
+        for i, cb in ipairs(getc(paneUI, AX.CheckBox)) do
+          if cb.AXSize.h < h then
+            index = i break
+          end
+        end
+        if index == focusOptionIndex then return end
+        focusOptionIndex = index
+        for _, hotkey in ipairs(focusOptionHotkeys or {}) do
+          hotkey:delete()
+        end
+        focusOptionHotkeys = nil
+        if index == nil then return end
+        focusOptionHotkeys = {}
+        local opts = tifilter(getc(paneUI, AX.CheckBox),
+            function(cb) return cb.AXSize.h < h end)
+        for i=1,#opts do
+          local hotkey = newControlCenter("⌘", tostring(i),
+              toggleNames[index - 1] .. " " .. i,
+              function() opts[i]:performAction(AX.Press) end)
+          assert(hotkey) hotkey:enable()
+          tinsert(focusOptionHotkeys, hotkey)
         end
       end
+      registerFocusOptionsFunc()
+      focusOptionWatcher = ExecContinuously(registerFocusOptionsFunc)
+    else
+      for _, hotkey in ipairs(focusOptionHotkeys or {}) do
+        hotkey:delete()
+      end
+      focusOptionHotkeys = nil
     end
   elseif panel == "Display" then
     local role = OS_VERSION < OS.Ventura and AX.ScrollArea or AX.Group
@@ -2263,6 +2288,16 @@ local function controlCenterObserverCallback()
         hotkey:delete()
       end
       selectNetworkHotkeys = nil
+    end
+    if focusOptionWatcher ~= nil then
+      StopExecContinuously(focusOptionWatcher)
+      focusOptionWatcher = nil
+    end
+    if focusOptionHotkeys ~= nil then
+      for _, hotkey in ipairs(focusOptionHotkeys) do
+        hotkey:delete()
+      end
+      focusOptionHotkeys = nil
     end
     if controlCenterHotKeys ~= nil then
       for _, hotkey in ipairs(controlCenterHotKeys) do

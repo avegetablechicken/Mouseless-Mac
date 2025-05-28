@@ -40,7 +40,12 @@
   "accessibility": {
     "Focus": {
       "Do Not Disturb": "focus-mode-activity-com.apple.donotdisturb.mode.default",
-      "Sleep": "focus-mode-activity-com.apple.sleep.sleep-mode"
+      "Personal": "focus-mode-activity-com.apple.focus.personal-time",
+      "Work": "focus-mode-activity-com.apple.focus.work",
+      "Sleep": "focus-mode-activity-com.apple.sleep.sleep-mode",
+      "Mindfulness": "focus-mode-activity-com.apple.focus.mindfulness",
+      "Gaming": "focus-mode-activity-com.apple.focus.gaming",
+      "Reading": "focus-mode-activity-com.apple.focus.reading"
     },
     "AirDrop": {
       "Contacts Only": "airdrop-mode-contactsOnly",
