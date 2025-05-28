@@ -673,6 +673,10 @@
       "nextLocation": {
         "mods": "control",
         "key": "Tab"
+      },
+      "deleteLocation": {
+        "mods": "command",
+        "key": "delete"
       }
     },
     "com.apple.Safari": {

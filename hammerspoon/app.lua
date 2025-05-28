@@ -1804,6 +1804,34 @@ appHotKeyCallbacks = {
         return false
       end,
       fn = press
+    },
+    ["deleteLocation"] = {
+      message = "Delete",
+      condition = function(app)
+        if app:focusedWindow() == nil then return false end
+        local list = getc(towinui(app:focusedWindow()), AX.Group, 1,
+            AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
+        if list.AXDescription == localizedString("Location List", app:bundleID()) then
+          local selected = tfind(list.AXChildren or {},
+              function(item) return item.AXSelected end)
+          return selected ~= nil, selected
+        end
+        return false
+      end,
+      fn = function(selected, app)
+        selected:performAction(AX.ShowMenu)
+        local observer = uiobserver.new(app:pid())
+        observer:addWatcher(toappui(app), uinotifications.menuOpened)
+        observer:callback(function(obs, menu)
+          local title = localizedString("Delete", app:bundleID())
+          local delete = getc(menu, AX.MenuItem, title)
+          if delete then
+            press(delete) obs:stop() obs = nil
+          end
+        end)
+        observer:start()
+        stopOnDeactivated(app:bundleID(), observer)
+      end
     }
   },
 
