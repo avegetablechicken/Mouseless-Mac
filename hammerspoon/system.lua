@@ -1007,6 +1007,16 @@ local function bindControlCenter(...)
   return hotkey
 end
 
+local controlCenterPanelFuncs = {}
+hs.urlevent.bind("controlcenter", function(eventName, params)
+  local fn = controlCenterPanelFuncs[params["panel"]]
+  if fn then fn() end
+end)
+
+local function bindControlCenterURL(panel, func)
+  controlCenterPanelFuncs[panel] = func
+end
+
 local controlCenterIdentifiers = hs.json.read("static/controlcenter-identifies.json")
 local controlCenterSubPanelIdentifiers = controlCenterIdentifiers.subpanel
 local controlCenterMenuBarItemIdentifiers = controlCenterIdentifiers.menubar
@@ -1239,6 +1249,16 @@ local function popupControlCenterSubPanel(panel, allowReentry)
   if ok and result ~= 0 then
     registerControlCenterHotKeys(panel)
   end
+end
+
+local controlCenterPanels = {
+  "Accessibility Shortcuts", "AirDrop", "Battery", "Bluetooth",
+  "Display", "Focus", "Hearing", "Keyboard Brightness",
+  "Music Recognition", "Now Playing", "Screen Mirroring", "Sound",
+  "Users", "Wi‑Fi"
+}
+for _, panel in ipairs(controlCenterPanels) do
+  bindControlCenterURL(panel, bind(popupControlCenterSubPanel, panel))
 end
 
 local controlCenterHotKeys = nil
@@ -2133,14 +2153,6 @@ function registerControlCenterHotKeys(panel)
   end
 end
 
-local controlCenterPanelConfigs = KeybindingConfigs.hotkeys.controlcenter
-local localizedControlCenter = find("com.apple.controlcenter"):name()
-for panel, spec in pairs(controlCenterPanelConfigs) do
-  local localizedPanel = controlCenterLocalized(panel)
-  bindControlCenter(spec, localizedControlCenter .. " > " .. localizedPanel,
-      bind(popupControlCenterSubPanel, panel))
-end
-
 local function getActiveControlCenterPanel()
   local pane =
       (OS_VERSION < OS.Ventura and "window 1" or "group 1 of window 1")
@@ -2235,36 +2247,14 @@ if hs.window.focusedWindow() ~= nil
   registerControlCenterHotKeys(getActiveControlCenterPanel())
 end
 
-local tapperForExtraInfo
-local controlCenterPanelHotKeys = {}
 local controlCenter = find("com.apple.controlcenter")
 ControlCenterObserver = uiobserver.new(controlCenter:pid())
 ControlCenterObserver:addWatcher(
   toappui(controlCenter),
   uinotifications.windowCreated
 )
+
 local function controlCenterObserverCallback()
-  for panel, spec in pairs(controlCenterPanelConfigs) do
-    local localizedPanel = controlCenterLocalized(panel)
-    local hotkey = bindControlCenter({ mods = "", key = spec.key },
-        localizedControlCenter .. " > " .. localizedPanel,
-        bind(popupControlCenterSubPanel, panel))
-    tinsert(controlCenterPanelHotKeys, hotkey)
-    local timeTapperForExtraInfo = os.time()
-    tapperForExtraInfo = hs.eventtap.new(
-      {hs.eventtap.event.types.flagsChanged},
-      function(event)
-        if event:getFlags():containExactly({"alt"})
-            and os.time() - timeTapperForExtraInfo > 2 then
-          timeTapperForExtraInfo = os.time()
-          local panel = getActiveControlCenterPanel()
-          if panel == "Wi‑Fi" or panel == "Bluetooth" then
-            popupControlCenterSubPanel(panel, true)
-          end
-        end
-        return false
-      end):start()
-  end
   local controlCenterDestroyObserver =
       uiobserver.new(controlCenter:pid())
   controlCenterDestroyObserver:addWatcher(
@@ -2272,12 +2262,6 @@ local function controlCenterObserverCallback()
     uinotifications.uIElementDestroyed
   )
   controlCenterDestroyObserver:callback(function()
-    tapperForExtraInfo:stop()
-    tapperForExtraInfo = nil
-    for _, hotkey in ipairs(controlCenterPanelHotKeys) do
-      hotkey:delete()
-    end
-    controlCenterPanelHotKeys = {}
     if selectNetworkWatcher ~= nil then
       StopExecContinuously(selectNetworkWatcher)
       selectNetworkWatcher = nil

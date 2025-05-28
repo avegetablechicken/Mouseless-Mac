@@ -3,7 +3,6 @@
     "hyper": "F18",
     "app": ["option", "command"],
     "daemon": ["shift", "option"],
-    "controlCenter": ["shift", "control"],
     "focusScreen": ["shift", "control"]
   },
 
@@ -304,53 +303,6 @@
         ]
       }
     ],
-
-    "controlcenter": {
-      "Wi‑Fi": {
-        "mods": "${hyper.controlCenter}",
-        "key": "W"
-      },
-      "Bluetooth": {
-        "mods": "${hyper.controlCenter}",
-        "key": "B"
-      },
-      "AirDrop": {
-        "mods": "${hyper.controlCenter}",
-        "key": "A"
-      },
-      "Focus": {
-        "mods": "${hyper.controlCenter}",
-        "key": "F"
-      },
-      "Keyboard Brightness": {
-        "mods": "${hyper.controlCenter}",
-        "key": "K"
-      },
-      "Screen Mirroring": {
-        "mods": "${hyper.controlCenter}",
-        "key": "M"
-      },
-      "Display": {
-        "mods": "${hyper.controlCenter}",
-        "key": "D"
-      },
-      "Sound": {
-        "mods": "${hyper.controlCenter}",
-        "key": "S"
-      },
-      "Now Playing": {
-        "mods": "${hyper.controlCenter}",
-        "key": "P"
-      },
-      "Music Recognition": {
-        "mods": "${hyper.controlCenter}",
-        "key": "R"
-      },
-      "Hearing": {
-        "mods": "${hyper.controlCenter}",
-        "key": "H"
-      }
-    },
 
     "menubar": {
       "index": {
