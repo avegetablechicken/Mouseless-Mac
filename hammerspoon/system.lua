@@ -1283,6 +1283,15 @@ local selectNetworkHotkeys, selectNetworkWatcher
 function registerControlCenterHotKeys(panel, inMenuBar)
   local appUI = toappui(find('com.apple.controlcenter'))
   local paneUI = getc(appUI, AX.Window, 1)
+  local winTotalDelay = 0
+  if paneUI == nil then
+    repeat
+      hs.timer.usleep(0.05 * 1000000)
+      winTotalDelay = winTotalDelay + 0.05
+      if winTotalDelay > 1 then return end
+      paneUI = getc(appUI, AX.Window, 1)
+    until paneUI ~= nil
+  end
   if OS_VERSION >= OS.Ventura then
     paneUI = getc(paneUI, AX.Group, 1)
     if panel == "Hearing" then
