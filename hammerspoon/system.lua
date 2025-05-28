@@ -1275,7 +1275,7 @@ local function checkAndRegisterControlCenterHotKeys(hotkey)
   end
 end
 
-local hotkeyMainForward, hotkeyMainBack
+local hotkeyMainBack
 local hotkeyShow, hotkeyHide
 local backgroundSoundsHotkeys
 local selectNetworkHotkeys, selectNetworkWatcher
@@ -1353,14 +1353,6 @@ function registerControlCenterHotKeys(panel)
           return item.AXIdentifier:find(ident) ~= nil
         end)
       menuBarItem:performAction(AX.Press)
-      hotkeyMainForward = newControlCenter("⌘", "]", "Forward",
-        function()
-          assert(hotkeyMainForward) hotkeyMainForward:disable()
-          popupControlCenterSubPanel(panel)
-        end)
-      if not checkAndRegisterControlCenterHotKeys(hotkeyMainForward) then
-        return
-      end
     end)
   if not checkAndRegisterControlCenterHotKeys(hotkeyMainBack) then
     return
@@ -2276,7 +2268,6 @@ local function controlCenterObserverCallback()
       controlCenterHotKeys = nil
     end
     hotkeyMainBack = nil
-    hotkeyMainForward = nil
     if hotkeyShow ~= nil then
       hotkeyShow:delete()
       hotkeyShow = nil
