@@ -1294,9 +1294,6 @@ function registerControlCenterHotKeys(panel)
       end
     end
   end
-  local pane =
-      (OS_VERSION < OS.Ventura and "window 1" or "group 1 of window 1")
-      .. ' of application process "ControlCenter"'
 
   local function mayLocalize(value)
     return controlCenterLocalized(panel, value)
