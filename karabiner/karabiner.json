@@ -804,28 +804,6 @@
                         ]
                     },
                     {
-                        "description": "Fn + Shift + Control + C to center and zoom window",
-                        "manipulators": [
-                            {
-                                "conditions": [
-                                    {
-                                        "bundle_identifiers": [
-                                            "com.parallels.desktop.console",
-                                            "com.parallels.macvm"
-                                        ],
-                                        "type": "frontmost_application_unless"
-                                    }
-                                ],
-                                "from": {
-                                    "key_code": "c",
-                                    "modifiers": { "mandatory": ["fn", "shift", "control"] }
-                                },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://windowresize?mode=center'" }],
-                                "type": "basic"
-                            }
-                        ]
-                    },
-                    {
                         "description": "Fn + Control + F to make window fill screen",
                         "enabled": false,
                         "manipulators": [

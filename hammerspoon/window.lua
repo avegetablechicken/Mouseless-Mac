@@ -8,7 +8,6 @@ local towinui = hs.axuielement.windowElement
 local windowParams = KeybindingConfigs["parameters"] or {}
 local moveStep = windowParams.windowMoveStep or 20
 local resizeStep = windowParams.windowResizeStep or 100
-local windowZoomToCenterSize = windowParams.windowZoomToCenterSize or { w = 830, h = 750 }
 
 local function bindWindow(...)
   local hotkey = bindHotkeySpec(...)
@@ -18,7 +17,6 @@ local function bindWindow(...)
 end
 
 local frameCacheMaximize = {}
-local frameCacheZoomToCenter = {}
 
 local windowMoveToFuncs = {}
 local windowMoveTowardsFuncs = {}
@@ -38,7 +36,6 @@ local function bindMoveWindowURL(direction, mode, fn)
     local win = hs.window.focusedWindow()
     if win == nil then return end
     frameCacheMaximize[win:id()] = nil
-    frameCacheZoomToCenter[win:id()] = nil
   end
   if mode == 1 then
     windowMoveToFuncs[direction] = newFn
@@ -55,13 +52,12 @@ end)
 
 local function bindResizeWindowURL(mode, fn)
   local newFn = fn
-  if mode ~= "max" and mode ~= "center" then
+  if mode ~= "max" then
     newFn = function()
       fn()
       local win = hs.window.focusedWindow()
       if win == nil then return end
       frameCacheMaximize[win:id()] = nil
-      frameCacheZoomToCenter[win:id()] = nil
     end
   end
   windowResizeFuncs[mode] = newFn
@@ -73,7 +69,6 @@ local function bindResizeWindow(spec, message, fn, repeatable)
     local win = hs.window.focusedWindow()
     if win == nil then return end
     frameCacheMaximize[win:id()] = nil
-    frameCacheZoomToCenter[win:id()] = nil
   end
   local repeatedFn = repeatable and newFn or nil
   local hotkey = bindWindow(spec, message, newFn, nil, repeatedFn)
@@ -273,31 +268,6 @@ function()
     frameCacheMaximize[win:id()] = win:frame()
     win:maximize()
   end
-  frameCacheZoomToCenter[win:id()] = nil
-end)
-
--- move and zoom to center
-bindResizeWindowURL("center",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
-  if frameCacheZoomToCenter[win:id()] then
-    win:setFrame(frameCacheZoomToCenter[win:id()])
-    frameCacheZoomToCenter[win:id()] = nil
-  else
-    frameCacheZoomToCenter[win:id()] = win:frame()
-
-    local f = win:frame()
-    local screen = win:screen()
-    local max = screen:frame()
-
-    f.w = windowZoomToCenterSize.w
-    f.h = windowZoomToCenterSize.h
-    f.x = (max.x + max.x + max.w - f.w) / 2
-    f.y = (max.y + max.y + max.h - f.h) / 2
-    win:setFrame(f)
-  end
-  frameCacheMaximize[win:id()] = nil
 end)
 
 -- expand on left

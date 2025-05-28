@@ -108,13 +108,6 @@
         "subkind": 0
     },
     {
-        "mods": ["fn", "control", "shift"],
-        "key": "C",
-        "message": "Toggle Zoom to Center",
-        "kind": "WIN_OP",
-        "subkind": 0
-    },
-    {
         "mods": ["fn", "control"],
         "key": "W",
         "message": "Move to Top",

@@ -9,7 +9,6 @@
   "parameters": {
     "windowMoveStep": 20,
     "windowResizeStep": 100,
-    "windowZoomToCenterSize": { "w": 830, "h": 750 },
     "trackpadCornerSize": 0.25
   },
 
