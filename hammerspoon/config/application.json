@@ -1,24 +1,7 @@
 {
   "menuBarItems": {
-    "changing": [
-      "com.kingsoft.wpsoffice.mac",
-      "5ZSL2CJU2T.com.dingtalk.mac"
-    ],
-    "changeOnWindow": [
-      "com.microsoft.VSCode",
-      "com.jetbrains.CLion",
-      "com.jetbrains.CLion-EAP",
-      "com.jetbrains.intellij",
-      "com.jetbrains.pycharm",
-      "com.mathworks.matlab",
-      "com.parallels.desktop.console",
-      "com.tencent.xinWeChat",
-      "com.hexrays.ida64",
-      "re.rizin.cutter",
-      "org.jkiss.dbeaver.core.product",
-      "JabRef",
-      "org.zotero.zotero"
-    ]
+    "changing": [ ],
+    "changeOnWindow": [ ]
   },
 
   "autoHideWithNoWindow": [
