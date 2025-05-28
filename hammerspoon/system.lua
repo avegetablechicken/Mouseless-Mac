@@ -1706,7 +1706,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       end
       for i=1,#toggleNames do
         local hotkey = newControlCenter("", tostring(i),
-            "Toggle " .. toggleNames[i],
+            toggleNames[i],
             function() cbs[i]:performAction(AX.Press) end)
         if not checkAndRegisterControlCenterHotKeys(hotkey) then
           return
@@ -1732,8 +1732,16 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         local opts = tifilter(getc(paneUI, AX.CheckBox),
             function(cb) return cb.AXSize.h < h end)
         for i=1,#opts do
+          local title = i
+          if #opts == 2 then
+            if i == 1 then
+              title = controlCenterLocalized(panel, "For 1 hour") or i
+            else
+              title = controlCenterLocalized(panel, "Until tomorrow morning") or i
+            end
+          end
           local hotkey = newControlCenter("⌘", tostring(i),
-              toggleNames[index - 1] .. " " .. i,
+              toggleNames[index - 1] .. " > " .. title,
               function() opts[i]:performAction(AX.Press) end)
           assert(hotkey) hotkey:enable()
           tinsert(focusOptionHotkeys, hotkey)
