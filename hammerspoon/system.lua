@@ -1591,6 +1591,10 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     selectNetworkHotkeys = {}
     local availableNetworksString = ""
     local selectNetworkActionFunc = function()
+      if paneUI[1] == nil or
+          paneUI[1].AXIdentifier ~= controlCenterSubPanelIdentifiers[panel] then
+        return
+      end
       local sa
       local totalDelay = 0
       repeat
@@ -1713,6 +1717,10 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       local focusOptionIndex
       local registerFocusOptionsFunc = function()
         if not paneUI:isValid() then return end
+        if paneUI[1] == nil or
+            paneUI[1].AXIdentifier ~= controlCenterSubPanelIdentifiers[panel] then
+          return
+        end
         local index
         for i, cb in ipairs(getc(paneUI, AX.CheckBox)) do
           if cb.AXSize.h < h then
