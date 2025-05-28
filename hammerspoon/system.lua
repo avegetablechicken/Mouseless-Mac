@@ -2230,18 +2230,6 @@ local function getActiveControlCenterPanel()
   return panel
 end
 
-if hs.window.focusedWindow() ~= nil
-    and hs.window.focusedWindow():application():bundleID()
-        == "com.apple.controlcenter"
-    and hs.window.focusedWindow():subrole()
-        == AX.SystemDialog then
-  local frame = hs.window.focusedWindow():frame()
-  local scrFrame = hs.screen.mainScreen():fullFrame()
-  local inMenuBar = frame.x + frame.w ~= scrFrame.x + scrFrame.w
-  registerControlCenterHotKeys(getActiveControlCenterPanel(),
-                               inMenuBar)
-end
-
 local controlCenter = find("com.apple.controlcenter")
 ControlCenterObserver = uiobserver.new(controlCenter:pid())
 ControlCenterObserver:addWatcher(
@@ -2295,6 +2283,20 @@ local function controlCenterObserverCallback()
 end
 ControlCenterObserver:callback(controlCenterObserverCallback)
 ControlCenterObserver:start()
+
+if hs.window.focusedWindow() ~= nil
+    and hs.window.focusedWindow():application():bundleID()
+        == "com.apple.controlcenter"
+    and hs.window.focusedWindow():subrole()
+        == AX.SystemDialog then
+  local frame = hs.window.focusedWindow():frame()
+  local scrFrame = hs.screen.mainScreen():fullFrame()
+  local inMenuBar = frame.x + frame.w ~= scrFrame.x + scrFrame.w
+  registerControlCenterHotKeys(getActiveControlCenterPanel(),
+                               inMenuBar)
+  controlCenterObserverCallback()
+end
+
 ExecContinuously(function()
   if not controlCenter:isRunning() then
     hs.timer.doAfter(2, function()
