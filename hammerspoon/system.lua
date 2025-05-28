@@ -1638,12 +1638,10 @@ function registerControlCenterHotKeys(panel, inMenuBar)
           end
         end
       else
-        if selectNetworkHotkeys ~= nil then
-          for _, hotkey in ipairs(selectNetworkHotkeys) do
-            hotkey:delete()
-          end
-          selectNetworkHotkeys = {}
+        for _, hotkey in ipairs(selectNetworkHotkeys or {}) do
+          hotkey:delete()
         end
+        selectNetworkHotkeys = nil
       end
     end
     selectNetworkActionFunc()
