@@ -21,6 +21,12 @@
     "com.apple.finder",
     "com.pigigaldi.pock",
     {
+      "whbalzac.Dongtaizhuomian": {
+        "rejectTitles": "^$"
+      },
+      "com.macosgame.iwallpaper": {
+        "rejectTitles": "^$"
+      },
       "com.app.menubarx": {
         "allowPopover": true,
         "rejectTitles": [ "^$", "ignoreWhenCheckOpeningWindows" ]
