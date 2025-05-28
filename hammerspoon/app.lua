@@ -167,13 +167,15 @@ end
 
 registerAppHotkeys()
 -- ## function utilities for process management on app switching
+local function isUIElement(appid)
+  local info = hs.application.infoForBundleID(appid)
+  return info and info.LSUIElement == true
+end
 
 -- for apps whose launching can be detected by Hammerspoon
 local processesOnLaunch = {}
-local appsLaunchSilently = ApplicationConfigs["launchSilently"] or {}
-local appsTerminateSilently = ApplicationConfigs["terminateSilently"] or {}
 local function execOnLaunch(appid, action, onlyFirstTime)
-  if tcontain(appsLaunchSilently, appid) then
+  if isUIElement(appid) then
     ExecOnSilentLaunch(appid, action)
   end
 
@@ -211,7 +213,7 @@ end
 
 local processesOnQuit = {}
 local function execOnQuit(appid, action)
-  if tcontain(appsTerminateSilently, appid) then
+  if isUIElement(appid) then
     ExecOnSilentQuit(appid, action)
     return
   end
@@ -232,7 +234,7 @@ end
 
 local observersStopOnQuit = {}
 local function stopOnQuit(appid, observer, action)
-  if tcontain(appsTerminateSilently, appid) then
+  if isUIElement(appid) then
     ExecOnSilentQuit(appid, function()
       observer:stop()
       action(observer, appid)
@@ -7102,9 +7104,6 @@ local frontWinAppID = frontWin and frontWin:application():bundleID() or nil
 if frontAppID then
   appLocales[frontAppID] = applicationLocale(frontAppID)
 end
-for _, appid in ipairs(appsLaunchSilently) do
-  ExecOnSilentLaunch(appid, bind(updateAppLocale, appid))
-end
 
 -- register hotkeys for background apps
 for appid, appConfig in pairs(appHotKeyCallbacks) do
@@ -7980,11 +7979,15 @@ function App_applicationCallback(appname, eventType, app)
   end
 end
 
-hs.fnutils.each(appsTerminateSilently, function(appid)
-  ExecOnSilentQuit(appid, function()
-    unregisterInAppHotKeys(appid, true)
-    unregisterInWinHotKeys(appid, true)
-  end)
+-- `Messages` terminate silently, which is unexpected
+local messageAppBundleID = "com.apple.MobileSMS"
+local messageApp = find(messageAppBundleID)
+execOnLaunch(messageAppBundleID, function()
+  messageApp = find(messageAppBundleID)
+end)
+ExecOnSilentQuit(messageAppBundleID, function()
+  App_applicationCallback(messageApp:name(),
+      hs.application.watcher.terminated, messageApp)
 end)
 
 function App_applicationInstalledCallback(files, flagTables)
