@@ -1309,7 +1309,7 @@
                                     }
                                 ],
                                 "from": {
-                                    "key_code": "X",
+                                    "key_code": "x",
                                     "modifiers": { "mandatory": "fn" }
                                 },
                                 "to": [{ "shell_command": "open -g 'hammerspoon://controlcenter?panel=Accessibility%20Shortcuts'" }],
