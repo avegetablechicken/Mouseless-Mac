@@ -3538,6 +3538,23 @@ function loadStatusItemsAutosaveName(app)
     local position = tonumber(items[6]:sub(1, #items[6] - 1))
     tinsert(preferredPositions, { name, position })
   end
+  if app:bundleID() == 'com.apple.controlcenter' then
+    local enabledRecords = hs.execute(strfmt([[
+      defaults read %s | grep '"NSStatusItem Visible ' | grep '" = 1;'
+    ]], app:bundleID()))
+    enabledRecords = strsplit(enabledRecords, '\n')
+    enabledRecords[#enabledRecords] = nil
+    local enabledItems = hs.fnutils.map(enabledRecords, function(r)
+      r = r:sub(r:find('"') + 1)
+      local items = strsplit(r, ' ')
+      local name = items[3]:sub(1, #items[3] - 1)
+      return name
+    end)
+    tinsert(preferredPositions, { "Clock", 1 })
+    preferredPositions = tifilter(preferredPositions, function(p)
+      return tcontain(enabledItems, p[1])
+    end)
+  end
   table.sort(preferredPositions, function(r1, r2)
     return r1[2] < r2[2]
   end)
