@@ -1195,6 +1195,10 @@ local function popupControlCenterSubPanel(panel, allowReentry)
               (number of buttons of pane > 2))
         ]]
       end
+    elseif panel == "Users" then
+      already = [[
+        set already to number of ui elements of pane is number of buttons of pane
+      ]]
     end
 
     if allowReentry == nil then
