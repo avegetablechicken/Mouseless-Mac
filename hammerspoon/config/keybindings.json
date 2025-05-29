@@ -2,7 +2,7 @@
   "hyper": {
     "hyper": "F18",
     "app": ["option", "command"],
-    "daemon": ["shift", "option"],
+    "daemon": ["shift", "option"]
   },
 
   "parameters": {
