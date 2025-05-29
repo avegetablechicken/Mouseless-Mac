@@ -1044,78 +1044,136 @@ local function controlCenterLocalized(panel, key)
   return result
 end
 
+local function testAlready(panel, pane, ident, role)
+  if role == nil then
+    if tcontain({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop",
+                  "Keyboard Brightness", "Screen Mirroring",
+                  "Accessibility Shortcuts", "Battery" }, panel) then
+      role = AX.StaticText
+    elseif panel == "Display" then
+      local sa = getc(pane, AX.ScrollArea, 1)
+      if sa == nil then
+        return false
+      else
+        role = getc(sa, AX.Slider)
+      end
+    elseif panel == "Sound" then
+      role = AX.Slider
+    elseif panel == "Music Recognition" then
+      role = AX.Group
+    elseif panel == "Hearing" then
+      if pane[1].AXRole == AX.ScrollArea then
+        role = getc(pane[1], AX.StaticText)
+      else
+        role = AX.StaticText
+      end
+    elseif panel == "Now Playing" then
+      if OS_VERSION < OS.Ventura then
+        local mayLocalize = bind(controlCenterLocalized, "Now Playing")
+        return getc(pane, AX.Button, mayLocalize("rewind")) ~= nil
+            or getc(pane, AX.Button, mayLocalize("previous")) ~= nil
+            or (#getc(pane, AX.Button, mayLocalize("play"))
+              + #getc(pane, AX.Button, mayLocalize("pause"))) > 1
+      else
+        return #getc(pane, AX.Image) > 0 and #getc(pane, AX.Button) > 2
+      end
+    elseif panel == "Users" then
+      return #pane == #getc(pane, AX.Button)
+    end
+  end
+
+  local elems = role
+  if type(role) == 'string' then
+    elems = getc(pane, role)
+  end
+  for _, ele in ipairs(elems or {}) do
+    if ele.AXIdentifier ~= nil then
+      if type(ident) == 'string' then
+        if ele.AXIdentifier:find(ident:gsub('%-', '%%-')) then
+          return true
+        end
+      else
+        if hs.fnutils.some(ident, function(id)
+              return ele.AXIdentifier:find(id:gsub('%-', '%%-')) ~= nil
+            end) then
+          return true
+        end
+      end
+    end
+  end
+  return false
+end
+
 local function popupControlCenterSubPanel(panel, allowReentry)
   local ident = controlCenterIdentifiers[panel]
   local app = find("com.apple.controlcenter")
-  local win = app:mainWindow()
-  local pane =
-      (OS_VERSION < OS.Ventura and "window 1" or "group 1 of window 1")
-      .. ' of application process "ControlCenter"'
+  local appUI = toappui(app)
+  local pane
 
-  local enter = nil
-  local makeEnter = function(role, identifier, index)
-    local testCmd
-    if type(identifier) == 'string' then
-      testCmd = strfmt([[
-        the value of attribute "AXIdentifier" of ele contains "%s"]],
-        identifier)
-    else
-      testCmd = strfmt([[
-        the value of attribute "AXIdentifier" of ele contains "%s" ¬
-        or the value of attribute "AXIdentifier" of ele contains "%s"]],
-        identifier[1], identifier[2])
+  local function enterPanel()
+    local role, index
+    if tcontain({ "Wi‑Fi", "Focus",
+                  "Bluetooth", "AirDrop",
+                  "Music Recognition" }, panel) then
+      role = AX.CheckBox index = 2
+    elseif panel == "Screen Mirroring" then
+      if OS_VERSION < OS.Ventura then
+        role = AX.CheckBox index = 2
+      else
+        role = AX.Button index = 1
+      end
+    elseif panel == "Display" then
+      role = OS_VERSION < OS.Ventura and AX.StaticText or AX.Group
+      index = 1
+    elseif panel == "Sound" then
+      role = AX.StaticText index = 1
+    elseif tcontain({ "Accessibility Shortcuts",
+                      "Battery", "Hearing", "Users",
+                      "Keyboard Brightness" }, panel) then
+      role = AX.Button index = 1
+    elseif panel == "Now Playing" then
+      local ele = getc(pane, AX.Image, -1)
+      local totalDelay = 0
+      while ele == nil do
+        hs.timer.usleep(0.05 * 1000000)
+        totalDelay = totalDelay + 0.05
+        if totalDelay > 3 then return end
+        ele = getc(pane, AX.Image, -1)
+      end
+      local act = ele:actionNames()[1]
+      ele:performAction(act)
+      return
     end
-    return [[
-      set panelFound to false
-      set totalDelay to 0.0
-      repeat until totalDelay > 0.9
-        repeat with ele in (every ]] .. role .. [[ of pane)
-          if (exists attribute "AXIdentifier" of ele) ¬
-              and (]] .. testCmd .. [[) then
-            set panelFound to true
-            perform action ]] .. tostring(index) .. [[of ele
-            exit repeat
-          end if
-        end repeat
-        if panelFound then
-          exit repeat
-        else
-          delay 0.1
-          set totalDelay to totalDelay + 0.1
-        end if
-      end repeat
-    ]]
-  end
-  if tcontain({ "Wi‑Fi", "Focus",
-                "Bluetooth", "AirDrop",
-                "Music Recognition" }, panel) then
-    enter = makeEnter("checkbox", ident, 2)
-  elseif panel == "Screen Mirroring" then
-    if OS_VERSION < OS.Ventura then
-      enter = makeEnter("checkbox", ident, 2)
-    else
-      enter = makeEnter("button", ident, 1)
-    end
-  elseif panel == "Display" then
-    enter = makeEnter(OS_VERSION < OS.Ventura
-        and "static text" or "group", ident, 1)
-  elseif panel == "Sound" then
-    enter = makeEnter("static text", ident, 1)
-  elseif tcontain({ "Accessibility Shortcuts",
-                    "Battery", "Hearing", "Users",
-                    "Keyboard Brightness" }, panel) then
-    enter = makeEnter("button", ident, 1)
-  elseif panel == "Now Playing" then
-    enter = [[
-      set panelFound to true
-      perform action 1 of last image of pane
-    ]]
+
+    local found = false
+    local totalDelay = 0
+    repeat
+      for _, ele in ipairs(getc(pane, role)) do
+        if ele.AXIdentifier ~= nil then
+          if type(ident) == 'string' then
+            found = ele.AXIdentifier:find(ident:gsub('%-', '%%-')) ~= nil
+          else
+            found = hs.fnutils.some(ident, function(id)
+              return ele.AXIdentifier:find(id:gsub('%-', '%%-')) ~= nil
+            end)
+          end
+          if found then
+            local act = ele:actionNames()[index]
+            ele:performAction(act)
+            break
+          else
+            hs.timer.usleep(0.05 * 1000000)
+            totalDelay = totalDelay + 0.05
+          end
+        end
+      end
+    until found or totalDelay > 0.9 or not pane:isValid()
   end
 
-  local foundInMenuBar = false
-  local ok, result
-  if win == nil then
+  local goToMainWindow = true
+  if app:mainWindow() == nil then
     for _, item in ipairs(getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem)) do
+      local foundInMenuBar
       if type(ident) == 'string' then
         foundInMenuBar = item.AXIdentifier:find(ident:gsub('%-', '%%-'))
       else
@@ -1126,7 +1184,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       if foundInMenuBar then
         if find("com.surteesstudios.Bartender") ~= nil then
           local menuBarPanel = panel == "Focus" and "Focus Modes" or panel
-          ok, result = hs.osascript.applescript(strfmt([[
+          hs.osascript.applescript(strfmt([[
             tell application id "com.surteesstudios.Bartender"
               activate "com.apple.controlcenter-%s"
             end tell
@@ -1134,153 +1192,44 @@ local function popupControlCenterSubPanel(panel, allowReentry)
         else
           item:performAction(AX.Press)
         end
-        break
+        registerControlCenterHotKeys(panel, true)
+        return
       end
-    end
-    if not foundInMenuBar then
-      local delayCmd = menuBarVisible() and "" or "delay 0.3"
-      ok, result = hs.osascript.applescript([[
-        tell application "System Events"
-          set controlitems to menu bar 1 ¬
-              of application process "ControlCenter"
-          set controlcenter to (first menu bar item whose ¬
-              value of attribute "AXIdentifier" ¬
-              contains "controlcenter") of controlitems
-          perform action 1 of controlcenter
-
-          ]] .. delayCmd .. [[ 
-          set pane to ]]..pane..[[ 
-          ]] .. enter .. [[
-          if panelFound then
-            return 1
-          else
-            return 0
-          end if
-        end tell
-      ]])
     end
   else
-    local already = nil
-    local makeAlready = function(role, identifier)
-      local testCmd
-      if type(identifier) == 'string' then
-        testCmd = strfmt([[
-          the value of attribute "AXIdentifier" of ele contains "%s"]],
-          identifier)
-      else
-        testCmd = strfmt([[
-          the value of attribute "AXIdentifier" of ele contains "%s" ¬
-          or the value of attribute "AXIdentifier" of ele contains "%s"]],
-          identifier[1], identifier[2])
-      end
-      return [[
-        repeat with ele in (every ]] .. role .. [[ of pane)
-          if (exists attribute "AXIdentifier" of ele) ¬
-              and (]] .. testCmd .. [[) then
-            set already to true
-            exit repeat
-          end if
-        end repeat
-      ]]
+    pane = getc(appUI, AX.Window, 1)
+    if OS_VERSION >= OS.Ventura then
+      pane = getc(pane, AX.Group, 1)
     end
-    if tcontain({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop",
-                  "Keyboard Brightness", "Screen Mirroring",
-                  "Accessibility Shortcuts", "Battery" }, panel) then
-      already = makeAlready("static text", ident)
-    elseif panel == "Display" then
-      already = [[
-        if exists scroll area 1 of pane then
-      ]] .. makeAlready("slider of scroll area 1", ident) .. [[
-        end if
-      ]]
-    elseif panel == "Sound" then
-      already = makeAlready("slider", ident)
-    elseif panel == "Music Recognition" then
-      already = makeAlready("group", ident)
-    elseif panel == "Hearing" then
-      already = [[
-        if value of attribute "AXRole" of ui element 1 of pane is "AXScrollArea" then
-      ]] .. makeAlready("static text of scroll area 1 ", ident) .. [[ 
-        else
-      ]] .. makeAlready("static text ", ident) .. [[ 
-        end if
-      ]]
-    elseif panel == "Now Playing" then
-      if OS_VERSION < OS.Ventura then
-        local mayLocalize = bind(controlCenterLocalized, "Now Playing")
-        already = [[
-          if (exists button "]] .. mayLocalize("rewind") .. [[" of pane) or  ¬
-              (exists button "]] .. mayLocalize("previous") .. [[" of pane) or ¬
-              (number of (buttons of pane whose title is "]] .. mayLocalize("play") .. [[" or ¬
-                  title is "]] .. mayLocalize("pause") .. [[") > 1)
-            set already to true
-          end if
-        ]]
-      else
-        already = [[
-          set already to ((exists image of pane) and ¬
-              (number of buttons of pane > 2))
-        ]]
-      end
-    elseif panel == "Users" then
-      already = [[
-        set already to number of ui elements of pane is number of buttons of pane
-      ]]
+    local wifiIdent = controlCenterIdentifiers["Wi‑Fi"]
+    local bluetoothIdent = controlCenterIdentifiers["Bluetooth"]
+    if testAlready("Wi‑Fi", pane, wifiIdent, AX.CheckBox)
+        and testAlready("Bluetooth", pane, bluetoothIdent, AX.CheckBox) then
+      goToMainWindow = false
+    elseif testAlready(panel, pane, ident) and not allowReentry then
+      return
     end
-
-    if allowReentry == nil then
-      allowReentry = false
-    end
-    allowReentry = tostring(allowReentry)
-    ok, result = hs.osascript.applescript([[
-      tell application "System Events"
-        set pane to ]]..pane..[[ 
-        set wifi to false
-        set bluetooth to false
-        repeat with ele in (every checkbox of pane)
-          if (exists attribute "AXIdentifier" of ele) then
-            if (the value of attribute "AXIdentifier" of ele contains ¬
-                "]] .. controlCenterIdentifiers["Wi‑Fi"] .. [[") then
-              set wifi to true
-            else if (the value of attribute "AXIdentifier" of ele contains ¬
-                "]] .. controlCenterIdentifiers["Bluetooth"] .. [[") then
-              set bluetooth to true
-            end if
-          end if
-        end repeat
-        if wifi and bluetooth then
-          ]] .. enter .. [[ 
-          return 1
-        else
-          set already to false
-          ]] .. already .. [[ 
-          if already and not ]] .. allowReentry .. [[ then
-            return 0
-          else
-            set controlitems to menu bar 1 ¬
-                of application process "ControlCenter"
-            set controlcenter to (first menu bar item whose ¬
-                value of attribute "AXIdentifier" ¬
-                contains "controlcenter") of controlitems
-            perform action 1 of controlcenter
-
-            delay 0.5
-            set pane to ]]..pane..[[ 
-            ]] .. enter .. [[ 
-            if panelFound then
-              return -1
-            else
-              return 0
-            end if
-          end if
-        end if
-      end tell
-    ]])
   end
 
-  if ok and result ~= 0 then
-    registerControlCenterHotKeys(panel, foundInMenuBar)
+  if goToMainWindow then
+    local menuBarItem = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 2)
+    menuBarItem:performAction(AX.Press)
+    pane = getc(appUI, AX.Window, 1)
+    local winTotalDelay = 0
+    if pane == nil then
+      repeat
+        hs.timer.usleep(0.05 * 1000000)
+        winTotalDelay = winTotalDelay + 0.05
+        if winTotalDelay > 1 then return end
+        pane = getc(appUI, AX.Window, 1)
+      until pane ~= nil
+    end
+    if OS_VERSION >= OS.Ventura then
+      pane = getc(pane, AX.Group, 1)
+    end
   end
+  enterPanel()
+  registerControlCenterHotKeys(panel)
 end
 
 local controlCenterPanels = {
@@ -1315,24 +1264,24 @@ local focusOptionHotkeys, focusOptionWatcher
 ---@diagnostic disable-next-line: lowercase-global
 function registerControlCenterHotKeys(panel, inMenuBar)
   local appUI = toappui(find('com.apple.controlcenter'))
-  local paneUI = getc(appUI, AX.Window, 1)
+  local pane = getc(appUI, AX.Window, 1)
   local winTotalDelay = 0
-  if paneUI == nil then
+  if pane == nil then
     repeat
       hs.timer.usleep(0.05 * 1000000)
       winTotalDelay = winTotalDelay + 0.05
       if winTotalDelay > 1 then return end
-      paneUI = getc(appUI, AX.Window, 1)
-    until paneUI ~= nil
+      pane = getc(appUI, AX.Window, 1)
+    until pane ~= nil
   end
   if OS_VERSION >= OS.Ventura then
-    paneUI = getc(paneUI, AX.Group, 1)
+    pane = getc(pane, AX.Group, 1)
     if panel == "Hearing" then
-      while #paneUI == 0 do
+      while #pane == 0 do
         hs.timer.usleep(0.05 * 1000000)
       end
-      if #paneUI == 1 and paneUI[1].AXRole == AX.ScrollArea then
-        paneUI = paneUI[1]
+      if #pane == 1 and pane[1].AXRole == AX.ScrollArea then
+        pane = pane[1]
       end
     end
   end
@@ -1411,14 +1360,14 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       local button
       repeat
         hs.timer.usleep(0.05 * 1000000)
-        local buttons = getc(paneUI, AX.Button)
+        local buttons = getc(pane, AX.Button)
         for i = #buttons, 1, -1 do
           if buttons[i].AXTitle:find("…") then
             button = buttons[i]
             break
           end
         end
-      until button or not paneUI:isValid()
+      until button or not pane:isValid()
       if button then
         local hotkey = newControlCenter("⌘", ",", result,
             function() button:performAction(AX.Press) end)
@@ -1447,7 +1396,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       btnName = controlCenterLocalized(searchPanel, btnName)
       local hotkey = newControlCenter("⌘", ",", btnName,
         function()
-          local button = getc(paneUI, AX.Button, -1)
+          local button = getc(pane, AX.Button, -1)
           if button then
             button:performAction(AX.Press)
           end
@@ -1488,11 +1437,11 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       hs.timer.usleep(0.05 * 1000000)
       if panel == "Display" then
         local role = OS_VERSION < OS.Ventura and AX.ScrollArea or AX.Group
-        enabledSliders = getc(paneUI, role, 1, AX.Slider)
+        enabledSliders = getc(pane, role, 1, AX.Slider)
       else
-        enabledSliders = getc(paneUI, AX.Slider)
+        enabledSliders = getc(pane, AX.Slider)
       end
-    until enabledSliders and #enabledSliders > 0 or not paneUI:isValid()
+    until enabledSliders and #enabledSliders > 0 or not pane:isValid()
     if #enabledSliders == 1 then
       for _, spec in ipairs(actions) do
         local key = spec[1]
@@ -1524,14 +1473,14 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     repeat
       hs.timer.usleep(0.05 * 1000000)
       totalDelay = totalDelay + 0.05
-      cbs = tifilter(getc(paneUI, AX.ScrollArea, 1, AX.CheckBox) or {},
+      cbs = tifilter(getc(pane, AX.ScrollArea, 1, AX.CheckBox) or {},
           function(cb) return cb.AXEnabled end)
       if #cbs == 0 and panel == "Screen Mirroring" then
-        cbs = tifilter(getc(paneUI, AX.ScrollArea, 1,
+        cbs = tifilter(getc(pane, AX.ScrollArea, 1,
             AX.Group, 1, AX.CheckBox) or {},
           function(cb) return cb.AXEnabled end)
       end
-    until #cbs > 0 or totalDelay > 1 or not paneUI:isValid()
+    until #cbs > 0 or totalDelay > 1 or not pane:isValid()
     if #cbs > 0 then
       for i=1, math.min(#cbs, 10) do
         local enabled = cbs[i].AXValue
@@ -1602,12 +1551,12 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     repeat
       hs.timer.usleep(0.05 * 1000000)
       totalDelay = totalDelay + 0.05
-      local sa = getc(paneUI, AX.ScrollArea, 1)
+      local sa = getc(pane, AX.ScrollArea, 1)
       if sa and sa[1] and sa[1].AXRole == "AXOpaqueProviderGroup" then
         sa = sa[1]
       end
       triangle = getc(sa, AX.DisclosureTriangle, 1)
-    until triangle or totalDelay > 0.5 or not paneUI:isValid()
+    until triangle or totalDelay > 0.5 or not pane:isValid()
     if triangle then
       local actionFunc = function()
         local actions = triangle:actionNames()
@@ -1622,18 +1571,18 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     selectNetworkHotkeys = {}
     local availableNetworksString = ""
     local selectNetworkActionFunc = function()
-      if not paneUI:isValid()
-          or paneUI[1] == nil or paneUI[1].AXIdentifier == nil then
+      if not pane:isValid()
+          or pane[1] == nil or pane[1].AXIdentifier == nil then
         return
       end
       local ident = controlCenterIdentifiers[panel]
       if type(ident) == 'string' then
-        if paneUI[1].AXIdentifier:find(ident:gsub('%-', '%%-')) == nil then
+        if pane[1].AXIdentifier:find(ident:gsub('%-', '%%-')) == nil then
           return
         end
       else
         if hs.fnutils.every(ident, function(id)
-          return paneUI[1].AXIdentifier:find(id:gsub('%-', '%%-')) == nil
+          return pane[1].AXIdentifier:find(id:gsub('%-', '%%-')) == nil
         end) then return end
       end
       local sa
@@ -1641,11 +1590,11 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       repeat
         hs.timer.usleep(0.05 * 1000000)
         totalDelay = totalDelay + 0.05
-        sa = getc(paneUI, AX.ScrollArea, 1)
+        sa = getc(pane, AX.ScrollArea, 1)
         if sa and sa[1] and sa[1].AXRole == "AXOpaqueProviderGroup" then
           sa = sa[1]
         end
-      until sa or totalDelay > 0.5 or not paneUI:isValid()
+      until sa or totalDelay > 0.5 or not pane:isValid()
       if sa then
         local availableNetworks = {}
         for idx, cb in ipairs(getc(sa, AX.CheckBox)) do
@@ -1695,10 +1644,10 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     local cb
     repeat
       hs.timer.usleep(0.05 * 1000000)
-      cb = getc(paneUI, AX.CheckBox, 3)
-    until cb or not paneUI:isValid()
+      cb = getc(pane, AX.CheckBox, 3)
+    until cb or not pane:isValid()
     if cb then
-      local cbs = { getc(paneUI, AX.CheckBox, 2), cb }
+      local cbs = { getc(pane, AX.CheckBox, 2), cb }
       local toggleNames
       if OS_VERSION < OS.Ventura then
         toggleNames = { cbs[1].AXTitle, cbs[2].AXTitle }
@@ -1726,11 +1675,11 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     local cb1
     repeat
       hs.timer.usleep(0.05 * 1000000)
-      cb1 = getc(paneUI, AX.CheckBox, 1)
-    until cb1 or not paneUI:isValid()
+      cb1 = getc(pane, AX.CheckBox, 1)
+    until cb1 or not pane:isValid()
     if cb1 then
-      local h = getc(paneUI, AX.CheckBox, 1).AXSize.h
-      local cbs = tifilter(getc(paneUI, AX.CheckBox),
+      local h = getc(pane, AX.CheckBox, 1).AXSize.h
+      local cbs = tifilter(getc(pane, AX.CheckBox),
           function(cb) return cb.AXSize.h == h end)
       local toggleNames
       if OS_VERSION < OS.Ventura then
@@ -1757,22 +1706,22 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       end
       local focusOptionIndex
       local registerFocusOptionsFunc = function()
-        if not paneUI:isValid()
-            or paneUI[1] == nil or paneUI[1].AXIdentifier == nil then
+        if not pane:isValid()
+            or pane[1] == nil or pane[1].AXIdentifier == nil then
           return
         end
         local ident = controlCenterIdentifiers[panel]
         if type(ident) == 'string' then
-          if paneUI[1].AXIdentifier:find(ident:gsub('%-', '%%-')) == nil then
+          if pane[1].AXIdentifier:find(ident:gsub('%-', '%%-')) == nil then
             return
           end
         else
           if hs.fnutils.every(ident, function(id)
-            return paneUI[1].AXIdentifier:find(id:gsub('%-', '%%-')) == nil
+            return pane[1].AXIdentifier:find(id:gsub('%-', '%%-')) == nil
           end) then return end
         end
         local index
-        for i, cb in ipairs(getc(paneUI, AX.CheckBox)) do
+        for i, cb in ipairs(getc(pane, AX.CheckBox)) do
           if cb.AXSize.h < h then
             index = i break
           end
@@ -1785,7 +1734,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         focusOptionHotkeys = nil
         if index == nil then return end
         focusOptionHotkeys = {}
-        local opts = tifilter(getc(paneUI, AX.CheckBox),
+        local opts = tifilter(getc(pane, AX.CheckBox),
             function(cb) return cb.AXSize.h < h end)
         for i=1,#opts do
           local title = i
@@ -1818,10 +1767,10 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     repeat
       hs.timer.usleep(0.05 * 1000000)
       totalDelay = totalDelay + 0.05
-      sa1 = getc(paneUI, role, 1)
-    until sa1 or totalDelay > 0.5 or not paneUI:isValid()
+      sa1 = getc(pane, role, 1)
+    until sa1 or totalDelay > 0.5 or not pane:isValid()
     local i, j
-    for m, sa in ipairs(getc(paneUI, role)) do
+    for m, sa in ipairs(getc(pane, role)) do
       for nn =1,#sa do
         local n = #sa - nn + 1
         if sa[n].AXRole == AX.DisclosureTriangle then
@@ -1831,7 +1780,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       end
     end
     if i and j then
-      local elem = getc(paneUI, role, i, nil, j)
+      local elem = getc(pane, role, i, nil, j)
       if elem then
         local hotkey = newControlCenter("", "Space",
             "Toggle Showing Display Presets",
@@ -1848,7 +1797,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     repeat
       hs.timer.usleep(0.05 * 1000000)
       cb3 = getc(area, AX.CheckBox, 3)
-    until cb3 or not paneUI:isValid()
+    until cb3 or not pane:isValid()
     if cb3 == nil then return end
     local cbs = getc(area, AX.CheckBox)
     local cbIdents = hs.fnutils.map(cbs, function (cb)
@@ -2018,7 +1967,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
   elseif panel == "Music Recognition" then
     local hotkey = newControlCenter("", "Space", "Toggle Listening",
       function()
-        local cb = getc(paneUI, AX.Group, 1, AX.CheckBox, 1)
+        local cb = getc(pane, AX.Group, 1, AX.CheckBox, 1)
         if cb then cb:performAction(AX.Press) end
       end)
     if not checkAndRegisterControlCenterHotKeys(hotkey) then
@@ -2044,17 +1993,17 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       repeat
         hs.timer.usleep(0.05 * 1000000)
         totalDelay = totalDelay + 0.05
-        slid = getc(paneUI, AX.Slider, 1)
-      until slid or totalDelay > 1 or not paneUI:isValid()
+        slid = getc(pane, AX.Slider, 1)
+      until slid or totalDelay > 1 or not pane:isValid()
       if slid == nil then
-        local triangle = getc(paneUI, AX.DisclosureTriangle, 1)
+        local triangle = getc(pane, AX.DisclosureTriangle, 1)
         if triangle == nil then
           return
         end
       end
 
       local actionFunc
-      local triangle = getc(paneUI, AX.DisclosureTriangle, 1)
+      local triangle = getc(pane, AX.DisclosureTriangle, 1)
       if triangle then
         actionFunc = function()
           local actions = triangle:actionNames()
@@ -2062,7 +2011,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
           hearingFunc()
         end
       else
-        triangle = getc(paneUI, AX.DisclosureTriangle, 1)
+        triangle = getc(pane, AX.DisclosureTriangle, 1)
         actionFunc = function()
           local actions = triangle:actionNames()
           triangle:performAction(actions[1])
@@ -2073,8 +2022,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
                                           slid and 1 or 0)
       if slid == nil then return end
 
-      local sliders = getc(paneUI, AX.Slider)
-          or getc(paneUI, AX.Slider)
+      local sliders = getc(pane, AX.Slider)
+          or getc(pane, AX.Slider)
       local enabledSliders = tifilter(sliders,
           function(slid) return slid.AXEnabled end)
       if #enabledSliders == 1 then
@@ -2105,9 +2054,9 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       local cbs
       repeat
         hs.timer.usleep(0.05 * 1000000)
-        cbs = getc(paneUI, AX.CheckBox)
+        cbs = getc(pane, AX.CheckBox)
         if cbs == nil then
-          cbs = tifilter(getc(paneUI, AX.CheckBox) or {}, function(cb)
+          cbs = tifilter(getc(pane, AX.CheckBox) or {}, function(cb)
             return cb.AXIdentifier and cb.AXIdentifier:find("button%-identifier") end)
         end
       until #cbs > 0
@@ -2138,8 +2087,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       "Toggle " .. mayLocalize("Background Sounds"),
       function()
         backgroundSoundsHotkeys = nil
-        local cb = getc(paneUI, AX.DisclosureTriangle, 1)
-            or getc(paneUI, AX.CheckBox, 1)
+        local cb = getc(pane, AX.DisclosureTriangle, 1)
+            or getc(pane, AX.CheckBox, 1)
         if cb then
           cb:performAction(AX.Press)
           hearingFunc()
@@ -2155,14 +2104,14 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     local button3
     repeat
       hs.timer.usleep(0.05 * 1000000)
-      button3 = getc(paneUI, AX.Button, 3)
-    until button3 or not paneUI:isValid()
+      button3 = getc(pane, AX.Button, 3)
+    until button3 or not pane:isValid()
     if button3 then
       if OS_VERSION < OS.Ventura then
-        result = hs.fnutils.map(getc(paneUI, AX.Button),
+        result = hs.fnutils.map(getc(pane, AX.Button),
             function(bt) return bt.AXTitle end)
       else
-        result = #getc(paneUI, AX.Button)
+        result = #getc(pane, AX.Button)
       end
       if (type(result) == "number" and result == 3)
           or (type(result) == "table" and #result == 3) then
@@ -2178,7 +2127,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
           function()
             if defaultMusicAppForControlCenter ~= nil then
               local appname = displayName('com.apple.Music')
-              local appTitle = getc(paneUI, AX.StaticText, 1)
+              local appTitle = getc(pane, AX.StaticText, 1)
               if appTitle and appTitle.AXValue == appname .. '.app' then
                 if type(defaultMusicAppForControlCenter) == 'string' then
                   defaultMusicAppForControlCenter =
@@ -2193,7 +2142,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
                 end
               end
             end
-            local button = getc(paneUI, AX.Button, 2)
+            local button = getc(pane, AX.Button, 2)
             if button then button:performAction(AX.Press) end
           end)
         if not checkAndRegisterControlCenterHotKeys(hotkey) then
@@ -2201,7 +2150,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         end
         hotkey = newControlCenter("", "Left", result[1],
           function()
-            local button = getc(paneUI, AX.Button, 1)
+            local button = getc(pane, AX.Button, 1)
             if button then button:performAction(AX.Press) end
           end)
         if not checkAndRegisterControlCenterHotKeys(hotkey) then
@@ -2209,7 +2158,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         end
         hotkey = newControlCenter("", "Right", result[3],
           function()
-            local button = getc(paneUI, AX.Button, 3)
+            local button = getc(pane, AX.Button, 3)
             if button then button:performAction(AX.Press) end
           end)
         if not checkAndRegisterControlCenterHotKeys(hotkey) then
@@ -2230,7 +2179,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
           hotkey = newControlCenter("", tostring(i),
             type(result) == "number" and buttonLabel or result[2*i-1],
             function()
-              local button = getc(paneUI, AX.Button, 2 * i - 1)
+              local button = getc(pane, AX.Button, 2 * i - 1)
               if button then button:performAction(AX.Press) end
             end)
           if not checkAndRegisterControlCenterHotKeys(hotkey) then
@@ -2240,107 +2189,6 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       end
     end
   end
-end
-
-local function getActiveControlCenterPanel()
-  local pane =
-      (OS_VERSION < OS.Ventura and "window 1" or "group 1 of window 1")
-      .. ' of application process "ControlCenter"'
-
-  local function mayLocalize(value)
-    return controlCenterLocalized("Now Playing", value)
-  end
-
-  local makeAlready = function(role, identifier, panel)
-      local testCmd
-      if type(identifier) == 'string' then
-        testCmd = strfmt([[
-          the value of attribute "AXIdentifier" of ele contains "%s"]],
-          identifier)
-      else
-        testCmd = strfmt([[
-          the value of attribute "AXIdentifier" of ele contains "%s" ¬
-          or the value of attribute "AXIdentifier" of ele contains "%s"]],
-          identifier[1], identifier[2])
-      end
-      return [[
-        repeat with ele in (every ]] .. role .. [[ of pane)
-          if (exists attribute "AXIdentifier" of ele) ¬
-              and (]] .. testCmd .. [[) then
-            return "]] .. panel .. [["
-          end if
-        end repeat
-      ]]
-    end
-  local script = [[
-    tell application "System Events"
-      set pane to ]]..pane..[[ 
-  ]]
-  for panel, ident in pairs(controlCenterIdentifiers) do
-    local already = nil
-    if tcontain({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop",
-          "Keyboard Brightness", "Screen Mirroring",
-          "Accessibility Shortcuts", "Battery" }, panel) then
-      already = makeAlready("static text", ident, panel)
-    elseif panel == "Display" then
-      already = [[
-        if exists scroll area 1 of pane then
-      ]] .. makeAlready("slider of scroll area 1", ident, panel) .. [[ 
-        end if
-      ]]
-    elseif panel == "Sound" then
-      already = makeAlready("slider", ident, panel)
-    elseif panel == "Music Recognition" then
-      already = makeAlready("group", ident, panel)
-    elseif panel == "Hearing" then
-      already = [[
-        if value of attribute "AXRole" of ui element 1 of pane is "AXScrollArea" then
-      ]] .. makeAlready("static text of scroll area 1 ", ident, panel) .. [[ 
-        else
-      ]] .. makeAlready("static text ", ident, panel) .. [[ 
-        end if
-      ]]
-    elseif panel == "Users" then
-      already = [[
-        if number of ui elements of pane is number of buttons of pane then
-          return "Users"
-        end if
-      ]]
-    end
-    if already then
-      script = script .. [[
-        ]] .. already .. [[
-      ]]
-    end
-  end
-  local already
-  if OS_VERSION < OS.Ventura then
-    already = [[
-      if (exists button "]] .. mayLocalize("rewind") .. [[" of pane) or  ¬
-          (exists button "]] .. mayLocalize("previous") .. [[" of pane) or ¬
-          (number of (buttons of pane whose title ¬
-              is "]] .. mayLocalize("play") .. [[" ¬
-              or title is "]] .. mayLocalize("pause") .. [[") > 1) then
-        return "Now Playing"
-      end if
-    ]]
-  else
-    already = [[
-      if ((exists image of pane) and ¬
-          (number of buttons of pane > 2)) then
-        return "Now Playing"
-      end if
-    ]]
-  end
-  script = script .. [[
-    ]] .. already .. [[
-  ]]
-
-  script = script .. [[
-    end tell
-  ]]
-  local ok, panel = hs.osascript.applescript(script)
-  return panel
 end
 
 local controlCenter = find("com.apple.controlcenter")
@@ -2407,6 +2255,19 @@ end
 ControlCenterObserver:callback(controlCenterObserverCallback)
 ControlCenterObserver:start()
 
+local function getActiveControlCenterPanel()
+  local appUI = toappui(find('com.apple.controlcenter'))
+  local pane = getc(appUI, AX.Window, 1)
+  if OS_VERSION >= OS.Ventura then
+    pane = getc(pane, AX.Group, 1)
+  end
+
+  for panel, ident in pairs(controlCenterIdentifiers) do
+    if testAlready(panel, pane, ident) then
+      return panel
+    end
+  end
+end
 if hs.window.focusedWindow() ~= nil
     and hs.window.focusedWindow():application():bundleID()
         == "com.apple.controlcenter"
