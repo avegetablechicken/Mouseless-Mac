@@ -707,8 +707,7 @@ local function registerProxySettingsEntry(menu)
       else
         action()
       end
-    end,
-    shortcut = 'p'
+    end
   })
 end
 
