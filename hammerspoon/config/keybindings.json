@@ -3,7 +3,6 @@
     "hyper": "F18",
     "app": ["option", "command"],
     "daemon": ["shift", "option"],
-    "focusScreen": ["shift", "control"]
   },
 
   "parameters": {
@@ -79,47 +78,47 @@
         "key": "X"
       },
       "focusScreen1": {
-        "mods": "${hyper.focusScreen}",
+        "mods": ["shift", "control"],
         "key": "1"
       },
       "focusScreen2": {
-        "mods": "${hyper.focusScreen}",
+        "mods": ["shift", "control"],
         "key": "2"
       },
       "focusScreen3": {
-        "mods": "${hyper.focusScreen}",
+        "mods": ["shift", "control"],
         "key": "3"
       },
       "focusScreen4": {
-        "mods": "${hyper.focusScreen}",
+        "mods": ["shift", "control"],
         "key": "4"
       },
       "focusScreen5": {
-        "mods": "${hyper.focusScreen}",
+        "mods": ["shift", "control"],
         "key": "5"
       },
       "focusScreen6": {
-        "mods": "${hyper.focusScreen}",
+        "mods": ["shift", "control"],
         "key": "6"
       },
       "focusScreen7": {
-        "mods": "${hyper.focusScreen}",
+        "mods": ["shift", "control"],
         "key": "7"
       },
       "focusScreen8": {
-        "mods": "${hyper.focusScreen}",
+        "mods": ["shift", "control"],
         "key": "8"
       },
       "focusScreen9": {
-        "mods": "${hyper.focusScreen}",
+        "mods": ["shift", "control"],
         "key": "9"
       },
       "focusPrevScreen": {
-        "mods": "${hyper.focusScreen}",
+        "mods": ["shift", "control"],
         "key": "left"
       },
       "focusNextScreen": {
-        "mods": "${hyper.focusScreen}",
+        "mods": ["shift", "control"],
         "key": "right"
       }
     },
