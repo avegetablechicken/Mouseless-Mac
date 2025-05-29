@@ -803,14 +803,15 @@ local bartenderBarItemIDs
 local bartenderBarWindowFilter = { allowTitles = "^Bartender Bar$" }
 BartenderBarFilter = nil
 local function getBartenderBarItemTitle(index, rightClick)
-  return function(app)
+  return function(win)
     if bartenderBarItemNames == nil then
-      local winUI = towinui(app:focusedWindow())
+      local winUI = towinui(win)
       local icons = getc(winUI, AX.ScrollArea, 1, AX.List, 1, AX.List, 1)
       local appnames = hs.fnutils.map(getc(icons, AX.Group), function(g)
         return getc(g, AX.Image, 1).AXDescription
       end)
       if #appnames > 0 then
+        local app = win:application()
         local appid = app:bundleID()
         local _, items = hs.osascript.applescript(strfmt([[
           tell application id "%s" to list menu bar items
@@ -962,16 +963,14 @@ local barbeeBarWindowFilter = {
 }
 BarbeeBarObserver = nil
 local function getBarbeeBarItemTitle(index)
-  return function(app)
+  return function(win)
     if barbeeBarItemNames == nil then
-      local win = tfind(app:visibleWindows(), barbeeBarWindowFilter.fn)
-      if win == nil then return end
       local winUI = towinui(win)
       local buttons = getc(winUI, AX.Group, 1, AX.Button)
       barbeeBarItemNames = hs.fnutils.map(buttons, function(bt)
         return bt.AXHelp
       end)
-      BarbeeBarObserver = uiobserver.new(app:pid())
+      BarbeeBarObserver = uiobserver.new(win:application():pid())
       BarbeeBarObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
       BarbeeBarObserver:callback(
           function()
@@ -997,11 +996,7 @@ end
 -- ### Ice
 local iceBarWindowFilter = { allowTitles = "^Ice Bar$" }
 local function getIceBarItemTitle(index)
-  return function(app)
-    local win = tfind(app:visibleWindows(), function(win)
-      return win:title():match(iceBarWindowFilter.allowTitles)
-    end)
-    if win == nil then return end
+  return function(win)
     local buttons = getc(towinui(win), AX.Group, 1,
         AX.ScrollArea, 1, AX.Image)
     if #buttons >= index then
@@ -1026,9 +1021,8 @@ local iBarWindowFilter = {
   allowTitles = "^iBarmenu$"
 }
 local function getiBarItemTitle(index)
-  return function(app)
-    if app:focusedWindow() == nil then return end
-    local buttons = getc(towinui(app:focusedWindow()), AX.Button)
+  return function(win)
+    local buttons = getc(towinui(win), AX.Button)
     if buttons and #buttons >= index then
       local ident = buttons[index].AXIdentifier
       local items = strsplit(ident, '/')
@@ -1279,11 +1273,21 @@ local function dumpPlistKeyBinding(mode, mods, key)
 end
 
 -- fetch localized string as hotkey message after activating the app
+local function getAppId(app)
+  if type(app) == 'string' then
+    return app
+  elseif app.application ~= nil then
+    return app:application():bundleID()
+  else
+    return app:bundleID()
+  end
+end
+
 local function commonLocalizedMessage(message)
   if message == "Hide" or message == "Quit" then
     return function(app)
-      local appname = displayName(app)
-      local appid = type(app) == 'string' and app or app:bundleID()
+      local appname = displayName(app.application and app:application() or app)
+      local appid = getAppId(app)
       local appLocale = applicationValidLocale(appid)
       if appLocale ~= nil then
         local result = localizedString(message .. ' App Store',
@@ -1297,7 +1301,7 @@ local function commonLocalizedMessage(message)
     end
   elseif message == "Back" then
     return function(app)
-      local appid = type(app) == 'string' and app or app:bundleID()
+      local appid = getAppId(app)
       local appLocale = applicationValidLocale(appid)
       if appLocale ~= nil then
         local result = localizedString(message, 'com.apple.AppStore',
@@ -1310,7 +1314,7 @@ local function commonLocalizedMessage(message)
     end
   else
     return function(app)
-      local appid = type(app) == 'string' and app or app:bundleID()
+      local appid = getAppId(app)
       local appLocale = applicationValidLocale(appid)
       if appLocale ~= nil then
         for _, stem in ipairs{ 'MenuCommands', 'Menus', 'Common' } do
@@ -1330,7 +1334,7 @@ end
 
 local function localizedMessage(message, params, sep)
   return function(app)
-    local appid = type(app) == 'string' and app or app:bundleID()
+    local appid = getAppId(app)
     if type(message) == 'string' then
       local str = localizedString(message, appid, params) or message
       return type(str) == 'string' and str or str[1]
@@ -4323,9 +4327,8 @@ appHotKeyCallbacks = {
       fn = clickRightMenuBarItem
     },
     ["newPassword"] = {
-      message = function(app)
-        local winUI = towinui(app:focusedWindow())
-        local button = getc(winUI, AX.Group, 1, AX.Button, 'plus')
+      message = function(win)
+        local button = getc(towinui(win), AX.Group, 1, AX.Button, 'plus')
         if button then return button.AXHelp end
       end,
       windowFilter = {
@@ -4341,9 +4344,8 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["showAllPasswords"] = {
-      message = function(app)
-        local winUI = towinui(app:focusedWindow())
-        local button = getc(winUI, AX.Group, 1, AX.Button, 'macwindow')
+      message = function(win)
+        local button = getc(towinui(win), AX.Group, 1, AX.Button, 'macwindow')
         if button then return button.AXHelp end
       end,
       windowFilter = {
@@ -6085,7 +6087,7 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter, event)
     if hasKey and isForWindow and isBackground and bindable()
         and sameFilter(windowFilter, filter) then
       local msg = type(cfg.message) == 'string'
-          and cfg.message or cfg.message(app)
+          and cfg.message or cfg.message(win)
       if msg ~= nil then
         local config = tcopy(cfg)
         config.mods = keybinding.mods
