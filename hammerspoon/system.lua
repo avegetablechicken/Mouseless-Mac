@@ -1086,18 +1086,9 @@ local function testAlready(panel, pane, ident, role)
     elems = getc(pane, role)
   end
   for _, ele in ipairs(elems or {}) do
-    if ele.AXIdentifier ~= nil then
-      if type(ident) == 'string' then
-        if ele.AXIdentifier:find(ident:gsub('%-', '%%-')) then
-          return true
-        end
-      else
-        if hs.fnutils.some(ident, function(id)
-              return ele.AXIdentifier:find(id:gsub('%-', '%%-')) ~= nil
-            end) then
-          return true
-        end
-      end
+    if ele.AXIdentifier ~= nil
+        and ele.AXIdentifier:find(ident:gsub('%-', '%%-')) then
+      return true
     end
   end
   return false
@@ -1144,56 +1135,43 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       return
     end
 
-    local found = false
+    local ele
     local totalDelay = 0
     repeat
-      for _, ele in ipairs(getc(pane, role)) do
-        if ele.AXIdentifier ~= nil then
-          if type(ident) == 'string' then
-            found = ele.AXIdentifier:find(ident:gsub('%-', '%%-')) ~= nil
-          else
-            found = hs.fnutils.some(ident, function(id)
-              return ele.AXIdentifier:find(id:gsub('%-', '%%-')) ~= nil
-            end)
-          end
-          if found then
-            local act = ele:actionNames()[index]
-            ele:performAction(act)
-            break
-          else
-            hs.timer.usleep(0.05 * 1000000)
-            totalDelay = totalDelay + 0.05
-          end
-        end
+      ele = tfind(getc(pane, role), function(e)
+        return e.AXIdentifier ~= nil
+            and e.AXIdentifier:find(ident:gsub('%-', '%%-')) ~= nil
+      end)
+      if ele == nil then
+        hs.timer.usleep(0.05 * 1000000)
+        totalDelay = totalDelay + 0.05
       end
-    until found or totalDelay > 0.9 or not pane:isValid()
+    until ele or totalDelay > 0.9 or not pane:isValid()
+    if ele then
+      local act = ele:actionNames()[index]
+      ele:performAction(act)
+    end
   end
 
   local goToMainWindow = true
   if app:mainWindow() == nil then
-    for _, item in ipairs(getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem)) do
-      local foundInMenuBar
-      if type(ident) == 'string' then
-        foundInMenuBar = item.AXIdentifier:find(ident:gsub('%-', '%%-'))
+    local locPanel = controlCenterLocalized(panel)
+    local item = tfind(getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem), function(elem)
+      return elem.AXDescription and elem.AXDescription:find(locPanel)
+    end)
+    if item then
+      if find("com.surteesstudios.Bartender") ~= nil then
+        local menuBarPanel = panel == "Focus" and "Focus Modes" or panel
+        hs.osascript.applescript(strfmt([[
+          tell application id "com.surteesstudios.Bartender"
+            activate "com.apple.controlcenter-%s"
+          end tell
+        ]], menuBarPanel:gsub(" ", ""):gsub("‑", "")))
       else
-        foundInMenuBar = hs.fnutils.some(ident, function(id)
-          return item.AXIdentifier:find(id:gsub('%-', '%%-'))
-        end)
+        item:performAction(AX.Press)
       end
-      if foundInMenuBar then
-        if find("com.surteesstudios.Bartender") ~= nil then
-          local menuBarPanel = panel == "Focus" and "Focus Modes" or panel
-          hs.osascript.applescript(strfmt([[
-            tell application id "com.surteesstudios.Bartender"
-              activate "com.apple.controlcenter-%s"
-            end tell
-          ]], menuBarPanel:gsub(" ", ""):gsub("‑", "")))
-        else
-          item:performAction(AX.Press)
-        end
-        registerControlCenterHotKeys(panel, true)
-        return
-      end
+      registerControlCenterHotKeys(panel, true)
+      return
     end
   else
     pane = getc(appUI, AX.Window, 1)
@@ -1575,14 +1553,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         return
       end
       local ident = controlCenterIdentifiers[panel]
-      if type(ident) == 'string' then
-        if pane[1].AXIdentifier:find(ident:gsub('%-', '%%-')) == nil then
-          return
-        end
-      else
-        if hs.fnutils.every(ident, function(id)
-          return pane[1].AXIdentifier:find(id:gsub('%-', '%%-')) == nil
-        end) then return end
+      if pane[1].AXIdentifier:find(ident:gsub('%-', '%%-')) == nil then
+        return
       end
       local sa
       local totalDelay = 0
@@ -1710,14 +1682,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
           return
         end
         local ident = controlCenterIdentifiers[panel]
-        if type(ident) == 'string' then
-          if pane[1].AXIdentifier:find(ident:gsub('%-', '%%-')) == nil then
-            return
-          end
-        else
-          if hs.fnutils.every(ident, function(id)
-            return pane[1].AXIdentifier:find(id:gsub('%-', '%%-')) == nil
-          end) then return end
+        if pane[1].AXIdentifier:find(ident:gsub('%-', '%%-')) == nil then
+          return
         end
         local index
         for i, cb in ipairs(getc(pane, AX.CheckBox)) do
