@@ -1683,12 +1683,12 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       end
     end
   elseif panel == "Focus" then
-    local cb2
+    local cb1
     repeat
       hs.timer.usleep(0.05 * 1000000)
-      cb2 = getc(paneUI, AX.CheckBox, 2)
-    until cb2 or not paneUI:isValid()
-    if cb2 then
+      cb1 = getc(paneUI, AX.CheckBox, 1)
+    until cb1 or not paneUI:isValid()
+    if cb1 then
       local h = getc(paneUI, AX.CheckBox, 1).AXSize.h
       local cbs = tifilter(getc(paneUI, AX.CheckBox),
           function(cb) return cb.AXSize.h == h end)
