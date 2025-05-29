@@ -1591,8 +1591,9 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     selectNetworkHotkeys = {}
     local availableNetworksString = ""
     local selectNetworkActionFunc = function()
-      if paneUI[1] == nil or
-          paneUI[1].AXIdentifier ~= controlCenterSubPanelIdentifiers[panel] then
+      if paneUI[1] == nil or paneUI[1].AXIdentifier == nil
+          or paneUI[1].AXIdentifier:find(
+          controlCenterSubPanelIdentifiers[panel]:gsub('%-', '%%-')) == nil then
         return
       end
       local sa
@@ -1717,8 +1718,9 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       local focusOptionIndex
       local registerFocusOptionsFunc = function()
         if not paneUI:isValid() then return end
-        if paneUI[1] == nil or
-            paneUI[1].AXIdentifier ~= controlCenterSubPanelIdentifiers[panel] then
+        if paneUI[1] == nil or paneUI[1].AXIdentifier == nil
+            or paneUI[1].AXIdentifier:find(
+            controlCenterSubPanelIdentifiers[panel]:gsub('%-', '%%-')) == nil then
           return
         end
         local index
