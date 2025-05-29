@@ -1019,9 +1019,8 @@ local function bindControlCenterURL(panel, func)
 end
 
 local controlCenterIdentifiers = hs.json.read("static/controlcenter-identifies.json")
-local controlCenterSubPanelIdentifiers = controlCenterIdentifiers.subpanel
-local controlCenterMenuBarItemIdentifiers = controlCenterIdentifiers.menubar
 local controlCenterAccessibiliyIdentifiers = controlCenterIdentifiers.accessibility
+controlCenterIdentifiers.accessibility = nil
 local defaultMusicAppForControlCenter
 defaultMusicAppForControlCenter = ApplicationConfigs["defaultMusicAppForControlCenter"]
 
@@ -1046,7 +1045,7 @@ local function controlCenterLocalized(panel, key)
 end
 
 local function popupControlCenterSubPanel(panel, allowReentry)
-  local ident = controlCenterSubPanelIdentifiers[panel]
+  local ident = controlCenterIdentifiers[panel]
   local app = find("com.apple.controlcenter")
   local win = app:mainWindow()
   local pane =
@@ -1054,46 +1053,58 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       .. ' of application process "ControlCenter"'
 
   local enter = nil
-  local enterTemplate = [[
-    set panelFound to false
-    set totalDelay to 0.0
-    repeat until totalDelay > 0.9
-      repeat with ele in (every %s of pane)
-        if (exists attribute "AXIdentifier" of ele) ¬
-            and (the value of attribute "AXIdentifier" ¬
-                 of ele contains "%s") then
-          set panelFound to true
-          perform action %d of ele
+  local makeEnter = function(role, identifier, index)
+    local testCmd
+    if type(identifier) == 'string' then
+      testCmd = strfmt([[
+        the value of attribute "AXIdentifier" of ele contains "%s"]],
+        identifier)
+    else
+      testCmd = strfmt([[
+        the value of attribute "AXIdentifier" of ele contains "%s" ¬
+        or the value of attribute "AXIdentifier" of ele contains "%s"]],
+        identifier[1], identifier[2])
+    end
+    return [[
+      set panelFound to false
+      set totalDelay to 0.0
+      repeat until totalDelay > 0.9
+        repeat with ele in (every ]] .. role .. [[ of pane)
+          if (exists attribute "AXIdentifier" of ele) ¬
+              and (]] .. testCmd .. [[) then
+            set panelFound to true
+            perform action ]] .. tostring(index) .. [[of ele
+            exit repeat
+          end if
+        end repeat
+        if panelFound then
           exit repeat
+        else
+          delay 0.1
+          set totalDelay to totalDelay + 0.1
         end if
       end repeat
-      if panelFound then
-        exit repeat
-      else
-        delay 0.1
-        set totalDelay to totalDelay + 0.1
-      end if
-    end repeat
-  ]]
+    ]]
+  end
   if tcontain({ "Wi‑Fi", "Focus",
                 "Bluetooth", "AirDrop",
                 "Music Recognition" }, panel) then
-    enter = strfmt(enterTemplate, "checkbox", ident, 2)
+    enter = makeEnter("checkbox", ident, 2)
   elseif panel == "Screen Mirroring" then
     if OS_VERSION < OS.Ventura then
-      enter = strfmt(enterTemplate, "checkbox", ident, 2)
+      enter = makeEnter("checkbox", ident, 2)
     else
-      enter = strfmt(enterTemplate, "button", ident, 1)
+      enter = makeEnter("button", ident, 1)
     end
   elseif panel == "Display" then
-    enter = strfmt(enterTemplate, OS_VERSION < OS.Ventura
+    enter = makeEnter(OS_VERSION < OS.Ventura
         and "static text" or "group", ident, 1)
   elseif panel == "Sound" then
-    enter = strfmt(enterTemplate, "static text", ident, 1)
+    enter = makeEnter("static text", ident, 1)
   elseif tcontain({ "Accessibility Shortcuts",
                     "Battery", "Hearing", "Users",
                     "Keyboard Brightness" }, panel) then
-    enter = strfmt(enterTemplate, "button", ident, 1)
+    enter = makeEnter("button", ident, 1)
   elseif panel == "Now Playing" then
     enter = [[
       set panelFound to true
@@ -1105,7 +1116,14 @@ local function popupControlCenterSubPanel(panel, allowReentry)
   local ok, result
   if win == nil then
     for _, item in ipairs(getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem)) do
-      if item.AXIdentifier:find(controlCenterMenuBarItemIdentifiers[panel]) then
+      if type(ident) == 'string' then
+        foundInMenuBar = item.AXIdentifier:find(ident:gsub('%-', '%%-'))
+      else
+        foundInMenuBar = hs.fnutils.some(ident, function(id)
+          return item.AXIdentifier:find(id:gsub('%-', '%%-'))
+        end)
+      end
+      if foundInMenuBar then
         if find("com.surteesstudios.Bartender") ~= nil then
           local menuBarPanel = panel == "Focus" and "Focus Modes" or panel
           ok, result = hs.osascript.applescript(strfmt([[
@@ -1116,7 +1134,6 @@ local function popupControlCenterSubPanel(panel, allowReentry)
         else
           item:performAction(AX.Press)
         end
-        foundInMenuBar = true
         break
       end
     end
@@ -1144,38 +1161,48 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     end
   else
     local already = nil
-    local alreadyTemplate = [[
-      repeat with ele in (every %s of pane)
-        if (exists attribute "AXIdentifier" of ele) ¬
-            and (the value of attribute "AXIdentifier" of ele ¬
-                 contains "%s") then
-          set already to true
-          exit repeat
-        end if
-      end repeat
-    ]]
+    local makeAlready = function(role, identifier)
+      local testCmd
+      if type(identifier) == 'string' then
+        testCmd = strfmt([[
+          the value of attribute "AXIdentifier" of ele contains "%s"]],
+          identifier)
+      else
+        testCmd = strfmt([[
+          the value of attribute "AXIdentifier" of ele contains "%s" ¬
+          or the value of attribute "AXIdentifier" of ele contains "%s"]],
+          identifier[1], identifier[2])
+      end
+      return [[
+        repeat with ele in (every ]] .. role .. [[ of pane)
+          if (exists attribute "AXIdentifier" of ele) ¬
+              and (]] .. testCmd .. [[) then
+            set already to true
+            exit repeat
+          end if
+        end repeat
+      ]]
+    end
     if tcontain({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop",
                   "Keyboard Brightness", "Screen Mirroring",
                   "Accessibility Shortcuts", "Battery" }, panel) then
-      already = strfmt(alreadyTemplate, "static text", ident)
+      already = makeAlready("static text", ident)
     elseif panel == "Display" then
       already = [[
         if exists scroll area 1 of pane then
-      ]] .. strfmt(alreadyTemplate, "slider of scroll area 1", ident) .. [[
+      ]] .. makeAlready("slider of scroll area 1", ident) .. [[
         end if
       ]]
     elseif panel == "Sound" then
-      already = strfmt(alreadyTemplate, "slider", ident)
+      already = makeAlready("slider", ident)
     elseif panel == "Music Recognition" then
-      already = strfmt(alreadyTemplate, "group", ident)
+      already = makeAlready("group", ident)
     elseif panel == "Hearing" then
       already = [[
         if value of attribute "AXRole" of ui element 1 of pane is "AXScrollArea" then
-      ]] .. strfmt(alreadyTemplate, "static text of scroll area 1 ",
-                   controlCenterMenuBarItemIdentifiers[panel], panel) .. [[ 
+      ]] .. makeAlready("static text of scroll area 1 ", ident) .. [[ 
         else
-      ]] .. strfmt(alreadyTemplate, "static text ",
-                   controlCenterMenuBarItemIdentifiers[panel], panel) .. [[ 
+      ]] .. makeAlready("static text ", ident) .. [[ 
         end if
       ]]
     elseif panel == "Now Playing" then
@@ -1213,10 +1240,10 @@ local function popupControlCenterSubPanel(panel, allowReentry)
         repeat with ele in (every checkbox of pane)
           if (exists attribute "AXIdentifier" of ele) then
             if (the value of attribute "AXIdentifier" of ele contains ¬
-                "]] .. controlCenterSubPanelIdentifiers["Wi‑Fi"] .. [[") then
+                "]] .. controlCenterIdentifiers["Wi‑Fi"] .. [[") then
               set wifi to true
             else if (the value of attribute "AXIdentifier" of ele contains ¬
-                "]] .. controlCenterSubPanelIdentifiers["Bluetooth"] .. [[") then
+                "]] .. controlCenterIdentifiers["Bluetooth"] .. [[") then
               set bluetooth to true
             end if
           end if
@@ -1363,7 +1390,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         controlCenterSubPanelWatcher = nil
       end
 
-      local ident = controlCenterMenuBarItemIdentifiers["Control Center"]
+      local ident = controlCenterIdentifiers["Control Center"]
       local menuBarItem = tfind(getc(appUI, AX.MenuBar, -1, AX.MenuBarItem),
         function(item)
           return item.AXIdentifier:find(ident) ~= nil
@@ -1595,10 +1622,19 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     selectNetworkHotkeys = {}
     local availableNetworksString = ""
     local selectNetworkActionFunc = function()
-      if paneUI[1] == nil or paneUI[1].AXIdentifier == nil
-          or paneUI[1].AXIdentifier:find(
-          controlCenterSubPanelIdentifiers[panel]:gsub('%-', '%%-')) == nil then
+      if not paneUI:isValid()
+          or paneUI[1] == nil or paneUI[1].AXIdentifier == nil then
         return
+      end
+      local ident = controlCenterIdentifiers[panel]
+      if type(ident) == 'string' then
+        if paneUI[1].AXIdentifier:find(ident:gsub('%-', '%%-')) == nil then
+          return
+        end
+      else
+        if hs.fnutils.every(ident, function(id)
+          return paneUI[1].AXIdentifier:find(id:gsub('%-', '%%-')) == nil
+        end) then return end
       end
       local sa
       local totalDelay = 0
@@ -1721,11 +1757,19 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       end
       local focusOptionIndex
       local registerFocusOptionsFunc = function()
-        if not paneUI:isValid() then return end
-        if paneUI[1] == nil or paneUI[1].AXIdentifier == nil
-            or paneUI[1].AXIdentifier:find(
-            controlCenterSubPanelIdentifiers[panel]:gsub('%-', '%%-')) == nil then
+        if not paneUI:isValid()
+            or paneUI[1] == nil or paneUI[1].AXIdentifier == nil then
           return
+        end
+        local ident = controlCenterIdentifiers[panel]
+        if type(ident) == 'string' then
+          if paneUI[1].AXIdentifier:find(ident:gsub('%-', '%%-')) == nil then
+            return
+          end
+        else
+          if hs.fnutils.every(ident, function(id)
+            return paneUI[1].AXIdentifier:find(id:gsub('%-', '%%-')) == nil
+          end) then return end
         end
         local index
         for i, cb in ipairs(getc(paneUI, AX.CheckBox)) do
@@ -2207,44 +2251,59 @@ local function getActiveControlCenterPanel()
     return controlCenterLocalized("Now Playing", value)
   end
 
-  local alreadyTemplate = [[
-    repeat with ele in (every %s of pane)
-      if (exists attribute "AXIdentifier" of ele) ¬
-          and (the value of attribute "AXIdentifier" ¬
-               of ele contains "%s") then
-        return "%s"
-      end if
-    end repeat
-  ]]
+  local makeAlready = function(role, identifier, panel)
+      local testCmd
+      if type(identifier) == 'string' then
+        testCmd = strfmt([[
+          the value of attribute "AXIdentifier" of ele contains "%s"]],
+          identifier)
+      else
+        testCmd = strfmt([[
+          the value of attribute "AXIdentifier" of ele contains "%s" ¬
+          or the value of attribute "AXIdentifier" of ele contains "%s"]],
+          identifier[1], identifier[2])
+      end
+      return [[
+        repeat with ele in (every ]] .. role .. [[ of pane)
+          if (exists attribute "AXIdentifier" of ele) ¬
+              and (]] .. testCmd .. [[) then
+            return "]] .. panel .. [["
+          end if
+        end repeat
+      ]]
+    end
   local script = [[
     tell application "System Events"
       set pane to ]]..pane..[[ 
   ]]
-  for panel, ident in pairs(controlCenterSubPanelIdentifiers) do
+  for panel, ident in pairs(controlCenterIdentifiers) do
     local already = nil
     if tcontain({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop",
           "Keyboard Brightness", "Screen Mirroring",
           "Accessibility Shortcuts", "Battery" }, panel) then
-      already = strfmt(alreadyTemplate, "static text", ident, panel)
+      already = makeAlready("static text", ident, panel)
     elseif panel == "Display" then
       already = [[
         if exists scroll area 1 of pane then
-      ]] .. strfmt(alreadyTemplate,
-            "slider of scroll area 1", ident, panel) .. [[ 
+      ]] .. makeAlready("slider of scroll area 1", ident, panel) .. [[ 
         end if
       ]]
     elseif panel == "Sound" then
-      already = strfmt(alreadyTemplate, "slider", ident, panel)
+      already = makeAlready("slider", ident, panel)
     elseif panel == "Music Recognition" then
-      already = strfmt(alreadyTemplate, "group", ident, panel)
+      already = makeAlready("group", ident, panel)
     elseif panel == "Hearing" then
       already = [[
         if value of attribute "AXRole" of ui element 1 of pane is "AXScrollArea" then
-      ]] .. strfmt(alreadyTemplate, "static text of scroll area 1 ",
-                   controlCenterMenuBarItemIdentifiers[panel], panel) .. [[ 
+      ]] .. makeAlready("static text of scroll area 1 ", ident, panel) .. [[ 
         else
-      ]] .. strfmt(alreadyTemplate, "static text ",
-                   controlCenterMenuBarItemIdentifiers[panel], panel) .. [[ 
+      ]] .. makeAlready("static text ", ident, panel) .. [[ 
+        end if
+      ]]
+    elseif panel == "Users" then
+      already = [[
+        if number of ui elements of pane is number of buttons of pane then
+          return "Users"
         end if
       ]]
     end
