@@ -936,10 +936,8 @@ local function clickBartenderSidebarItem(index)
   return function(win)
     local winUI = towinui(win)
     local row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
-        AX.Outline, 1, AX.Row, index, AX.Cell, 1, AX.Image, 1)
-    if row ~= nil then
-      leftClickAndRestore(row, win:application():name())
-    end
+        AX.Outline, 1, AX.Row, index)
+    if row then row.AXSelected = true end
   end
 end
 
