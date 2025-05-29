@@ -1051,7 +1051,7 @@ local function testAlready(panel, pane, ident, role)
                   "Accessibility Shortcuts", "Battery" }, panel) then
       role = AX.StaticText
     elseif panel == "Display" then
-      local sa = getc(pane, AX.ScrollArea, 1)
+      local sa = getc(pane, OS_VERSION < OS.Ventura and AX.ScrollArea or AX.Group, 1)
       if sa == nil then
         return false
       else
