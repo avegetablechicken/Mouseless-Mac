@@ -1156,20 +1156,14 @@ local function popupControlCenterSubPanel(panel, allowReentry)
   local goToMainWindow = true
   if app:mainWindow() == nil then
     local locPanel = controlCenterLocalized(panel)
-    local item = tfind(getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem), function(elem)
-      return elem.AXDescription and elem.AXDescription:find(locPanel)
-    end)
-    if item then
-      if find("com.surteesstudios.Bartender") ~= nil then
-        local menuBarPanel = panel == "Focus" and "Focus Modes" or panel
-        hs.osascript.applescript(strfmt([[
-          tell application id "com.surteesstudios.Bartender"
-            activate "com.apple.controlcenter-%s"
-          end tell
-        ]], menuBarPanel:gsub(" ", ""):gsub("‑", "")))
-      else
-        item:performAction(AX.Press)
+    local index
+    for i, elem in ipairs(getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem)) do
+      if elem.AXDescription and elem.AXDescription:find(locPanel) then
+        index = i break
       end
+    end
+    if index then
+      clickRightMenuBarItem({'com.apple.controlcenter', index})
       registerControlCenterHotKeys(panel, true)
       return
     end
