@@ -7833,7 +7833,7 @@ local appsLaunchSlow = {
     return #getMenuBarItems(app) > 0
   end,
   ["com.microsoft.VSCode"] = function(app)
-    return #getMenuBarItems(app) > 10
+    return #getMenuBarItems(app) > 1
   end,
   ["com.jetbrains.CLion"] = function(app)
     return #getMenuBarItems(app) > 10
