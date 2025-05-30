@@ -167,7 +167,7 @@ end
 
 registerAppHotkeys()
 -- ## function utilities for process management on app switching
-local function isUIElement(appid)
+local function isLSUIElement(appid)
   local info = hs.application.infoForBundleID(appid)
   return info and info.LSUIElement == true
 end
@@ -175,7 +175,7 @@ end
 -- for apps whose launching can be detected by Hammerspoon
 local processesOnLaunch = {}
 local function execOnLaunch(appid, action, onlyFirstTime)
-  if isUIElement(appid) then
+  if isLSUIElement(appid) then
     ExecOnSilentLaunch(appid, action)
   end
 
@@ -213,7 +213,7 @@ end
 
 local processesOnQuit = {}
 local function execOnQuit(appid, action)
-  if isUIElement(appid) then
+  if isLSUIElement(appid) then
     ExecOnSilentQuit(appid, action)
     return
   end
@@ -234,7 +234,7 @@ end
 
 local observersStopOnQuit = {}
 local function stopOnQuit(appid, observer, action)
-  if isUIElement(appid) then
+  if isLSUIElement(appid) then
     ExecOnSilentQuit(appid, function()
       observer:stop()
       action(observer, appid)
