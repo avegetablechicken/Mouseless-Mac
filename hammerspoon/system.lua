@@ -1153,21 +1153,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     end
   end
 
-  local goToMainWindow = true
-  if app:mainWindow() == nil then
-    local locPanel = controlCenterLocalized(panel)
-    local index
-    for i, elem in ipairs(getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem)) do
-      if elem.AXDescription and elem.AXDescription:find(locPanel) then
-        index = i break
-      end
-    end
-    if index then
-      clickRightMenuBarItem({'com.apple.controlcenter', index})
-      registerControlCenterHotKeys(panel, true)
-      return
-    end
-  else
+  if app:mainWindow() then
     pane = getc(appUI, AX.Window, 1)
     if OS_VERSION >= OS.Ventura then
       pane = getc(pane, AX.Group, 1)
@@ -1176,13 +1162,25 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     local bluetoothIdent = controlCenterIdentifiers["Bluetooth"]
     if testAlready("Wi‑Fi", pane, wifiIdent, AX.CheckBox)
         and testAlready("Bluetooth", pane, bluetoothIdent, AX.CheckBox) then
-      goToMainWindow = false
+      enterPanel()
+      registerControlCenterHotKeys(panel)
+      return
     elseif testAlready(panel, pane, ident) and not allowReentry then
       return
     end
   end
 
-  if goToMainWindow then
+  local locPanel = controlCenterLocalized(panel)
+  local index
+  for i, elem in ipairs(getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem)) do
+    if elem.AXDescription and elem.AXDescription:find(locPanel) then
+      index = i break
+    end
+  end
+  if index then
+    clickRightMenuBarItem({'com.apple.controlcenter', index})
+    registerControlCenterHotKeys(panel, true)
+  else
     local menuBarItem = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 2)
     menuBarItem:performAction(AX.Press)
     pane = getc(appUI, AX.Window, 1)
@@ -1198,9 +1196,9 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     if OS_VERSION >= OS.Ventura then
       pane = getc(pane, AX.Group, 1)
     end
+    enterPanel()
+    registerControlCenterHotKeys(panel)
   end
-  enterPanel()
-  registerControlCenterHotKeys(panel)
 end
 
 local controlCenterPanels = {
