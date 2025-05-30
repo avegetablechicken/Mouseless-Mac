@@ -6529,6 +6529,11 @@ local specialConfirmFuncs = {
 }
 
 local function registerForOpenSavePanel(app)
+  for _, hotkey in ipairs(openSavePanelHotkeys) do
+    hotkey:delete()
+  end
+  openSavePanelHotkeys = {}
+
   if app:bundleID() == "com.apple.finder" then return end
   local appUI = toappui(app)
   if not appUI:isValid() then
@@ -6663,6 +6668,19 @@ local function registerForOpenSavePanel(app)
         tinsert(openSavePanelHotkeys, hotkey)
       end
     end
+
+    if dontSaveButton == nil and #sidebarCells == 0 then return end
+    local closeObserver = uiobserver.new(app:pid())
+    closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
+    closeObserver:callback(function(obs)
+      for _, hotkey in ipairs(openSavePanelHotkeys) do
+        hotkey:delete()
+      end
+      openSavePanelHotkeys = {}
+      obs:stop() obs = nil
+    end)
+    closeObserver:start()
+    stopOnDeactivated(app:bundleID(), closeObserver)
   end
   if app:focusedWindow() ~= nil then
     actionFunc(towinui(app:focusedWindow()))
@@ -6671,18 +6689,10 @@ local function registerForOpenSavePanel(app)
   local observer = uiobserver.new(app:pid())
   observer:addWatcher(toappui(app), uinotifications.focusedWindowChanged)
   observer:callback(function(_, element, notifications)
-    for _, hotkey in ipairs(openSavePanelHotkeys) do
-      hotkey:delete()
-    end
-    openSavePanelHotkeys = {}
     actionFunc(element)
   end)
   observer:start()
   stopOnDeactivated(app:bundleID(), observer, function()
-    for _, hotkey in ipairs(openSavePanelHotkeys) do
-      hotkey:delete()
-    end
-    openSavePanelHotkeys = {}
     if windowFilter ~= nil then
       windowFilter:unsubscribeAll()
       windowFilter = nil
@@ -7915,15 +7925,12 @@ function App_applicationCallback(appname, eventType, app)
       FLAGS["NO_RESHOW_KEYBINDING"] = false
     end)
 
-    -- necesary for "registerForOpenSavePanel" for unknown reason
-    hs.timer.doAfter(0, function()
-      registerForOpenSavePanel(app)
-      if fullyLaunchCriterion == nil then
-        menuItemsPrepared = onLaunchedAndActivated(app)
-      elseif fullyLaunchCriterion == false then
-        menuItemsPrepared = false
-      end
-    end)
+    registerForOpenSavePanel(app)
+    if fullyLaunchCriterion == nil then
+      menuItemsPrepared = onLaunchedAndActivated(app)
+    elseif fullyLaunchCriterion == false then
+      menuItemsPrepared = false
+    end
   elseif eventType == hs.application.watcher.deactivated
       and appname ~= nil then
     if appid then
