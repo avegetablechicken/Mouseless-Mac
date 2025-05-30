@@ -174,36 +174,15 @@ end
 
 -- for apps whose launching can be detected by Hammerspoon
 local processesOnLaunch = {}
-local processesOnLaunchIndices = {}
-local function execOnLaunch(appid, action, once)
+local function execOnLaunch(appid, action)
   if isLSUIElement(appid) then
-    ExecOnSilentLaunch(appid, action, once)
+    ExecOnSilentLaunch(appid, action)
     return
   end
 
   if processesOnLaunch[appid] == nil then
     processesOnLaunch[appid] = {}
-    processesOnLaunchIndices[appid] = {}
   end
-
-  if once then
-    local timeKey = hs.timer.absoluteTime()
-    tinsert(processesOnLaunchIndices[appid], timeKey)
-    local oldAction = action
-    action = function(app)
-      oldAction(app)
-      local idx = tindex(processesOnLaunchIndices[appid], timeKey)
-      tremove(processesOnLaunch[appid], idx)
-      tremove(processesOnLaunchIndices[appid], idx)
-      if #processesOnLaunch[appid] == 0 then
-        processesOnLaunch[appid] = nil
-        processesOnLaunchIndices[appid] = nil
-      end
-    end
-  else
-    tinsert(processesOnLaunchIndices[appid], 0)
-  end
-
   tinsert(processesOnLaunch[appid], action)
 end
 
@@ -7462,7 +7441,7 @@ for appid, cfg in pairs(appsAutoHideWithNoWindows) do
   if app ~= nil then
     func(app)
   else
-    execOnLaunch(appid, func, true)
+    execOnLaunch(appid, func)
   end
 end
 AutoHideWindowFilter:subscribe(hs.window.filter.windowDestroyed,
@@ -7482,7 +7461,7 @@ for appid, cfg in pairs(appsAutoQuitWithNoWindows) do
   if app ~= nil then
     func(app)
   else
-    execOnLaunch(appid, func, true)
+    execOnLaunch(appid, func)
   end
 end
 AutoQuitWindowFilter:subscribe(hs.window.filter.windowDestroyed,
@@ -7503,7 +7482,7 @@ for appid, roles in pairs(appsAutoHideWithNoPseudoWindows) do
   if app ~= nil then
     func(app)
   else
-    execOnLaunch(appid, func, true)
+    execOnLaunch(appid, func)
   end
 end
 for appid, roles in pairs(appsAutoQuitWithNoPseudoWindows) do
@@ -7515,7 +7494,7 @@ for appid, roles in pairs(appsAutoQuitWithNoPseudoWindows) do
   if app ~= nil then
     func(app)
   else
-    execOnLaunch(appid, func, true)
+    execOnLaunch(appid, func)
   end
 end
 

@@ -364,30 +364,10 @@ end
 
 -- for apps that launch silently
 local processesOnSilentLaunch = {}
-local processesOnSilentLaunchIndices = {}
 local hasLaunched = {}
-function ExecOnSilentLaunch(appid, action, once)
+function ExecOnSilentLaunch(appid, action)
   if processesOnSilentLaunch[appid] == nil then
     processesOnSilentLaunch[appid] = {}
-    processesOnSilentLaunchIndices[appid] = {}
-  end
-
-  if once then
-    local timeKey = hs.timer.absoluteTime()
-    tinsert(processesOnSilentLaunchIndices[appid], timeKey)
-    local oldAction = action
-    action = function(app)
-      oldAction(app)
-      local idx = tindex(processesOnSilentLaunchIndices[appid], timeKey)
-      tremove(processesOnSilentLaunch[appid], idx)
-      tremove(processesOnSilentLaunchIndices[appid], idx)
-      if #processesOnSilentLaunch[appid] == 0 then
-        processesOnSilentLaunch[appid] = nil
-        processesOnSilentLaunchIndices[appid] = nil
-      end
-    end
-  else
-    tinsert(processesOnSilentLaunchIndices[appid], 0)
   end
 
   tinsert(processesOnSilentLaunch[appid], action)
