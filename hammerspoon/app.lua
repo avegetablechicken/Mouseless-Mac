@@ -909,20 +909,6 @@ local function clickBartenderBarItem(index, rightClick)
   end
 end
 
-local function getBartenderSidebarItemTitle(index)
-  return function(app)
-    local win = tfind(app:visibleWindows(), function(win)
-      return win:title() == "Bartender 5"
-    end)
-    local winUI = towinui(win)
-    local row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
-        AX.Outline, 1, AX.Row, index, AX.Cell, 1, AX.StaticText, 1)
-    if row ~= nil then
-      return row.AXValue
-    end
-  end
-end
-
 local function clickBartenderSidebarItem(index)
   return function(win)
     local winUI = towinui(win)
@@ -3812,55 +3798,55 @@ appHotKeyCallbacks = {
     },
     ["view1"] =
     {
-      message = getBartenderSidebarItemTitle(1),
+      message = "General",
       windowFilter = { allowTitles = "^Bartender 5$" },
       fn = clickBartenderSidebarItem(1)
     },
     ["view2"] =
     {
-      message = getBartenderSidebarItemTitle(2),
+      message = "Menu Bar Items",
       windowFilter = { allowTitles = "^Bartender 5$" },
       fn = clickBartenderSidebarItem(2)
     },
     ["view3"] =
     {
-      message = getBartenderSidebarItemTitle(3),
+      message = "Menu Bar Style",
       windowFilter = { allowTitles = "^Bartender 5$" },
       fn = clickBartenderSidebarItem(3)
     },
     ["view4"] =
     {
-      message = getBartenderSidebarItemTitle(4),
+      message = "Presets",
       windowFilter = { allowTitles = "^Bartender 5$" },
       fn = clickBartenderSidebarItem(4)
     },
     ["view5"] =
     {
-      message = getBartenderSidebarItemTitle(5),
+      message = "Triggers",
       windowFilter = { allowTitles = "^Bartender 5$" },
       fn = clickBartenderSidebarItem(5)
     },
     ["view6"] =
     {
-      message = getBartenderSidebarItemTitle(6),
+      message = "Hotkeys",
       windowFilter = { allowTitles = "^Bartender 5$" },
       fn = clickBartenderSidebarItem(6)
     },
     ["view7"] =
     {
-      message = getBartenderSidebarItemTitle(7),
+      message = "Advanced",
       windowFilter = { allowTitles = "^Bartender 5$" },
       fn = clickBartenderSidebarItem(7)
     },
     ["view8"] =
     {
-      message = getBartenderSidebarItemTitle(8),
+      message = "License",
       windowFilter = { allowTitles = "^Bartender 5$" },
       fn = clickBartenderSidebarItem(8)
     },
     ["view9"] =
     {
-      message = getBartenderSidebarItemTitle(9),
+      message = "About",
       windowFilter = { allowTitles = "^Bartender 5$" },
       fn = clickBartenderSidebarItem(9)
     },
