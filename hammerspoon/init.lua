@@ -32,12 +32,12 @@ OS = {
 }
 
 local osVersion = hs.host.operatingSystemVersion()
-local v = osVersion.major
-if v < 11 then
+local vm = osVersion.major
+if vm < 11 then
   local vminor = (osVersion.minor < 10 and "0" or "") .. tostring(osVersion.minor)
-  OS_VERSION = tostring(v) .. "." .. tostring(vminor)
+  OS_VERSION = tostring(vm) .. "." .. tostring(vminor)
 else
-  OS_VERSION = tostring(v)
+  OS_VERSION = tostring(vm)
 end
 
 HK = {
