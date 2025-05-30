@@ -2998,6 +2998,15 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["com.tdesktop.Telegram"] =
+  {
+    ["remapPreviousTab"] = {
+      message = "Go to Previous Chat",
+      repeatable = true,
+      fn = function(app) hs.eventtap.keyStroke('⇧⌃', 'Tab', nil, app) end
+    }
+  },
+
   ["com.tencent.xinWeChat"] =
   {
     ["back"] = {
