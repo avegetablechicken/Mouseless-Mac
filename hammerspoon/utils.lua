@@ -3410,7 +3410,7 @@ function displayName(app)
       .. "/Contents/Resources"
   local locale = get(appLocaleDir, appid, appLocale)
   if locale == false then return basename end
-  if locale == nil then
+  if locale == nil or not exists(resourceDir .. "/" .. locale .. ".lproj") then
     locale = getDefaultMatchedLocale(appLocale, resourceDir, 'lproj')
     if locale == nil then return basename end
   end
