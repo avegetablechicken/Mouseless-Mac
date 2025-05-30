@@ -7931,6 +7931,7 @@ function App_applicationCallback(appname, eventType, app)
       for _, proc in ipairs(processesOnDeactivated[appid] or {}) do
         proc(app)
       end
+      processesOnDeactivated[appid] = nil
       for _, ob in ipairs(observersStopOnDeactivated[appid] or {}) do
         local observer, func = ob[1], ob[2]
         observer:stop()
