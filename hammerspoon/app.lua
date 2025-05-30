@@ -7946,8 +7946,7 @@ function App_applicationCallback(appname, eventType, app)
       end
       observersStopOnDeactivated[appid] = nil
     end
-  elseif eventType == hs.application.watcher.terminated
-      and appname ~= nil then
+  elseif eventType == hs.application.watcher.terminated then
     for _, proc in ipairs(processesOnDeactivated[appid] or {}) do
       proc()
     end
