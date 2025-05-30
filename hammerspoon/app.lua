@@ -744,6 +744,37 @@ local function confirmButtonValidForAppCleanerUninstaller(title)
   end
 end
 
+--- ### QQLive
+local function getQQLiveChannel(index)
+  return function(app)
+    if app:focusedWindow() == nil then return false end
+    local list = getc(towinui(app:focusedWindow()), AX.Group, 2)
+    if list == nil or #list == 0 then return false end
+    local start
+    for i, txt in ipairs(list) do
+      if txt.AXValue == "频道" then
+        start = i
+        break
+      end
+    end
+    if start == nil then return false end
+    if #list - 2 >= start + index then
+      local row = list[start + index]
+      if row.AXPosition.y > list.AXPosition.y
+          and row.AXPosition.y + row.AXSize.h < list[#list].AXPosition.y - 15 then
+        return true, row
+      elseif row.AXPosition.y <= list.AXPosition.y
+          and row.AXPosition.y + row.AXSize.h > list.AXPosition.y then
+        return true, uioffset(row, { row.AXSize.w / 2, row.AXSize.h })
+      elseif row.AXPosition.y + row.AXSize.h >= list[#list].AXPosition.y - 15
+          and row.AXPosition.y < list[#list].AXPosition.y - 15 then
+        return true, uioffset(row, { row.AXSize.w / 2, 0 })
+      end
+    end
+    return false
+  end
+end
+
 --- ### Douyin Desktop
 local function douyinDesktopPage(app)
   local winUI = towinui(app:focusedWindow())
@@ -3256,6 +3287,56 @@ appHotKeyCallbacks = {
           press(menuItem)
         end
       end
+    },
+    ["channel1"] = {
+      message = "频道1",
+      condition = getQQLiveChannel(1),
+      fn = receivePosition
+    },
+    ["channel2"] = {
+      message = "频道2",
+      condition = getQQLiveChannel(2),
+      fn = receivePosition
+    },
+    ["channel3"] = {
+      message = "频道3",
+      condition = getQQLiveChannel(3),
+      fn = receivePosition
+    },
+    ["channel4"] = {
+      message = "频道4",
+      condition = getQQLiveChannel(4),
+      fn = receivePosition
+    },
+    ["channel5"] = {
+      message = "频道5",
+      condition = getQQLiveChannel(5),
+      fn = receivePosition
+    },
+    ["channel6"] = {
+      message = "频道6",
+      condition = getQQLiveChannel(6),
+      fn = receivePosition
+    },
+    ["channel7"] = {
+      message = "频道7",
+      condition = getQQLiveChannel(7),
+      fn = receivePosition
+    },
+    ["channel8"] = {
+      message = "频道8",
+      condition = getQQLiveChannel(8),
+      fn = receivePosition
+    },
+    ["channel9"] = {
+      message = "频道9",
+      condition = getQQLiveChannel(9),
+      fn = receivePosition
+    },
+    ["channel10"] = {
+      message = "频道10",
+      condition = getQQLiveChannel(10),
+      fn = receivePosition
     }
   },
 

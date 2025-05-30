@@ -1039,6 +1039,48 @@
         "key": "escape"
       }
     },
+    "com.tencent.tenvideo": {
+      "channel1": {
+        "mods": "command",
+        "key": "1"
+      },
+      "channel2": {
+        "mods": "command",
+        "key": "2"
+      },
+      "channel3": {
+        "mods": "command",
+        "key": "3"
+      },
+      "channel4": {
+        "mods": "command",
+        "key": "4"
+      },
+      "channel5": {
+        "mods": "command",
+        "key": "5"
+      },
+      "channel6": {
+        "mods": "command",
+        "key": "6"
+      },
+      "channel7": {
+        "mods": "command",
+        "key": "7"
+      },
+      "channel8": {
+        "mods": "command",
+        "key": "8"
+      },
+      "channel9": {
+        "mods": "command",
+        "key": "9"
+      },
+      "channel10": {
+        "mods": "command",
+        "key": "0"
+      }
+    },
     "com.tencent.meeting": {
       "preferences": {
         "mods": "command",
