@@ -5864,6 +5864,7 @@ function AppBind(app, config, ...)
 end
 
 -- hotkeys for active app
+local unregisterInAppHotKeys
 local function registerInAppHotKeys(app)
   local appid = app:bundleID()
   if appHotKeyCallbacks[appid] == nil then return end
@@ -5914,9 +5915,16 @@ local function registerInAppHotKeys(app)
       end
     end
   end
+
+  execOnDeactivated(appid, function()
+    unregisterInAppHotKeys(appid)
+  end)
+  execOnQuit(appid, function()
+    unregisterInAppHotKeys(appid, true)
+  end)
 end
 
-local function unregisterInAppHotKeys(appid, delete)
+unregisterInAppHotKeys = function(appid, delete)
   if type(appid) ~= 'string' then appid = appid:bundleID() end
   if appHotKeyCallbacks[appid] == nil then return end
 
@@ -5950,6 +5958,7 @@ function AppWinBind(app, config, ...)
 end
 
 -- hotkeys for focused window of active app
+local unregisterInWinHotKeys
 local function registerInWinHotKeys(app)
   local appid = app:bundleID()
   if appHotKeyCallbacks[appid] == nil then return end
@@ -5995,9 +6004,16 @@ local function registerInWinHotKeys(app)
       inWinHotKeys[appid][hkID]:enable()
     end
   end
+
+  execOnDeactivated(appid, function()
+    unregisterInWinHotKeys(appid)
+  end)
+  execOnQuit(appid, function()
+    unregisterInWinHotKeys(appid, true)
+  end)
 end
 
-local function unregisterInWinHotKeys(appid, delete)
+unregisterInWinHotKeys = function(appid, delete)
   if type(appid) ~= 'string' then appid = appid:bundleID() end
   if appHotKeyCallbacks[appid] == nil or inWinHotKeys[appid] == nil then
     return
@@ -7935,8 +7951,6 @@ function App_applicationCallback(appname, eventType, app)
   elseif eventType == hs.application.watcher.deactivated
       and appname ~= nil then
     if appid then
-      unregisterInAppHotKeys(appid)
-      unregisterInWinHotKeys(appid)
       for _, proc in ipairs(processesOnDeactivated[appid] or {}) do
         proc(app)
       end
@@ -7970,8 +7984,6 @@ function App_applicationCallback(appname, eventType, app)
       if func ~= nil then func(observer, appid) end
     end
     observersStopOnQuit[appid] = nil
-    unregisterInAppHotKeys(appid, true)
-    unregisterInWinHotKeys(appid, true)
   elseif eventType == hs.application.watcher.deactivated then
     for id, processes in pairs(processesOnDeactivated) do
       if find(id) == nil then
@@ -8007,16 +8019,6 @@ function App_applicationCallback(appname, eventType, app)
           if func ~= nil then func(observer, id) end
         end
         observersStopOnQuit[id] = nil
-      end
-    end
-    for id, _ in pairs(inAppHotKeys) do
-      if find(id) == nil then
-        unregisterInAppHotKeys(id, true)
-      end
-    end
-    for id, _ in pairs(inWinHotKeys) do
-      if find(id) == nil then
-        unregisterInWinHotKeys(id, true)
       end
     end
   end
