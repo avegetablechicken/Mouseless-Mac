@@ -22,17 +22,18 @@ hs.application.enableSpotlightForNameSearches(true)
 
 -- launch or hide applications
 local function focusOrHideFinder(app)
+  local appid = app:bundleID()
   local windowFilter = hs.window.filter.new(false):setAppFilter(app:name())
   local windows = windowFilter:getWindows()
   local nonDesktop = tfind(windows, function(win)
     return win:id() ~= hs.window.desktop():id()
   end) == nil
   if nonDesktop then
-    app = hs.application.open(app:bundleID())
+    app = hs.application.open(appid)
   elseif hs.window.focusedWindow() ~= nil
       and hs.window.focusedWindow():application() == app then
     if hs.window.focusedWindow():id() == hs.window.desktop():id() then
-      hs.application.open(app:bundleID())
+      hs.application.open(appid)
       hs.window.focusedWindow():focus()
     else
       app:hide()
