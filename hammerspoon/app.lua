@@ -174,22 +174,34 @@ end
 
 -- for apps whose launching can be detected by Hammerspoon
 local processesOnLaunch = {}
-local function execOnLaunch(appid, action, onlyFirstTime)
+local processesOnLaunchIndices = {}
+local function execOnLaunch(appid, action, once)
   if isLSUIElement(appid) then
-    ExecOnSilentLaunch(appid, action)
+    ExecOnSilentLaunch(appid, action, once)
+    return
   end
 
   if processesOnLaunch[appid] == nil then
     processesOnLaunch[appid] = {}
+    processesOnLaunchIndices[appid] = {}
   end
 
-  if onlyFirstTime then
-    local idx = #processesOnLaunch[appid] + 1
+  if once then
+    local timeKey = hs.timer.absoluteTime()
+    tinsert(processesOnLaunchIndices[appid], timeKey)
     local oldAction = action
     action = function(app)
       oldAction(app)
+      local idx = tindex(processesOnLaunchIndices[appid], timeKey)
       tremove(processesOnLaunch[appid], idx)
+      tremove(processesOnLaunchIndices[appid], idx)
+      if #processesOnLaunch[appid] == 0 then
+        processesOnLaunch[appid] = nil
+        processesOnLaunchIndices[appid] = nil
+      end
     end
+  else
+    tinsert(processesOnLaunchIndices[appid], 0)
   end
 
   tinsert(processesOnLaunch[appid], action)
