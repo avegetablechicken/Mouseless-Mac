@@ -5618,8 +5618,6 @@ local function wrapCondition(app, config, mode)
   local win
   if app.application ~= nil then
     win = app app = win:application()
-  else
-    win = app:focusedWindow()
   end
   local appid = app:bundleID()
 
@@ -5727,7 +5725,7 @@ local function wrapCondition(app, config, mode)
   cond = resendToFrontmostWindow(cond, config.nonFrontmost or config.menubar)
   local fn = func
   fn = function(...)
-    local obj = windowFilter == nil and app or win
+    local obj = windowFilter == nil and app or (win or app:focusedWindow())
     if obj == nil then  -- no window focused when triggering window-specific hotkeys
       selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
       return
