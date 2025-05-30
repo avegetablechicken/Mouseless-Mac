@@ -6534,7 +6534,8 @@ local function registerForOpenSavePanel(app)
   end
   openSavePanelHotkeys = {}
 
-  if app:bundleID() == "com.apple.finder" then return end
+  local appid = app:bundleID()
+  if appid == "com.apple.finder" then return end
   local appUI = toappui(app)
   if not appUI:isValid() then
     hs.timer.doAfter(0.1, function() registerForOpenSavePanel(app) end)
@@ -6544,8 +6545,8 @@ local function registerForOpenSavePanel(app)
   local getUIElements = function(winUI)
     local windowIdent = winUI.AXIdentifier
     local dontSaveButton, sidebarCells = nil, {}
-    if get(KeybindingConfigs.hotkeys, app:bundleID(), "confirmDelete") == nil then
-      local specialConfirmFunc = specialConfirmFuncs[app:bundleID()]
+    if get(KeybindingConfigs.hotkeys, appid, "confirmDelete") == nil then
+      local specialConfirmFunc = specialConfirmFuncs[appid]
       if specialConfirmFunc ~= nil then
         dontSaveButton = specialConfirmFunc(winUI)
       elseif windowIdent == "save-panel" then
@@ -6680,7 +6681,7 @@ local function registerForOpenSavePanel(app)
       obs:stop() obs = nil
     end)
     closeObserver:start()
-    stopOnDeactivated(app:bundleID(), closeObserver)
+    stopOnDeactivated(appid, closeObserver)
   end
   if app:focusedWindow() ~= nil then
     actionFunc(towinui(app:focusedWindow()))
@@ -6692,7 +6693,7 @@ local function registerForOpenSavePanel(app)
     actionFunc(element)
   end)
   observer:start()
-  stopOnDeactivated(app:bundleID(), observer, function()
+  stopOnDeactivated(appid, observer, function()
     if windowFilter ~= nil then
       windowFilter:unsubscribeAll()
       windowFilter = nil
