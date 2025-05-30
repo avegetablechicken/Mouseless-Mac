@@ -720,8 +720,10 @@ if misc["switchWindow"] ~= nil then
   if find("com.lwouis.alt-tab-macos") == nil then
     registerWindowSwitcher()
   end
-  ExecOnSilentLaunch("com.lwouis.alt-tab-macos", unregisterWindowSwitcher)
-  ExecOnSilentQuit("com.lwouis.alt-tab-macos", registerWindowSwitcher)
+  ExecOnSilentLaunch("com.lwouis.alt-tab-macos", function()
+    unregisterWindowSwitcher()
+    ExecOnSilentQuit("com.lwouis.alt-tab-macos", registerWindowSwitcher)
+  end)
 end
 
 -- visible windows of all browsers on all user spaces

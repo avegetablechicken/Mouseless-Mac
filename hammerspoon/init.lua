@@ -401,6 +401,7 @@ ExecContinuously(function()
       for _, proc in ipairs(processes) do
         proc(appid)
       end
+      processesOnSilentQuit[appid] = nil
     end
     hasLaunchedTmp[appid] = app ~= nil
   end
