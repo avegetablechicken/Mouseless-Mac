@@ -3706,12 +3706,6 @@ MENUBAR_MANAGER_SHOW = {
     return true
   end,
 
-  ["com.dwarvesv.minimalbar"] = bind(showHiddenMenuBarItems,
-                                     "com.dwarvesv.minimalbar"),
-
-  ["com.mortennn.Dozer"] = bind(showHiddenMenuBarItems,
-                                "com.mortennn.Dozer"),
-
   ["net.matthewpalmer.Vanilla"] = function()
     local app = find("net.matthewpalmer.Vanilla")
     local icon = tfind(getc(toappui(app), AX.Window), function(win)
@@ -3721,7 +3715,10 @@ MENUBAR_MANAGER_SHOW = {
       leftClickAndRestore(icon, app:name())
     end
     return false
-  end
+  end,
+
+  "com.dwarvesv.minimalbar",
+  "com.mortennn.Dozer",
 }
 
 local function getValidMenuBarManager()
@@ -3729,7 +3726,10 @@ local function getValidMenuBarManager()
   hs.fnutils.each(hs.screen.allScreens(), function(screen)
     leftmostHorizontal = math.min(screen:fullFrame().x, leftmostHorizontal)
   end)
-  for appid, _ in pairs(MENUBAR_MANAGER_SHOW) do
+  for appid, fn in pairs(MENUBAR_MANAGER_SHOW) do
+    if type(fn) == 'string' then
+      appid = fn
+    end
     local app = find(appid)
     if app then
       local maxX  -- incase it is hidden by other menu bar managers
@@ -3801,8 +3801,9 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
     local hidden, manager
     hidden, manager, map = hiddenByMenuBarManager(app, menuBarId, map)
     if hidden then
-      local done = MENUBAR_MANAGER_SHOW[manager](appid,
-          menuBarId or 1, map, show == "click")
+      local showFunc = MENUBAR_MANAGER_SHOW[manager]
+          or bind(showHiddenMenuBarItems, manager)
+      local done = showFunc(appid, menuBarId or 1, map, show == "click")
       if done ~= true then
         hs.timer.doAfter(0.2, function()
           if menuBarMenu then
