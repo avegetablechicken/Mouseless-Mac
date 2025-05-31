@@ -3571,6 +3571,7 @@ function loadStatusItemsAutosaveName(app)
   local map = {}
   for i, r in ipairs(positions) do
     map[r[1]] = preferredPositions[i][1]
+    map[preferredPositions[i][1]] = r[1]
   end
   return map
 end
@@ -3640,7 +3641,7 @@ MENUBAR_MANAGER_SHOW = {
     if isAdvancedMode ~= "1" then
       if type(index) == 'string' then
         map = map or loadStatusItemsAutosaveName(targetApp)
-        index = tindex(map, index)
+        index = map[index]
         if index == nil then return true end
       end
       hs.eventtap.event.newMouseEvent(
@@ -3754,7 +3755,7 @@ function hiddenByMenuBarManager(app, index, map)
   if manager == nil then return false end
   if type(index) == 'string' then
     map = map or loadStatusItemsAutosaveName(app)
-    index = tindex(map, index)
+    index = map[index]
     if index == nil then return false end
   end
   local menuBarItem = getc(toappui(app), AX.MenuBar, -1,
@@ -3789,7 +3790,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   local map
   if type(menuBarIdx) == 'string' then
     map = loadStatusItemsAutosaveName(app)
-    menuBarIdx = tindex(map, menuBarIdx)
+    menuBarIdx = map[menuBarIdx]
     if menuBarIdx == nil then return false end
   end
   local menuBarMenu = getc(toappui(app), AX.MenuBar, -1,
