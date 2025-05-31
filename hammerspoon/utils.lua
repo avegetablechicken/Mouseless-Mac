@@ -3585,9 +3585,9 @@ local function showHiddenMenuBarItems(appid)
 end
 
 MENUBAR_MANAGER_SHOW = {
-  ["com.surteesstudios.Bartender"] = function(appid, index)
+  ["com.surteesstudios.Bartender"] = function(appid, index, map)
     if type(index) == 'number' then
-      local map = loadStatusItemsAutosaveName(find(appid))
+      map = map or loadStatusItemsAutosaveName(find(appid))
       index = map[index]
     end
     hs.osascript.applescript(string.format([[
@@ -3598,9 +3598,9 @@ MENUBAR_MANAGER_SHOW = {
     return true
   end,
 
-  ["com.HyperartFlow.Barbee"] = function(appid, index)
+  ["com.HyperartFlow.Barbee"] = function(appid, index, map)
     if type(index) == 'number' then
-      local map = loadStatusItemsAutosaveName(find(appid))
+      map = map or loadStatusItemsAutosaveName(find(appid))
       index = map[index]
     end
     -- fixme: below script will force `Barbee` to kill itself
@@ -3629,7 +3629,7 @@ MENUBAR_MANAGER_SHOW = {
     return true
   end,
 
-  ["cn.better365.iBar"] = function(appid, index, click)
+  ["cn.better365.iBar"] = function(appid, index, map, click)
     local app = find("cn.better365.iBar")
     local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
     if not icon then return end
@@ -3639,7 +3639,7 @@ MENUBAR_MANAGER_SHOW = {
       [[defaults read cn.better365.iBar advancedMode | tr -d '\n']])
     if isAdvancedMode ~= "1" then
       if type(index) == 'string' then
-        local map = loadStatusItemsAutosaveName(targetApp)
+        map = map or loadStatusItemsAutosaveName(targetApp)
         index = tindex(map, index)
         if index == nil then return true end
       end
@@ -3667,7 +3667,7 @@ MENUBAR_MANAGER_SHOW = {
 
     leftClickAndRestore(icon, app:name())
     if type(index) == 'number' then
-      local map = loadStatusItemsAutosaveName(find(appid))
+      map = map or loadStatusItemsAutosaveName(find(appid))
       index = map[index]
       if index == nil then return true end
     end
@@ -3749,11 +3749,11 @@ local function getValidMenuBarManager()
   end
 end
 
-function hiddenByMenuBarManager(app, index)
+function hiddenByMenuBarManager(app, index, map)
   local manager = getValidMenuBarManager()
   if manager == nil then return false end
   if type(index) == 'string' then
-    local map = loadStatusItemsAutosaveName(app)
+    map = map or loadStatusItemsAutosaveName(app)
     index = tindex(map, index)
     if index == nil then return false end
   end
@@ -3763,7 +3763,7 @@ function hiddenByMenuBarManager(app, index)
   hs.fnutils.each(hs.screen.allScreens(), function(screen)
     leftmostHorizontal = math.min(screen:fullFrame().x, leftmostHorizontal)
   end)
-  return menuBarItem.AXPosition.x < leftmostHorizontal, manager
+  return menuBarItem.AXPosition.x < leftmostHorizontal, manager, map
 end
 
 function clickRightMenuBarItem(appid, menuItemPath, show)
@@ -3786,8 +3786,9 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   end
 
   local menuBarIdx = menuBarId
+  local map
   if type(menuBarIdx) == 'string' then
-    local map = loadStatusItemsAutosaveName(app)
+    map = loadStatusItemsAutosaveName(app)
     menuBarIdx = tindex(map, menuBarIdx)
     if menuBarIdx == nil then return false end
   end
@@ -3796,10 +3797,11 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   if menuBarMenu == nil then return false end
 
   if show then
-    local hidden, manager = hiddenByMenuBarManager(app, menuBarId)
+    local hidden, manager
+    hidden, manager, map = hiddenByMenuBarManager(app, menuBarId, map)
     if hidden then
       local done = MENUBAR_MANAGER_SHOW[manager](appid,
-          menuBarId or 1, show == "click")
+          menuBarId or 1, map, show == "click")
       if done ~= true then
         hs.timer.doAfter(0.2, function()
           if menuBarMenu then
