@@ -2044,12 +2044,23 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     local hotkey = newControlCenter("", "Space",
       "Toggle " .. mayLocalize("Background Sounds"),
       function()
+        if hotkeyShow ~= nil then
+          hotkeyShow:delete()
+          hotkeyShow = nil
+        end
+        if hotkeyHide ~= nil then
+          hotkeyHide:delete()
+          hotkeyHide = nil
+        end
+        for _, hotkey in ipairs(backgroundSoundsHotkeys or {}) do
+          hotkey:delete()
+        end
         backgroundSoundsHotkeys = nil
         local cb = getc(pane, AX.DisclosureTriangle, 1)
             or getc(pane, AX.CheckBox, 1)
         if cb then
           cb:performAction(AX.Press)
-          hearingFunc()
+          hs.timer.doAfter(0.2,  hearingFunc)
         end
       end)
     if not checkAndRegisterControlCenterHotKeys(hotkey) then
