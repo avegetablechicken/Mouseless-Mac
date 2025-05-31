@@ -464,7 +464,7 @@ local function messageDeletable(app)
       or messageItems[1].AXDescription:sub(4) == desc then
     tremove(messageItems, 1)
   end
-  return true, messageItems
+  return #messageItems > 0, messageItems
 end
 
 local function deleteAllMessages(messageItems, app)
