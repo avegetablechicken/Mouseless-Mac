@@ -7981,17 +7981,22 @@ function App_applicationCallback(appname, eventType, app)
   if eventType == hs.application.watcher.launching then
     fullyLaunchCriterion = appsLaunchSlow[appid] or false
   elseif eventType == hs.application.watcher.launched then
-    local criterion = fullyLaunchCriterion
-    if criterion then
-      if not criterion(app) then
-        hs.timer.waitUntil(function() return criterion(app) end,
-                           function() onLaunchedAndActivated(app) end,
-                           0.01)
+    local doublecheck = function()
+       return hs.application.frontmostApplication():bundleID() == appid
+    end
+    if fullyLaunchCriterion then
+      local oldFn = doublecheck
+      doublecheck = function()
+        return oldFn() and fullyLaunchCriterion(app)
+      end
+    end
+    if fullyLaunchCriterion or menuItemsPrepared == false then
+      if not doublecheck() then
+        hs.timer.waitUntil(doublecheck,
+                           bind(onLaunchedAndActivated, app), 0.01)
       else
         onLaunchedAndActivated(app)
       end
-    elseif menuItemsPrepared == false then
-      onLaunchedAndActivated(app)
     end
     menuItemsPrepared = nil
     for _, proc in ipairs(processesOnLaunch[appid] or {}) do
