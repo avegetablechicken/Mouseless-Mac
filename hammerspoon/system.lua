@@ -1061,11 +1061,7 @@ local function testAlready(panel, pane, ident, role)
     elseif panel == "Music Recognition" then
       role = AX.Group
     elseif panel == "Hearing" then
-      if pane[1].AXRole == AX.ScrollArea then
-        role = getc(pane[1], AX.StaticText)
-      else
-        role = AX.StaticText
-      end
+      role = AX.StaticText
     elseif panel == "Now Playing" then
       if OS_VERSION < OS.Ventura then
         local mayLocalize = bind(controlCenterLocalized, "Now Playing")
@@ -1157,6 +1153,11 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     pane = getc(appUI, AX.Window, 1)
     if OS_VERSION >= OS.Ventura then
       pane = getc(pane, AX.Group, 1)
+    end
+    if panel == "Hearing" then
+      if #pane == 1 and pane[1].AXRole == AX.ScrollArea then
+        pane = pane[1]
+      end
     end
     local wifiIdent = controlCenterIdentifiers["Wi‑Fi"]
     local bluetoothIdent = controlCenterIdentifiers["Bluetooth"]
