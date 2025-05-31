@@ -467,29 +467,37 @@ local function messageDeletable(app)
   return true, messageItems
 end
 
-local function deleteAllMessages(messageItems, app, first)
-  if first == nil then first = true end
-  local messageItem = messageItems[1]
-  if messageItem.AXSelected then
-    if first and #messageItems > 1 then
-      tremove(messageItems, 1)
-      deleteAllMessages(messageItems, app, false)
-      return
-    end
+local function deleteAllMessages(messageItems, app)
+  local firstMsg, lastMsg = messageItems[1], messageItems[#messageItems]
+
+  local firstSelected = firstMsg.AXSelected
+  if not firstSelected then
+    press(firstMsg)
+  end
+  if #messageItems == 1
+      or (#messageItems == 2 and lastMsg.AXSelected) then
     deleteSelectedMessage(app, nil, true)
-  else
-    press(messageItem)
-    hs.timer.doAfter(0.1, function()
-      deleteSelectedMessage(app, nil, true)
-    end)
+    return
   end
 
+  hs.timer.doAfter(0.5, function()
+    for i=2,#messageItems do
+      messageItems[i].AXSelected = false
+    end
+    hs.eventtap.event.newKeyEvent(hs.keycodes.map.shift, true):post()
+    hs.timer.doAfter(1, function()
+      press(lastMsg)
+      hs.eventtap.event.newKeyEvent(hs.keycodes.map.shift, false):post()
+      deleteSelectedMessage(app, nil, true)
+    end)
+  end)
+
   hs.timer.doAfter(2, function()
-    if not app:isRunning() then return end
+    if not app:isFrontmost() then return end
     local continue
     continue, messageItems = messageDeletable(app)
     if continue then
-      deleteAllMessages(messageItems, app, false)
+      deleteAllMessages(messageItems, app)
     end
   end)
 end
