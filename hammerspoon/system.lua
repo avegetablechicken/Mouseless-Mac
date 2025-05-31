@@ -1283,7 +1283,16 @@ function registerControlCenterHotKeys(panel, inMenuBar)
 
   -- back to main panel
   if not inMenuBar then
-    hotkeyMainBack = newControlCenter("⌘", "[", "Back",
+    local msg = "Back"
+    local appLocale = applicationValidLocale('com.apple.controlcenter')
+    if appLocale ~= nil then
+      local result = localizedString(msg, 'com.apple.AppStore',
+                                     { locale = appLocale })
+      if result ~= nil then
+        msg = result
+      end
+    end
+    hotkeyMainBack = newControlCenter("⌘", "[", msg,
     function()
       assert(hotkeyMainBack) hotkeyMainBack:disable()
       for _, hotkey in ipairs(controlCenterHotKeys) do
@@ -1923,7 +1932,9 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       end
     end
   elseif panel == "Music Recognition" then
-    local hotkey = newControlCenter("", "Space", "Toggle Listening",
+    local msg = "Start Listening"
+    msg = controlCenterLocalized(panel, msg) or msg
+    local hotkey = newControlCenter("", "Space", msg,
       function()
         local cb = getc(pane, AX.Group, 1, AX.CheckBox, 1)
         if cb then cb:performAction(AX.Press) end
