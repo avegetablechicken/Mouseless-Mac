@@ -1962,19 +1962,11 @@ function registerControlCenterHotKeys(panel, inMenuBar)
 
       local actionFunc
       local triangle = getc(pane, AX.DisclosureTriangle, 1)
-      if triangle then
-        actionFunc = function()
-          local actions = triangle:actionNames()
-          triangle:performAction(actions[2])
-          hearingFunc()
-        end
-      else
-        triangle = getc(pane, AX.DisclosureTriangle, 1)
-        actionFunc = function()
-          local actions = triangle:actionNames()
-          triangle:performAction(actions[1])
-          hearingFunc()
-        end
+      actionFunc = function()
+        local actions = triangle:actionNames()
+        local actIdx = pane.AXRole == AX.ScrollArea and 2 or 1
+        triangle:performAction(actions[actIdx])
+        hearingFunc()
       end
       registerHotkeyForTraingleDisclosure(actionFunc, "Sounds",
                                           slid and 1 or 0)
