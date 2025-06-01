@@ -468,7 +468,13 @@ local function messageDeletable(app)
 end
 
 local function deleteAllMessages(messageItems, app)
-  local firstMsg, lastMsg = messageItems[1], messageItems[#messageItems]
+  local cnt = #messageItems
+  local firstMsg, lastMsg = messageItems[1], messageItems[cnt]
+  local frame = app:focusedWindow():frame()
+  while frame.y + frame.h < lastMsg.AXPosition.y + lastMsg.AXSize.h do
+    cnt = cnt - 1
+    lastMsg = messageItems[cnt]
+  end
 
   local firstSelected = firstMsg.AXSelected
   if not firstSelected then
@@ -489,16 +495,16 @@ local function deleteAllMessages(messageItems, app)
       press(lastMsg)
       hs.eventtap.event.newKeyEvent(hs.keycodes.map.shift, false):post()
       deleteSelectedMessage(app, nil, true)
-    end)
-  end)
 
-  hs.timer.doAfter(2, function()
-    if not app:isFrontmost() then return end
-    local continue
-    continue, messageItems = messageDeletable(app)
-    if continue then
-      deleteAllMessages(messageItems, app)
-    end
+      hs.timer.doAfter(2, function()
+        if not app:isFrontmost() then return end
+        local continue
+        continue, messageItems = messageDeletable(app)
+        if continue then
+          deleteAllMessages(messageItems, app)
+        end
+      end)
+    end)
   end)
 end
 
