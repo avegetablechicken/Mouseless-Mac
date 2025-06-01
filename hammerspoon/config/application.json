@@ -21,9 +21,6 @@
     "com.apple.finder",
     "com.pigigaldi.pock",
     {
-      "whbalzac.Dongtaizhuomian": {
-        "rejectTitles": "^$"
-      },
       "com.macosgame.iwallpaper": {
         "rejectTitles": "^$"
       },
