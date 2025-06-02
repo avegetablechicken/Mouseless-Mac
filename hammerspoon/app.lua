@@ -416,40 +416,33 @@ local function openFinderSidebarItem(cell, app)
 end
 
 -- ### Messages
-local function deleteSelectedMessage(app, menuItem, force)
+local function deleteSelectedMessage(app)
   if app:focusedWindow() == nil then return end
   local winUI = towinui(app:focusedWindow())
   local button = getc(winUI, AX.Group, 1, AX.Group, 1,
       AX.Group, 2, AX.Group, 1, AX.Button, 2)
   if button ~= nil then
     press(button)
-    if force ~= nil then
-      local confirm = function()
-        if not app:isRunning() then return end
-        if app:focusedWindow():role() == AX.Sheet then
-          local sheet = towinui(app:focusedWindow())
-          local delete = getc(sheet, AX.Button, 2)
-          press(delete)
-        end
+    hs.timer.doAfter(0.2, function()
+      if not app:isRunning() then return end
+      if app:focusedWindow():role() == AX.Sheet then
+        local sheet = towinui(app:focusedWindow())
+        local delete = getc(sheet, AX.Button, 2)
+        press(delete)
       end
-      hs.timer.doAfter(0.2, confirm)
-    end
+    end)
     return
   end
-  if menuItem == nil then
-    local _, menuItemPath = findMenuItem(app, {
-      OS_VERSION < OS.Ventura and "File" or "Conversation",
-      "Delete Conversation…"
-    })
-    menuItem = menuItemPath
-  end
+
+  local _, menuItem = findMenuItem(app, {
+    OS_VERSION < OS.Ventura and "File" or "Conversation",
+    "Delete Conversation…"
+  })
   app:selectMenuItem(menuItem)
-  if force ~= nil then
-    hs.timer.doAfter(0.1, function()
-      if not app:isRunning() then return end
-      hs.eventtap.keyStroke("", "Return", nil, app)
-    end)
-  end
+  hs.timer.doAfter(0.1, function()
+    if not app:isRunning() then return end
+    hs.eventtap.keyStroke("", "Return", nil, app)
+  end)
 end
 
 local function messageDeletable(app)
@@ -492,7 +485,7 @@ local function deleteAllMessages(messageItems, app)
   end
   if #messageItems == 1
       or (#messageItems == 2 and lastMsg.AXSelected) then
-    deleteSelectedMessage(app, nil, true)
+    deleteSelectedMessage(app)
     return
   end
 
@@ -504,7 +497,7 @@ local function deleteAllMessages(messageItems, app)
     hs.timer.doAfter(1, function()
       press(lastMsg)
       hs.eventtap.event.newKeyEvent(hs.keycodes.map.shift, false):post()
-      deleteSelectedMessage(app, nil, true)
+      deleteSelectedMessage(app)
 
       hs.timer.doAfter(2, function()
         if not app:isFrontmost() then return end
@@ -1703,9 +1696,7 @@ appHotKeyCallbacks = {
           "Delete Conversation…"
         })(app)
       end,
-      fn = function(menuItemTitle, app)
-        deleteSelectedMessage(app, menuItemTitle)
-      end
+      fn = receiveMenuItem
     },
     ["deleteAllConversations"] = {
       message = localizedMessage("Delete All"),
