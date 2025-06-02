@@ -478,7 +478,17 @@ local function deleteAllMessages(messageItems, app)
 
   local firstSelected = firstMsg.AXSelected
   if not firstSelected then
-    press(firstMsg)
+    local select = false
+    for i=2,cnt do
+      if messageItems[i].AXSelected then
+        press(firstMsg)
+        select = true
+        break
+      end
+    end
+    if not select then
+      selectMenuItem(app, { "Window", "Go to Next Conversation"})
+    end
   end
   if #messageItems == 1
       or (#messageItems == 2 and lastMsg.AXSelected) then
