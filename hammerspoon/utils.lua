@@ -267,7 +267,8 @@ end
 
 local function filterParallels(apps)
   return tfind(apps, function(app)
-    return app:bundleID():find("com.parallels") == nil
+    return app:bundleID() == nil
+        or app:bundleID():find("com.parallels") == nil
         or app:bundleID() == "com.parallels.desktop.console"
   end)
 end
@@ -3527,7 +3528,7 @@ end
 function loadStatusItemsAutosaveName(app)
   local records = hs.execute(strfmt([[
     defaults read %s | grep '"NSStatusItem Preferred Position '
-  ]], app:bundleID()))
+  ]], app:bundleID() or app:name()))
   records = strsplit(records, '\n')
   records[#records] = nil
   local preferredPositions = {}
