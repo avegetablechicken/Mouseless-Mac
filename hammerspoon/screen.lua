@@ -212,6 +212,10 @@ local function getUserSpaces()
   return user_spaces
 end
 
+if OS_VERSION >= OS.Sequoia then
+  Drag = hs.loadSpoon("Drag")
+end
+
 local function checkAndMoveWindowToSpace(space)
   local user_spaces = getUserSpaces()
   local nspaces = #user_spaces
@@ -222,6 +226,10 @@ local function checkAndMoveWindowToSpace(space)
     if 1 <= targetIdx and targetIdx <= nspaces then
       local win = hs.window.focusedWindow()
       if win == nil then return end
+      if Drag then
+        Drag:focusedWindowToSpace(user_spaces[targetIdx])
+        return
+      end
       hs.spaces.moveWindowToSpace(win, user_spaces[targetIdx])
       hs.spaces.gotoSpace(user_spaces[targetIdx])
       local screenUUID = hs.spaces.spaceDisplay(user_spaces[targetIdx])
@@ -250,6 +258,10 @@ local function registerMoveToSpaceHotkeys()
         local win = hs.window.focusedWindow()
         if win == nil then return end
         local user_spaces = getUserSpaces()
+        if Drag then
+          Drag:focusedWindowToSpace(user_spaces[i])
+          return
+        end
         local curSpaceID = hs.spaces.focusedSpace()
         if curSpaceID == user_spaces[i] then return end
         hs.spaces.moveWindowToSpace(win, user_spaces[i])
