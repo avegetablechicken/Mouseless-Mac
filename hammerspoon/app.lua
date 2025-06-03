@@ -7969,10 +7969,8 @@ local appsLaunchSlow = {
     return #getMenuBarItems(app) > 10
   end
 }
-local fullyLaunchCriterion, menuItemsPrepared
 
 local function onLaunchedAndActivated(app)
-  fullyLaunchCriterion = nil
   local menuBarItems = getMenuBarItems(app)
   local localeUpdated = updateAppLocale(app)
   altMenuBarItem(app, menuBarItems)
@@ -7998,21 +7996,21 @@ local function onLaunchedAndActivated(app)
   return #menuBarItems > 0
 end
 
+local fullyLaunchCriterion, menuItemsPrepared
 function App_applicationCallback(appname, eventType, app)
   local appid = app:bundleID()
   if eventType == hs.application.watcher.launching then
     fullyLaunchCriterion = appsLaunchSlow[appid] or false
   elseif eventType == hs.application.watcher.launched then
-    local doublecheck = function()
-       return hs.application.frontmostApplication():bundleID() == appid
-    end
-    if fullyLaunchCriterion then
+    local doublecheck = fullyLaunchCriterion and bind(fullyLaunchCriterion, app)
+    if menuItemsPrepared ~= nil then
       local oldFn = doublecheck
       doublecheck = function()
-        return oldFn() and fullyLaunchCriterion(app)
+        return hs.application.frontmostApplication():bundleID() == appid
+            and (not oldFn or oldFn())
       end
     end
-    if fullyLaunchCriterion or menuItemsPrepared == false then
+    if doublecheck then
       if not doublecheck() then
         hs.timer.waitUntil(doublecheck,
                            bind(onLaunchedAndActivated, app), 0.01)
@@ -8020,7 +8018,7 @@ function App_applicationCallback(appname, eventType, app)
         onLaunchedAndActivated(app)
       end
     end
-    menuItemsPrepared = nil
+    fullyLaunchCriterion, menuItemsPrepared = nil, nil
     for _, proc in ipairs(processesOnLaunch[appid] or {}) do
       proc(app)
     end
