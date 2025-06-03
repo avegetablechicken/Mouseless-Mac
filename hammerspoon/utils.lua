@@ -3556,15 +3556,17 @@ function loadStatusItemsAutosaveName(app)
       return tcontain(enabledItems, p[1])
     end)
   end
-  table.sort(preferredPositions, function(r1, r2)
-    return r1[2] < r2[2]
-  end)
 
   local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
   local positions = {}
   for i, item in ipairs(menuBarItems) do
     tinsert(positions, { i, item.AXPosition.x })
   end
+
+  if #preferredPositions ~= #positions then return end
+  table.sort(preferredPositions, function(r1, r2)
+    return r1[2] < r2[2]
+  end)
   table.sort(positions, function(r1, r2)
     return r1[2] > r2[2]
   end)
@@ -3590,7 +3592,7 @@ MENUBAR_MANAGER_SHOW = {
   ["com.surteesstudios.Bartender"] = function(appid, index, map)
     if type(index) == 'number' then
       map = map or loadStatusItemsAutosaveName(find(appid))
-      index = map[index]
+      index = map and map[index] or "Item-" .. tostring(index - 1)
     end
     hs.osascript.applescript(string.format([[
       tell application id "com.surteesstudios.Bartender"
@@ -3603,7 +3605,7 @@ MENUBAR_MANAGER_SHOW = {
   ["com.HyperartFlow.Barbee"] = function(appid, index, map)
     if type(index) == 'number' then
       map = map or loadStatusItemsAutosaveName(find(appid))
-      index = map[index]
+      index = map and map[index] or "Item-" .. tostring(index - 1)
     end
     -- fixme: below script will force `Barbee` to kill itself
     hs.osascript.applescript(string.format([[
@@ -3642,7 +3644,7 @@ MENUBAR_MANAGER_SHOW = {
     if isAdvancedMode ~= "1" then
       if type(index) == 'string' then
         map = map or loadStatusItemsAutosaveName(targetApp)
-        index = map[index]
+        index = map and map[index]
         if index == nil then return true end
       end
       hs.eventtap.event.newMouseEvent(
@@ -3670,8 +3672,7 @@ MENUBAR_MANAGER_SHOW = {
     leftClickAndRestore(icon)
     if type(index) == 'number' then
       map = map or loadStatusItemsAutosaveName(find(appid))
-      index = map[index]
-      if index == nil then return true end
+      index = map and map[index] or "Item-" .. tostring(index - 1)
     end
     hs.timer.waitUntil(
       function()
@@ -3756,7 +3757,7 @@ function hiddenByMenuBarManager(app, index, map)
   if manager == nil then return false end
   if type(index) == 'string' then
     map = map or loadStatusItemsAutosaveName(app)
-    index = map[index]
+    index = map and map[index]
     if index == nil then return false end
   end
   local menuBarItem = getc(toappui(app), AX.MenuBar, -1,
@@ -3791,7 +3792,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   local map
   if type(menuBarIdx) == 'string' then
     map = loadStatusItemsAutosaveName(app)
-    menuBarIdx = map[menuBarIdx]
+    menuBarIdx = map and map[menuBarIdx]
     if menuBarIdx == nil then return false end
   end
   local menuBarMenu = getc(toappui(app), AX.MenuBar, -1,
