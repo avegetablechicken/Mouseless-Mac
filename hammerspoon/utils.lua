@@ -3581,7 +3581,7 @@ local function showHiddenMenuBarItems(appid)
   local app = find(appid)
   local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
   if icon then
-    leftClickAndRestore(icon, app:name())
+    leftClickAndRestore(icon)
   end
   return false
 end
@@ -3618,7 +3618,7 @@ MENUBAR_MANAGER_SHOW = {
     local app = find("com.jordanbaird.Ice")
     local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
     if icon then
-      leftClickAndRestore(icon, app:name())
+      leftClickAndRestore(icon)
     end
 
     local useIceBar = hs.execute(
@@ -3656,7 +3656,7 @@ MENUBAR_MANAGER_SHOW = {
           if menuBarMenu then
             hs.timer.doAfter(0, function()
               if click then
-                leftClickAndRestore(menuBarMenu, targetApp:name())
+                leftClickAndRestore(menuBarMenu)
               else
                 menuBarMenu:performAction(AX.Press)
               end
@@ -3667,7 +3667,7 @@ MENUBAR_MANAGER_SHOW = {
       return true
     end
 
-    leftClickAndRestore(icon, app:name())
+    leftClickAndRestore(icon)
     if type(index) == 'number' then
       map = map or loadStatusItemsAutosaveName(find(appid))
       index = map[index]
@@ -3713,7 +3713,7 @@ MENUBAR_MANAGER_SHOW = {
       return #win == 1 and win[1].AXRole == AX.Image
     end)
     if icon then
-      leftClickAndRestore(icon, app:name())
+      leftClickAndRestore(icon)
     end
     return false
   end,
@@ -3810,7 +3810,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
           if menuBarMenu then
             -- note: some apps do not react to AX.Press, you have to click them.
             if show == "click" then
-              leftClickAndRestore(menuBarMenu, app:name())
+              leftClickAndRestore(menuBarMenu)
             else
               menuBarMenu:performAction(AX.Press)
             end
@@ -3822,7 +3822,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
     elseif menuBarMenu then
       -- note: some apps do not react to AX.Press, you have to click them.
       if show == "click" then
-        leftClickAndRestore(menuBarMenu, app:name())
+        leftClickAndRestore(menuBarMenu)
       else
         menuBarMenu:performAction(AX.Press)
       end
