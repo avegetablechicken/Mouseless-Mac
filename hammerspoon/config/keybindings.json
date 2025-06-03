@@ -652,6 +652,10 @@
         "mods": "command",
         "key": "7"
       },
+      "view:toggleTimeline": {
+        "mods": "command",
+        "key": "8"
+      },
       "toggleSearchEditorWholeWord": {
         "mods": ["shift", "option", "command"],
         "key": "W"

@@ -1986,6 +1986,21 @@ appHotKeyCallbacks = {
         VSCodeToggleSideBarSection(winUI, "EXPLORER", "OUTLINE")
       end
     },
+    ["view:toggleTimeline"] = {
+      message = "View: Toggle Outline",
+      condition = function(app)
+        if app:focusedWindow() == nil then
+          return false
+        else
+          local winUI = towinui(app:focusedWindow())
+          return winUI.AXIdentifier ~= "open-panel", winUI
+        end
+      end,
+      repeatable = true,
+      fn = function(winUI)
+        VSCodeToggleSideBarSection(winUI, "EXPLORER", "TIMELINE")
+      end
+    },
     ["toggleSearchEditorWholeWord"] = {
       message = "Search Editor: Toggle Match Whole Word",
       condition = function(app)
