@@ -2750,33 +2750,21 @@ appHotKeyCallbacks = {
     },
     ["toggleLauncher"] = {
       message = "Toggle ChatGPT Launcher",
-      fn = function(app)
-        local appid = app:bundleID()
-        local output = hs.execute(strfmt([[
-          defaults read '%s' KeyboardShortcuts_toggleLauncher | tr -d '\n'
-        ]], appid))
-        if output == "0" then
-          local spec = KeybindingConfigs.hotkeys[appid]["toggleLauncher"]
-          local mods, key = dumpPlistKeyBinding(1, spec.mods, spec.key)
-          hs.execute(strfmt([[
-            defaults write '%s' KeyboardShortcuts_toggleLauncher -string \
-            '{"carbonKeyCode":%d,"carbonModifiers": %d}'
-          ]], appid, key, mods))
-          app:kill()
-          hs.timer.doAfter(1, function()
-            hs.execute(strfmt("open -g -b '%s'", appid))
-            hs.timer.doAfter(1, function()
-              safeGlobalKeyStroke(spec.mods, spec.key)
-            end)
-          end)
-        else
-          local json = hs.json.decode(output)
-          local mods, key = parsePlistKeyBinding(
-              json["carbonModifiers"], json["carbonKeyCode"])
-          if mods == nil or key == nil then return end
-          safeGlobalKeyStroke(mods, key)
-        end
+      fn = function()
+        clickRightMenuBarItem("ChatGPTHelper", {}, "click")
       end,
+      onLaunch = function(app)
+        local retry = 0
+        while app:focusedWindow() == nil do
+          hs.timer.usleep(10000)
+          retry = retry + 1
+          if retry == 100 then return end
+        end
+        app:focusedWindow():close()
+        app:hide()
+        hs.timer.usleep(1000000)
+        clickRightMenuBarItem("ChatGPTHelper", {}, "click")
+      end
     }
   },
 
