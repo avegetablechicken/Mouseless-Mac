@@ -1987,7 +1987,7 @@ appHotKeyCallbacks = {
       end
     },
     ["view:toggleTimeline"] = {
-      message = "View: Toggle Outline",
+      message = "View: Toggle Timeline",
       condition = function(app)
         if app:focusedWindow() == nil then
           return false
