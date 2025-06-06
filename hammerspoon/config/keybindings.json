@@ -915,6 +915,12 @@
       "back": {
         "mods": "command",
         "key": "["
+      },
+      "toggleLauncher": {
+        "mods": ["option", "command"],
+        "key": "space",
+        "background": true,
+        "persist": true
       }
     },
     "com.tencent.yuanbao": {
@@ -933,12 +939,6 @@
       "back": {
         "mods": "command",
         "key": "["
-      },
-      "toggleLauncher": {
-        "mods": ["option", "command"],
-        "key": "space",
-        "background": true,
-        "persist": true
       },
       "showMainWindow": {
         "mods": "command",
@@ -1536,6 +1536,24 @@
       "preferencesInMenuBarMenu": {
         "mods": "command",
         "key": ","
+      }
+    },
+    "io.mountainduck": {
+      "preferencesInMenuBarMenu": {
+        "mods": "command",
+        "key": ","
+      },
+      "openConnectionInMenuBarMenu": {
+        "mods": "command",
+        "key": "N"
+      },
+      "historyInMenuBarMenu": {
+        "mods": "control",
+        "key": "R"
+      },
+      "quitInMenuBarMenu": {
+        "mods": "command",
+        "key": "Q"
       }
     },
     "cn.better365.iShotProHelper": {
