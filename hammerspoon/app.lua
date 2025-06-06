@@ -5211,6 +5211,58 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["io.mountainduck"] =
+  {
+    ["preferencesInMenuBarMenu"] = {
+      message = localizedMessage("Preferences…"),
+      menubarFilter = { allowIndices = 1 },
+      fn = function(menuBarItem, app)
+        local title = localizedString("Preferences…", app:bundleID())
+        local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, title)
+        if menuItem then press(menuItem) end
+      end
+    },
+    ["openConnectionInMenuBarMenu"] = {
+      message = localizedMessage("Open Connection…"),
+      menubarFilter = { allowIndices = 1 },
+      fn = function(menuBarItem, app)
+        local title = localizedString("Open Connection…", app:bundleID())
+        local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, title)
+        if menuItem then press(menuItem) end
+      end
+    },
+    ["historyInMenuBarMenu"] = {
+      message = localizedMessage("History"),
+      menubarFilter = { allowIndices = 1 },
+      fn = function(menuBarItem, app)
+        local title = localizedString("History", app:bundleID())
+        local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, title)
+        if menuItem then
+          press(menuBarItem)
+          hs.eventtap.event.newMouseEvent(
+            hs.eventtap.event.types.mouseMoved, uioffset(menuItem, { 20, 5 })):post()
+          hs.timer.doAfter(0.1, function()
+            hs.eventtap.event.newMouseEvent(
+              hs.eventtap.event.types.mouseMoved, uioffset(menuItem, { 10, 5 })):post()
+          end)
+        end
+      end
+    },
+    ["quitInMenuBarMenu"] = {
+      message = function(app)
+        local quit = commonLocalizedMessage("Quit")(app)
+        return quit:gsub(app:name(), ' ' .. app:name())
+      end,
+      menubarFilter = { allowIndices = 1 },
+      fn = function(menuBarItem, app)
+        local quit = commonLocalizedMessage("Quit")(app)
+        local title = quit:gsub(app:name(), ' ' .. app:name())
+        local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, title)
+        if menuItem then press(menuItem) end
+      end
+    }
+  },
+
   ["cn.better365.iShotProHelper"] =
   {
     ["OCR"] = {
