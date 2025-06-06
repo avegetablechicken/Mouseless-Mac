@@ -947,6 +947,8 @@ local function collectLocaleFiles(localeDir, option)
   for file in hs.fs.dir(localeDir or {}) do
     if option.strings and file:sub(-8) == ".strings" then
       tinsert(localeFiles, file:sub(1, -9))
+    elseif option.strings and file:sub(-10) == ".strings.1" then
+      tinsert(localeFiles, file:sub(1, -11))
     elseif option.loctable and file:sub(-9) == ".loctable" then
       tinsert(localeFiles, file:sub(1, -10))
     elseif option.nib and file:sub(-4) == ".nib" then
@@ -1169,6 +1171,8 @@ local function localizeByStrings(str, localeDir, localeFile, localesDict, locale
       if jsonDict == nil then
         if exists(localeDir .. '/' .. fileStem .. '.strings') then
           jsonDict = parseStringsFile(localeDir .. '/' .. fileStem .. '.strings')
+        elseif exists(localeDir .. '/' .. fileStem .. '.strings.1') then
+          jsonDict = parseStringsFile(localeDir .. '/' .. fileStem .. '.strings.1')
         end
       end
       if jsonDict ~= nil and jsonDict[str] ~= nil then
@@ -1188,6 +1192,12 @@ local function localizeByStrings(str, localeDir, localeFile, localesDict, locale
         for _, p in ipairs(localeFile) do
           if file:sub(1, -9):match('^' .. p .. '$') then
             tinsert(preferentialStringsFiles, file:sub(1, -9))
+          end
+        end
+      elseif file:sub(-10) == '.strings.1' then
+        for _, p in ipairs(localeFile) do
+          if file:sub(1, -11):match('^' .. p .. '$') then
+            tinsert(preferentialStringsFiles, file:sub(1, -11))
           end
         end
       end
@@ -1211,6 +1221,9 @@ local function localizeByStrings(str, localeDir, localeFile, localesDict, locale
         if invDict == nil then
           if exists(baseLocaleDir .. '/' .. fileStem .. '.strings') then
             invDict = parseStringsFile(baseLocaleDir .. '/' .. fileStem .. '.strings',
+                                       false, true)
+          elseif exists(baseLocaleDir .. '/' .. fileStem .. '.strings.1') then
+            invDict = parseStringsFile(baseLocaleDir .. '/' .. fileStem .. '.strings.1',
                                        false, true)
           elseif exists(baseLocaleDir .. '/' .. fileStem .. '.nib')
               and exists(localeDir .. '/' .. fileStem .. '.strings') then
@@ -1271,7 +1284,8 @@ local function localizeByStrings(str, localeDir, localeFile, localesDict, locale
   else
     baseStringsFiles = collectLocaleFiles(baseLocaleDirs[1])
     for i=2, #baseLocaleDirs do
-      if exists(baseLocaleDirs[i] .. '/Localizable.strings') then
+      if exists(baseLocaleDirs[i] .. '/Localizable.strings')
+          or exists(baseLocaleDirs[i] .. '/Localizable.strings.1') then
         tinsert(baseStringsFiles, 'Localizable')
       end
     end
@@ -2224,6 +2238,8 @@ local function delocalizeByStrings(str, localeDir, localeFile, deLocalesInvDict)
       local jsonDict
       if exists(baseLocaleDir .. '/' .. file .. '.strings') then
         jsonDict = parseStringsFile(baseLocaleDir .. '/' .. file .. '.strings')
+      elseif exists(baseLocaleDir .. '/' .. file .. '.strings.1') then
+        jsonDict = parseStringsFile(baseLocaleDir .. '/' .. file .. '.strings.1')
       elseif exists(baseLocaleDir .. '/' .. file .. '.nib') then
         local fullPath = baseLocaleDir .. '/' .. file .. '.nib'
         if isdir(fullPath) then
@@ -2266,6 +2282,9 @@ local function delocalizeByStrings(str, localeDir, localeFile, deLocalesInvDict)
         if exists(localeDir .. '/' .. fileStem .. '.strings') then
           invDict = parseStringsFile(localeDir .. '/' .. fileStem .. '.strings',
                                      false, true)
+        elseif exists(localeDir .. '/' .. fileStem .. '.strings.1') then
+          invDict = parseStringsFile(localeDir .. '/' .. fileStem .. '.strings.1',
+                                     false, true)
         end
       end
       if invDict ~= nil and invDict[str] ~= nil then
@@ -2298,6 +2317,12 @@ local function delocalizeByStrings(str, localeDir, localeFile, deLocalesInvDict)
         for _, p in ipairs(localeFile) do
           if file:sub(1, -9):match('^' .. p .. '$') then
             tinsert(stringsFiles, file:sub(1, -9))
+          end
+        end
+      elseif file:sub(-10) == '.strings.1' then
+        for _, p in ipairs(localeFile) do
+          if file:sub(1, -11):match('^' .. p .. '$') then
+            tinsert(stringsFiles, file:sub(1, -11))
           end
         end
       end
