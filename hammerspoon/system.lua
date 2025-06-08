@@ -1866,11 +1866,12 @@ function registerControlCenterHotKeys(panel, inMenuBar)
                     totalDelay = totalDelay + 0.1
                   end
                 until button ~= nil or totalDelay > 3 or not webarea:isValid()
+                local darkMode = enableds[i] == 1 and "Enabled" or "Disabled"
+                if button.AXValue == darkMode then return end
                 local clicked = leftClickAndRestore(button,
                     getMenuBarItems(app)[1].AXTitle)
                 if not clicked then return end
 
-                local darkMode = enableds[i] == 1 and "Enabled" or "Disabled"
                 local menuItem
                 totalDelay = 0
                 repeat
