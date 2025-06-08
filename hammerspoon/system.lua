@@ -1910,19 +1910,20 @@ function registerControlCenterHotKeys(panel, inMenuBar)
                 observer:callback(function()
                   local frontWinBundleID = hs.window.frontmostWindow()
                       :application():bundleID()
-                  local ok, url = hs.osascript.applescript(strfmt([[
-                    tell application id "%s" to get URL of active tab of front window
-                  ]], appid))
-                  if frontWinBundleID ~= appid or not ok
-                      or url ~= scheme .. "://flags/#enable-force-dark" then
-                    if hotkey ~= nil then
-                      hotkey:delete()
-                      hotkey = nil
+                  if frontWinBundleID == appid and webarea:isValid() then
+                    local url = getc(webarea.AXParent.AXParent, AX.Toolbar, 1,
+                        AX.Group, 1, AX.TextField, 1).AXValue
+                    if url == scheme .. "://flags/#enable-force-dark" then
+                      return
                     end
-                    if observer ~= nil then
-                      observer:stop()
-                      observer = nil
-                    end
+                  end
+                  if hotkey ~= nil then
+                    hotkey:delete()
+                    hotkey = nil
+                  end
+                  if observer ~= nil then
+                    observer:stop()
+                    observer = nil
                   end
                 end)
                 observer:start()
