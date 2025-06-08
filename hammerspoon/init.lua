@@ -57,7 +57,14 @@ HK = {
 local function capitalize(str)
   return str:sub(1, 1):upper() .. str:sub(2)
 end
-AX = { WebArea = "AXWebArea", Open = "AXOpen" }
+AX = {
+  Heading             = "AXHeading",
+  OpaqueProviderGroup = "AXOpaqueProviderGroup",
+  WebArea             = "AXWebArea",
+  LandmarkBanner      = "AXLandmarkBanner",
+  TabPanel            = "AXTabPanel",
+  Open                = "AXOpen",
+}
 for k, v in pairs(hs.axuielement.roles) do AX[capitalize(k)] = v end
 for k, v in pairs(hs.axuielement.subroles) do AX[capitalize(k)] = v end
 for k, v in pairs(hs.axuielement.actions) do AX[capitalize(k)] = v end

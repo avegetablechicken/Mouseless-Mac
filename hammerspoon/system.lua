@@ -1531,7 +1531,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       hs.timer.usleep(0.05 * 1000000)
       totalDelay = totalDelay + 0.05
       local sa = getc(pane, AX.ScrollArea, 1)
-      if sa and sa[1] and sa[1].AXRole == "AXOpaqueProviderGroup" then
+      if sa and sa[1] and sa[1].AXRole == AX.OpaqueProviderGroup then
         sa = sa[1]
       end
       triangle = getc(sa, AX.DisclosureTriangle, 1)
@@ -1564,7 +1564,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         hs.timer.usleep(0.05 * 1000000)
         totalDelay = totalDelay + 0.05
         sa = getc(pane, AX.ScrollArea, 1)
-        if sa and sa[1] and sa[1].AXRole == "AXOpaqueProviderGroup" then
+        if sa and sa[1] and sa[1].AXRole == AX.OpaqueProviderGroup then
           sa = sa[1]
         end
       until sa or totalDelay > 0.5 or not pane:isValid()
@@ -1845,12 +1845,12 @@ function registerControlCenterHotKeys(panel, inMenuBar)
                     end
                   else
                     list = tfind(webarea.AXChildren, function(elem)
-                      return elem.AXSubrole == "AXTabPanel"
+                      return elem.AXSubrole == AX.TabPanel
                     end)
                     if list == nil and getc(webarea, AX.Group, 4) then
                       list = tfind(getc(webarea, AX.Group, 4).AXChildren,
                         function(elem)
-                          return elem.AXSubrole == "AXTabPanel"
+                          return elem.AXSubrole == AX.TabPanel
                         end)
                     end
                   end

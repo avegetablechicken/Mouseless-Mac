@@ -3345,7 +3345,7 @@ appHotKeyCallbacks = {
         end
         local banner = getc(webarea, AX.Group, 2, AX.Group, 1,
             AX.Group, 2, AX.Group, 1, AX.Group, 1)
-        if banner == nil or banner.AXSubrole ~= "AXLandmarkBanner" then
+        if banner == nil or banner.AXSubrole ~= AX.LandmarkBanner then
           return false
         end
         return true, getc(banner, AX.Group, 2, AX.Group, 1, AX.Image, 1).AXPosition
