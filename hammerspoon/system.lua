@@ -688,9 +688,8 @@ local function registerProxySettingsEntry(menu)
             return record ~= nil
           end,
           function()
-            local position = getc(record, AX.TextField, 1).AXPosition
-            local size = getc(record, AX.TextField, 1).AXSize
-            leftClickAndRestore({ position.x + size.w - 1, position.y },
+            local tf = getc(record, AX.TextField, 1)
+            leftClickAndRestore(uioffset(tf, { tf.AXSize.w - 1, 0}),
                                 app:name())
           end)
           obs:stop()

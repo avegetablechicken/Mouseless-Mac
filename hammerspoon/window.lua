@@ -1222,8 +1222,7 @@ local function PDFChooser()
           local aTab = getc(winUI, AX.Toolbar, 1, AX.Group, 1,
               AX.TabGroup, 1, AX.ScrollArea, 1, nil, choice.id)
           if aTab ~= nil then
-            local position = aTab.AXPosition
-            if leftClickAndRestore({ x = position.x + 10, y = position.y }, app:name()) then
+            if leftClickAndRestore(uioffset(aTab, { 10, 0 }), app:name()) then
               return
             end
           end

@@ -634,7 +634,7 @@ local function deleteAllCalls(win)
       local section = getc(results[1][1], AX.Group, 1)
       if section == nil then return end
 
-      if not rightClickAndRestore(section.AXPosition, appname) then
+      if not rightClickAndRestore(section, appname) then
         return
       end
       local popups = getc(section, AX.Menu)
