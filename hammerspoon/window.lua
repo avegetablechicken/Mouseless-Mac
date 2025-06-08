@@ -1332,17 +1332,16 @@ end
 -- use it to switch to a tab
 bindWindowSwitch(misc["searchTab"], 'Switch to Tab',
 function()
-  local appid = hs.application.frontmostApplication():bundleID()
+  local app = hs.application.frontmostApplication()
+  local appid = app:bundleID()
+
   if tcontain({ "com.readdle.PDFExpert-Mac", "com.superace.updf.mac" }, appid) then
     PDFChooser()
     return
   end
-
-  if appid == "com.apple.Preview" then
-    local ok, name = hs.osascript.applescript([[
-      tell application id "]] .. appid .. [[" to get name of front document
-    ]])
-    if ok and name:sub(-4) == '.pdf' then
+  if appid == "com.apple.Preview" and app:mainWindow() ~= nil then
+    local doc = towinui(app:mainWindow()).AXDocument
+    if doc:sub(-4) == '.pdf' then
       PDFChooser()
       return
     end
