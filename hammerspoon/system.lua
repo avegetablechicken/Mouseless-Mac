@@ -1822,43 +1822,65 @@ function registerControlCenterHotKeys(panel, inMenuBar)
                 local app = find(appid)
                 local appUI = toappui(app)
                 local winUI = towinui(app:focusedWindow())
-                local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
-                    AX.Group, 1, AX.Group, 1, AX.WebArea, 1)
+                local webarea
+                repeat
+                  webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
+                      AX.Group, 1, AX.Group, 1, AX.WebArea, 1)
+                until webarea ~= nil
                 local list, button
-                if appid == "com.google.Chrome" then
-                  list = getc(webarea, AX.Group, 2, AX.Group, 1,
-                              AX.Group, 4, AX.Group, 1)
-                else
-                  list = getc(webarea, AX.Group, 1, AX.Group, 2,
-                              AX.Group, 1, AX.Group, 3, AX.Group, 1)
-                end
-                if list ~= nil then
-                  for _, c in ipairs(list) do
-                    if c[1].AXTitle:find("Auto Dark Mode") then
-                      button = getc(c, AX.Group, 2, AX.PopupButton, 1)
-                    end
+                local totalDelay = 0
+                repeat
+                  if appid == "com.google.Chrome" then
+                    list = getc(webarea, AX.Group, 2, AX.Group, 1,
+                                AX.Group, 4, AX.Group, 1)
+                  else
+                    list = getc(webarea, AX.Group, 1, AX.Group, 2,
+                                AX.Group, 1, AX.Group, 3, AX.Group, 1)
                   end
-                else
-                  list = tfind(getc(webarea, AX.Group, 4).AXChildren,
-                    function(elem)
-                      return elem.AXSubrole == "AXTabPanel"
-                    end)
-                  if list == nil then
+                  if list ~= nil then
+                    for _, c in ipairs(list) do
+                      if c[1].AXTitle:find("Auto Dark Mode") then
+                        button = getc(c, AX.Group, 2, AX.PopupButton, 1)
+                      end
+                    end
+                  else
                     list = tfind(webarea.AXChildren, function(elem)
                       return elem.AXSubrole == "AXTabPanel"
                     end)
-                  end
-                  for c = 1, #list / 4 do
-                    if list[c*4-3].AXTitle:find("Auto Dark Mode") then
-                      button = getc(list[c * 4], AX.PopupButton, 1)
+                    if list == nil and getc(webarea, AX.Group, 4) then
+                      list = tfind(getc(webarea, AX.Group, 4).AXChildren,
+                        function(elem)
+                          return elem.AXSubrole == "AXTabPanel"
+                        end)
                     end
                   end
-                end
-                leftClickAndRestore(button, getMenuBarItems(app)[1].AXTitle)
+                  for ci, c in ipairs(list.AXChildren) do
+                    if c.AXRole == AX.Link
+                        and c.AXDescription == "#enable-force-dark" then
+                      button = getc(list[ci + 1], AX.PopupButton, 1)
+                      break
+                    end
+                  end
+                  if button == nil then
+                    hs.timer.usleep(0.1 * 1000000)
+                    totalDelay = totalDelay + 0.1
+                  end
+                until button ~= nil or totalDelay > 3 or not webarea:isValid()
+                local clicked = leftClickAndRestore(button,
+                    getMenuBarItems(app)[1].AXTitle)
+                if not clicked then return end
 
                 local darkMode = enableds[i] == 1 and "Enabled" or "Disabled"
-                local menuItem = getc(winUI, AX.Group, 1, AX.Group, 1,
-                    AX.Group, 1, AX.Group, 1, AX.Menu, 1, AX.MenuItem, darkMode)
+                local menuItem
+                totalDelay = 0
+                repeat
+                  menuItem = getc(winUI, AX.Group, 1, AX.Group, 1,
+                      AX.Group, 1, AX.Group, 1, AX.Menu, 1, AX.MenuItem, darkMode)
+                  if menuItem == nil then
+                    hs.timer.usleep(0.1 * 1000000)
+                    totalDelay = totalDelay + 0.1
+                  end
+                until menuItem ~= nil or totalDelay > 3 or not webarea:isValid()
                 menuItem:performAction(AX.Press)
                 local hotkey, observer
                 hotkey = AppWinBind(app, {
