@@ -1928,18 +1928,11 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
       condition = function(app)
-        local ok, filePath = hs.osascript.applescript(strfmt([[
-          tell application id "%s" to get path of front document
-        ]], app:bundleID()))
-        if ok then
-          return true, filePath
-        else
-          return false
-        end
+        if app:mainWindow() == nil then return end
+        local doc = towinui(app:mainWindow()).AXDocument
+        return doc ~= nil, doc
       end,
-      fn = function(filePath)
-        hs.execute("open -R '" .. filePath .. "'")
-      end
+      fn = function(doc) hs.execute('open -R "' .. doc .. '"') end
     }
   },
 
@@ -2526,22 +2519,11 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
       condition = function(app)
-        local ok, filePath = hs.osascript.applescript(strfmt([[
-          tell application id "%s" to get file of front document
-        ]], app:bundleID()))
-        if ok and filePath ~= nil then
-          local pos = filePath:find(":", 1)
-          assert(pos)
-          filePath = filePath:sub(pos)
-          filePath = filePath:gsub(":", "/")
-          return true, filePath
-        else
-          return false
-        end
+        if app:mainWindow() == nil then return end
+        local doc = towinui(app:mainWindow()).AXDocument
+        return doc ~= nil, doc
       end,
-      fn = function(filePath)
-        hs.execute("open -R '" .. filePath .. "'")
-      end
+      fn = function(doc) hs.execute('open -R "' .. doc .. '"') end
     },
   },
 
@@ -2583,22 +2565,11 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
       condition = function(app)
-        local ok, filePath = hs.osascript.applescript(strfmt([[
-          tell application id "%s" to get file of front document
-        ]], app:bundleID()))
-        if ok and filePath ~= nil then
-          local pos = filePath:find(":", 1)
-          assert(pos)
-          filePath = filePath:sub(pos)
-          filePath = filePath:gsub(":", "/")
-          return true, filePath
-        else
-          return false
-        end
+        if app:mainWindow() == nil then return end
+        local doc = towinui(app:mainWindow()).AXDocument
+        return doc ~= nil, doc
       end,
-      fn = function(filePath)
-        hs.execute("open -R '" .. filePath .. "'")
-      end
+      fn = function(doc) hs.execute('open -R "' .. doc .. '"') end
     },
   },
 
@@ -2640,22 +2611,11 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
       condition = function(app)
-        local ok, filePath = hs.osascript.applescript(strfmt([[
-          tell application id "%s" to get file of front document
-        ]], app:bundleID()))
-        if ok and filePath ~= nil then
-          local pos = filePath:find(":", 1)
-          assert(pos)
-          filePath = filePath:sub(pos)
-          filePath = filePath:gsub(":", "/")
-          return true, filePath
-        else
-          return false
-        end
+        if app:mainWindow() == nil then return end
+        local doc = towinui(app:mainWindow()).AXDocument
+        return doc ~= nil, doc
       end,
-      fn = function(filePath)
-        hs.execute("open -R '" .. filePath .. "'")
-      end
+      fn = function(doc) hs.execute('open -R "' .. doc .. '"') end
     },
   },
 
