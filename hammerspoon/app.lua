@@ -736,10 +736,10 @@ end)
 -- ### App Cleaner & Uninstaller
 local function buttonValidForAppCleanerUninstaller(title)
   return function(win)
-    local locTitle = localizedString(title, win:application():bundleID())
     local winUI = towinui(win)
     local sg = getc(winUI, AX.SplitGroup, 1)
     if sg == nil then return false end
+    local locTitle = localizedString(title, win:application():bundleID())
     local button = tfind(getc(sg, AX.Button), function(bt)
       return bt.AXIdentifier == "uaid:RemoveSelectedItemsButton"
           and bt.AXTitle == locTitle and bt.AXEnabled
@@ -750,12 +750,12 @@ end
 
 local function confirmButtonValidForAppCleanerUninstaller(title)
   return function(win)
-    local locTitle = localizedString(title, win:application():bundleID())
     local winUI = towinui(win)
     local cancel = tfind(getc(winUI, AX.Button), function(bt)
       return bt.AXIdentifier == "uaid:RemoveDialogSecondButton" and bt.AXEnabled
     end)
     if cancel == nil then return false end
+    local locTitle = localizedString(title, win:application():bundleID())
     local button = getc(winUI, AX.StaticText, locTitle)
     return button ~= nil, button ~= nil and button.AXPosition
   end
