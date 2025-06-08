@@ -1145,6 +1145,22 @@ local function getTabUrl(app)
   if ok then return url end
 end
 
+local function setTabUrl(app, url)
+  if app:bundleID() == "com.apple.Safari" then
+    hs.osascript.applescript(strfmt([[
+      tell application id "com.apple.Safari"
+        set URL of front document to "%s"
+      end tell
+    ]], url))
+  else  -- assume chromium-based browsers
+    hs.osascript.applescript(strfmt([[
+      tell application id "%s"
+        set URL of active tab of front window to "%s"
+      end tell
+    ]], app:bundleID(), url))
+  end
+end
+
 local function weiboNavigateToSideBarCondition(idx, isCommon)
   return function(app)
     if idx == 1 and isCommon then
@@ -1192,19 +1208,7 @@ local function weiboNavigateToSideBar(result, url, app)
   local schemeEnd = url:find("//")
   local domainEnd = url:find("/", schemeEnd + 2)
   local fullUrl = url:sub(1, domainEnd) .. result
-  if app:bundleID() == "com.apple.Safari" then
-    hs.osascript.applescript(strfmt([[
-      tell application id "com.apple.Safari"
-        set URL of front document to "%s"
-      end tell
-    ]], fullUrl))
-  else  -- assume chromium-based browsers
-    hs.osascript.applescript(strfmt([[
-      tell application id "%s"
-        set URL of active tab of front window to "%s"
-      end tell
-    ]], app:bundleID(), fullUrl))
-  end
+  setTabUrl(app, fullUrl)
 end
 
 local function weiboNavigateToCustomGroupCondition(idx)
@@ -1238,19 +1242,7 @@ local function douyinNavigateToTab(result, url, app)
   else
     fullUrl = result
   end
-  if app:bundleID() == "com.apple.Safari" then
-    hs.osascript.applescript(strfmt([[
-      tell application id "com.apple.Safari"
-        set URL of front document to "%s"
-      end tell
-    ]], fullUrl))
-  else  -- assume chromium-based browsers
-    hs.osascript.applescript(strfmt([[
-      tell application id "%s"
-        set URL of active tab of front window to "%s"
-      end tell
-    ]], app:bundleID(), fullUrl))
-  end
+  setTabUrl(app, fullUrl)
 end
 
 -- ## functin utilities for hotkey configs
