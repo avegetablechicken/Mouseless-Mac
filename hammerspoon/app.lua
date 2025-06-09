@@ -1772,6 +1772,23 @@ appHotKeyCallbacks = {
         return button ~= nil, button
       end,
       fn = press
+    },
+    ["addPeopleWhenNewFaceTime"] = {
+      message = localizedMessage("Add People"),
+      windowFilter = {
+        allowSheet = true
+      },
+      condition = function(win)
+        local heading = getc(towinui(win), AX.Group, 1, AX.Group, 1,
+            AX.Group, 1, AX.Heading, 1)
+        return heading and heading.AXDescription ==
+            localizedString("New FaceTime", win:application():bundleID())
+      end,
+      fn = function(win)
+        local button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
+            AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 1)
+        if button then press(button) end
+      end
     }
   },
 

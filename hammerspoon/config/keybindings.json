@@ -597,6 +597,10 @@
       "newFaceTime": {
         "mods": "command",
         "key": "N"
+      },
+      "addPeopleWhenNewFaceTime": {
+        "mods": "command",
+        "key": "F"
       }
     },
     "com.apple.Notes": {
