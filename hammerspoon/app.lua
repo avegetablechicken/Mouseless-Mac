@@ -7314,10 +7314,6 @@ end
 
 -- register watchers for focused window belonging to daemon app
 for appid, appConfig in pairs(appHotKeyCallbacks) do
-  local app = find(appid)
-  if app ~= nil then
-    registerWinFiltersForDaemonApp(app, appConfig)
-  end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
   for hkID, cfg in pairs(appConfig) do
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
@@ -7326,6 +7322,10 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
     if hasKey and isForWindow and isBackground then
+      local app = find(appid)
+      if app ~= nil then
+        registerWinFiltersForDaemonApp(app, appConfig)
+      end
       execOnLaunch(appid, function(app)
         registerWinFiltersForDaemonApp(app, appConfig)
       end)
@@ -7336,10 +7336,6 @@ end
 
 -- register watchers for menu of menubar app
 for appid, appConfig in pairs(appHotKeyCallbacks) do
-  local app = find(appid)
-  if app ~= nil then
-    registerObserversForMenuBarMenu(app, appConfig)
-  end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
   for hkID, cfg in pairs(appConfig) do
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
@@ -7347,6 +7343,10 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     local isMenuBarMenu = keybinding.menubarFilter ~= nil
         or cfg.menubarFilter ~= nil
     if hasKey and isMenuBarMenu then
+      local app = find(appid)
+      if app ~= nil then
+        registerObserversForMenuBarMenu(app, appConfig)
+      end
       execOnLaunch(appid, function(app)
         registerObserversForMenuBarMenu(app, appConfig)
       end)
