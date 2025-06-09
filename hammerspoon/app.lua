@@ -2235,7 +2235,7 @@ appHotKeyCallbacks = {
       fn = receiveMenuItem
     },
     ["goToHome"] = {
-      message = localizedWPSHome,
+      message = localizedWPSHome:sub(2, -2),
       windowFilter = { rejectTitles = localizedWPSHome },
       fn = function(win)
         local winUI = towinui(win)
