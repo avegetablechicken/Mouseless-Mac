@@ -6254,7 +6254,6 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
     local observer = uiobserver.new(app:pid())
     observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
     observer:callback(function(_, element, notification)
-      if filter.fn and not filter.fn(app:focusedWindow()) then return end
       registerDaemonAppInWinHotkeys(app, appid, filter)
       registerCloseObserver(element)
     end)
@@ -6265,18 +6264,11 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
     end)
     return
   end
-  local actualFilter = filter
-  local fn = filter.fn
-  if fn then
-    actualFilter = hs.fnutils.copy(filter)
-    actualFilter.fn = nil
-  end
-  local windowFilter = hs.window.filter.new(false):setAppFilter(app:name(), actualFilter)
+  local windowFilter = hs.window.filter.new(false):setAppFilter(app:name(), filter)
   :subscribe({
     hs.window.filter.windowCreated, hs.window.filter.windowFocused
   },
   function(win, appname, event)
-    if fn ~= nil and not fn(win) then return end
     registerDaemonAppInWinHotkeys(win, appid, filter, event)
     registerCloseObserver(towinui(win))
   end)
