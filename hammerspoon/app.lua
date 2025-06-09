@@ -6372,6 +6372,7 @@ local function registerObserversForMenuBarMenu(app, appConfig)
       if observer == nil then
         local appUI = toappui(app)
         observer = uiobserver.new(app:pid())
+        if not appUI:isValid() then return end
         observer:addWatcher(appUI, uinotifications.menuOpened)
         observer:callback(function(_, element, notification)
           local mbItem
