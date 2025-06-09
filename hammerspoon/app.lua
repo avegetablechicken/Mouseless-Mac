@@ -6118,25 +6118,26 @@ local function registerInWinHotKeys(app)
   end)
 end
 
-unregisterInWinHotKeys = function(appid, delete)
+unregisterInWinHotKeys = function(appid, delete, hotkeys)
   if type(appid) ~= 'string' then appid = appid:bundleID() end
-  if appHotKeyCallbacks[appid] == nil or inWinHotKeys[appid] == nil then
+  hotkeys = hotkeys or inWinHotKeys[appid]
+  if appHotKeyCallbacks[appid] == nil or hotkeys == nil then
     return
   end
 
-  local hasDeleteOnDisable = hs.fnutils.some(inWinHotKeys[appid],
+  local hasDeleteOnDisable = hs.fnutils.some(hotkeys,
     function(_, hotkey)
       return hotkey.deleteOnDisable
     end)
   if delete or hasDeleteOnDisable then
-    for _, hotkey in pairs(inWinHotKeys[appid]) do
+    for _, hotkey in pairs(hotkeys) do
       hotkey:delete()
     end
     inWinHotKeys[appid] = nil
     prevWindowCallbacks[appid] = nil
     InWinHotkeyInfoChain[appid] = nil
   else
-    for _, hotkey in pairs(inWinHotKeys[appid]) do
+    for _, hotkey in pairs(hotkeys) do
       hotkey:disable()
     end
   end
@@ -6172,6 +6173,156 @@ local function sameFilter(a, b)
     if a[k] == nil then return false end
   end
   return true
+end
+
+
+AppFocusedWindowFilters = {}
+local function registerAppInWinHotkeys(win, hotkeys, appid, filter, event)
+  local app = win:application()
+  for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
+    local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID) or cfg
+    local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    local isBackground = keybinding.background ~= nil
+        and keybinding.background or cfg.background
+    local windowFilter = keybinding.windowFilter or cfg.windowFilter
+    local isForWindow = windowFilter ~= nil
+    local bindable = function()
+      return cfg.bindCondition == nil or cfg.bindCondition(app)
+    end
+    if hasKey and isForWindow and not isBackground and bindable()
+        and sameFilter(windowFilter, filter) then
+      local msg = type(cfg.message) == 'string'
+          and cfg.message or cfg.message(app)
+      if msg ~= nil then
+        local config = tcopy(cfg)
+        config.mods = keybinding.mods
+        config.key = keybinding.key
+        config.message = msg
+        if type(filter) == 'table' and (filter.allowSheet or filter.allowPopover) then
+          config.windowFilter = filter
+        else
+          config.windowFilter = true
+        end
+        config.repeatable = keybinding.repeatable ~= nil
+            and keybinding.repeatable or cfg.repeatable
+        config.repeatedFn = config.repeatable and cfg.fn or nil
+        hotkeys[hkID] = AppWinBind(win, config)
+      end
+    end
+  end
+end
+
+local function registerSingleWinFilterForApp(app, filter)
+  local appid = app:bundleID()
+  local actualFilter = filter
+  local allowSheet, allowPopover
+  if type(filter) == 'table' then
+    allowSheet, allowPopover = filter.allowSheet, filter.allowPopover
+  end
+  if allowSheet or allowPopover then
+    actualFilter = false
+  end
+  local windowFilter = hs.window.filter.new(false):setAppFilter(app:name(), actualFilter)
+
+  local hotkeys
+  local observer = uiobserver.new(app:pid())
+  local win = app:focusedWindow()
+  if win and ((allowSheet and win:role() == AX.Sheet)
+        or (allowPopover and win:role() == AX.Popover)
+        or windowFilter:isWindowAllowed(win)) then
+    hotkeys = {}
+    registerAppInWinHotkeys(win, hotkeys, appid, filter)
+    observer:addWatcher(towinui(win), uinotifications.uIElementDestroyed)
+  end
+
+  local appUI = toappui(app)
+  observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
+  if win and (type(filter) == 'table'
+      and (filter.allowTitles or filter.rejectTitles)) then
+    observer:addWatcher(towinui(win), uinotifications.titleChanged)
+  end
+  observer:callback(function(_, element, notification)
+    win = app:focusedWindow()
+    if notification == uinotifications.focusedWindowChanged
+        and win ~= nil and (type(filter) == 'table'
+            and (filter.allowTitles or filter.rejectTitles)) then
+      observer:addWatcher(towinui(win), uinotifications.titleChanged)
+    end
+    if notification == uinotifications.uIElementDestroyed then
+      unregisterInWinHotKeys(appid, true, hotkeys or {})
+      hotkeys = nil
+      return
+    end
+
+    local action = function()
+      if win ~= nil and ((allowSheet and win:role() == AX.Sheet)
+            or (allowPopover and win:role() == AX.Popover)
+            or windowFilter:isWindowAllowed(win))  then
+        if hotkeys == nil then
+          hotkeys = {}
+          registerAppInWinHotkeys(win, hotkeys, appid, filter)
+          observer:addWatcher(towinui(win), uinotifications.uIElementDestroyed)
+        else
+          for _, hotkey in pairs(hotkeys) do
+            hotkey:enable()
+          end
+        end
+      else
+        unregisterInWinHotKeys(appid, false, hotkeys or {})
+      end
+    end
+    -- "hs.window.filter" waits for stop of changing title,
+    -- affecting the return of "hs.window.filter.isWindowAllowed"
+    -- we have to workaround it
+    if notification == uinotifications.titleChanged then
+      windowFilter:subscribe(hs.window.filter.windowTitleChanged,
+        function(window)
+          win = window
+          hs.timer.doAfter(0.6, action)
+          windowFilter:unsubscribeAll()
+        end)
+      return
+    else
+      windowFilter:unsubscribeAll()
+    end
+    action()
+  end)
+  observer:start()
+  AppFocusedWindowFilters[appid][filter] = observer
+  stopOnDeactivated(appid, observer, function()
+    AppFocusedWindowFilters[appid][filter] = nil
+    unregisterInWinHotKeys(appid, true, hotkeys or {})
+    hotkeys = nil
+  end)
+end
+
+local function registerWinFiltersForApp(app)
+  local appid = app:bundleID()
+  for hkID, cfg in pairs(appHotKeyCallbacks[appid] or {}) do
+    local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID)
+        or { mods = cfg.mods, key = cfg.key }
+    local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
+    local isBackground = keybinding.background ~= nil
+        and keybinding.background or cfg.background
+    local bindable = function()
+      return cfg.bindCondition == nil or cfg.bindCondition(app)
+    end
+    if hasKey and isForWindow and not isBackground and bindable() then
+      if AppFocusedWindowFilters[appid] == nil then
+        AppFocusedWindowFilters[appid] = {}
+      end
+      local windowFilter = keybinding.windowFilter or cfg.windowFilter
+      for f, _ in pairs(AppFocusedWindowFilters[appid]) do
+        -- a window filter can be shared by multiple hotkeys
+        if sameFilter(f, windowFilter) then
+          goto L_CONTINUE
+        end
+      end
+      registerSingleWinFilterForApp(app, windowFilter)
+    end
+    ::L_CONTINUE::
+  end
 end
 
 function WinBind(win, config, ...)
@@ -6863,9 +7014,8 @@ local function processInvalidAltMenu(app, reinvokeKey)
   local isSameWin = curWin == windowOnBindAltMenu
   altMenuBarItem(app, nil, reinvokeKey)
   unregisterInAppHotKeys(app, true)
-  unregisterInWinHotKeys(app, true)
   registerInAppHotKeys(app)
-  registerInWinHotKeys(app)
+  registerWinFiltersForApp(app)
   remapPreviousTab(app)
   registerOpenRecent(app)
   registerZoomHotkeys(app)
@@ -7297,7 +7447,8 @@ if frontApp then
   registerForOpenSavePanel(frontApp)
   altMenuBarItem(frontApp)
   registerInAppHotKeys(frontApp)
-  registerInWinHotKeys(frontApp) -- for focused window
+  -- registerInWinHotKeys(frontApp) -- for focused window
+  registerWinFiltersForApp(frontApp)
 
   remapPreviousTab(frontApp)
   registerOpenRecent(frontApp)
@@ -7978,10 +8129,9 @@ local function onLaunchedAndActivated(app)
   altMenuBarItem(app, menuBarItems)
   if localeUpdated then
     unregisterInAppHotKeys(app, true)
-    unregisterInWinHotKeys(app, true)
   end
   registerInAppHotKeys(app)
-  registerInWinHotKeys(app)
+  registerWinFiltersForApp(app)
   remapPreviousTab(app)
   registerOpenRecent(app)
   registerZoomHotkeys(app)
