@@ -6192,7 +6192,7 @@ local function registerAppInWinHotkeys(win, hotkeys, appid, filter, event)
     if hasKey and isForWindow and not isBackground and bindable()
         and sameFilter(windowFilter, filter) then
       local msg = type(cfg.message) == 'string'
-          and cfg.message or cfg.message(app)
+          and cfg.message or cfg.message(win)
       if msg ~= nil then
         local config = tcopy(cfg)
         config.mods = keybinding.mods
