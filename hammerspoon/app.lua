@@ -5737,7 +5737,7 @@ local function wrapCondition(app, config, mode)
   local resendToSystem = config.defaultResendToSystem
 
   -- testify window filter and return TF & extra result
-  if windowFilter ~= nil and windowFilter ~= 'background' then
+  if windowFilter ~= nil and appid ~= "com.tencent.LemonMonitor" then
     local hkIdx = hotkeyIdx(mods, key)
     prevWindowCallback = get(prevWindowCallbacks, appid, hkIdx, mode)
     local actualFilter  -- remove self-customed properties
@@ -5876,7 +5876,7 @@ local function wrapCondition(app, config, mode)
     selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
   end
 
-  if windowFilter ~= nil and windowFilter ~= 'background' then
+  if windowFilter ~= nil and appid ~= "com.tencent.LemonMonitor" then
     -- multiple window-specified hotkeys may share a common keybinding
     -- they are cached in a linked list.
     -- each window filter will be tested until one matched target window
@@ -5902,7 +5902,7 @@ local function wrapCondition(app, config, mode)
     end
     prevWebsiteCallbacks[appid][hkIdx][mode] = fn
   end
-  if (windowFilter ~= nil and windowFilter ~= 'background')
+  if (windowFilter ~= nil and appid ~= "com.tencent.LemonMonitor")
       or websiteFilter ~= nil then
     -- essential info are also cached in a linked list for showing keybindings by `HSKeybindings`
     wrapInfoChain(app, config, cond, mode)
@@ -6326,7 +6326,10 @@ local function registerWinFiltersForApp(app)
 end
 
 function WinBind(win, config, ...)
-  config.windowFilter = 'background'
+  if type(config.windowFilter) ~= 'table' or
+      not (config.windowFilter.allowSheet or config.windowFilter.allowPopover) then
+    config.windowFilter = true
+  end
   local hotkey, cond = bindAppWinImpl(win, config, ...)
   hotkey.kind = HK.IN_WIN
   hotkey.condition = cond
@@ -6363,6 +6366,7 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter, event)
         config.mods = keybinding.mods
         config.key = keybinding.key
         config.message = msg
+        config.windowFilter = windowFilter
         config.repeatable = keybinding.repeatable ~= nil
             and keybinding.repeatable or cfg.repeatable
         config.repeatedFn = config.repeatable and cfg.fn or nil
