@@ -494,37 +494,31 @@ end
 local function testValid(entry)
   local pos = entry.msg:find(": ")
   local valid = pos ~= nil and not (entry.suspendable and FLAGS["SUSPEND"])
-  local actualMsg
   if valid then
-    if entry.condition ~= nil then
-      if entry.kind == HK.IN_WIN then
+    local actualMsg
+    if entry.kind == HK.IN_WIN then
+      if entry.condition ~= nil then
         valid = entry.condition(hs.window.frontmostWindow())
+      end
+    elseif entry.kind == HK.IN_APP then
+      local app = hs.application.frontmostApplication()
+      if entry.subkind == HK.IN_APP_.WINDOW then
+        local hotkeyInfo = get(InWinHotkeyInfoChain, app:bundleID(), entry.idx)
+        if hotkeyInfo ~= nil then
+          valid, actualMsg = getValidMessage(hotkeyInfo, app:focusedWindow())
+        end
       else
-        valid = entry.condition(hs.application.frontmostApplication())
+        local hotkeyInfo = get(InAppHotkeyInfoChain, app:bundleID(), entry.idx)
+        if hotkeyInfo ~= nil then
+          valid, actualMsg = getValidMessage(hotkeyInfo, app)
+        end
       end
     end
-    local app = hs.application.frontmostApplication()
-    local appid = app:bundleID()
-    if valid and entry.kind == HK.IN_APP
-        and entry.subkind == HK.IN_APP_.WEBSITE then
-      local hotkeyInfo = get(InWebsiteHotkeyInfoChain, appid, entry.idx)
-      if hotkeyInfo ~= nil then
-        valid, actualMsg = getValidMessage(hotkeyInfo, app)
-      end
-    elseif valid and entry.kind == HK.IN_APP
-        and entry.subkind == HK.IN_APP_.WINDOW then
-      local hotkeyInfo = get(InWinHotkeyInfoChain, appid, entry.idx)
-      if hotkeyInfo ~= nil then
-        valid, actualMsg = getValidMessage(hotkeyInfo, app:focusedWindow())
-      end
-    end
-    entry.valid = valid
     if actualMsg ~= nil then
       entry.msg = entry.msg:sub(1, pos - 1) .. ": " .. actualMsg
     end
-  else
-    entry.valid = false
   end
+  entry.valid = valid
 end
 
 local trackpad = require('modal.trackpad')

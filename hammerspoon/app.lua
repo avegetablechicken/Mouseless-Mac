@@ -5769,14 +5769,13 @@ local KEY_MODE = {
   REPEAT = 2,
 }
 
-InWebsiteHotkeyInfoChain = {}
+InAppHotkeyInfoChain = {}
 InWinHotkeyInfoChain = {}
 local function wrapInfoChain(app, config, cond, mode)
   local appid = app:bundleID()
   local mods, key = config.mods, config.key
   local message = config.message
   local windowFilter = config.windowFilter
-  local websiteFilter = config.websiteFilter
 
   if windowFilter ~= nil then
     if InWinHotkeyInfoChain[appid] == nil then
@@ -5791,26 +5790,26 @@ local function wrapInfoChain(app, config, cond, mode)
         previous = prevHotkeyInfo
       }
     end
-  elseif websiteFilter ~= nil then
-    if InWebsiteHotkeyInfoChain[appid] == nil then
-      InWebsiteHotkeyInfoChain[appid] = {}
+  else
+    if InAppHotkeyInfoChain[appid] == nil then
+      InAppHotkeyInfoChain[appid] = {}
     end
     if mode == KEY_MODE.PRESS then
       local hkIdx = hotkeyIdx(mods, key)
-      local prevWebsiteHotkeyInfo = InWebsiteHotkeyInfoChain[appid][hkIdx]
-      InWebsiteHotkeyInfoChain[appid][hkIdx] = {
+      local prevHotkeyInfo = InAppHotkeyInfoChain[appid][hkIdx]
+      InAppHotkeyInfoChain[appid][hkIdx] = {
         condition = cond,
         message = message,
-        previous = prevWebsiteHotkeyInfo
+        previous = prevHotkeyInfo
       }
     end
   end
 end
 
-local prevWebsiteCallbacks = {}
+local prevAppCallbacks = {}
 local prevWindowCallbacks = {}
 local function wrapCondition(app, config, mode)
-  local prevWebsiteCallback, prevWindowCallback
+  local prevCallback
   local win
   if app.application ~= nil then
     win = app app = win:application()
@@ -5821,19 +5820,28 @@ local function wrapCondition(app, config, mode)
   local func = mode == KEY_MODE.REPEAT and config.repeatedfn or config.fn
   local windowFilter = config.windowFilter
   local websiteFilter = config.websiteFilter
+  local condition = config.condition
   local cond = function(obj)
-    if config.condition == nil then return true end
-    local satisfied, result = config.condition(obj)
+    if condition == nil then return true end
+    local satisfied, result = condition(obj)
     if not satisfied then result = COND_FAIL.USER_CONDITION_FAILED end
     return satisfied, result
   end
   -- some apps only accept system key strokes and neglect key strokes targeted at them
   local resendToSystem = config.defaultResendToSystem
 
+  if (windowFilter ~= nil or websiteFilter ~= nil or condition ~= nil)
+      and appid ~= "com.tencent.LemonMonitor" then
+    local hkIdx = hotkeyIdx(mods, key)
+    if windowFilter ~= nil then
+      prevCallback = get(prevWindowCallbacks, appid, hkIdx, mode)
+    else
+      prevCallback = get(prevAppCallbacks, appid, hkIdx, mode)
+    end
+  end
+
   -- testify window filter and return TF & extra result
   if windowFilter ~= nil and appid ~= "com.tencent.LemonMonitor" then
-    local hkIdx = hotkeyIdx(mods, key)
-    prevWindowCallback = get(prevWindowCallbacks, appid, hkIdx, mode)
     local actualFilter  -- remove self-customed properties
     if type(windowFilter) == 'table' then
       for k, v in pairs(windowFilter) do
@@ -5856,11 +5864,7 @@ local function wrapCondition(app, config, mode)
               and windowFilter.allowSheet and win:role() == AX.Sheet)
           or (type(windowFilter) == 'table'
               and windowFilter.allowPopover and win:role() == AX.Popover) then
-        local satisfied, result = oldCond(win)
-        if not satisfied then
-          result = COND_FAIL.WINDOW_FILTER_NOT_SATISFIED
-        end
-        return satisfied, result
+        return oldCond(win)
       else
         return false, COND_FAIL.WINDOW_FILTER_NOT_SATISFIED
       end
@@ -5868,8 +5872,6 @@ local function wrapCondition(app, config, mode)
   end
   -- testify website filter and return TF, valid URL & extra result
   if websiteFilter ~= nil then
-    local hkIdx = hotkeyIdx(mods, key)
-    prevWebsiteCallback = get(prevWebsiteCallbacks, appid, hkIdx, mode)
     local oldCond = cond
     cond = function(obj)
       if app:focusedWindow() == nil
@@ -5882,9 +5884,10 @@ local function wrapCondition(app, config, mode)
         if type(allowURLs) == 'string' then
           allowURLs = { allowURLs }
         end
+        local satisfied, result
         for _, v in ipairs(allowURLs) do
           if url:match(v) ~= nil then
-            local satisfied, result = oldCond(obj)
+            satisfied, result = oldCond(obj)
             if satisfied then
               if result ~= nil then
                 return true, result, url
@@ -5894,7 +5897,7 @@ local function wrapCondition(app, config, mode)
             end
           end
         end
-        return false, COND_FAIL.WEBSITE_FILTER_NOT_SATISFIED
+        return false, result or COND_FAIL.WEBSITE_FILTER_NOT_SATISFIED
       end
     end
   end
@@ -5939,19 +5942,12 @@ local function wrapCondition(app, config, mode)
         hs.eventtap.keyStroke(mods, key, nil, app)
       end
       return
-    elseif result == COND_FAIL.WINDOW_FILTER_NOT_SATISFIED then
-      if prevWindowCallback ~= nil then
-        prevWindowCallback()
-        return
-      end
-    elseif result == COND_FAIL.WEBSITE_FILTER_NOT_SATISFIED then
-      if prevWebsiteCallback ~= nil then
-        prevWebsiteCallback()
-        return
-      end
     elseif result == COND_FAIL.NOT_FRONTMOST_WINDOW then
       selectMenuItemOrKeyStroke(hs.window.frontmostWindow():application(),
                                 mods, key, resendToSystem)
+      return
+    elseif prevCallback ~= nil then
+      prevCallback()
       return
     end
     -- most of the time, directly selecting menu item costs less time than key strokes
@@ -5971,21 +5967,21 @@ local function wrapCondition(app, config, mode)
     end
     prevWindowCallbacks[appid][hkIdx][mode] = fn
   end
-  if websiteFilter ~= nil then
-    -- multiple website-specified hotkeys may share a common keybinding
+  if websiteFilter ~= nil or config.condition ~= nil then
+    -- multiple conditioned hotkeys may share a common keybinding
     -- they are cached in a linked list.
-    -- each website filterParallels will be tested until one matched target tab
-    if prevWebsiteCallbacks[appid] == nil then
-      prevWebsiteCallbacks[appid] = {}
-     end
-    local hkIdx = hotkeyIdx(mods, key)
-    if prevWebsiteCallbacks[appid][hkIdx] == nil then
-      prevWebsiteCallbacks[appid][hkIdx] = { nil, nil }
+    -- each condition will be tested until one is satisfied
+    if prevAppCallbacks[appid] == nil then
+      prevAppCallbacks[appid] = {}
     end
-    prevWebsiteCallbacks[appid][hkIdx][mode] = fn
+    local hkIdx = hotkeyIdx(mods, key)
+    if prevAppCallbacks[appid][hkIdx] == nil then
+      prevAppCallbacks[appid][hkIdx] = { nil, nil }
+    end
+    prevAppCallbacks[appid][hkIdx][mode] = fn
   end
-  if (windowFilter ~= nil or websiteFilter ~= nil)
-      and appid ~= "com.tencent.LemonMonitor" then
+  if (windowFilter ~= nil and appid ~= "com.tencent.LemonMonitor")
+      or websiteFilter ~= nil or condition ~= nil then
     -- essential info are also cached in a linked list for showing keybindings by `HSKeybindings`
     wrapInfoChain(app, config, cond, mode)
   end
@@ -6039,10 +6035,9 @@ local function bindAppWinImpl(app, config, ...)
 end
 
 function AppBind(app, config, ...)
-  local hotkey, cond = bindAppWinImpl(app, config, ...)
+  local hotkey = bindAppWinImpl(app, config, ...)
   hotkey.kind = HK.IN_APP
   if config.websiteFilter == nil then
-    hotkey.condition = cond
     hotkey.subkind = HK.IN_APP_.APP
   else
     hotkey.subkind = HK.IN_APP_.WEBSITE
@@ -6056,7 +6051,6 @@ local function registerInAppHotKeys(app)
   local appid = app:bundleID()
   if appHotKeyCallbacks[appid] == nil then return end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
-  prevWebsiteCallbacks = {}
 
   if not inAppHotKeys[appid] then
     inAppHotKeys[appid] = {}
