@@ -5893,12 +5893,12 @@ local function wrapCondition(app, config, mode)
           if url:match(v) ~= nil then
             if oldCond ~= nil then
               local satisfied, result = oldCond(obj)
-              if not satisfied then
-                return false, result
-              elseif result ~= nil then
-                return true, result, url
-              else
-                return true, url
+              if satisfied then
+                if result ~= nil then
+                  return true, result, url
+                else
+                  return true, url
+                end
               end
             else
               return true, url
