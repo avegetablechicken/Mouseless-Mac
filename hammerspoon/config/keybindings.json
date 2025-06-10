@@ -1598,11 +1598,11 @@
         "persist": true
       },
       "serverMode": {
-        "mods": ["shift, command"],
+        "mods": ["shift", "command"],
         "key": "S"
       },
       "clientMode": {
-        "mods": ["shift, command"],
+        "mods": ["shift", "command"],
         "key": "C"
       },
       "reload": {
