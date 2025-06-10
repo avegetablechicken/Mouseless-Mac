@@ -3634,6 +3634,54 @@ appHotKeyCallbacks = {
       end,
       fn = press
     },
+    ["serverMode"] = {
+      message = "Toggle Server Mode",
+      windowFilter = {
+        allowTitles = "^Barrier$"
+      },
+      fn = function(win)
+        local winUI = towinui(win)
+        local server = getc(winUI, AX.CheckBox, 1)
+        if server then press(server) end
+      end
+    },
+    ["clientMode"] = {
+      message = "Toggle Client Mode",
+      windowFilter = {
+        allowTitles = "^Barrier$"
+      },
+      fn = function(win)
+        local winUI = towinui(win)
+        local client = getc(winUI, AX.CheckBox, 2)
+        if client then press(client) end
+      end
+    },
+    ["configureInteractively"] = {
+      message = "Configure interactively",
+      windowFilter = {
+        allowTitles = "^Barrier$"
+      },
+      condition = function(win)
+        local winUI = towinui(win)
+        local configure = getc(winUI, AX.CheckBox, 1,
+            AX.RadioButton, "Configure interactively:")
+        return configure ~= nil and #configure:actionNames() > 0, configure
+      end,
+      fn = press
+    },
+    ["useExistingConfiguration"] = {
+      message = "Use existing configuration",
+      windowFilter = {
+        allowTitles = "^Barrier$"
+      },
+      condition = function(win)
+        local winUI = towinui(win)
+        local configure = getc(winUI, AX.CheckBox, 1,
+            AX.RadioButton, "Use existing configuration:")
+        return configure ~= nil and #configure:actionNames() > 0, configure
+      end,
+      fn = press
+    },
     ["configureServer"] = {
       message = "Configure Server...",
       windowFilter = {
@@ -3647,6 +3695,21 @@ appHotKeyCallbacks = {
       end,
       fn = press
     },
+    ["configurationFile"] = {
+      message = "Configuration file",
+      windowFilter = {
+        allowTitles = "^Barrier$"
+      },
+      condition = function(win)
+        local winUI = towinui(win)
+        local configure = getc(winUI, AX.CheckBox, 1,
+            AX.TextField, "Configuration file:")
+        return configure ~= nil and #configure:actionNames() > 0, configure
+      end,
+      fn = function(button)
+        button:performAction(AX.Raise)
+      end
+    },
     ["browse"] = {
       message = "Browse",
       windowFilter = {
@@ -3658,6 +3721,29 @@ appHotKeyCallbacks = {
         return browse ~= nil and #browse:actionNames() > 0, browse
       end,
       fn = press
+    },
+    ["autoConfig"] = {
+      message = "Toggle Auto config",
+      windowFilter = {
+        allowTitles = "^Barrier$"
+      },
+      condition = function(win)
+        local winUI = towinui(win)
+        local autoconfig = getc(winUI, AX.CheckBox, 2,
+            AX.CheckBox, "Auto config")
+        return autoconfig ~= nil and #autoconfig:actionNames() > 0, autoconfig
+      end,
+      fn = function(checkbox, win)
+        local toSpecify = checkbox.AXValue == 1
+        press(checkbox)
+        if toSpecify then
+          local input = getc(towinui(win), AX.CheckBox, 2,
+              AX.TextField, "Server IP:")
+          if input then
+            input:performAction(AX.Raise)
+          end
+        end
+      end
     },
     ["showMainWindow"] = {
       message = "Show",

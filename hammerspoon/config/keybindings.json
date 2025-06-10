@@ -1597,6 +1597,14 @@
         "background": true,
         "persist": true
       },
+      "serverMode": {
+        "mods": ["shift, command"],
+        "key": "S"
+      },
+      "clientMode": {
+        "mods": ["shift, command"],
+        "key": "C"
+      },
       "reload": {
         "mods": "option",
         "key": "R"
@@ -1609,13 +1617,29 @@
         "mods": "option",
         "key": "S"
       },
+      "configureInteractively": {
+        "mods": "command",
+        "key": "1"
+      },
+      "useExistingConfiguration": {
+        "mods": "command",
+        "key": "2"
+      },
       "configureServer": {
+        "mods": "option",
+        "key": "C"
+      },
+      "configurationFile": {
         "mods": "option",
         "key": "C"
       },
       "browse": {
         "mods": "command",
         "key": "O"
+      },
+      "autoConfig": {
+        "mods": "option",
+        "key": "C"
       },
       "showMainWindow": {
         "mods": "command",
