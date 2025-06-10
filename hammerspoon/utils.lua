@@ -34,7 +34,7 @@ function getc(element, role, index, ...)
     child = tfind(children, function(c)
       if c.AXIdentifier == index then return true end
       local cRole = role or c.AXRole
-      if cRole == AX.StaticText or cRole == AX.TextField then
+      if cRole == AX.StaticText then
         return c.AXValue == index
       else
         return c.AXTitle == index
