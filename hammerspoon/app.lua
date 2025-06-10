@@ -1406,6 +1406,7 @@ end
 
 -- possible reasons for failure of hotkey condition
 local COND_FAIL = {
+  USER_CONDITION_FAILED = "USER_CONDITION_FAILED",
   NOT_FRONTMOST_WINDOW = "NOT_FRONTMOST_WINDOW",
   MENU_ITEM_SELECTED = "MENU_ITEM_SELECTED",
   NO_MENU_ITEM_BY_KEYBINDING = "NO_MENU_ITEM_BY_KEYBINDING",
@@ -1441,11 +1442,7 @@ local function noSelectedMenuBarItemFunc(fn)
     local app = obj.application ~= nil and obj:application() or obj
     local satisfied = noSelectedMenuBarItem(app)
     if satisfied then
-      if fn ~= nil then
-        return fn(obj)
-      else
-        return true
-      end
+      return fn(obj)
     else
       return false, COND_FAIL.MENU_ITEM_SELECTED
     end
@@ -5764,11 +5761,7 @@ local function resendToFrontmostWindow(cond, nonFrontmost)
         return false, COND_FAIL.NOT_FRONTMOST_WINDOW
       end
     end
-    if cond ~= nil then
-      return cond(obj)
-    else
-      return true
-    end
+    return cond(obj)
   end
 end
 
@@ -5827,9 +5820,14 @@ local function wrapCondition(app, config, mode)
 
   local mods, key = config.mods, config.key
   local func = mode == KEY_MODE.REPEAT and config.repeatedfn or config.fn
-  local cond = config.condition
   local windowFilter = config.windowFilter
   local websiteFilter = config.websiteFilter
+  local cond = function(obj)
+    if config.condition == nil then return true end
+    local satisfied, result = config.condition(obj)
+    if not satisfied then result = COND_FAIL.USER_CONDITION_FAILED end
+    return satisfied, result
+  end
   -- some apps only accept system key strokes and neglect key strokes targeted at them
   local resendToSystem = config.defaultResendToSystem
 
@@ -5859,15 +5857,11 @@ local function wrapCondition(app, config, mode)
               and windowFilter.allowSheet and win:role() == AX.Sheet)
           or (type(windowFilter) == 'table'
               and windowFilter.allowPopover and win:role() == AX.Popover) then
-        if oldCond ~= nil then
-          local satisfied, result = oldCond(win)
-          if not satisfied then
-            result = COND_FAIL.WINDOW_FILTER_NOT_SATISFIED
-          end
-          return satisfied, result
-        else
-          return true
+        local satisfied, result = oldCond(win)
+        if not satisfied then
+          result = COND_FAIL.WINDOW_FILTER_NOT_SATISFIED
         end
+        return satisfied, result
       else
         return false, COND_FAIL.WINDOW_FILTER_NOT_SATISFIED
       end
@@ -5891,17 +5885,13 @@ local function wrapCondition(app, config, mode)
         end
         for _, v in ipairs(allowURLs) do
           if url:match(v) ~= nil then
-            if oldCond ~= nil then
-              local satisfied, result = oldCond(obj)
-              if satisfied then
-                if result ~= nil then
-                  return true, result, url
-                else
-                  return true, url
-                end
+            local satisfied, result = oldCond(obj)
+            if satisfied then
+              if result ~= nil then
+                return true, result, url
+              else
+                return true, url
               end
-            else
-              return true, url
             end
           end
         end
@@ -5912,12 +5902,8 @@ local function wrapCondition(app, config, mode)
   if config.menubar ~= nil then
     local oldCond = cond
     cond = function(app)
-      if oldCond ~= nil then
-        local satisfied, result = oldCond(config.menubar, app)
-        return satisfied, result, config.menubar
-      else
-        return true, config.menubar
-      end
+      local satisfied, result = oldCond(config.menubar, app)
+      return satisfied, result, config.menubar
     end
   else
     -- if a menu is extended, hotkeys with no modifiers are disabled
