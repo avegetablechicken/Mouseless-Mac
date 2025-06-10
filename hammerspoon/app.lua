@@ -5772,14 +5772,16 @@ local KEY_MODE = {
 }
 
 InAppHotkeyInfoChain = {}
-InWinHotkeyInfoChain = {}
+if APPWIN_HOTKEY_ON_WINDOW_FOCUS then
+  InWinHotkeyInfoChain = {}
+end
 local function wrapInfoChain(app, config, cond, mode)
   local appid = app:bundleID()
   local mods, key = config.mods, config.key
   local message = config.message
   local windowFilter = config.windowFilter
 
-  if windowFilter ~= nil then
+  if APPWIN_HOTKEY_ON_WINDOW_FOCUS and windowFilter ~= nil then
     if InWinHotkeyInfoChain[appid] == nil then
       InWinHotkeyInfoChain[appid] = {}
     end
@@ -5804,12 +5806,18 @@ local function wrapInfoChain(app, config, cond, mode)
         message = message,
         previous = prevHotkeyInfo
       }
+      if not APPWIN_HOTKEY_ON_WINDOW_FOCUS then
+        InAppHotkeyInfoChain[appid][hkIdx].window = windowFilter ~= nil
+      end
     end
   end
 end
 
 local prevAppCallbacks = {}
-local prevWindowCallbacks = {}
+local prevWindowCallbacks
+if APPWIN_HOTKEY_ON_WINDOW_FOCUS then
+  prevWindowCallbacks = {}
+end
 local function wrapCondition(app, config, mode)
   local prevCallback
   local win
@@ -5835,7 +5843,7 @@ local function wrapCondition(app, config, mode)
   if (windowFilter ~= nil or websiteFilter ~= nil or condition ~= nil)
       and appid ~= "com.tencent.LemonMonitor" then
     local hkIdx = hotkeyIdx(mods, key)
-    if windowFilter ~= nil then
+    if APPWIN_HOTKEY_ON_WINDOW_FOCUS and windowFilter ~= nil then
       prevCallback = get(prevWindowCallbacks, appid, hkIdx, mode)
     else
       prevCallback = get(prevAppCallbacks, appid, hkIdx, mode)
@@ -5956,7 +5964,8 @@ local function wrapCondition(app, config, mode)
     selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
   end
 
-  if windowFilter ~= nil and appid ~= "com.tencent.LemonMonitor" then
+  if APPWIN_HOTKEY_ON_WINDOW_FOCUS and windowFilter ~= nil
+      and appid ~= "com.tencent.LemonMonitor" then
     -- multiple window-specified hotkeys may share a common keybinding
     -- they are cached in a linked list.
     -- each window filter will be tested until one matched target window
@@ -5969,7 +5978,9 @@ local function wrapCondition(app, config, mode)
     end
     prevWindowCallbacks[appid][hkIdx][mode] = fn
   end
-  if websiteFilter ~= nil or config.condition ~= nil then
+  if websiteFilter ~= nil or config.condition ~= nil
+      or (not APPWIN_HOTKEY_ON_WINDOW_FOCUS and windowFilter ~= nil
+          and appid ~= "com.tencent.LemonMonitor") then
     -- multiple conditioned hotkeys may share a common keybinding
     -- they are cached in a linked list.
     -- each condition will be tested until one is satisfied

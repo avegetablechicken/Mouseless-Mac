@@ -480,7 +480,12 @@ end
 
 local function getValidMessage(hotkeyInfo, obj)
   if obj == nil then return false, nil end
-  if hotkeyInfo.condition(obj) then
+  local thisObj = obj
+  if not APPWIN_HOTKEY_ON_WINDOW_FOCUS and hotkeyInfo.window
+      and obj.focusedWindow ~= nil then
+    thisObj = obj:focusedWindow()
+  end
+  if hotkeyInfo.condition(thisObj) then
     return true, hotkeyInfo.message
   else
     if hotkeyInfo.previous then
@@ -502,7 +507,7 @@ local function testValid(entry)
       end
     elseif entry.kind == HK.IN_APP then
       local app = hs.application.frontmostApplication()
-      if entry.subkind == HK.IN_APP_.WINDOW then
+      if APPWIN_HOTKEY_ON_WINDOW_FOCUS and entry.subkind == HK.IN_APP_.WINDOW then
         local hotkeyInfo = get(InWinHotkeyInfoChain, app:bundleID(), entry.idx)
         if hotkeyInfo ~= nil then
           valid, actualMsg = getValidMessage(hotkeyInfo, app:focusedWindow())
