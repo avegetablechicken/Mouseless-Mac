@@ -5985,8 +5985,8 @@ local function wrapCondition(app, config, mode)
     end
     prevWebsiteCallbacks[appid][hkIdx][mode] = fn
   end
-  if (windowFilter ~= nil and appid ~= "com.tencent.LemonMonitor")
-      or websiteFilter ~= nil then
+  if (windowFilter ~= nil or websiteFilter ~= nil)
+      and appid ~= "com.tencent.LemonMonitor" then
     -- essential info are also cached in a linked list for showing keybindings by `HSKeybindings`
     wrapInfoChain(app, config, cond, mode)
   end
