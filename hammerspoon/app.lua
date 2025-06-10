@@ -5316,13 +5316,13 @@ appHotKeyCallbacks = {
     },
     ["quitInMenuBarMenu"] = {
       message = function(app)
-        local quit = commonLocalizedMessage("Quit")(app)
-        return quit:gsub(app:name(), ' ' .. app:name())
+        local quit = localizedString("Quit", app:bundleID())
+        return quit .. ' ' .. app:name()
       end,
       menubarFilter = { allowIndices = 1 },
       fn = function(menuBarItem, app)
-        local quit = commonLocalizedMessage("Quit")(app)
-        local title = quit:gsub(app:name(), ' ' .. app:name())
+        local quit = localizedString("Quit", app:bundleID())
+        local title = quit .. ' ' .. app:name()
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, title)
         if menuItem then press(menuItem) end
       end
