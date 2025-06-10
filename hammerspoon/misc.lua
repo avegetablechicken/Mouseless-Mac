@@ -277,19 +277,6 @@ local function loadKarabinerKeyBindings(filePath)
   return keyBindings
 end
 
-local function getValidMessage(hotkeyInfo, obj)
-  if obj == nil then return false, nil end
-  if hotkeyInfo.condition(obj) then
-    return true, hotkeyInfo.message
-  else
-    if hotkeyInfo.previous then
-      return getValidMessage(hotkeyInfo.previous, obj)
-    else
-      return false, nil
-    end
-  end
-end
-
 local function menuItemHotkeyIdx(mods, key)
   local idx = ""
   for _, mod in ipairs{"cmd", "alt", "ctrl", "shift"} do
@@ -488,6 +475,19 @@ local function loadAppHotkeys(t, showOrSearch)
   end
   for i=#appHotkeys,1,-1 do
     tinsert(t, insertIdx, appHotkeys[i])
+  end
+end
+
+local function getValidMessage(hotkeyInfo, obj)
+  if obj == nil then return false, nil end
+  if hotkeyInfo.condition(obj) then
+    return true, hotkeyInfo.message
+  else
+    if hotkeyInfo.previous then
+      return getValidMessage(hotkeyInfo.previous, obj)
+    else
+      return false, nil
+    end
   end
 end
 
