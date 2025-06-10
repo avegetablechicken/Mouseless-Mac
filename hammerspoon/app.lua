@@ -5764,6 +5764,8 @@ local function resendToFrontmostWindow(cond, nonFrontmost)
   end
 end
 
+APPWIN_HOTKEY_ON_WINDOW_FOCUS = true
+
 local KEY_MODE = {
   PRESS = 1,
   REPEAT = 2,
@@ -6196,7 +6198,9 @@ end
 
 unregisterInWinHotKeys = function(appid, delete, hotkeys)
   if type(appid) ~= 'string' then appid = appid:bundleID() end
-  hotkeys = hotkeys or inWinHotKeys[appid]
+  if not APPWIN_HOTKEY_ON_WINDOW_FOCUS then
+    hotkeys = inWinHotKeys[appid]
+  end
   if appHotKeyCallbacks[appid] == nil or hotkeys == nil then
     return
   end
@@ -6209,7 +6213,9 @@ unregisterInWinHotKeys = function(appid, delete, hotkeys)
     for _, hotkey in pairs(hotkeys) do
       hotkey:delete()
     end
-    inWinHotKeys[appid] = nil
+    if not APPWIN_HOTKEY_ON_WINDOW_FOCUS then
+      inWinHotKeys[appid] = nil
+    end
     prevWindowCallbacks[appid] = nil
     InWinHotkeyInfoChain[appid] = nil
   else
@@ -7095,7 +7101,12 @@ local function processInvalidAltMenu(app, reinvokeKey)
   altMenuBarItem(app, nil, reinvokeKey)
   unregisterInAppHotKeys(app, true)
   registerInAppHotKeys(app)
-  registerWinFiltersForApp(app)
+  if APPWIN_HOTKEY_ON_WINDOW_FOCUS then
+    registerWinFiltersForApp(app)
+  else
+    unregisterInWinHotKeys(app, true)
+    registerInWinHotKeys(app)
+  end
   remapPreviousTab(app)
   registerOpenRecent(app)
   registerZoomHotkeys(app)
@@ -7527,8 +7538,11 @@ if frontApp then
   registerForOpenSavePanel(frontApp)
   altMenuBarItem(frontApp)
   registerInAppHotKeys(frontApp)
-  -- registerInWinHotKeys(frontApp) -- for focused window
-  registerWinFiltersForApp(frontApp)
+  if APPWIN_HOTKEY_ON_WINDOW_FOCUS then -- for focused window
+    registerWinFiltersForApp(frontApp)
+  else
+    registerInWinHotKeys(frontApp)
+  end
 
   remapPreviousTab(frontApp)
   registerOpenRecent(frontApp)
@@ -8206,9 +8220,16 @@ local function onLaunchedAndActivated(app)
   altMenuBarItem(app, menuBarItems)
   if localeUpdated then
     unregisterInAppHotKeys(app, true)
+    if not APPWIN_HOTKEY_ON_WINDOW_FOCUS then
+      unregisterInWinHotKeys(app, true)
+    end
   end
   registerInAppHotKeys(app)
-  registerWinFiltersForApp(app)
+  if APPWIN_HOTKEY_ON_WINDOW_FOCUS then
+    registerWinFiltersForApp(app)
+  else
+    registerInWinHotKeys(app)
+  end
   remapPreviousTab(app)
   registerOpenRecent(app)
   registerZoomHotkeys(app)
