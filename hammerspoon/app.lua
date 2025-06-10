@@ -3269,8 +3269,7 @@ appHotKeyCallbacks = {
       message = "最近打开",
       fn = function(app)
         -- in early version of macOS there was a duplicated menu bar item '文件'
-        -- which does not have menu items. So we have to manually find out the
-        -- right menu bar item '文件'
+        -- which does not have menu items. So we have to manually filter it out
         local appUI = toappui(app)
         local menuBarItems = getc(appUI, AX.MenuBar, 1,AX.MenuBarItem)
         local menuBarItem = tfind(menuBarItems, function(item)
