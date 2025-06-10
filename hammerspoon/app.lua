@@ -7856,9 +7856,8 @@ for appid, roles in pairs(appsAutoHideWithNoPseudoWindows) do
   local app = find(appid)
   if app ~= nil then
     func(app)
-  else
-    execOnLaunch(appid, func)
   end
+  execOnLaunch(appid, func)
 end
 for appid, roles in pairs(appsAutoQuitWithNoPseudoWindows) do
   local func = function(app)
@@ -7868,9 +7867,8 @@ for appid, roles in pairs(appsAutoQuitWithNoPseudoWindows) do
   local app = find(appid)
   if app ~= nil then
     func(app)
-  else
-    execOnLaunch(appid, func)
   end
+  execOnLaunch(appid, func)
 end
 
 
@@ -7950,19 +7948,18 @@ BarrierFocusWindowFilter = nil
 if hs.application.pathForBundleID("barrier") ~= nil
     and hs.application.pathForBundleID("barrier") ~= "" then
   local app = find("barrier")
-  if app == nil then
-    execOnLaunch("barrier", function(app)
-      BarrierFocusWindowFilter = hs.window.filter.new(false)
-          :allowApp(app:name())
-          :subscribe(hs.window.filter.windowCreated,
-                     function(win) win:focus() end)
-    end)
-  else
+  if app then
     BarrierFocusWindowFilter = hs.window.filter.new(false)
         :allowApp(app:name())
         :subscribe(hs.window.filter.windowCreated,
                    function(win) win:focus() end)
   end
+  execOnLaunch("barrier", function(app)
+    BarrierFocusWindowFilter = hs.window.filter.new(false)
+        :allowApp(app:name())
+        :subscribe(hs.window.filter.windowCreated,
+                    function(win) win:focus() end)
+  end)
 end
 
 -- ## remote desktop apps
