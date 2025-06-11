@@ -923,7 +923,6 @@
       "toggleLauncher": {
         "mods": ["option", "command"],
         "key": "space",
-        "background": true,
         "persist": true
       }
     },
@@ -1254,8 +1253,7 @@
     "com.surteesstudios.Bartender": {
       "toggleMenuBar": {
         "mods": "${hyper.daemon}",
-        "key": "E",
-        "background": true
+        "key": "E"
       },
       "click1stBartenderBarItem": {
         "mods": "",
@@ -1339,13 +1337,11 @@
       },
       "searchMenuBar": {
         "mods": "${hyper.daemon}",
-        "key": "space",
-        "background": true
+        "key": "space"
       },
       "keyboardNavigate": {
         "mods": "control",
-        "key": "F1",
-        "background": true
+        "key": "F1"
       },
       "view1": {
         "mods": "command",
@@ -1387,8 +1383,7 @@
     "com.HyperartFlow.Barbee": {
       "toggleMenuBar": {
         "mods": "${hyper.daemon}",
-        "key": "E",
-        "background": true
+        "key": "E"
       },
       "toggleSidebar": {
         "mods": ["control", "command"],
@@ -1480,8 +1475,7 @@
     "cn.better365.iBar": {
       "toggleMenuBar": {
         "mods": "${hyper.daemon}",
-        "key": "E",
-        "background": true
+        "key": "E"
       },
       "click1stiBarItem": {
         "mods": "",
@@ -1527,15 +1521,13 @@
     "com.app.menubarx": {
       "toggleMenuBarX": {
         "mods": ["shift", "option", "command"],
-        "key": "X",
-        "background": true
+        "key": "X"
       }
     },
     "com.gaosun.eul": {
       "showSystemStatus": {
         "mods": "${hyper.daemon}",
-        "key": "Z",
-        "background": true
+        "key": "Z"
       },
       "preferencesInMenuBarMenu": {
         "mods": "command",
@@ -1564,15 +1556,13 @@
       "OCR": {
         "mods": "${hyper.daemon}",
         "key": "O",
-        "background": true,
         "persist": true
       }
     },
     "whbalzac.Dongtaizhuomian": {
       "invokeInAppScreenSaver": {
         "mods": "${hyper.daemon}",
-        "key": "S",
-        "background": true
+        "key": "S"
       },
       "preferences": {
         "mods": "command",
@@ -1594,7 +1584,6 @@
       "toggleBarrierConnect": {
         "mods": "${hyper.daemon}",
         "key": "B",
-        "background": true,
         "persist": true
       },
       "serverMode": {
@@ -1650,7 +1639,6 @@
       "toggleTopNotch": {
         "mods": "${hyper.daemon}",
         "key": "N",
-        "background": true,
         "persist": true
       }
     },
@@ -1658,7 +1646,6 @@
       "toggleJetbrainsToolbox": {
         "mods": "${hyper.daemon}",
         "key": "J",
-        "background": true,
         "persist": true
       }
     },
@@ -1666,7 +1653,6 @@
       "OCRForLatex": {
         "mods": "${hyper.daemon}",
         "key": "T",
-        "background": true,
         "persist": true
       }
     },
@@ -1674,7 +1660,6 @@
       "showPasswordsDialog": {
         "mods": "${hyper.daemon}",
         "key": "P",
-        "background": true,
         "persist": true
       },
       "newPassword": {

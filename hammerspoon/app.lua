@@ -2727,6 +2727,7 @@ appHotKeyCallbacks = {
     },
     ["toggleLauncher"] = {
       message = "Toggle ChatGPT Launcher",
+      background = true,
       fn = function()
         clickRightMenuBarItem("ChatGPTHelper", {}, "click")
       end,
@@ -2834,6 +2835,7 @@ appHotKeyCallbacks = {
         local appname = displayName(app)
         return "Toggle " .. appname .. " Launcher"
       end,
+      background = true,
       fn = function(app)
         -- fixme: false invoke when `Bartender` try to show or hide menubar icon
         -- always show the icon to workaround it
@@ -3558,6 +3560,7 @@ appHotKeyCallbacks = {
   {
     ["toggleBarrierConnect"] = {
       message = "Toggle Barrier Connect",
+      background = true,
       fn = function(app)
         local appUI = toappui(app)
         local menu = getc(appUI, AX.MenuBar, 2, AX.MenuBarItem, 1, AX.Menu, 1)
@@ -3804,6 +3807,7 @@ appHotKeyCallbacks = {
     ["toggleMenuBar"] = {
       message = "Toggle Menu Bar",
       kind = HK.MENUBAR,
+      background = true,
       fn = function(app)
         hs.osascript.applescript(strfmt([[
           tell application id "%s" to toggle bartender
@@ -3933,6 +3937,7 @@ appHotKeyCallbacks = {
     ["searchMenuBar"] = {
       message = "Search Menu Bar",
       kind = HK.MENUBAR,
+      background = true,
       fn = function(app)
         hs.osascript.applescript(strfmt([[
           tell application id "%s" to quick search
@@ -3942,6 +3947,7 @@ appHotKeyCallbacks = {
     ["keyboardNavigate"] = {
       message = "Navigate Menu Bar",
       kind = HK.MENUBAR,
+      background = true,
       bindCondition = function(app)
         -- the property update in command line is not working
         local _, ok = hs.execute(strfmt(
@@ -4023,6 +4029,7 @@ appHotKeyCallbacks = {
     ["toggleMenuBar"] = {
       message = "Toggle Menu Bar",
       kind = HK.MENUBAR,
+      background = true,
       fn = function(app)
         local barShown = false
         for _, e in ipairs(getc(toappui(app), AX.Window)) do
@@ -4208,6 +4215,7 @@ appHotKeyCallbacks = {
     ["toggleMenuBar"] = {
       message = "Toggle Menu Bar",
       kind = HK.MENUBAR,
+      background = true,
       fn = function(app)
         local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
         local isAdvancedMode = hs.execute(
@@ -4296,6 +4304,7 @@ appHotKeyCallbacks = {
     ["toggleMenuBarX"] = {
       message = "Toggle MenuBarX",
       kind = HK.MENUBAR,
+      background = true,
       fn = function(app)
         local appid = app:bundleID()
         local output = hs.execute(strfmt([[
@@ -4331,6 +4340,7 @@ appHotKeyCallbacks = {
     ["showSystemStatus"] = {
       message = "Show System Status",
       kind = HK.MENUBAR,
+      background = true,
       fn = clickRightMenuBarItem
     },
     ["preferencesInMenuBarMenu"] = {
@@ -4355,6 +4365,7 @@ appHotKeyCallbacks = {
     ["invokeInAppScreenSaver"] = {
       message = localizedMessage("In-app Screensaver",
                                 { localeFile = "HotkeyWindowController" }),
+      background = true,
       fn = function(app)
         clickRightMenuBarItem(app,
             localizedString("In-app Screensaver", app:bundleID(),
@@ -4376,6 +4387,7 @@ appHotKeyCallbacks = {
   {
     ["toggleTopNotch"] = {
       message = "Toggle Top Notch",
+      background = true,
       fn = function(app)
         clickRightMenuBarItem(app)
         local appUI = toappui(app)
@@ -4405,6 +4417,7 @@ appHotKeyCallbacks = {
   {
     ["toggleJetbrainsToolbox"] = {
       message = "Toggle Jetbrains Toolbox",
+      background = true,
       fn = focusOrHide
     }
   },
@@ -4413,6 +4426,7 @@ appHotKeyCallbacks = {
   {
     ["OCRForLatex"] = {
       message = "OCR for LaTeX",
+      background = true,
       fn = function(app)
         local appid = app:bundleID()
         local mods = hs.execute(strfmt(
@@ -4470,6 +4484,7 @@ appHotKeyCallbacks = {
   {
     ["showPasswordsDialog"] = {
       message = "Show Passwords",
+      background = true,
       fn = clickRightMenuBarItem
     },
     ["newPassword"] = {
@@ -5329,6 +5344,7 @@ appHotKeyCallbacks = {
   {
     ["OCR"] = {
       message = "OCR",
+      background = true,
       bindCondition = function()
         -- the property update in command line is overridden when app quits
         local appid = "cn.better365.iShotProHelper"
