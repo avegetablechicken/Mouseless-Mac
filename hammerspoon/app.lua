@@ -5645,10 +5645,10 @@ local function registerRunningAppHotKeys(appid, app)
     end
     -- prefer properties specified in configuration file than in code
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
-    local isBackground = keybinding.background ~= nil
-        and keybinding.background or cfg.background
     local isPersistent = keybinding.persist ~= nil
         and keybinding.persist or cfg.persist
+    local isBackground = isPersistent or (keybinding.background ~= nil
+        and keybinding.background or cfg.background)
     local appInstalled = hs.application.pathForBundleID(appid) ~= nil
         and hs.application.pathForBundleID(appid) ~= ""
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
