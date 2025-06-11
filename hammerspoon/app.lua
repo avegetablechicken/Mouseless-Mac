@@ -747,10 +747,50 @@ local function confirmButtonValidForAppCleanerUninstaller(title)
 end
 
 --- ### QQLive
+local function existQQLiveChannel(win)
+  local list = getc(towinui(win), AX.Group, 2)
+  if list == nil or #list == 0 then return false end
+  return tfind(list.AXChildren, function(txt)
+    return txt.AXValue == "频道"
+  end) ~= nil and tfind(list.AXChildren, function(txt)
+    return txt.AXValue == "全部频道"
+  end) ~= nil
+end
+
+QQLiveMainWindowFilter = {
+  fn = existQQLiveChannel
+}
+
+local QQLiveChannelNames = {}
+local function getQQLiveChannelName(index)
+  return function(win)
+    if #QQLiveChannelNames == 0 then
+      local list = getc(towinui(win), AX.Group, 2)
+      if list == nil or #list == 0 then return false end
+      local start
+      for i, txt in ipairs(list) do
+        if txt.AXValue == "频道" then
+          start = i
+          break
+        end
+      end
+      if start == nil then return end
+      for i = 1, 10 do
+        if #list - 2 >= start + i then
+          local row = list[start + i]
+          tinsert(QQLiveChannelNames, row.AXValue)
+        end
+      end
+      execOnDeactivated(win:application():bundleID(),
+          function() QQLiveChannelNames = {} end)
+    end
+    return QQLiveChannelNames[index]
+  end
+end
+
 local function getQQLiveChannel(index)
-  return function(app)
-    if app:focusedWindow() == nil then return false end
-    local list = getc(towinui(app:focusedWindow()), AX.Group, 2)
+  return function(win)
+    local list = getc(towinui(win), AX.Group, 2)
     if list == nil or #list == 0 then return false end
     local start
     for i, txt in ipairs(list) do
@@ -3270,52 +3310,62 @@ appHotKeyCallbacks = {
       end
     },
     ["channel1"] = {
-      message = "频道1",
+      message = getQQLiveChannelName(1),
+      windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(1),
       fn = receivePosition
     },
     ["channel2"] = {
-      message = "频道2",
+      message = getQQLiveChannelName(2),
+      windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(2),
       fn = receivePosition
     },
     ["channel3"] = {
-      message = "频道3",
+      message = getQQLiveChannelName(3),
+      windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(3),
       fn = receivePosition
     },
     ["channel4"] = {
-      message = "频道4",
+      message = getQQLiveChannelName(4),
+      windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(4),
       fn = receivePosition
     },
     ["channel5"] = {
-      message = "频道5",
+      message = getQQLiveChannelName(5),
+      windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(5),
       fn = receivePosition
     },
     ["channel6"] = {
-      message = "频道6",
+      message = getQQLiveChannelName(6),
+      windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(6),
       fn = receivePosition
     },
     ["channel7"] = {
-      message = "频道7",
+      message = getQQLiveChannelName(7),
+      windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(7),
       fn = receivePosition
     },
     ["channel8"] = {
-      message = "频道8",
+      message = getQQLiveChannelName(8),
+      windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(8),
       fn = receivePosition
     },
     ["channel9"] = {
-      message = "频道9",
+      message = getQQLiveChannelName(9),
+      windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(9),
       fn = receivePosition
     },
     ["channel10"] = {
-      message = "频道10",
+      message = getQQLiveChannelName(10),
+      windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(10),
       fn = receivePosition
     }
