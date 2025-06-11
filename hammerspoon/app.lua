@@ -6323,10 +6323,13 @@ end
 
 local function registerSingleWinFilterForApp(app, filter)
   local appid = app:bundleID()
-  local actualFilter = filter
-  local allowSheet, allowPopover
+  local actualFilter, allowSheet, allowPopover
   if type(filter) == 'table' then
+    actualFilter = tcopy(filter)
     allowSheet, allowPopover = filter.allowSheet, filter.allowPopover
+    actualFilter.fn = nil
+  else
+    actualFilter = filter
   end
   if allowSheet or allowPopover then
     actualFilter = false
