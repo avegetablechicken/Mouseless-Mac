@@ -1,17 +1,4 @@
 ---@diagnostic disable: lowercase-global
-local strfmt = string.format
-local strsplit = hs.fnutils.split
-local tinsert = table.insert
-local tremove = table.remove
-local tcontain = hs.fnutils.contains
-local tfind = hs.fnutils.find
-local tindex = hs.fnutils.indexOf
-local tifilter = hs.fnutils.ifilter
-local tconcat = hs.fnutils.concat
-local tcopy = hs.fnutils.copy
-local toappui = hs.axuielement.applicationElement
-local towinui = hs.axuielement.windowElement
-local bind = hs.fnutils.partial
 
 function get(table, key, ...)
   if table == nil or key == nil then return table end
@@ -3750,7 +3737,7 @@ MENUBAR_MANAGER_SHOW = {
 
 local function getValidMenuBarManager()
   local leftmostHorizontal = 0
-  hs.fnutils.each(hs.screen.allScreens(), function(screen)
+  foreach(hs.screen.allScreens(), function(screen)
     leftmostHorizontal = math.min(screen:fullFrame().x, leftmostHorizontal)
   end)
   for appid, fn in pairs(MENUBAR_MANAGER_SHOW) do
@@ -3767,7 +3754,7 @@ local function getValidMenuBarManager()
         maxX = icon.AXPosition.x
       else
         maxX = leftmostHorizontal - 1
-        hs.fnutils.each(getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem),
+        foreach(getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem),
             function(item) maxX = math.max(maxX, item.AXPosition.x) end)
       end
       if maxX > leftmostHorizontal then
@@ -3788,7 +3775,7 @@ function hiddenByMenuBarManager(app, index, map)
   local menuBarItem = getc(toappui(app), AX.MenuBar, -1,
       AX.MenuBarItem, index or 1)
   local leftmostHorizontal = 0
-  hs.fnutils.each(hs.screen.allScreens(), function(screen)
+  foreach(hs.screen.allScreens(), function(screen)
     leftmostHorizontal = math.min(screen:fullFrame().x, leftmostHorizontal)
   end)
   return menuBarItem.AXPosition.x < leftmostHorizontal, manager, map

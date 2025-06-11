@@ -1,17 +1,4 @@
 require "utils"
-local strfmt = string.format
-local tinsert = table.insert
-local tremove = table.remove
-local tcontain = hs.fnutils.contains
-local tfind = hs.fnutils.find
-local tindex = hs.fnutils.indexOf
-local tifilter = hs.fnutils.ifilter
-local foreach = hs.fnutils.each
-local bind = hs.fnutils.partial
-local toappui = hs.axuielement.applicationElement
-local towinui = hs.axuielement.windowElement
-local uiobserver = hs.axuielement.observer
-local uinotifications = hs.axuielement.observer.notifications
 
 -- menubar for caffeine
 local caffeine = hs.menubar.new()

@@ -1,19 +1,4 @@
 require "utils"
-local strfmt = string.format
-local strsplit = hs.fnutils.split
-local tinsert = table.insert
-local tremove = table.remove
-local tcontain = hs.fnutils.contains
-local tfind = hs.fnutils.find
-local tindex = hs.fnutils.indexOf
-local tfilter = hs.fnutils.filter
-local tifilter = hs.fnutils.ifilter
-local tcopy = hs.fnutils.copy
-local bind = hs.fnutils.partial
-local toappui = hs.axuielement.applicationElement
-local towinui = hs.axuielement.windowElement
-local uiobserver = hs.axuielement.observer
-local uinotifications = hs.axuielement.observer.notifications
 
 hs.application.enableSpotlightForNameSearches(true)
 

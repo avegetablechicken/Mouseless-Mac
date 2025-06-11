@@ -1,11 +1,3 @@
-local strfmt = string.format
-local tinsert = table.insert
-local tcontain = hs.fnutils.contains
-local tfind = hs.fnutils.find
-local tindex = hs.fnutils.indexOf
-local tfilter = hs.fnutils.filter
-local foreach = hs.fnutils.each
-
 local misc = KeybindingConfigs.hotkeys.global
 local miscConfig = {}
 if exists("config/misc.json") then

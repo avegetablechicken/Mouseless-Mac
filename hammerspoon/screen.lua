@@ -1,8 +1,3 @@
-local tinsert = table.insert
-local tindex = hs.fnutils.indexOf
-local tfilter = hs.fnutils.filter
-local bind = hs.fnutils.partial
-
 local function newWindow(...)
   local hotkey = newHotkeySpec(...)
   if hotkey == nil then return nil end

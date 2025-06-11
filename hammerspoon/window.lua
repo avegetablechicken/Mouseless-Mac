@@ -1,10 +1,3 @@
-local tinsert = table.insert
-local tcontain = hs.fnutils.contains
-local tfind = hs.fnutils.find
-local tindex = hs.fnutils.indexOf
-local tcopy = hs.fnutils.copy
-local toappui = hs.axuielement.applicationElement
-local towinui = hs.axuielement.windowElement
 local windowParams = KeybindingConfigs["parameters"] or {}
 local moveStep = windowParams.windowMoveStep or 20
 local resizeStep = windowParams.windowResizeStep or 100

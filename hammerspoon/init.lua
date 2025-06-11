@@ -1,12 +1,5 @@
 ---@diagnostic disable: lowercase-global
 
-local tinsert = table.insert
-local tremove = table.remove
-local tcontain = hs.fnutils.contains
-local tfind = hs.fnutils.find
-local tindex = hs.fnutils.indexOf
-local tfilter = hs.fnutils.filter
-
 OS = {
   Cheetah = "10.00",
   Puma = "10.01",
@@ -68,6 +61,24 @@ AX = {
 for k, v in pairs(hs.axuielement.roles) do AX[capitalize(k)] = v end
 for k, v in pairs(hs.axuielement.subroles) do AX[capitalize(k)] = v end
 for k, v in pairs(hs.axuielement.actions) do AX[capitalize(k)] = v end
+
+strfmt = string.format
+strsplit = hs.fnutils.split
+tinsert = table.insert
+tremove = table.remove
+tconcat = hs.fnutils.concat
+tcontain = hs.fnutils.contains
+tfind = hs.fnutils.find
+tindex = hs.fnutils.indexOf
+tfilter = hs.fnutils.filter
+tifilter = hs.fnutils.ifilter
+tcopy = hs.fnutils.copy
+foreach = hs.fnutils.each
+bind = hs.fnutils.partial
+toappui = hs.axuielement.applicationElement
+towinui = hs.axuielement.windowElement
+uiobserver = hs.axuielement.observer
+uinotifications = hs.axuielement.observer.notifications
 
 FLAGS = {}
 

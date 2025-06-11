@@ -1,8 +1,3 @@
-local strfmt = string.format
-local tinsert = table.insert
-local tcontain = hs.fnutils.contains
-local bind = hs.fnutils.partial
-
 local function syncFiles(targetDir, watchedDir, changedPaths, beforeFunc, workFunc, afterFunc)
   local relativePaths = {}
   for i, path in ipairs(changedPaths) do
