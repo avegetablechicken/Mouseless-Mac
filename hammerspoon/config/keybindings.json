@@ -1578,6 +1578,18 @@
         "mods": "${hyper.daemon}",
         "key": "K",
         "background": true
+      },
+      "clear": {
+        "mods": "command",
+        "key": "delete"
+      },
+      "copy": {
+        "mods": ["option", "command"],
+        "key": "C"
+      },
+      "save": {
+        "mods": "command",
+        "key": "S"
       }
     },
     "barrier": {

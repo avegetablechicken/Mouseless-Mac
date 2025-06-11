@@ -3020,6 +3020,45 @@ appHotKeyCallbacks = {
         end
       end
     },
+    ["copy"] = {
+      message = "Copy",
+      windowFilter = {
+        allowTitles = "^KLatexFormula$"
+      },
+      fn = function(win)
+        local winUI = towinui(win)
+        local button = getc(winUI, AX.SplitGroup, 1, AX.Button, "COPY")
+        if button ~= nil and button.AXEnabled then
+          press(button)
+        end
+      end
+    },
+    ["clear"] = {
+      message = "Clear",
+      windowFilter = {
+        allowTitles = "^KLatexFormula$"
+      },
+      fn = function(win)
+        local winUI = towinui(win)
+        local button = getc(winUI, AX.SplitGroup, 1, AX.Button, 1)
+        if button ~= nil then
+          press(button)
+        end
+      end
+    },
+    ["save"] = {
+      message = "Save",
+      windowFilter = {
+        allowTitles = "^KLatexFormula$"
+      },
+      fn = function(win)
+        local winUI = towinui(win)
+        local button = getc(winUI, AX.SplitGroup, 1, AX.Button, "SAVE")
+        if button ~= nil and button.AXEnabled then
+          press(button)
+        end
+      end
+    },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
     ["minimize"] = specialCommonHotkeyConfigs["minimize"]
   },
