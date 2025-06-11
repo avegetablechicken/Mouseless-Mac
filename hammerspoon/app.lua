@@ -7102,7 +7102,7 @@ local function searchHotkeyByNth(itemTitles, alreadySetHotkeys, index)
   return notSetItems, alreadySetHotkeys
 end
 
-local appswatchMenuBarItems, appsMayChangeMenuBar
+local appsWatchMenuBarItems, appsMayChangeMenuBar
 local appsMayChangeMenuBarTmpDir =
     hs.fs.temporaryDirectory() .. 'org.hammerspoon.Hammerspoon/application'
 local appsMayChangeMenuBarTmpFile =
@@ -7141,7 +7141,7 @@ local function processInvalidAltMenu(app, reinvokeKey)
   end
   local appid = app:bundleID()
   if isSameWin then
-    tinsert(appswatchMenuBarItems, appid)
+    tinsert(appsWatchMenuBarItems, appid)
     watchMenuBarItems(app)
     if json["changing"] == nil then json["changing"] = {} end
     tinsert(json["changing"], appid)
@@ -7399,7 +7399,7 @@ altMenuBarItem = function(app, menuBarItems, reinvokeKey)
 end
 
 -- some apps may change their menu bar items irregularly
-appswatchMenuBarItems = get(ApplicationConfigs,
+appsWatchMenuBarItems = get(ApplicationConfigs,
     "menuBarItems", 'changing') or {}
 local appsMenuBarItemTitlesString = {}
 
@@ -7442,7 +7442,7 @@ appsMayChangeMenuBar = get(ApplicationConfigs,
 if exists(appsMayChangeMenuBarTmpFile) then
   local tmp = hs.json.read(appsMayChangeMenuBarTmpFile)
   for _, appid in ipairs(tmp['changing'] or {}) do
-    tinsert(appswatchMenuBarItems, appid)
+    tinsert(appsWatchMenuBarItems, appid)
   end
   for _, appid in ipairs(tmp['onWindow'] or {}) do
     tinsert(appsMayChangeMenuBar, appid)
@@ -7482,7 +7482,7 @@ registerObserverForMenuBarChange = function(app, menuBarItems)
     menuBarItems = getMenuBarItems(app)
   end
 
-  if tcontain(appswatchMenuBarItems, appid) then
+  if tcontain(appsWatchMenuBarItems, appid) then
     watchMenuBarItems(app, menuBarItems)
   end
 
