@@ -6308,10 +6308,11 @@ end
 
 local function registerSingleWinFilterForApp(app, filter)
   local appid = app:bundleID()
-  local actualFilter, allowSheet, allowPopover
+  local actualFilter, allowSheet, allowPopover, condition
   if type(filter) == 'table' then
     actualFilter = tcopy(filter)
     allowSheet, allowPopover = filter.allowSheet, filter.allowPopover
+    condition = actualFilter.fn
     actualFilter.fn = nil
   else
     actualFilter = filter
@@ -6326,7 +6327,8 @@ local function registerSingleWinFilterForApp(app, filter)
   local win = app:focusedWindow()
   if win and ((allowSheet and win:role() == AX.Sheet)
         or (allowPopover and win:role() == AX.Popover)
-        or windowFilter:isWindowAllowed(win)) then
+        or windowFilter:isWindowAllowed(win))
+      and (condition == nil or condition(win)) then
     hotkeys = {}
     registerAppInWinHotkeys(win, hotkeys, appid, filter)
     observer:addWatcher(towinui(win), uinotifications.uIElementDestroyed)
@@ -6354,7 +6356,8 @@ local function registerSingleWinFilterForApp(app, filter)
     local action = function()
       if win ~= nil and ((allowSheet and win:role() == AX.Sheet)
             or (allowPopover and win:role() == AX.Popover)
-            or windowFilter:isWindowAllowed(win))  then
+            or windowFilter:isWindowAllowed(win))
+          and (condition == nil or condition(win)) then
         if hotkeys == nil then
           hotkeys = {}
           registerAppInWinHotkeys(win, hotkeys, appid, filter)
