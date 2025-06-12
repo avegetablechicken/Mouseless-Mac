@@ -2998,13 +2998,12 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "^KLatexFormula$"
       },
-      fn = function(win)
-        local winUI = towinui(win)
-        local button = getc(winUI, AX.SplitGroup, 1, AX.Button, 2)
-        if button ~= nil then
-          press(button)
-        end
-      end
+      condition = function(win)
+        local g = getc(towinui(win), AX.SplitGroup, 1)
+        local ta = getc(g, AX.TextArea, 1)
+        return ta ~= nil and ta.AXValue ~= "", getc(g, AX.Button, 2)
+      end,
+      fn = press
     },
     ["renderClipboardInKlatexformula"] = {
       message = "Render Clipboard in klatexformula",
