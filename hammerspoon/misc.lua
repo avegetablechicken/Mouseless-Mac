@@ -1184,7 +1184,10 @@ function()
   local title = win:title()
   local id = win:id()
   local role = win:role()
-  local subrole = win:subrole()
+  if role == AX.Window then
+    local subrole = win:subrole()
+    role = role .. ' (' .. subrole .. ')'
+  end
   local pid = win:pid()
   local frame = win:frame()
   local app, appname, appid = getCurrentApplication()
@@ -1192,13 +1195,13 @@ function()
   hs.dialog.blockAlert("Current Window",
     strfmt([[
       Window: %s (#%d)
-      Role: %s (%s)
+      Role: %s
       Process: #%s
       Position: (%d, %d)
       Size: %dx%d
 
       App: %s (%s)]],
-    title, id, role, subrole, pid, frame.x, frame.y, frame.w, frame.h,
+    title, id, role, pid, frame.x, frame.y, frame.w, frame.h,
     appname, appid))
 end)
 
