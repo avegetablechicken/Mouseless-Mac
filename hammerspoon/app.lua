@@ -456,21 +456,15 @@ local function deleteAllMessages(messageItems, app)
 
   local firstSelected = firstMsg.AXSelected
   if not firstSelected then
-    local select = false
-    for i=2,cnt do
-      if messageItems[i].AXSelected then
-        press(firstMsg)
-        select = true
-        break
-      end
-    end
-    if not select then
-      selectMenuItem(app, { "Window", "Go to Next Conversation"})
-    end
+    hs.timer.doAfter(0.1, bind(press, firstMsg))
   end
   if #messageItems == 1
       or (#messageItems == 2 and lastMsg.AXSelected) then
-    deleteSelectedMessage(app)
+    if firstSelected then
+      deleteSelectedMessage(app)
+    else
+      hs.timer.doAfter(0.3, bind(deleteSelectedMessage, app))
+    end
     return
   end
 
