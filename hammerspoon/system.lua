@@ -637,7 +637,7 @@ local function registerProxySettingsEntry(menu)
       local app = hs.application.open("com.apple.systempreferences", 2, true)
       local action = function()
         if OS_VERSION < OS.Ventura then
-          local ok = hs.osascript.applescript([[
+          hs.osascript.applescript([[
             tell application id "com.apple.systempreferences"
               set current pane to pane "com.apple.preference.network"
               repeat until anchor "Proxies" of current pane exists
@@ -646,43 +646,14 @@ local function registerProxySettingsEntry(menu)
               reveal anchor "Proxies" of current pane
             end tell
           ]])
-          if not ok then return end
         else
-          local ok = hs.osascript.applescript([[
+          hs.osascript.applescript([[
             tell application id "com.apple.systempreferences"
               reveal anchor "Proxies" of pane ¬
                   id "com.apple.Network-Settings.extension"
             end tell
           ]])
-          if not ok then return end
         end
-        local observer = uiobserver.new(app:pid())
-        observer:addWatcher(toappui(app), uinotifications.sheetCreated)
-        observer:callback(function(obs, sheet)
-          local record
-          hs.timer.waitUntil(function()
-            local rows
-            if OS_VERSION < OS.Ventura then
-              rows = getc(sheet, AX.TabGroup, 1,
-                AX.Group, 1, AX.SrollArea, 1, AX.Table, 1, AX.Row)
-            else
-              rows = getc(sheet, AX.Group, 1,
-                AX.SplitGroup, 1, AX.Group, 2, AX.SrollArea, 1, AX.Group)
-            end
-            record = tfind(rows, function(r)
-              return getc(r, AX.CheckBox, 1).AXValue == 1
-            end)
-            return record ~= nil
-          end,
-          function()
-            local tf = getc(record, AX.TextField, 1)
-            leftClickAndRestore(uioffset(tf, { tf.AXSize.w - 1, 0}),
-                                app:name())
-          end)
-          obs:stop()
-          obs = nil
-        end)
-        observer:start()
       end
 
       if app:focusedWindow():role() == AX.Sheet then
