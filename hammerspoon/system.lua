@@ -736,8 +736,7 @@ local function registerProxyMenuImpl()
           ]] .. info[5]
         hs.focus()
         hs.dialog.blockAlert("Proxy Configuration", header)
-      end,
-      shortcut = 'i',
+      end
     },
 
     updateProxyWrapper({
