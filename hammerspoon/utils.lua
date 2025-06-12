@@ -3599,6 +3599,15 @@ local function showHiddenMenuBarItems(manager)
   return false
 end
 
+local function activateMenuBarItem(menuBarItem, click)
+  -- note: some apps do not react to AX.Press, you have to click them.
+  if click then
+    leftClickAndRestore(menuBarItem)
+  else
+    menuBarItem:performAction(AX.Press)
+  end
+end
+
 MENUBAR_MANAGER_SHOW = {
   ["com.surteesstudios.Bartender"] = function(_, appid, index, map)
     if type(index) == 'number' then
@@ -3665,13 +3674,7 @@ MENUBAR_MANAGER_SHOW = {
           local menuBarItem = getc(toappui(app), AX.MenuBar, -1,
               AX.MenuBarItem, index or 1)
           if menuBarItem then
-            hs.timer.doAfter(0, function()
-              if click then
-                leftClickAndRestore(menuBarItem)
-              else
-                menuBarItem:performAction(AX.Press)
-              end
-            end)
+            hs.timer.doAfter(0, bind(activateMenuBarItem, menuBarItem, click))
           end
         end)
       end)
@@ -3808,34 +3811,25 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   if menuBarItem == nil then return false end
 
   if show then
+    local click = show == "click"
     local hidden, manager
     hidden, manager, map = hiddenByMenuBarManager(app, menuBarId, map)
     if hidden then
       assert(manager)
       local showFunc = MENUBAR_MANAGER_SHOW[manager:bundleID()]
           or bind(showHiddenMenuBarItems, manager)
-      local done = showFunc(manager, appid, menuBarId or 1, map, show == "click")
+      local done = showFunc(manager, appid, menuBarId or 1, map, click)
       if done ~= true then
         hs.timer.doAfter(0.2, function()
           if menuBarItem then
-            -- note: some apps do not react to AX.Press, you have to click them.
-            if show == "click" then
-              leftClickAndRestore(menuBarItem)
-            else
-              menuBarItem:performAction(AX.Press)
-            end
+            activateMenuBarItem(menuBarItem, click)
           else
             return false
           end
         end)
       end
     elseif menuBarItem then
-      -- note: some apps do not react to AX.Press, you have to click them.
-      if show == "click" then
-        leftClickAndRestore(menuBarItem)
-      else
-        menuBarItem:performAction(AX.Press)
-      end
+      activateMenuBarItem(menuBarItem, click)
     else
       return false
     end
