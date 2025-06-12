@@ -3591,9 +3591,8 @@ function loadStatusItemsAutosaveName(app)
   return map
 end
 
-local function showHiddenMenuBarItems(appid)
-  local app = find(appid)
-  local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
+local function showHiddenMenuBarItems(manager)
+  local icon = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 1)
   if icon then
     leftClickAndRestore(icon)
   end
@@ -3601,7 +3600,7 @@ local function showHiddenMenuBarItems(appid)
 end
 
 MENUBAR_MANAGER_SHOW = {
-  ["com.surteesstudios.Bartender"] = function(appid, index, map)
+  ["com.surteesstudios.Bartender"] = function(_, appid, index, map)
     if type(index) == 'number' then
       map = map or loadStatusItemsAutosaveName(find(appid))
       index = map and map[index] or "Item-" .. tostring(index - 1)
@@ -3614,7 +3613,7 @@ MENUBAR_MANAGER_SHOW = {
     return true
   end,
 
-  ["com.HyperartFlow.Barbee"] = function(appid, index, map)
+  ["com.HyperartFlow.Barbee"] = function(_, appid, index, map)
     if type(index) == 'number' then
       map = map or loadStatusItemsAutosaveName(find(appid))
       index = map and map[index] or "Item-" .. tostring(index - 1)
@@ -3628,9 +3627,8 @@ MENUBAR_MANAGER_SHOW = {
     return true
   end,
 
-  ["com.jordanbaird.Ice"] = function(appid, index)
-    local app = find("com.jordanbaird.Ice")
-    local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
+  ["com.jordanbaird.Ice"] = function(manager, appid, index)
+    local icon = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 1)
     if icon then
       leftClickAndRestore(icon)
     end
@@ -3645,17 +3643,16 @@ MENUBAR_MANAGER_SHOW = {
     return true
   end,
 
-  ["cn.better365.iBar"] = function(appid, index, map, click)
-    local app = find("cn.better365.iBar")
-    local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
+  ["cn.better365.iBar"] = function(manager, appid, index, map, click)
+    local icon = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 1)
     if not icon then return end
-    local targetApp = find(appid)
+    local app = find(appid)
 
     local isAdvancedMode = hs.execute(
       [[defaults read cn.better365.iBar advancedMode | tr -d '\n']])
     if isAdvancedMode ~= "1" then
       if type(index) == 'string' then
-        map = map or loadStatusItemsAutosaveName(targetApp)
+        map = map or loadStatusItemsAutosaveName(app)
         index = map and map[index]
         if index == nil then return true end
       end
@@ -3665,7 +3662,7 @@ MENUBAR_MANAGER_SHOW = {
         hs.eventtap.event.newMouseEvent(
             hs.eventtap.event.types.mouseMoved, uioffset(icon, {-20, 10})):post()
         hs.timer.doAfter(3, function()
-          local menuBarMenu = getc(toappui(targetApp), AX.MenuBar, -1,
+          local menuBarMenu = getc(toappui(app), AX.MenuBar, -1,
               AX.MenuBarItem, index or 1)
           if menuBarMenu then
             hs.timer.doAfter(0, function()
@@ -3688,12 +3685,12 @@ MENUBAR_MANAGER_SHOW = {
     end
     hs.timer.waitUntil(
       function()
-        local win = app:focusedWindow()
+        local win = manager:focusedWindow()
         return win ~= nil and win:title() == "iBarmenu"
             and win:subrole() == AX.SystemFloatingWindow
       end,
       function()
-        local winUI = towinui(app:focusedWindow())
+        local winUI = towinui(manager:focusedWindow())
         if index ~= nil then
           local itemRepr = index .. ' >>> ' .. appid
           for _, bt in ipairs(getc(winUI, AX.Button)) do
@@ -3720,9 +3717,8 @@ MENUBAR_MANAGER_SHOW = {
     return true
   end,
 
-  ["net.matthewpalmer.Vanilla"] = function()
-    local app = find("net.matthewpalmer.Vanilla")
-    local icon = tfind(getc(toappui(app), AX.Window), function(win)
+  ["net.matthewpalmer.Vanilla"] = function(manager)
+    local icon = tfind(getc(toappui(manager), AX.Window), function(win)
       return #win == 1 and win[1].AXRole == AX.Image
     end)
     if icon then
@@ -3758,7 +3754,7 @@ local function getValidMenuBarManager()
             function(item) maxX = math.max(maxX, item.AXPosition.x) end)
       end
       if maxX > leftmostHorizontal then
-        return appid
+        return app
       end
     end
   end
@@ -3815,9 +3811,10 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
     local hidden, manager
     hidden, manager, map = hiddenByMenuBarManager(app, menuBarId, map)
     if hidden then
-      local showFunc = MENUBAR_MANAGER_SHOW[manager]
+      assert(manager)
+      local showFunc = MENUBAR_MANAGER_SHOW[manager:bundleID()]
           or bind(showHiddenMenuBarItems, manager)
-      local done = showFunc(appid, menuBarId or 1, map, show == "click")
+      local done = showFunc(manager, appid, menuBarId or 1, map, show == "click")
       if done ~= true then
         hs.timer.doAfter(0.2, function()
           if menuBarMenu then
