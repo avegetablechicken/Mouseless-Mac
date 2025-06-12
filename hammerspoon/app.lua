@@ -1743,9 +1743,10 @@ appHotKeyCallbacks = {
         if #messageItems == 1 and messageItems[1].AXSelected then
           return false
         end
-        for i=2,#messageItems do
+        for i=1,#messageItems do
           if messageItems[i].AXSelected then
-            return true, messageItems[i-1]
+            local prevIdx = i == 1 and #messageItems or (i - 1)
+            return true, messageItems[prevIdx]
           end
         end
         return true, messageItems[#messageItems]
@@ -1768,9 +1769,10 @@ appHotKeyCallbacks = {
         if #messageItems == 1 and messageItems[1].AXSelected then
           return false
         end
-        for i=#messageItems-1,1,-1 do
+        for i=1,#messageItems do
           if messageItems[i].AXSelected then
-            return true, messageItems[i+1]
+            local nextIdx = i == #messageItems and 1 or (i + 1)
+            return true, messageItems[nextIdx]
           end
         end
         return true, messageItems[1]
