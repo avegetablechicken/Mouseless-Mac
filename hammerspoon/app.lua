@@ -3777,12 +3777,12 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local configure = getc(winUI, AX.CheckBox, 1,
+        local textField = getc(winUI, AX.CheckBox, 1,
             AX.TextField, "Configuration file:")
-        return configure ~= nil and #configure:actionNames() > 0, configure
+        return textField ~= nil and #textField:actionNames() > 0, textField
       end,
-      fn = function(button)
-        button:performAction(AX.Raise)
+      fn = function(textField)
+        textField:performAction(AX.Raise)
       end
     },
     ["browse"] = {
@@ -3812,10 +3812,10 @@ appHotKeyCallbacks = {
         local toSpecify = checkbox.AXValue == 1
         press(checkbox)
         if toSpecify then
-          local input = getc(towinui(win), AX.CheckBox, 2,
+          local textField = getc(towinui(win), AX.CheckBox, 2,
               AX.TextField, "Server IP:")
-          if input then
-            input:performAction(AX.Raise)
+          if textField then
+            textField:performAction(AX.Raise)
           end
         end
       end
