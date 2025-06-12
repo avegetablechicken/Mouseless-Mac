@@ -8245,20 +8245,18 @@ for _, appid in ipairs(remoteDesktopAppsRequireSuspendHotkeys) do
 end
 
 -- ## iOS apps
--- disable cmd+w to close window for iOS apps because it will quit them
-local iOSAppHotkey
+-- hold cmd+w to close window for iOS apps because it will quit them
+HoldToQuit = hs.loadSpoon("HoldToQuit")
+HoldToQuit.duration = 0.2
+HoldToQuit:init()
+HoldToQuit:bindHotkeys({ quit = { "⌘", "W" } })
 local function deactivateCloseWindowForIOSApps(app)
   if app:bundleID() == nil then return end
   if exists(hs.application.pathForBundleID(
       app:bundleID()) .. '/WrappedBundle') then
-    if iOSAppHotkey == nil then
-      iOSAppHotkey = newHotkey("⌘", "w", "Cancel ⌘W", function() end)
-      iOSAppHotkey.kind = HK.IN_APP
-      iOSAppHotkey.subkind = HK.IN_APP_.APP
-    end
-    iOSAppHotkey:enable()
-  elseif iOSAppHotkey ~= nil then
-    iOSAppHotkey:disable()
+    HoldToQuit:start()
+  else
+    HoldToQuit:stop()
   end
 end
 if frontApp then
