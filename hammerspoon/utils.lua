@@ -3662,14 +3662,14 @@ MENUBAR_MANAGER_SHOW = {
         hs.eventtap.event.newMouseEvent(
             hs.eventtap.event.types.mouseMoved, uioffset(icon, {-20, 10})):post()
         hs.timer.doAfter(3, function()
-          local menuBarMenu = getc(toappui(app), AX.MenuBar, -1,
+          local menuBarItem = getc(toappui(app), AX.MenuBar, -1,
               AX.MenuBarItem, index or 1)
-          if menuBarMenu then
+          if menuBarItem then
             hs.timer.doAfter(0, function()
               if click then
-                leftClickAndRestore(menuBarMenu)
+                leftClickAndRestore(menuBarItem)
               else
-                menuBarMenu:performAction(AX.Press)
+                menuBarItem:performAction(AX.Press)
               end
             end)
           end
@@ -3803,9 +3803,9 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
     menuBarIdx = map and map[menuBarIdx]
     if menuBarIdx == nil then return false end
   end
-  local menuBarMenu = getc(toappui(app), AX.MenuBar, -1,
+  local menuBarItem = getc(toappui(app), AX.MenuBar, -1,
       AX.MenuBarItem, menuBarIdx or 1)
-  if menuBarMenu == nil then return false end
+  if menuBarItem == nil then return false end
 
   if show then
     local hidden, manager
@@ -3817,24 +3817,24 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
       local done = showFunc(manager, appid, menuBarId or 1, map, show == "click")
       if done ~= true then
         hs.timer.doAfter(0.2, function()
-          if menuBarMenu then
+          if menuBarItem then
             -- note: some apps do not react to AX.Press, you have to click them.
             if show == "click" then
-              leftClickAndRestore(menuBarMenu)
+              leftClickAndRestore(menuBarItem)
             else
-              menuBarMenu:performAction(AX.Press)
+              menuBarItem:performAction(AX.Press)
             end
           else
             return false
           end
         end)
       end
-    elseif menuBarMenu then
+    elseif menuBarItem then
       -- note: some apps do not react to AX.Press, you have to click them.
       if show == "click" then
-        leftClickAndRestore(menuBarMenu)
+        leftClickAndRestore(menuBarItem)
       else
-        menuBarMenu:performAction(AX.Press)
+        menuBarItem:performAction(AX.Press)
       end
     else
       return false
@@ -3842,7 +3842,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   end
   if #menuItemPath == 0 then return true end
 
-  local menu = menuBarMenu
+  local menu = menuBarItem
   for _, item in ipairs(menuItemPath) do
     local parent = menu
     menu = getc(parent, AX.Menu, 1, AX.MenuItem, item)
