@@ -3638,7 +3638,8 @@ appHotKeyCallbacks = {
         local appUI = toappui(app)
         local menu = getc(appUI, AX.MenuBar, 2, AX.MenuBarItem, 1, AX.Menu, 1)
         if menu == nil then
-          clickRightMenuBarItem(app)
+          local invoked = clickRightMenuBarItem(app)
+          if not invoked then return end
           menu = getc(appUI, AX.MenuBar, 2, AX.MenuBarItem, 1, AX.Menu, 1)
         end
         local start = getc(menu, AX.MenuItem, "Start")
@@ -4462,7 +4463,8 @@ appHotKeyCallbacks = {
       message = "Toggle Top Notch",
       background = true,
       fn = function(app)
-        clickRightMenuBarItem(app)
+        local invoked = clickRightMenuBarItem(app)
+        if not invoked then return end
         local appUI = toappui(app)
         hs.timer.doAfter(1, function()
           local switch = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1,
