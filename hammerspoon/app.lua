@@ -706,12 +706,6 @@ local function JabRefShowLibraryByIndex(idx)
   end
 end
 
--- ### WPS
-local localizedWPSHome = '^'..localizedString("Home", "com.kingsoft.wpsoffice.mac")..'$'
-execOnLaunch("com.kingsoft.wpsoffice.mac", function()
-  localizedWPSHome = '^'..localizedString("Home", "com.kingsoft.wpsoffice.mac")..'$'
-end)
-
 -- ### App Cleaner & Uninstaller
 local function buttonValidForAppCleanerUninstaller(title)
   return function(win)
@@ -2264,8 +2258,12 @@ appHotKeyCallbacks = {
       fn = receiveMenuItem
     },
     ["goToHome"] = {
-      message = localizedWPSHome:sub(2, -2),
-      windowFilter = { rejectTitles = localizedWPSHome },
+      message = localizedMessage("Home"),
+      condition = function(app)
+        local win = app:focusedWindow()
+        local home = localizedString("Home", "com.kingsoft.wpsoffice.mac")
+        return win ~= nil and win:title() ~= home, win
+      end,
       fn = function(win)
         local winUI = towinui(win)
         local buttons = getc(winUI, AX.Button)
@@ -2279,8 +2277,9 @@ appHotKeyCallbacks = {
       message = localizedMessage("Recent"),
       fn = function(app)
         if app:focusedWindow() == nil then return false end
+        local home = localizedString("Home", "com.kingsoft.wpsoffice.mac")
         local winUI = towinui(app:focusedWindow())
-        if app:focusedWindow():title():match(localizedWPSHome) == nil then
+        if app:focusedWindow():title() ~= home then
           local buttons = getc(winUI, AX.Button)
           local maxX = buttons[#buttons].AXPosition.x
           maxX = math.max(maxX, buttons[#buttons - 1].AXPosition.x)
@@ -2312,8 +2311,10 @@ appHotKeyCallbacks = {
     },
     ["goToShare"] = {
       message = localizedMessage("Share"),
-      windowFilter = { allowTitles = localizedWPSHome },
-      condition = function(win)
+      condition = function(app)
+        local win = app:focusedWindow()
+        local home = localizedString("Home", "com.kingsoft.wpsoffice.mac")
+        if win == nil or win:title() ~= home then return false end
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -2327,14 +2328,16 @@ appHotKeyCallbacks = {
         if firstSplitLine == 4 then return true, groups[3] end
         return false
       end,
-      fn = function(button, win)
-        leftClickAndRestore(button, win:application():name())
+      fn = function(button, app)
+        leftClickAndRestore(button, app:name())
       end
     },
     ["goToMyCloudDocuments"] = {
       message = localizedMessage("My Cloud Documents"),
-      windowFilter = { allowTitles = localizedWPSHome },
-      condition = function(win)
+      condition = function(app)
+        local win = app:focusedWindow()
+        local home = localizedString("Home", "com.kingsoft.wpsoffice.mac")
+        if win == nil or win:title() ~= home then return false end
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -2354,14 +2357,16 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = function(button, win)
-        leftClickAndRestore(button, win:application():name())
+      fn = function(button, app)
+        leftClickAndRestore(button, app:name())
       end
     },
     ["goToMyDesktop"] = {
       message = localizedMessage("My Desktop"),
-      windowFilter = { allowTitles = localizedWPSHome },
-      condition = function(win)
+      condition = function(app)
+        local win = app:focusedWindow()
+        local home = localizedString("Home", "com.kingsoft.wpsoffice.mac")
+        if win == nil or win:title() ~= home then return false end
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -2383,14 +2388,16 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = function(button, win)
-        leftClickAndRestore(button, win:application():name())
+      fn = function(button, app)
+        leftClickAndRestore(button, app:name())
       end
     },
     ["goToDocuments"] = {
       message = localizedMessage("Documents"),
-      windowFilter = { allowTitles = localizedWPSHome },
-      condition = function(win)
+      condition = function(app)
+        local win = app:focusedWindow()
+        local home = localizedString("Home", "com.kingsoft.wpsoffice.mac")
+        if win == nil or win:title() ~= home then return false end
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -2412,14 +2419,16 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = function(button, win)
-        leftClickAndRestore(button, win:application():name())
+      fn = function(button, app)
+        leftClickAndRestore(button, app:name())
       end
     },
     ["goToDownloads"] = {
       message = localizedMessage("Downloads"),
-      windowFilter = { allowTitles = localizedWPSHome },
-      condition = function(win)
+      condition = function(app)
+        local win = app:focusedWindow()
+        local home = localizedString("Home", "com.kingsoft.wpsoffice.mac")
+        if win == nil or win:title() ~= home then return false end
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -2441,14 +2450,16 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = function(button, win)
-        leftClickAndRestore(button, win:application():name())
+      fn = function(button, app)
+        leftClickAndRestore(button, app:name())
       end
     },
     ["openFileLocation"] = {
       message = localizedMessage("Open File Location"),
-      windowFilter = { rejectTitles = localizedWPSHome },
-      condition = function(win)
+      condition = function(app)
+        local win = app:focusedWindow()
+        local home = localizedString("Home", "com.kingsoft.wpsoffice.mac")
+        if win == nil or win:title() == home then return false end
         local winUI = towinui(win)
         for i=1,#winUI - 1 do
           if winUI[i].AXRole == AX.Button
@@ -2458,8 +2469,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = function(position, win)
-        local app = win:application()
+      fn = function(position, app)
         local title = localizedString("Open File Location", app:bundleID())
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.created)
