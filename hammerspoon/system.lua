@@ -2296,12 +2296,9 @@ end)
 function System_applicationInstalledCallback(files, flagTables)
   for i=1,#files do
     if files[i]:match("V2RayX")
-      or files[i]:match("V2rayU")
-      or files[i]:match("MonoProxyMac") then
-      if flagTables[i].itemCreated
-          or flagTables[i].itemRemoved then
-        registerProxyMenu(true)
-      end
+        or files[i]:match("V2rayU")
+        or files[i]:match("MonoProxyMac") then
+      registerProxyMenu(true)
     end
   end
 end
