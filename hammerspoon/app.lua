@@ -8507,11 +8507,10 @@ function App_applicationInstalledCallback(files, flagTables)
   for i, file in ipairs(files) do
     if flagTables[i].itemRemoved then
       local appid = hs.application.infoForBundlePath(file).CFBundleIdentifier
-      for j, appkey in ipairs(appHotkeys) do
+      for _, appkey in ipairs(appHotkeys) do
         if appkey.appid == appid or appkey.appPath == file then
-          appkey:delete()
-          tremove(appHotkeys, j)
-          break
+          registerAppHotkeys()
+          return
         end
       end
     elseif flagTables[i].itemCreated then
