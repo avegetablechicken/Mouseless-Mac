@@ -7923,7 +7923,6 @@ for _, item in ipairs(appsAutoQuitWithNoWindowsLoaded) do
 end
 
 AutoHideWindowFilter = hs.window.filter.new(false)
-    :setAppFilter("Hammerspoon", true)  -- Hammerspoon overlook itself by default, so add it here
 for appid, cfg in pairs(appsAutoHideWithNoWindows) do
   local func = function(app)
     AutoHideWindowFilter:setAppFilter(app:name(), cfg)
