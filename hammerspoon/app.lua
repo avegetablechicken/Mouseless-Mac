@@ -7065,7 +7065,6 @@ local function registerForOpenSavePanel(app)
     return dontSaveButton, sidebarCells
   end
 
-  local windowFilter
   local actionFunc = function(winUI)
     local dontSaveButton, sidebarCells = getUIElements(winUI)
     local header
@@ -7125,20 +7124,6 @@ local function registerForOpenSavePanel(app)
       end
     end
 
-    if windowFilter ~= nil then windowFilter:unsubscribeAll() end
-    if #app:visibleWindows() == 1 then
-      windowFilter = hs.window.filter.new(false):setAppFilter(app:name())
-      windowFilter:subscribe(hs.window.filter.windowDestroyed,
-      function(win, appname)
-        for _, hotkey in ipairs(openSavePanelHotkeys) do
-          hotkey:delete()
-        end
-        openSavePanelHotkeys = {}
-        windowFilter:unsubscribeAll()
-        windowFilter = nil
-      end)
-    end
-
     if dontSaveButton ~= nil then
       local spec = get(KeybindingConfigs.hotkeys.shared, "confirmDelete")
       if spec ~= nil then
@@ -7174,12 +7159,7 @@ local function registerForOpenSavePanel(app)
     actionFunc(element)
   end)
   observer:start()
-  stopOnDeactivated(appid, observer, function()
-    if windowFilter ~= nil then
-      windowFilter:unsubscribeAll()
-      windowFilter = nil
-    end
-  end)
+  stopOnDeactivated(appid, observer)
 end
 
 -- bind `alt+?` hotkeys to select left menu bar items
@@ -7607,27 +7587,13 @@ registerObserverForMenuBarChange = function(app, menuBarItems)
 
   appsMenuBarItemTitlesString[appid] = getMenuBarItemTitlesString(app, menuBarItems)
 
-  local observer, windowFilter
+  local observer
   observer = uiobserver.new(app:pid())
   local appUI = toappui(app)
   observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
-  observer:addWatcher(appUI, uinotifications.windowMiniaturized)
   observer:callback(bind(appMenuBarChangeCallback, app))
   observer:start()
-
-  windowFilter = hs.window.filter.new(app:name())
-      :subscribe(hs.window.filter.windowDestroyed,
-        function(win)
-          if win == nil or win:application() == nil then return end
-          appMenuBarChangeCallback(win:application())
-        end)
-  stopOnDeactivated(appid, observer,
-    function()
-      if windowFilter ~= nil then
-        windowFilter:unsubscribeAll()
-        windowFilter = nil
-      end
-    end)
+  stopOnDeactivated(appid, observer)
 end
 
 
