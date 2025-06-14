@@ -152,6 +152,8 @@ local function registerAppHotkeys()
 end
 
 registerAppHotkeys()
+
+
 -- ## function utilities for process management on app switching
 local function isLSUIElement(appid)
   local info = hs.application.infoForBundleID(appid)
@@ -1499,7 +1501,6 @@ end
 local function receivePosition(position, app)
   leftClickAndRestore(position, app:name())
 end
-
 
 -- send key strokes to the app. but if the key binding is found, select corresponding menu item
 local function selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
