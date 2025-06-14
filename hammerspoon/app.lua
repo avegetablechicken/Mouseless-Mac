@@ -6030,7 +6030,7 @@ local function wrapCondition(app, config, mode)
   -- send key strokes to frontmost window instead of frontmost app
   cond = resendToFrontmostWindow(cond, config.nonFrontmost or config.menubar)
   local fn = func
-  fn = function(...)
+  fn = function()
     local obj = windowFilter == nil and app or (win or app:focusedWindow())
     if obj == nil then  -- no window focused when triggering window-specific hotkeys
       selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
@@ -6040,12 +6040,12 @@ local function wrapCondition(app, config, mode)
     if satisfied then
       if result ~= nil then  -- condition function can pass result to callback function
         if url ~= nil then
-          func(result, url, obj, ...)
+          func(result, url, obj)
         else
-          func(result, obj, ...)
+          func(result, obj)
         end
       else
-        func(obj, ...)
+        func(obj)
       end
       return
     elseif result == COND_FAIL.NO_MENU_ITEM_BY_KEYBINDING
