@@ -8497,10 +8497,10 @@ local messageAppBundleID = "com.apple.MobileSMS"
 local messageApp = find(messageAppBundleID)
 execOnLaunch(messageAppBundleID, function()
   messageApp = find(messageAppBundleID)
-end)
-ExecOnSilentQuit(messageAppBundleID, function()
-  App_applicationCallback(messageApp:name(),
+  ExecOnSilentQuit(messageAppBundleID, function()
+    App_applicationCallback(messageApp:name(),
       hs.application.watcher.terminated, messageApp)
+  end)
 end)
 
 function App_applicationInstalledCallback(files, flagTables)
