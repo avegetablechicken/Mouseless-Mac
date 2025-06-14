@@ -377,7 +377,6 @@ end
 
 local function applicationCallback(appname, eventType, app)
   App_applicationCallback(appname, eventType, app)
-  System_applicationCallback(appname, eventType, app)
 end
 
 -- for apps that launch silently

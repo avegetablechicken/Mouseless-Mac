@@ -948,6 +948,19 @@ local proxyHotkey = bindHotkeySpec(menubarHK["showProxyMenu"], "Show Proxy Menu"
 proxyHotkey.kind = HK.MENUBAR
 proxyHotkey.icon = hs.image.imageFromAppBundle("com.apple.systempreferences")
 
+for appname, appid in pairs(proxyAppBundleIDs) do
+  ExecOnSilentLaunch(appid, function()
+    ExecOnSilentQuit(appid, function()
+      if getCurNetworkService() ~= nil then
+        local enabledProxy = parseProxyInfo(proxy_info(), false)
+        if enabledProxy == appname then
+          disable_proxy()
+        end
+      end
+    end)
+  end)
+end
+
 -- toggle system proxy
 local function toggleSystemProxy(networkservice)
   if networkservice == nil then
@@ -2278,24 +2291,6 @@ ExecContinuously(function()
 end)
 
 -- # callbacks
-
--- application event callbacks
-function System_applicationCallback(appname, eventType, app)
-  if eventType == hs.application.watcher.deactivated then
-    if appname == nil and getCurNetworkService() ~= nil then
-      local enabledProxy = parseProxyInfo(proxy_info(), false)
-      for _, proxyApp in ipairs(proxyMenuItemCandidates) do
-        if enabledProxy == proxyApp.appname then
-          local appid = proxyAppBundleIDs[enabledProxy]
-          if find(appid) == nil then
-            disable_proxy()
-          end
-          break
-        end
-      end
-    end
-  end
-end
 
 -- application installation/uninstallation callbacks
 function System_applicationInstalledCallback(files, flagTables)
