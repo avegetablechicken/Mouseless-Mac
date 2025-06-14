@@ -807,37 +807,46 @@ local function getQQLiveChannel(index)
 end
 
 --- ### Douyin Desktop
-local function douyinDesktopPage(app)
-  local winUI = towinui(app:focusedWindow())
+local function douyinDesktopPage(win)
+  local winUI = towinui(win)
   if getc(winUI, AX.WebArea, 2, AX.Group, 2) == nil then
-    return getc(towinui(app:focusedWindow()), AX.WebArea, 2, AX.Group, 1)
+    return getc(winUI, AX.WebArea, 2, AX.Group, 1)
   else
-    return getc(towinui(app:focusedWindow()), AX.WebArea, 2)
+    return getc(winUI, AX.WebArea, 2)
   end
 end
 
+local douyinDesktopTabTitles = {}
 local function douyinDesktopTabTitle(idx)
   return function(app)
     if app:focusedWindow() == nil then return "tab " .. idx end
-    local webarea = douyinDesktopPage(app)
-    local link = getc(webarea,
-        AX.Group, 2, AX.Group, 1, AX.Group, 2, AX.Group, 1,
-        AX.Group, 2, AX.Group, 1, AX.Group, idx, AX.Link, 1)
-      or getc(webarea,
-        AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-        AX.Group, 2, AX.Group, 1, AX.Group, idx, AX.Link, 1)
-      or getc(webarea,
-        AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-        AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, idx, AX.Link, 1)
-    if link == nil then return "tab " .. idx end
-    return link.AXDescription
+    if #douyinDesktopTabTitles == 0 then
+      local webarea = douyinDesktopPage(app:focusedWindow())
+      local links = getc(webarea,
+            AX.Group, 2, AX.Group, 1, AX.Group, 2, AX.Group, 1,
+            AX.Group, 2, AX.Group, 1, AX.Group)
+          or getc(webarea,
+            AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+            AX.Group, 2, AX.Group, 1, AX.Group)
+          or getc(webarea,
+            AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+            AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group)
+      if links == nil then return end
+      for _, g in ipairs(links) do
+        local link = getc(g, AX.Link, 1)
+        if link then
+          tinsert(douyinDesktopTabTitles, link.AXDescription)
+        end
+      end
+    end
+    return douyinDesktopTabTitles[idx]
   end
 end
 
 local function douyinDesktopTab(idx)
   return function(app)
     if app:focusedWindow() == nil then return false end
-    local webarea = douyinDesktopPage(app)
+    local webarea = douyinDesktopPage(app:focusedWindow())
     local link = getc(webarea,
         AX.Group, 2, AX.Group, 1, AX.Group, 2, AX.Group, 1,
         AX.Group, 2, AX.Group, 1, AX.Group, idx, AX.Link, 1)
@@ -3442,7 +3451,7 @@ appHotKeyCallbacks = {
       message = "返回",
       condition = function(app)
         if app:focusedWindow() == nil then return false end
-        local webarea = douyinDesktopPage(app)
+        local webarea = douyinDesktopPage(app:focusedWindow())
         local btImage = getc(webarea, AX.Group, 2, AX.Group, 2,
             AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
             AX.Group, 1, AX.Group, 2, AX.Image, 1)
