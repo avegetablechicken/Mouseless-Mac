@@ -7746,9 +7746,10 @@ local specialNoWindowsRules = {
         return win:id() ~= hs.window.desktop():id() end) == 0
   end
 }
-local function processAppWithNoWindows(app, quit, delay)
+local function processAppWithNoWindows(app, delay)
   local fn = function()
     local appid = app:bundleID()
+    local quit = appsAutoQuitWithNoWindows[appid] ~= nil
     local defaultRule = function()
       local windowFilterRules = quit and appsAutoQuitWithNoWindows
           or appsAutoHideWithNoWindows
@@ -7922,43 +7923,25 @@ for _, item in ipairs(appsAutoQuitWithNoWindowsLoaded) do
   end
 end
 
-AutoHideWindowFilter = hs.window.filter.new(false)
-for appid, cfg in pairs(appsAutoHideWithNoWindows) do
-  local func = function(app)
-    AutoHideWindowFilter:setAppFilter(app:name(), cfg)
-  end
-  local app = find(appid)
-  if app ~= nil then
-    func(app)
-  else
-    execOnLaunch(appid, func)
+AutoHideQuitWindowFilter = hs.window.filter.new(false)
+for _, configs in ipairs{appsAutoHideWithNoWindows, appsAutoQuitWithNoWindows} do
+  for appid, cfg in pairs(configs) do
+    local func = function(app)
+      AutoHideQuitWindowFilter:setAppFilter(app:name(), cfg)
+    end
+    local app = find(appid)
+    if app ~= nil then
+      func(app)
+    else
+      execOnLaunch(appid, func)
+    end
   end
 end
-AutoHideWindowFilter:subscribe(hs.window.filter.windowDestroyed,
+AutoHideQuitWindowFilter:subscribe(hs.window.filter.windowDestroyed,
   function(win)
     if win == nil or win:application() == nil then return end
     local appid = win:application():bundleID()
-    processAppWithNoWindows(win:application(), false,
-                            appsWithNoWindowsDelay[appid])
-  end)
-
-AutoQuitWindowFilter = hs.window.filter.new(false)
-for appid, cfg in pairs(appsAutoQuitWithNoWindows) do
-  local func = function(app)
-    AutoQuitWindowFilter:setAppFilter(app:name(), cfg)
-  end
-  local app = find(appid)
-  if app ~= nil then
-    func(app)
-  else
-    execOnLaunch(appid, func)
-  end
-end
-AutoQuitWindowFilter:subscribe(hs.window.filter.windowDestroyed,
-  function(win)
-    if win == nil or win:application() == nil then return end
-    local appid = win:application():bundleID()
-    processAppWithNoWindows(win:application(), true,
+    processAppWithNoWindows(win:application(),
                             appsWithNoWindowsDelay[appid])
   end)
 
