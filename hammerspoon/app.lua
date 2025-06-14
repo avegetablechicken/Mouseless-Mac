@@ -990,6 +990,7 @@ local function clickBartenderSidebarItem(index)
   end
 end
 
+-- to notify hammerspoon's window filter
 execOnLaunch("com.surteesstudios.Bartender", function(app)
   app:activate() hs.timer.doAfter(0.5, function() app:hide() end)
 end)
