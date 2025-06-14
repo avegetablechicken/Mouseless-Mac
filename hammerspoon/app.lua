@@ -864,7 +864,6 @@ end
 local bartenderBarItemNames
 local bartenderBarItemIDs
 local bartenderBarWindowFilter = { allowTitles = "^Bartender Bar$" }
-BartenderBarFilter = nil
 local function getBartenderBarItemTitle(index, rightClick)
   return function(win)
     if bartenderBarItemNames == nil then
@@ -934,16 +933,14 @@ local function getBartenderBarItemTitle(index, rightClick)
             tinsert(bartenderBarItemIDs, i)
           end
         end
-        BartenderBarFilter = hs.window.filter.new(false):setAppFilter(
-            app:name(), bartenderBarWindowFilter)
-        BartenderBarFilter:subscribe(
-            { hs.window.filter.windowDestroyed, hs.window.filter.windowUnfocused },
-            function()
-              bartenderBarItemNames = nil
-              bartenderBarItemIDs = nil
-              BartenderBarFilter:unsubscribeAll()
-              BartenderBarFilter = nil
-            end)
+        local closeObserver = uiobserver.new(app:pid())
+        closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
+        closeObserver:callback(function(obs)
+          bartenderBarItemNames = nil
+          bartenderBarItemIDs = nil
+          obs:stop() obs = nil
+        end)
+        closeObserver:start()
       end
     end
     if bartenderBarItemNames ~= nil and index <= #bartenderBarItemNames then
