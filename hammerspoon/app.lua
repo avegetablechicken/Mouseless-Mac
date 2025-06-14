@@ -745,11 +745,10 @@ local function existQQLiveChannel(win)
   end) ~= nil
 end
 
-QQLiveMainWindowFilter = {
+local QQLiveChannelNames = {}
+local QQLiveMainWindowFilter = {
   fn = existQQLiveChannel
 }
-
-local QQLiveChannelNames = {}
 local function getQQLiveChannelName(index)
   return function(win)
     if #QQLiveChannelNames == 0 then
@@ -7770,8 +7769,7 @@ end
 
 local specialNoPseudoWindowsRules = {
   ["com.app.menubarx"] = function(app, defaultRule)
-    if versionGreaterEqual("1.6.9")(app) then return false end
-    return defaultRule()
+    return versionLessThan("1.6.9")(app) and defaultRule()
   end
 }
 PseudoWindowDestroyObservers = {}
