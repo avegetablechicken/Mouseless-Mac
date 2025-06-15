@@ -498,13 +498,15 @@ function getResourceDir(appid, frameworkName)
   return resourceDir, framework
 end
 
-local function getBestMatchedLocale(appLocale, locales, combineExtras)
-  local bestMatch, bestScore = {}, -1
+local function getBestMatchedLocale(appLocale, locales, combineExtras, multiplePerfectMatch)
+  local bestMatch, bestScore = nil, -1
   for _, locale in ipairs(locales) do
     if locale.scriptCode == appLocale.scriptCode
         and locale.countryCode == appLocale.countryCode then
-      bestMatch = locale
-      break
+      if not multiplePerfectMatch then
+        bestMatch = locale
+        break
+      end
     end
     local score = 0
     if locale.scriptCode == appLocale.scriptCode then
@@ -519,7 +521,7 @@ local function getBestMatchedLocale(appLocale, locales, combineExtras)
     if score > bestScore then
       bestScore = score
       bestMatch = locale
-    elseif combineExtras and score == bestScore
+    elseif combineExtras and score == bestScore and bestMatch
         and locale.scriptCode == bestMatch.scriptCode
         and locale.countryCode == bestMatch.countryCode then
       if type(bestMatch.extra) == 'string' then
@@ -529,7 +531,7 @@ local function getBestMatchedLocale(appLocale, locales, combineExtras)
       tinsert(bestMatch.extra, locale.extra)
     end
   end
-  return bestMatch
+  return bestMatch or {}
 end
 
 local function getDefaultMatchedLocale(appLocale, localeSource, dirExt)
@@ -623,16 +625,21 @@ local function getQtMatchedLocale(appLocale, resourceDir)
         for i = #fileSplits, #fileSplits - 2, -1 do
           if fileSplits[i] == language then
             local thisCountry, thisScript
-            if i + 1 <= #fileSplits then
-              if fileSplits[i + 1]:upper() == fileSplits[i + 1] then
-                thisCountry = fileSplits[i + 1]
-                if i == #fileSplits - 2 then
-                  thisScript = fileSplits[i + 2]
-                end
+            if i + 2 == #fileSplits then
+              thisCountry = fileSplits[i + 2]:upper()
+              thisScript = fileSplits[i + 1]
+            elseif i + 1 == #fileSplits then
+              if fileSplits[i + 1]:upper() == country then
+                thisCountry = country
               else
                 thisScript = fileSplits[i + 1]
               end
             end
+            local localeStartPos = 0
+            for j = 1, i - 1 do
+              localeStartPos = localeStartPos + #fileSplits[i - 1]
+            end
+            local locale = file:sub(localeStartPos, -4)
             if script == nil or thisScript == nil or thisScript == script then
               if language == 'zh' or language == 'yue' then
                 if thisCountry == 'HK' or thisCountry == 'MO'
@@ -646,6 +653,7 @@ local function getQtMatchedLocale(appLocale, resourceDir)
                 scriptCode = thisScript,
                 countryCode = thisCountry,
                 extra = dir .. '/' .. file,
+                locale = locale
               })
             end
           end
@@ -655,15 +663,8 @@ local function getQtMatchedLocale(appLocale, resourceDir)
   end
 
   if #matchedLocales == 0 then return end
-  local bestMatch = getBestMatchedLocale(localDetails, matchedLocales, true)
-  local matchedLocale = language
-  if bestMatch.script ~= nil then
-    matchedLocale = matchedLocale .. '_' .. bestMatch.script
-  end
-  if bestMatch.country ~= nil then
-    matchedLocale = matchedLocale .. '_' .. bestMatch.country
-  end
-  return matchedLocale, bestMatch.extra
+  local bestMatch = getBestMatchedLocale(localDetails, matchedLocales, true, true)
+  return bestMatch.locale, bestMatch.extra
 end
 
 local jimageLocales = {}
