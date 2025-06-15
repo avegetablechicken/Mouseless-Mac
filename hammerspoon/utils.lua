@@ -1995,7 +1995,8 @@ local function localizedStringImpl(str, appid, params, force)
       getMatchedLocale(appid, appLocale, resourceDir, framework, appLocaleDir)
   if locale == nil then return end
   assert(framework)
-  if not framework.electron and not framework.java then
+  if not framework.electron and not framework.java
+      and (not framework.qt or (type(localeDir) ~= 'table' and isdir(localeDir))) then
     local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
     for _, dir in ipairs(baseLocaleDirs) do
       if exists(dir) and hs.fs.attributes(localeDir).ino
