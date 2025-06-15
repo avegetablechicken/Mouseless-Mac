@@ -523,6 +523,7 @@ local function getBestMatchedLocale(appLocale, locales, combineExtras)
         and locale.scriptCode == bestMatch.scriptCode
         and locale.countryCode == bestMatch.countryCode then
       if type(bestMatch.extra) == 'string' then
+        bestMatch = tcopy(bestMatch)
         bestMatch.extra = { bestMatch.extra }
       end
       tinsert(bestMatch.extra, locale.extra)
