@@ -834,7 +834,8 @@ local function getMatchedLocale(appid, appLocale, resourceDir, framework, buffer
         appid, appLocale, resourceDir, framework.java)
     if locale == nil then return end
   end
-  if not tindex(framework, true) or framework.user or framework.chromium then
+  if not tindex(framework, true) or framework.user
+      or framework.chromium or framework.qt then
     dirExt = 'lproj'
   end
   if locale == nil then
