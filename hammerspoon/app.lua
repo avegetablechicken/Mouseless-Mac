@@ -7671,6 +7671,9 @@ end
 -- auto hide or quit apps with no windows (including pseudo windows suck as popover or sheet)
 local appsAutoHideWithNoWindows = {}
 local appsAutoQuitWithNoWindows = {}
+-- account for pseudo windows such as popover or sheet
+local appsAutoHideWithNoPseudoWindows = {}
+local appsAutoQuitWithNoPseudoWindows = {}
 
 local specialNoWindowsRules = {
   ["com.apple.finder"] = function(app)
@@ -7722,13 +7725,14 @@ local specialNoPseudoWindowsRules = {
   end
 }
 PseudoWindowDestroyObservers = {}
-local function registerPseudoWindowDestroyObserver(app, roles, quit, delay)
+local function registerPseudoWindowDestroyObserver(app, roles, delay)
   local appid = app:bundleID()
   local observer = PseudoWindowDestroyObservers[appid]
   local appUI = toappui(app)
   if observer ~= nil then observer:start() return end
   observer = uiobserver.new(app:pid())
   observer:addWatcher(appUI, uinotifications.focusedUIElementChanged)
+  local quit = appsAutoQuitWithNoPseudoWindows[appid] ~= nil
   local windowFilterRules = quit and appsAutoQuitWithNoWindows
       or appsAutoHideWithNoWindows
   local windowFilter = hs.window.filter.new(false):setAppFilter(
@@ -7802,9 +7806,6 @@ end
 
 local appsAutoHideWithNoWindowsLoaded = ApplicationConfigs["autoHideWithNoWindow"] or {}
 local appsAutoQuitWithNoWindowsLoaded = ApplicationConfigs["autoQuitWithNoWindow"] or {}
--- account for pseudo windows such as popover or sheet
-local appsAutoHideWithNoPseudoWindows = {}
-local appsAutoQuitWithNoPseudoWindows = {}
 -- some apps may first close a window before create a targeted one, so delay is needed before checking
 local appsWithNoWindowsDelay = {}
 for _, item in ipairs(appsAutoHideWithNoWindowsLoaded) do
@@ -7883,27 +7884,21 @@ AutoHideQuitWindowFilter:subscribe(hs.window.filter.windowDestroyed,
   end)
 
 -- Hammerspoon only account standard windows, so add watchers for pseudo windows here
-for appid, roles in pairs(appsAutoHideWithNoPseudoWindows) do
-  local func = function(app)
-    registerPseudoWindowDestroyObserver(app, roles, false,
-                                        appsWithNoWindowsDelay[appid])
+for _, configs in ipairs {
+  appsAutoHideWithNoPseudoWindows,
+  appsAutoQuitWithNoPseudoWindows,
+} do
+  for appid, roles in pairs(configs) do
+    local func = function(app)
+      registerPseudoWindowDestroyObserver(app, roles,
+                                          appsWithNoWindowsDelay[appid])
+    end
+    local app = find(appid)
+    if app ~= nil then
+      func(app)
+    end
+    execOnLaunch(appid, func)
   end
-  local app = find(appid)
-  if app ~= nil then
-    func(app)
-  end
-  execOnLaunch(appid, func)
-end
-for appid, roles in pairs(appsAutoQuitWithNoPseudoWindows) do
-  local func = function(app)
-    registerPseudoWindowDestroyObserver(app, roles, true,
-                                        appsWithNoWindowsDelay[appid])
-  end
-  local app = find(appid)
-  if app ~= nil then
-    func(app)
-  end
-  execOnLaunch(appid, func)
 end
 
 
