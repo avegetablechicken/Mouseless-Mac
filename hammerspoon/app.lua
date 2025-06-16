@@ -6028,7 +6028,11 @@ local function wrapCondition(app, config, mode)
     local oldCond = cond
     cond = function(app)
       local satisfied, result = oldCond(config.menubar, app)
-      return satisfied, result, config.menubar
+      if result == nil then
+        return satisfied, config.menubar
+      else
+        return satisfied, result, config.menubar
+      end
     end
   else
     -- if a menu is extended, hotkeys with no modifiers are disabled
