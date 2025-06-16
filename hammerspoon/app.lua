@@ -6290,7 +6290,7 @@ unregisterInWinHotKeys = function(appid, delete, hotkeys)
   end
 
   local hasDeleteOnDisable = hs.fnutils.some(hotkeys,
-    function(_, hotkey)
+    function(hotkey, _)
       return hotkey.deleteOnDisable
     end)
   if delete or hasDeleteOnDisable then
