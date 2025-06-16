@@ -3516,7 +3516,9 @@ appHotKeyCallbacks = {
     ["closeWindow"] = {
       mods = "", key = "Escape",
       message = commonLocalizedMessage("Close Window"),
-      windowFilter = {},
+      windowFilter = {
+        allowRoles = AX.Unknown
+      },
       background = true,
       nonFrontmost = true,
       fn = function(win)
