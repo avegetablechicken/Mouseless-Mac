@@ -6043,7 +6043,7 @@ local function wrapCondition(app, config, mode)
   cond = resendToFrontmostWindow(cond, config.nonFrontmost or config.menubar)
   local fn = func
   fn = function()
-    local obj = windowFilter == nil and app or (win or app:focusedWindow())
+    local obj = win or (windowFilter == nil and app or app:focusedWindow())
     if obj == nil then  -- no window focused when triggering window-specific hotkeys
       selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
       return
@@ -6538,10 +6538,6 @@ local function registerWinFiltersForApp(app)
 end
 
 function WinBind(win, config, ...)
-  if type(config.windowFilter) ~= 'table' or
-      not (config.windowFilter.allowSheet or config.windowFilter.allowPopover) then
-    config.windowFilter = true
-  end
   local hotkey, cond = bindAppWinImpl(win, config, ...)
   hotkey.kind = HK.IN_WIN
   hotkey.condition = cond
@@ -6578,7 +6574,7 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter, event)
         config.mods = keybinding.mods
         config.key = keybinding.key
         config.message = msg
-        config.windowFilter = windowFilter
+        config.windowFilter = nil
         config.repeatable = keybinding.repeatable ~= nil
             and keybinding.repeatable or cfg.repeatable
         config.repeatedFn = config.repeatable and cfg.fn or nil
