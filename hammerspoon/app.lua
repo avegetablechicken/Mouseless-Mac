@@ -6401,11 +6401,18 @@ local function registerSingleWinFilterForApp(app, filter)
 
   local appUI = toappui(app)
   observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
+  if allowPopover then
+    observer:addWatcher(appUI, uinotifications.focusedUIElementChanged)
+  end
   if win and (type(filter) == 'table'
       and (filter.allowTitles or filter.rejectTitles)) then
     observer:addWatcher(towinui(win), uinotifications.titleChanged)
   end
   observer:callback(function(_, element, notification)
+    if notification == uinotifications.focusedUIElementChanged
+        and element.AXRole ~= AX.Popover then
+      return
+    end
     win = app:focusedWindow()
     if notification == uinotifications.focusedWindowChanged
         and win ~= nil and (type(filter) == 'table'
@@ -6568,7 +6575,14 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
     local appUI = toappui(app)
     local observer = uiobserver.new(app:pid())
     observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
+    if filter.allowPopover then
+      observer:addWatcher(appUI, uinotifications.focusedUIElementChanged)
+    end
     observer:callback(function(_, element, notification)
+      if notification == uinotifications.focusedUIElementChanged
+          and element.AXRole ~= AX.Popover then
+        return
+      end
       registerDaemonAppInWinHotkeys(app, appid, filter)
       registerCloseObserver(element)
     end)
