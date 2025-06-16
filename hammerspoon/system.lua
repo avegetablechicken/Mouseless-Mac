@@ -1882,7 +1882,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
                 until menuItem ~= nil or totalDelay > 3 or not webarea:isValid()
                 menuItem:performAction(AX.Press)
                 local hotkey, observer
-                hotkey = AppWinBind(app, {
+                local obj = APPWIN_HOTKEY_ON_WINDOW_FOCUS and app:focusedWindow() or app
+                hotkey = AppWinBind(obj, {
                   mods = "⌘", key = "Return",
                   message = "Relaunch",
                   fn = function()
