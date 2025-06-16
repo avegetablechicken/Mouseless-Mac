@@ -5953,8 +5953,7 @@ local function wrapCondition(app, config, mode)
   -- some apps only accept system key strokes and neglect key strokes targeted at them
   local resendToSystem = config.defaultResendToSystem
 
-  if (windowFilter ~= nil or websiteFilter ~= nil or condition ~= nil)
-      and appid ~= "com.tencent.LemonMonitor" then
+  if (windowFilter ~= nil or websiteFilter ~= nil or condition ~= nil) then
     local hkIdx = hotkeyIdx(mods, key)
     if APPWIN_HOTKEY_ON_WINDOW_FOCUS and windowFilter ~= nil then
       prevCallback = get(prevWindowCallbacks, appid, hkIdx, mode)
@@ -5964,7 +5963,7 @@ local function wrapCondition(app, config, mode)
   end
 
   -- testify window filter and return TF & extra result
-  if windowFilter ~= nil and appid ~= "com.tencent.LemonMonitor" then
+  if windowFilter ~= nil then
     local actualFilter  -- remove self-customed properties
     if type(windowFilter) == 'table' then
       for k, v in pairs(windowFilter) do
@@ -6081,8 +6080,7 @@ local function wrapCondition(app, config, mode)
     selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
   end
 
-  if APPWIN_HOTKEY_ON_WINDOW_FOCUS and windowFilter ~= nil
-      and appid ~= "com.tencent.LemonMonitor" then
+  if APPWIN_HOTKEY_ON_WINDOW_FOCUS and windowFilter ~= nil then
     -- multiple window-specified hotkeys may share a common keybinding
     -- they are cached in a linked list.
     -- each window filter will be tested until one matched target window
@@ -6096,8 +6094,7 @@ local function wrapCondition(app, config, mode)
     prevWindowCallbacks[appid][hkIdx][mode] = fn
   end
   if websiteFilter ~= nil or config.condition ~= nil
-      or (not APPWIN_HOTKEY_ON_WINDOW_FOCUS and windowFilter ~= nil
-          and appid ~= "com.tencent.LemonMonitor") then
+      or (not APPWIN_HOTKEY_ON_WINDOW_FOCUS and windowFilter ~= nil) then
     -- multiple conditioned hotkeys may share a common keybinding
     -- they are cached in a linked list.
     -- each condition will be tested until one is satisfied
@@ -6110,8 +6107,7 @@ local function wrapCondition(app, config, mode)
     end
     prevAppCallbacks[appid][hkIdx][mode] = fn
   end
-  if (windowFilter ~= nil and appid ~= "com.tencent.LemonMonitor")
-      or websiteFilter ~= nil or condition ~= nil then
+  if windowFilter ~= nil or websiteFilter ~= nil or condition ~= nil then
     -- essential info are also cached in a linked list for showing keybindings by `HSKeybindings`
     wrapInfoChain(app, config, cond, mode)
   end
@@ -6619,8 +6615,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
     closeObserver:start()
     stopOnQuit(appid, closeObserver, callback)
   end
-  if (type(filter) == 'table' and (filter.allowSheet or filter.allowPopover))
-      or appid == "com.tencent.LemonMonitor" then
+  if (type(filter) == 'table' and (filter.allowSheet or filter.allowPopover)) then
     local appUI = toappui(app)
     local observer = uiobserver.new(app:pid())
     observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
