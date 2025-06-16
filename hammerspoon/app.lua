@@ -5884,52 +5884,30 @@ local KEY_MODE = {
 }
 
 InAppHotkeyInfoChain = {}
-if APPWIN_HOTKEY_ON_WINDOW_FOCUS then
-  InWinHotkeyInfoChain = {}
-end
 local function wrapInfoChain(app, config, cond, mode)
   local appid = app:bundleID()
   local mods, key = config.mods, config.key
   local message = config.message
   local windowFilter = config.windowFilter
 
-  if APPWIN_HOTKEY_ON_WINDOW_FOCUS and windowFilter ~= nil then
-    if InWinHotkeyInfoChain[appid] == nil then
-      InWinHotkeyInfoChain[appid] = {}
-    end
-    if mode == KEY_MODE.PRESS then -- only info for pressing event is enough
-      local hkIdx = hotkeyIdx(mods, key)
-      local prevHotkeyInfo = InWinHotkeyInfoChain[appid][hkIdx]
-      InWinHotkeyInfoChain[appid][hkIdx] = {
-        condition = cond,
-        message = message,
-        previous = prevHotkeyInfo
-      }
-    end
-  else
-    if InAppHotkeyInfoChain[appid] == nil then
-      InAppHotkeyInfoChain[appid] = {}
-    end
-    if mode == KEY_MODE.PRESS then
-      local hkIdx = hotkeyIdx(mods, key)
-      local prevHotkeyInfo = InAppHotkeyInfoChain[appid][hkIdx]
-      InAppHotkeyInfoChain[appid][hkIdx] = {
-        condition = cond,
-        message = message,
-        previous = prevHotkeyInfo
-      }
-      if not APPWIN_HOTKEY_ON_WINDOW_FOCUS then
-        InAppHotkeyInfoChain[appid][hkIdx].window = windowFilter ~= nil
-      end
+  if InAppHotkeyInfoChain[appid] == nil then
+    InAppHotkeyInfoChain[appid] = {}
+  end
+  if mode == KEY_MODE.PRESS then
+    local hkIdx = hotkeyIdx(mods, key)
+    local prevHotkeyInfo = InAppHotkeyInfoChain[appid][hkIdx]
+    InAppHotkeyInfoChain[appid][hkIdx] = {
+      condition = cond,
+      message = message,
+      previous = prevHotkeyInfo
+    }
+    if not APPWIN_HOTKEY_ON_WINDOW_FOCUS then
+      InAppHotkeyInfoChain[appid][hkIdx].window = windowFilter ~= nil
     end
   end
 end
 
 local prevAppCallbacks = {}
-local prevWindowCallbacks
-if APPWIN_HOTKEY_ON_WINDOW_FOCUS then
-  prevWindowCallbacks = {}
-end
 local function wrapCondition(app, config, mode)
   local prevCallback
   local win
@@ -5954,11 +5932,7 @@ local function wrapCondition(app, config, mode)
 
   if (windowFilter ~= nil or websiteFilter ~= nil or condition ~= nil) then
     local hkIdx = hotkeyIdx(mods, key)
-    if APPWIN_HOTKEY_ON_WINDOW_FOCUS and windowFilter ~= nil then
-      prevCallback = get(prevWindowCallbacks, appid, hkIdx, mode)
-    else
-      prevCallback = get(prevAppCallbacks, appid, hkIdx, mode)
-    end
+    prevCallback = get(prevAppCallbacks, appid, hkIdx, mode)
   end
 
   -- testify window filter and return TF & extra result
@@ -6079,21 +6053,7 @@ local function wrapCondition(app, config, mode)
     selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
   end
 
-  if APPWIN_HOTKEY_ON_WINDOW_FOCUS and windowFilter ~= nil then
-    -- multiple window-specified hotkeys may share a common keybinding
-    -- they are cached in a linked list.
-    -- each window filter will be tested until one matched target window
-    if prevWindowCallbacks[appid] == nil then
-      prevWindowCallbacks[appid] = {}
-    end
-    local hkIdx = hotkeyIdx(mods, key)
-    if prevWindowCallbacks[appid][hkIdx] == nil then
-      prevWindowCallbacks[appid][hkIdx] = { nil, nil }
-    end
-    prevWindowCallbacks[appid][hkIdx][mode] = fn
-  end
-  if websiteFilter ~= nil or config.condition ~= nil
-      or (not APPWIN_HOTKEY_ON_WINDOW_FOCUS and windowFilter ~= nil) then
+  if websiteFilter ~= nil or config.condition ~= nil or windowFilter ~= nil then
     -- multiple conditioned hotkeys may share a common keybinding
     -- they are cached in a linked list.
     -- each condition will be tested until one is satisfied
@@ -6105,8 +6065,6 @@ local function wrapCondition(app, config, mode)
       prevAppCallbacks[appid][hkIdx] = { nil, nil }
     end
     prevAppCallbacks[appid][hkIdx][mode] = fn
-  end
-  if windowFilter ~= nil or websiteFilter ~= nil or condition ~= nil then
     -- essential info are also cached in a linked list for showing keybindings by `HSKeybindings`
     wrapInfoChain(app, config, cond, mode)
   end
@@ -6339,8 +6297,6 @@ unregisterInWinHotKeys = function(appid, delete, hotkeys)
     if not APPWIN_HOTKEY_ON_WINDOW_FOCUS then
       inWinHotKeys[appid] = nil
     end
-    prevWindowCallbacks[appid] = nil
-    InWinHotkeyInfoChain[appid] = nil
   else
     for _, hotkey in pairs(hotkeys) do
       hotkey:disable()
@@ -6403,11 +6359,7 @@ local function registerAppInWinHotkeys(win, hotkeys, appid, filter, event)
         config.mods = keybinding.mods
         config.key = keybinding.key
         config.message = msg
-        if type(filter) == 'table' and (filter.allowSheet or filter.allowPopover) then
-          config.windowFilter = filter
-        else
-          config.windowFilter = true
-        end
+        config.windowFilter = nil
         config.repeatable = keybinding.repeatable ~= nil
             and keybinding.repeatable or cfg.repeatable
         config.repeatedFn = config.repeatable and cfg.fn or nil

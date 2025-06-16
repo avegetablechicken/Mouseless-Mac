@@ -492,27 +492,21 @@ local function testValid(entry)
   local pos = entry.msg:find(": ")
   local valid = pos ~= nil and not (entry.suspendable and FLAGS["SUSPEND"])
   if valid then
-    local actualMsg
     if entry.kind == HK.IN_WIN then
       if entry.condition ~= nil then
         valid = entry.condition(hs.window.frontmostWindow())
       end
     elseif entry.kind == HK.IN_APP then
       local app = hs.application.frontmostApplication()
-      if APPWIN_HOTKEY_ON_WINDOW_FOCUS and entry.subkind == HK.IN_APP_.WINDOW then
-        local hotkeyInfo = get(InWinHotkeyInfoChain, app:bundleID(), entry.idx)
-        if hotkeyInfo ~= nil then
-          valid, actualMsg = getValidMessage(hotkeyInfo, app:focusedWindow())
-        end
-      else
-        local hotkeyInfo = get(InAppHotkeyInfoChain, app:bundleID(), entry.idx)
-        if hotkeyInfo ~= nil then
-          valid, actualMsg = getValidMessage(hotkeyInfo, app)
+      local obj = entry.subkind == HK.IN_APP_.WINDOW and app:focusedWindow() or app
+      local hotkeyInfo = get(InAppHotkeyInfoChain, app:bundleID(), entry.idx)
+      if hotkeyInfo ~= nil then
+        local actualMsg
+        valid, actualMsg = getValidMessage(hotkeyInfo, obj)
+        if valid and actualMsg then
+          entry.msg = entry.msg:sub(1, pos - 1) .. ": " .. actualMsg
         end
       end
-    end
-    if actualMsg ~= nil then
-      entry.msg = entry.msg:sub(1, pos - 1) .. ": " .. actualMsg
     end
   end
   entry.valid = valid
