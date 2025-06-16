@@ -710,11 +710,11 @@ end
 
 -- ### App Cleaner & Uninstaller
 local function buttonValidForAppCleanerUninstaller(title)
-  return function(win)
-    local winUI = towinui(win)
+  return function(app)
+    local winUI = towinui(app:focusedWindow())
     local sg = getc(winUI, AX.SplitGroup, 1)
     if sg == nil then return false end
-    local locTitle = localizedString(title, win:application():bundleID())
+    local locTitle = localizedString(title, app:bundleID())
     local button = tfind(getc(sg, AX.Button), function(bt)
       return bt.AXIdentifier == "uaid:RemoveSelectedItemsButton"
           and bt.AXTitle == locTitle and bt.AXEnabled
@@ -724,13 +724,13 @@ local function buttonValidForAppCleanerUninstaller(title)
 end
 
 local function confirmButtonValidForAppCleanerUninstaller(title)
-  return function(win)
-    local winUI = towinui(win)
+  return function(app)
+    local winUI = towinui(app:focusedWindow())
     local cancel = tfind(getc(winUI, AX.Button), function(bt)
       return bt.AXIdentifier == "uaid:RemoveDialogSecondButton" and bt.AXEnabled
     end)
     if cancel == nil then return false end
-    local locTitle = localizedString(title, win:application():bundleID())
+    local locTitle = localizedString(title,app:bundleID())
     local button = getc(winUI, AX.StaticText, locTitle)
     return button ~= nil, button ~= nil and button.AXPosition
   end
@@ -3532,59 +3532,51 @@ appHotKeyCallbacks = {
   {
     ["uninstall"] = {
       message = localizedMessage('Uninstall'),
-      windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('Uninstall'),
       fn = press
     },
     ["remove"] = {
       message = localizedMessage('Remove'),
-      windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('Remove'),
       fn = press
     },
     ["enable"] = {
       message = localizedMessage('Enable'),
-      windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('Enable'),
       fn = press
     },
     ["disable"] = {
       message = localizedMessage('Disable'),
-      windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('Disable'),
       fn = press
     },
     ["update"] = {
       message = localizedMessage('Update'),
-      windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('Update'),
       fn = press
     },
     ["confirmRemove"] = {
       message = localizedMessage('Remove'),
-      windowFilter = true,
       condition = confirmButtonValidForAppCleanerUninstaller('Remove'),
-      fn = function(position, win)
+      fn = function(position, app)
         -- fixme: false click
-        leftClick(position, win:application():name())
+        leftClick(position, app:name())
       end
     },
     ["confirmUpdate"] = {
       message = localizedMessage('Update'),
-      windowFilter = true,
       condition = confirmButtonValidForAppCleanerUninstaller('Update'),
-      fn = function(position, win)
+      fn = function(position, app)
         -- fixme: false click
-        leftClick(position, win:application():name())
+        leftClick(position, app:name())
       end
     },
     ["confirmRetry"] = {
       message = localizedMessage('Retry'),
-      windowFilter = true,
       condition = confirmButtonValidForAppCleanerUninstaller('Retry'),
-      fn = function(position, win)
+      fn = function(position, app)
         -- fixme: false click
-        leftClick(position, win:application():name())
+        leftClick(position, app:name())
       end
     }
   },
@@ -3593,53 +3585,46 @@ appHotKeyCallbacks = {
   {
     ["remove"] = {
       message = localizedMessage('Remove_Button_Title'),
-      windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('Remove_Button_Title'),
       fn = press
     },
     ["enable"] = {
       message = localizedMessage('EnableMenuItemTitle'),
-      windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('EnableMenuItemTitle'),
       fn = press
     },
     ["disable"] = {
       message = localizedMessage('DisableMenuItemTitle'),
-      windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('DisableMenuItemTitle'),
       fn = press
     },
     ["update"] = {
       message = localizedMessage('UpdateButtonTitle'),
-      windowFilter = true,
       condition = buttonValidForAppCleanerUninstaller('UpdateButtonTitle'),
       fn = press
     },
     ["confirmRemove"] = {
       message = localizedMessage('PartialRemove_Remove'),
-      windowFilter = true,
       condition = confirmButtonValidForAppCleanerUninstaller('PartialRemove_Remove'),
-      fn = function(position, win)
+      fn = function(position, app)
         -- fixme: false click
-        leftClick(position, win:application():name())
+        leftClick(position, app:name())
       end
     },
     ["confirmUpdate"] = {
       message = localizedMessage('UpdateButtonTitle'),
-      windowFilter = true,
       condition = confirmButtonValidForAppCleanerUninstaller('UpdateButtonTitle'),
-      fn = function(position, win)
+      fn = function(position, app)
         -- fixme: false click
-        leftClick(position, win:application():name())
+        leftClick(position, app:name())
       end
     },
     ["confirmRetry"] = {
       message = localizedMessage('PartialRemove_Retry'),
-      windowFilter = true,
       condition = confirmButtonValidForAppCleanerUninstaller('PartialRemove_Retry'),
-      fn = function(position, win)
+      fn = function(position, app)
         -- fixme: false click
-        leftClick(position, win:application():name())
+        leftClick(position, app:name())
       end
     }
   },
