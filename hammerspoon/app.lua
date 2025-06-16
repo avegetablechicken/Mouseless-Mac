@@ -5908,12 +5908,15 @@ local function wrapInfoChain(app, config, cond, mode)
 end
 
 local prevAppCallbacks = {}
-local function wrapCondition(app, config, mode)
+local function wrapCondition(obj, config, mode)
   local prevCallback
-  local win
-  if app.application ~= nil then
-    win = app app = win:application()
+  local app, win
+  if obj.application ~= nil then
+    win = obj app = obj:application()
+  else
+    app = obj
   end
+  obj = nil
   local appid = app:bundleID()
 
   local mods, key = config.mods, config.key
