@@ -1165,6 +1165,10 @@
         "mods": "command",
         "key": "Return"
       },
+      "launchApp": {
+        "mods": "command",
+        "key": "Return"
+      },
       "confirmRemove": {
         "mods": "",
         "key": "Return"
@@ -1192,6 +1196,10 @@
         "key": "Return"
       },
       "update": {
+        "mods": "command",
+        "key": "Return"
+      },
+      "launchApp": {
         "mods": "command",
         "key": "Return"
       },

@@ -3555,6 +3555,12 @@ appHotKeyCallbacks = {
       condition = buttonValidForAppCleanerUninstaller('Update'),
       fn = press
     },
+    ["launchApp"] = {
+      message = localizedMessage('Launch App'),
+      bindCondition = versionGreaterEqual("8.6"),
+      condition = buttonValidForAppCleanerUninstaller('Launch App'),
+      fn = press
+    },
     ["confirmRemove"] = {
       message = localizedMessage('Remove'),
       condition = confirmButtonValidForAppCleanerUninstaller('Remove'),
@@ -3601,6 +3607,12 @@ appHotKeyCallbacks = {
     ["update"] = {
       message = localizedMessage('UpdateButtonTitle'),
       condition = buttonValidForAppCleanerUninstaller('UpdateButtonTitle'),
+      fn = press
+    },
+    ["launchApp"] = {
+      message = localizedMessage('LaunchAppButtonTitle'),
+      bindCondition = versionGreaterEqual("8.6"),
+      condition = buttonValidForAppCleanerUninstaller('LaunchAppButtonTitle'),
       fn = press
     },
     ["confirmRemove"] = {
