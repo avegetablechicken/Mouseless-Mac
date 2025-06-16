@@ -5805,7 +5805,6 @@ local function registerRunningAppHotKeys(appid, app)
           hotkey.persist = true
         end
         hotkey.kind = cfg.kind or HK.BACKGROUND
-        hotkey.deleteOnDisable = cfg.deleteOnDisable
         hotkey.appid = appid
         runningAppHotKeys[appid][hkID] = hotkey
       end
