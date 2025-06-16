@@ -4558,7 +4558,6 @@ appHotKeyCallbacks = {
       fn = function(win)
         clickRightMenuBarItem(win:application())
       end,
-      deleteOnDisable = true,
       defaultResendToSystem = true
     }
   },
