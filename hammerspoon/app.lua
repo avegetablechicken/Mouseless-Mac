@@ -8422,6 +8422,7 @@ execOnLaunch(messageAppBundleID, function()
   ExecOnSilentQuit(messageAppBundleID, function()
     App_applicationCallback(messageApp:name(),
       hs.application.watcher.terminated, messageApp)
+    messageApp = nil
   end)
 end)
 
