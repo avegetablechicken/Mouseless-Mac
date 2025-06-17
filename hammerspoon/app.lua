@@ -8426,6 +8426,17 @@ execOnLaunch(messageAppBundleID, function()
 end)
 
 function App_applicationInstalledCallback(files, flagTables)
+  files = tcopy(files) flagTables = tcopy(flagTables)
+  for i=#files,1,-1 do
+    if files[i]:match("Google Docs")
+        or files[i]:match("Google Sheets")
+        or files[i]:match("Google Slides") then
+      if flagTables[i].itemCreated then
+        hs.execute(strfmt("rm -rf \"%s\"", files[i]))
+        tremove(files, i) tremove(flagTables, i)
+      end
+    end
+  end
   for i, file in ipairs(files) do
     if flagTables[i].itemRemoved then
       local appid = hs.application.infoForBundlePath(file).CFBundleIdentifier

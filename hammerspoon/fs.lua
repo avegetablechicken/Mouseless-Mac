@@ -115,18 +115,6 @@ for _, tuple in ipairs(filesToSync) do
   tinsert(SyncPathWatchers, watcher)
 end
 
-function File_applicationInstalledCallback(files, flagTables)
-  for i=1,#files do
-    if files[i]:match("Google Docs")
-      or files[i]:match("Google Sheets")
-      or files[i]:match("Google Slides") then
-      if flagTables[i].itemCreated then
-        hs.execute(strfmt("rm -rf \"%s\"", files[i]))
-      end
-    end
-  end
-end
-
 -- listen to other devices on port 8086 and copy received text/image/file to clipboard
 local function handleRequest(method, path, headers, body)
   print("[LOG] Received " .. method .. " request for " .. path)

@@ -438,7 +438,6 @@ local function applicationInstalledCallback(files, flagTables)
   if #newFiles ~= 0 then
     App_applicationInstalledCallback(newFiles, newFlagTables)
     System_applicationInstalledCallback(newFiles, newFlagTables)
-    File_applicationInstalledCallback(newFiles, newFlagTables)
   end
 end
 
