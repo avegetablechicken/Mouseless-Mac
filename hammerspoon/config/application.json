@@ -4,7 +4,7 @@
     "changeOnWindow": [ ]
   },
 
-  "autoHideWithNoWindow": [
+  "hideWithoutWindow": [
     "org.hammerspoon.Hammerspoon",
     "com.surteesstudios.Bartender",
     "com.gaosun.eul",
@@ -38,7 +38,7 @@
       }
     }
   ],
-  "autoQuitWithNoWindow": [
+  "quitWithoutWindow": [
     "com.apple.MobileSMS",
     "com.apple.iCal",
     "com.apple.mail",
