@@ -8425,13 +8425,14 @@ execOnLaunch(messageAppBundleID, function()
   end)
 end)
 
+local forbiddenApps = ApplicationConfigs["forbidden"] or {}
 function App_applicationInstalledCallback(files, flagTables)
   files = tcopy(files) flagTables = tcopy(flagTables)
   for i=#files,1,-1 do
-    if files[i]:match("Google Docs")
-        or files[i]:match("Google Sheets")
-        or files[i]:match("Google Slides") then
-      if flagTables[i].itemCreated then
+    if flagTables[i].itemCreated then
+      local appid = hs.application.infoForBundlePath(files[i]).CFBundleIdentifier
+      if tcontain(forbiddenApps, appid)
+          or tcontain(forbiddenApps, files[i]:sub(1, -5)) then
         hs.execute(strfmt("rm -rf \"%s\"", files[i]))
         tremove(files, i) tremove(flagTables, i)
       end

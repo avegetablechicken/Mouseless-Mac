@@ -65,6 +65,14 @@
     "com.eusoft.freeeudic"
   ],
 
+  "forbidden": [
+    "com.microsoft.autoupdate2",
+    "com.google.SoftwareUpdate",
+    "Google Docs",
+    "Google Sheets",
+    "Google Slides"
+  ],
+
   "windowSwitcherIgnore": [
     "com.apple.controlcenter",
     "com.apple.notificationcenterui",
