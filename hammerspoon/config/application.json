@@ -35,6 +35,9 @@
       },
       "com.omni.mac.utility.store.ntfs": {
         "allowPopover": true
+      },
+      "com.tencent.LemonMonitor": {
+        "allowRoles": "AXUnknown"
       }
     }
   ],
