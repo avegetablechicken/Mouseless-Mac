@@ -7680,8 +7680,19 @@ local specialNoWindowRules = {
         and hs.window.visibleWindows()[1]:id() == hs.window.desktop():id() then
       return false
     end
-    return tfind(app:visibleWindows(), function(win)
-        return win:id() ~= hs.window.desktop():id() end) == nil
+    local nonDesktopWindows = tifilter(app:visibleWindows(), function(win)
+      return win:id() ~= hs.window.desktop():id()
+    end)
+    if #nonDesktopWindows == 0 then return true end
+    local appid = app:bundleID()
+    local quit = appsQuitWithoutWindow[appid] ~= nil
+    local windowFilterRules = quit and appsQuitWithoutWindow
+        or appsHideWithoutWindow
+    local windowFilter = hs.window.filter.new(false):setAppFilter(
+      app:name(), windowFilterRules[appid])
+    return tfind(nonDesktopWindows, function(win)
+      return windowFilter:isWindowAllowed(win)
+    end) == nil
   end
 }
 local function processAppWithoutWindow(app, delay)
