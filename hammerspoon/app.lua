@@ -7680,9 +7680,8 @@ local specialNoWindowRules = {
         and hs.window.visibleWindows()[1]:id() == hs.window.desktop():id() then
       return false
     end
-    local windows = app:visibleWindows()
-    return #tifilter(windows, function(win)
-        return win:id() ~= hs.window.desktop():id() end) == 0
+    return tfind(app:visibleWindows(), function(win)
+        return win:id() ~= hs.window.desktop():id() end) == nil
   end
 }
 local function processAppWithoutWindow(app, delay)
