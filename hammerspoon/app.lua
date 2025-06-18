@@ -4964,6 +4964,16 @@ appHotKeyCallbacks = {
       condition = checkMenuItem({ "Window", "Control Center" }),
       fn = receiveMenuItem
     },
+    ["expandedView"] = {
+      message = localizedMessage("Expanded View"),
+      condition = checkMenuItem({ "View", "Expanded View" }),
+      fn = receiveMenuItem
+    },
+    ["compactView"] = {
+      message = localizedMessage("Compact View"),
+      condition = checkMenuItem({ "View", "Compact View" }),
+      fn = receiveMenuItem
+    },
     ["minimize"] = {
       mods = "⌘", key = "M",
       message = localizedMessage("Minimize"),

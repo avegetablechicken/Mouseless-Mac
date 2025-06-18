@@ -1240,6 +1240,14 @@
       "showControlCenter": {
         "mods": ["shift", "command"],
         "key": "K"
+      },
+      "expandedView": {
+        "mods": "command",
+        "key": "1"
+      },
+      "compactView": {
+        "mods": "command",
+        "key": "2"
       }
     },
     "com.objective-see.lulu.app": {
