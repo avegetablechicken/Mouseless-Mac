@@ -7141,9 +7141,13 @@ AltMenuBarItemHotkeys = {}
 
 local function bindAltMenu(app, mods, key, message, fn)
   fn = showMenuItemWrapper(fn)
-  local hotkey = AppBind(app, {
+  local config = {
     mods = mods, key = key, message = message, fn = fn,
-  })
+  }
+  if app:bundleID() == "com.valvesoftware.steam" then
+    config.nonFrontmost = true
+  end
+  local hotkey = AppBind(app, config)
   hotkey.subkind = HK.IN_APP_.MENU
   return hotkey
 end
@@ -7236,6 +7240,12 @@ altMenuBarItem = function(app, menuBarItems, reinvokeKey)
   -- check whether called by window filter (possibly with delay)
   if appid ~= hs.application.frontmostApplication():bundleID() then
     return
+  end
+  if appid == "com.valvesoftware.steam.helper" then
+    appid = "com.valvesoftware.steam"
+    app = find(appid)
+    if app == nil then return end
+    menuBarItems = getMenuBarItems(app)
   end
 
   local enableIndex = get(KeybindingConfigs.hotkeys,
