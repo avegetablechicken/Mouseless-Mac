@@ -1902,6 +1902,60 @@ local function localizeChatGPT(str, appLocale)
   return jsonDict[str], locale
 end
 
+local function localizeSteam(str, appLocale, locale)
+  if locale == nil then
+    _, locale = hs.osascript.applescript(strfmt([[
+      use framework "Foundation"
+      set theLocale to current application's NSLocale's localeWithLocaleIdentifier:"en"
+      set langName to theLocale's localizedStringForLanguageCode:"%s"
+      return langName as text
+    ]], strsplit(appLocale, '_')[1]))
+    locale = locale:lower()
+  end
+  if locale == 'english' then return str, locale end
+  if locale == 'chinese' then
+    if appLocale == 'zh' or appLocale:find('Hans')
+        or (not appLocale:find('Hant')
+            and (appLocale:find('CN') or appLocale:find('SG'))) then
+      locale = 's' .. locale
+    else
+      locale = 't' .. locale
+    end
+  end
+  local resourceDir
+  local app = find("com.valvesoftware.steam")
+  if app then
+    resourceDir = app:path() .. "/Contents/MacOS"
+  else
+    resourceDir = os.getenv("HOME") ..
+        "/Library/Application Support/Steam/Steam.AppBundle/Steam/Contents/MacOS"
+  end
+  local suffix = '_english.txt'
+  for fp in hs.fs.dir(resourceDir) do
+    if fp:sub(1, 1) ~= '.' and isdir(resourceDir..'/'..fp) then
+      for f in hs.fs.dir(resourceDir .. '/' .. fp) do
+        if f:sub(-#suffix) == suffix then
+          local key = hs.execute(strfmt([[
+            awk -F'\t| ' '$2 ~ /"%s"/ {
+              gsub(/"/, "", $1); print $1; exit
+            }' '%s' | tr -d '\r\n'
+          ]], str, resourceDir..'/'..fp..'/'..f))
+          if key ~= "" then
+            local enFile = f:gsub('english', locale)
+            local result = hs.execute(strfmt([[
+              awk -F'\t| ' '$1 ~ /"%s"/ {
+                gsub(/"/, "", $2); print $2
+              }' '%s' | tr -d '\r\n'
+            ]], key, resourceDir..'/'..fp..'/'..enFile))
+            if result ~= "" then return result, locale end
+          end
+        end
+      end
+    end
+  end
+  return nil, locale
+end
+
 local appLocaleDir = {}
 local localeMatchTmpFile = localeTmpDir .. 'map.json'
 if exists(localeMatchTmpFile) then
@@ -1961,6 +2015,10 @@ local function localizedStringImpl(str, appid, params, force)
 
   if appid == "com.openai.chat" then
     result, locale = localizeChatGPT(str, appLocale)
+    return result, appLocale, locale
+  elseif appid:find("com.valvesoftware.steam") then
+    locale = get(appLocaleDir, appid, appLocale)
+    result, locale = localizeSteam(str, appLocale, locale)
     return result, appLocale, locale
   elseif appid == "org.zotero.zotero" then
     result, locale = localizeZotero(str, appLocale)
@@ -2837,6 +2895,60 @@ local function delocalizeChatGPT(str, appLocale)
   return tindex(jsonDict, str), locale
 end
 
+local function delocalizeSteam(str, appLocale, locale)
+  if locale == nil then
+    _, locale = hs.osascript.applescript(strfmt([[
+      use framework "Foundation"
+      set theLocale to current application's NSLocale's localeWithLocaleIdentifier:"en"
+      set langName to theLocale's localizedStringForLanguageCode:"%s"
+      return langName as text
+    ]], strsplit(appLocale, '_')[1]))
+    locale = locale:lower()
+  end
+  if locale == 'english' then return str, locale end
+  if locale == 'chinese' then
+    if appLocale == 'zh' or appLocale:find('Hans')
+        or (not appLocale:find('Hant')
+            and (appLocale:find('CN') or appLocale:find('SG'))) then
+      locale = 's' .. locale
+    else
+      locale = 't' .. locale
+    end
+  end
+  local resourceDir
+  local app = find("com.valvesoftware.steam")
+  if app then
+    resourceDir = app:path() .. "/Contents/MacOS"
+  else
+    resourceDir = os.getenv("HOME") ..
+        "/Library/Application Support/Steam/Steam.AppBundle/Steam/Contents/MacOS"
+  end
+  local suffix = '_' .. locale .. '.txt'
+  for fp in hs.fs.dir(resourceDir) do
+    if fp:sub(1, 1) ~= '.' and isdir(resourceDir..'/'..fp) then
+      for f in hs.fs.dir(resourceDir .. '/' .. fp) do
+        if f:sub(-#suffix) == suffix then
+          local key = hs.execute(strfmt([[
+            awk -F'\t| ' '$2 ~ /"%s"/ {
+              gsub(/"/, "", $1); print $1; exit
+            }' '%s' | tr -d '\r\n'
+          ]], str, resourceDir..'/'..fp..'/'..f))
+          if key ~= "" then
+            local enFile = f:gsub(locale, 'english')
+            local result = hs.execute(strfmt([[
+              awk -F'\t| ' '$1 ~ /"%s"/ {
+                gsub(/"/, "", $2); print $2
+              }' '%s' | tr -d '\r\n'
+            ]], key, resourceDir..'/'..fp..'/'..enFile))
+            if result ~= "" then return result, locale end
+          end
+        end
+      end
+    end
+  end
+  return nil, locale
+end
+
 local function delocalizeMATLABFigureMenu(str, appLocale)
   local resourceDir = hs.application.pathForBundleID("com.mathworks.matlab")
                       .. "/resources/MATLAB"
@@ -2891,9 +3003,12 @@ local function delocalizedStringImpl(str, appid, params, force)
     if result == false then return nil
     elseif result ~= nil then return result end
   end
-
   if appid == "com.openai.chat" then
     result, locale = delocalizeChatGPT(str, appLocale)
+    return result, appLocale, locale
+  elseif appid:find("com.valvesoftware.steam") then
+    locale = get(appLocaleDir, appid, appLocale)
+    result, locale = delocalizeSteam(str, appLocale, locale)
     return result, appLocale, locale
   elseif appid == "org.zotero.zotero" then
     result, locale = delocalizeZotero(str, appLocale)
