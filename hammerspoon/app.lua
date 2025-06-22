@@ -6286,6 +6286,7 @@ local function registerInWinHotKeys(obj, filter)
     end
     hotkeys = hotkeys[filter]
   end
+  local needCloseWatcher = true
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
     if hotkeys[hkID] == nil then
       -- prefer properties specified in configuration file than in code
@@ -6323,6 +6324,7 @@ local function registerInWinHotKeys(obj, filter)
         end
       end
     else
+      needCloseWatcher = false
       hotkeys[hkID]:enable()
     end
   end
@@ -6333,6 +6335,17 @@ local function registerInWinHotKeys(obj, filter)
     end)
     execOnQuit(appid, function()
       unregisterInWinHotKeys(appid, true)
+    end)
+  elseif needCloseWatcher then
+    local observer = uiobserver.new(app:pid())
+    observer:addWatcher(towinui(obj), uinotifications.uIElementDestroyed)
+    observer:callback(function(obs)
+      unregisterInWinHotKeys(appid, true, filter)
+      obs:stop() obs = nil
+    end)
+    observer:start()
+    stopOnDeactivated(appid, observer, function()
+      unregisterInWinHotKeys(appid, true, filter)
     end)
   end
 end
@@ -6389,7 +6402,6 @@ local function registerSingleWinFilterForApp(app, filter)
         or windowFilter:isWindowAllowed(win))
       and (condition == nil or condition(win)) then
     registerInWinHotKeys(win, filter)
-    observer:addWatcher(towinui(win), uinotifications.uIElementDestroyed)
   end
 
   local appUI = toappui(app)
@@ -6412,19 +6424,12 @@ local function registerSingleWinFilterForApp(app, filter)
             and (filter.allowTitles or filter.rejectTitles)) then
       observer:addWatcher(towinui(win), uinotifications.titleChanged)
     end
-    if notification == uinotifications.uIElementDestroyed then
-      unregisterInWinHotKeys(appid, true, filter)
-      return
-    end
 
     local action = function()
       if win ~= nil and ((allowSheet and win:role() == AX.Sheet)
             or (allowPopover and win:role() == AX.Popover)
             or windowFilter:isWindowAllowed(win))
           and (condition == nil or condition(win)) then
-        if get(inWinHotKeys, appid, filter) == nil then
-          observer:addWatcher(towinui(win), uinotifications.uIElementDestroyed)
-        end
         registerInWinHotKeys(win, filter)
       else
         unregisterInWinHotKeys(appid, false, filter)
@@ -6449,7 +6454,6 @@ local function registerSingleWinFilterForApp(app, filter)
   FocusedWindowObservers[appid][filter] = observer
   stopOnDeactivated(appid, observer, function()
     FocusedWindowObservers[appid][filter] = nil
-    unregisterInWinHotKeys(appid, true, filter)
   end)
 end
 
