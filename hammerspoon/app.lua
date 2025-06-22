@@ -6205,13 +6205,12 @@ unregisterInAppHotKeys = function(appid, delete)
   if type(appid) ~= 'string' then appid = appid:bundleID() end
   if appHotKeyCallbacks[appid] == nil then return end
 
+  local allDeleted = true
   if delete then
     for _, hotkey in pairs(inAppHotKeys[appid] or {}) do
       hotkey:delete()
     end
-    inAppHotKeys[appid] = nil
   else
-    local allDeleted = true
     for hkID, hotkey in pairs(inAppHotKeys[appid] or {}) do
       hotkey:disable()
       if hotkey.deleteOnDisable then
@@ -6221,9 +6220,9 @@ unregisterInAppHotKeys = function(appid, delete)
         allDeleted = false
       end
     end
-    if allDeleted then
-      inAppHotKeys[appid] = nil
-    end
+  end
+  if allDeleted then
+    inAppHotKeys[appid] = nil
   end
 end
 
