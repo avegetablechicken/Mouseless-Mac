@@ -6526,7 +6526,7 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter, event)
         if keybinding.nonFrontmost ~= nil then
           config.nonFrontmost = keybinding.nonFrontmost
         end
-        config.repeatedFn = config.repeatable and cfg.fn or nil
+        config.repeatedfn = config.repeatable and cfg.fn or nil
         local hotkey = WinBind(win, config)
         tinsert(daemonAppFocusedWindowHotkeys[appid], hotkey)
       end
@@ -6661,7 +6661,7 @@ local function registerInMenuHotkeys(appid, appConfig, menubarFilter, menuBarIte
         if keybinding.repeatable ~= nil then
           config.repeatable = keybinding.repeatable
         end
-        config.repeatedFn = config.repeatable and cfg.fn or nil
+        config.repeatedfn = config.repeatable and cfg.fn or nil
         config.menubar = menuBarItem
         tinsert(menuBarMenuHotkeys[appid], MenuBarBind(app, config))
       end
