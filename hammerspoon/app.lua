@@ -5888,6 +5888,7 @@ local KEY_MODE = {
   REPEAT = 2,
 }
 
+-- essential info are cached in a linked list for showing keybindings by "HSKeybindings"
 InAppHotkeyInfoChain = {}
 local function wrapInfoChain(app, config, cond, mode)
   local appid = app:bundleID()
@@ -6069,7 +6070,7 @@ local function wrapCondition(obj, config, mode)
       prevAppCallbacks[appid][hkIdx] = { nil, nil }
     end
     prevAppCallbacks[appid][hkIdx][mode] = fn
-    -- essential info are also cached in a linked list for showing keybindings by `HSKeybindings`
+    -- cache essential info for showing keybindings
     wrapInfoChain(app, config, cond, mode)
   end
   return fn, cond
