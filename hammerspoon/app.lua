@@ -160,7 +160,6 @@ local function isLSUIElement(appid)
   return info and info.LSUIElement == true
 end
 
--- for apps whose launching can be detected by Hammerspoon
 local processesOnLaunch = {}
 local function execOnLaunch(appid, action)
   if isLSUIElement(appid) then
