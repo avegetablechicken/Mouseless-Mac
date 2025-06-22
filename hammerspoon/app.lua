@@ -5961,7 +5961,7 @@ local function wrapCondition(obj, config, mode)
     end
     local oldCond = cond
     cond = function(win)
-      if win == nil then return false end
+      if win == nil then return false, COND_FAIL.WINDOW_FILTER_NOT_SATISFIED end
       local wf = hs.window.filter.new(false):setAppFilter(
         win:application():name(), actualFilter)
       if wf:isWindowAllowed(win)
