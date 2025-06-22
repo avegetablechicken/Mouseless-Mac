@@ -5885,8 +5885,6 @@ local function resendToFrontmostWindow(cond, nonFrontmost)
   end
 end
 
-APPWIN_HOTKEY_ON_WINDOW_FOCUS = true
-
 local KEY_MODE = {
   PRESS = 1,
   REPEAT = 2,
@@ -7171,26 +7169,24 @@ local appsMayChangeMenuBarTmpFile =
     appsMayChangeMenuBarTmpDir .. '/variable_menubar.json'
 local windowOnBindAltMenu
 
-local altMenuBarItem, registerObserverForMenuBarChange, watchMenuBarItems
+local onLaunchedAndActivated
 local function processInvalidAltMenu(app, reinvokeKey)
+  local appid = app:bundleID()
   local curWin = app:focusedWindow() and app:focusedWindow():id() or false
   local isSameWin = curWin == windowOnBindAltMenu
-  altMenuBarItem(app, nil, reinvokeKey)
-  unregisterInAppHotKeys(app, true)
-  registerInAppHotKeys(app)
-  if APPWIN_HOTKEY_ON_WINDOW_FOCUS then
-    registerWinFiltersForApp(app)
-  else
-    unregisterInWinHotKeys(app, true)
-    registerInWinHotKeys(app)
-  end
-  remapPreviousTab(app)
-  registerOpenRecent(app)
-  registerZoomHotkeys(app)
   if isSameWin then
     local _, framework = getResourceDir(app:bundleID())
-    if framework.electron then return end
+    if framework.electron then
+      onLaunchedAndActivated(app, reinvokeKey)
+      return
+    end
   end
+  if isSameWin then
+    tinsert(appsWatchMenuBarItems, appid)
+  else
+    tinsert(appsMayChangeMenuBar, appid)
+  end
+  onLaunchedAndActivated(app, reinvokeKey)
 
   if not exists(appsMayChangeMenuBarTmpDir) then
     hs.execute(strfmt("mkdir -p '%s'", appsMayChangeMenuBarTmpDir))
@@ -7201,22 +7197,13 @@ local function processInvalidAltMenu(app, reinvokeKey)
   else
     json = {}
   end
-  local appid = app:bundleID()
-  if isSameWin then
-    tinsert(appsWatchMenuBarItems, appid)
-    watchMenuBarItems(app)
-    if json["changing"] == nil then json["changing"] = {} end
-    tinsert(json["changing"], appid)
-  else
-    tinsert(appsMayChangeMenuBar, appid)
-    registerObserverForMenuBarChange(app)
-    if json["onWindow"] == nil then json["onWindow"] = {} end
-    tinsert(json["onWindow"], appid)
-  end
+  local key = isSameWin and "changing" or "onWindow"
+  if json[key] == nil then json[key] = {} end
+  tinsert(json[key], appid)
   hs.json.write(json, appsMayChangeMenuBarTmpFile, false, true)
 end
 
-altMenuBarItem = function(app, menuBarItems, reinvokeKey)
+local function altMenuBarItem(app, menuBarItems, reinvokeKey)
   -- delete previous hotkeys
   for _, hotkey in ipairs(AltMenuBarItemHotkeys) do
     hotkey:delete()
@@ -7483,7 +7470,7 @@ local getMenuBarItemTitlesString = function(app, menuBarItems)
   return table.concat(menuBarItemTitles, "|")
 end
 
-watchMenuBarItems = function(app, menuBarItems)
+local function watchMenuBarItems(app, menuBarItems)
   local appid = app:bundleID()
   appsMenuBarItemTitlesString[appid] = getMenuBarItemTitlesString(app, menuBarItems)
   local watcher = ExecContinuously(function()
@@ -7543,7 +7530,7 @@ local function appMenuBarChangeCallback(app)
   end)
 end
 
-registerObserverForMenuBarChange = function(app, menuBarItems)
+local function registerObserverForMenuBarChange(app, menuBarItems)
   local appid = app:bundleID()
   if appid == nil then return end
   if menuBarItems == nil then
@@ -7577,11 +7564,6 @@ local frontAppID = frontApp and frontApp:bundleID() or nil
 local frontWin = hs.window.frontmostWindow()
 local frontWinAppID = frontWin and frontWin:application():bundleID() or nil
 
--- update apps' locales
-if frontAppID then
-  appLocales[frontAppID] = applicationLocale(frontAppID)
-end
-
 -- register hotkeys for background apps
 for appid, appConfig in pairs(appHotKeyCallbacks) do
   registerRunningAppHotKeys(appid)
@@ -7603,20 +7585,43 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
 end
 
 -- register hotkeys for active app
+APPWIN_HOTKEY_ON_WINDOW_FOCUS = true
+
+onLaunchedAndActivated = function(app, reinvokeKey)
+  local menuBarItems = getMenuBarItems(app)
+  local localeUpdated = updateAppLocale(app)
+  local menuBarChanged = reinvokeKey ~= nil
+  altMenuBarItem(app, menuBarItems, reinvokeKey)
+  if localeUpdated or menuBarChanged then
+    unregisterInAppHotKeys(app, true)
+    if not APPWIN_HOTKEY_ON_WINDOW_FOCUS then
+      unregisterInWinHotKeys(app, true)
+    end
+  end
+  registerInAppHotKeys(app)
+  if APPWIN_HOTKEY_ON_WINDOW_FOCUS then
+    registerWinFiltersForApp(app)
+  else
+    registerInWinHotKeys(app)
+  end
+  remapPreviousTab(app)
+  registerOpenRecent(app)
+  registerZoomHotkeys(app)
+  registerObserverForMenuBarChange(app, menuBarItems)
+
+  if HSKeybindings ~= nil and HSKeybindings.isShowing then
+    local validOnly = HSKeybindings.validOnly
+    local showHS = HSKeybindings.showHS
+    local showApp = HSKeybindings.showApp
+    HSKeybindings:reset()
+    HSKeybindings:update(validOnly, showHS, showApp, true)
+  end
+  FLAGS["NO_RESHOW_KEYBINDING"] = false
+  return #menuBarItems > 0
+end
 if frontApp then
   registerForOpenSavePanel(frontApp)
-  altMenuBarItem(frontApp)
-  registerInAppHotKeys(frontApp)
-  if APPWIN_HOTKEY_ON_WINDOW_FOCUS then -- for focused window
-    registerWinFiltersForApp(frontApp)
-  else
-    registerInWinHotKeys(frontApp)
-  end
-
-  remapPreviousTab(frontApp)
-  registerOpenRecent(frontApp)
-  registerZoomHotkeys(frontApp)
-  registerObserverForMenuBarChange(frontApp)
+  onLaunchedAndActivated(frontApp)
 end
 
 -- register watchers for focused window belonging to daemon app
@@ -8266,38 +8271,6 @@ local appsLaunchSlow = {
     return #getMenuBarItems(app) > 10
   end
 }
-
-local function onLaunchedAndActivated(app)
-  local menuBarItems = getMenuBarItems(app)
-  local localeUpdated = updateAppLocale(app)
-  altMenuBarItem(app, menuBarItems)
-  if localeUpdated then
-    unregisterInAppHotKeys(app, true)
-    if not APPWIN_HOTKEY_ON_WINDOW_FOCUS then
-      unregisterInWinHotKeys(app, true)
-    end
-  end
-  registerInAppHotKeys(app)
-  if APPWIN_HOTKEY_ON_WINDOW_FOCUS then
-    registerWinFiltersForApp(app)
-  else
-    registerInWinHotKeys(app)
-  end
-  remapPreviousTab(app)
-  registerOpenRecent(app)
-  registerZoomHotkeys(app)
-  registerObserverForMenuBarChange(app, menuBarItems)
-
-  if HSKeybindings ~= nil and HSKeybindings.isShowing then
-    local validOnly = HSKeybindings.validOnly
-    local showHS = HSKeybindings.showHS
-    local showApp = HSKeybindings.showApp
-    HSKeybindings:reset()
-    HSKeybindings:update(validOnly, showHS, showApp, true)
-  end
-  FLAGS["NO_RESHOW_KEYBINDING"] = false
-  return #menuBarItems > 0
-end
 
 local fullyLaunchCriterion, menuItemsPrepared
 function App_applicationCallback(appname, eventType, app)
