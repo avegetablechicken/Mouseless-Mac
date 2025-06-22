@@ -6245,8 +6245,9 @@ local function registerInWinHotKeys(app)
   if not inWinHotKeys[appid] then
     inWinHotKeys[appid] = {}
   end
+  local hotkeys = inWinHotKeys[appid]
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
-    if inWinHotKeys[appid][hkID] == nil then
+    if hotkeys[hkID] == nil then
       -- prefer properties specified in configuration file than in code
       local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
       local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
@@ -6278,11 +6279,11 @@ local function registerInWinHotKeys(app)
             config.repeatable = keybinding.repeatable
           end
           config.repeatedfn = config.repeatable and cfg.fn or nil
-          inWinHotKeys[appid][hkID] = AppWinBind(app, config)
+          hotkeys[hkID] = AppWinBind(app, config)
         end
       end
     else
-      inWinHotKeys[appid][hkID]:enable()
+      hotkeys[hkID]:enable()
     end
   end
 
@@ -6355,8 +6356,10 @@ local function sameFilter(a, b)
 end
 
 FocusedWindowObservers = {}
-local function registerAppInWinHotkeys(win, appid, filter, event)
+local function registerAppInWinHotkeys(win, appid, filter)
   local app = win:application()
+  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
+
   if inWinHotKeys[appid] == nil then
     inWinHotKeys[appid] = {}
   end
@@ -6366,12 +6369,20 @@ local function registerAppInWinHotkeys(win, appid, filter, event)
   local hotkeys = inWinHotKeys[appid][filter]
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
     if hotkeys[hkID] == nil then
-      local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID) or cfg
+      -- prefer properties specified in configuration file than in code
+      local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
       local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-      local isBackground = keybinding.background ~= nil
-          and keybinding.background or cfg.background
+      if hasKey == false then
+        local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
+        if kbShared ~= nil then
+          keybinding = { mods = kbShared.mods, key = kbShared.key }
+          hasKey = true
+        end
+      end
       local windowFilter = keybinding.windowFilter or cfg.windowFilter
       local isForWindow = windowFilter ~= nil
+      local isBackground = keybinding.background ~= nil
+          and keybinding.background or cfg.background
       local bindable = function()
         return cfg.bindCondition == nil or cfg.bindCondition(app)
       end
