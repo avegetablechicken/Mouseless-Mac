@@ -6354,8 +6354,7 @@ local function sameFilter(a, b)
   return true
 end
 
-
-AppFocusedWindowFilters = {}
+FocusedWindowObservers = {}
 local function registerAppInWinHotkeys(win, appid, filter, event)
   local app = win:application()
   if inWinHotKeys[appid] == nil then
@@ -6480,9 +6479,9 @@ local function registerSingleWinFilterForApp(app, filter)
     action()
   end)
   observer:start()
-  AppFocusedWindowFilters[appid][filter] = observer
+  FocusedWindowObservers[appid][filter] = observer
   stopOnDeactivated(appid, observer, function()
-    AppFocusedWindowFilters[appid][filter] = nil
+    FocusedWindowObservers[appid][filter] = nil
     unregisterInWinHotKeys(appid, true, filter)
   end)
 end
@@ -6500,11 +6499,11 @@ local function registerWinFiltersForApp(app)
       return cfg.bindCondition == nil or cfg.bindCondition(app)
     end
     if hasKey and isForWindow and not isBackground and bindable() then
-      if AppFocusedWindowFilters[appid] == nil then
-        AppFocusedWindowFilters[appid] = {}
+      if FocusedWindowObservers[appid] == nil then
+        FocusedWindowObservers[appid] = {}
       end
       local windowFilter = keybinding.windowFilter or cfg.windowFilter
-      for f, _ in pairs(AppFocusedWindowFilters[appid]) do
+      for f, _ in pairs(FocusedWindowObservers[appid]) do
         -- a window filter can be shared by multiple hotkeys
         if sameFilter(f, windowFilter) then
           goto L_CONTINUE
