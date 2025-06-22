@@ -6227,6 +6227,9 @@ unregisterInAppHotKeys = function(appid, delete)
 end
 
 function AppWinBind(obj, config, ...)
+  if not APPWIN_HOTKEY_ON_WINDOW_FOCUS and obj.application then
+    obj = obj:application()
+  end
   local hotkey = bindAppWinImpl(obj, config, ...)
   hotkey.kind = HK.IN_APP
   hotkey.subkind = HK.IN_APP_.WINDOW
@@ -7043,8 +7046,7 @@ local function registerForOpenSavePanel(app)
         local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
         if spec ~= nil then
           local idx = i
-          local obj = APPWIN_HOTKEY_ON_WINDOW_FOCUS and app:focusedWindow() or app
-          local hotkey = AppWinBind(obj, {
+          local hotkey = AppWinBind(app:focusedWindow(), {
             spec = spec, message = 'Location ' .. i,
             fn = function()
               local outline = getc(winUI, AX.SplitGroup, 1, AX.List, 1)
@@ -7076,8 +7078,7 @@ local function registerForOpenSavePanel(app)
         local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
         if spec ~= nil then
           local folder = getc(cell, AX.StaticText, 1).AXValue
-          local obj = APPWIN_HOTKEY_ON_WINDOW_FOCUS and app:focusedWindow() or app
-          local hotkey = AppWinBind(obj, {
+          local hotkey = AppWinBind(app:focusedWindow(), {
             spec = spec, message = header .. ' > ' .. folder,
             fn = function() cell:performAction(AX.Open) end,
           })
@@ -7090,8 +7091,7 @@ local function registerForOpenSavePanel(app)
     if dontSaveButton ~= nil then
       local spec = get(KeybindingConfigs.hotkeys.shared, "confirmDelete")
       if spec ~= nil then
-        local obj = APPWIN_HOTKEY_ON_WINDOW_FOCUS and app:focusedWindow() or app
-        local hotkey = AppWinBind(obj, {
+        local hotkey = AppWinBind(app:focusedWindow(), {
           spec = spec,
           message = dontSaveButton.AXTitle or dontSaveButton.AXDescription,
           fn = function() press(dontSaveButton) end,
