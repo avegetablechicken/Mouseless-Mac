@@ -6357,22 +6357,27 @@ unregisterInWinHotKeys = function(appid, delete, filter)
     return
   end
 
-  local hasDeleteOnDisable = hs.fnutils.some(hotkeys,
-    function(hotkey, _)
-      return hotkey.deleteOnDisable
-    end)
-  if delete or hasDeleteOnDisable then
+  local allDeleted = true
+  if delete then
     for _, hotkey in pairs(hotkeys) do
       hotkey:delete()
     end
+  else
+    for hkID, hotkey in pairs(hotkeys) do
+      hotkey:disable()
+      if hotkey.deleteOnDisable then
+        hotkey:delete()
+        hotkeys[hkID] = nil
+      else
+        allDeleted = false
+      end
+    end
+  end
+  if allDeleted then
     if filter then
       inWinHotKeys[appid][filter] = nil
     else
       inWinHotKeys[appid] = nil
-    end
-  else
-    for _, hotkey in pairs(hotkeys) do
-      hotkey:disable()
     end
   end
 end
