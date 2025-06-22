@@ -6468,7 +6468,6 @@ local function registerSingleWinFilterForApp(app, filter)
     if notification == uinotifications.titleChanged then
       windowFilter:subscribe(hs.window.filter.windowTitleChanged,
         function(window)
-          win = window
           hs.timer.doAfter(0.6, action)
           windowFilter:unsubscribeAll()
         end)
