@@ -6131,10 +6131,10 @@ end
 function AppBind(app, config, ...)
   local hotkey = bindAppWinImpl(app, config, ...)
   hotkey.kind = HK.IN_APP
-  if config.websiteFilter == nil then
-    hotkey.subkind = HK.IN_APP_.APP
-  else
+  if config.websiteFilter ~= nil then
     hotkey.subkind = HK.IN_APP_.WEBSITE
+  else
+    hotkey.subkind = HK.IN_APP_.APP
   end
   return hotkey
 end
@@ -6181,9 +6181,12 @@ local function registerInAppHotKeys(app)
           config.mods = keybinding.mods
           config.key = keybinding.key
           config.message = msg
-          config.websiteFilter = keybinding.websiteFilter or cfg.websiteFilter
-          config.repeatable = keybinding.repeatable ~= nil
-              and keybinding.repeatable or cfg.repeatable
+          if keybinding.websiteFilter ~= nil then
+            config.websiteFilter = keybinding.websiteFilter
+          end
+          if keybinding.repeatable ~= nil then
+            config.repeatable = keybinding.repeatable
+          end
           config.repeatedfn = config.repeatable and cfg.fn or nil
           inAppHotKeys[appid][hkID] = AppBind(app, config)
         end
@@ -6268,9 +6271,12 @@ local function registerInWinHotKeys(app)
           config.mods = keybinding.mods
           config.key = keybinding.key
           config.message = msg
-          config.windowFilter = keybinding.windowFilter or cfg.windowFilter
-          config.repeatable = keybinding.repeatable ~= nil
-              and keybinding.repeatable or cfg.repeatable
+          if keybinding.windowFilter ~= nil then
+            config.windowFilter = keybinding.windowFilter
+          end
+          if keybinding.repeatable ~= nil then
+            config.repeatable = keybinding.repeatable
+          end
           config.repeatedfn = config.repeatable and cfg.fn or nil
           inWinHotKeys[appid][hkID] = AppWinBind(app, config)
         end
@@ -6371,8 +6377,9 @@ local function registerAppInWinHotkeys(win, hotkeys, appid, filter, event)
         config.key = keybinding.key
         config.message = msg
         config.windowFilter = nil
-        config.repeatable = keybinding.repeatable ~= nil
-            and keybinding.repeatable or cfg.repeatable
+        if keybinding.repeatable ~= nil then
+          config.repeatable = keybinding.repeatable
+        end
         config.repeatedFn = config.repeatable and cfg.fn or nil
         hotkeys[hkID] = AppWinBind(win, config)
       end
@@ -6544,11 +6551,13 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter, event)
         config.key = keybinding.key
         config.message = msg
         config.windowFilter = nil
-        config.repeatable = keybinding.repeatable ~= nil
-            and keybinding.repeatable or cfg.repeatable
+        if keybinding.repeatable ~= nil then
+          config.repeatable = keybinding.repeatable
+        end
+        if keybinding.nonFrontmost ~= nil then
+          config.nonFrontmost = keybinding.nonFrontmost
+        end
         config.repeatedFn = config.repeatable and cfg.fn or nil
-        config.nonFrontmost = keybinding.nonFrontmost ~= nil
-            and keybinding.nonFrontmost or cfg.nonFrontmost
         local hotkey = WinBind(win, config)
         tinsert(daemonAppFocusedWindowHotkeys[appid], hotkey)
       end
@@ -6650,6 +6659,13 @@ local function registerWinFiltersForDaemonApp(app, appConfig)
 end
 
 -- hotkeys for menu belonging to menubar app
+function MenuBarBind(app, config)
+  local hotkey, cond = bindAppWinImpl(app, config)
+  hotkey.condition = cond
+  hotkey.kind = HK.MENUBAR
+  return hotkey
+end
+
 local menuBarMenuHotkeys = {}
 local function registerInMenuHotkeys(appid, appConfig, menubarFilter, menuBarItem)
   if menuBarMenuHotkeys[appid] == nil then
@@ -6673,14 +6689,12 @@ local function registerInMenuHotkeys(appid, appConfig, menubarFilter, menuBarIte
         config.mods = keybinding.mods
         config.key = keybinding.key
         config.message = msg
-        config.repeatable = keybinding.repeatable ~= nil
-            and keybinding.repeatable or cfg.repeatable
+        if keybinding.repeatable ~= nil then
+          config.repeatable = keybinding.repeatable
+        end
         config.repeatedFn = config.repeatable and cfg.fn or nil
         config.menubar = menuBarItem
-        local hotkey, cond = bindAppWinImpl(app, config)
-        hotkey.condition = cond
-        hotkey.kind = HK.MENUBAR
-        tinsert(menuBarMenuHotkeys[appid], hotkey)
+        tinsert(menuBarMenuHotkeys[appid], MenuBarBind(app, config))
       end
     end
   end
