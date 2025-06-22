@@ -502,6 +502,10 @@ local function testValid(entry)
           entry.msg = entry.msg:sub(1, pos - 1) .. ": " .. actualMsg
         end
       end
+    elseif entry.kind == HK.MENUBAR then
+      if entry.condition ~= nil then
+        valid = entry.condition(hs.application.frontmostApplication())
+      end
     end
   end
   entry.valid = valid
