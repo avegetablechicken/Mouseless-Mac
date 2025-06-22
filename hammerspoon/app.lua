@@ -751,7 +751,9 @@ local QQLiveMainWindowFilter = {
   fn = existQQLiveChannel
 }
 local function getQQLiveChannelName(index)
-  return function(win)
+    return function(win)
+    if win.focusedWindow then win = win:focusedWindow() end
+    if win == nil then return "频道" .. index end
     if #QQLiveChannelNames == 0 then
       local list = getc(towinui(win), AX.Group, 2)
       if list == nil or #list == 0 then return false end
@@ -979,6 +981,8 @@ end
 
 local function getBartenderSidebarItemTitle(index)
   return function(win)
+    if win.focusedWindow then win = win:focusedWindow() end
+    if win == nil then return "View " .. index end
     local winUI = towinui(win)
     local row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
         AX.Outline, 1, AX.Row, index, AX.Cell, 1, AX.StaticText, 1)
