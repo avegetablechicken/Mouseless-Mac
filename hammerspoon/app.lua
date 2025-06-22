@@ -6236,92 +6236,6 @@ function AppWinBind(obj, config, ...)
 end
 
 -- hotkeys for focused window of active app
-local unregisterInWinHotKeys
-local function registerInWinHotKeys(app)
-  local appid = app:bundleID()
-  if appHotKeyCallbacks[appid] == nil then return end
-  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
-
-  if not inWinHotKeys[appid] then
-    inWinHotKeys[appid] = {}
-  end
-  local hotkeys = inWinHotKeys[appid]
-  for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
-    if hotkeys[hkID] == nil then
-      -- prefer properties specified in configuration file than in code
-      local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
-      local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-      if hasKey == false then
-        local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
-        if kbShared ~= nil then
-          keybinding = { mods = kbShared.mods, key = kbShared.key }
-          hasKey = true
-        end
-      end
-      local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
-      local isBackground = keybinding.background ~= nil
-          and keybinding.background or cfg.background
-      local bindable = function()
-        return cfg.bindCondition == nil or cfg.bindCondition(app)
-      end
-      if hasKey and isForWindow and not isBackground and bindable() then  -- only consider windows of active app
-        local msg = type(cfg.message) == 'string'
-            and cfg.message or cfg.message(app)
-        if msg ~= nil then
-          local config = tcopy(cfg)
-          config.mods = keybinding.mods
-          config.key = keybinding.key
-          config.message = msg
-          if keybinding.windowFilter ~= nil then
-            config.windowFilter = keybinding.windowFilter
-          end
-          if keybinding.repeatable ~= nil then
-            config.repeatable = keybinding.repeatable
-          end
-          config.repeatedfn = config.repeatable and cfg.fn or nil
-          hotkeys[hkID] = AppWinBind(app, config)
-        end
-      end
-    else
-      hotkeys[hkID]:enable()
-    end
-  end
-
-  execOnDeactivated(appid, function()
-    unregisterInWinHotKeys(appid)
-  end)
-  execOnQuit(appid, function()
-    unregisterInWinHotKeys(appid, true)
-  end)
-end
-
-unregisterInWinHotKeys = function(appid, delete, filter)
-  if type(appid) ~= 'string' then appid = appid:bundleID() end
-  local hotkeys = inWinHotKeys[appid]
-  if filter then hotkeys = hotkeys[filter] end
-  if appHotKeyCallbacks[appid] == nil or hotkeys == nil then
-    return
-  end
-
-  local hasDeleteOnDisable = hs.fnutils.some(hotkeys,
-    function(hotkey, _)
-      return hotkey.deleteOnDisable
-    end)
-  if delete or hasDeleteOnDisable then
-    for _, hotkey in pairs(hotkeys) do
-      hotkey:delete()
-    end
-    if filter then
-      inWinHotKeys[appid][filter] = nil
-    else
-      inWinHotKeys[appid] = nil
-    end
-  else
-    for _, hotkey in pairs(hotkeys) do
-      hotkey:disable()
-    end
-  end
-end
 
 -- check if a window filter is the same as another
 -- if a value is a list, the order of elements matters
@@ -6355,18 +6269,23 @@ local function sameFilter(a, b)
   return true
 end
 
-FocusedWindowObservers = {}
-local function registerAppInWinHotkeys(win, appid, filter)
-  local app = win:application()
+local unregisterInWinHotKeys
+local function registerInWinHotKeys(obj, filter)
+  local app = obj.application and obj:application() or obj
+  local appid = app:bundleID()
+  if appHotKeyCallbacks[appid] == nil then return end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
 
-  if inWinHotKeys[appid] == nil then
+  if not inWinHotKeys[appid] then
     inWinHotKeys[appid] = {}
   end
-  if inWinHotKeys[appid][filter] == nil then
-    inWinHotKeys[appid][filter] = {}
+  local hotkeys = inWinHotKeys[appid]
+  if filter ~= nil then
+    if not hotkeys[filter] then
+      hotkeys[filter] = {}
+    end
+    hotkeys = hotkeys[filter]
   end
-  local hotkeys = inWinHotKeys[appid][filter]
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
     if hotkeys[hkID] == nil then
       -- prefer properties specified in configuration file than in code
@@ -6387,28 +6306,66 @@ local function registerAppInWinHotkeys(win, appid, filter)
         return cfg.bindCondition == nil or cfg.bindCondition(app)
       end
       if hasKey and isForWindow and not isBackground and bindable()
-          and sameFilter(windowFilter, filter) then
+          and (filter == nil or sameFilter(windowFilter, filter) )then
         local msg = type(cfg.message) == 'string'
-            and cfg.message or cfg.message(win)
+            and cfg.message or cfg.message(obj)
         if msg ~= nil then
           local config = tcopy(cfg)
           config.mods = keybinding.mods
           config.key = keybinding.key
           config.message = msg
-          config.windowFilter = nil
+          config.windowFilter = filter == nil and windowFilter or nil
           if keybinding.repeatable ~= nil then
             config.repeatable = keybinding.repeatable
           end
-          config.repeatedFn = config.repeatable and cfg.fn or nil
-          hotkeys[hkID] = AppWinBind(win, config)
+          config.repeatedfn = config.repeatable and cfg.fn or nil
+          hotkeys[hkID] = AppWinBind(obj, config)
         end
       end
     else
       hotkeys[hkID]:enable()
     end
   end
+
+  if filter == nil then
+    execOnDeactivated(appid, function()
+      unregisterInWinHotKeys(appid)
+    end)
+    execOnQuit(appid, function()
+      unregisterInWinHotKeys(appid, true)
+    end)
+  end
 end
 
+unregisterInWinHotKeys = function(appid, delete, filter)
+  if type(appid) ~= 'string' then appid = appid:bundleID() end
+  local hotkeys = inWinHotKeys[appid]
+  if hotkeys and filter ~= nil then hotkeys = hotkeys[filter] end
+  if appHotKeyCallbacks[appid] == nil or hotkeys == nil then
+    return
+  end
+
+  local hasDeleteOnDisable = hs.fnutils.some(hotkeys,
+    function(hotkey, _)
+      return hotkey.deleteOnDisable
+    end)
+  if delete or hasDeleteOnDisable then
+    for _, hotkey in pairs(hotkeys) do
+      hotkey:delete()
+    end
+    if filter then
+      inWinHotKeys[appid][filter] = nil
+    else
+      inWinHotKeys[appid] = nil
+    end
+  else
+    for _, hotkey in pairs(hotkeys) do
+      hotkey:disable()
+    end
+  end
+end
+
+FocusedWindowObservers = {}
 local function registerSingleWinFilterForApp(app, filter)
   local appid = app:bundleID()
   local actualFilter, allowSheet, allowPopover, condition
@@ -6431,7 +6388,7 @@ local function registerSingleWinFilterForApp(app, filter)
         or (allowPopover and win:role() == AX.Popover)
         or windowFilter:isWindowAllowed(win))
       and (condition == nil or condition(win)) then
-    registerAppInWinHotkeys(win, appid, filter)
+    registerInWinHotKeys(win, filter)
     observer:addWatcher(towinui(win), uinotifications.uIElementDestroyed)
   end
 
@@ -6468,7 +6425,7 @@ local function registerSingleWinFilterForApp(app, filter)
         if get(inWinHotKeys, appid, filter) == nil then
           observer:addWatcher(towinui(win), uinotifications.uIElementDestroyed)
         end
-        registerAppInWinHotkeys(win, appid, filter)
+        registerInWinHotKeys(win, filter)
       else
         unregisterInWinHotKeys(appid, false, filter)
       end
