@@ -6221,9 +6221,9 @@ unregisterInAppHotKeys = function(appid, delete)
 end
 
 function AppWinBind(obj, config, ...)
-  if not APPWIN_HOTKEY_ON_WINDOW_FOCUS and obj.application then
-    obj = obj:application()
-  end
+  -- in new impl (APPWIN_HOTKEY_ON_WINDOW_FOCUS is true), obj has to be a window
+  -- in old impl, obj can be either an application or a window,
+  -- but if obj is a window, user must take care of its lifetime
   local hotkey = bindAppWinImpl(obj, config, ...)
   hotkey.kind = HK.IN_APP
   hotkey.subkind = HK.IN_APP_.WINDOW
