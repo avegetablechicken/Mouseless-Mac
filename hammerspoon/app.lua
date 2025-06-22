@@ -5895,7 +5895,6 @@ local function wrapInfoChain(app, config, cond, mode)
   local appid = app:bundleID()
   local mods, key = config.mods, config.key
   local message = config.message
-  local windowFilter = config.windowFilter
 
   if InAppHotkeyInfoChain[appid] == nil then
     InAppHotkeyInfoChain[appid] = {}
@@ -5908,9 +5907,6 @@ local function wrapInfoChain(app, config, cond, mode)
       message = message,
       previous = prevHotkeyInfo
     }
-    if not APPWIN_HOTKEY_ON_WINDOW_FOCUS then
-      InAppHotkeyInfoChain[appid][hkIdx].window = windowFilter ~= nil
-    end
   end
 end
 

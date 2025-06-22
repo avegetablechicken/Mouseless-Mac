@@ -472,13 +472,7 @@ end
 
 local function getValidMessage(hotkeyInfo, obj)
   if obj == nil then return false, nil end
-  local thisObj = obj
-  if not APPWIN_HOTKEY_ON_WINDOW_FOCUS and hotkeyInfo.window
-      and obj.focusedWindow ~= nil then
-    thisObj = obj:focusedWindow()
-    if thisObj == nil then return false, nil end
-  end
-  if hotkeyInfo.condition(thisObj) then
+  if hotkeyInfo.condition(obj) then
     return true, hotkeyInfo.message
   else
     if hotkeyInfo.previous then
