@@ -7653,7 +7653,6 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
 end
 
 -- register hotkeys for focused window belonging to daemon app
--- note: ignore non-frontmost window
 if frontWin ~= nil then
   if DaemonAppFocusedWindowFilters[frontWinAppID] ~= nil then
     for filter, _ in pairs(DaemonAppFocusedWindowFilters[frontWinAppID]) do
@@ -7671,6 +7670,44 @@ if frontWin ~= nil then
           or (allowPopover and frontWin:role() == AX.Popover)
           or windowFilter:isWindowAllowed(frontWin) then
         registerDaemonAppInWinHotkeys(frontWin, frontWinAppID, filter)
+      end
+    end
+  end
+end
+
+for appid, _ in pairs(DaemonAppFocusedWindowFilters) do
+  local app = find(appid)
+  if app then
+    local nonFrontmostFilters = {}
+    for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
+      local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID)
+          or { mods = cfg.mods, key = cfg.key }
+      if keybinding.nonFrontmost or cfg.nonFrontmost then
+        local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+        if hasKey then
+          tinsert(nonFrontmostFilters, keybinding.windowFilter or cfg.windowFilter)
+        end
+      end
+    end
+    for _, filter in ipairs(nonFrontmostFilters) do
+      local allowSheet, allowPopover
+      local actualFilter = filter
+      if type(filter) == 'table' then
+        allowSheet, allowPopover = filter.allowSheet, filter.allowPopover
+      end
+      if allowSheet or allowPopover then
+        actualFilter = false
+      end
+      local windowFilter = hs.window.filter.new(false):setAppFilter(
+          app:name(), actualFilter)
+      local win = tfind(app:visibleWindows(), function(win)
+        return (frontWin == nil or win:id() ~= frontWin:id())
+          and (allowSheet and win:role() == AX.Sheet)
+          or (allowPopover and win:role() == AX.Popover)
+          or windowFilter:isWindowAllowed(win)
+      end)
+      if win then
+        registerDaemonAppInWinHotkeys(win, appid, filter)
       end
     end
   end
