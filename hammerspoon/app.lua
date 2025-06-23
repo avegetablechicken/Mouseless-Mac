@@ -6646,21 +6646,53 @@ function MenuBarBind(app, config)
 end
 
 local menuBarMenuHotkeys = {}
-local function registerInMenuHotkeys(appid, appConfig, menubarFilter, menuBarItem)
+local function registerInMenuHotkeys(app)
+  local appid = app:bundleID()
+  local appUI = toappui(app)
+  local appConfig = appHotKeyCallbacks[appid]
   if menuBarMenuHotkeys[appid] == nil then
     menuBarMenuHotkeys[appid] = {}
   end
+  local closeObserver
   for hkID, cfg in pairs(appConfig) do
-    local app = find(appid)
     local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID)
         or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    local thisMenubarFilter = keybinding.menubarFilter or cfg.menubarFilter
+    local menubarFilter = keybinding.menubarFilter or cfg.menubarFilter
     local bindable = function()
       return cfg.bindCondition == nil or cfg.bindCondition(app)
     end
-    if hasKey and thisMenubarFilter ~= nil
-        and sameFilter(menubarFilter, thisMenubarFilter) and bindable() then
+    if hasKey and menubarFilter ~= nil and bindable() then
+      local mbItem
+      if type(menubarFilter) == 'table' then
+        if menubarFilter.allowIndices then
+          local t = menubarFilter.allowIndices
+          if type(t) ~= 'table' then t = { t } end
+          for _, idx in ipairs(t) do
+            local item = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, idx)
+            if item.AXSelected then
+              mbItem = item break
+            end
+          end
+        elseif menubarFilter.allowTitles then
+          local t = menubarFilter.allowTitles
+          if type(t) ~= 'table' then t = { t } end
+          local map = loadStatusItemsAutosaveName(app)
+          for _, title in ipairs(t) do
+            local idx = tindex(map, title)
+            if idx then
+              local item = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, idx)
+              if item.AXSelected then
+                mbItem = item break
+              end
+            end
+          end
+        end
+      elseif menubarFilter == true then
+        mbItem = tfind(getc(appUI, AX.MenuBar, -1, AX.MenuBarItem),
+            function(item) return item.AXSelected end)
+      end
+      if mbItem == nil then return end
       local msg = type(cfg.message) == 'string'
           and cfg.message or cfg.message(app)
       if msg ~= nil then
@@ -6672,65 +6704,12 @@ local function registerInMenuHotkeys(appid, appConfig, menubarFilter, menuBarIte
           config.repeatable = keybinding.repeatable
         end
         config.repeatedfn = config.repeatable and cfg.fn or nil
-        config.menubar = menuBarItem
+        config.menubar = mbItem
         tinsert(menuBarMenuHotkeys[appid], MenuBarBind(app, config))
-      end
-    end
-  end
-end
-
-MenuBarMenuObservers = {}
-local function registerObserversForMenuBarMenu(app, appConfig)
-  local appid = app:bundleID()
-  for hkID, cfg in pairs(appConfig) do
-    local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID)
-        or { mods = cfg.mods, key = cfg.key }
-    local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    local menubarFilter = keybinding.menubarFilter or cfg.menubarFilter
-    local bindable = function()
-      return cfg.bindCondition == nil or cfg.bindCondition(app)
-    end
-    if hasKey and menubarFilter ~= nil and bindable() then
-      local observer = MenuBarMenuObservers[appid]
-      if observer == nil then
-        local appUI = toappui(app)
-        observer = uiobserver.new(app:pid())
-        if not appUI:isValid() then return end
-        observer:addWatcher(appUI, uinotifications.menuOpened)
-        observer:callback(function(_, element, notification)
-          local mbItem
-          if type(menubarFilter) == 'table' then
-            if menubarFilter.allowIndices then
-              local t = menubarFilter.allowIndices
-              if type(t) ~= 'table' then t = { t } end
-              for _, idx in ipairs(t) do
-                local item = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, idx)
-                if item.AXSelected then
-                  mbItem = item break
-                end
-              end
-            elseif menubarFilter.allowTitles then
-              local t = menubarFilter.allowTitles
-              if type(t) ~= 'table' then t = { t } end
-              local map = loadStatusItemsAutosaveName(app)
-              for _, title in ipairs(t) do
-                local idx = tindex(map, title)
-                if idx then
-                  local item = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, idx)
-                  if item.AXSelected then
-                    mbItem = item break
-                  end
-                end
-              end
-            end
-          elseif menubarFilter == true then
-            mbItem = tfind(getc(appUI, AX.MenuBar, -1, AX.MenuBarItem),
-                function(item) return item.AXSelected end)
-          end
-          if mbItem == nil then return end
-          registerInMenuHotkeys(appid, appConfig, menubarFilter, mbItem)
-          local closeObserver = uiobserver.new(app:pid())
-          closeObserver:addWatcher(element, uinotifications.menuClosed)
+        if closeObserver == nil then
+          closeObserver = uiobserver.new(app:pid())
+          local menu = getc(mbItem, AX.Menu, 1)
+          closeObserver:addWatcher(menu, uinotifications.menuClosed)
           local callback = function(obs)
             if menuBarMenuHotkeys[appid] ~= nil then
               for i, hotkey in ipairs(menuBarMenuHotkeys[appid]) do
@@ -6749,13 +6728,38 @@ local function registerObserversForMenuBarMenu(app, appConfig)
           closeObserver:callback(callback)
           closeObserver:start()
           stopOnQuit(appid, closeObserver, callback)
+        end
+      end
+    end
+  end
+end
+
+MenuBarMenuObservers = {}
+local function registerObserversForMenuBarMenu(app, appConfig)
+  local appid = app:bundleID()
+  for hkID, cfg in pairs(appConfig) do
+    local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID)
+        or { mods = cfg.mods, key = cfg.key }
+    local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    local isMenuBarMenu = keybinding.menubarFilter ~= nil
+        or cfg.menubarFilter ~= nil
+    local bindable = function()
+      return cfg.bindCondition == nil or cfg.bindCondition(app)
+    end
+    if hasKey and isMenuBarMenu and bindable() then
+      local observer = MenuBarMenuObservers[appid]
+      if observer == nil then
+        local appUI = toappui(app)
+        observer = uiobserver.new(app:pid())
+        if not appUI:isValid() then return end
+        observer:addWatcher(appUI, uinotifications.menuOpened)
+        observer:callback(bind(registerInMenuHotkeys, app))
+        observer:start()
+        MenuBarMenuObservers[appid] = observer
+        stopOnQuit(appid, observer, function()
+          MenuBarMenuObservers[appid] = nil
         end)
       end
-      observer:start()
-      MenuBarMenuObservers[appid] = observer
-      stopOnQuit(appid, observer, function()
-        MenuBarMenuObservers[appid] = nil
-      end)
       break
     end
   end
