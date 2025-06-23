@@ -3523,8 +3523,7 @@ appHotKeyCallbacks = {
       background = true,
       nonFrontmost = true,
       fn = function(win)
-        local winUI = towinui(win)
-        leftClickAndRestore(uioffset(winUI, { winUI.AXSize.w/2, 0 }))
+        clickRightMenuBarItem(win:application(), {}, "click")
       end
     }
   },
