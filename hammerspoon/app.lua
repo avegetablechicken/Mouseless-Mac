@@ -6384,6 +6384,13 @@ end
 FocusedWindowObservers = {}
 local function registerSingleWinFilterForApp(app, filter)
   local appid = app:bundleID()
+  for f, _ in pairs(FocusedWindowObservers[appid] or {}) do
+    -- a window filter can be shared by multiple hotkeys
+    if sameFilter(f, filter) then
+      return
+    end
+  end
+
   local actualFilter, allowSheet, allowPopover, condition
   if type(filter) == 'table' then
     actualFilter = tcopy(filter)
@@ -6454,6 +6461,9 @@ local function registerSingleWinFilterForApp(app, filter)
     action()
   end)
   observer:start()
+  if FocusedWindowObservers[appid] == nil then
+    FocusedWindowObservers[appid] = {}
+  end
   FocusedWindowObservers[appid][filter] = observer
   stopOnDeactivated(appid, observer, function()
     FocusedWindowObservers[appid][filter] = nil
@@ -6473,19 +6483,9 @@ local function registerWinFiltersForApp(app)
       return cfg.bindCondition == nil or cfg.bindCondition(app)
     end
     if hasKey and isForWindow and not isBackground and bindable() then
-      if FocusedWindowObservers[appid] == nil then
-        FocusedWindowObservers[appid] = {}
-      end
       local windowFilter = keybinding.windowFilter or cfg.windowFilter
-      for f, _ in pairs(FocusedWindowObservers[appid]) do
-        -- a window filter can be shared by multiple hotkeys
-        if sameFilter(f, windowFilter) then
-          goto L_CONTINUE
-        end
-      end
       registerSingleWinFilterForApp(app, windowFilter)
     end
-    ::L_CONTINUE::
   end
 end
 
@@ -6543,6 +6543,13 @@ end
 
 local function registerSingleWinFilterForDaemonApp(app, filter)
   local appid = app:bundleID()
+  for f, _ in pairs(DaemonAppFocusedWindowFilters[appid] or {}) do
+    -- a window filter can be shared by multiple hotkeys
+    if sameFilter(f, filter) then
+      return
+    end
+  end
+
   local registerCloseObserver = function(winUI)
     local closeObserver = uiobserver.new(app:pid())
     closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
@@ -6581,6 +6588,9 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
       registerCloseObserver(element)
     end)
     observer:start()
+    if DaemonAppFocusedWindowFilters[appid] == nil then
+      DaemonAppFocusedWindowFilters[appid] = {}
+    end
     DaemonAppFocusedWindowFilters[appid][filter] = observer
     stopOnQuit(appid, observer, function()
       DaemonAppFocusedWindowFilters[appid][filter] = nil
@@ -6595,6 +6605,9 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
     registerDaemonAppInWinHotkeys(win, appid, filter, event)
     registerCloseObserver(towinui(win))
   end)
+  if DaemonAppFocusedWindowFilters[appid] == nil then
+    DaemonAppFocusedWindowFilters[appid] = {}
+  end
   DaemonAppFocusedWindowFilters[appid][filter] = windowFilter
   execOnQuit(appid, function()
     if windowFilter ~= nil then
@@ -6618,19 +6631,9 @@ local function registerWinFiltersForDaemonApp(app, appConfig)
       return cfg.bindCondition == nil or cfg.bindCondition(app)
     end
     if hasKey and isForWindow and isBackground and bindable() then
-      if DaemonAppFocusedWindowFilters[appid] == nil then
-        DaemonAppFocusedWindowFilters[appid] = {}
-      end
       local windowFilter = keybinding.windowFilter or cfg.windowFilter
-      for f, _ in pairs(DaemonAppFocusedWindowFilters[appid]) do
-        -- a window filter can be shared by multiple hotkeys
-        if sameFilter(f, windowFilter) then
-          goto L_CONTINUE
-        end
-      end
       registerSingleWinFilterForDaemonApp(app, windowFilter)
     end
-    ::L_CONTINUE::
   end
 end
 
