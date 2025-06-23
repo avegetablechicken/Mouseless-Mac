@@ -7658,14 +7658,15 @@ if frontWin ~= nil then
   if DaemonAppFocusedWindowFilters[frontWinAppID] ~= nil then
     for filter, _ in pairs(DaemonAppFocusedWindowFilters[frontWinAppID]) do
       local allowSheet, allowPopover
+      local actualFilter = filter
       if type(filter) == 'table' then
         allowSheet, allowPopover = filter.allowSheet, filter.allowPopover
       end
       if allowSheet or allowPopover then
-        filter = false
+        actualFilter = false
       end
       local windowFilter = hs.window.filter.new(false):setAppFilter(
-          frontWin:application():name(), filter)
+          frontWin:application():name(), actualFilter)
       if (allowSheet and frontWin:role() == AX.Sheet)
           or (allowPopover and frontWin:role() == AX.Popover)
           or windowFilter:isWindowAllowed(frontWin) then
