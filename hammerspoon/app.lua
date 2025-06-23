@@ -8270,17 +8270,19 @@ HoldToQuit = hs.loadSpoon("HoldToQuit")
 HoldToQuit.duration = 0.2
 HoldToQuit:init()
 HoldToQuit:bindHotkeys({ quit = { "⌘", "W" } })
-local function deactivateCloseWindowForIOSApps(app)
-  if app:bundleID() == nil then return end
-  if exists(hs.application.pathForBundleID(
-      app:bundleID()) .. '/WrappedBundle') then
+local function mayRequireHoldToCloseWindow(app)
+  local appid = app:bundleID()
+  if appid == nil then return end
+  local appPath = hs.application.pathForBundleID(appid)
+  if exists(appPath .. '/WrappedBundle')
+      or appPath:find("Steam/steamapps/common") then
     HoldToQuit:start()
   else
     HoldToQuit:stop()
   end
 end
 if frontApp then
-  deactivateCloseWindowForIOSApps(frontApp)
+  mayRequireHoldToCloseWindow(frontApp)
 end
 
 
@@ -8374,7 +8376,7 @@ function App_applicationCallback(appname, eventType, app)
     for _, proc in ipairs(processesOnActivated[appid] or {}) do
       proc(app)
     end
-    deactivateCloseWindowForIOSApps(app)
+    mayRequireHoldToCloseWindow(app)
     selectInputSourceInApp(app)
     FLAGS["NO_RESHOW_KEYBINDING"] = true
     hs.timer.doAfter(3, function()
