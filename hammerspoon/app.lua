@@ -7696,6 +7696,16 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
   end
 end
 
+-- register hotkeys for menu of menubar app
+for appid, _ in pairs(MenuBarMenuObservers) do
+  local app = find(appid)
+  for _, menuBarItem in ipairs(getc(toappui(app), AX.MenuBar, -1, AX.MenuBatItem)) do
+    if menuBarItem.AXSelected then
+      registerInMenuHotkeys(app)
+    end
+  end
+end
+
 
 -- auto hide or quit apps with no windows (including pseudo windows suck as popover or sheet)
 local appsHideWithoutWindow = {}
