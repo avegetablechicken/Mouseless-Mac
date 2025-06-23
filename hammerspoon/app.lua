@@ -7654,6 +7654,7 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
 end
 
 -- register hotkeys for focused window belonging to daemon app
+-- note: ignore non-frontmost window
 if frontWin ~= nil then
   if DaemonAppFocusedWindowFilters[frontWinAppID] ~= nil then
     for filter, _ in pairs(DaemonAppFocusedWindowFilters[frontWinAppID]) do
