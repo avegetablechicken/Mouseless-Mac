@@ -7707,7 +7707,7 @@ for appid, _ in pairs(MenuBarMenuObservers) do
 end
 
 
--- auto hide or quit apps with no windows (including pseudo windows suck as popover or sheet)
+-- auto hide or quit apps with no windows (including pseudo windows such as popover or sheet)
 local appsHideWithoutWindow = {}
 local appsQuitWithoutWindow = {}
 -- account for pseudo windows such as popover or sheet
