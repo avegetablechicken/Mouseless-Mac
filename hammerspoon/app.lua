@@ -6687,7 +6687,7 @@ local function registerInMenuHotkeys(app)
       end
       if menu == nil then return end
       local msg = type(cfg.message) == 'string'
-          and cfg.message or cfg.message(app)
+          and cfg.message or cfg.message(app, menu)
       if msg ~= nil then
         local config = tcopy(cfg)
         config.mods = keybinding.mods
