@@ -1440,36 +1440,15 @@ local COND_FAIL = {
 
 -- check whether the menu bar item is selected
 -- if a menu is extended, hotkeys with no modifiers are disabled
-local function noSelectedMenuBarItem(app)
-  local appUI = toappui(app)
-  local menuBar
-  local maxTryTime = 3
-  local tryInterval = 0.05
-  local tryTimes = 1
-  while tryTimes <= maxTryTime / tryInterval do
-    menuBar = getc(appUI, AX.MenuBar, 1)
-    if menuBar ~= nil then break end
-    hs.timer.usleep(tryInterval * 1000000)
-    tryTimes = tryTimes + 1
-  end
-  if menuBar == nil then return true end
-  for i, menuBarItem in ipairs(getc(menuBar, AX.MenuBarItem)) do
-    if i > 1 and menuBarItem.AXSelected then
-      return false
-    end
-  end
-  return true
-end
-
 local function noSelectedMenuBarItemFunc(fn)
   return function(obj)
     local app = obj.application ~= nil and obj:application() or obj
-    local satisfied = noSelectedMenuBarItem(app)
-    if satisfied then
-      return fn(obj)
-    else
-      return false, COND_FAIL.MENU_ITEM_SELECTED
+    for i, menuBarItem in ipairs(getMenuBarItems(app, false)) do
+      if i > 1 and menuBarItem.AXSelected then
+        return false, COND_FAIL.MENU_ITEM_SELECTED
+      end
     end
+    return fn(obj)
   end
 end
 

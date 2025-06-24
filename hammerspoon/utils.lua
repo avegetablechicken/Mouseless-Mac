@@ -76,9 +76,10 @@ function menuBarVisible()
   return elem.AXRole == AX.MenuBar
 end
 
-function getMenuBarItems(app)
+function getMenuBarItems(app, ignoreAppMenu)
+  if ignoreAppMenu == nil then ignoreAppMenu = true end
   local menuBarItems = getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem) or {}
-  if #menuBarItems > 0 then
+  if ignoreAppMenu and #menuBarItems > 0 then
     tremove(menuBarItems, 1)
   end
   return menuBarItems
