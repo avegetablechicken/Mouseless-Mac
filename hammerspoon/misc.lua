@@ -493,13 +493,17 @@ local function testValid(entry)
       end
     elseif entry.kind == HK.IN_APP then
       local app = hs.application.frontmostApplication()
-      local hotkeyInfo = get(InAppHotkeyInfoChain, app:bundleID(), entry.idx)
-      if hotkeyInfo ~= nil then
-        local obj = entry.subkind == HK.IN_APP_.WINDOW and app:focusedWindow() or app
-        local actualMsg
-        valid, actualMsg = getValidMessage(hotkeyInfo, obj)
-        if valid and actualMsg then
-          entry.msg = entry.msg:sub(1, pos - 1) .. ": " .. actualMsg
+      if entry.condition ~= nil then
+        valid = entry.condition(app)
+      else
+        local hotkeyInfo = get(InAppHotkeyInfoChain, app:bundleID(), entry.idx)
+        if hotkeyInfo ~= nil then
+          local obj = entry.subkind == HK.IN_APP_.WINDOW and app:focusedWindow() or app
+          local actualMsg
+          valid, actualMsg = getValidMessage(hotkeyInfo, obj)
+          if valid and actualMsg then
+            entry.msg = entry.msg:sub(1, pos - 1) .. ": " .. actualMsg
+          end
         end
       end
     elseif entry.kind == HK.MENUBAR then

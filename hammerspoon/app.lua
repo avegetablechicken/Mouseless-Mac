@@ -6105,12 +6105,15 @@ local function bindImpl(obj, config, ...)
 end
 
 function AppBind(app, config, ...)
-  local hotkey = bindImpl(app, config, ...)
+  local hotkey, cond = bindImpl(app, config, ...)
   hotkey.kind = HK.IN_APP
   if config.websiteFilter ~= nil then
     hotkey.subkind = HK.IN_APP_.WEBSITE
   else
     hotkey.subkind = HK.IN_APP_.APP
+  end
+  if config.condition == nil and config.websiteFilter == nil then
+    hotkey.condition = cond
   end
   return hotkey
 end
