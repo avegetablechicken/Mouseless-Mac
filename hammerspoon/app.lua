@@ -6436,8 +6436,6 @@ local function registerSingleWinFilterForApp(app, filter)
           windowFilter:unsubscribeAll()
         end)
       return
-    else
-      windowFilter:unsubscribeAll()
     end
     action()
   end)
