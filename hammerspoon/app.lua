@@ -6072,13 +6072,13 @@ local function callBackExecutingWrapper(fn)
   end
 end
 
-local function bindAppWinImpl(app, config, ...)
+local function bindAppWinImpl(obj, config, ...)
   if config.spec ~= nil then
     config.mods = config.spec.mods
     config.key = config.spec.key
     config.spec = nil
   end
-  local pressedfn, cond = wrapCondition(app, config, KEY_MODE.PRESS)
+  local pressedfn, cond = wrapCondition(obj, config, KEY_MODE.PRESS)
   if config.repeatedfn == nil
       and (config.condition ~= nil or config.windowFilter ~= nil
            or config.websiteFilter ~= nil) then
@@ -6088,7 +6088,7 @@ local function bindAppWinImpl(app, config, ...)
   end
   local repeatedfn = config.repeatedfn
   if repeatedfn ~= nil then
-    repeatedfn = wrapCondition(app, config, KEY_MODE.REPEAT)
+    repeatedfn = wrapCondition(obj, config, KEY_MODE.REPEAT)
   end
   if config.condition ~= nil then  -- executing condition may take too much time
     pressedfn = callBackExecutingWrapper(pressedfn)
