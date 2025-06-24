@@ -6043,7 +6043,7 @@ local function wrapCondition(obj, config, mode)
     selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
   end
 
-  if websiteFilter ~= nil or config.condition ~= nil or windowFilter ~= nil then
+  if websiteFilter ~= nil or condition ~= nil or windowFilter ~= nil then
     -- multiple conditioned hotkeys may share a common keybinding
     -- they are cached in a linked list.
     -- each condition will be tested until one is satisfied
