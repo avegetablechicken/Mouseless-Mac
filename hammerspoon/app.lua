@@ -6517,8 +6517,7 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter, event)
         tinsert(daemonAppFocusedWindowHotkeys[appid], hotkey)
         if closeObserver == nil then
           closeObserver = uiobserver.new(app:pid())
-          local winUI = win.title and towinui(win) or win
-          closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
+          closeObserver:addWatcher(towinui(win), uinotifications.uIElementDestroyed)
           local callback = function(obs)
             if daemonAppFocusedWindowHotkeys[appid] ~= nil then -- fix weird bug
               for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[appid]) do
@@ -6564,7 +6563,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
           and element.AXRole ~= AX.Popover then
         return
       end
-      registerDaemonAppInWinHotkeys(app, appid, filter)
+      registerDaemonAppInWinHotkeys(element:asHSWindow(), appid, filter)
     end)
     observer:start()
     if DaemonAppFocusedWindowFilters[appid] == nil then
