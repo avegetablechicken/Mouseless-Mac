@@ -6085,7 +6085,7 @@ local function callBackExecutingWrapper(fn)
   end
 end
 
-local function bindAppWinImpl(obj, config, ...)
+local function bindImpl(obj, config, ...)
   if config.spec ~= nil then
     config.mods = config.spec.mods
     config.key = config.spec.key
@@ -6116,7 +6116,7 @@ local function bindAppWinImpl(obj, config, ...)
 end
 
 function AppBind(app, config, ...)
-  local hotkey = bindAppWinImpl(app, config, ...)
+  local hotkey = bindImpl(app, config, ...)
   hotkey.kind = HK.IN_APP
   if config.websiteFilter ~= nil then
     hotkey.subkind = HK.IN_APP_.WEBSITE
@@ -6218,7 +6218,7 @@ function AppWinBind(obj, config, ...)
   -- in new impl (APPWIN_HOTKEY_ON_WINDOW_FOCUS is true), obj has to be a window
   -- in old impl, obj can be either an application or a window,
   -- but if obj is a window, user must take care of its lifetime
-  local hotkey = bindAppWinImpl(obj, config, ...)
+  local hotkey = bindImpl(obj, config, ...)
   hotkey.kind = HK.IN_APP
   hotkey.subkind = HK.IN_APP_.WINDOW
   return hotkey
@@ -6481,7 +6481,7 @@ local function registerWinFiltersForApp(app)
 end
 
 function WinBind(win, config, ...)
-  local hotkey, cond = bindAppWinImpl(win, config, ...)
+  local hotkey, cond = bindImpl(win, config, ...)
   hotkey.kind = HK.IN_WIN
   hotkey.condition = cond
   return hotkey
@@ -6629,7 +6629,7 @@ end
 
 -- hotkeys for menu belonging to menubar app
 function MenuBarBind(menu, config)
-  local hotkey, cond = bindAppWinImpl(menu, config)
+  local hotkey, cond = bindImpl(menu, config)
   hotkey.condition = cond
   hotkey.kind = HK.MENUBAR
   return hotkey
