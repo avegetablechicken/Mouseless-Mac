@@ -6003,7 +6003,7 @@ local function wrapCondition(obj, config, mode)
   cond = resendToFrontmostWindow(cond, config.nonFrontmost or menu ~= nil)
   local fn = func
   fn = function()
-    local obj = win or menu or (windowFilter == nil and app or app:focusedWindow())
+    local obj = windowFilter == nil and (win or menu or app) or app:focusedWindow()
     if obj == nil then  -- no window focused when triggering window-specific hotkeys
       selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
       return
