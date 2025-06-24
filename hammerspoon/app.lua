@@ -8264,8 +8264,7 @@ for _, appid in ipairs(remoteDesktopAppsRequireSuspendHotkeys) do
   execOnActivated(appid, watchForRemoteDesktopWindow)
 end
 
--- ## iOS apps
--- hold cmd+w to close window for iOS apps because it will quit them
+-- ## hold cmd+w to close window for iOS apps because it will quit them
 HoldToQuit = hs.loadSpoon("HoldToQuit")
 HoldToQuit.duration = 0.2
 HoldToQuit:init()
