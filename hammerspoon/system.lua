@@ -1182,7 +1182,6 @@ for _, panel in ipairs(controlCenterPanels) do
 end
 
 local controlCenterHotKeys = nil
-local controlCenterSubPanelWatcher = nil
 
 local function checkAndRegisterControlCenterHotKeys(hotkey)
   if controlCenterHotKeys == nil then
@@ -1281,10 +1280,6 @@ function registerControlCenterHotKeys(panel, inMenuBar)
           hotkey:delete()
         end
         backgroundSoundsHotkeys = nil
-      end
-      if controlCenterSubPanelWatcher ~= nil then
-        controlCenterSubPanelWatcher:unsubscribeAll()
-        controlCenterSubPanelWatcher = nil
       end
 
       local ident = controlCenterIdentifiers["Control Center"]
