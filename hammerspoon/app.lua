@@ -5825,7 +5825,6 @@ end
 WindowCreatedSince = {}
 WindowCreatedSinceWatcher = hs.window.filter.new(true):subscribe({
   hs.window.filter.windowCreated,
-  hs.window.filter.windowFocused,
   hs.window.filter.windowDestroyed,
 },
 function(win, appname, eventType)
@@ -5834,8 +5833,7 @@ function(win, appname, eventType)
          == hs.application.frontmostApplication():bundleID() then
     return
   end
-  if eventType == hs.window.filter.windowCreated
-      or eventType == hs.window.filter.windowFocused then
+  if eventType == hs.window.filter.windowCreated then
     WindowCreatedSince[win:id()] = win:application():bundleID()
   else
     for wid, appid in pairs(WindowCreatedSince) do
