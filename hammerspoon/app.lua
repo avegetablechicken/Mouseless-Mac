@@ -4462,8 +4462,8 @@ appHotKeyCallbacks = {
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
-        local menuTitle = localizedString("Preferences...", app:bundleID())
-        local menuItem = getc(menu, AX.MenuItem, menuTitle)
+        local title = localizedString("Preferences...", app:bundleID())
+        local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then press(menuItem) end
       end
     }
@@ -4560,8 +4560,8 @@ appHotKeyCallbacks = {
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
-        local menuTitle = localizedString("Open Keyboard Settings…", app:bundleID())
-        local menuItem = getc(menu, AX.MenuItem, menuTitle)
+        local title = localizedString("Open Keyboard Settings…", app:bundleID())
+        local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then press(menuItem) end
       end
     }
