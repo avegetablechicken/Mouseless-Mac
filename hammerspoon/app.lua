@@ -8053,12 +8053,17 @@ end
 
 -- ## Barrier
 -- barrier window may not be focused when it is created, so focus it
+-- note: barrier is mistakenly recognized as an app prohibited from having GUI elements,
+--       so window filter does not work unless the app is activated once.
+--       we use uielement observer instead
 if hs.application.pathForBundleID("barrier") ~= nil
     and hs.application.pathForBundleID("barrier") ~= "" then
   local func = function(app)
-    hs.window.filter.new(app:name())
-        :subscribe(hs.window.filter.windowCreated,
-                   function(win) win:focus() end)
+    local observer = uiobserver.new(app:pid())
+    observer:addWatcher(toappui(app), uinotifications.windowCreated)
+    observer:callback(function(_, winUI) winUI:asHSWindow():focus() end)
+    observer:start()
+    stopOnQuit("barrier", observer)
   end
   local app = find("barrier")
   if app then
