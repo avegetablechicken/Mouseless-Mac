@@ -1323,6 +1323,15 @@ local function dumpPlistKeyBinding(mode, mods, key)
   return modIdx, key
 end
 
+-- get hs.application from AXUIElement
+local function getAppFromDescendantElement(elem)
+  local appUI = elem
+  repeat
+    appUI = appUI.AXParent
+  until appUI.AXParent == nil
+  return appUI:asHSApplication()
+end
+
 -- fetch localized string as hotkey message after activating the app
 local function getAppId(app)
   if type(app) == 'string' then
@@ -3816,8 +3825,9 @@ appHotKeyCallbacks = {
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, "Show")
         return menuItem and menuItem.AXEnabled, menuItem
       end,
-      fn = function(menuItem, _, app)
+      fn = function(menuItem)
         press(menuItem)
+        local app = getAppFromDescendantElement(menuItem)
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.focusedWindowChanged)
         observer:callback(function(obs)
@@ -4425,7 +4435,8 @@ appHotKeyCallbacks = {
       menubarFilter = {
         allowTitles = 'eul'
       },
-      fn = function(menuBarItem, app)
+      fn = function(menuBarItem)
+        local app = getAppFromDescendantElement(menuBarItem)
         local prefString = localizedString('Preferences', app:bundleID())
         local button = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, 1, AX.Group, 1,
             AX.StaticText, prefString)
@@ -4449,7 +4460,8 @@ appHotKeyCallbacks = {
     ["preferences"] = {
       message = localizedMessage("Preferences..."),
       menubarFilter = { allowIndices = 1 },
-      fn = function(menuBarItem, app)
+      fn = function(menuBarItem)
+        local app = getAppFromDescendantElement(menuBarItem)
         local menuTitle = localizedString("Preferences...", app:bundleID())
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, menuTitle)
         if menuItem then press(menuItem) end
@@ -4546,7 +4558,8 @@ appHotKeyCallbacks = {
     ["openKeyboardSettings"] = {
       message = localizedMessage("Open Keyboard Settings…"),
       menubarFilter = { allowIndices = 1 },
-      fn = function(menuBarItem, app)
+      fn = function(menuBarItem)
+        local app = getAppFromDescendantElement(menuBarItem)
         local menuTitle = localizedString("Open Keyboard Settings…", app:bundleID())
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, menuTitle)
         if menuItem then press(menuItem) end
@@ -5377,7 +5390,8 @@ appHotKeyCallbacks = {
     ["preferencesInMenuBarMenu"] = {
       message = localizedMessage("Preferences…"),
       menubarFilter = { allowIndices = 1 },
-      fn = function(menuBarItem, app)
+      fn = function(menuBarItem)
+        local app = getAppFromDescendantElement(menuBarItem)
         local title = localizedString("Preferences…", app:bundleID())
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, title)
         if menuItem then press(menuItem) end
@@ -5386,7 +5400,8 @@ appHotKeyCallbacks = {
     ["openConnectionInMenuBarMenu"] = {
       message = localizedMessage("Open Connection…"),
       menubarFilter = { allowIndices = 1 },
-      fn = function(menuBarItem, app)
+      fn = function(menuBarItem)
+        local app = getAppFromDescendantElement(menuBarItem)
         local title = localizedString("Open Connection…", app:bundleID())
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, title)
         if menuItem then press(menuItem) end
@@ -5395,7 +5410,8 @@ appHotKeyCallbacks = {
     ["historyInMenuBarMenu"] = {
       message = localizedMessage("History"),
       menubarFilter = { allowIndices = 1 },
-      fn = function(menuBarItem, app)
+      fn = function(menuBarItem)
+        local app = getAppFromDescendantElement(menuBarItem)
         local title = localizedString("History", app:bundleID())
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, title)
         if menuItem then
@@ -5415,7 +5431,8 @@ appHotKeyCallbacks = {
         return quit .. ' ' .. app:name()
       end,
       menubarFilter = { allowIndices = 1 },
-      fn = function(menuBarItem, app)
+      fn = function(menuBarItem)
+        local app = getAppFromDescendantElement(menuBarItem)
         local quit = localizedString("Quit", app:bundleID())
         local title = quit .. ' ' .. app:name()
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, title)
@@ -5841,10 +5858,14 @@ end)
 
 local function resendToFrontmostWindow(cond, nonFrontmost)
   return function(obj)
-    if obj.application == nil and obj.focusedWindow == nil then
-      return true
+    local app
+    if obj.application ~= nil then
+      app = obj:application()
+    elseif obj.asHSApplication ~= nil then
+      app = getAppFromDescendantElement(obj)
+    else
+      app = obj
     end
-    local app = obj.application ~= nil and obj:application() or obj
     local frontWin = hs.window.frontmostWindow()
     if nonFrontmost then
       if frontWin ~= nil and WindowCreatedSince[frontWin:id()] then
@@ -5892,9 +5913,11 @@ end
 local prevAppCallbacks = {}
 local function wrapCondition(obj, config, mode)
   local prevCallback
-  local app, win
+  local app, win, mbItem
   if obj.application ~= nil then
     win = obj app = obj:application()
+  elseif obj.asHSApplication ~= nil then
+    mbItem = obj app = getAppFromDescendantElement(obj)
   else
     app = obj
   end
@@ -5981,27 +6004,17 @@ local function wrapCondition(obj, config, mode)
       end
     end
   end
-  if config.menubar ~= nil then
-    local oldCond = cond
-    cond = function(app)
-      local satisfied, result = oldCond(config.menubar, app)
-      if result == nil then
-        return satisfied, config.menubar
-      else
-        return satisfied, result, config.menubar
-      end
-    end
-  else
+  if mbItem == nil then
     -- if a menu is extended, hotkeys with no modifiers are disabled
     if mods == nil or mods == "" or #mods == 0 then
       cond = noSelectedMenuBarItemFunc(cond)
     end
   end
   -- send key strokes to frontmost window instead of frontmost app
-  cond = resendToFrontmostWindow(cond, config.nonFrontmost or config.menubar)
+  cond = resendToFrontmostWindow(cond, config.nonFrontmost or mbItem ~= nil)
   local fn = func
   fn = function()
-    local obj = win or (windowFilter == nil and app or app:focusedWindow())
+    local obj = win or mbItem or (windowFilter == nil and app or app:focusedWindow())
     if obj == nil then  -- no window focused when triggering window-specific hotkeys
       selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
       return
@@ -6615,8 +6628,8 @@ local function registerWinFiltersForDaemonApp(app, appConfig)
 end
 
 -- hotkeys for menu belonging to menubar app
-function MenuBarBind(app, config)
-  local hotkey, cond = bindAppWinImpl(app, config)
+function MenuBarBind(menuBarItem, config)
+  local hotkey, cond = bindAppWinImpl(menuBarItem, config)
   hotkey.condition = cond
   hotkey.kind = HK.MENUBAR
   return hotkey
@@ -6681,8 +6694,7 @@ local function registerInMenuHotkeys(app)
           config.repeatable = keybinding.repeatable
         end
         config.repeatedfn = config.repeatable and cfg.fn or nil
-        config.menubar = mbItem
-        tinsert(menuBarMenuHotkeys[appid], MenuBarBind(app, config))
+        tinsert(menuBarMenuHotkeys[appid], MenuBarBind(mbItem, config))
         if closeObserver == nil then
           closeObserver = uiobserver.new(app:pid())
           local menu = getc(mbItem, AX.Menu, 1)
