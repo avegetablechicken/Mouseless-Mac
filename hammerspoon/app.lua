@@ -6479,11 +6479,9 @@ end
 -- the window is frontmost unless specified "nonFrontmost"
 local daemonAppFocusedWindowHotkeys = {}
 DaemonAppFocusedWindowFilters = {}
-local function registerDaemonAppInWinHotkeys(win, appid, filter, event)
+local function registerDaemonAppInWinHotkeys(win, appid, filter)
   if daemonAppFocusedWindowHotkeys[appid] == nil then
     daemonAppFocusedWindowHotkeys[appid] = {}
-  elseif event == hs.window.filter.windowFocused then
-    return
   end
   local closeObserver
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
@@ -6577,11 +6575,9 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
     return
   end
   local windowFilter = hs.window.filter.new(false):setAppFilter(app:name(), filter)
-  :subscribe({
-    hs.window.filter.windowCreated, hs.window.filter.windowFocused
-  },
+  :subscribe(hs.window.filter.windowCreated,
   function(win, appname, event)
-    registerDaemonAppInWinHotkeys(win, appid, filter, event)
+    registerDaemonAppInWinHotkeys(win, appid, filter)
   end)
   if DaemonAppFocusedWindowFilters[appid] == nil then
     DaemonAppFocusedWindowFilters[appid] = {}
