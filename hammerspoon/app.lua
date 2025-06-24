@@ -8053,22 +8053,18 @@ end
 
 -- ## Barrier
 -- barrier window may not be focused when it is created, so focus it
-BarrierFocusWindowFilter = nil
 if hs.application.pathForBundleID("barrier") ~= nil
     and hs.application.pathForBundleID("barrier") ~= "" then
-  local app = find("barrier")
-  if app then
-    BarrierFocusWindowFilter = hs.window.filter.new(false)
-        :allowApp(app:name())
+  local func = function(app)
+    hs.window.filter.new(app:name())
         :subscribe(hs.window.filter.windowCreated,
                    function(win) win:focus() end)
   end
-  execOnLaunch("barrier", function(app)
-    BarrierFocusWindowFilter = hs.window.filter.new(false)
-        :allowApp(app:name())
-        :subscribe(hs.window.filter.windowCreated,
-                    function(win) win:focus() end)
-  end)
+  local app = find("barrier")
+  if app then
+    func(app)
+  end
+  execOnLaunch("barrier", func)
 end
 
 -- ## remote desktop apps
