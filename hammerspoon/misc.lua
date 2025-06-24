@@ -470,13 +470,16 @@ local function loadAppHotkeys(t, showOrSearch)
   end
 end
 
-local function getValidMessage(hotkeyInfo, obj)
-  if obj == nil then return false, nil end
-  if hotkeyInfo.condition(obj) then
+local function getValidMessage(hotkeyInfo, win)
+  if not APPWIN_HOTKEY_ON_WINDOW_FOCUS and win == nil then
+    win = hs.application.frontmostApplication():focusedWindow()
+    if win == nil then return false, nil end
+  end
+  if hotkeyInfo.condition(win) then
     return true, hotkeyInfo.message
   else
     if hotkeyInfo.previous then
-      return getValidMessage(hotkeyInfo.previous, obj)
+      return getValidMessage(hotkeyInfo.previous, win)
     else
       return false, nil
     end
@@ -487,28 +490,21 @@ local function testValid(entry)
   local pos = entry.msg:find(": ")
   local valid = pos ~= nil and not (entry.suspendable and FLAGS["SUSPEND"])
   if valid then
-    if entry.kind == HK.IN_WIN then
-      if entry.condition ~= nil then
-        valid = entry.condition(hs.window.frontmostWindow())
-      end
+    if entry.condition ~= nil then
+      valid = entry.condition()
     elseif entry.kind == HK.IN_APP then
       local app = hs.application.frontmostApplication()
       if entry.condition ~= nil then
-        valid = entry.condition(app)
+        valid = entry.condition()
       else
         local hotkeyInfo = get(InAppHotkeyInfoChain, app:bundleID(), entry.idx)
         if hotkeyInfo ~= nil then
-          local obj = entry.subkind == HK.IN_APP_.WINDOW and app:focusedWindow() or app
           local actualMsg
-          valid, actualMsg = getValidMessage(hotkeyInfo, obj)
+          valid, actualMsg = getValidMessage(hotkeyInfo)
           if valid and actualMsg then
             entry.msg = entry.msg:sub(1, pos - 1) .. ": " .. actualMsg
           end
         end
-      end
-    elseif entry.kind == HK.MENUBAR then
-      if entry.condition ~= nil then
-        valid = entry.condition(hs.application.frontmostApplication())
       end
     end
   end

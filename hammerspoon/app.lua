@@ -6001,6 +6001,9 @@ local function wrapCondition(obj, config, mode)
   end
   -- send key strokes to frontmost window instead of frontmost app
   cond = resendToFrontmostWindow(cond, config.nonFrontmost or menu ~= nil)
+  if windowFilter == nil then
+    cond = bind(cond, win or menu or app)
+  end
   local fn = func
   fn = function()
     local obj = windowFilter == nil and (win or menu or app) or app:focusedWindow()
