@@ -3825,17 +3825,7 @@ appHotKeyCallbacks = {
         local menuItem = getc(menu, AX.MenuItem, "Show")
         return menuItem and menuItem.AXEnabled, menuItem
       end,
-      fn = function(menuItem)
-        press(menuItem)
-        local app = getAppFromDescendantElement(menuItem)
-        local observer = uiobserver.new(app:pid())
-        observer:addWatcher(toappui(app), uinotifications.focusedWindowChanged)
-        observer:callback(function(obs)
-          app:activate()
-          obs:stop() obs = nil
-        end)
-        observer:start()
-      end
+      fn = press
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
   },
