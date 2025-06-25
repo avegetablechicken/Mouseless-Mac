@@ -6538,8 +6538,9 @@ end
 -- hotkeys for focused window belonging to daemon app
 -- the window is frontmost unless specified "nonFrontmost"
 local daemonAppFocusedWindowHotkeys = {}
-DaemonAppFocusedWindowFilters = {}
-local function registerDaemonAppInWinHotkeys(win, appid, filter)
+DaemonAppFocusedWindowObservers = {}
+local function registerDaemonAppInWinHotkeys(winUI, appid, filter)
+  local win = winUI:asHSWindow()
   if daemonAppFocusedWindowHotkeys[appid] == nil then
     daemonAppFocusedWindowHotkeys[appid] = {}
   end
@@ -6577,7 +6578,7 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
         tinsert(daemonAppFocusedWindowHotkeys[appid], hotkey)
         if closeObserver == nil then
           closeObserver = uiobserver.new(app:pid())
-          closeObserver:addWatcher(towinui(win), uinotifications.uIElementDestroyed)
+          closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
           local callback = function(obs)
             if daemonAppFocusedWindowHotkeys[appid] ~= nil then -- fix weird bug
               for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[appid]) do
@@ -6605,52 +6606,40 @@ end
 
 local function registerSingleWinFilterForDaemonApp(app, filter)
   local appid = app:bundleID()
-  for f, _ in pairs(DaemonAppFocusedWindowFilters[appid] or {}) do
+  for f, _ in pairs(DaemonAppFocusedWindowObservers[appid] or {}) do
     -- a window filter can be shared by multiple hotkeys
     if sameFilter(f, filter) then
       return
     end
   end
 
-  if (type(filter) == 'table' and (filter.allowSheet or filter.allowPopover)) then
-    local appUI = toappui(app)
-    local observer = uiobserver.new(app:pid())
+  local appUI = toappui(app)
+  local observer = uiobserver.new(app:pid())
+  observer:addWatcher(appUI, uinotifications.windowCreated)
+  if type(filter) == 'table' and filter.allowPopover then
     observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
-    if filter.allowPopover then
-      observer:addWatcher(appUI, uinotifications.focusedUIElementChanged)
-    end
-    observer:callback(function(_, element, notification)
-      if notification == uinotifications.focusedUIElementChanged
-          and element.AXRole ~= AX.Popover then
-        return
-      end
-      registerDaemonAppInWinHotkeys(element:asHSWindow(), appid, filter)
-    end)
-    observer:start()
-    if DaemonAppFocusedWindowFilters[appid] == nil then
-      DaemonAppFocusedWindowFilters[appid] = {}
-    end
-    DaemonAppFocusedWindowFilters[appid][filter] = observer
-    stopOnQuit(appid, observer, function()
-      DaemonAppFocusedWindowFilters[appid][filter] = nil
-    end)
-    return
   end
-  local windowFilter = hs.window.filter.new(false):setAppFilter(app:name(), filter)
-  :subscribe(hs.window.filter.windowCreated,
-  function(win, appname, event)
-    registerDaemonAppInWinHotkeys(win, appid, filter)
+  if type(filter) == 'table' and filter.allowPopover then
+    observer:addWatcher(appUI, uinotifications.focusedUIElementChanged)
+  end
+  observer:callback(function(_, element, notification)
+    if notification == uinotifications.focusedWindowChanged
+        and element.AXRole ~= AX.Popover then
+      return
+    end
+    if notification == uinotifications.focusedUIElementChanged
+        and element.AXRole ~= AX.Sheet then
+      return
+    end
+    registerDaemonAppInWinHotkeys(element, appid, filter)
   end)
-  if DaemonAppFocusedWindowFilters[appid] == nil then
-    DaemonAppFocusedWindowFilters[appid] = {}
+  observer:start()
+  if DaemonAppFocusedWindowObservers[appid] == nil then
+    DaemonAppFocusedWindowObservers[appid] = {}
   end
-  DaemonAppFocusedWindowFilters[appid][filter] = windowFilter
-  execOnQuit(appid, function()
-    if windowFilter ~= nil then
-      windowFilter:unsubscribeAll()
-      windowFilter = nil
-    end
-    DaemonAppFocusedWindowFilters[appid][filter] = nil
+  DaemonAppFocusedWindowObservers[appid][filter] = observer
+  stopOnQuit(appid, observer, function()
+    DaemonAppFocusedWindowObservers[appid][filter] = nil
   end)
 end
 
@@ -7721,8 +7710,8 @@ end
 
 -- register hotkeys for focused window belonging to daemon app
 if frontWin ~= nil then
-  if DaemonAppFocusedWindowFilters[frontWinAppID] ~= nil then
-    for filter, _ in pairs(DaemonAppFocusedWindowFilters[frontWinAppID]) do
+  if DaemonAppFocusedWindowObservers[frontWinAppID] ~= nil then
+    for filter, _ in pairs(DaemonAppFocusedWindowObservers[frontWinAppID]) do
       local allowSheet, allowPopover
       local actualFilter = filter
       if type(filter) == 'table' then
@@ -7742,7 +7731,7 @@ if frontWin ~= nil then
   end
 end
 
-for appid, _ in pairs(DaemonAppFocusedWindowFilters) do
+for appid, _ in pairs(DaemonAppFocusedWindowObservers) do
   local app = find(appid)
   if app then
     local nonFrontmostFilters = {}

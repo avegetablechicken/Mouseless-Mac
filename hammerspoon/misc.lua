@@ -153,19 +153,22 @@ local function parseVerificationCodeFromFirstMessage()
   end
 end
 
-NewMessageWindowFilter = hs.window.filter.new(false):
-allowApp(find("com.apple.notificationcenterui"):name()):
-subscribe(hs.window.filter.windowCreated,
-  function()
-    local code = parseVerificationCodeFromFirstMessage()
-    if code then
-      hs.notify.new({
-        title = strfmt("SMS Code Detected: %s", code),
-        informativeText = 'Copied to pasteboard',
-      }):send()
-      hs.pasteboard.writeObjects(code)
-    end
-  end)
+local notificationCenterApp = find("com.apple.notificationcenterui")
+NewMessageWindowObserver = uiobserver.new(notificationCenterApp:pid())
+NewMessageWindowObserver:addWatcher(
+  toappui(notificationCenterApp),
+  uinotifications.windowCreated)
+NewMessageWindowObserver:callback(function()
+  local code = parseVerificationCodeFromFirstMessage()
+  if code then
+    hs.notify.new({
+      title = strfmt("SMS Code Detected: %s", code),
+      informativeText = 'Copied to pasteboard',
+    }):send()
+    hs.pasteboard.writeObjects(code)
+  end
+end)
+NewMessageWindowObserver:start()
 
 -- show all hammerspoon keybinds
 HSKeybindings = {}
