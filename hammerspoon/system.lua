@@ -867,7 +867,6 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
     tinsert(NetworkMonitorKeys, "Setup:/Network/Service/" .. curNetID .. "/Proxies")
     if lastIpv4State == nil and proxySettings ~= nil then
       refreshNetworkService()
-      disable_proxy()
       for _, cfg in ipairs(proxySettings) do
         if cfg.condition ~= nil and cfg.condition() then
           for _, candidate in ipairs(cfg.candidates or {}) do
@@ -902,6 +901,7 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
           end
         end
       end
+      disable_proxy()
     end
   end
   ::L_PROXY_SET::
