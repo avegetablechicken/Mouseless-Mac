@@ -342,7 +342,7 @@ SYSTEM_LOCALE = systemLocales()[1]
 local electronLocale, javaLocale
 function applicationLocale(appid)
   -- locale of apps whose localization is enabled by Electron or Java
-  -- cannot be required by "defaults" command
+  -- cannot be aquired by "defaults" command
   if localizationFrameworks[appid] ~= nil and find(appid) then
     local appContentPath = hs.application.pathForBundleID(appid) .. "/Contents"
     if exists(appContentPath .. "/Resources/app.asar") then
