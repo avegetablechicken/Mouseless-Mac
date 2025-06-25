@@ -6188,7 +6188,7 @@ unregisterInAppHotKeys = function(appid, delete)
   if type(appid) ~= 'string' then appid = appid:bundleID() end
   if appHotKeyCallbacks[appid] == nil then return end
 
-  local allDeleted = true
+  local allDeleted = delete
   if delete then
     for _, hotkey in pairs(inAppHotKeys[appid] or {}) do
       hotkey:delete()
@@ -6342,7 +6342,7 @@ unregisterInWinHotKeys = function(appid, delete, filter)
     return
   end
 
-  local allDeleted = true
+  local allDeleted = delete
   if delete then
     for _, hotkey in pairs(hotkeys) do
       hotkey:delete()
