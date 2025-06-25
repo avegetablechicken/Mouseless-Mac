@@ -344,13 +344,19 @@ function applicationLocale(appid)
   -- locale of apps whose localization is enabled by Electron or Java
   -- cannot be required by "defaults" command
   if localizationFrameworks[appid] ~= nil and find(appid) then
-    local resourceDir, framework = getResourceDir(appid)
-    if framework.electron then  -- process Electron
-      local locale = electronLocale(appid, framework.electron)
+    local appContentPath = hs.application.pathForBundleID(appid) .. "/Contents"
+    if exists(appContentPath .. "/Resources/app.asar") then
+      local locale = electronLocale(appid, localizationFrameworks[appid])
       if locale ~= nil then return locale end
-    elseif framework.java then  -- process Java
-      local locale = javaLocale(appid, resourceDir, framework.java)
-      if locale ~= nil then return locale end
+    else
+      local jimage, status = hs.execute(strfmt([[
+        find '%s' -type f -name jimage | tr -d '\n'
+      ]], appContentPath))
+      if status and jimage ~= "" then
+        resourceDir = jimage:sub(1, #jimage - #'/bin/jimage')
+        local locale = javaLocale(appid, resourceDir, localizationFrameworks[appid])
+        if locale ~= nil then return locale end
+      end
     end
   end
   local locales = hs.execute(
