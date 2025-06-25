@@ -5879,17 +5879,20 @@ local KEY_MODE = {
 }
 
 ActivatedAppConditionChain = {}
+DaemonAppConditionChain = {}
 local function appendConditionChain(app, config, pressedfn, repeatedfn, cond)
   local appid = app:bundleID()
   local mods, key = config.mods, config.key
   local message = config.message
+  local chain = config.background and DaemonAppConditionChain
+      or ActivatedAppConditionChain
 
-  if ActivatedAppConditionChain[appid] == nil then
-    ActivatedAppConditionChain[appid] = {}
+  if chain[appid] == nil then
+    chain[appid] = {}
   end
   local hkIdx = hotkeyIdx(mods, key)
-  local prevHotkeyInfo = ActivatedAppConditionChain[appid][hkIdx]
-  ActivatedAppConditionChain[appid][hkIdx] = {
+  local prevHotkeyInfo = chain[appid][hkIdx]
+  chain[appid][hkIdx] = {
     pressedfn = pressedfn,
     repeatedfn = repeatedfn,
     condition = cond,
@@ -5898,9 +5901,9 @@ local function appendConditionChain(app, config, pressedfn, repeatedfn, cond)
     previous = prevHotkeyInfo,
   }
   if prevHotkeyInfo then
-    prevHotkeyInfo.next = ActivatedAppConditionChain[appid][hkIdx]
+    prevHotkeyInfo.next = chain[appid][hkIdx]
   end
-  return ActivatedAppConditionChain[appid][hkIdx]
+  return chain[appid][hkIdx]
 end
 
 local function enableConditionInChain(hotkey)
@@ -5918,7 +5921,9 @@ local function disableConditionInChain(appid, hotkey, delete)
     if hotkey.chainedCond.next then
       hotkey.chainedCond.next.previous = hotkey.chainedCond.previous
     else
-      ActivatedAppConditionChain[appid][hotkey.idx] = hotkey.chainedCond.previous
+      local chain = (hotkey.kind == HK.IN_WIN or hotkey.kind == HK.MENUBAR)
+          and DaemonAppConditionChain or ActivatedAppConditionChain
+      chain[appid][hotkey.idx] = hotkey.chainedCond.previous
     end
   end
 end
@@ -5927,7 +5932,9 @@ local wrapConditionChain = function(app, fn, mode, config)
   return function()
     if fn() then return end
     local hkIdx = hotkeyIdx(config.mods, config.key)
-    local cb = ActivatedAppConditionChain[app:bundleID()][hkIdx]
+    local chain = config.background and DaemonAppConditionChain
+        or ActivatedAppConditionChain
+    local cb = chain[app:bundleID()][hkIdx]
     while cb do
       if cb.enabled then
         local f = mode == KEY_MODE.PRESS and cb.pressedfn or cb.repeatfn
@@ -6110,13 +6117,19 @@ local function bindImpl(obj, config, ...)
     repeatedfn = wrapCondition(obj, config, KEY_MODE.REPEAT)
   end
 
-  if not config.background and config.menubarFilter == nil
-      and (config.websiteFilter ~= nil or config.windowFilter ~= nil
-           or config.condition ~= nil) then
+  if config.websiteFilter ~= nil or config.windowFilter ~= nil
+      or config.condition ~= nil then
     -- multiple conditioned hotkeys may share a common keybinding
     -- they are cached in a linked list.
     -- each condition will be tested until one is satisfied
-    local app = obj.application ~= nil and obj:application() or obj
+    local app
+    if obj.application ~= nil then
+      app = obj:application()
+    elseif obj.asHSApplication ~= nil then
+      app = getAppFromDescendantElement(obj)
+    else
+      app = obj
+    end
     cond = appendConditionChain(app, config, pressedfn, repeatedfn, cond)
     pressedfn = wrapConditionChain(app, pressedfn, KEY_MODE.PRESS, config)
     repeatedfn = wrapConditionChain(app, repeatedfn, KEY_MODE.REPEAT, config)
@@ -6339,7 +6352,7 @@ local function registerInWinHotKeys(obj, filter)
           if keybinding.repeatable ~= nil then
             config.repeatable = keybinding.repeatable
           end
-          config.background = isBackground
+          config.background = false
           config.repeatedfn = config.repeatable and cfg.fn or nil
           hotkeys[hkID] = AppWinBind(obj, config)
         end
@@ -6555,7 +6568,7 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
         if keybinding.repeatable ~= nil then
           config.repeatable = keybinding.repeatable
         end
-        config.background = isBackground
+        config.background = true
         if keybinding.nonFrontmost ~= nil then
           config.nonFrontmost = keybinding.nonFrontmost
         end
@@ -6569,6 +6582,7 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
             if daemonAppFocusedWindowHotkeys[appid] ~= nil then -- fix weird bug
               for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[appid]) do
                 if hotkey.idx ~= nil then
+                  disableConditionInChain(appid, hotkey, true)
                   hotkey:delete()
                   daemonAppFocusedWindowHotkeys[appid][i] = nil
                 end
@@ -6725,7 +6739,7 @@ local function registerInMenuHotkeys(app)
         config.mods = keybinding.mods
         config.key = keybinding.key
         config.message = msg
-        config.menubarFilter = menubarFilter
+        config.background = true
         if keybinding.repeatable ~= nil then
           config.repeatable = keybinding.repeatable
         end
@@ -6738,6 +6752,7 @@ local function registerInMenuHotkeys(app)
             if menuBarMenuHotkeys[appid] ~= nil then
               for i, hotkey in ipairs(menuBarMenuHotkeys[appid]) do
                 if hotkey.idx ~= nil then
+                  disableConditionInChain(appid, hotkey, true)
                   hotkey:delete()
                   menuBarMenuHotkeys[appid][i] = nil
                 end

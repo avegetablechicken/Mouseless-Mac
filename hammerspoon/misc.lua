@@ -502,6 +502,17 @@ local function testValid(entry)
           entry.msg = entry.msg:sub(1, pos - 1) .. ": " .. actualMsg
         end
       end
+    elseif entry.kind == HK.IN_WIN or entry.kind == HK.MENUBAR then
+      for _, appCfg in pairs(DaemonAppConditionChain) do
+        local hotkeyInfo = appCfg[entry.idx]
+        if hotkeyInfo then
+          local actualMsg
+          valid, actualMsg = getValidMessage(hotkeyInfo)
+          if valid and actualMsg then
+            entry.msg = entry.msg:sub(1, pos - 1) .. ": " .. actualMsg
+          end
+        end
+      end
     end
   end
   entry.valid = valid
