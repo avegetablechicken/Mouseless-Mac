@@ -668,8 +668,10 @@ local function registerProxySettingsEntry(menu)
   })
 end
 
-local function registerProxyMenuImpl()
-  local enabledProxy, mode = parseProxyInfo(proxy_info())
+local function registerProxyMenuImpl(enabledProxy, mode)
+  if enabledProxy == nil then
+    enabledProxy, mode = parseProxyInfo(proxy_info())
+  end
 
   proxyMenu =
   {
@@ -799,7 +801,7 @@ local function registerProxyMenuImpl()
   proxy:setMenu(proxyMenu)
 end
 
-local function registerProxyMenu(retry)
+local function registerProxyMenu(retry, enabledProxy, mode)
   refreshNetworkService()
   if not getCurNetworkService() then
     local menu = {{
@@ -829,7 +831,7 @@ local function registerProxyMenu(retry)
     proxy:setMenu(menu)
     return true
   else
-    registerProxyMenuImpl()
+    registerProxyMenuImpl(enabledProxy, mode)
     return true
   end
 end
@@ -862,6 +864,7 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
   local Ipv4State = NetworkWatcher
       :contents("State:/Network/Global/IPv4")
       ["State:/Network/Global/IPv4"]
+  local enabledProxy, enabledMode = "", nil
   if Ipv4State ~= nil then
     local curNetID = Ipv4State["PrimaryService"]
     tinsert(NetworkMonitorKeys, "Setup:/Network/Service/" .. curNetID .. "/Proxies")
@@ -884,6 +887,8 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
                 end
               end
               if config ~= nil then
+                enabledProxy = name
+                enabledMode = mode
                 for n, actFuncs in pairs(proxyActivateFuncs) do
                   if n == name and actFuncs[mode] ~= nil then
                     actFuncs[mode]()
@@ -906,7 +911,12 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
   end
   ::L_PROXY_SET::
   NetworkWatcher:monitorKeys(NetworkMonitorKeys)
-  registerProxyMenu(true)
+  if enabledMode == "global" then
+    enabledMode = "Global"
+  elseif enabledMode == "pac" then
+    enabledMode = "PAC"
+  end
+  registerProxyMenu(true, enabledProxy, enabledMode)
   lastIpv4State = Ipv4State
 end
 registerProxyMenuWrapper()
