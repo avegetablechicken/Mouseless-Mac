@@ -5878,30 +5878,70 @@ local KEY_MODE = {
   REPEAT = 2,
 }
 
--- essential info are cached in a linked list for showing keybindings by "HSKeybindings"
-InAppHotkeyInfoChain = {}
-local function wrapInfoChain(app, config, cond, mode)
+ActivatedAppConditionChain = {}
+local function appendConditionChain(app, config, pressedfn, repeatedfn, cond)
   local appid = app:bundleID()
   local mods, key = config.mods, config.key
   local message = config.message
 
-  if InAppHotkeyInfoChain[appid] == nil then
-    InAppHotkeyInfoChain[appid] = {}
+  if ActivatedAppConditionChain[appid] == nil then
+    ActivatedAppConditionChain[appid] = {}
   end
-  if mode == KEY_MODE.PRESS then
-    local hkIdx = hotkeyIdx(mods, key)
-    local prevHotkeyInfo = InAppHotkeyInfoChain[appid][hkIdx]
-    InAppHotkeyInfoChain[appid][hkIdx] = {
-      condition = cond,
-      message = message,
-      previous = prevHotkeyInfo
-    }
+  local hkIdx = hotkeyIdx(mods, key)
+  local prevHotkeyInfo = ActivatedAppConditionChain[appid][hkIdx]
+  ActivatedAppConditionChain[appid][hkIdx] = {
+    pressedfn = pressedfn,
+    repeatedfn = repeatedfn,
+    condition = cond,
+    message = message,
+    enabled = true,
+    previous = prevHotkeyInfo,
+  }
+  if prevHotkeyInfo then
+    prevHotkeyInfo.next = ActivatedAppConditionChain[appid][hkIdx]
+  end
+  return ActivatedAppConditionChain[appid][hkIdx]
+end
+
+local function enableConditionInChain(hotkey)
+  if hotkey.chainedCond == nil then return end
+  hotkey.chainedCond.enabled = true
+end
+
+local function disableConditionInChain(appid, hotkey, delete)
+  if hotkey.chainedCond == nil then return end
+  hotkey.chainedCond.enabled = false
+  if delete or hotkey.deleteOnDisable then
+    if hotkey.chainedCond.previous then
+      hotkey.chainedCond.previous.next = hotkey.chainedCond.next
+    end
+    if hotkey.chainedCond.next then
+      hotkey.chainedCond.next.previous = hotkey.chainedCond.previous
+    else
+      ActivatedAppConditionChain[appid][hotkey.idx] = hotkey.chainedCond.previous
+    end
   end
 end
 
-local prevAppCallbacks = {}
+local wrapConditionChain = function(app, fn, mode, config)
+  return function()
+    if fn() then return end
+    local hkIdx = hotkeyIdx(config.mods, config.key)
+    local cb = ActivatedAppConditionChain[app:bundleID()][hkIdx]
+    while cb do
+      if cb.enabled then
+        local f = mode == KEY_MODE.PRESS and cb.pressedfn or cb.repeatfn
+        if f() then return end
+      end
+      cb = cb.previous
+    end
+    -- most of the time, directly selecting menu item costs less time than key strokes
+    selectMenuItemOrKeyStroke(app, config.mods, config.key,
+                              config.defaultResendToSystem)
+  end
+end
+
 local function wrapCondition(obj, config, mode)
-  local prevCallback
   local app, win, menu
   if obj.application ~= nil then
     win = obj app = obj:application()
@@ -5911,7 +5951,6 @@ local function wrapCondition(obj, config, mode)
     app = obj
   end
   obj = nil
-  local appid = app:bundleID()
 
   local mods, key = config.mods, config.key
   local func = mode == KEY_MODE.REPEAT and config.repeatedfn or config.fn
@@ -5926,11 +5965,6 @@ local function wrapCondition(obj, config, mode)
   end
   -- some apps only accept system key strokes and neglect key strokes targeted at them
   local resendToSystem = config.defaultResendToSystem
-
-  if (windowFilter ~= nil or websiteFilter ~= nil or condition ~= nil) then
-    local hkIdx = hotkeyIdx(mods, key)
-    prevCallback = get(prevAppCallbacks, appid, hkIdx, mode)
-  end
 
   -- testify window filter and return TF & extra result
   if windowFilter ~= nil then
@@ -6022,7 +6056,7 @@ local function wrapCondition(obj, config, mode)
       else
         func(obj)
       end
-      return
+      return true
     elseif result == COND_FAIL.NO_MENU_ITEM_BY_KEYBINDING
         or result == COND_FAIL.MENU_ITEM_SELECTED then
       if resendToSystem then
@@ -6030,33 +6064,13 @@ local function wrapCondition(obj, config, mode)
       else
         hs.eventtap.keyStroke(mods, key, nil, app)
       end
-      return
+      return true
     elseif result == COND_FAIL.NOT_FRONTMOST_WINDOW then
       selectMenuItemOrKeyStroke(hs.window.frontmostWindow():application(),
                                 mods, key, resendToSystem)
-      return
-    elseif prevCallback ~= nil then
-      prevCallback()
-      return
+      return true
     end
-    -- most of the time, directly selecting menu item costs less time than key strokes
-    selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
-  end
-
-  if websiteFilter ~= nil or condition ~= nil or windowFilter ~= nil then
-    -- multiple conditioned hotkeys may share a common keybinding
-    -- they are cached in a linked list.
-    -- each condition will be tested until one is satisfied
-    if prevAppCallbacks[appid] == nil then
-      prevAppCallbacks[appid] = {}
-    end
-    local hkIdx = hotkeyIdx(mods, key)
-    if prevAppCallbacks[appid][hkIdx] == nil then
-      prevAppCallbacks[appid][hkIdx] = { nil, nil }
-    end
-    prevAppCallbacks[appid][hkIdx][mode] = fn
-    -- cache essential info for showing keybindings
-    wrapInfoChain(app, config, cond, mode)
+    return false
   end
   return fn, cond
 end
@@ -6095,6 +6109,19 @@ local function bindImpl(obj, config, ...)
   if repeatedfn ~= nil then
     repeatedfn = wrapCondition(obj, config, KEY_MODE.REPEAT)
   end
+
+  if not config.background and config.menubarFilter == nil
+      and (config.websiteFilter ~= nil or config.windowFilter ~= nil
+           or config.condition ~= nil) then
+    -- multiple conditioned hotkeys may share a common keybinding
+    -- they are cached in a linked list.
+    -- each condition will be tested until one is satisfied
+    local app = obj.application ~= nil and obj:application() or obj
+    cond = appendConditionChain(app, config, pressedfn, repeatedfn, cond)
+    pressedfn = wrapConditionChain(app, pressedfn, KEY_MODE.PRESS, config)
+    repeatedfn = wrapConditionChain(app, repeatedfn, KEY_MODE.REPEAT, config)
+  end
+
   if config.condition ~= nil then  -- executing condition may take too much time
     pressedfn = callBackExecutingWrapper(pressedfn)
     if repeatedfn ~= nil then
@@ -6104,7 +6131,12 @@ local function bindImpl(obj, config, ...)
   local hotkey = bindHotkeySpec(config, config.message,
                                 pressedfn, nil, repeatedfn, ...)
   hotkey.deleteOnDisable = config.deleteOnDisable
-  return hotkey, cond
+  if type(cond) == 'table' then
+    hotkey.chainedCond = cond
+    return hotkey
+  else
+    return hotkey, cond
+  end
 end
 
 function AppBind(app, config, ...)
@@ -6115,9 +6147,7 @@ function AppBind(app, config, ...)
   else
     hotkey.subkind = HK.IN_APP_.APP
   end
-  if config.condition == nil and config.websiteFilter == nil then
-    hotkey.condition = cond
-  end
+  hotkey.condition = cond
   return hotkey
 end
 
@@ -6134,7 +6164,9 @@ local function registerInAppHotKeys(app)
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
     if type(hkID) == 'number' then break end
     if inAppHotKeys[appid][hkID] ~= nil then
-      inAppHotKeys[appid][hkID]:enable()
+      local hotkey = inAppHotKeys[appid][hkID]
+      hotkey:enable()
+      enableConditionInChain(hotkey)
     else
       -- prefer properties specified in configuration file than in code
       local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
@@ -6181,6 +6213,7 @@ local function registerInAppHotKeys(app)
   end)
   execOnQuit(appid, function()
     unregisterInAppHotKeys(appid, true)
+    ActivatedAppConditionChain[appid] = nil
   end)
 end
 
@@ -6190,12 +6223,15 @@ unregisterInAppHotKeys = function(appid, delete)
 
   local allDeleted = delete
   if delete then
-    for _, hotkey in pairs(inAppHotKeys[appid] or {}) do
+    for hkID, hotkey in pairs(inAppHotKeys[appid] or {}) do
+      disableConditionInChain(appid, hotkey, true)
       hotkey:delete()
+      inAppHotKeys[appid][hkID] = nil
     end
   else
     for hkID, hotkey in pairs(inAppHotKeys[appid] or {}) do
       hotkey:disable()
+      disableConditionInChain(appid, hotkey)
       if hotkey.deleteOnDisable then
         hotkey:delete()
         inAppHotKeys[appid][hkID] = nil
@@ -6303,6 +6339,7 @@ local function registerInWinHotKeys(obj, filter)
           if keybinding.repeatable ~= nil then
             config.repeatable = keybinding.repeatable
           end
+          config.background = isBackground
           config.repeatedfn = config.repeatable and cfg.fn or nil
           hotkeys[hkID] = AppWinBind(obj, config)
         end
@@ -6310,6 +6347,7 @@ local function registerInWinHotKeys(obj, filter)
     else
       needCloseWatcher = false
       hotkeys[hkID]:enable()
+      enableConditionInChain(hotkeys[hkID])
     end
   end
 
@@ -6319,6 +6357,7 @@ local function registerInWinHotKeys(obj, filter)
     end)
     execOnQuit(appid, function()
       unregisterInWinHotKeys(appid, true)
+      ActivatedAppConditionChain[appid] = nil
     end)
   elseif needCloseWatcher then
     local observer = uiobserver.new(app:pid())
@@ -6344,12 +6383,15 @@ unregisterInWinHotKeys = function(appid, delete, filter)
 
   local allDeleted = delete
   if delete then
-    for _, hotkey in pairs(hotkeys) do
+    for hkID, hotkey in pairs(hotkeys) do
+      disableConditionInChain(appid, hotkey, true)
       hotkey:delete()
+      inWinHotKeys[appid][hkID] = nil
     end
   else
     for hkID, hotkey in pairs(hotkeys) do
       hotkey:disable()
+      disableConditionInChain(appid, hotkey)
       if hotkey.deleteOnDisable then
         hotkey:delete()
         hotkeys[hkID] = nil
@@ -6513,6 +6555,7 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
         if keybinding.repeatable ~= nil then
           config.repeatable = keybinding.repeatable
         end
+        config.background = isBackground
         if keybinding.nonFrontmost ~= nil then
           config.nonFrontmost = keybinding.nonFrontmost
         end
@@ -6682,6 +6725,7 @@ local function registerInMenuHotkeys(app)
         config.mods = keybinding.mods
         config.key = keybinding.key
         config.message = msg
+        config.menubarFilter = menubarFilter
         if keybinding.repeatable ~= nil then
           config.repeatable = keybinding.repeatable
         end
@@ -6791,6 +6835,15 @@ local function remapPreviousTab(app, menuItems)
       spec = spec, message = menuItemPath[#menuItemPath],
       fn = fn, repeatedfn = fn, condition = cond
     })
+    assert(remapPreviousTabHotkey)
+    local info = {
+      chainedCond = remapPreviousTabHotkey.chainedCond,
+      idx = remapPreviousTabHotkey.idx
+    }
+    execOnDeactivated(appid, function()
+      disableConditionInChain(appid, info, true)
+      info = nil
+    end)
   end
 end
 
@@ -6859,6 +6912,15 @@ local function registerOpenRecent(app)
       spec = spec, message = menuItemPath[2],
       fn = fn, condition = cond
     })
+    assert(openRecentHotkey)
+    local info = {
+      chainedCond = openRecentHotkey.chainedCond,
+      idx = openRecentHotkey.idx
+    }
+    execOnDeactivated(appid, function()
+      disableConditionInChain(appid, info, true)
+      info = nil
+    end)
   end
 end
 
@@ -6910,6 +6972,14 @@ local function registerZoomHotkeys(app)
         spec = spec, message = menuItemPath[2],
         fn = fn, condition = cond
       })
+      local info = {
+        chainedCond = zoomHotkeys[hkID].chainedCond,
+        idx = zoomHotkeys[hkID].idx
+      }
+      execOnDeactivated(appid, function()
+        disableConditionInChain(appid, info, true)
+        info = nil
+      end)
     end
   end
 end
@@ -7584,6 +7654,7 @@ onLaunchedAndActivated = function(app, reinvokeKey)
     if not APPWIN_HOTKEY_ON_WINDOW_FOCUS then
       unregisterInWinHotKeys(app, true)
     end
+    ActivatedAppConditionChain[app:bundleID()] = nil
   end
   registerInAppHotKeys(app)
   if APPWIN_HOTKEY_ON_WINDOW_FOCUS then

@@ -475,7 +475,7 @@ local function getValidMessage(hotkeyInfo, win)
     win = hs.application.frontmostApplication():focusedWindow()
     if win == nil then return false, nil end
   end
-  if hotkeyInfo.condition(win) then
+  if hotkeyInfo.enabled and hotkeyInfo.condition(win) then
     return true, hotkeyInfo.message
   else
     if hotkeyInfo.previous then
@@ -494,16 +494,12 @@ local function testValid(entry)
       valid = entry.condition()
     elseif entry.kind == HK.IN_APP then
       local app = hs.application.frontmostApplication()
-      if entry.condition ~= nil then
-        valid = entry.condition()
-      else
-        local hotkeyInfo = get(InAppHotkeyInfoChain, app:bundleID(), entry.idx)
-        if hotkeyInfo ~= nil then
-          local actualMsg
-          valid, actualMsg = getValidMessage(hotkeyInfo)
-          if valid and actualMsg then
-            entry.msg = entry.msg:sub(1, pos - 1) .. ": " .. actualMsg
-          end
+      local hotkeyInfo = get(ActivatedAppConditionChain, app:bundleID(), entry.idx)
+      if hotkeyInfo ~= nil then
+        local actualMsg
+        valid, actualMsg = getValidMessage(hotkeyInfo)
+        if valid and actualMsg then
+          entry.msg = entry.msg:sub(1, pos - 1) .. ": " .. actualMsg
         end
       end
     end
