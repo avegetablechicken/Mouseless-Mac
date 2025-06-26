@@ -3291,6 +3291,11 @@ function localizeCommonMenuItemTitles(locale, appid)
   local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
   local matchedLocale = getDefaultMatchedLocale(locale, resourceDir, 'lproj')
 
+  local shouldSave = false
+  local key = '__macos'
+  local cachedDelocMap = get(deLocaleMap, key, matchedLocale) or {}
+  local cachedLocMap = get(appLocaleMap, key, matchedLocale) or {}
+
   local target = appid or 'common'
   if delocMap[target] == nil then
     delocMap[target] = {}
@@ -3301,18 +3306,29 @@ function localizeCommonMenuItemTitles(locale, appid)
   local targetDelocMap = delocMap[target]
   local targetLocMap = locMap[target]
   for _, title in ipairs { 'File', 'View', 'Window', 'Help' } do
-    local localizedTitle = localizeByLoctable(
-        title, resourceDir, 'MenuCommands', matchedLocale)
+    local localizedTitle = cachedLocMap[title] or localizeByLoctable(
+      title, resourceDir, 'MenuCommands', matchedLocale)
     if localizedTitle ~= nil then
       targetDelocMap[localizedTitle] = title
       targetLocMap[title] = localizedTitle
+      if cachedLocMap[title] == nil then
+        cachedDelocMap[localizedTitle] = title
+        cachedLocMap[title] = localizedTitle
+        shouldSave = true
+      end
     end
   end
-  local localizedTitle = localizeByLoctable(
-      'Edit', resourceDir, 'InputManager', matchedLocale)
+  local title = 'Edit'
+  local localizedTitle = cachedLocMap[title] or localizeByLoctable(
+    title, resourceDir, 'InputManager', matchedLocale)
   if localizedTitle ~= nil then
-    targetDelocMap[localizedTitle] = 'Edit'
-    targetLocMap['Edit'] = localizedTitle
+    targetDelocMap[localizedTitle] = title
+    targetLocMap[title] = localizedTitle
+    if cachedLocMap[title] == nil then
+      cachedDelocMap[localizedTitle] = title
+      cachedLocMap[title] = localizedTitle
+      shouldSave = true
+    end
   end
 
   local titleList = {
@@ -3327,19 +3343,53 @@ function localizeCommonMenuItemTitles(locale, appid)
     })
   end
   for _, title in ipairs(titleList) do
-    local localizedTitle = localizeByLoctable(
-        title, resourceDir, 'MenuCommands', matchedLocale)
+    local localizedTitle = tindex(cachedDelocMap, title) or localizeByLoctable(
+      title, resourceDir, 'MenuCommands', matchedLocale)
     if localizedTitle ~= nil then
       delocMap.common[localizedTitle] = title
+      if cachedDelocMap[localizedTitle] == nil then
+        cachedDelocMap[localizedTitle] = title
+        shouldSave = true
+      end
     end
   end
-  local localizedTitle = localizeByLoctable(
-      'Emoji & Symbols', resourceDir, 'InputManager', matchedLocale)
+  title = 'Emoji & Symbols'
+  local localizedTitle = tindex(cachedDelocMap, title) or localizeByLoctable(
+    title, resourceDir, 'InputManager', matchedLocale)
   if localizedTitle ~= nil then
-    delocMap.common[localizedTitle] = 'Emoji & Symbols'
+    delocMap.common[localizedTitle] = title
+    if cachedDelocMap[localizedTitle] == nil then
+      cachedDelocMap[localizedTitle] = title
+      shouldSave = true
+    end
+  end
+
+  if shouldSave then
+    if deLocaleMap[key] == nil then
+      deLocaleMap[key] = {}
+    end
+    if deLocaleMap[key][matchedLocale] == nil then
+      deLocaleMap[key][matchedLocale] = cachedDelocMap
+    else
+      deLocaleMap[key][matchedLocale] =
+          tconcat(deLocaleMap[key][matchedLocale], cachedDelocMap)
+    end
+    if appLocaleMap[key] == nil then
+      appLocaleMap[key] = {}
+    end
+    if appLocaleMap[key][matchedLocale] == nil then
+      appLocaleMap[key][matchedLocale] = cachedLocMap
+    else
+      appLocaleMap[key][matchedLocale] =
+          tconcat(appLocaleMap[key][matchedLocale], cachedLocMap)
+    end
+    if not exists(localeTmpDir) then
+      hs.execute(strfmt("mkdir -p '%s'", localeTmpDir))
+    end
+    hs.json.write(appLocaleMap, localeTmpFile, false, true)
+    hs.json.write(deLocaleMap, menuItemTmpFile, false, true)
   end
 end
-
 localizeCommonMenuItemTitles(SYSTEM_LOCALE)
 
 local menuItemLocaleFilePatterns = {
