@@ -1,5 +1,7 @@
 ---@diagnostic disable: lowercase-global
 
+local t = hs.timer.absoluteTime()
+
 OS = {
   Cheetah           = "10.00",
   Puma              = "10.01",
@@ -501,3 +503,5 @@ require "fs"
 
 -- miscellaneous function
 require "misc"
+
+print(strfmt("-- Loading time: %f ms", (hs.timer.absoluteTime() - t) / 1000000))
