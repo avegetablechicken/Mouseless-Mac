@@ -3301,11 +3301,8 @@ function localizeCommonMenuItemTitles(locale, appid)
   local targetDelocMap = delocMap[target]
   local targetLocMap = locMap[target]
   for _, title in ipairs { 'File', 'View', 'Window', 'Help' } do
-    local escapedTitle = title:gsub('…', '\\U2026')
-                              :gsub('“', '\\U201C')
-                              :gsub('”', '\\U201D')
     local localizedTitle = localizeByLoctable(
-        escapedTitle, resourceDir, 'MenuCommands', matchedLocale)
+        title, resourceDir, 'MenuCommands', matchedLocale)
     if localizedTitle ~= nil then
       targetDelocMap[localizedTitle] = title
       targetLocMap[title] = localizedTitle
@@ -3330,11 +3327,8 @@ function localizeCommonMenuItemTitles(locale, appid)
     })
   end
   for _, title in ipairs(titleList) do
-    local escapedTitle = title:gsub('…', '\\U2026')
-                              :gsub('“', '\\U201C')
-                              :gsub('”', '\\U201D')
     local localizedTitle = localizeByLoctable(
-        escapedTitle, resourceDir, 'MenuCommands', matchedLocale)
+        title, resourceDir, 'MenuCommands', matchedLocale)
     if localizedTitle ~= nil then
       delocMap.common[localizedTitle] = title
     end
