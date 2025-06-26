@@ -676,10 +676,13 @@ local function VSCodeToggleSideBarSection(winUI, sidebar, section)
 
     local sections = getc(ancestor, AX.Group, 2, AX.Group, 2,
         AX.Group, 1, AX.Group, 2, AX.Group)
+    local totalDelay = 0
     while sections == nil do
-      hs.timer.usleep(0.1 * 1000000)
+      hs.timer.usleep(0.05 * 1000000)
+      totalDelay = totalDelay + 0.05
       sections = getc(ancestor, AX.Group, 2, AX.Group, 2,
           AX.Group, 1, AX.Group, 2, AX.Group)
+      if sections == nil and totalDelay > 0.2 then return end
     end
     for _, sec in ipairs(sections) do
       local button = getc(sec, AX.Group, 1, AX.Button, 1)
