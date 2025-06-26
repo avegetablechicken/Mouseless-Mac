@@ -5945,7 +5945,9 @@ end
 
 local function wrapConditionChain(app, fn, mode, config)
   return function()
-    if fn() then return end
+    local succ, result = fn()
+    if succ then return end
+    local menuItemNotFound = result == COND_FAIL.NO_MENU_ITEM_BY_KEYBINDING
     local hkIdx = hotkeyIdx(config.mods, config.key)
     local chain = config.background and DaemonAppConditionChain
         or ActivatedAppConditionChain
@@ -5953,13 +5955,25 @@ local function wrapConditionChain(app, fn, mode, config)
     while cb do
       if cb.enabled then
         local f = mode == KEY_MODE.PRESS and cb.pressedfn or cb.repeatfn
-        if f() then return end
+        succ, result = f()
+        if succ then return end
+        menuItemNotFound = menuItemNotFound
+            or result == COND_FAIL.NO_MENU_ITEM_BY_KEYBINDING
       end
       cb = cb.previous
     end
-    -- most of the time, directly selecting menu item costs less time than key strokes
-    selectMenuItemOrKeyStroke(app, config.mods, config.key,
-                              config.defaultResendToSystem)
+    local mods, key = config.mods, config.key
+    local resendToSystem = config.defaultResendToSystem
+    if menuItemNotFound then
+      if resendToSystem then
+        safeGlobalKeyStroke(mods, key)
+      else
+        hs.eventtap.keyStroke(mods, key, nil, app)
+      end
+    else
+      -- most of the time, directly selecting menu item costs less time than key strokes
+      selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
+    end
   end
 end
 
@@ -6079,20 +6093,15 @@ local function wrapCondition(obj, config, mode)
         func(obj)
       end
       return true
-    elseif result == COND_FAIL.NO_MENU_ITEM_BY_KEYBINDING
-        or result == COND_FAIL.MENUBAR_ITEM_SELECTED then
-      if resendToSystem then
-        safeGlobalKeyStroke(mods, key)
-      else
-        hs.eventtap.keyStroke(mods, key, nil, app)
-      end
+    elseif result == COND_FAIL.MENUBAR_ITEM_SELECTED then
+      selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
       return true
     elseif result == COND_FAIL.NOT_FRONTMOST_WINDOW then
       selectMenuItemOrKeyStroke(hs.window.frontmostWindow():application(),
                                 mods, key, resendToSystem)
       return true
     end
-    return false
+    return false, result
   end
   return fn, cond
 end
