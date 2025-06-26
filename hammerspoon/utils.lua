@@ -3516,8 +3516,8 @@ function localizedMenuBarItem(title, appid, params)
       if not exists(localeTmpDir) then
         hs.execute(strfmt("mkdir -p '%s'", localeTmpDir))
       end
-      hs.json.write(appLocaleDir, localeMatchTmpFile, true, true)
-      hs.json.write(deLocaleMap, menuItemTmpFile, true, true)
+      hs.json.write(appLocaleDir, localeMatchTmpFile, false, true)
+      hs.json.write(deLocaleMap, menuItemTmpFile, false, true)
     end
     return locTitle
   end
