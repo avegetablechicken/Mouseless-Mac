@@ -1456,7 +1456,7 @@ end
 local COND_FAIL = {
   USER_CONDITION_FAILED = "USER_CONDITION_FAILED",
   NOT_FRONTMOST_WINDOW = "NOT_FRONTMOST_WINDOW",
-  MENU_ITEM_SELECTED = "MENU_ITEM_SELECTED",
+  MENUBAR_ITEM_SELECTED = "MENUBAR_ITEM_SELECTED",
   NO_MENU_ITEM_BY_KEYBINDING = "NO_MENU_ITEM_BY_KEYBINDING",
   WINDOW_FILTER_NOT_SATISFIED = "WINDOW_FILTER_NOT_SATISFIED",
   WEBSITE_FILTER_NOT_SATISFIED = "WEBSITE_FILTER_NOT_SATISFIED",
@@ -1469,7 +1469,7 @@ local function noSelectedMenuBarItemFunc(fn)
     local app = obj.application ~= nil and obj:application() or obj
     for i, menuBarItem in ipairs(getMenuBarItems(app, false)) do
       if i > 1 and menuBarItem.AXSelected then
-        return false, COND_FAIL.MENU_ITEM_SELECTED
+        return false, COND_FAIL.MENUBAR_ITEM_SELECTED
       end
     end
     return fn(obj)
@@ -6080,7 +6080,7 @@ local function wrapCondition(obj, config, mode)
       end
       return true
     elseif result == COND_FAIL.NO_MENU_ITEM_BY_KEYBINDING
-        or result == COND_FAIL.MENU_ITEM_SELECTED then
+        or result == COND_FAIL.MENUBAR_ITEM_SELECTED then
       if resendToSystem then
         safeGlobalKeyStroke(mods, key)
       else
