@@ -5768,6 +5768,7 @@ local function registerRunningAppHotKeys(appid, app)
     end
     -- prefer properties specified in configuration file than in code
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+    local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isPersistent = keybinding.persist ~= nil
         and keybinding.persist or cfg.persist
     local isBackground = isPersistent or (keybinding.background ~= nil
@@ -5779,7 +5780,7 @@ local function registerRunningAppHotKeys(appid, app)
       return cfg.bindCondition == nil or ((app ~= nil and cfg.bindCondition(app))
         or (app == nil and isPersistent and cfg.bindCondition()))
     end
-    if isBackground and not isForWindow
+    if hasKey and isBackground and not isForWindow
         and (app ~= nil or (isPersistent and appInstalled)) -- runninng / installed and persist
         and bindable() then                                       -- bindable
       local fn
