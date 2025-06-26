@@ -871,7 +871,7 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
     if lastIpv4State == nil and proxySettings ~= nil then
       refreshNetworkService()
       for _, cfg in ipairs(proxySettings) do
-        if cfg.condition ~= nil and cfg.condition() then
+        if cfg.condition == nil or cfg.condition() then
           for _, candidate in ipairs(cfg.candidates or {}) do
             local name, mode = candidate.name, candidate.mode
             if ProxyConfigs[name] ~= nil then
