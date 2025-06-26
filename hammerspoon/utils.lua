@@ -3279,7 +3279,7 @@ javaLocale = function(appid, javahome, localesPath)
 end
 
 -- some menu items are managed by system framework
--- the localized strings of their titles are manged here
+-- the localized strings of their titles are managed here
 -- should be use when localizing / delocalizing menu bar items
 -- and delocalizing menu items whose keybindings contain 'fn'
 function localizeCommonMenuItemTitles(locale, appid)
