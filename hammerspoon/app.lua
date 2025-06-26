@@ -1455,6 +1455,7 @@ end
 -- possible reasons for failure of hotkey condition
 local COND_FAIL = {
   USER_CONDITION_FAILED = "USER_CONDITION_FAILED",
+  NO_FOCUSED_WINDOW = "NO_FOCUSED_WINDOW",
   NOT_FRONTMOST_WINDOW = "NOT_FRONTMOST_WINDOW",
   MENUBAR_ITEM_SELECTED = "MENUBAR_ITEM_SELECTED",
   NO_MENU_ITEM_BY_KEYBINDING = "NO_MENU_ITEM_BY_KEYBINDING",
@@ -6078,8 +6079,7 @@ local function wrapCondition(obj, config, mode)
   fn = function()
     local obj = windowFilter == nil and (win or menu or app) or app:focusedWindow()
     if obj == nil then  -- no window focused when triggering window-specific hotkeys
-      selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
-      return
+      return false, COND_FAIL.NO_FOCUSED_WINDOW
     end
     local satisfied, result, url = cond(obj)
     if satisfied then
