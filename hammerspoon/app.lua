@@ -654,12 +654,20 @@ local function VSCodeToggleSideBarSection(winUI, sidebar, section)
         AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 2)
   end
 
-  local elem = getc(ancestor, AX.Group, 2, AX.Group, 1, AX.Group, 1, nil, 1)
+  local elem = getc(ancestor, AX.Group, 2, AX.Heading, 1)
+      or getc(ancestor, AX.Group, 2, AX.Group, 1, AX.Group, 1, nil, 1)
   if elem and elem.AXTitle:sub(1, #sidebar) == sidebar then
-    local sections = getc(ancestor, AX.Group, 2, AX.Group, 2,
-        AX.Group, 1, AX.Group, 2, AX.Group)
+    local sections
+    if elem.AXRole == AX.Group then
+      sections = getc(ancestor, AX.Group, 2, AX.Group, 2,
+          AX.Group, 1, AX.Group, 2, AX.Group)
+    else
+      sections = getc(ancestor, AX.Group, 2, AX.Group, 1,
+          AX.Group, 1, AX.Group, 2, AX.Group)
+    end
     for _, sec in ipairs(sections) do
-      local button = getc(sec, AX.Group, 1, AX.Button, 1)
+      local button = getc(sec, AX.Button, 1)
+          or getc(sec, AX.Group, 1, AX.Button, 1)
       if button[2].AXTitle == section then
         press(button)
         break
@@ -674,20 +682,24 @@ local function VSCodeToggleSideBarSection(winUI, sidebar, section)
     end)
     press(tab)
 
-    local sections = getc(ancestor, AX.Group, 2, AX.Group, 2,
-        AX.Group, 1, AX.Group, 2, AX.Group)
+    local sections
     local totalDelay = 0
-    while sections == nil do
+    repeat
+      sections = getc(ancestor, AX.Group, 2, AX.Group, 1,
+                      AX.Group, 1, AX.Group, 2, AX.Group)
+          or getc(ancestor, AX.Group, 2, AX.Group, 2,
+                  AX.Group, 1, AX.Group, 2, AX.Group)
+      if sections then break end
       hs.timer.usleep(0.05 * 1000000)
       totalDelay = totalDelay + 0.05
-      sections = getc(ancestor, AX.Group, 2, AX.Group, 2,
-          AX.Group, 1, AX.Group, 2, AX.Group)
-      if sections == nil and totalDelay > 0.2 then return end
-    end
+    until totalDelay > 0.2
     for _, sec in ipairs(sections) do
-      local button = getc(sec, AX.Group, 1, AX.Button, 1)
+      local button = getc(sec, AX.Button, 1)
+          or getc(sec, AX.Group, 1, AX.Button, 1)
       if button[2].AXTitle == section then
-        if #getc(sec, AX.Group, 1) == 1 then
+        local records = getc(sec, AX.Group, 1, AX.Outline, 1, AX.Group, 1)
+            or getc(sec, AX.Group, 1)
+        if records == nil or #records == 1 then
           press(button)
           break
         end
