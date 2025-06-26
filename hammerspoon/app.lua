@@ -1453,14 +1453,14 @@ local function checkMenuItem(menuItemTitle, params)
 end
 
 -- possible reasons for failure of hotkey condition
-local COND_FAIL = {
-  USER_CONDITION_FAILED = "USER_CONDITION_FAILED",
-  NO_FOCUSED_WINDOW = "NO_FOCUSED_WINDOW",
-  NOT_FRONTMOST_WINDOW = "NOT_FRONTMOST_WINDOW",
-  MENUBAR_ITEM_SELECTED = "MENUBAR_ITEM_SELECTED",
-  NO_MENU_ITEM_BY_KEYBINDING = "NO_MENU_ITEM_BY_KEYBINDING",
-  WINDOW_FILTER_NOT_SATISFIED = "WINDOW_FILTER_NOT_SATISFIED",
-  WEBSITE_FILTER_NOT_SATISFIED = "WEBSITE_FILTER_NOT_SATISFIED",
+local CF = {
+  userConditionFail         = 0,
+  noFocusedWindow           = 1,
+  notFrontmostWindow        = 2,
+  menubarItemSelected       = 3,
+  noMenuItemMatchKeybinding = 4,
+  windowFilterReject        = 5,
+  websiteFilterReject       = 6,
 }
 
 -- check whether the menu bar item is selected
@@ -1470,7 +1470,7 @@ local function noSelectedMenuBarItemFunc(fn)
     local app = obj.application ~= nil and obj:application() or obj
     for i, menuBarItem in ipairs(getMenuBarItems(app, false)) do
       if i > 1 and menuBarItem.AXSelected then
-        return false, COND_FAIL.MENUBAR_ITEM_SELECTED
+        return false, CF.menubarItemSelected
       end
     end
     return fn(obj)
@@ -1485,7 +1485,7 @@ local function checkMenuItemByKeybinding(mods, key)
     if menuItem ~= nil and enabled then
       return true, menuItem
     else
-      return false, COND_FAIL.NO_MENU_ITEM_BY_KEYBINDING
+      return false, CF.noMenuItemMatchKeybinding
     end
   end
 end
@@ -5874,15 +5874,15 @@ local function resendToFrontmostWindow(cond, nonFrontmost)
     local frontWin = hs.window.frontmostWindow()
     if nonFrontmost then
       if frontWin ~= nil and WindowCreatedSince[frontWin:id()] then
-        return false, COND_FAIL.NOT_FRONTMOST_WINDOW
+        return false, CF.notFrontmostWindow
       end
     else
       if app:focusedWindow() ~= nil and frontWin ~= nil
         and frontWin:application():bundleID() ~= app:bundleID() then
-        return false, COND_FAIL.NOT_FRONTMOST_WINDOW
+        return false, CF.notFrontmostWindow
       elseif app:focusedWindow() == nil and frontWin ~= nil
           and WindowCreatedSince[frontWin:id()] then
-        return false, COND_FAIL.NOT_FRONTMOST_WINDOW
+        return false, CF.notFrontmostWindow
       end
     end
     return cond(obj)
@@ -5948,7 +5948,7 @@ local function wrapConditionChain(app, fn, mode, config)
   return function()
     local succ, result = fn()
     if succ then return end
-    local menuItemNotFound = result == COND_FAIL.NO_MENU_ITEM_BY_KEYBINDING
+    local menuItemNotFound = result == CF.noMenuItemMatchKeybinding
     local hkIdx = hotkeyIdx(config.mods, config.key)
     local chain = config.background and DaemonAppConditionChain
         or ActivatedAppConditionChain
@@ -5959,7 +5959,7 @@ local function wrapConditionChain(app, fn, mode, config)
         succ, result = f()
         if succ then return end
         menuItemNotFound = menuItemNotFound
-            or result == COND_FAIL.NO_MENU_ITEM_BY_KEYBINDING
+            or result == CF.noMenuItemMatchKeybinding
       end
       cb = cb.previous
     end
@@ -5997,7 +5997,7 @@ local function wrapCondition(obj, config, mode)
   local cond = function(obj)
     if condition == nil then return true end
     local satisfied, result = condition(obj)
-    if not satisfied then result = COND_FAIL.USER_CONDITION_FAILED end
+    if not satisfied then result = CF.userConditionFail end
     return satisfied, result
   end
   -- some apps only accept system key strokes and neglect key strokes targeted at them
@@ -6019,7 +6019,7 @@ local function wrapCondition(obj, config, mode)
     end
     local oldCond = cond
     cond = function(win)
-      if win == nil then return false, COND_FAIL.WINDOW_FILTER_NOT_SATISFIED end
+      if win == nil then return false, CF.windowFilterReject end
       local wf = hs.window.filter.new(false):setAppFilter(
         win:application():name(), actualFilter)
       if wf:isWindowAllowed(win)
@@ -6029,7 +6029,7 @@ local function wrapCondition(obj, config, mode)
               and windowFilter.allowPopover and win:role() == AX.Popover) then
         return oldCond(win)
       else
-        return false, COND_FAIL.WINDOW_FILTER_NOT_SATISFIED
+        return false, CF.windowFilterReject
       end
     end
   end
@@ -6060,7 +6060,7 @@ local function wrapCondition(obj, config, mode)
             end
           end
         end
-        return false, result or COND_FAIL.WEBSITE_FILTER_NOT_SATISFIED
+        return false, result or CF.websiteFilterReject
       end
     end
   end
@@ -6079,7 +6079,7 @@ local function wrapCondition(obj, config, mode)
   fn = function()
     local obj = windowFilter == nil and (win or menu or app) or app:focusedWindow()
     if obj == nil then  -- no window focused when triggering window-specific hotkeys
-      return false, COND_FAIL.NO_FOCUSED_WINDOW
+      return false, CF.noFocusedWindow
     end
     local satisfied, result, url = cond(obj)
     if satisfied then
@@ -6093,10 +6093,10 @@ local function wrapCondition(obj, config, mode)
         func(obj)
       end
       return true
-    elseif result == COND_FAIL.MENUBAR_ITEM_SELECTED then
+    elseif result == CF.menubarItemSelected then
       selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
       return true
-    elseif result == COND_FAIL.NOT_FRONTMOST_WINDOW then
+    elseif result == CF.notFrontmostWindow then
       selectMenuItemOrKeyStroke(hs.window.frontmostWindow():application(),
                                 mods, key, resendToSystem)
       return true
