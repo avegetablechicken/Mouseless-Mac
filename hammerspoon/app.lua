@@ -5943,7 +5943,7 @@ local function disableConditionInChain(appid, hotkey, delete)
   end
 end
 
-local wrapConditionChain = function(app, fn, mode, config)
+local function wrapConditionChain(app, fn, mode, config)
   return function()
     if fn() then return end
     local hkIdx = hotkeyIdx(config.mods, config.key)
