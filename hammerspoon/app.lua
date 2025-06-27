@@ -1439,6 +1439,7 @@ local function menuItemMessage(mods, key, titleIndex, sep)
       for i=2,#titleIndex do
         str = str .. sep .. menuItem[titleIndex[i]]
       end
+      return str
     end
   end
 end
