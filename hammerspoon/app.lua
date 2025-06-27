@@ -1429,11 +1429,11 @@ end
 local function menuItemMessage(mods, key, titleIndex, sep)
   return function(app)
     if type(titleIndex) == 'number' then
-      local menuItem = findMenuItemByKeyBinding(app, mods, key)
+      local menuItem = findMenuItemByKeyBinding(app, mods, key, true)
       if menuItem ~= nil then return menuItem[titleIndex] end
     else
       if sep == nil then sep = ' > ' end
-      local menuItem = findMenuItemByKeyBinding(app, mods, key)
+      local menuItem = findMenuItemByKeyBinding(app, mods, key, true)
       assert(menuItem)
       local str = menuItem[titleIndex[1]]
       for i=2,#titleIndex do
@@ -1482,7 +1482,7 @@ end
 -- if so, return the path of the menu item
 local function checkMenuItemByKeybinding(mods, key)
   return function(app)
-    local menuItem, enabled = findMenuItemByKeyBinding(app, mods, key)
+    local menuItem, enabled = findMenuItemByKeyBinding(app, mods, key, true)
     if menuItem ~= nil and enabled then
       return true, menuItem
     else

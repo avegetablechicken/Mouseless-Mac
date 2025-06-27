@@ -182,21 +182,28 @@ function selectMenuItem(app, menuItemTitle, params, show)
 end
 
 local function findMenuItemByKeyBindingImpl(mods, key, menuItem)
-  if menuItem.AXChildren == nil then return end
+  if menuItem.AXChildren == nil or #menuItem.AXChildren == 0 then return end
   for _, subItem in ipairs(menuItem.AXChildren[1]) do
     local cmdChar = subItem.AXMenuItemCmdChar
-    if cmdChar ~= "" and (cmdChar:byte(1) <= 32 or cmdChar:byte(1) > 127) then
+    if cmdChar and cmdChar ~= ""
+        and (cmdChar:byte(1) <= 32 or cmdChar:byte(1) > 127) then
       cmdChar = SPECIAL_KEY_SIMBOL_MAP[key] or cmdChar
     end
     if (cmdChar == key
         or (subItem.AXMenuItemCmdGlyph ~= ""
-            and hs.application.menuGlyphs[subItem.AXMenuItemCmdGlyph] == key))
-        and #subItem.AXMenuItemCmdModifiers == #mods then
-      local match = true
-      for _, mod in ipairs(mods) do
-        if not tcontain(subItem.AXMenuItemCmdModifiers, mod) then
-          match = false
-          break
+            and hs.application.menuGlyphs[subItem.AXMenuItemCmdGlyph] == key)) then
+      local match
+      if type(mods) == 'number' then
+        match = subItem.AXMenuItemCmdModifiers == mods
+      else
+        if #subItem.AXMenuItemCmdModifiers == #mods then
+          match = true
+          for _, mod in ipairs(mods) do
+            if not tcontain(subItem.AXMenuItemCmdModifiers, mod) then
+              match = false
+              break
+            end
+          end
         end
       end
       if match then
@@ -212,7 +219,21 @@ local function findMenuItemByKeyBindingImpl(mods, key, menuItem)
   end
 end
 
-local modifierSymbolMap = {
+local modifierSymbolMap1 = {
+  command = 1 << 3,
+  control = 1 << 2,
+  option = 1 << 1,
+  shift = 1 << 0,
+  cmd = 1 << 3,
+  ctrl = 1 << 2,
+  alt = 1 << 1,
+  ["⌘"] = 1 << 3,
+  ["⌃"] = 1 << 2,
+  ["⌥"] = 1 << 1,
+  ["⇧"] = 1 << 0
+}
+
+local modifierSymbolMap2 = {
   command = 'cmd',
   control = 'ctrl',
   option = 'alt',
@@ -222,30 +243,64 @@ local modifierSymbolMap = {
   ["⇧"] = 'shift'
 }
 
-function findMenuItemByKeyBinding(app, mods, key, menuItems)
-  if menuItems == nil then
-    menuItems = app:getMenuItems()
-  end
-  if menuItems == nil then return end
+local function getModsRepr(mods, likelyToFind)
   if mods == '' then mods = {} end
   if type(mods) == 'string' and mods:byte(1, 1) < 127 then
     mods = { mods }
   end
-  local newMods = {}
-  if type(mods) == 'string' then
-    for i=1,utf8.len(mods) do
-      local mod = mods:sub(i*3-2, i*3)
-      tinsert(newMods, modifierSymbolMap[mod] or mod)
+  if likelyToFind then
+    local modsRepr = 1 << 3
+    if type(mods) == 'string' then
+      for i=1,utf8.len(mods) do
+        local mod = mods:sub(i*3-2, i*3)
+        local v = modifierSymbolMap1[mod]
+        if mod == "⌘" then
+          modsRepr = modsRepr &~ v
+        else
+          modsRepr = modsRepr | v
+        end
+      end
+    else
+      for _, mod in ipairs(mods) do
+        local v = modifierSymbolMap1[mod]
+        if mod == "command" or mod == 'cmd' then
+          modsRepr = modsRepr &~ v
+        else
+          modsRepr = modsRepr | v
+        end
+      end
     end
+    return modsRepr
   else
-    for _, mod in ipairs(mods) do
-      tinsert(newMods, modifierSymbolMap[mod] or mod)
+    local newMods = {}
+    if type(mods) == 'string' then
+      for i = 1, utf8.len(mods) do
+        local mod = mods:sub(i * 3 - 2, i * 3)
+        tinsert(newMods, modifierSymbolMap2[mod] or mod)
+      end
+    else
+      for _, mod in ipairs(mods) do
+        tinsert(newMods, modifierSymbolMap2[mod] or mod)
+      end
     end
+    return newMods
   end
+end
+
+function findMenuItemByKeyBinding(app, mods, key, likelyToFind, menuItems)
+  if menuItems == nil then
+    if likelyToFind then
+      menuItems = getMenuBarItems(app)
+    else
+      menuItems = app:getMenuItems()
+    end
+    if menuItems == nil then return end
+  end
+  mods = getModsRepr(mods, likelyToFind)
   for i=#menuItems,1,-1 do
     local menuItem = menuItems[i]
     local menuItemPath, enabled =
-        findMenuItemByKeyBindingImpl(newMods, key, menuItem)
+        findMenuItemByKeyBindingImpl(mods, key, menuItem)
     if menuItemPath ~= nil then
       tinsert(menuItemPath, 1, menuItem.AXTitle)
       return menuItemPath, enabled
