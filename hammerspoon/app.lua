@@ -5753,14 +5753,11 @@ local function registerRunningAppHotKeys(appid, app)
   if appHotKeyCallbacks[appid] == nil then return end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
 
-  if app == nil then
-    app = find(appid)
-  end
-
   if runningAppHotKeys[appid] == nil then
     runningAppHotKeys[appid] = {}
   end
 
+  local app
   -- do not support "condition" property currently
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
     if runningAppHotKeys[appid][hkID] ~= nil then
@@ -5777,13 +5774,18 @@ local function registerRunningAppHotKeys(appid, app)
     local appInstalled = hs.application.pathForBundleID(appid) ~= nil
         and hs.application.pathForBundleID(appid) ~= ""
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
-    local bindable = function()
-      return cfg.bindCondition == nil or ((app ~= nil and cfg.bindCondition(app))
-        or (app == nil and isPersistent and cfg.bindCondition()))
+    local bindable
+    if isPersistent and appInstalled then
+      bindable = function()
+        return cfg.bindCondition == nil or cfg.bindCondition()
+      end
+    else
+      bindable = function()
+        app = app or find(appid)
+        return app and (cfg.bindCondition == nil or cfg.bindCondition(app))
+      end
     end
-    if hasKey and isBackground and not isForWindow
-        and (app ~= nil or (isPersistent and appInstalled)) -- runninng / installed and persist
-        and bindable() then                                       -- bindable
+    if hasKey and isBackground and not isForWindow and bindable() then
       local fn
       if isPersistent then
         fn = function()
