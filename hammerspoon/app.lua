@@ -7223,7 +7223,7 @@ local function registerForOpenSavePanel(app)
 end
 
 -- bind `alt+?` hotkeys to select left menu bar items
-AltMenuBarItemHotkeys = {}
+local altMenuBarItemHotkeys = {}
 
 local function bindAltMenu(app, mods, key, message, fn)
   fn = showMenuItemWrapper(fn)
@@ -7304,10 +7304,10 @@ end
 
 local function altMenuBarItem(app, menuBarItems, reinvokeKey)
   -- delete previous hotkeys
-  for _, hotkey in ipairs(AltMenuBarItemHotkeys) do
+  for _, hotkey in ipairs(altMenuBarItemHotkeys) do
     hotkey:delete()
   end
-  AltMenuBarItemHotkeys = {}
+  altMenuBarItemHotkeys = {}
   windowOnBindAltMenu = nil
 
   local appid = app:bundleID()
@@ -7503,7 +7503,7 @@ local function altMenuBarItem(app, menuBarItems, reinvokeKey)
       if spec ~= nil then
         local fn = bind(clickMenuCallback, menuBarItemTitles[i], spec[1])
         local hotkey = bindAltMenu(app, "⌥", spec[1], spec[2], fn)
-        tinsert(AltMenuBarItemHotkeys, hotkey)
+        tinsert(altMenuBarItemHotkeys, hotkey)
         if reinvokeKey == spec[1] then
           clickMenuCallback(menuBarItemTitles[i])
         end
@@ -7524,7 +7524,7 @@ local function altMenuBarItem(app, menuBarItems, reinvokeKey)
     local hotkey = bindAltMenu(app, "⌥", "`", menuBarItemTitles[1],
       function() app:selectMenuItem({ menuBarItemTitles[1] }) end)
     hotkey.subkind = 0
-    tinsert(AltMenuBarItemHotkeys, hotkey)
+    tinsert(altMenuBarItemHotkeys, hotkey)
 
     local itemTitles = {}
     for i=2,#menuBarItemTitles do
@@ -7544,7 +7544,7 @@ local function altMenuBarItem(app, menuBarItems, reinvokeKey)
     for i=1,maxMenuBarItemHotkey do
       local fn = bind(clickMenuCallback, menuBarItemTitles[i + 1], i % 10)
       hotkey = bindAltMenu(app, "⌥", tostring(i % 10), itemTitles[i], fn)
-      tinsert(AltMenuBarItemHotkeys, hotkey)
+      tinsert(altMenuBarItemHotkeys, hotkey)
       if reinvokeKey == i % 10 then
         clickMenuCallback(menuBarItemTitles[i + 1])
       end

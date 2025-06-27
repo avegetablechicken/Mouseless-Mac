@@ -634,9 +634,12 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
     for i, hotkey in ipairs(allKeys) do
       if hotkey.kind >= HK.IN_APP then insertIdx = i break end
     end
-    for i, hk in ipairs(AltMenuBarItemHotkeys) do
+    local app = hs.application.frontmostApplication()
+    local menuBarItems = getMenuBarItems(app)
+    tremove(menuBarItems, 1)
+    for i, item in ipairs(menuBarItems) do
       local entry = tfind(enabledAltMenuHotkeys, function(menuHK)
-        return menuHK.idx == hk.idx
+        return menuHK.msg:sub(-#item.AXTitle-2) == ': ' .. item.AXTitle
       end)
       if entry ~= nil then
         tinsert(allKeys, insertIdx + i - 1, entry)
@@ -1303,11 +1306,13 @@ function()
     for i, hotkey in ipairs(allKeys) do
       if hotkey.kind >= HK.IN_APP then insertIdx = i break end
     end
-    for i, hk in ipairs(AltMenuBarItemHotkeys) do
-      local entry = hs.fnutils.find(enabledAltMenuHotkeys,
-        function(menuHK)
-          return menuHK.idx == hk.idx
-        end)
+    local app = hs.application.frontmostApplication()
+    local menuBarItems = getMenuBarItems(app)
+    tremove(menuBarItems, 1)
+    for i, item in ipairs(menuBarItems) do
+      local entry = tfind(enabledAltMenuHotkeys, function(menuHK)
+        return menuHK.msg:sub(-#item.AXTitle-2) == ': ' .. item.AXTitle
+      end)
       if entry ~= nil then
         tinsert(allKeys, insertIdx + i - 1, entry)
       end
