@@ -3157,7 +3157,7 @@ appHotKeyCallbacks = {
         if result[1] == 0 then
           app:selectMenuItem(result[2])
         elseif result[1] == 1 then
-          result[2]:performAction(AX.Press)
+          press(result[2])
         elseif result[1] == 2 then
           leftClickAndRestore(result[2], app:name())
         end
