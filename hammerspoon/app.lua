@@ -1513,6 +1513,9 @@ end
 -- click the position returned by the condition
 -- work as hotkey callback
 local function receivePosition(position, app)
+  if app.application ~= nil then
+    app = app:application()
+  end
   leftClickAndRestore(position, app:name())
 end
 
