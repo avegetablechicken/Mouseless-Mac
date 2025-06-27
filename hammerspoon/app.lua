@@ -5842,9 +5842,9 @@ local function unregisterRunningAppHotKeys(appid)
 end
 
 -- record windows created and alive since last app switch
--- we have to record them because key strokes must be
--- sent to frontmost window instead of frontmost app
--- and some windows may be made frontmost silently
+-- most of time key strokes should be sent to the frontmost window
+-- instead of the frontmost app, unless the app has no window while
+-- the frontmost window was created before this app activates
 WindowCreatedSince = {}
 WindowCreatedSinceWatcher = hs.window.filter.new(true):subscribe({
   hs.window.filter.windowCreated,
