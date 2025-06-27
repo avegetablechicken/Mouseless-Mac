@@ -3343,11 +3343,22 @@ function localizeCommonMenuItemTitles(locale, appid)
   end
   if locale == SYSTEM_LOCALE and appid ~= nil then return end
 
+  local key = '__macos'
   local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
-  local matchedLocale = getDefaultMatchedLocale(locale, resourceDir, 'lproj')
+  local matchedLocale = get(appLocaleDir, key, locale)
+  if matchedLocale == nil then
+    matchedLocale = getDefaultMatchedLocale(locale, resourceDir, 'lproj')
+    if appLocaleDir[key] == nil then
+      appLocaleDir[key] = {}
+    end
+    appLocaleDir[key][locale] = matchedLocale
+    if not exists(localeTmpDir) then
+      hs.execute(strfmt("mkdir -p '%s'", localeTmpDir))
+    end
+    hs.json.write(appLocaleDir, localeMatchTmpFile, false, true)
+  end
 
   local shouldSave = false
-  local key = '__macos'
   local cachedDelocMap = get(deLocaleMap, key, matchedLocale) or {}
   local cachedLocMap = get(appLocaleMap, key, matchedLocale) or {}
 
@@ -3649,7 +3660,18 @@ function displayName(app)
   local locale = get(appLocaleDir, appid, appLocale)
   if locale == false then return basename end
   if locale == nil or not exists(resourceDir .. "/" .. locale .. ".lproj") then
+    local shouldSave = locale == nil
     locale = getDefaultMatchedLocale(appLocale, resourceDir, 'lproj')
+    if shouldSave then
+      if appLocaleDir[appid] == nil then
+        appLocaleDir[appid] = {}
+      end
+      appLocaleDir[appid][appLocale] = locale or false
+      if not exists(localeTmpDir) then
+        hs.execute(strfmt("mkdir -p '%s'", localeTmpDir))
+      end
+      hs.json.write(appLocaleDir, localeMatchTmpFile, false, true)
+    end
     if locale == nil then return basename end
   end
   if exists(resourceDir .. '/InfoPlist.loctable') then
@@ -3676,9 +3698,6 @@ function displayName(app)
     appLocaleMap[appid][appLocale] = {}
   end
   appLocaleMap[appid][appLocale][basename] = appname
-  if not exists(localeTmpDir) then
-    hs.execute(strfmt("mkdir -p '%s'", localeTmpDir))
-  end
   hs.json.write(appLocaleMap, localeTmpFile, false, true)
 
   return appname
