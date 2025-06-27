@@ -1020,8 +1020,8 @@
         "key": "H"
       },
       "showChatProfile": {
-        "mods": "command",
-        "key": "I"
+        "mods": ["shift", "command"],
+        "key": "P"
       },
       "openInDefaultBrowser": {
         "mods": ["shift", "command"],
