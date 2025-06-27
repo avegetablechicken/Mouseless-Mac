@@ -3110,10 +3110,53 @@ appHotKeyCallbacks = {
   ["com.tencent.xinWeChat"] =
   {
     ["back"] = {
-      message = localizedMessage("Common.Navigation.Back"),
+      message = function(app)
+        if versionLessThan("4")(app) then
+          return localizedMessage("Common.Navigation.Back")
+        else
+          local name = getc(toappui(app),
+              AX.MenuBar, 1, AX.MenuBarItem, 2).AXTitle
+          return name == "Weixin" and "Back" or "返回"
+        end
+      end,
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local appid = app:bundleID()
+
+        if versionGreaterEqual("4")(app) then
+          -- CEF Window
+          local exBundleID = "com.tencent.flue.WeChatAppEx"
+          local menuItemPath = {
+            localizedMenuBarItem('File', appid),
+            localizedString('Back', exBundleID)
+          }
+          if #menuItemPath == 2 then
+            local menuItem = app:findMenuItem(menuItemPath)
+            if menuItem ~= nil and menuItem.enabled then
+              return true, { 0, menuItemPath }
+            end
+          end
+
+          local winUI = towinui(app:focusedWindow())
+          -- Minimized Groups
+          local name = getc(toappui(app),
+              AX.MenuBar, 1, AX.MenuBarItem, 2).AXTitle
+          local back = name == "Weixin" and "Back" or "返回"
+          local bt = getc(winUI, AX.Group, 1,
+              AX.SplitGroup, 1, AX.Button, back)
+          if bt then return true, { 2, bt.AXPosition } end
+
+          -- Moments
+          if app:focusedWindow():title():find(app:name()) == nil then
+            local moments = name == "Weixin" and "Moments" or "朋友圈"
+            if app:focusedWindow():title() == moments then
+              return true, { 2, getc(winUI, AX.Button, 1).AXPosition }
+            end
+            return false
+          end
+
+          return false
+        end
 
         -- CEF Window
         local exBundleID = "com.tencent.xinWeChat.WeChatAppEx"
@@ -3164,35 +3207,87 @@ appHotKeyCallbacks = {
       end
     },
     ["hideChat"] = {
-      message = localizedMessage("Chats.Menu.Hide"),
+      message = function(app)
+        if versionLessThan("4")(app) then
+          return localizedString("Chats.Menu.Hide", app:bundleID())
+        else
+          local file = getc(toappui(app),
+              AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
+          if file == "File" then return "Hide"
+          elseif file == localizedString('File', {
+            locale = 'zh_CN',
+            localeFile = 'MenuCommands',
+            framework = "AppKit.framework",
+          }) then return "不显示"
+          else return "不顯示" end
+        end
+      end,
       condition = function(app)
         if app:focusedWindow() == nil then return end
         local winUI = towinui(app:focusedWindow())
-        local curChatTitle = getc(winUI, AX.SplitGroup, 1,
-            AX.SplitGroup, 1, AX.StaticText, 1)
-            or getc(winUI, AX.SplitGroup, 1, AX.StaticText, 1)
-        if curChatTitle == nil then return false end
-        local title = curChatTitle.AXValue
-        local chats = getc(winUI, AX.SplitGroup, 1,
-            AX.ScrollArea, 1, AX.Table, 1, AX.Row)
-        local curChat = tfind(chats, function(c)
-          local row = getc(c, AX.Cell, 1, AX.Row, 1)
-          return row ~= nil and (row.AXTitle == title
-              or row.AXTitle:sub(1, #title + 1) == title .. ",")
-        end)
-        return curChat ~= nil, curChat
+        if versionLessThan("4")(app) then
+          local curChatTitle = getc(winUI, AX.SplitGroup, 1,
+              AX.SplitGroup, 1, AX.StaticText, 1)
+              or getc(winUI, AX.SplitGroup, 1, AX.StaticText, 1)
+          if curChatTitle == nil then return false end
+          local title = curChatTitle.AXValue
+          local chats = getc(winUI, AX.SplitGroup, 1,
+              AX.ScrollArea, 1, AX.Table, 1, AX.Row)
+          local curChat = tfind(chats, function(c)
+            local row = getc(c, AX.Cell, 1, AX.Row, 1)
+            return row ~= nil and (row.AXTitle == title
+                or row.AXTitle:sub(1, #title + 1) == title .. ",")
+          end)
+          return curChat ~= nil, getc(curChat, AX.Cell, 1)
+        else
+          local curChatTitle = getc(winUI, AX.Group, 1,
+              AX.SplitGroup, 1, AX.StaticText, -1)
+          if curChatTitle == nil then return false end
+          if #curChatTitle > 0 then
+            curChatTitle = getc(curChatTitle, AX.StaticText, 1)
+          end
+          local title = curChatTitle.AXValue
+          local chats = getc(winUI, AX.Group, 1,
+              AX.SplitGroup, 1, AX.List, -1, AX.StaticText)
+          local curChat = tfind(chats, function(row)
+            return row.AXTitle == title
+                or row.AXTitle:sub(1, #title + 1) == title .. " "
+          end)
+          return curChat ~= nil, curChat
+        end
       end,
-      fn = function(chat)
-        getc(chat, AX.Cell, 1):performAction(AX.ShowMenu)
-        local menu = getc(chat, AX.Cell, 1, AX.Row, 1, AX.Menu, 1)
-        if menu then
-          local hide = getc(menu, AX.MenuItem, "contextMenuHide:")
-          if hide then press(hide) end
+      fn = function(chat, app)
+        chat:performAction(AX.ShowMenu)
+        if chat.AXRole == AX.Cell then
+          local menu = getc(chat, AX.Row, 1, AX.Menu, 1)
+          if menu then
+            local hide = getc(menu, AX.MenuItem, "contextMenuHide:")
+            if hide then press(hide) end
+          end
+        else
+          hs.timer.doAfter(0.5, function()
+            local menu = toappui(app):elementAtPosition(chat.AXPosition)
+            if menu and menu.AXRole == AX.Menu then
+              local title
+              local file = getc(toappui(app),
+                  AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
+              if file == "File" then title = "Hide"
+              elseif file == localizedString('File', {
+                locale = 'zh_CN',
+                localeFile = 'MenuCommands',
+                framework = "AppKit.framework",
+              }) then title = "不显示"
+              else title = "不顯示" end
+              local hide = getc(menu, AX.MenuItem, title)
+              if hide then leftClickAndRestore(hide, app:name()) end
+            end
+          end)
         end
       end
     },
     ["showChatProfile"] = {
       message = localizedMessage("Chats.Menu.Profile"),
+      bindCondition = versionLessThan("4"),
       condition = function(app)
         if app:focusedWindow() == nil then return end
         local winUI = towinui(app:focusedWindow())
@@ -3226,7 +3321,25 @@ appHotKeyCallbacks = {
       end
     },
     ["openInDefaultBrowser"] = {
-      message = localizedMessage("Open in Default Browser"),
+      message = function(app)
+        if versionLessThan("4")(app) then
+          return localizedString("Open in Default Browser", app:bundleID())
+        else
+          local file = getc(toappui(app),
+              AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
+          if file == "File" then
+            return "Open in Default Browser"
+          elseif file == localizedString('File', {
+            locale = 'zh_CN',
+            localeFile = 'MenuCommands',
+            framework = "AppKit.framework",
+          }) then
+            return "用默认浏览器打开"
+          else
+            return "使用預設瀏覽器開啟"
+          end
+        end
+      end,
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
