@@ -3338,7 +3338,8 @@ end
 -- should be use when localizing / delocalizing menu bar items
 -- and delocalizing menu items whose keybindings contain 'fn'
 function localizeCommonMenuItemTitles(locale, appid)
-  if locale == 'en' or locale:find('en_') or locale == 'English' then
+  if locale == 'en' or locale == 'English'
+      or locale:sub(1, 3) == 'en-' or locale:sub(1, 3) == 'en_' then
     return
   end
   if locale == SYSTEM_LOCALE and appid ~= nil then return end
