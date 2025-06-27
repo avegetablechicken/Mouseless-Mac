@@ -3676,17 +3676,14 @@ function displayName(app)
   end
   if exists(resourceDir .. '/InfoPlist.loctable') then
     appname = localizeByLoctable('CFBundleDisplayName',
-        resourceDir, 'InfoPlist', locale)
-    if appname == nil then
-      appname = localizeByLoctable('CFBundleName',
-          resourceDir, 'InfoPlist', locale)
-    end
+                                 resourceDir, 'InfoPlist', locale)
+        or localizeByLoctable('CFBundleName',
+                              resourceDir, 'InfoPlist', locale)
   else
     local localeDir = resourceDir .. "/" .. locale .. ".lproj"
     if exists(localeDir .. '/InfoPlist.strings') then
       jsonDict = parseStringsFile(localeDir .. '/InfoPlist.strings')
-      appname = jsonDict['CFBundleDisplayName']
-      if appname == nil then appname = jsonDict['CFBundleyName'] end
+      appname = jsonDict['CFBundleDisplayName'] or jsonDict['CFBundleyName']
     end
   end
 
