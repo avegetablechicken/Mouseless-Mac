@@ -451,7 +451,7 @@ local function loadAppHotkeys(t, showOrSearch)
         if (frontWin ~= nil and activeApp:focusedWindow() ~= nil
             and frontWin:application():bundleID() ~= activeApp:bundleID())
             or (frontWin ~= nil and activeApp:focusedWindow() == nil
-            and WindowCreatedSince[frontWin:id()]) then
+            and WindowCreatedSinceApp[frontWin:id()]) then
           hotkey.valid = false
         end
         if hotkey.valid and tfind(t, function(hk)

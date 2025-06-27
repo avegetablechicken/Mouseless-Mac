@@ -5841,11 +5841,16 @@ local function unregisterRunningAppHotKeys(appid)
   runningAppHotKeys[appid] = nil
 end
 
--- record windows created and alive since last app switch
--- most of time key strokes should be sent to the frontmost window
--- instead of the frontmost app, unless the app has no window while
--- the frontmost window was created before this app activates
-WindowCreatedSince = {}
+-- record windows created and alive since last app switch or creation
+-- of a non-frontmost window belonging to a daemon application
+-- below are two situations that these records make difference:
+-- 1. most of time key strokes should be sent to the frontmost window
+--    instead of the frontmost app, unless the app has no window while
+--    the frontmost window was created before this app activates
+-- 2. keystrokes are bound to a non-frontmost window, so the frontmost
+--    window created before the targeted window are ignored too
+WindowCreatedSinceApp = {}
+WindowCreatedSinceWindow = nil
 WindowCreatedSinceWatcher = hs.window.filter.new(true):subscribe({
   hs.window.filter.windowCreated,
   hs.window.filter.windowDestroyed,
@@ -5857,12 +5862,18 @@ function(win, appname, eventType)
     return
   end
   if eventType == hs.window.filter.windowCreated then
-    WindowCreatedSince[win:id()] = win:application():bundleID()
+    WindowCreatedSinceApp[win:id()] = win:application():bundleID()
+    if WindowCreatedSinceWindow then
+      WindowCreatedSinceWindow[win:id()] = win:application():bundleID()
+    end
   else
-    for wid, appid in pairs(WindowCreatedSince) do
+    for wid, appid in pairs(WindowCreatedSinceApp) do
       if hs.window.get(wid) == nil
           or hs.window.get(wid):application():bundleID() ~= appid then
-        WindowCreatedSince[wid] = nil
+        WindowCreatedSinceApp[wid] = nil
+        if WindowCreatedSinceWindow then
+          WindowCreatedSinceWindow[wid] = nil
+        end
       end
     end
   end
@@ -5880,7 +5891,7 @@ local function resendToFrontmostWindow(cond, nonFrontmost)
     end
     local frontWin = hs.window.frontmostWindow()
     if nonFrontmost then
-      if frontWin ~= nil and WindowCreatedSince[frontWin:id()] then
+      if frontWin ~= nil and WindowCreatedSinceWindow[frontWin:id()] then
         return false, CF.notFrontmostWindow
       end
     else
@@ -5888,7 +5899,7 @@ local function resendToFrontmostWindow(cond, nonFrontmost)
         and frontWin:application():bundleID() ~= app:bundleID() then
         return false, CF.notFrontmostWindow
       elseif app:focusedWindow() == nil and frontWin ~= nil
-          and WindowCreatedSince[frontWin:id()] then
+          and WindowCreatedSinceApp[frontWin:id()] then
         return false, CF.notFrontmostWindow
       end
     end
@@ -6610,6 +6621,9 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
         config.background = true
         if keybinding.nonFrontmost ~= nil then
           config.nonFrontmost = keybinding.nonFrontmost
+          if WindowCreatedSinceWindow == nil then
+            WindowCreatedSinceWindow = {}
+          end
         end
         config.repeatedfn = config.repeatable and cfg.fn or nil
         local hotkey = WinBind(win, config)
@@ -6630,6 +6644,7 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
                 daemonAppFocusedWindowHotkeys[appid] = nil
               end
             end
+            WindowCreatedSinceWindow = nil
             obs:stop()
             obs = nil
           end
@@ -8468,7 +8483,7 @@ function App_applicationCallback(appname, eventType, app)
       proc(app)
     end
   elseif eventType == hs.application.watcher.activated then
-    WindowCreatedSince = {}
+    WindowCreatedSinceApp = {}
     if appid == nil then return end
     if RemoteDesktopObserver ~= nil then
       if FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] ~= nil then
