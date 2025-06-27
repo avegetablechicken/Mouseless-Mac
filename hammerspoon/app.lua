@@ -5946,7 +5946,9 @@ local function disableConditionInChain(appid, hotkey, delete)
     else
       local chain = (hotkey.kind == HK.IN_WIN or hotkey.kind == HK.MENUBAR)
           and DaemonAppConditionChain or ActivatedAppConditionChain
-      chain[appid][hotkey.idx] = hotkey.chainedCond.previous
+      if chain[appid] then
+        chain[appid][hotkey.idx] = hotkey.chainedCond.previous
+      end
     end
   end
 end
