@@ -6654,7 +6654,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
   local appUI = toappui(app)
   local observer = uiobserver.new(app:pid())
   observer:addWatcher(appUI, uinotifications.windowCreated)
-  if type(filter) == 'table' and filter.allowPopover then
+  if type(filter) == 'table' and filter.allowSheet then
     observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
   end
   if type(filter) == 'table' and filter.allowPopover then
@@ -6662,11 +6662,11 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
   end
   observer:callback(function(_, element, notification)
     if notification == uinotifications.focusedWindowChanged
-        and element.AXRole ~= AX.Popover then
+        and element.AXRole ~= AX.Sheet then
       return
     end
     if notification == uinotifications.focusedUIElementChanged
-        and element.AXRole ~= AX.Sheet then
+        and element.AXRole ~= AX.Popover then
       return
     end
     registerDaemonAppInWinHotkeys(element, appid, filter)
