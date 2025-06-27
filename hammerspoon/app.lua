@@ -6669,6 +6669,12 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
         and element.AXRole ~= AX.Popover then
       return
     end
+    local win = element:asHSWindow()
+    if win then
+      local windowFilter = hs.window.filter.new(false):setAppFilter(
+          app:name(), filter)
+      if not windowFilter:isWindowAllowed(win) then return end
+    end
     registerDaemonAppInWinHotkeys(element, appid, filter)
   end)
   observer:start()
