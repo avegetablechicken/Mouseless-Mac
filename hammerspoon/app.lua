@@ -6565,8 +6565,13 @@ end
 -- the window is frontmost unless specified "nonFrontmost"
 local daemonAppFocusedWindowHotkeys = {}
 DaemonAppFocusedWindowObservers = {}
-local function registerDaemonAppInWinHotkeys(winUI, appid, filter)
-  local win = winUI:asHSWindow()
+local function registerDaemonAppInWinHotkeys(win, appid, filter)
+  local winUI
+  if win.asHSWindow then
+    winUI = win win = winUI:asHSWindow()
+  else
+    winUI = towinui(win)
+  end
   if daemonAppFocusedWindowHotkeys[appid] == nil then
     daemonAppFocusedWindowHotkeys[appid] = {}
   end
