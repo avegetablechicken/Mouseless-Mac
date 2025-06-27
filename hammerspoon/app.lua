@@ -6498,11 +6498,11 @@ local function registerSingleWinFilterForApp(app, filter)
     observer:addWatcher(towinui(win), uinotifications.titleChanged)
   end
   observer:callback(function(_, element, notification)
+    win = app:focusedWindow()
     if notification == uinotifications.focusedUIElementChanged
-        and element.AXRole ~= AX.Popover then
+        and win:role() ~= AX.Popover then
       return
     end
-    win = app:focusedWindow()
     if notification == uinotifications.focusedWindowChanged
         and win ~= nil and (type(filter) == 'table'
             and (filter.allowTitles or filter.rejectTitles)) then
@@ -6665,9 +6665,12 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
         and element.AXRole ~= AX.Sheet then
       return
     end
-    if notification == uinotifications.focusedUIElementChanged
-        and element.AXRole ~= AX.Popover then
-      return
+    if notification == uinotifications.focusedUIElementChanged then
+      local elem = element
+      while elem and elem.AXRole ~= AX.Popover do
+        elem = elem.AXParent
+      end
+      if elem == nil then return end
     end
     local win = element:asHSWindow()
     if win then
