@@ -7687,8 +7687,9 @@ end
 appsWatchMenuBarItems = get(ApplicationConfigs,
     "menuBarItems", 'changing') or {}
 local appsMenuBarItemTitlesString = {}
+local appsWinMenuBarItemTitlesString = {}
 
-local function getMenuBarItemTitlesString(app, menuBarItems)
+local function getMenuBarItemTitlesStringImpl(app, menuBarItems)
   if menuBarItems == nil then
     menuBarItems = getMenuBarItems(app)
   end
@@ -7700,19 +7701,42 @@ local function getMenuBarItemTitlesString(app, menuBarItems)
   return table.concat(menuBarItemTitles, "|")
 end
 
+local function getMenuBarItemTitlesString(app, menuBarItems)
+  local appMenuBarStr = getMenuBarItemTitlesStringImpl(app, menuBarItems)
+  local winMenuBarStr
+  if app:focusedWindow() ~= nil then
+    local winUI = towinui(app:focusedWindow())
+    if #getc(winUI, AX.MenuBar) > 0 then
+      local winMenuBarItems = getc(winUI, AX.MenuBar, 1, AX.Menu)
+      if #winMenuBarItems == 0 then
+        winMenuBarItems = getc(winUI, AX.MenuBar, 1, AX.MenuBar)
+      end
+      winMenuBarStr = getMenuBarItemTitlesStringImpl(app, winMenuBarItems)
+    end
+  end
+  return appMenuBarStr, winMenuBarStr
+end
+
 local function watchMenuBarItems(app, menuBarItems)
   local appid = app:bundleID()
-  appsMenuBarItemTitlesString[appid] = getMenuBarItemTitlesString(app, menuBarItems)
+  appsMenuBarItemTitlesString[appid], appsWinMenuBarItemTitlesString[appid]
+      = getMenuBarItemTitlesString(app, menuBarItems)
   local watcher = ExecContinuously(function()
     local app = find(appid)
     if app == nil then return end
-    local menuBarItemTitlesString = getMenuBarItemTitlesString(app)
+    local menuBarItemTitlesString, winMenuBarItemTitlesString
+        = getMenuBarItemTitlesString(app)
+    -- assume menu mars of app & window don't change at the same time
     if menuBarItemTitlesString ~= appsMenuBarItemTitlesString[appid] then
       appsMenuBarItemTitlesString[appid] = menuBarItemTitlesString
       altMenuBarItem(app)
       remapPreviousTab(app)
       registerOpenRecent(app)
       registerZoomHotkeys(app)
+    end
+    if winMenuBarItemTitlesString ~= appsWinMenuBarItemTitlesString[appid] then
+      appsWinMenuBarItemTitlesString[appid] = winMenuBarItemTitlesString
+      altMenuBarItem(app)
     end
   end)
   execOnDeactivated(appid, function()
@@ -7736,8 +7760,12 @@ end
 
 local function appMenuBarChangeCallback(app)
   local appid = app:bundleID()
-  local menuBarItemStr = getMenuBarItemTitlesString(app)
+  local menuBarItemStr, winMenuBarItemStr = getMenuBarItemTitlesString(app)
   if menuBarItemStr == appsMenuBarItemTitlesString[appid] then
+    if winMenuBarItemStr ~= appsWinMenuBarItemTitlesString[appid] then
+      appsWinMenuBarItemTitlesString[appid] = winMenuBarItemStr
+      altMenuBarItem(app)
+    end
     return
   end
   appsMenuBarItemTitlesString[appid] = menuBarItemStr
@@ -7775,7 +7803,8 @@ local function registerObserverForMenuBarChange(app, menuBarItems)
     return
   end
 
-  appsMenuBarItemTitlesString[appid] = getMenuBarItemTitlesString(app, menuBarItems)
+  appsMenuBarItemTitlesString[appid], appsWinMenuBarItemTitlesString[appid]
+      = getMenuBarItemTitlesString(app, menuBarItems)
 
   local observer
   observer = uiobserver.new(app:pid())
