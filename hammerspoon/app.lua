@@ -7452,13 +7452,6 @@ local function altMenuBarItem(app, menuBarItems, reinvokeKey)
   if appid ~= hs.application.frontmostApplication():bundleID() then
     return
   end
-  if appid == "com.valvesoftware.steam.helper" then
-    appid = "com.valvesoftware.steam"
-    app = find(appid)
-    if app == nil then return end
-    menuBarItems = getMenuBarItems(app)
-  end
-
   local enableIndex = get(KeybindingConfigs.hotkeys,
       "menubar", "index", "enable")
   local enableLetter = get(KeybindingConfigs.hotkeys,
@@ -7471,6 +7464,13 @@ local function altMenuBarItem(app, menuBarItems, reinvokeKey)
     enableLetter = false
   end
   if enableIndex == false and enableLetter == false then return end
+
+  if appid == "com.valvesoftware.steam.helper" then
+    appid = "com.valvesoftware.steam"
+    app = find(appid)
+    if app == nil then return end
+    menuBarItems = getMenuBarItems(app)
+  end
 
   local menuBarItemTitles
   local useWindowMenuBar
