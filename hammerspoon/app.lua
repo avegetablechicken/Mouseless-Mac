@@ -3470,8 +3470,7 @@ appHotKeyCallbacks = {
       fn = function(app)
         -- in early version of macOS there was a duplicated menu bar item '文件'
         -- which does not have menu items. So we have to manually filter it out
-        local appUI = toappui(app)
-        local menuBarItems = getc(appUI, AX.MenuBar, 1,AX.MenuBarItem)
+        local menuBarItems = getMenuBarItems(app)
         local menuBarItem = tfind(menuBarItems, function(item)
           return #item > 0 and item.AXTitle == '文件'
         end)
@@ -7488,6 +7487,7 @@ local function altMenuBarItem(app, menuBarItems, reinvokeKey)
           return item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "")
         end)
         tinsert(menuBarItemTitles, 1, app:name())
+        menuBarItems = menus
       end
     end
   end
@@ -7504,13 +7504,13 @@ local function altMenuBarItem(app, menuBarItems, reinvokeKey)
         if item.AXTitle == app:name() then
           -- ordinary menu bar item share the same title with app menu
           -- e.t.c. "Barrier" menu in `Barrier`
-          menuBarItemActualIndices[item.AXTitle] = i + 1
+          menuBarItemActualIndices[item.AXTitle] = i
         elseif itemDict[item.AXTitle].AXChildren == nil then
           -- two ordinary menu bar items share the same title, but the former is invalid
           -- e.t.c. two "File" menus in `QQLive`
           local idx = tindex(menuBarItemTitles, item.AXTitle)
           tremove(menuBarItemTitles, idx)
-          menuBarItemActualIndices[item.AXTitle] = i + 1
+          menuBarItemActualIndices[item.AXTitle] = i
         elseif item.AXChildren == nil then
           -- two ordinary menu bar items share the same title, but the latter is invalid
           goto CHECK_MENU_ITEM_CONTINUE
@@ -7535,33 +7535,27 @@ local function altMenuBarItem(app, menuBarItems, reinvokeKey)
   local clickMenuCallback
   if useWindowMenuBar then
     clickMenuCallback = function(title, k)
-      local winUI = towinui(app:focusedWindow())
-      local menus = getc(winUI, AX.MenuBar, 1, AX.Menu)
-      if menus == nil or #menus == 0 then
-        menus = getc(winUI, AX.MenuBar, 1, AX.MenuBar)
-      end
-      local menu = tfind(menus or {}, function(item)
+      local menuBarItem = tfind(menuBarItems, function(item)
         return item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "") == title
       end)
-      if menu == nil then
+      if menuBarItem == nil then
         processInvalidAltMenu(app, k)
         return
       end
-      local actionNames = menu:actionNames()
+      local actionNames = menuBarItem:actionNames()
       if actionNames ~= nil and tcontain(actionNames, AX.Pick) then
-        menu:performAction(AX.Pick)
+        menuBarItem:performAction(AX.Pick)
       elseif actionNames ~= nil and tcontain(actionNames, AX.Press) then
-        press(menu)
+        press(menuBarItem)
       else
-        leftClick(menu, app:name())
+        leftClick(menuBarItem, app:name())
       end
     end
   else
     clickMenuCallback = function(title, k)
       local index = menuBarItemActualIndices[title]
       if index then
-        local appUI = toappui(app)
-        local menubarItem = getc(appUI, AX.MenuBar, 1, AX.MenuBarItem, index)
+        local menubarItem = menuBarItems[index]
         if menubarItem then
           press(menubarItem)
           return

@@ -3270,10 +3270,8 @@ end
 
 electronLocale = function(appid, localesPath)
   local app = find(appid)
-  local appUI = toappui(app)
-  local menubar = getc(appUI, AX.MenuBar, 1, AX.MenuBarItem)
-  if menubar == nil or #menubar < 3 then return end
-  tremove(menubar, 1)
+  local menubar = getMenuBarItems(app)
+  if #menubar < 2 then return end
   tremove(menubar, 1)
   local item = tfind(menubar, function(item)
     return delocMap.common[item.AXTitle] == nil
@@ -3302,10 +3300,8 @@ end
 
 javaLocale = function(appid, javahome, localesPath)
   local app = find(appid)
-  local appUI = toappui(app)
-  local menubar = getc(appUI, AX.MenuBar, 1, AX.MenuBarItem)
-  if menubar == nil or #menubar < 3 then return end
-  tremove(menubar, 1)
+  local menubar = getMenuBarItems(app)
+  if #menubar < 2 then return end
   tremove(menubar, 1)
   local item = tfind(menubar, function(item)
     return delocMap.common[item.AXTitle] == nil
