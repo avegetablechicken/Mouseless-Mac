@@ -76,10 +76,13 @@ function menuBarVisible()
   return elem.AXRole == AX.MenuBar
 end
 
-function getMenuBarItems(app, ignoreAppMenu)
-  if ignoreAppMenu == nil then ignoreAppMenu = true end
+function getMenuBarItems(app, ignoreAppMenu, ignoreAppleMenu)
+  if ignoreAppleMenu == nil then ignoreAppleMenu = true end
   local menuBarItems = getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem) or {}
-  if ignoreAppMenu and #menuBarItems > 0 then
+  if ignoreAppMenu and #menuBarItems > 1 then
+    tremove(menuBarItems, 2)
+  end
+  if ignoreAppleMenu and #menuBarItems > 0 then
     tremove(menuBarItems, 1)
   end
   return menuBarItems
@@ -2097,8 +2100,7 @@ local function localizedStringImpl(str, appid, params, force)
   if resourceDir == nil then return nil end
   if framework.chromium then
     if find(appid) then
-      local menuBarItems = getMenuBarItems(find(appid))
-      tremove(menuBarItems, 1)
+      local menuBarItems = getMenuBarItems(find(appid), true)
       if menuBarItems ~= nil then
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
           if tfind(menuBarItems,
@@ -3090,9 +3092,8 @@ local function delocalizedStringImpl(str, appid, params, force)
   if resourceDir == nil then return nil end
   if framework.chromium then
     if find(appid) then
-      local menuBarItems = getMenuBarItems(find(appid))
+      local menuBarItems = getMenuBarItems(find(appid), true)
       if menuBarItems ~= nil then
-        tremove(menuBarItems, 1)
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
           if tfind(menuBarItems,
               function(item)
@@ -3270,9 +3271,8 @@ end
 
 electronLocale = function(appid, localesPath)
   local app = find(appid)
-  local menubar = getMenuBarItems(app)
-  if #menubar < 2 then return end
-  tremove(menubar, 1)
+  local menubar = getMenuBarItems(app, true)
+  if #menubar == 0 then return end
   local item = tfind(menubar, function(item)
     return delocMap.common[item.AXTitle] == nil
         and tindex(delocMap.common, item.AXTitle) == nil
@@ -3300,9 +3300,8 @@ end
 
 javaLocale = function(appid, javahome, localesPath)
   local app = find(appid)
-  local menubar = getMenuBarItems(app)
-  if #menubar < 2 then return end
-  tremove(menubar, 1)
+  local menubar = getMenuBarItems(app, true)
+  if #menubar == 0 then return end
   local item = tfind(menubar, function(item)
     return delocMap.common[item.AXTitle] == nil
         and tindex(delocMap.common, item.AXTitle) == nil

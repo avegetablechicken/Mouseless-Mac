@@ -1469,7 +1469,7 @@ local CF = {
 local function noSelectedMenuBarItemFunc(fn)
   return function(obj)
     local app = obj.application ~= nil and obj:application() or obj
-    for i, menuBarItem in ipairs(getMenuBarItems(app, false)) do
+    for i, menuBarItem in ipairs(getMenuBarItems(app, false, false)) do
       if i > 1 and menuBarItem.AXSelected then
         return false, CF.menubarItemSelected
       end

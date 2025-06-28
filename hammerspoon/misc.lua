@@ -635,8 +635,7 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
       if hotkey.kind >= HK.IN_APP then insertIdx = i break end
     end
     local app = hs.application.frontmostApplication()
-    local menuBarItems = getMenuBarItems(app)
-    tremove(menuBarItems, 1)
+    local menuBarItems = getMenuBarItems(app, true)
     for i, item in ipairs(menuBarItems) do
       local entry = tfind(enabledAltMenuHotkeys, function(menuHK)
         return menuHK.msg:sub(-#item.AXTitle-2) == ': ' .. item.AXTitle
@@ -1307,8 +1306,7 @@ function()
       if hotkey.kind >= HK.IN_APP then insertIdx = i break end
     end
     local app = hs.application.frontmostApplication()
-    local menuBarItems = getMenuBarItems(app)
-    tremove(menuBarItems, 1)
+    local menuBarItems = getMenuBarItems(app, true)
     for i, item in ipairs(menuBarItems) do
       local entry = tfind(enabledAltMenuHotkeys, function(menuHK)
         return menuHK.msg:sub(-#item.AXTitle-2) == ': ' .. item.AXTitle
