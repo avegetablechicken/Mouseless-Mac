@@ -2101,7 +2101,7 @@ local function localizedStringImpl(str, appid, params, force)
   if framework.chromium then
     if find(appid) then
       local menuBarItems = getMenuBarItems(find(appid), true)
-      if menuBarItems ~= nil then
+      if #menuBarItems ~= 0 then
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
           if tfind(menuBarItems,
               function(item)
@@ -3093,7 +3093,7 @@ local function delocalizedStringImpl(str, appid, params, force)
   if framework.chromium then
     if find(appid) then
       local menuBarItems = getMenuBarItems(find(appid), true)
-      if menuBarItems ~= nil then
+      if #menuBarItems ~= 0 then
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
           if tfind(menuBarItems,
               function(item)
