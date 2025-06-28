@@ -1038,7 +1038,7 @@ end
 local function parseStringsFile(file, keepOrder, keepAll)
   if keepOrder == nil then keepOrder = true end
   local jsonStr = hs.execute(strfmt("plutil -convert json -o - '%s'", file))
-  local jsonDict = hs.json.decode(jsonStr)
+  local jsonDict = hs.json.decode(jsonStr) or {}
   if keepOrder then return jsonDict end
   local localesDict = {}
   for k, v in pairs(jsonDict) do
