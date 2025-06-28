@@ -7688,7 +7688,7 @@ appsWatchMenuBarItems = get(ApplicationConfigs,
     "menuBarItems", 'changing') or {}
 local appsMenuBarItemTitlesString = {}
 
-local getMenuBarItemTitlesString = function(app, menuBarItems)
+local function getMenuBarItemTitlesString(app, menuBarItems)
   if menuBarItems == nil then
     menuBarItems = getMenuBarItems(app)
   end
