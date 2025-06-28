@@ -7968,7 +7968,7 @@ end
 -- register hotkeys for menu of menubar app
 for appid, _ in pairs(MenuBarMenuObservers) do
   local app = find(appid)
-  for _, menuBarItem in ipairs(getc(toappui(app), AX.MenuBar, -1, AX.MenuBatItem)) do
+  for _, menuBarItem in ipairs(getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)) do
     if menuBarItem.AXSelected then
       registerInMenuHotkeys(app)
     end
