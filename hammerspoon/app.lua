@@ -3769,11 +3769,11 @@ appHotKeyCallbacks = {
       background = true,
       fn = function(app)
         local appUI = toappui(app)
-        local menu = getc(appUI, AX.MenuBar, 2, AX.MenuBarItem, 1, AX.Menu, 1)
+        local menu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1)
         if menu == nil then
           local invoked = clickRightMenuBarItem(app)
           if not invoked then return end
-          menu = getc(appUI, AX.MenuBar, 2, AX.MenuBarItem, 1, AX.Menu, 1)
+          menu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1)
         end
         local start = getc(menu, AX.MenuItem, "Start")
         assert(start)

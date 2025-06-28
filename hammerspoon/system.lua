@@ -1152,7 +1152,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
 
   local locPanel = controlCenterLocalized(panel)
   local index
-  for i, elem in ipairs(getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem)) do
+  for i, elem in ipairs(getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)) do
     if elem.AXDescription and elem.AXDescription:find(locPanel) then
       index = i break
     end
