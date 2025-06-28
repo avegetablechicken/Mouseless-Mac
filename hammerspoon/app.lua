@@ -6088,7 +6088,7 @@ local function wrapConditionChain(app, fn, mode, config)
     local cb = chain[app:bundleID()][hkIdx]
     while cb do
       if cb.enabled then
-        local f = mode == KEY_MODE.PRESS and cb.pressedfn or cb.repeatfn
+        local f = mode == KEY_MODE.PRESS and cb.pressedfn or cb.repeatedfn
         succ, result = f()
         if succ then return end
         menuItemNotFound = menuItemNotFound
