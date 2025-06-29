@@ -7795,11 +7795,8 @@ appsWatchMenuBarItems = get(ApplicationConfigs,
 local appsMenuBarItemTitlesString = {}
 local appsWinMenuBarItemTitlesString = {}
 
-local function getMenuBarItemTitlesStringImpl(app, menuBarItems)
-  if menuBarItems == nil then
-    menuBarItems = getMenuBarItems(app)
-  end
-  if menuBarItems == nil or #menuBarItems == 0 then return "" end
+local function getMenuBarItemTitlesStringImpl(menuBarItems)
+  if #menuBarItems == 0 then return "" end
   local menuBarItemTitles = {}
   for _, item in ipairs(menuBarItems) do
     tinsert(menuBarItemTitles, item.AXTitle)
@@ -7808,7 +7805,10 @@ local function getMenuBarItemTitlesStringImpl(app, menuBarItems)
 end
 
 local function getMenuBarItemTitlesString(app, menuBarItems)
-  local appMenuBarStr = getMenuBarItemTitlesStringImpl(app, menuBarItems)
+  if menuBarItems == nil then
+    menuBarItems = getMenuBarItems(app)
+  end
+  local appMenuBarStr = getMenuBarItemTitlesStringImpl(menuBarItems)
   local winMenuBarStr
   if app:focusedWindow() ~= nil then
     local winUI = towinui(app:focusedWindow())
@@ -7817,7 +7817,7 @@ local function getMenuBarItemTitlesString(app, menuBarItems)
       if #winMenuBarItems == 0 then
         winMenuBarItems = getc(winUI, AX.MenuBar, 1, AX.MenuBar)
       end
-      winMenuBarStr = getMenuBarItemTitlesStringImpl(app, winMenuBarItems)
+      winMenuBarStr = getMenuBarItemTitlesStringImpl(winMenuBarItems)
     end
   end
   return appMenuBarStr, winMenuBarStr
