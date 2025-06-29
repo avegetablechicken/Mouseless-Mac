@@ -7544,7 +7544,7 @@ local function processInvalidAltMenu(app, reinvokeKey)
   hs.json.write(json, appsMayChangeMenuBarTmpFile, false, true)
 end
 
-local function altMenuBarItem(app, menuBarItems, reinvokeKey)
+local function altMenuBarItem(app, reinvokeKey)
   -- delete previous hotkeys
   for _, hotkey in ipairs(altMenuBarItemHotkeys) do
     hotkey:delete()
@@ -7575,10 +7575,9 @@ local function altMenuBarItem(app, menuBarItems, reinvokeKey)
     appid = "com.valvesoftware.steam"
     app = find(appid)
     if app == nil then return end
-    menuBarItems = getMenuBarItems(app)
   end
 
-  local menuBarItemTitles
+  local menuBarItems, menuBarItemTitles
   local useWindowMenuBar
   if app:focusedWindow() ~= nil then
     local winUI = towinui(app:focusedWindow())
@@ -7599,9 +7598,7 @@ local function altMenuBarItem(app, menuBarItems, reinvokeKey)
   end
   local menuBarItemActualIndices = {}
   if menuBarItemTitles == nil then
-    if menuBarItems == nil then
-      menuBarItems = getMenuBarItems(app)
-    end
+    menuBarItems = getMenuBarItems(app)
     if #menuBarItems == 0 then return end
     local itemDict = {}
     menuBarItemTitles = {}
@@ -7804,10 +7801,8 @@ local function getMenuBarItemTitlesStringImpl(menuBarItems)
   return table.concat(menuBarItemTitles, "|")
 end
 
-local function getMenuBarItemTitlesString(app, menuBarItems)
-  if menuBarItems == nil then
-    menuBarItems = getMenuBarItems(app)
-  end
+local function getMenuBarItemTitlesString(app)
+  local menuBarItems = getMenuBarItems(app)
   local appMenuBarStr = getMenuBarItemTitlesStringImpl(menuBarItems)
   local winMenuBarStr
   if app:focusedWindow() ~= nil then
@@ -7823,10 +7818,10 @@ local function getMenuBarItemTitlesString(app, menuBarItems)
   return appMenuBarStr, winMenuBarStr
 end
 
-local function watchMenuBarItems(app, menuBarItems)
+local function watchMenuBarItems(app)
   local appid = app:bundleID()
   appsMenuBarItemTitlesString[appid], appsWinMenuBarItemTitlesString[appid]
-      = getMenuBarItemTitlesString(app, menuBarItems)
+      = getMenuBarItemTitlesString(app)
   local watcher = ExecContinuously(function()
     local app = find(appid)
     if app == nil then return end
@@ -7894,15 +7889,12 @@ local function appMenuBarChangeCallback(app)
   end)
 end
 
-local function registerObserverForMenuBarChange(app, menuBarItems)
+local function registerObserverForMenuBarChange(app)
   local appid = app:bundleID()
   if appid == nil then return end
-  if menuBarItems == nil then
-    menuBarItems = getMenuBarItems(app)
-  end
 
   if tcontain(appsWatchMenuBarItems, appid) then
-    watchMenuBarItems(app, menuBarItems)
+    watchMenuBarItems(app)
   end
 
   if not tcontain(appsMayChangeMenuBar, appid) then
@@ -7910,7 +7902,7 @@ local function registerObserverForMenuBarChange(app, menuBarItems)
   end
 
   appsMenuBarItemTitlesString[appid], appsWinMenuBarItemTitlesString[appid]
-      = getMenuBarItemTitlesString(app, menuBarItems)
+      = getMenuBarItemTitlesString(app)
 
   local observer
   observer = uiobserver.new(app:pid())
@@ -7956,7 +7948,7 @@ onLaunchedAndActivated = function(app, reinvokeKey)
   local menuBarItems = getMenuBarItems(app)
   local localeUpdated = updateAppLocale(app)
   local menuBarChanged = reinvokeKey ~= nil
-  altMenuBarItem(app, menuBarItems, reinvokeKey)
+  altMenuBarItem(app, reinvokeKey)
   if localeUpdated or menuBarChanged then
     unregisterInAppHotKeys(app, true)
     if not APPWIN_HOTKEY_ON_WINDOW_FOCUS then
@@ -7973,7 +7965,7 @@ onLaunchedAndActivated = function(app, reinvokeKey)
   remapPreviousTab(app)
   registerOpenRecent(app)
   registerZoomHotkeys(app)
-  registerObserverForMenuBarChange(app, menuBarItems)
+  registerObserverForMenuBarChange(app)
 
   if HSKeybindings ~= nil and HSKeybindings.isShowing then
     local validOnly = HSKeybindings.validOnly
