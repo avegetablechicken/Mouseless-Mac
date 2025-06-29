@@ -7602,7 +7602,7 @@ local function altMenuBarItem(app, menuBarItems, reinvokeKey)
     if menuBarItems == nil then
       menuBarItems = getMenuBarItems(app)
     end
-    if menuBarItems == nil then return end
+    if #menuBarItems == 0 then return end
     local itemDict = {}
     menuBarItemTitles = {}
     for i, item in ipairs(menuBarItems) do
