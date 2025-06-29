@@ -3127,7 +3127,7 @@ appHotKeyCallbacks = {
           -- CEF Window
           local exBundleID = "com.tencent.flue.WeChatAppEx"
           local menuItemPath = {
-            localizedMenuBarItem('File', appid),
+            localizedMenuBarItem('File', exBundleID),
             localizedString('Back', exBundleID)
           }
           if #menuItemPath == 2 then
@@ -3161,7 +3161,7 @@ appHotKeyCallbacks = {
         -- CEF Window
         local exBundleID = "com.tencent.xinWeChat.WeChatAppEx"
         local menuItemPath = {
-          localizedMenuBarItem('File', appid),
+          localizedMenuBarItem('File', exBundleID),
           localizedString('Back', exBundleID)
         }
         if #menuItemPath == 2 then
