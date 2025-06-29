@@ -450,9 +450,8 @@ function getResourceDir(appid, frameworkName)
     local frameworkDir
     if exists(frameworkName) then
       frameworkDir = frameworkName
-    else
-      if appContentPath ~= nil
-          and exists(appContentPath .. "/Resources/app.asar") then
+    elseif appContentPath ~= nil then
+      if exists(appContentPath .. "/Resources/app.asar") then
         resourceDir = appContentPath .. "/Resources"
         framework.electron = frameworkName
         goto END_GET_RESOURCE_DIR
@@ -495,19 +494,19 @@ function getResourceDir(appid, frameworkName)
       frameworkDir = hs.execute(strfmt([[
         find '%s' -type d -name '%s' | head -n 1 | tr -d '\n'
       ]], appContentPath, frameworkName))
-      if frameworkDir == "" then
-        for _, searchDir in ipairs {
-          '/System/Library/Frameworks',
-          '/System/Library/PrivateFrameworks',
-          '/System/iOSSupport/System/Library/PrivateFrameworks',
-        } do
-          if exists(searchDir .. '/' .. frameworkName) then
-            frameworkDir = searchDir .. '/' .. frameworkName
-            break
-          end
+    end
+    if frameworkDir == nil or frameworkDir == "" then
+      for _, searchDir in ipairs {
+        '/System/Library/Frameworks',
+        '/System/Library/PrivateFrameworks',
+        '/System/iOSSupport/System/Library/PrivateFrameworks',
+      } do
+        if exists(searchDir .. '/' .. frameworkName) then
+          frameworkDir = searchDir .. '/' .. frameworkName
+          break
         end
       end
-      if frameworkDir == "" then return nil, {} end
+      if frameworkDir == nil or frameworkDir == "" then return nil, {} end
     end
     if not exists(frameworkDir .. "/Contents") then
       resourceDir = frameworkDir .. "/Resources"
