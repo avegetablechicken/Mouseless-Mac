@@ -510,4 +510,4 @@ require "fs"
 -- miscellaneous function
 require "misc"
 
-print(strfmt("-- Loading time: %f ms", (hs.timer.absoluteTime() - t) / 1000000))
+print(strfmt("-- Loading time: %d ms", (hs.timer.absoluteTime() - t) // 1000000))
