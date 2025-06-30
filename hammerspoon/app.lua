@@ -7264,7 +7264,7 @@ local function registerForOpenSavePanel(app)
   openSavePanelHotkeys = {}
 
   local appid = app:bundleID()
-  if appid == "com.apple.finder" then return end
+  if appid == "com.apple.finder" or appid == "com.apple.dock" then return end
   local appUI = toappui(app)
   if not appUI:isValid() then
     hs.timer.doAfter(0.1, function() registerForOpenSavePanel(app) end)
