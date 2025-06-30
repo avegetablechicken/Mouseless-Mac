@@ -333,6 +333,23 @@ function quit(hint)
   return false
 end
 
+function applicationVersion(appid)
+  local appPath = hs.application.pathForBundleID(appid)
+  local version = hs.execute(strfmt(
+    "mdls -r -name kMDItemVersion '%s'", appPath))
+  version = strsplit(version, "%.")
+  local major, minor, patch
+  major = tonumber(version[1]:match("%d+"))
+  if major == nil then
+    version = hs.application.infoForBundleID(appid).CFBundleShortVersionString
+    version = strsplit(version, "%.")
+    major = tonumber(version[1]:match("%d+"))
+  end
+  minor = #version > 1 and tonumber(version[2]:match("%d+")) or 0
+  patch = #version > 2 and tonumber(version[3]:match("%d+")) or 0
+  return major, minor, patch
+end
+
 local localeTmpDir = hs.fs.temporaryDirectory()
     .. 'org.hammerspoon.Hammerspoon/locale/'
 
