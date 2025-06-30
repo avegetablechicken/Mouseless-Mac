@@ -401,19 +401,22 @@ local electronLocale, javaLocale
 function applicationLocale(appid)
   -- locale of apps whose localization is enabled by Electron or Java
   -- cannot be aquired by "defaults" command
-  if localizationFrameworks[appid] ~= nil and find(appid) then
-    local appContentPath = hs.application.pathForBundleID(appid) .. "/Contents"
-    if exists(appContentPath .. "/Resources/app.asar") then
-      local locale = electronLocale(appid, localizationFrameworks[appid])
-      if locale ~= nil then return locale end
-    else
-      local jimage, status = hs.execute(strfmt([[
-        find '%s' -type f -name jimage | tr -d '\n'
-      ]], appContentPath))
-      if status and jimage ~= "" then
-        resourceDir = jimage:sub(1, #jimage - #'/bin/jimage')
-        local locale = javaLocale(appid, resourceDir, localizationFrameworks[appid])
+  if localizationFrameworks[appid] ~= nil then
+    local app = find(appid)
+    if app then
+      local appContentPath = hs.application.pathForBundleID(appid) .. "/Contents"
+      if exists(appContentPath .. "/Resources/app.asar") then
+        local locale = electronLocale(app, localizationFrameworks[appid])
         if locale ~= nil then return locale end
+      else
+        local jimage, status = hs.execute(strfmt([[
+          find '%s' -type f -name jimage | tr -d '\n'
+        ]], appContentPath))
+        if status and jimage ~= "" then
+          resourceDir = jimage:sub(1, #jimage - #'/bin/jimage')
+          local locale = javaLocale(app, resourceDir, localizationFrameworks[appid])
+          if locale ~= nil then return locale end
+        end
       end
     end
   end
@@ -3278,8 +3281,8 @@ function delocalizedString(str, appid, params, force)
   return result
 end
 
-electronLocale = function(appid, localesPath)
-  local app = find(appid)
+electronLocale = function(app, localesPath)
+  local appid = app:bundleID()
   local menubar = getMenuBarItems(app, true)
   if #menubar == 0 then return end
   local item = tfind(menubar, function(item)
@@ -3307,8 +3310,8 @@ electronLocale = function(appid, localesPath)
   end
 end
 
-javaLocale = function(appid, javahome, localesPath)
-  local app = find(appid)
+javaLocale = function(app, javahome, localesPath)
+  local appid = app:bundleID()
   local menubar = getMenuBarItems(app, true)
   if #menubar == 0 then return end
   local item = tfind(menubar, function(item)
