@@ -3707,7 +3707,7 @@ end
 
 -- helpers for click menubar to the right
 
-function leftClick(point, appname)
+function leftClick(point, obj)
   if point.AXPosition ~= nil then
     point = hs.geometry.point {
       point.AXPosition.x + point.AXSize.w / 2,
@@ -3716,23 +3716,27 @@ function leftClick(point, appname)
   elseif point.x == nil then
     point = hs.geometry.point(point)
   end
-  if appname ~= nil then
+  if obj ~= nil then
     local appHere = hs.axuielement.systemElementAtPosition(point)
     while appHere ~= nil and appHere.AXParent ~= nil do
       appHere = appHere.AXParent
     end
-    if appHere and appHere.AXTitle ~= appname then return false end
+    if appHere then
+      local appid = appHere:asHSApplication():bundleID()
+      local targetApp = obj.application and obj:application() or obj
+      if appid ~= targetApp:bundleID() then return false end
+    end
   end
   hs.eventtap.leftClick(point)
   return true
 end
 
-function leftClickAndRestore(point, appname, delay)
-  if type(appname) == 'number' then
-    delay = appname appname = nil
+function leftClickAndRestore(point, obj, delay)
+  if type(obj) == 'number' then
+    delay = obj obj = nil
   end
   local mousePosition = hs.mouse.absolutePosition()
-  if leftClick(point, appname) then
+  if leftClick(point, obj) then
     if delay then
       hs.timer.doAfter(delay, function()
         hs.mouse.absolutePosition(mousePosition)
@@ -3745,7 +3749,7 @@ function leftClickAndRestore(point, appname, delay)
   return false
 end
 
-function rightClick(point, appname)
+function rightClick(point, obj)
   if point.AXPosition ~= nil then
     point = hs.geometry.point {
       point.AXPosition.x + point.AXSize.w / 2,
@@ -3754,23 +3758,27 @@ function rightClick(point, appname)
   elseif point.x == nil then
     point = hs.geometry.point(point)
   end
-  if appname ~= nil then
+  if obj ~= nil then
     local appHere = hs.axuielement.systemElementAtPosition(point)
     while appHere ~= nil and appHere.AXParent ~= nil do
       appHere = appHere.AXParent
     end
-    if appHere and appHere.AXTitle ~= appname then return false end
+    if appHere then
+      local appid = appHere:asHSApplication():bundleID()
+      local targetApp = obj.application and obj:application() or obj
+      if appid ~= targetApp:bundleID() then return false end
+    end
   end
   hs.eventtap.rightClick(point)
   return true
 end
 
-function rightClickAndRestore(point, appname, delay)
-  if type(appname) == 'number' then
-    delay = appname appname = nil
+function rightClickAndRestore(point, obj, delay)
+  if type(obj) == 'number' then
+    delay = obj obj = nil
   end
   local mousePosition = hs.mouse.absolutePosition()
-  if rightClick(point, appname) then
+  if rightClick(point, obj) then
     if delay then
       hs.timer.doAfter(delay, function()
         hs.mouse.absolutePosition(mousePosition)

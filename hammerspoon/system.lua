@@ -1842,8 +1842,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
                 until button ~= nil or totalDelay > 3 or not webarea:isValid()
                 local darkMode = enableds[i] == 1 and "Enabled" or "Disabled"
                 if button.AXValue == darkMode then return end
-                local clicked = leftClickAndRestore(button,
-                    getMenuBarItems(app)[1].AXTitle)
+                local clicked = leftClickAndRestore(button, app)
                 if not clicked then return end
 
                 local menuItem
@@ -1867,7 +1866,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
                     if button == nil then
                       button = getc(webarea, AX.Group, 7, AX.Button, 1)
                     end
-                    leftClickAndRestore(button, getMenuBarItems(app)[1].AXTitle)
+                    leftClickAndRestore(button, app)
                     if hotkey ~= nil then
                       hotkey:delete()
                       hotkey = nil

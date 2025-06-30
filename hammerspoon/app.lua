@@ -988,7 +988,7 @@ local function clickBartenderBarItem(index, rightClick)
           AX.List, 1, AX.Group, itemID, AX.Image, 1)
       if icon ~= nil then
         local fn = rightClick and rightClickAndRestore or leftClickAndRestore
-        fn(icon, win:application():name())
+        fn(icon, win)
       end
     end
   end
@@ -1084,7 +1084,7 @@ local function clickIceBarItem(index)
     local button = getc(towinui(win), AX.Group, 1,
         AX.ScrollArea, 1, AX.Image, index)
     if button then
-      leftClickAndRestore(button, win:application():name(), 0.1)
+      leftClickAndRestore(button, win, 0.1)
     end
   end
 end
@@ -1516,7 +1516,7 @@ local function receivePosition(position, app)
   if app.application ~= nil then
     app = app:application()
   end
-  leftClickAndRestore(position, app:name())
+  leftClickAndRestore(position, app)
 end
 
 -- send key strokes to the app. but if the key binding is found, select corresponding menu item
@@ -1704,7 +1704,7 @@ appHotKeyCallbacks = {
         return true, searchField
       end,
       fn = function(searchField, app)
-        leftClickAndRestore(uioffset(searchField, { 10, 2 }), app:name())
+        leftClickAndRestore(uioffset(searchField, { 10, 2 }), app)
       end
     }
   },
@@ -2322,7 +2322,7 @@ appHotKeyCallbacks = {
           end
         end
         if firstSplitLine == 4 then
-          leftClickAndRestore(groups[1], app:name())
+          leftClickAndRestore(groups[1], app)
         end
         return false
       end,
@@ -2346,9 +2346,7 @@ appHotKeyCallbacks = {
         if firstSplitLine == 4 then return true, groups[3] end
         return false
       end,
-      fn = function(button, app)
-        leftClickAndRestore(button, app:name())
-      end
+      fn = leftClickAndRestore
     },
     ["goToMyCloudDocuments"] = {
       message = localizedMessage("My Cloud Documents"),
@@ -2375,9 +2373,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = function(button, app)
-        leftClickAndRestore(button, app:name())
-      end
+      fn = leftClickAndRestore
     },
     ["goToMyDesktop"] = {
       message = localizedMessage("My Desktop"),
@@ -2406,9 +2402,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = function(button, app)
-        leftClickAndRestore(button, app:name())
-      end
+      fn = leftClickAndRestore
     },
     ["goToDocuments"] = {
       message = localizedMessage("Documents"),
@@ -2437,9 +2431,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = function(button, app)
-        leftClickAndRestore(button, app:name())
-      end
+      fn = leftClickAndRestore
     },
     ["goToDownloads"] = {
       message = localizedMessage("Downloads"),
@@ -2468,9 +2460,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = function(button, app)
-        leftClickAndRestore(button, app:name())
-      end
+      fn = leftClickAndRestore
     },
     ["openFileLocation"] = {
       message = localizedMessage("Open File Location"),
@@ -3202,7 +3192,7 @@ appHotKeyCallbacks = {
         elseif result[1] == 1 then
           press(result[2])
         elseif result[1] == 2 then
-          leftClickAndRestore(result[2], app:name())
+          leftClickAndRestore(result[2], app)
         end
       end
     },
@@ -3279,7 +3269,7 @@ appHotKeyCallbacks = {
               }) then title = "不显示"
               else title = "不顯示" end
               local hide = getc(menu, AX.MenuItem, title)
-              if hide then leftClickAndRestore(hide, app:name()) end
+              if hide then leftClickAndRestore(hide, app) end
             end
           end)
         end
@@ -3349,7 +3339,7 @@ appHotKeyCallbacks = {
       fn = function(app)
         local frame = app:focusedWindow():frame()
         local position = { frame.x + frame.w - 60, frame.y + 23 }
-        leftClickAndRestore(position, app:name())
+        leftClickAndRestore(position, app)
       end
     },
     ["confirm"] = {
@@ -3382,9 +3372,7 @@ appHotKeyCallbacks = {
         local bt = getc(towinui(win), AX.Button, title)
         return bt and bt.AXEnabled, bt
       end,
-      fn = function(button, win)
-        leftClickAndRestore(button, win:application():name())
-      end
+      fn = leftClickAndRestore
     },
     ["send"] = {
       message = function(win)
@@ -3416,9 +3404,7 @@ appHotKeyCallbacks = {
         local bt = getc(towinui(win), AX.Button, title)
         return bt and bt.AXEnabled, bt
       end,
-      fn = function(button, win)
-        leftClickAndRestore(button, win:application():name())
-      end
+      fn = leftClickAndRestore
     }
   },
 
@@ -3447,7 +3433,7 @@ appHotKeyCallbacks = {
       end,
       repeatable = true,
       fn = function(button, app)
-        leftClickAndRestore(button, app:name(), 0.1)
+        leftClickAndRestore(button, app, 0.1)
       end
     },
     ["forward"] = {
@@ -3473,7 +3459,7 @@ appHotKeyCallbacks = {
       end,
       repeatable = true,
       fn = function(button, app)
-        leftClickAndRestore(button, app:name(), 0.1)
+        leftClickAndRestore(button, app, 0.1)
       end
     },
     ["refresh"] = {
@@ -3503,7 +3489,7 @@ appHotKeyCallbacks = {
             refreshButton
       end,
       fn = function(button, app)
-        leftClickAndRestore(button, app:name(), 0.1)
+        leftClickAndRestore(button, app, 0.1)
       end
     },
     ["playBarCloseSingleSong"] = {
@@ -3754,7 +3740,7 @@ appHotKeyCallbacks = {
       condition = confirmButtonValidForAppCleanerUninstaller('Remove'),
       fn = function(position, app)
         -- fixme: false click
-        leftClick(position, app:name())
+        leftClick(position, app)
       end
     },
     ["confirmUpdate"] = {
@@ -3762,7 +3748,7 @@ appHotKeyCallbacks = {
       condition = confirmButtonValidForAppCleanerUninstaller('Update'),
       fn = function(position, app)
         -- fixme: false click
-        leftClick(position, app:name())
+        leftClick(position, app)
       end
     },
     ["confirmRetry"] = {
@@ -3770,7 +3756,7 @@ appHotKeyCallbacks = {
       condition = confirmButtonValidForAppCleanerUninstaller('Retry'),
       fn = function(position, app)
         -- fixme: false click
-        leftClick(position, app:name())
+        leftClick(position, app)
       end
     }
   },
@@ -3808,7 +3794,7 @@ appHotKeyCallbacks = {
       condition = confirmButtonValidForAppCleanerUninstaller('PartialRemove_Remove'),
       fn = function(position, app)
         -- fixme: false click
-        leftClick(position, app:name())
+        leftClick(position, app)
       end
     },
     ["confirmUpdate"] = {
@@ -3816,7 +3802,7 @@ appHotKeyCallbacks = {
       condition = confirmButtonValidForAppCleanerUninstaller('UpdateButtonTitle'),
       fn = function(position, app)
         -- fixme: false click
-        leftClick(position, app:name())
+        leftClick(position, app)
       end
     },
     ["confirmRetry"] = {
@@ -3824,7 +3810,7 @@ appHotKeyCallbacks = {
       condition = confirmButtonValidForAppCleanerUninstaller('PartialRemove_Retry'),
       fn = function(position, app)
         -- fixme: false click
-        leftClick(position, app:name())
+        leftClick(position, app)
       end
     }
   },
@@ -4507,7 +4493,7 @@ appHotKeyCallbacks = {
             end)
           end)
         else
-          leftClickAndRestore(icon, app:name())
+          leftClickAndRestore(icon, app)
         end
       end
     },
@@ -4630,7 +4616,7 @@ appHotKeyCallbacks = {
         local prefString = localizedString('Preferences', app:bundleID())
         local button = getc(menu, AX.MenuItem, 1, AX.Group, 1,
             AX.StaticText, prefString)
-        leftClickAndRestore(button, app:name(), 0.2)
+        leftClickAndRestore(button, app, 0.2)
       end
     }
   },
@@ -4833,7 +4819,7 @@ appHotKeyCallbacks = {
             AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, 2,
             AX.Cell, 1, AX.StaticText, 2)
         assert(field)
-        leftClickAndRestore(field, win:application():name())
+        leftClickAndRestore(field, win)
         clickRightMenuBarItem(win:application())
       end
     },
@@ -4861,7 +4847,7 @@ appHotKeyCallbacks = {
           field = getc(outline, AX.Row, 4, AX.Cell, 1, AX.StaticText, 2)
         end
         assert(field)
-        leftClickAndRestore(field, win:application():name())
+        leftClickAndRestore(field, win)
         clickRightMenuBarItem(win:application())
       end
     },
@@ -5110,8 +5096,7 @@ appHotKeyCallbacks = {
         local winUI = towinui(win)
         local searchField = getc(winUI, AX.TextField, 1)
         if searchField ~= nil then
-          leftClickAndRestore(uioffset(searchField, { 5, 5 }),
-                              win:application():name())
+          leftClickAndRestore(uioffset(searchField, { 5, 5 }), win)
         end
       end
     },
@@ -5455,7 +5440,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          leftClickAndRestore(button, win:application():name())
+          leftClickAndRestore(button, win)
         end
       end
     },
@@ -5484,7 +5469,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          leftClickAndRestore(button, win:application():name())
+          leftClickAndRestore(button, win)
         end
       end
     },
@@ -5513,7 +5498,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          leftClickAndRestore(button, win:application():name())
+          leftClickAndRestore(button, win)
         end
       end
     },
@@ -5542,7 +5527,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          leftClickAndRestore(button, win:application():name())
+          leftClickAndRestore(button, win)
         end
       end
     },
@@ -7356,7 +7341,7 @@ local function registerForOpenSavePanel(app)
                   if row.AXSize.h > 20 then
                     cnt = cnt + 1
                     if cnt == idx then
-                      leftClickAndRestore(row, app:name())
+                      leftClickAndRestore(row, app)
                     end
                   end
                 end
@@ -7616,7 +7601,7 @@ local function altMenuBarItem(app, menuBarItems, reinvokeKey)
       elseif actionNames ~= nil and tcontain(actionNames, AX.Press) then
         press(menuBarItem)
       else
-        leftClick(menuBarItem, app:name())
+        leftClick(menuBarItem, app)
       end
     end
   else
