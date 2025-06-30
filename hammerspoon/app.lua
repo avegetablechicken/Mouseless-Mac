@@ -1512,7 +1512,7 @@ end
 
 -- click the position returned by the condition
 -- work as hotkey callback
-local function receivePosition(position, app)
+local function click(position, app)
   if app.application ~= nil then
     app = app:application()
   end
@@ -1703,7 +1703,7 @@ appHotKeyCallbacks = {
         if searchField == nil then return false end
         return true, uioffset(searchField, { 10, 2 })
       end,
-      fn = receivePosition
+      fn = click
     }
   },
 
@@ -2286,7 +2286,7 @@ appHotKeyCallbacks = {
         local maxX = buttons[#buttons].AXPosition.x
         maxX = math.max(maxX, buttons[#buttons - 1].AXPosition.x)
         maxX = math.max(maxX, buttons[#buttons - 2].AXPosition.x)
-        leftClickAndRestore({ maxX + 100, buttons[#buttons].AXPosition.y })
+        click({ maxX + 100, buttons[#buttons].AXPosition.y }, win)
       end
     },
     ["openRecent"] = {
@@ -2320,7 +2320,7 @@ appHotKeyCallbacks = {
           end
         end
         if firstSplitLine == 4 then
-          leftClickAndRestore(groups[1], app)
+          click(groups[1], app)
         end
         return false
       end,
@@ -2344,7 +2344,7 @@ appHotKeyCallbacks = {
         if firstSplitLine == 4 then return true, groups[3] end
         return false
       end,
-      fn = leftClickAndRestore
+      fn = click
     },
     ["goToMyCloudDocuments"] = {
       message = localizedMessage("My Cloud Documents"),
@@ -2371,7 +2371,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = leftClickAndRestore
+      fn = click
     },
     ["goToMyDesktop"] = {
       message = localizedMessage("My Desktop"),
@@ -2400,7 +2400,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = leftClickAndRestore
+      fn = click
     },
     ["goToDocuments"] = {
       message = localizedMessage("Documents"),
@@ -2429,7 +2429,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = leftClickAndRestore
+      fn = click
     },
     ["goToDownloads"] = {
       message = localizedMessage("Downloads"),
@@ -2458,7 +2458,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = leftClickAndRestore
+      fn = click
     },
     ["openFileLocation"] = {
       message = localizedMessage("Open File Location"),
@@ -2804,7 +2804,7 @@ appHotKeyCallbacks = {
           return false
         end
       end,
-      fn = receivePosition
+      fn = click
     },
     ["newChat"] = {
       message = "新建对话",
@@ -2945,52 +2945,52 @@ appHotKeyCallbacks = {
     ["1stLibrary"] = {
       message = "First Library",
       condition = JabRefShowLibraryByIndex(1),
-      fn = receivePosition
+      fn = click
     },
     ["2ndLibrary"] = {
       message = "Second Library",
       condition = JabRefShowLibraryByIndex(2),
-      fn = receivePosition
+      fn = click
     },
     ["3rdLibrary"] = {
       message = "Third Library",
       condition = JabRefShowLibraryByIndex(3),
-      fn = receivePosition
+      fn = click
     },
     ["4thLibrary"] = {
       message = "Forth Library",
       condition = JabRefShowLibraryByIndex(4),
-      fn = receivePosition
+      fn = click
     },
     ["5thLibrary"] = {
       message = "Fifth Library",
       condition = JabRefShowLibraryByIndex(5),
-      fn = receivePosition
+      fn = click
     },
     ["6thLibrary"] = {
       message = "Sixth Library",
       condition = JabRefShowLibraryByIndex(6),
-      fn = receivePosition
+      fn = click
     },
     ["7thLibrary"] = {
       message = "Seventh Library",
       condition = JabRefShowLibraryByIndex(7),
-      fn = receivePosition
+      fn = click
     },
     ["8thLibrary"] = {
       message = "Eighth Library",
       condition = JabRefShowLibraryByIndex(8),
-      fn = receivePosition
+      fn = click
     },
     ["9thLibrary"] = {
       message = "Nineth Library",
       condition = JabRefShowLibraryByIndex(9),
-      fn = receivePosition
+      fn = click
     },
     ["10thLibrary"] = {
       message = "Tenth Library",
       condition = JabRefShowLibraryByIndex(10),
-      fn = receivePosition
+      fn = click
     },
     ["minimize"] = specialCommonHotkeyConfigs["minimize"]
   },
@@ -3190,7 +3190,7 @@ appHotKeyCallbacks = {
         elseif result[1] == 1 then
           press(result[2])
         elseif result[1] == 2 then
-          leftClickAndRestore(result[2], app)
+          click(result[2], app)
         end
       end
     },
@@ -3267,7 +3267,7 @@ appHotKeyCallbacks = {
               }) then title = "不显示"
               else title = "不顯示" end
               local hide = getc(menu, AX.MenuItem, title)
-              if hide then leftClickAndRestore(hide, app) end
+              if hide then click(hide, app) end
             end
           end)
         end
@@ -3337,7 +3337,7 @@ appHotKeyCallbacks = {
       fn = function(app)
         local frame = app:focusedWindow():frame()
         local position = { frame.x + frame.w - 60, frame.y + 23 }
-        leftClickAndRestore(position, app)
+        click(position, app)
       end
     },
     ["confirm"] = {
@@ -3370,7 +3370,7 @@ appHotKeyCallbacks = {
         local bt = getc(towinui(win), AX.Button, title)
         return bt and bt.AXEnabled, bt
       end,
-      fn = leftClickAndRestore
+      fn = click
     },
     ["send"] = {
       message = function(win)
@@ -3402,7 +3402,7 @@ appHotKeyCallbacks = {
         local bt = getc(towinui(win), AX.Button, title)
         return bt and bt.AXEnabled, bt
       end,
-      fn = leftClickAndRestore
+      fn = click
     }
   },
 
@@ -3537,61 +3537,61 @@ appHotKeyCallbacks = {
       message = getQQLiveChannelName(1),
       windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(1),
-      fn = receivePosition
+      fn = click
     },
     ["channel2"] = {
       message = getQQLiveChannelName(2),
       windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(2),
-      fn = receivePosition
+      fn = click
     },
     ["channel3"] = {
       message = getQQLiveChannelName(3),
       windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(3),
-      fn = receivePosition
+      fn = click
     },
     ["channel4"] = {
       message = getQQLiveChannelName(4),
       windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(4),
-      fn = receivePosition
+      fn = click
     },
     ["channel5"] = {
       message = getQQLiveChannelName(5),
       windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(5),
-      fn = receivePosition
+      fn = click
     },
     ["channel6"] = {
       message = getQQLiveChannelName(6),
       windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(6),
-      fn = receivePosition
+      fn = click
     },
     ["channel7"] = {
       message = getQQLiveChannelName(7),
       windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(7),
-      fn = receivePosition
+      fn = click
     },
     ["channel8"] = {
       message = getQQLiveChannelName(8),
       windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(8),
-      fn = receivePosition
+      fn = click
     },
     ["channel9"] = {
       message = getQQLiveChannelName(9),
       windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(9),
-      fn = receivePosition
+      fn = click
     },
     ["channel10"] = {
       message = getQQLiveChannelName(10),
       windowFilter = QQLiveMainWindowFilter,
       condition = getQQLiveChannel(10),
-      fn = receivePosition
+      fn = click
     }
   },
 
@@ -3635,7 +3635,7 @@ appHotKeyCallbacks = {
         end
         return true, getc(banner, AX.Group, 2, AX.Group, 1, AX.Image, 1).AXPosition
       end,
-      fn = receivePosition
+      fn = click
     },
     ["tab1"] = {
       message = douyinDesktopTabTitle(1),
@@ -4491,7 +4491,7 @@ appHotKeyCallbacks = {
             end)
           end)
         else
-          leftClickAndRestore(icon, app)
+          click(icon, app)
         end
       end
     },
@@ -4817,7 +4817,7 @@ appHotKeyCallbacks = {
             AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, 2,
             AX.Cell, 1, AX.StaticText, 2)
         assert(field)
-        leftClickAndRestore(field, win)
+        click(field, win)
         clickRightMenuBarItem(win:application())
       end
     },
@@ -4845,7 +4845,7 @@ appHotKeyCallbacks = {
           field = getc(outline, AX.Row, 4, AX.Cell, 1, AX.StaticText, 2)
         end
         assert(field)
-        leftClickAndRestore(field, win)
+        click(field, win)
         clickRightMenuBarItem(win:application())
       end
     },
@@ -4858,7 +4858,7 @@ appHotKeyCallbacks = {
       condition = getPasswordRecordPosition(1),
       background = true,
       fn = function(position, win)
-        return receivePosition(position, win:application())
+        return click(position, win:application())
       end
     },
     ["record2"] = {
@@ -4870,7 +4870,7 @@ appHotKeyCallbacks = {
       condition = getPasswordRecordPosition(2),
       background = true,
       fn = function(position, win)
-        return receivePosition(position, win:application())
+        return click(position, win:application())
       end
     },
     ["record3"] = {
@@ -4882,7 +4882,7 @@ appHotKeyCallbacks = {
       condition = getPasswordRecordPosition(3),
       background = true,
       fn = function(position, win)
-        return receivePosition(position, win:application())
+        return click(position, win:application())
       end
     },
     ["record4"] = {
@@ -4894,7 +4894,7 @@ appHotKeyCallbacks = {
       condition = getPasswordRecordPosition(4),
       background = true,
       fn = function(position, win)
-        return receivePosition(position, win:application())
+        return click(position, win:application())
       end
     },
     ["record5"] = {
@@ -4906,7 +4906,7 @@ appHotKeyCallbacks = {
       condition = getPasswordRecordPosition(5),
       background = true,
       fn = function(position, win)
-        return receivePosition(position, win:application())
+        return click(position, win:application())
       end
     },
     ["record6"] = {
@@ -4918,7 +4918,7 @@ appHotKeyCallbacks = {
       condition = getPasswordRecordPosition(6),
       background = true,
       fn = function(position, win)
-        return receivePosition(position, win:application())
+        return click(position, win:application())
       end
     },
     ["record7"] = {
@@ -4930,7 +4930,7 @@ appHotKeyCallbacks = {
       condition = getPasswordRecordPosition(7),
       background = true,
       fn = function(position, win)
-        return receivePosition(position, win:application())
+        return click(position, win:application())
       end
     },
     ["record8"] = {
@@ -4942,7 +4942,7 @@ appHotKeyCallbacks = {
       condition = getPasswordRecordPosition(8),
       background = true,
       fn = function(position, win)
-        return receivePosition(position, win:application())
+        return click(position, win:application())
       end
     }
   },
@@ -5094,7 +5094,7 @@ appHotKeyCallbacks = {
         local winUI = towinui(win)
         local searchField = getc(winUI, AX.TextField, 1)
         if searchField ~= nil then
-          leftClickAndRestore(uioffset(searchField, { 5, 5 }), win)
+          click(uioffset(searchField, { 5, 5 }), win)
         end
       end
     },
@@ -5438,7 +5438,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          leftClickAndRestore(button, win)
+          click(button, win)
         end
       end
     },
@@ -5467,7 +5467,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          leftClickAndRestore(button, win)
+          click(button, win)
         end
       end
     },
@@ -5496,7 +5496,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          leftClickAndRestore(button, win)
+          click(button, win)
         end
       end
     },
@@ -5525,7 +5525,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          leftClickAndRestore(button, win)
+          click(button, win)
         end
       end
     },
@@ -7339,7 +7339,7 @@ local function registerForOpenSavePanel(app)
                   if row.AXSize.h > 20 then
                     cnt = cnt + 1
                     if cnt == idx then
-                      leftClickAndRestore(row, app)
+                      click(row, app)
                     end
                   end
                 end
