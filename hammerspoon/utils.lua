@@ -416,9 +416,28 @@ SYSTEM_LOCALE = systemLocales()[1]
 
 local electronLocale, javaLocale
 function applicationLocale(appid)
-  -- locale of apps whose localization is enabled by Electron or Java
+  -- locale of `WeChat` and apps whose localization is enabled by Electron or Java
   -- cannot be aquired by "defaults" command
-  if localizationFrameworks[appid] ~= nil then
+  if appid == "com.tencent.xinWeChat" then
+    if applicationVersion(appid) >= 4 then
+      local app = find(appid)
+      if app then
+        local file = getc(toappui(app),
+            AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
+        if file == "File" then return "en"
+        elseif file == localizedString('File', {
+          locale = 'zh_CN',
+          localeFile = 'MenuCommands',
+          framework = "AppKit.framework",
+        }) then return "zh-Hans"
+        else
+          return 'zh-Hant'
+        end
+      else
+        return SYSTEM_LOCALE
+      end
+    end
+  elseif localizationFrameworks[appid] ~= nil then
     local app = find(appid)
     if app then
       local appContentPath = hs.application.pathForBundleID(appid) .. "/Contents"
