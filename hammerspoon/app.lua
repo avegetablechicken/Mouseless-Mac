@@ -6054,7 +6054,8 @@ local function resendToFrontmostWindow(cond, nonFrontmost)
     end
     local frontWin = hs.window.frontmostWindow()
     if nonFrontmost then
-      if frontWin ~= nil and WindowCreatedSinceWindow[frontWin:id()] then
+      if frontWin ~= nil and WindowCreatedSinceWindow
+          and WindowCreatedSinceWindow[frontWin:id()] then
         return false, CF.notFrontmostWindow
       end
     else
