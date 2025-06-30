@@ -733,6 +733,19 @@ local function confirmButtonValidForAppCleanerUninstaller(title)
   end
 end
 
+--- ### WeChat
+local function weChatSelectLocalizedString(en, hans, hant)
+  local locale = applicationLocale("com.tencent.xinWeChat")
+  if locale:sub(1, 2) == 'en' then
+    return en
+  elseif locale:find('Hant')
+      or locale:sub(-2) == 'HK' or locale:sub(-2) == 'TW' then
+    return hant
+  else
+    return hans
+  end
+end
+
 --- ### QQLive
 local function existQQLiveChannel(win)
   local list = getc(towinui(win), AX.Group, 2)
@@ -3085,9 +3098,7 @@ appHotKeyCallbacks = {
         if versionLessThan("4")(app) then
           return localizedMessage("Common.Navigation.Back")
         else
-          local name = getc(toappui(app),
-              AX.MenuBar, 1, AX.MenuBarItem, 2).AXTitle
-          return name == "Weixin" and "Back" or "返回"
+          return weChatSelectLocalizedString("Back", "返回", "返回")
         end
       end,
       condition = function(app)
@@ -3110,16 +3121,14 @@ appHotKeyCallbacks = {
 
           local winUI = towinui(app:focusedWindow())
           -- Minimized Groups
-          local name = getc(toappui(app),
-              AX.MenuBar, 1, AX.MenuBarItem, 2).AXTitle
-          local back = name == "Weixin" and "Back" or "返回"
+          local back = weChatSelectLocalizedString("Back", "返回", "返回")
           local bt = getc(winUI, AX.Group, 1,
               AX.SplitGroup, 1, AX.Button, back)
           if bt then return true, { 2, bt.AXPosition } end
 
           -- Moments
           if app:focusedWindow():title():find(app:name()) == nil then
-            local moments = name == "Weixin" and "Moments" or "朋友圈"
+            local moments = weChatSelectLocalizedString("Moments", "朋友圈", "朋友圈")
             if app:focusedWindow():title() == moments then
               return true, { 2, getc(winUI, AX.Button, 1).AXPosition }
             end
@@ -3182,15 +3191,7 @@ appHotKeyCallbacks = {
         if versionLessThan("4")(app) then
           return localizedString("Chats.Menu.Hide", app:bundleID())
         else
-          local file = getc(toappui(app),
-              AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
-          if file == "File" then return "Hide"
-          elseif file == localizedString('File', {
-            locale = 'zh_CN',
-            localeFile = 'MenuCommands',
-            framework = "AppKit.framework",
-          }) then return "不显示"
-          else return "不顯示" end
+          return weChatSelectLocalizedString("Hide", "不显示", "不顯示")
         end
       end,
       condition = function(app)
@@ -3239,16 +3240,7 @@ appHotKeyCallbacks = {
           hs.timer.doAfter(0.5, function()
             local menu = toappui(app):elementAtPosition(chat.AXPosition)
             if menu and menu.AXRole == AX.Menu then
-              local title
-              local file = getc(toappui(app),
-                  AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
-              if file == "File" then title = "Hide"
-              elseif file == localizedString('File', {
-                locale = 'zh_CN',
-                localeFile = 'MenuCommands',
-                framework = "AppKit.framework",
-              }) then title = "不显示"
-              else title = "不顯示" end
+              local title = weChatSelectLocalizedString("Hide", "不显示", "不顯示")
               local hide = getc(menu, AX.MenuItem, title)
               if hide then click(hide, app) end
             end
@@ -3296,19 +3288,8 @@ appHotKeyCallbacks = {
         if versionLessThan("4")(app) then
           return localizedString("Open in Default Browser", app:bundleID())
         else
-          local file = getc(toappui(app),
-              AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
-          if file == "File" then
-            return "Open in Default Browser"
-          elseif file == localizedString('File', {
-            locale = 'zh_CN',
-            localeFile = 'MenuCommands',
-            framework = "AppKit.framework",
-          }) then
-            return "用默认浏览器打开"
-          else
-            return "使用預設瀏覽器開啟"
-          end
+          return weChatSelectLocalizedString("Open in Default Browser",
+              "用默认浏览器打开", "使用預設瀏覽器開啟")
         end
       end,
       condition = function(app)
@@ -3324,64 +3305,26 @@ appHotKeyCallbacks = {
       end
     },
     ["confirm"] = {
-      message = function(win)
-        local app = win.application and win:application() or win
-        local file = getc(toappui(app),
-            AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
-        if file == "File" then return "OK"
-        elseif file == localizedString('File', {
-          locale = 'zh_CN',
-          localeFile = 'MenuCommands',
-          framework = "AppKit.framework",
-        }) then return "确定"
-        else return "確定" end
+      message = function()
+        return weChatSelectLocalizedString("OK", "确定", "確定")
       end,
       bindCondition = versionGreaterEqual("4"),
       windowFilter = { allowSheet = true },
       condition = function(win)
-        local title
-        local app = win:application()
-        local file = getc(toappui(app),
-            AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
-        if file == "File" then title = "OK"
-        elseif file == localizedString('File', {
-          locale = 'zh_CN',
-          localeFile = 'MenuCommands',
-          framework = "AppKit.framework",
-        }) then title = "确定"
-        else title = "確定" end
+        local title = weChatSelectLocalizedString("OK", "确定", "確定")
         local bt = getc(towinui(win), AX.Button, title)
         return bt and bt.AXEnabled, bt
       end,
       fn = click
     },
     ["send"] = {
-      message = function(win)
-        local app = win.application and win:application() or win
-        local file = getc(toappui(app),
-            AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
-        if file == "File" then return "Send"
-        elseif file == localizedString('File', {
-          locale = 'zh_CN',
-          localeFile = 'MenuCommands',
-          framework = "AppKit.framework",
-        }) then return "发送"
-        else return "傳送" end
+      message = function()
+        return weChatSelectLocalizedString("Send", "发送", "傳送")
       end,
       bindCondition = versionGreaterEqual("4"),
       windowFilter = { allowSheet = true },
       condition = function(win)
-        local title
-        local app = win:application()
-        local file = getc(toappui(app),
-            AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
-        if file == "File" then title = "Send"
-        elseif file == localizedString('File', {
-          locale = 'zh_CN',
-          localeFile = 'MenuCommands',
-          framework = "AppKit.framework",
-        }) then title = "发送"
-        else title = "傳送" end
+        local title = weChatSelectLocalizedString("Send", "发送", "傳送")
         local bt = getc(towinui(win), AX.Button, title)
         return bt and bt.AXEnabled, bt
       end,
