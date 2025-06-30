@@ -8480,7 +8480,9 @@ local function suspendHotkeysInRemoteDesktop(app)
   local win = app:focusedWindow()
   if win ~= nil then
     if isDefaultRemoteDesktopWindow(win) then
-      FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] = not FLAGS["SUSPEND"]
+      if FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] == nil then
+        FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] = not FLAGS["SUSPEND"]
+      end
       FLAGS["SUSPEND"] = true
       return
     end
