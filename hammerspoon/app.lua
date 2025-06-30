@@ -1701,11 +1701,9 @@ appHotKeyCallbacks = {
         local winUI = towinui(app:focusedWindow())
         local searchField = getc(winUI, AX.Toolbar, 1, AX.Group, 2, AX.TextField, 1)
         if searchField == nil then return false end
-        return true, searchField
+        return true, uioffset(searchField, { 10, 2 })
       end,
-      fn = function(searchField, app)
-        leftClickAndRestore(uioffset(searchField, { 10, 2 }), app)
-      end
+      fn = receivePosition
     }
   },
 
