@@ -237,6 +237,7 @@ local function getFunc(f)
   return nil
 end
 
+local log = hs.logger.new('hotkey', 'info')
 function newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
   if message == nil or getFunc(message) then
     repeatfn=releasedfn releasedfn=pressedfn pressedfn=message message=nil -- shift down arguments
@@ -250,6 +251,11 @@ function newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
   end)
   if validHyperModal ~= nil then
     hotkey = validHyperModal:bind("", key, message, pressedfn, releasedfn, repeatfn)
+    local msg = hotkey.msg
+    if validHyperModal.hyper == HYPER then
+      msg = "✧" .. msg:sub(validHyperModal.hyper:len() + 1)
+    end
+    log.f('Enabled hotkey %s', msg)
   else
     hotkey = hs.hotkey.new(mods, key, pressedfn, releasedfn, repeatfn)
   end
