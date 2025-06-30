@@ -3351,6 +3351,74 @@ appHotKeyCallbacks = {
         local position = { frame.x + frame.w - 60, frame.y + 23 }
         leftClickAndRestore(position, app:name())
       end
+    },
+    ["confirm"] = {
+      message = function(win)
+        local app = win.application and win:application() or win
+        local file = getc(toappui(app),
+            AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
+        if file == "File" then return "OK"
+        elseif file == localizedString('File', {
+          locale = 'zh_CN',
+          localeFile = 'MenuCommands',
+          framework = "AppKit.framework",
+        }) then return "确定"
+        else return "確定" end
+      end,
+      bindCondition = versionGreaterEqual("4"),
+      windowFilter = { allowSheet = true },
+      condition = function(win)
+        local title
+        local app = win:application()
+        local file = getc(toappui(app),
+            AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
+        if file == "File" then title = "OK"
+        elseif file == localizedString('File', {
+          locale = 'zh_CN',
+          localeFile = 'MenuCommands',
+          framework = "AppKit.framework",
+        }) then title = "确定"
+        else title = "確定" end
+        local bt = getc(towinui(win), AX.Button, title)
+        return bt and bt.AXEnabled, bt
+      end,
+      fn = function(button, win)
+        leftClickAndRestore(button, win:application():name())
+      end
+    },
+    ["send"] = {
+      message = function(win)
+        local app = win.application and win:application() or win
+        local file = getc(toappui(app),
+            AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
+        if file == "File" then return "Send"
+        elseif file == localizedString('File', {
+          locale = 'zh_CN',
+          localeFile = 'MenuCommands',
+          framework = "AppKit.framework",
+        }) then return "发送"
+        else return "傳送" end
+      end,
+      bindCondition = versionGreaterEqual("4"),
+      windowFilter = { allowSheet = true },
+      condition = function(win)
+        local title
+        local app = win:application()
+        local file = getc(toappui(app),
+            AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
+        if file == "File" then title = "Send"
+        elseif file == localizedString('File', {
+          locale = 'zh_CN',
+          localeFile = 'MenuCommands',
+          framework = "AppKit.framework",
+        }) then title = "发送"
+        else title = "傳送" end
+        local bt = getc(towinui(win), AX.Button, title)
+        return bt and bt.AXEnabled, bt
+      end,
+      fn = function(button, win)
+        leftClickAndRestore(button, win:application():name())
+      end
     }
   },
 

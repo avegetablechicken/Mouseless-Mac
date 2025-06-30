@@ -1026,6 +1026,14 @@
       "openInDefaultBrowser": {
         "mods": ["shift", "command"],
         "key": "O"
+      },
+      "confirm": {
+        "mods": "",
+        "key": "Return"
+      },
+      "send": {
+        "mods": "command",
+        "key": "Return"
       }
     },
     "com.tencent.QQMusicMac": {
