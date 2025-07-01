@@ -476,15 +476,15 @@ end
 
 -- ### FaceTime
 local function deleteMousePositionCall(win)
-  local appid = win:application():bundleID()
-  local appname = win:application():name()
+  local app = win:application()
+  local appid = app:bundleID()
   local winUI = towinui(win)
   local collection = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
   if collection ~= nil and collection.AXDescription ==
       localizedString("Recent Calls", appid) then
     local section = getc(collection, AX.Button, 1)
     if section ~= nil then
-      if not rightClick(hs.mouse.absolutePosition(), appname) then
+      if not rightClick(hs.mouse.absolutePosition(), app) then
         return
       end
       local popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
@@ -495,7 +495,7 @@ local function deleteMousePositionCall(win)
         popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
       end
       if popup == nil then
-        if not rightClick(hs.mouse.absolutePosition(), appname) then
+        if not rightClick(hs.mouse.absolutePosition(), app) then
           return
         end
         popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
@@ -522,7 +522,7 @@ local function deleteMousePositionCall(win)
       local section = getc(results[1][1], AX.Group, 1)
       if section == nil then return end
 
-      if not rightClick(hs.mouse.absolutePosition(), appname) then
+      if not rightClick(hs.mouse.absolutePosition(), app) then
         return
       end
       local popups = getc(section, AX.Menu)
@@ -549,15 +549,15 @@ local function deleteMousePositionCall(win)
 end
 
 local function deleteAllCalls(win)
-  local appid = win:application():bundleID()
-  local appname = win:application():name()
+  local app = win:application()
+  local appid = app:bundleID()
   local winUI = towinui(win)
   local collection = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
   if collection ~= nil and collection.AXDescription ==
       localizedString("Recent Calls", appid) then
     local section = getc(collection, AX.Button, 1)
     if section ~= nil then
-      if not rightClick(section, appname) then
+      if not rightClick(section, app) then
         return
       end
       local popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
@@ -568,7 +568,7 @@ local function deleteAllCalls(win)
         popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
       end
       if popup == nil then
-        if not rightClick(section, appname) then
+        if not rightClick(section, app) then
           return
         end
         popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
@@ -597,7 +597,7 @@ local function deleteAllCalls(win)
       local section = getc(results[1][1], AX.Group, 1)
       if section == nil then return end
 
-      if not rightClickAndRestore(section, appname) then
+      if not rightClickAndRestore(section, app) then
         return
       end
       local popups = getc(section, AX.Menu)
@@ -2489,7 +2489,7 @@ appHotKeyCallbacks = {
           end
         end)
         observer:start()
-        local clicked = rightClickAndRestore(position, app:name())
+        local clicked = rightClickAndRestore(position, app)
         if clicked then
           hs.timer.doAfter(2, function()
             if observer ~= nil then
