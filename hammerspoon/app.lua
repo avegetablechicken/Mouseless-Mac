@@ -733,19 +733,6 @@ local function confirmButtonValidForAppCleanerUninstaller(title)
   end
 end
 
---- ### WeChat
-local function weChatSelectLocalizedString(en, hans, hant)
-  local locale = applicationLocale("com.tencent.xinWeChat")
-  if locale:sub(1, 2) == 'en' then
-    return en
-  elseif locale:find('Hant')
-      or locale:sub(-2) == 'HK' or locale:sub(-2) == 'TW' then
-    return hant
-  else
-    return hans
-  end
-end
-
 --- ### QQLive
 local function existQQLiveChannel(win)
   local list = getc(towinui(win), AX.Group, 2)
@@ -3098,7 +3085,7 @@ appHotKeyCallbacks = {
         if versionLessThan("4")(app) then
           return localizedString("Common.Navigation.Back", app:bundleID())
         else
-          return weChatSelectLocalizedString("Back", "返回", "返回")
+          return localizedString("Back", app:bundleID())
         end
       end,
       condition = function(app)
@@ -3121,14 +3108,14 @@ appHotKeyCallbacks = {
 
           local winUI = towinui(app:focusedWindow())
           -- Minimized Groups
-          local back = weChatSelectLocalizedString("Back", "返回", "返回")
+          local back = localizedString("Back", appid)
           local bt = getc(winUI, AX.Group, 1,
               AX.SplitGroup, 1, AX.Button, back)
           if bt then return true, { 2, bt.AXPosition } end
 
           -- Moments
           if app:focusedWindow():title():find(app:name()) == nil then
-            local moments = weChatSelectLocalizedString("Moments", "朋友圈", "朋友圈")
+            local moments = localizedString("Moments", appid)
             if app:focusedWindow():title() == moments then
               return true, { 2, getc(winUI, AX.Button, 1).AXPosition }
             end
@@ -3191,7 +3178,7 @@ appHotKeyCallbacks = {
         if versionLessThan("4")(app) then
           return localizedString("Chats.Menu.Hide", app:bundleID())
         else
-          return weChatSelectLocalizedString("Hide", "不显示", "不顯示")
+          return localizedString("Hide", app:bundleID())
         end
       end,
       condition = function(app)
@@ -3240,7 +3227,7 @@ appHotKeyCallbacks = {
           hs.timer.doAfter(0.5, function()
             local menu = toappui(app):elementAtPosition(chat.AXPosition)
             if menu and menu.AXRole == AX.Menu then
-              local title = weChatSelectLocalizedString("Hide", "不显示", "不顯示")
+              local title = localizedString("Hide", app:bundleID())
               local hide = getc(menu, AX.MenuItem, title)
               if hide then click(hide, app) end
             end
@@ -3284,14 +3271,7 @@ appHotKeyCallbacks = {
       end
     },
     ["openInDefaultBrowser"] = {
-      message = function(app)
-        if versionLessThan("4")(app) then
-          return localizedString("Open in Default Browser", app:bundleID())
-        else
-          return weChatSelectLocalizedString("Open in Default Browser",
-              "用默认浏览器打开", "使用預設瀏覽器開啟")
-        end
-      end,
+      message = localizedMessage("Open in Default Browser"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
@@ -3310,33 +3290,33 @@ appHotKeyCallbacks = {
           win = win:focusedWindow()
           if win == nil then return "OK" end
         end
-        local title = weChatSelectLocalizedString("OK", "确定", "確定")
+        local appid = win:application():bundleID()
+        local title = localizedString("OK", appid)
         local bt = getc(towinui(win), AX.Button, title)
         if bt then return title end
-        title = weChatSelectLocalizedString("Delete", "删除", "刪除")
+        title = localizedString("Delete", appid)
         bt = getc(towinui(win), AX.Button, title)
         if bt then return title end
       end,
       bindCondition = versionGreaterEqual("4"),
       windowFilter = { allowSheet = true },
       condition = function(win)
-        local title = weChatSelectLocalizedString("OK", "确定", "確定")
+        local appid = win:application():bundleID()
+        local title = localizedString("OK", appid)
         local bt = getc(towinui(win), AX.Button, title)
         if bt then return bt.AXEnabled, bt end
-        title = weChatSelectLocalizedString("Delete", "删除", "刪除")
+        title = localizedString("Delete", appid)
         bt = getc(towinui(win), AX.Button, title)
         return bt and bt.AXEnabled, bt
       end,
       fn = click
     },
     ["send"] = {
-      message = function()
-        return weChatSelectLocalizedString("Send", "发送", "傳送")
-      end,
+      message = localizedMessage("Send"),
       bindCondition = versionGreaterEqual("4"),
       windowFilter = { allowSheet = true },
       condition = function(win)
-        local title = weChatSelectLocalizedString("Send", "发送", "傳送")
+        local title = localizedString("Send", win:application():bundleID())
         local bt = getc(towinui(win), AX.Button, title)
         return bt and bt.AXEnabled, bt
       end,

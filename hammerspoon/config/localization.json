@@ -31,6 +31,16 @@
   "com.tencent.qq": {
     "切换全屏": "Toggle fullscreen"
   },
+  "com.tencent.xinWeChat": [{
+  }, {
+    "Back": "返回",
+    "Hide": "不显示",
+    "Moments": "朋友圈",
+    "OK": "确定",
+    "Delete": "删除",
+    "Send": "发送",
+    "Open in Default Browser": "用默认浏览器打开"
+  }],
   "com.kingsoft.wpsoffice.mac": [{
     "账户": "Account",
     "账号": "Account",
