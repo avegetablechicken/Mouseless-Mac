@@ -679,7 +679,7 @@ local function registerProxyMenuImpl(enabledProxy, mode)
       title = "Information",
       fn = function()
         local info = proxy_info()
-        local enabled, m = parseProxyInfo(proxy_info())
+        local enabled, m = parseProxyInfo(info)
         local header
         if enabled ~= "" then
           header = "Enabled: " .. enabled
