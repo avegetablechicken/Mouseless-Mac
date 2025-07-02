@@ -26,14 +26,6 @@
 
     "proxy": [
         {
-            "condition": {
-                "shell_command": "zsh ./scripts/checkinlab.sh"
-            },
-            "candidates": [
-                { "name": "Lab Proxy", "mode": "pac" }
-            ]
-        },
-        {
             "candidates": [
                 { "name": "System", "mode": "pac" },
                 { "name": "MonoCloud", "mode": "pac" }

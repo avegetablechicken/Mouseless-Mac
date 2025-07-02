@@ -127,14 +127,7 @@
   },
 
   "io.mountainduck": {
-    "connections": [{
-      "condition": {
-        "shell_command": "zsh ./scripts/checkinlab.sh"
-      },
-      "locations": ["inlab", "outoflab"],
-      "inlab": ["dell"],
-      "outoflab": []
-    },
+    "connections": [
     "OneDrive",
     {
       "condition": {
