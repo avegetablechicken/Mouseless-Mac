@@ -1115,14 +1115,14 @@ local function localizeByLoctableImpl(str, filePath, locale)
   if result ~= nil then return result end
   if locale == 'en' then
     local enLocales = tconcat({ 'English', 'Base' }, extraEnglishLocales)
-    for en in ipairs(enLocales) do
+    for _, en in ipairs(enLocales) do
       result = get(loctables, en, str)
       if result ~= nil then return result end
     end
   end
 
   local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
-  for en in ipairs(enLocales) do
+  for _, en in ipairs(enLocales) do
     if loctables[en] ~= nil then
       local key = tindex(loctables[en], str)
       if key ~= nil then
