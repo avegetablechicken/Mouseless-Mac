@@ -423,9 +423,10 @@ function applicationLocale(appid)
       local app = find(appid)
       if app then
         local file = getc(toappui(app),
-            AX.MenuBar, 1, AX.MenuBarItem, 3).AXTitle
-        if file == "File" then return "en"
-        elseif file == localizedString('File', {
+            AX.MenuBar, 1, AX.MenuBarItem, 3)
+        if file == nil then return SYSTEM_LOCALE end
+        if file.AXTitle == "File" then return "en"
+        elseif file.AXTitle == localizedString('File', {
           locale = 'zh_CN',
           localeFile = 'MenuCommands',
           framework = "AppKit.framework",
