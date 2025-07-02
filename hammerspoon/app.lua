@@ -3305,14 +3305,26 @@ appHotKeyCallbacks = {
       end
     },
     ["confirm"] = {
-      message = function()
-        return weChatSelectLocalizedString("OK", "确定", "確定")
+      message = function(win)
+        if win.focusedWindow then
+          win = win:focusedWindow()
+          if win == nil then return "OK" end
+        end
+        local title = weChatSelectLocalizedString("OK", "确定", "確定")
+        local bt = getc(towinui(win), AX.Button, title)
+        if bt then return title end
+        title = weChatSelectLocalizedString("Delete", "删除", "刪除")
+        bt = getc(towinui(win), AX.Button, title)
+        if bt then return title end
       end,
       bindCondition = versionGreaterEqual("4"),
       windowFilter = { allowSheet = true },
       condition = function(win)
         local title = weChatSelectLocalizedString("OK", "确定", "確定")
         local bt = getc(towinui(win), AX.Button, title)
+        if bt then return bt.AXEnabled, bt end
+        title = weChatSelectLocalizedString("Delete", "删除", "刪除")
+        bt = getc(towinui(win), AX.Button, title)
         return bt and bt.AXEnabled, bt
       end,
       fn = click
