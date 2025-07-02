@@ -1107,41 +1107,39 @@ local function parseStringsFile(file, keepOrder, keepAll)
   return localesDict
 end
 
-local function localizeByLoctableImpl(str, filePath, locale)
-  local loctables = hs.plist.read(filePath)
-  local loctable = loctables[locale]
-  if loctable == nil then return end
-  local result = loctable[str]
+local function localizeByLoctableImpl(str, filePath, locale, localesDict)
+  if localesDict[locale] == nil then
+    local loctables = hs.plist.read(filePath)
+    localesDict[locale] = loctables[locale]
+    if localesDict[locale] == nil then return end
+    local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
+    for _, en in ipairs(enLocales) do
+      localesDict[en] = loctables[en]
+    end
+  end
+
+  local result = localesDict[locale][str]
   if result ~= nil then return result end
   if locale == 'en' then
     local enLocales = tconcat({ 'English', 'Base' }, extraEnglishLocales)
     for _, en in ipairs(enLocales) do
-      result = get(loctables, en, str)
+      result = get(localesDict, en, str)
       if result ~= nil then return result end
     end
   end
 
   local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
   for _, en in ipairs(enLocales) do
-    if loctables[en] ~= nil then
-      local key = tindex(loctables[en], str)
+    if localesDict[en] ~= nil then
+      local key = tindex(localesDict[en], str)
       if key ~= nil then
-        return loctable[key]
+        return localesDict[locale][key]
       end
     end
   end
 end
 
-local function localizeByLoctableImplPython(str, filePath, locale)
-  local output, status = hs.execute(strfmt(
-      "/usr/bin/python3 scripts/loctable_localize.py '%s' '%s' %s",
-      filePath, str, locale))
-  if status and output ~= "" then
-    return output
-  end
-end
-
-local function localizeByLoctable(str, resourceDir, localeFile, locale)
+local function localizeByLoctable(str, resourceDir, localeFile, locale, localesDict)
   local loctableFiles = {}
   if localeFile ~= nil then
     if type(localeFile) == 'string' then
@@ -1166,9 +1164,15 @@ local function localizeByLoctable(str, resourceDir, localeFile, locale)
     tconcat(preferentialLoctableFiles, loctableFiles)
     loctableFiles = preferentialLoctableFiles
   end
+  if localesDict == nil then
+    localesDict = {}
+  end
   for _, file in ipairs(loctableFiles) do
     local fullPath = resourceDir .. '/' .. file .. '.loctable'
-    local result = localizeByLoctableImplPython(str, fullPath, locale)
+    if localesDict[file] == nil then
+      localesDict[file] = {}
+    end
+    local result = localizeByLoctableImpl(str, fullPath, locale, localesDict[file])
     if result ~= nil then return result end
   end
 end
@@ -2252,7 +2256,7 @@ local function localizedStringImpl(str, appid, params, force)
   end
 
   local defaultAction = function(emptyCache)
-    result = localizeByLoctable(str, resourceDir, localeFile, locale)
+    result = localizeByLoctable(str, resourceDir, localeFile, locale, localesDict)
     if result ~= nil then return result end
 
     if emptyCache or appLocaleAssetBufferInverse[appid] == nil
@@ -2338,28 +2342,28 @@ function localizedString(str, appid, params, force)
 end
 
 
-local function delocalizeByLoctableImpl(str, filePath, locale)
-  local loctables = hs.plist.read(filePath)
-  local loctable = loctables[locale]
-  if loctable == nil then return end
-  local key = tindex(loctable, str)
+local function delocalizeByLoctableImpl(str, filePath, locale, localesDict)
+  if localesDict[locale] == nil then
+    local loctables = hs.plist.read(filePath)
+    localesDict[locale] = loctables[locale]
+    if localesDict[locale] == nil then return end
+    local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
+    for en in ipairs(enLocales) do
+      localesDict[en] = loctables[en]
+    end
+  end
+
+  local key = tindex(localesDict[locale], str)
   if key == nil then return end
   local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
   for _, en in ipairs(enLocales) do
-    if loctables[en] ~= nil then
-      return loctables[en][key]
+    if localesDict[en] ~= nil then
+      return localesDict[en][key]
     end
   end
 end
 
-local function delocalizeByLoctableImplPython(str, filePath, locale)
-  local output, status = hs.execute(strfmt(
-      "/usr/bin/python3 scripts/loctable_delocalize.py '%s' '%s' %s",
-      filePath, str, locale))
-  if status and output ~= "" then return output end
-end
-
-local function delocalizeByLoctable(str, resourceDir, localeFile, locale)
+local function delocalizeByLoctable(str, resourceDir, localeFile, locale, localesDict)
   local loctableFiles = {}
   if localeFile ~= nil then
     if type(localeFile) == 'string' then
@@ -2384,9 +2388,15 @@ local function delocalizeByLoctable(str, resourceDir, localeFile, locale)
     tconcat(preferentialLoctableFiles, loctableFiles)
     loctableFiles = preferentialLoctableFiles
   end
+  if localesDict == nil then
+    localesDict = {}
+  end
   for _, file in ipairs(loctableFiles) do
-    local result = delocalizeByLoctableImplPython(
-          str, resourceDir .. '/' .. file .. '.loctable', locale)
+    if localesDict[file] == nil then
+      localesDict[file] = {}
+    end
+    local result = delocalizeByLoctableImpl(
+        str, resourceDir .. '/' .. file .. '.loctable', locale, localesDict)
     if result ~= nil then return result end
   end
 end
@@ -3240,7 +3250,12 @@ local function delocalizedStringImpl(str, appid, params, force)
   end
 
   local defaultAction = function(emptyCache)
-    result = delocalizeByLoctable(str, resourceDir, localeFile, locale)
+    if appLocaleAssetBuffer[appid] == nil
+        or get(appLocaleDir, appid, appLocale) ~= locale then
+      appLocaleAssetBuffer[appid] = {}
+    end
+    local localesDict = appLocaleAssetBuffer[appid]
+    result = delocalizeByLoctable(str, resourceDir, localeFile, locale, localesDict)
     if result ~= nil then return result end
 
     if emptyCache or deLocaleInversedMap[appid] == nil
@@ -3416,9 +3431,15 @@ function localizeCommonMenuItemTitles(locale, appid)
   end
   local targetDelocMap = delocMap[target]
   local targetLocMap = locMap[target]
+  if appLocaleAssetBuffer[target] == nil
+      or get(appLocaleDir, target, matchedLocale) ~= locale then
+    appLocaleAssetBuffer[target] = {}
+  end
+  local localesDict = appLocaleAssetBuffer[target]
+
   for _, title in ipairs { 'File', 'View', 'Window', 'Help' } do
     local localizedTitle = cachedLocMap[title] or localizeByLoctable(
-      title, resourceDir, 'MenuCommands', matchedLocale)
+      title, resourceDir, 'MenuCommands', matchedLocale, localesDict)
     if localizedTitle ~= nil then
       targetDelocMap[localizedTitle] = title
       targetLocMap[title] = localizedTitle
@@ -3431,7 +3452,7 @@ function localizeCommonMenuItemTitles(locale, appid)
   end
   local title = 'Edit'
   local localizedTitle = cachedLocMap[title] or localizeByLoctable(
-    title, resourceDir, 'InputManager', matchedLocale)
+    title, resourceDir, 'InputManager', matchedLocale, localesDict)
   if localizedTitle ~= nil then
     targetDelocMap[localizedTitle] = title
     targetLocMap[title] = localizedTitle
@@ -3455,7 +3476,7 @@ function localizeCommonMenuItemTitles(locale, appid)
   end
   for _, title in ipairs(titleList) do
     local localizedTitle = tindex(cachedDelocMap, title) or localizeByLoctable(
-      title, resourceDir, 'MenuCommands', matchedLocale)
+      title, resourceDir, 'MenuCommands', matchedLocale, localesDict)
     if localizedTitle ~= nil then
       delocMap.common[localizedTitle] = title
       if cachedDelocMap[localizedTitle] == nil then
@@ -3466,7 +3487,7 @@ function localizeCommonMenuItemTitles(locale, appid)
   end
   title = 'Emoji & Symbols'
   local localizedTitle = tindex(cachedDelocMap, title) or localizeByLoctable(
-    title, resourceDir, 'InputManager', matchedLocale)
+    title, resourceDir, 'InputManager', matchedLocale, localesDict)
   if localizedTitle ~= nil then
     delocMap.common[localizedTitle] = title
     if cachedDelocMap[localizedTitle] == nil then
