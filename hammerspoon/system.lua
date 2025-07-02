@@ -854,13 +854,9 @@ end
 
 local lastIpv4State
 local function registerProxyMenuWrapper(storeObj, changedKeys)
-  for i = #NetworkMonitorKeys, 1, -1 do
-    local netID = NetworkMonitorKeys[i]
-        :match("Setup:/Network/Service/(.-)/Proxies")
-    if netID ~= nil then
-      tremove(NetworkMonitorKeys, i)
-    end
-  end
+  NetworkMonitorKeys = tifilter(NetworkMonitorKeys, function(key)
+    return key:match("Setup:/Network/Service/(.-)/Proxies") == nil
+  end)
   local Ipv4State = NetworkWatcher
       :contents("State:/Network/Global/IPv4")
       ["State:/Network/Global/IPv4"]
