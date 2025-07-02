@@ -6583,6 +6583,7 @@ local function registerSingleWinFilterForApp(app, filter)
 
   local appUI = toappui(app)
   observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
+  observer:addWatcher(appUI, uinotifications.windowMiniaturized)
   if allowPopover then
     observer:addWatcher(appUI, uinotifications.focusedUIElementChanged)
   end
@@ -6600,6 +6601,9 @@ local function registerSingleWinFilterForApp(app, filter)
         and win ~= nil and (type(filter) == 'table'
             and (filter.allowTitles or filter.rejectTitles)) then
       observer:addWatcher(towinui(win), uinotifications.titleChanged)
+    end
+    if notification == uinotifications.windowMiniaturized then
+      observer:removeWatcher(element, uinotifications.titleChanged)
     end
 
     local action = function()
