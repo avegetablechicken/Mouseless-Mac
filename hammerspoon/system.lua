@@ -40,13 +40,14 @@ local function getCurNetworkService()
   return curNetworkService
 end
 
-local function proxy_info(networkservice)
+local function proxy_info(compact, networkservice)
   if networkservice == nil then
     networkservice = getCurNetworkService()
   end
-  local autodiscovery = hs.execute("networksetup -getproxyautodiscovery " .. networkservice)
   local autoproxyurl = hs.execute("networksetup -getautoproxyurl " .. networkservice)
   local webproxy = hs.execute("networksetup -getwebproxy " .. networkservice)
+  if compact then return { autoproxyurl, webproxy } end
+  local autodiscovery = hs.execute("networksetup -getproxyautodiscovery " .. networkservice)
   local securewebproxy = hs.execute("networksetup -getsecurewebproxy " .. networkservice)
   local socksproxy = hs.execute("networksetup -getsocksfirewallproxy " .. networkservice)
   return { autodiscovery, autoproxyurl, webproxy, securewebproxy, socksproxy }
@@ -559,19 +560,20 @@ end
 
 local function parseProxyInfo(info, require_mode)
   if require_mode == nil then require_mode = true end
+  local autoproxy, webproxy = info[1], info[2]
   local enabledProxy = ""
   local mode = nil
-  if info[2]:match("Enabled: Yes") then
+  if autoproxy:match("Enabled: Yes") then
     for appname, config in pairs(ProxyConfigs) do
       if config.condition == nil then
-        if config.PAC ~= nil and info[2]:match(config.PAC) then
+        if config.PAC ~= nil and autoproxy:match(config.PAC) then
           enabledProxy = appname
           mode = "PAC"
         end
       else
         for _, loc in ipairs(config.locations) do
           local spec = config[loc]
-          if spec.PAC ~= nil and info[2]:match(spec.PAC) then
+          if spec.PAC ~= nil and autoproxy:match(spec.PAC) then
             enabledProxy = appname
             mode = "PAC"
             break
@@ -580,18 +582,18 @@ local function parseProxyInfo(info, require_mode)
       end
       if mode ~= nil then break end
     end
-  elseif info[3]:match("Enabled: Yes") then
+  elseif webproxy:match("Enabled: Yes") then
     for appname, config in pairs(ProxyConfigs) do
       if config.condition == nil then
-        if config.global ~= nil and info[3]:match(config.global[1])
-            and info[3]:match(tostring(config.global[2])) then
+        if config.global ~= nil and webproxy:match(config.global[1])
+            and webproxy:match(tostring(config.global[2])) then
           enabledProxy = appname
         end
       else
         for _, loc in pairs(config.locations) do
           local spec = config[loc]
-          if spec.global ~= nil and info[3]:match(spec.global[1])
-              and info[3]:match(tostring(spec.global[2])) then
+          if spec.global ~= nil and webproxy:match(spec.global[1])
+              and webproxy:match(tostring(spec.global[2])) then
             enabledProxy = appname
             break
           end
@@ -670,7 +672,7 @@ end
 
 local function registerProxyMenuImpl(enabledProxy, mode)
   if enabledProxy == nil then
-    enabledProxy, mode = parseProxyInfo(proxy_info())
+    enabledProxy, mode = parseProxyInfo(proxy_info(true))
   end
 
   proxyMenu =
@@ -679,7 +681,7 @@ local function registerProxyMenuImpl(enabledProxy, mode)
       title = "Information",
       fn = function()
         local info = proxy_info()
-        local enabled, m = parseProxyInfo(info)
+        local enabled, m = parseProxyInfo({ info[2], info[3] })
         local header
         if enabled ~= "" then
           header = "Enabled: " .. enabled
@@ -930,7 +932,7 @@ for appname, appid in pairs(proxyAppBundleIDs) do
   ExecOnSilentLaunch(appid, function()
     ExecOnSilentQuit(appid, function()
       if getCurNetworkService() ~= nil then
-        local enabledProxy = parseProxyInfo(proxy_info(), false)
+        local enabledProxy = parseProxyInfo(proxy_info(true), false)
         if enabledProxy == appname then
           disable_proxy()
         end
