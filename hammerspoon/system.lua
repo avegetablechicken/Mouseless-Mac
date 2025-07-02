@@ -802,7 +802,6 @@ local function registerProxyMenuImpl(enabledProxy, mode)
 end
 
 local function registerProxyMenu(retry, enabledProxy, mode)
-  refreshNetworkService()
   if not getCurNetworkService() then
     local menu = {{
       title = "No Network Access",
@@ -904,6 +903,8 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
       end
       disable_proxy()
     end
+  else
+    curNetworkService = nil
   end
   ::L_PROXY_SET::
   NetworkWatcher:monitorKeys(NetworkMonitorKeys)
@@ -2269,6 +2270,7 @@ function System_applicationInstalledCallback(files, flagTables)
     if files[i]:match("V2RayX")
         or files[i]:match("V2rayU")
         or files[i]:match("MonoProxyMac") then
+      refreshNetworkService()
       registerProxyMenu(true)
     end
   end
