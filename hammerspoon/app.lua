@@ -5931,7 +5931,7 @@ end
 -- 2. keystrokes are bound to a non-frontmost window, so the frontmost
 --    window created before the targeted window are ignored too
 WindowCreatedSinceApp = {}
-WindowCreatedSinceWindow = nil
+local windowCreatedSinceWindow
 WindowCreatedSinceWatcher = hs.window.filter.new(true):subscribe({
   hs.window.filter.windowCreated,
   hs.window.filter.windowDestroyed,
@@ -5944,16 +5944,16 @@ function(win, appname, eventType)
   end
   if eventType == hs.window.filter.windowCreated then
     WindowCreatedSinceApp[win:id()] = win:application():bundleID()
-    if WindowCreatedSinceWindow then
-      WindowCreatedSinceWindow[win:id()] = win:application():bundleID()
+    if windowCreatedSinceWindow then
+      windowCreatedSinceWindow[win:id()] = win:application():bundleID()
     end
   else
     for wid, appid in pairs(WindowCreatedSinceApp) do
       if hs.window.get(wid) == nil
           or hs.window.get(wid):application():bundleID() ~= appid then
         WindowCreatedSinceApp[wid] = nil
-        if WindowCreatedSinceWindow then
-          WindowCreatedSinceWindow[wid] = nil
+        if windowCreatedSinceWindow then
+          windowCreatedSinceWindow[wid] = nil
         end
       end
     end
@@ -5972,8 +5972,8 @@ local function resendToFrontmostWindow(cond, nonFrontmost)
     end
     local frontWin = hs.window.frontmostWindow()
     if nonFrontmost then
-      if frontWin ~= nil and WindowCreatedSinceWindow
-          and WindowCreatedSinceWindow[frontWin:id()] then
+      if frontWin ~= nil and windowCreatedSinceWindow
+          and windowCreatedSinceWindow[frontWin:id()] then
         return false, CF.notFrontmostWindow
       end
     else
@@ -6707,8 +6707,8 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
         config.background = true
         if keybinding.nonFrontmost ~= nil then
           config.nonFrontmost = keybinding.nonFrontmost
-          if WindowCreatedSinceWindow == nil then
-            WindowCreatedSinceWindow = {}
+          if windowCreatedSinceWindow == nil then
+            windowCreatedSinceWindow = {}
           end
         end
         config.repeatedfn = config.repeatable and cfg.fn or nil
@@ -6730,7 +6730,7 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
                 daemonAppFocusedWindowHotkeys[appid] = nil
               end
             end
-            WindowCreatedSinceWindow = nil
+            windowCreatedSinceWindow = nil
             obs:stop()
             obs = nil
           end
