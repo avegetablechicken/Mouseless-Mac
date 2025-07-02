@@ -3096,7 +3096,7 @@ appHotKeyCallbacks = {
     ["back"] = {
       message = function(app)
         if versionLessThan("4")(app) then
-          return localizedMessage("Common.Navigation.Back")
+          return localizedString("Common.Navigation.Back", app:bundleID())
         else
           return weChatSelectLocalizedString("Back", "返回", "返回")
         end
