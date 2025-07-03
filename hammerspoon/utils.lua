@@ -3878,31 +3878,45 @@ function rightClickAndRestore(point, obj, delay)
 end
 
 function loadStatusItemsAutosaveName(app)
-  local records = hs.execute(strfmt([[
-    defaults read %s | grep '"NSStatusItem Preferred Position '
-  ]], app:bundleID() or app:name()))
-  records = strsplit(records, '\n')
-  records[#records] = nil
+  local appid = app:bundleID()
   local preferredPositions = {}
-  for _, r in ipairs(records) do
-    r = r:sub(r:find('"') + 1)
-    local items = strsplit(r, ' ')
-    local name = items[4]:sub(1, #items[4] - 1)
-    local position = tonumber(items[6]:sub(1, #items[6] - 1))
-    tinsert(preferredPositions, { name, position })
+  local plistPath, defaults
+  plistPath = hs.fs.pathToAbsolute(strfmt(
+      "~/Library/Containers/%s/Data/Library/Preferences/%s.plist", appid, appid))
+  if plistPath ~= nil then
+    defaults = hs.plist.read(plistPath)
+    local prefix = "NSStatusItem Preferred Position "
+    local prefix_len = #prefix
+    for k, v in pairs(defaults) do
+      if k:sub(1, prefix_len) == prefix then
+        tinsert(preferredPositions, { k:sub(prefix_len + 1), tonumber(v) })
+      end
+    end
+  end
+  if #preferredPositions == 0 then
+    plistPath = hs.fs.pathToAbsolute(strfmt(
+        "~/Library/Preferences/%s.plist", appid))
+    if plistPath ~= nil then
+      defaults = hs.plist.read(plistPath)
+      local prefix = "NSStatusItem Preferred Position "
+      local prefix_len = #prefix
+      for k, v in pairs(defaults) do
+        if k:sub(1, prefix_len) == prefix then
+          tinsert(preferredPositions, { k:sub(prefix_len + 1), tonumber(v) })
+          found = true
+        end
+      end
+    end
   end
   if app:bundleID() == 'com.apple.controlcenter' then
-    local enabledRecords = hs.execute(strfmt([[
-      defaults read %s | grep '"NSStatusItem Visible ' | grep '" = 1;'
-    ]], app:bundleID()))
-    enabledRecords = strsplit(enabledRecords, '\n')
-    enabledRecords[#enabledRecords] = nil
-    local enabledItems = hs.fnutils.map(enabledRecords, function(r)
-      r = r:sub(r:find('"') + 1)
-      local items = strsplit(r, ' ')
-      local name = items[3]:sub(1, #items[3] - 1)
-      return name
-    end)
+    local enabledItems = {}
+    local prefix = "NSStatusItem Visible "
+    local prefix_len = #prefix
+    for k, v in pairs(defaults) do
+      if v == true and k:sub(1, prefix_len) == prefix then
+        tinsert(enabledItems, k:sub(prefix_len + 1))
+      end
+    end
     tinsert(preferredPositions, { "Clock", 1 })
     preferredPositions = tifilter(preferredPositions, function(p)
       return tcontain(enabledItems, p[1])
