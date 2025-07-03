@@ -2809,7 +2809,7 @@ appHotKeyCallbacks = {
         observer:start()
         local clicked = clickRightMenuBarItem(app, {}, "right-click")
         if clicked then
-          hs.timer.doAfter(2, function()
+          hs.timer.doAfter(5, function()
             if observer ~= nil then
               observer:stop()
               observer = nil
@@ -2917,7 +2917,7 @@ appHotKeyCallbacks = {
           observer:start()
           local clicked = clickRightMenuBarItem(app, {}, "right-click")
           if clicked then
-            hs.timer.doAfter(2, function()
+            hs.timer.doAfter(5, function()
               if observer ~= nil then
                 observer:stop()
                 observer = nil
