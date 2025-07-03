@@ -3936,7 +3936,9 @@ end
 
 local function activateMenuBarItem(menuBarItem, click)
   -- note: some apps do not react to AX.Press, you have to click them.
-  if click then
+  if click == "right-click" then
+    rightClickAndRestore(menuBarItem)
+  elseif click then
     leftClickAndRestore(menuBarItem)
   else
     menuBarItem:performAction(AX.Press)
@@ -3944,16 +3946,17 @@ local function activateMenuBarItem(menuBarItem, click)
 end
 
 MENUBAR_MANAGER_SHOW = {
-  ["com.surteesstudios.Bartender"] = function(_, appid, index, map)
+  ["com.surteesstudios.Bartender"] = function(_, appid, index, map, click)
     if type(index) == 'number' then
       map = map or loadStatusItemsAutosaveName(find(appid))
       index = map and map[index] or "Item-" .. tostring(index - 1)
     end
+    local rightClick = click == "right-click"
     hs.osascript.applescript(strfmt([[
       tell application id "com.surteesstudios.Bartender"
-        activate "%s-%s"
+        activate "%s-%s" %s
       end
-    ]], appid, index))
+    ]], appid, index, rightClick and "with right click" or ""))
     return true
   end,
 
@@ -4146,7 +4149,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   if menuBarItem == nil then return false end
 
   if show then
-    local click = show == "click"
+    local click = type(show) == "string" and show or false
     local hidden, manager
     hidden, manager, map = hiddenByMenuBarManager(app, menuBarId, map)
     if hidden then
