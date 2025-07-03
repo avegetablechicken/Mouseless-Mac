@@ -407,13 +407,11 @@ delocMap.common = {}
 locMap.common = {}
 
 local function systemLocales()
-  local locales, ok = hs.execute([[
-    defaults read -globalDomain AppleLanguages \
-    | tr -d '()" \n'
-  ]])
-  return strsplit(locales, ',')
+  local plistPath = "/Library/Preferences/.GlobalPreferences.plist"
+  local locales = hs.plist.read(plistPath).AppleLanguages
+  return locales[1]
 end
-SYSTEM_LOCALE = systemLocales()[1]
+SYSTEM_LOCALE = systemLocales()
 
 local electronLocale, javaLocale
 function applicationLocale(appid)
