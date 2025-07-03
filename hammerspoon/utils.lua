@@ -335,16 +335,17 @@ end
 
 function applicationVersion(appid)
   local appPath = hs.application.pathForBundleID(appid)
-  local version = hs.execute(strfmt(
-    "mdls -r -name kMDItemVersion '%s'", appPath))
+  if appPath == nil or appPath == "" then return end
+  local version
+  if exists(appPath .. '/Contents/Info.plist') then
+    local info = hs.plist.read(appPath .. '/Contents/Info.plist')
+    version = info.CFBundleShortVersionString or info.CFBundleVersion
+  else
+    version = hs.execute(strfmt("mdls -r -name kMDItemVersion '%s'", appPath))
+  end
   version = strsplit(version, "%.")
   local major, minor, patch
   major = tonumber(version[1]:match("%d+"))
-  if major == nil then
-    version = hs.application.infoForBundleID(appid).CFBundleShortVersionString
-    version = strsplit(version, "%.")
-    major = tonumber(version[1]:match("%d+"))
-  end
   minor = #version > 1 and tonumber(version[2]:match("%d+")) or 0
   patch = #version > 2 and tonumber(version[3]:match("%d+")) or 0
   return major, minor, patch
