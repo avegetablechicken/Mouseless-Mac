@@ -496,84 +496,91 @@ function getResourceDir(appid, frameworkName)
     resourceDir = hs.application.pathForBundleID(appid) .. "/WrappedBundle/.."
   elseif frameworkName ~= nil then
     local frameworkDir
-    if type(frameworkName) == 'string' and exists(frameworkName) then
-      frameworkDir = frameworkName
-    elseif appContentPath ~= nil then
-      if type(frameworkName) == 'table' and frameworkName.electron then
-        if exists(appContentPath .. "/Resources/app.asar") then
-          resourceDir = appContentPath .. "/Resources"
-          framework.electron = frameworkName.electron
-        end
-        goto END_GET_RESOURCE_DIR
-      end
-
-      if type(frameworkName) == 'table' and frameworkName.java then
-        local jimage, status = hs.execute(strfmt([[
-          find '%s' -type f -name jimage | tr -d '\n'
-        ]], appContentPath))
-        if status and jimage ~= "" then
-          resourceDir = jimage:sub(1, #jimage - #'/bin/jimage')
-          framework.java = frameworkName.java
-        end
-        goto END_GET_RESOURCE_DIR
-      end
-
-      _, status = hs.execute(strfmt([[
-        find '%s' -type f -path '%s/Resources/%s/*.properties' | tr -d '\n'
-      ]], appContentPath, appContentPath, frameworkName))
-      if status and _ ~= "" then
-        resourceDir = appContentPath .. '/Resources/' .. frameworkName
-        framework.properties = true
-      end
-
-      _, status = hs.execute(strfmt([[
-        find '%s' -type f -path '%s/Resources/%s/*.dtd' | tr -d '\n'
-      ]], appContentPath, appContentPath, frameworkName))
-      if status and _ ~= "" then
-        resourceDir = appContentPath .. '/Resources/' .. frameworkName
-        framework.dtd = true
-      end
-
-      _, status = hs.execute(strfmt([[
-        find '%s' -type f -path '%s/Resources/%s/*.ftl' | tr -d '\n'
-      ]], appContentPath, appContentPath, frameworkName))
-      if status and _ ~= "" then
-        resourceDir = appContentPath .. '/Resources/' .. frameworkName
-        framework.ftl = true
-      end
-      if resourceDir then goto END_GET_RESOURCE_DIR end
-
-      frameworkDir = hs.execute(strfmt([[
-        find '%s' -type d -name '%s' | head -n 1 | tr -d '\n'
-      ]], appContentPath, frameworkName))
+    local frameworkNames = frameworkName
+    if type(frameworkNames) == 'string' or #frameworkNames == 0 then
+      frameworkNames = { frameworkNames }
     end
-    if frameworkDir == nil or frameworkDir == "" then
-      for _, searchDir in ipairs {
-        '/System/Library/Frameworks',
-        '/System/Library/PrivateFrameworks',
-        '/System/iOSSupport/System/Library/PrivateFrameworks',
-      } do
-        if exists(searchDir .. '/' .. frameworkName) then
-          frameworkDir = searchDir .. '/' .. frameworkName
-          break
+    for _, frameworkName in ipairs(frameworkNames) do
+      if type(frameworkName) == 'string' and exists(frameworkName) then
+        frameworkDir = frameworkName
+      elseif appContentPath ~= nil then
+        if type(frameworkName) == 'table'then
+          if frameworkName.electron and
+              exists(appContentPath .. "/Resources/app.asar") then
+            resourceDir = appContentPath .. "/Resources"
+            framework.electron = frameworkName.electron
+            goto END_GET_RESOURCE_DIR
+          elseif frameworkName.java then
+            local jimage, status = hs.execute(strfmt([[
+              find '%s' -type f -name jimage | tr -d '\n'
+            ]], appContentPath))
+            if status and jimage ~= "" then
+              resourceDir = jimage:sub(1, #jimage - #'/bin/jimage')
+              framework.java = frameworkName.java
+              goto END_GET_RESOURCE_DIR
+            end
+          end
+        else
+          _, status = hs.execute(strfmt([[
+            find '%s' -type f -path '%s/Resources/%s/*.properties' | tr -d '\n'
+          ]], appContentPath, appContentPath, frameworkName))
+          if status and _ ~= "" then
+            resourceDir = appContentPath .. '/Resources/' .. frameworkName
+            framework.properties = true
+          end
+
+          _, status = hs.execute(strfmt([[
+            find '%s' -type f -path '%s/Resources/%s/*.dtd' | tr -d '\n'
+          ]], appContentPath, appContentPath, frameworkName))
+          if status and _ ~= "" then
+            resourceDir = appContentPath .. '/Resources/' .. frameworkName
+            framework.dtd = true
+          end
+
+          _, status = hs.execute(strfmt([[
+            find '%s' -type f -path '%s/Resources/%s/*.ftl' | tr -d '\n'
+          ]], appContentPath, appContentPath, frameworkName))
+          if status and _ ~= "" then
+            resourceDir = appContentPath .. '/Resources/' .. frameworkName
+            framework.ftl = true
+          end
+          if resourceDir then goto END_GET_RESOURCE_DIR end
+
+          frameworkDir = hs.execute(strfmt([[
+            find '%s' -type d -name '%s' | head -n 1 | tr -d '\n'
+          ]], appContentPath, frameworkName))
         end
       end
-      if frameworkDir == nil or frameworkDir == "" then return nil, {} end
-    end
-    if not exists(frameworkDir .. "/Contents") then
-      resourceDir = frameworkDir .. "/Resources"
-    else
-      resourceDir = frameworkDir .. "/Contents/Resources"
-    end
-    framework.user = true
-    if exists(resourceDir) then
-      local chromiumDirs, status = hs.execute(strfmt([[
-        find '%s/' -type f -path '*/locale.pak'
-      ]], resourceDir))
-      if status and chromiumDirs:sub(1, -2) ~= "" then
-        framework.chromium = true
-        framework.user = nil
-        goto END_GET_RESOURCE_DIR
+      if (frameworkDir == nil or frameworkDir == "")
+          and type(frameworkName) == 'string' then
+        for _, searchDir in ipairs {
+          '/System/Library/Frameworks',
+          '/System/Library/PrivateFrameworks',
+          '/System/iOSSupport/System/Library/PrivateFrameworks',
+        } do
+          if exists(searchDir .. '/' .. frameworkName) then
+            frameworkDir = searchDir .. '/' .. frameworkName
+            break
+          end
+        end
+      end
+      if frameworkDir ~= nil and frameworkDir ~= "" then
+        if not exists(frameworkDir .. "/Contents") then
+          resourceDir = frameworkDir .. "/Resources"
+        else
+          resourceDir = frameworkDir .. "/Contents/Resources"
+        end
+        framework.user = true
+        if exists(resourceDir) then
+          local chromiumDirs, status = hs.execute(strfmt([[
+            find '%s/' -type f -path '*/locale.pak'
+          ]], resourceDir))
+          if status and chromiumDirs:sub(1, -2) ~= "" then
+            framework.chromium = true
+            framework.user = nil
+            goto END_GET_RESOURCE_DIR
+          end
+        end
       end
     end
   else

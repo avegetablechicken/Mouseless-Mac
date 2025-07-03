@@ -9,7 +9,7 @@
     "com.charliemonroe.Downie-4": "XUCore.framework",
     "com.charliemonroe.Permute-3": "XUCore.framework",
     "com.tencent.xinWeChat": "WeChatAppEx Framework.framework",
-    "com.tencent.yuanbao": { "electron": "locales" },
+    "com.tencent.yuanbao": [{ "electron": "locales" }, "locales"],
     "net.xmind.vana.app": { "electron": "static/locales" },
     "JabRef": { "java": "org.jabref/l10n" }
   },
