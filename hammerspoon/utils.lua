@@ -3949,7 +3949,7 @@ MENUBAR_MANAGER_SHOW = {
       map = map or loadStatusItemsAutosaveName(find(appid))
       index = map and map[index] or "Item-" .. tostring(index - 1)
     end
-    hs.osascript.applescript(string.format([[
+    hs.osascript.applescript(strfmt([[
       tell application id "com.surteesstudios.Bartender"
         activate "%s-%s"
       end
@@ -3963,7 +3963,7 @@ MENUBAR_MANAGER_SHOW = {
       index = map and map[index] or "Item-" .. tostring(index - 1)
     end
     -- fixme: below script will force `Barbee` to kill itself
-    hs.osascript.applescript(string.format([[
+    hs.osascript.applescript(strfmt([[
       tell application id "com.HyperartFlow.Barbee"
         show item "%s-%s"
       end
