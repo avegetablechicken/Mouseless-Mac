@@ -2769,8 +2769,9 @@ appHotKeyCallbacks = {
   ["com.tencent.yuanbao"] =
   {
     ["settings"] = {
-      message = localizedMessage("Tencent Yuanbao Setting"),
+      message = "设置",
       condition = function(app)
+        if versionGreaterEqual("2")(app) then return true end
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
         local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
@@ -2787,7 +2788,38 @@ appHotKeyCallbacks = {
           return false
         end
       end,
-      fn = click
+      fn = function(button, app)
+        if app ~= nil then click(button) end
+        app = button
+        local observer = uiobserver.new(app:pid())
+        observer:addWatcher(toappui(app), uinotifications.windowCreated)
+        observer:callback(function(obs, winUI)
+          local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
+            AX.ScrollArea, 1, AX.WebArea, 1)
+          if webarea then
+            for _, g in ipairs(getc(webarea, AX.Group)) do
+              if g[1] and g[1].AXValue == "设置" then
+                click(g[1], app) break
+              end
+            end
+            obs:stop()
+            obs = nil
+          end
+        end)
+        observer:start()
+        local clicked = clickRightMenuBarItem(app, {}, "right-click")
+        if clicked then
+          hs.timer.doAfter(2, function()
+            if observer ~= nil then
+              observer:stop()
+              observer = nil
+            end
+          end)
+        else
+          observer:stop()
+          observer = nil
+        end
+      end
     },
     ["newChat"] = {
       message = "新建对话",
@@ -2835,6 +2867,7 @@ appHotKeyCallbacks = {
     },
     ["back"] = {
       message = commonLocalizedMessage("Back"),
+      bindCondition = versionLessThan("2"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
@@ -2857,9 +2890,44 @@ appHotKeyCallbacks = {
       end,
       background = true,
       fn = function(app)
-        -- fixme: false invoke when `Bartender` try to show or hide menubar icon
+        -- false invoke when `Bartender` try to show or hide menubar icon
         -- always show the icon to workaround it
-        clickRightMenuBarItem(app, {}, "click")
+        if versionLessThan("2")(app) then
+          clickRightMenuBarItem(app, {}, "click")
+        else
+          local observer = uiobserver.new(app:pid())
+          observer:addWatcher(toappui(app), uinotifications.windowCreated)
+          observer:callback(function(obs, winUI)
+            -- false invoke when `Bartender` try to show or hide menubar icon
+            if winUI.AXSubrole == AX.StandardWindow then return end
+
+            local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
+              AX.ScrollArea, 1, AX.WebArea, 1)
+            if webarea then
+              for _, g in ipairs(getc(webarea, AX.Group)) do
+                if g[1] and g[1].AXValue == "打开迷你对话窗" then
+                  click(g[1], app)
+                  break
+                end
+              end
+              obs:stop()
+              obs = nil
+            end
+          end)
+          observer:start()
+          local clicked = clickRightMenuBarItem(app, {}, "right-click")
+          if clicked then
+            hs.timer.doAfter(2, function()
+              if observer ~= nil then
+                observer:stop()
+                observer = nil
+              end
+            end)
+          else
+            observer:stop()
+            observer = nil
+          end
+        end
       end,
       onLaunch = function(app)
         local retry = 0
@@ -2871,7 +2939,7 @@ appHotKeyCallbacks = {
         app:focusedWindow():close()
         app:hide()
         hs.timer.usleep(1000000)
-        clickRightMenuBarItem(app, {}, "click")
+        appHotKeyCallbacks[app:bundleID()]["toggleLauncher"].fn(app)
       end
     },
     ["showMainWindow"] = {
