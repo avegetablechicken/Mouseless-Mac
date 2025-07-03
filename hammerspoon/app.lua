@@ -2789,7 +2789,7 @@ appHotKeyCallbacks = {
         end
       end,
       fn = function(button, app)
-        if app ~= nil then click(button) end
+        if app ~= nil then click(button, app) return end
         app = button
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.windowCreated)
