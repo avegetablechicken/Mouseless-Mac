@@ -2782,7 +2782,7 @@ appHotKeyCallbacks = {
           end) ~= nil
         end)
         if button ~= nil and button.AXPosition.x ~= winUI.AXPosition.x then
-          return true, button.AXPosition
+          return true, button
         else
           return false
         end
@@ -3544,14 +3544,14 @@ appHotKeyCallbacks = {
             AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
             AX.Group, 1, AX.Group, 2, AX.Image, 1)
         if btImage ~= nil then
-          return true, btImage.AXPosition
+          return true, btImage
         end
         local banner = getc(webarea, AX.Group, 2, AX.Group, 1,
             AX.Group, 2, AX.Group, 1, AX.Group, 1)
         if banner == nil or banner.AXSubrole ~= AX.LandmarkBanner then
           return false
         end
-        return true, getc(banner, AX.Group, 2, AX.Group, 1, AX.Image, 1).AXPosition
+        return true, getc(banner, AX.Group, 2, AX.Group, 1, AX.Image, 1)
       end,
       fn = click
     },
