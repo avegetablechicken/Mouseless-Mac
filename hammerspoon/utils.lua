@@ -418,7 +418,7 @@ SYSTEM_LOCALE = systemLocales()[1]
 local electronLocale, javaLocale
 function applicationLocale(appid)
   -- locale of `WeChat` and apps whose localization is enabled by Electron or Java
-  -- cannot be aquired by "defaults" command
+  -- cannot be aquired in preferences files
   if appid == "com.tencent.xinWeChat" then
     if applicationVersion(appid) >= 4 then
       local app = find(appid)
@@ -466,13 +466,20 @@ function applicationLocale(appid)
       return locale or SYSTEM_LOCALE
     end
   end
-  local locales = hs.execute(
-      strfmt("defaults read %s AppleLanguages | tr -d '()\" \\n'", appid))
-  if locales ~= "" then
-    return strsplit(locales, ',')[1]
-  else
-    return SYSTEM_LOCALE
+
+  local plistPath = hs.fs.pathToAbsolute(strfmt(
+      "~/Library/Containers/%s/Data/Library/Preferences/%s.plist", appid, appid))
+  if plistPath ~= nil then
+    local locales = hs.plist.read(plistPath).AppleLanguages
+    if locales ~= nil then return locales[1] end
   end
+  plistPath = hs.fs.pathToAbsolute(strfmt(
+      "~/Library/Preferences/%s.plist", appid))
+  if plistPath ~= nil then
+    local locales = hs.plist.read(plistPath).AppleLanguages
+    if locales ~= nil then return locales[1] end
+  end
+  return SYSTEM_LOCALE
 end
 
 local function dirNotExistOrEmpty(dir)
