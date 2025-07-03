@@ -6605,6 +6605,7 @@ local function registerSingleWinFilterForApp(app, filter)
     if notification == uinotifications.windowMiniaturized then
       observer:removeWatcher(element, uinotifications.titleChanged)
     end
+    if not element:isValid() then return end
 
     local action = function()
       if win ~= nil and ((allowSheet and win:role() == AX.Sheet)
@@ -6762,6 +6763,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
     observer:addWatcher(appUI, uinotifications.focusedUIElementChanged)
   end
   observer:callback(function(_, element, notification)
+    if not element:isValid() then return end
     if notification == uinotifications.focusedWindowChanged
         and element.AXRole ~= AX.Sheet then
       return
