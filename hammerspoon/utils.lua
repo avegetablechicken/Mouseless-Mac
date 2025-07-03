@@ -439,22 +439,30 @@ function applicationLocale(appid)
       end
     end
   elseif localizationFrameworks[appid] ~= nil then
-    local app = find(appid)
-    if app then
+    if localizationFrameworks[appid].electron then
+      local locale
       local appContentPath = hs.application.pathForBundleID(appid) .. "/Contents"
       if exists(appContentPath .. "/Resources/app.asar") then
-        local locale = electronLocale(app, localizationFrameworks[appid])
-        if locale ~= nil then return locale end
-      else
-        local jimage, status = hs.execute(strfmt([[
-          find '%s' -type f -name jimage | tr -d '\n'
-        ]], appContentPath))
-        if status and jimage ~= "" then
-          resourceDir = jimage:sub(1, #jimage - #'/bin/jimage')
-          local locale = javaLocale(app, resourceDir, localizationFrameworks[appid])
-          if locale ~= nil then return locale end
+        local app = find(appid)
+        if app then
+          locale = electronLocale(app, localizationFrameworks[appid])
         end
       end
+      return locale or SYSTEM_LOCALE
+    elseif localizationFrameworks[appid].java then
+      local locale
+      local appContentPath = hs.application.pathForBundleID(appid) .. "/Contents"
+      local jimage, status = hs.execute(strfmt([[
+        find '%s' -type f -name jimage | tr -d '\n'
+      ]], appContentPath))
+      if status and jimage ~= "" then
+        local app = find(appid)
+        if app then
+          resourceDir = jimage:sub(1, #jimage - #'/bin/jimage')
+          locale = javaLocale(app, resourceDir, localizationFrameworks[appid])
+        end
+      end
+      return locale or SYSTEM_LOCALE
     end
   end
   local locales = hs.execute(
@@ -488,21 +496,25 @@ function getResourceDir(appid, frameworkName)
     resourceDir = hs.application.pathForBundleID(appid) .. "/WrappedBundle/.."
   elseif frameworkName ~= nil then
     local frameworkDir
-    if exists(frameworkName) then
+    if type(frameworkName) == 'string' and exists(frameworkName) then
       frameworkDir = frameworkName
     elseif appContentPath ~= nil then
-      if exists(appContentPath .. "/Resources/app.asar") then
-        resourceDir = appContentPath .. "/Resources"
-        framework.electron = frameworkName
+      if type(frameworkName) == 'table' and frameworkName.electron then
+        if exists(appContentPath .. "/Resources/app.asar") then
+          resourceDir = appContentPath .. "/Resources"
+          framework.electron = frameworkName.electron
+        end
         goto END_GET_RESOURCE_DIR
       end
 
-      local jimage, status = hs.execute(strfmt([[
-        find '%s' -type f -name jimage | tr -d '\n'
-      ]], appContentPath))
-      if status and jimage ~= "" then
-        resourceDir = jimage:sub(1, #jimage - #'/bin/jimage')
-        framework.java = frameworkName
+      if type(frameworkName) == 'table' and frameworkName.java then
+        local jimage, status = hs.execute(strfmt([[
+          find '%s' -type f -name jimage | tr -d '\n'
+        ]], appContentPath))
+        if status and jimage ~= "" then
+          resourceDir = jimage:sub(1, #jimage - #'/bin/jimage')
+          framework.java = frameworkName.java
+        end
         goto END_GET_RESOURCE_DIR
       end
 

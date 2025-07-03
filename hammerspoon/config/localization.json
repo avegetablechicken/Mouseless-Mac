@@ -9,9 +9,9 @@
     "com.charliemonroe.Downie-4": "XUCore.framework",
     "com.charliemonroe.Permute-3": "XUCore.framework",
     "com.tencent.xinWeChat": "WeChatAppEx Framework.framework",
-    "com.tencent.yuanbao": "locales",
-    "net.xmind.vana.app": "static/locales",
-    "JabRef": "org.jabref/l10n"
+    "com.tencent.yuanbao": { "electron": "locales" },
+    "net.xmind.vana.app": { "electron": "static/locales" },
+    "JabRef": { "java": "org.jabref/l10n" }
   },
 
   "com.baidu.BaiduNetdisk-mac": {
