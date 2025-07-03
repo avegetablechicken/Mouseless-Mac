@@ -6677,8 +6677,9 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
   else
     winUI = towinui(win)
   end
-  if daemonAppFocusedWindowHotkeys[appid] == nil then
-    daemonAppFocusedWindowHotkeys[appid] = {}
+  local wid = win:id()
+  if daemonAppFocusedWindowHotkeys[wid] == nil then
+    daemonAppFocusedWindowHotkeys[wid] = {}
   end
   local closeObserver
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
@@ -6714,21 +6715,21 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
         end
         config.repeatedfn = config.repeatable and cfg.fn or nil
         local hotkey = WinBind(win, config)
-        tinsert(daemonAppFocusedWindowHotkeys[appid], hotkey)
+        tinsert(daemonAppFocusedWindowHotkeys[wid], hotkey)
         if closeObserver == nil then
           closeObserver = uiobserver.new(app:pid())
           closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
           local callback = function(obs)
-            if daemonAppFocusedWindowHotkeys[appid] ~= nil then -- fix weird bug
-              for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[appid]) do
+            if daemonAppFocusedWindowHotkeys[wid] ~= nil then
+              for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[wid]) do
                 if hotkey.idx ~= nil then
                   disableConditionInChain(appid, hotkey, true)
                   hotkey:delete()
-                  daemonAppFocusedWindowHotkeys[appid][i] = nil
+                  daemonAppFocusedWindowHotkeys[wid][i] = nil
                 end
               end
-              if #daemonAppFocusedWindowHotkeys[appid] == 0 then
-                daemonAppFocusedWindowHotkeys[appid] = nil
+              if #daemonAppFocusedWindowHotkeys[wid] == 0 then
+                daemonAppFocusedWindowHotkeys[wid] = nil
               end
             end
             windowCreatedSinceWindow = nil
