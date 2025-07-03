@@ -571,7 +571,7 @@ function getResourceDir(appid, frameworkName)
           resourceDir = frameworkDir .. "/Contents/Resources"
         end
         framework.user = true
-        if exists(resourceDir) then
+        if frameworkDir:sub(-10) == ".framework" and exists(resourceDir) then
           local chromiumDirs, status = hs.execute(strfmt([[
             find '%s/' -type f -path '*/locale.pak'
           ]], resourceDir))
