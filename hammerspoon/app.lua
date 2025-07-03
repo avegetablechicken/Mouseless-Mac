@@ -2890,7 +2890,7 @@ appHotKeyCallbacks = {
       end,
       background = true,
       fn = function(app)
-        -- false invoke when `Bartender` try to show or hide menubar icon
+        -- false invoke when menubar manager try to show or hide menubar icon
         -- always show the icon to workaround it
         if versionLessThan("2")(app) then
           clickRightMenuBarItem(app, {}, "click")
@@ -2898,7 +2898,7 @@ appHotKeyCallbacks = {
           local observer = uiobserver.new(app:pid())
           observer:addWatcher(toappui(app), uinotifications.windowCreated)
           observer:callback(function(obs, winUI)
-            -- false invoke when `Bartender` try to show or hide menubar icon
+            -- false invoke when menubar manager try to show or hide menubar icon
             if winUI.AXSubrole == AX.StandardWindow then return end
 
             local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
