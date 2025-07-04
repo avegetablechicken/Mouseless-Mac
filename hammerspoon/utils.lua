@@ -3898,17 +3898,22 @@ end
 function loadStatusItemsAutosaveName(app)
   local appid = app:bundleID()
   local preferredPositions = {}
+  local errorReadingDefaults = false
   local plistPath, defaults
+  local prefix = "NSStatusItem Preferred Position "
   plistPath = hs.fs.pathToAbsolute(strfmt(
       "~/Library/Containers/%s/Data/Library/Preferences/%s.plist", appid, appid))
   if plistPath ~= nil then
     defaults = hs.plist.read(plistPath)
-    local prefix = "NSStatusItem Preferred Position "
-    local prefix_len = #prefix
-    for k, v in pairs(defaults) do
-      if k:sub(1, prefix_len) == prefix then
-        tinsert(preferredPositions, { k:sub(prefix_len + 1), tonumber(v) })
+    if defaults then
+      local prefix_len = #prefix
+      for k, v in pairs(defaults) do
+        if k:sub(1, prefix_len) == prefix then
+          tinsert(preferredPositions, { k:sub(prefix_len + 1), tonumber(v) })
+        end
       end
+    else
+      errorReadingDefaults = true
     end
   end
   if #preferredPositions == 0 then
@@ -3916,22 +3921,40 @@ function loadStatusItemsAutosaveName(app)
         "~/Library/Preferences/%s.plist", appid))
     if plistPath ~= nil then
       defaults = hs.plist.read(plistPath)
-      local prefix = "NSStatusItem Preferred Position "
-      local prefix_len = #prefix
-      for k, v in pairs(defaults) do
-        if k:sub(1, prefix_len) == prefix then
-          tinsert(preferredPositions, { k:sub(prefix_len + 1), tonumber(v) })
-          found = true
+      if defaults then
+        local prefix_len = #prefix
+        for k, v in pairs(defaults) do
+          if k:sub(1, prefix_len) == prefix then
+            tinsert(preferredPositions, { k:sub(prefix_len + 1), tonumber(v) })
+            found = true
+          end
         end
+      else
+        errorReadingDefaults = true
       end
     end
   end
+  if #preferredPositions == 0 and errorReadingDefaults then
+    local records = hs.execute(strfmt([[
+      defaults read %s | grep '"%s'
+    ]], app:bundleID() or app:name(), prefix))
+    records = strsplit(records, '\n')
+    records[#records] = nil
+    for _, r in ipairs(records) do
+      r = r:sub(r:find('"') + 1)
+      local items = strsplit(r, ' ')
+      local name = items[4]:sub(1, #items[4] - 1)
+      local position = tonumber(items[6]:sub(1, #items[6] - 1))
+      tinsert(preferredPositions, { name, position })
+    end
+  end
+
   if app:bundleID() == 'com.apple.controlcenter' then
     local enabledItems = {}
-    local prefix = "NSStatusItem Visible "
-    local prefix_len = #prefix
+    local visiblePrefix = "NSStatusItem Visible "
+    local prefix_len = #visiblePrefix
     for k, v in pairs(defaults) do
-      if v == true and k:sub(1, prefix_len) == prefix then
+      if v == true and k:sub(1, prefix_len) == visiblePrefix then
         tinsert(enabledItems, k:sub(prefix_len + 1))
       end
     end
