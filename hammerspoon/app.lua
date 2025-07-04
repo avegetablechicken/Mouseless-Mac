@@ -4730,15 +4730,12 @@ appHotKeyCallbacks = {
   ["com.apple.Passwords.MenuBarExtra"] =
   {
     ["showPasswordsDialog"] = {
-      message = "Show Passwords",
+      message = "Show Passwords Dialog",
       background = true,
       fn = clickRightMenuBarItem
     },
     ["newPassword"] = {
-      message = function(win)
-        local button = getc(towinui(win), AX.Group, 1, AX.Button, 'plus')
-        if button then return button.AXHelp end
-      end,
+      message = localizedMessage("New Password"),
       windowFilter = {
         allowRoles = AX.SystemDialog,
         allowTitles = "^$"
@@ -4752,10 +4749,7 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["showAllPasswords"] = {
-      message = function(win)
-        local button = getc(towinui(win), AX.Group, 1, AX.Button, 'macwindow')
-        if button then return button.AXHelp end
-      end,
+      message = localizedMessage("Show all passwords"),
       windowFilter = {
         allowRoles = AX.SystemDialog,
         allowTitles = "^$"
@@ -4769,10 +4763,7 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["back"] = {
-      message = localizedString("Back", {
-        locale = applicationLocale("com.apple.Passwords"),
-        framework = "AccessibilitySharedSupport.framework"
-      }),
+      message = localizedMessage("Back"),
       windowFilter = {
         allowRoles = AX.SystemDialog,
         allowTitles = "^$"
@@ -4785,8 +4776,8 @@ appHotKeyCallbacks = {
       background = true,
       fn = press
     },
-    ["copyUsername"] = {
-      message = localizedString("Username", "com.apple.Passwords"),
+    ["copyUserName"] = {
+      message = localizedMessage("Copy User Name"),
       windowFilter = {
         allowRoles = AX.SystemDialog,
         allowTitles = "^$"
@@ -4808,7 +4799,7 @@ appHotKeyCallbacks = {
       end
     },
     ["copyPassword"] = {
-      message = localizedString("Password", "com.apple.Passwords"),
+      message = localizedMessage("Copy Password"),
       windowFilter = {
         allowRoles = AX.SystemDialog,
         allowTitles = "^$"
@@ -4825,7 +4816,7 @@ appHotKeyCallbacks = {
             AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1)
         local field
         if getc(outline, AX.Row, 3, AX.Cell, 1, AX.StaticText, 1).AXValue
-            == localizedString("Password", "com.apple.Passwords") then
+            == localizedString("Password", win:application():bundleID()) then
           field = getc(outline, AX.Row, 3, AX.Cell, 1, AX.StaticText, 2)
         else
           field = getc(outline, AX.Row, 4, AX.Cell, 1, AX.StaticText, 2)

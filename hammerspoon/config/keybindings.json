@@ -1710,7 +1710,7 @@
         "mods": "command",
         "key": "["
       },
-      "copyUsername": {
+      "copyUserName": {
         "mods": "option",
         "key": "1"
       },

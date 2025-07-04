@@ -4,7 +4,7 @@
     "com.apple.FaceTime": "ConversationKit.framework",
     "com.apple.Safari": "Safari.framework",
     "com.apple.Home": "UIKitMacHelper.framework",
-    "com.apple.Passwords": "LocalAuthenticationUI.framework",
+    "com.apple.Passwords.MenuBarExtra": "PasswordManagerUI.framework",
     "com.apple.iMovieApp": "Flexo.framework",
     "com.charliemonroe.Downie-4": "XUCore.framework",
     "com.charliemonroe.Permute-3": "XUCore.framework",
