@@ -4826,6 +4826,32 @@ appHotKeyCallbacks = {
         clickRightMenuBarItem(win:application())
       end
     },
+    ["copyVerificationCode"] = {
+      message = localizedMessage("Copy Verification Code"),
+      windowFilter = {
+        allowRoles = AX.SystemDialog,
+        allowTitles = "^$"
+      },
+      condition = function(win)
+        local winUI = towinui(win)
+        local elem = getc(winUI, AX.Group, 1)[1]
+        if elem.AXRole ~= AX.Button then return false end
+        local cell = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+            AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1,
+            AX.Row, 5, AX.Cell, 1)
+        local title = getc(cell, AX.StaticText, 1)
+        if title and title.AXValue
+            == localizedString("Verification Code", win:application():bundleID()) then
+          return true, getc(cell, AX.StaticText, 2)
+        end
+        return false
+      end,
+      background = true,
+      fn = function(field, win)
+        click(field, win)
+        clickRightMenuBarItem(win:application())
+      end
+    },
     ["record1"] = {
       message = "Record 1",
       windowFilter = {

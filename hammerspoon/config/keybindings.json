@@ -1718,6 +1718,10 @@
         "mods": "option",
         "key": "2"
       },
+      "copyVerificationCode": {
+        "mods": "option",
+        "key": "3"
+      },
       "record1": {
         "mods": "command",
         "key": "1"
