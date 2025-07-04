@@ -4217,14 +4217,14 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
       local showFunc = MENUBAR_MANAGER_SHOW[manager:bundleID()]
           or bind(showHiddenMenuBarItems, manager)
       local done = showFunc(manager, appid, menuBarId or 1, map, click)
-      if done ~= true then
-        hs.timer.doAfter(0.2, function()
-          if menuBarItem then
+      if not done then
+        if menuBarItem then
+          hs.timer.doAfter(0.2, function()
             activateMenuBarItem(menuBarItem, click)
-          else
-            return false
-          end
-        end)
+          end)
+        else
+          return false
+        end
       end
     elseif menuBarItem then
       activateMenuBarItem(menuBarItem, click)
