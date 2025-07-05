@@ -3293,7 +3293,8 @@ appHotKeyCallbacks = {
           end
         else
           hs.timer.doAfter(0.5, function()
-            local menu = toappui(app):elementAtPosition(chat.AXPosition)
+            local menu = toappui(app):elementAtPosition(
+                uioffset(chat.AXPosition, { 1, 1 }))
             if menu and menu.AXRole == AX.Menu then
               local title = localizedString("Hide", app:bundleID())
               local hide = getc(menu, AX.MenuItem, title)
