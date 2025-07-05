@@ -8852,8 +8852,8 @@ function App_applicationInstalledCallback(files, flagTables)
     end
   end
   for i, file in ipairs(files) do
+    local appid = hs.application.infoForBundlePath(file).CFBundleIdentifier
     if flagTables[i].itemRemoved then
-      local appid = hs.application.infoForBundlePath(file).CFBundleIdentifier
       for _, appkey in ipairs(appHotkeys) do
         if appkey.appid == appid or appkey.appPath == file then
           registerAppHotkeys()
@@ -8862,6 +8862,9 @@ function App_applicationInstalledCallback(files, flagTables)
       end
     elseif flagTables[i].itemCreated then
       registerAppHotkeys()
+      if appid then
+        registerRunningAppHotKeys(appid)
+      end
       return
     end
   end
