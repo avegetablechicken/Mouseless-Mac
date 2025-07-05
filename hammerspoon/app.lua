@@ -5938,6 +5938,7 @@ local function registerRunningAppHotKeys(appid, app)
     runningAppHotKeys[appid] = {}
   end
 
+  local running = true
   -- do not support "condition" property currently
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
     if runningAppHotKeys[appid][hkID] ~= nil then
@@ -5961,7 +5962,9 @@ local function registerRunningAppHotKeys(appid, app)
       end
     else
       bindable = function()
+        if not running then return false end
         app = app or find(appid)
+        running = app ~= nil
         return app and (cfg.bindCondition == nil or cfg.bindCondition(app))
       end
     end
