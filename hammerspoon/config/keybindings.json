@@ -1695,8 +1695,7 @@
     "com.apple.Passwords.MenuBarExtra": {
       "showPasswordsDialog": {
         "mods": "${hyper.daemon}",
-        "key": "P",
-        "persist": true
+        "key": "P"
       },
       "newPassword": {
         "mods": "command",
