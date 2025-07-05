@@ -119,6 +119,7 @@ local function registerAppHotkeys()
     if appPath == nil and config.vm ~= nil then
       if config.vm == "com.parallels.desktop.console" then
         appPath = getParallelsVMPath(config.name)
+        appid = hs.application.infoForBundlePath(appPath).CFBundleIdentifier
       else
         hs.alert("Unsupported Virtual Machine : " .. config.vm)
       end
@@ -134,6 +135,7 @@ local function registerAppHotkeys()
           end
         end
       end
+      appid = hs.application.infoForBundlePath(appPath).CFBundleIdentifier
     end
     if appPath ~= nil then
       local appname
