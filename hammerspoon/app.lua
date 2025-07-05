@@ -3253,13 +3253,18 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then return end
         local winUI = towinui(app:focusedWindow())
         if versionLessThan("4")(app) then
+          local chats = getc(winUI, AX.SplitGroup, 1,
+              AX.ScrollArea, 1, AX.Table, 1, AX.Row)
           local curChatTitle = getc(winUI, AX.SplitGroup, 1,
               AX.SplitGroup, 1, AX.StaticText, 1)
               or getc(winUI, AX.SplitGroup, 1, AX.StaticText, 1)
-          if curChatTitle == nil then return false end
+          if curChatTitle == nil then
+            local curChat = tfind(chats, function(row)
+              return row.AXFocused
+            end)
+            return curChat ~= nil, curChat
+          end
           local title = curChatTitle.AXValue
-          local chats = getc(winUI, AX.SplitGroup, 1,
-              AX.ScrollArea, 1, AX.Table, 1, AX.Row)
           local curChat = tfind(chats, function(c)
             local row = getc(c, AX.Cell, 1, AX.Row, 1)
             return row ~= nil and (row.AXTitle == title
@@ -3267,15 +3272,20 @@ appHotKeyCallbacks = {
           end)
           return curChat ~= nil, getc(curChat, AX.Cell, 1)
         else
+          local chats = getc(winUI, AX.Group, 1,
+              AX.SplitGroup, 1, AX.List, -1, AX.StaticText)
           local curChatTitle = getc(winUI, AX.Group, 1,
               AX.SplitGroup, 1, AX.StaticText, -1)
-          if curChatTitle == nil then return false end
+          if curChatTitle == nil then
+            local curChat = tfind(chats, function(row)
+              return row.AXFocused
+            end)
+            return curChat ~= nil, curChat
+          end
           if #curChatTitle > 0 then
             curChatTitle = getc(curChatTitle, AX.StaticText, 1)
           end
           local title = curChatTitle.AXValue
-          local chats = getc(winUI, AX.Group, 1,
-              AX.SplitGroup, 1, AX.List, -1, AX.StaticText)
           local curChat = tfind(chats, function(row)
             return row.AXTitle == title
                 or row.AXTitle:sub(1, #title + 1) == title .. " "
