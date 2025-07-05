@@ -307,11 +307,13 @@ end
 
 -- ### Finder
 local function getFinderSidebarItemTitle(idx)
-  return function(app)
-    if app:focusedWindow() == nil
-        or app:focusedWindow():role() == AX.Sheet then return end
-    local winUI = towinui(app:focusedWindow())
-    local outline = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1, AX.Outline, 1)
+  return function(win)
+    if win.focusedWindow then
+      win = win:focusedWindow()
+      if win == nil then return end
+    end
+    local outline = getc(towinui(win), AX.SplitGroup, 1,
+        AX.ScrollArea, 1, AX.Outline, 1)
     if outline == nil then return end
     local header
     local cnt = 0
@@ -331,11 +333,9 @@ local function getFinderSidebarItemTitle(idx)
 end
 
 local function getFinderSidebarItem(idx)
-  return function(app)
-    if app:focusedWindow() == nil
-        or app:focusedWindow():role() == AX.Sheet then return false end
-    local winUI = towinui(app:focusedWindow())
-    local outline = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1, AX.Outline, 1)
+  return function(win)
+    local outline = getc(towinui(win), AX.SplitGroup, 1,
+        AX.ScrollArea, 1, AX.Outline, 1)
     if outline == nil then return false end
     local cnt = 0
     for _, row in ipairs(getc(outline, AX.Row)) do
@@ -350,7 +350,8 @@ local function getFinderSidebarItem(idx)
   end
 end
 
-local function openFinderSidebarItem(cell, app)
+local function openFinderSidebarItem(cell, win)
+  local app = win:application()
   local go = localizedString("Go", app:bundleID())
   local itemTitle = getc(cell, AX.StaticText, 1).AXValue
   if app:findMenuItem({ go, itemTitle }) ~= nil then
@@ -1579,9 +1580,9 @@ appHotKeyCallbacks = {
       key = get(KeybindingConfigs.hotkeys.shared,
                 "open1stSidebarItemOnOpenSavePanel", "key"),
       message = getFinderSidebarItemTitle(1),
+      windowFilter = true,
       condition = getFinderSidebarItem(1),
-      fn = openFinderSidebarItem,
-      deleteOnDisable = true
+      fn = openFinderSidebarItem
     },
     ["open2ndSidebarItem"] = {
       mods = get(KeybindingConfigs.hotkeys.shared,
@@ -1589,9 +1590,9 @@ appHotKeyCallbacks = {
       key = get(KeybindingConfigs.hotkeys.shared,
                 "open2ndSidebarItemOnOpenSavePanel", "key"),
       message = getFinderSidebarItemTitle(2),
+      windowFilter = true,
       condition = getFinderSidebarItem(2),
-      fn = openFinderSidebarItem,
-      deleteOnDisable = true
+      fn = openFinderSidebarItem
     },
     ["open3rdSidebarItem"] = {
       mods = get(KeybindingConfigs.hotkeys.shared,
@@ -1599,9 +1600,9 @@ appHotKeyCallbacks = {
       key = get(KeybindingConfigs.hotkeys.shared,
                 "open3rdSidebarItemOnOpenSavePanel", "key"),
       message = getFinderSidebarItemTitle(3),
+      windowFilter = true,
       condition = getFinderSidebarItem(3),
-      fn = openFinderSidebarItem,
-      deleteOnDisable = true
+      fn = openFinderSidebarItem
     },
     ["open4thSidebarItem"] = {
       mods = get(KeybindingConfigs.hotkeys.shared,
@@ -1609,9 +1610,9 @@ appHotKeyCallbacks = {
       key = get(KeybindingConfigs.hotkeys.shared,
                 "open4thSidebarItemOnOpenSavePanel", "key"),
       message = getFinderSidebarItemTitle(4),
+      windowFilter = true,
       condition = getFinderSidebarItem(4),
-      fn = openFinderSidebarItem,
-      deleteOnDisable = true
+      fn = openFinderSidebarItem
     },
     ["open5thSidebarItem"] = {
       mods = get(KeybindingConfigs.hotkeys.shared,
@@ -1619,9 +1620,9 @@ appHotKeyCallbacks = {
       key = get(KeybindingConfigs.hotkeys.shared,
                 "open5thSidebarItemOnOpenSavePanel", "key"),
       message = getFinderSidebarItemTitle(5),
+      windowFilter = true,
       condition = getFinderSidebarItem(5),
-      fn = openFinderSidebarItem,
-      deleteOnDisable = true
+      fn = openFinderSidebarItem
     },
     ["open6thSidebarItem"] = {
       mods = get(KeybindingConfigs.hotkeys.shared,
@@ -1629,9 +1630,9 @@ appHotKeyCallbacks = {
       key = get(KeybindingConfigs.hotkeys.shared,
                 "open6thSidebarItemOnOpenSavePanel", "key"),
       message = getFinderSidebarItemTitle(6),
+      windowFilter = true,
       condition = getFinderSidebarItem(6),
-      fn = openFinderSidebarItem,
-      deleteOnDisable = true
+      fn = openFinderSidebarItem
     },
     ["open7thSidebarItem"] = {
       mods = get(KeybindingConfigs.hotkeys.shared,
@@ -1639,9 +1640,9 @@ appHotKeyCallbacks = {
       key = get(KeybindingConfigs.hotkeys.shared,
                 "open7thSidebarItemOnOpenSavePanel", "key"),
       message = getFinderSidebarItemTitle(7),
+      windowFilter = true,
       condition = getFinderSidebarItem(7),
-      fn = openFinderSidebarItem,
-      deleteOnDisable = true
+      fn = openFinderSidebarItem
     },
     ["open8thSidebarItem"] = {
       mods = get(KeybindingConfigs.hotkeys.shared,
@@ -1649,9 +1650,9 @@ appHotKeyCallbacks = {
       key = get(KeybindingConfigs.hotkeys.shared,
                 "open8thSidebarItemOnOpenSavePanel", "key"),
       message = getFinderSidebarItemTitle(8),
+      windowFilter = true,
       condition = getFinderSidebarItem(8),
-      fn = openFinderSidebarItem,
-      deleteOnDisable = true
+      fn = openFinderSidebarItem
     },
     ["open9thSidebarItem"] = {
       mods = get(KeybindingConfigs.hotkeys.shared,
@@ -1659,9 +1660,9 @@ appHotKeyCallbacks = {
       key = get(KeybindingConfigs.hotkeys.shared,
                 "open9thSidebarItemOnOpenSavePanel", "key"),
       message = getFinderSidebarItemTitle(9),
+      windowFilter = true,
       condition = getFinderSidebarItem(9),
-      fn = openFinderSidebarItem,
-      deleteOnDisable = true
+      fn = openFinderSidebarItem
     },
     ["open10thSidebarItem"] = {
       mods = get(KeybindingConfigs.hotkeys.shared,
@@ -1669,9 +1670,9 @@ appHotKeyCallbacks = {
       key = get(KeybindingConfigs.hotkeys.shared,
                 "open10thSidebarItemOnOpenSavePanel", "key"),
       message = getFinderSidebarItemTitle(10),
+      windowFilter = true,
       condition = getFinderSidebarItem(10),
-      fn = openFinderSidebarItem,
-      deleteOnDisable = true
+      fn = openFinderSidebarItem
     }
   },
 
