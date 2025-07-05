@@ -2,6 +2,12 @@ require "utils"
 
 hs.application.enableSpotlightForNameSearches(true)
 
+local runningAppsOnLoading = {}
+foreach(hs.application.runningApplications(), function(app)
+  runningAppsOnLoading[app:bundleID() or app:name()] = app
+end)
+local isLoading = true
+
 
 -- # appkeys
 
@@ -132,7 +138,11 @@ local function registerAppHotkeys()
     if appPath ~= nil then
       local appname
       if appid ~= nil then
-        appname = displayName(appid)
+        if isLoading then
+          appname = displayName(runningAppsOnLoading[appid] or appid)
+        else
+          appname = displayName(appid)
+        end
       else
         appname = hs.execute(strfmt(
           "mdls -name kMDItemDisplayName -raw '%s'", appPath))
@@ -5963,7 +5973,7 @@ local function registerRunningAppHotKeys(appid, app)
     else
       bindable = function()
         if not running then return false end
-        app = app or find(appid)
+        app = app or (isLoading and runningAppsOnLoading[appid] or find(appid))
         running = app ~= nil
         return app and (cfg.bindCondition == nil or cfg.bindCondition(app))
       end
@@ -7980,7 +7990,7 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
     if hasKey and isForWindow and isBackground then
-      local app = find(appid)
+      local app = runningAppsOnLoading[appid]
       if app ~= nil then
         registerWinFiltersForDaemonApp(app, appConfig)
       end
@@ -8016,7 +8026,7 @@ if frontWin ~= nil then
 end
 
 for appid, _ in pairs(DaemonAppFocusedWindowObservers) do
-  local app = find(appid)
+  local app = runningAppsOnLoading[appid]
   if app then
     local nonFrontmostFilters = {}
     for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
@@ -8062,7 +8072,7 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     local isMenuBarMenu = keybinding.menubarFilter ~= nil
         or cfg.menubarFilter ~= nil
     if hasKey and isMenuBarMenu then
-      local app = find(appid)
+      local app = runningAppsOnLoading[appid]
       if app ~= nil then
         registerObserversForMenuBarMenu(app, appConfig)
       end
@@ -8076,7 +8086,7 @@ end
 
 -- register hotkeys for menu of menubar app
 for appid, _ in pairs(MenuBarMenuObservers) do
-  local app = find(appid)
+  local app = find(appid)  -- "runningAppsOnLoading" may lead to null menubar item
   for _, menuBarItem in ipairs(getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)) do
     if menuBarItem.AXSelected then
       registerInMenuHotkeys(app)
@@ -8294,7 +8304,7 @@ for _, configs in ipairs{appsHideWithoutWindow, appsQuitWithoutWindow} do
     local func = function(app)
       AutoHideQuitWindowFilter:setAppFilter(app:name(), cfg)
     end
-    local app = find(appid)
+    local app = runningAppsOnLoading[appid]
     if app ~= nil then
       func(app)
     else
@@ -8320,7 +8330,7 @@ for _, configs in ipairs {
       registerPseudoWindowDestroyObserver(app, roles,
                                           appsWithoutWindowDelay[appid])
     end
-    local app = find(appid)
+    local app = runningAppsOnLoading[appid]
     if app ~= nil then
       func(app)
     end
@@ -8907,3 +8917,6 @@ function App_usbChangedCallback(device)
     end
   end
 end
+
+runningAppsOnLoading = {}
+isLoading = false
