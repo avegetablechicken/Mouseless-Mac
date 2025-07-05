@@ -473,16 +473,12 @@ local function loadAppHotkeys(t, showOrSearch)
   end
 end
 
-local function getValidMessage(hotkeyInfo, win)
-  if not APPWIN_HOTKEY_ON_WINDOW_FOCUS and win == nil then
-    win = hs.application.frontmostApplication():focusedWindow()
-    if win == nil then return false, nil end
-  end
-  if hotkeyInfo.enabled and hotkeyInfo.condition(win) then
+local function getValidMessage(hotkeyInfo)
+  if hotkeyInfo.enabled and hotkeyInfo.condition() then
     return true, hotkeyInfo.message
   else
     if hotkeyInfo.previous then
-      return getValidMessage(hotkeyInfo.previous, win)
+      return getValidMessage(hotkeyInfo.previous)
     else
       return false, nil
     end
