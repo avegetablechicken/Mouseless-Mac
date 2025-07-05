@@ -6177,16 +6177,6 @@ local function wrapConditionChain(app, fn, mode, config)
 end
 
 local function wrapCondition(obj, config, mode)
-  local app, win, menu
-  if obj.application ~= nil then
-    win = obj app = obj:application()
-  elseif obj.asHSApplication ~= nil then
-    menu = obj app = getAppFromDescendantElement(obj)
-  else
-    app = obj
-  end
-  obj = nil
-
   local mods, key = config.mods, config.key
   local func = mode == KEY_MODE.REPEAT and config.repeatedfn or config.fn
   local windowFilter = config.windowFilter
@@ -6200,6 +6190,23 @@ local function wrapCondition(obj, config, mode)
   end
   -- some apps only accept system key strokes and neglect key strokes targeted at them
   local resendToSystem = config.defaultResendToSystem
+
+  local app, win, menu
+  if obj.application ~= nil then
+    app = obj:application()
+    -- WinBind or AppWinBind (APPWIN_HOTKEY_ON_WINDOW_FOCUS)
+    win = config.background and obj or true
+  elseif obj.asHSApplication ~= nil then
+    -- MenuBarBind
+    menu = obj app = getAppFromDescendantElement(obj)
+  else
+    app = obj  -- APPBIND
+    if windowFilter ~= nil then
+      -- AppWinBind (not APPWIN_HOTKEY_ON_WINDOW_FOCUS)
+      win = true
+    end
+  end
+  obj = nil
 
   -- testify window filter and return TF & extra result
   if windowFilter ~= nil then
@@ -6270,17 +6277,20 @@ local function wrapCondition(obj, config, mode)
   end
   -- send key strokes to frontmost window instead of frontmost app
   cond = resendToFrontmostWindow(cond, config.nonFrontmost or menu ~= nil)
-  if windowFilter == nil then
+  if win == true then
+    local oldCond = cond
+    cond = function()
+      if app:focusedWindow() == nil then return false, CF.noFocusedWindow end
+      return oldCond(app:focusedWindow())
+    end
+  else
     cond = bind(cond, win or menu or app)
   end
   local fn = func
   fn = function()
-    local obj = windowFilter == nil and (win or menu or app) or app:focusedWindow()
-    if obj == nil then  -- no window focused when triggering window-specific hotkeys
-      return false, CF.noFocusedWindow
-    end
-    local satisfied, result, url = cond(obj)
+    local satisfied, result, url = cond()
     if satisfied then
+      local obj = win == true and app:focusedWindow() or (win or menu or app)
       if result ~= nil then  -- condition function can pass result to callback function
         if url ~= nil then
           func(result, url, obj)
