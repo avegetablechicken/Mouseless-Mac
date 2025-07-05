@@ -309,7 +309,7 @@ end
 local function getFinderSidebarItemTitle(idx)
   return function(app)
     if app:focusedWindow() == nil
-        or app:focusedWindow():role() == AX.Sheet then return false end
+        or app:focusedWindow():role() == AX.Sheet then return end
     local winUI = towinui(app:focusedWindow())
     local outline = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1, AX.Outline, 1)
     if outline == nil then return end
