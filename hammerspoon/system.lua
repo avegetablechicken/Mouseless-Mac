@@ -324,22 +324,75 @@ local shellCommandsExecutedOnLoading = {}
 local isLoaing = true
 local function executeProxyCondition(condition, returnCode)
   if condition.shell_command then
+    local status, rc
     if isLoaing then
       local cmd = tfind(shellCommandsExecutedOnLoading, function(cmd)
         return cmd[1] == condition.shell_command
       end)
       if cmd then
-        local status, rc = cmd[2], cmd[3]
-        return returnCode and rc or status
+        status, rc = cmd[2], cmd[3]
+        if returnCode then return rc end
+        if status then return true end
       end
     end
-    local _, status, _, rc = hs.execute(condition.shell_command)
-    if isLoaing then
-      tinsert(shellCommandsExecutedOnLoading,
-              { condition.shell_command, status, rc })
+    if rc == nil then
+      _, status, _, rc = hs.execute(condition.shell_command)
+      if isLoaing then
+        tinsert(shellCommandsExecutedOnLoading,
+          { condition.shell_command, status, rc })
+      end
     end
-    return returnCode and rc or status
+    if returnCode then return rc end
+    if status then return true end
   end
+
+  if returnCode then return -1 end
+
+  local interface = hs.network.primaryInterfaces()
+  local interfaceName = getNetworkService(true)
+  if condition.ssid then
+    if interfaceName == '"Wi-Fi"' then
+      local ssid = hs.wifi.currentNetwork()
+      if ssid == nil then
+        if hs.location.servicesEnabled() then
+          hs.location.start()
+          -- you may be prompted to authorise Hammerspoon to use Location Services
+          if hs.location.get() then
+            ssid = hs.wifi.currentNetwork()
+          end
+          hs.location.stop()
+        end
+      end
+      if ssid == nil then
+        ssid = hs.execute(strfmt([[
+          ipconfig getsummary %s | awk -F ' SSID : '  '/ SSID : / {print $2}' | tr -d '\n'
+        ]], interface))
+      end
+      if ssid and ssid ~= "" then
+        local ssidPatterns = type(condition.ssid) == 'string'
+            and { condition.ssid } or condition.ssid
+        if tfind(ssidPatterns, function(id) return ssid:match(id) end) then
+          return true
+        end
+      end
+    end
+  end
+  if condition.etherNet then
+    if interfaceName:match('"^USB (.-) LAN$"') then
+      local ip = NetworkWatcher
+        :contents("State:/Network/Interface/"..interface.."/IPv4")
+        ["State:/Network/Interface/" .. interface .. "/IPv4"]
+      if ip and ip.Addresses and ip.Addresses[1] then
+        local addrPatterns = type(condition.etherNet) == 'string'
+            and { condition.etherNet } or condition.etherNet
+        if tfind(addrPatterns, function(addr)
+            return ip.Addresses[1]:match(addr) end) then
+          return true
+        end
+      end
+    end
+  end
+  return false
 end
 
 -- menubar for proxy
