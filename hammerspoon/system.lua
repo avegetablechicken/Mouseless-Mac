@@ -666,7 +666,8 @@ local function registerProxyMenuImpl(enabledProxy, mode)
     {
       title = "Information",
       fn = function()
-        local info = NetworkWatcher:proxies()
+        local info = NetworkWatcher
+            :contents("State:/Network/Global/Proxies")["State:/Network/Global/Proxies"]
         local enabled, m = parseProxyInfo(info)
         local header
         if enabled ~= "" then
@@ -678,33 +679,33 @@ local function registerProxyMenuImpl(enabledProxy, mode)
           header = "No Proxy Enabled"
         end
 
-        local networkservice = getNetworkService()
-        local autoproxyurl = hs.execute("networksetup -getautoproxyurl " .. networkservice)
-        local webproxy = hs.execute("networksetup -getwebproxy " .. networkservice)
-        local autodiscovery = hs.execute("networksetup -getproxyautodiscovery " .. networkservice)
-        local securewebproxy = hs.execute("networksetup -getsecurewebproxy " .. networkservice)
-        local socksproxy = hs.execute("networksetup -getsocksfirewallproxy " .. networkservice)
-
-        header = header .. [[
+        local content = header .. [[
 
 
           Details:
 
-          ]] .. autodiscovery .. [[
+          Auto Proxy Discovery: ]] .. (info.ProxyAutoDiscoveryEnable == 1 and "On" or "Off") .. [[ 
 
           Auto Proxy:
-          ]] .. autoproxyurl .. [[
+          URL: ]] .. (info.ProxyAutoConfigURLString or "(null)") .. [[ 
+          Enabled: ]] .. (info.ProxyAutoConfigEnable == 1 and "Yes" or "No") .. [[ 
 
           HTTP Proxy:
-          ]] .. webproxy .. [[
+          Enabled: ]] .. (info.HTTPEnable == 1 and "Yes" or "No") .. [[ 
+          Server: ]] .. (info.HTTPProxy or "").. [[ 
+          Port: ]] .. (info.HTTPPort or 0) .. [[ 
 
           HTTPS Proxy:
-          ]] .. securewebproxy .. [[
+          Enabled: ]] .. (info.HTTPSEnable == 1 and "Yes" or "No") .. [[ 
+          Server: ]] .. (info.HTTPSProxy or "") .. [[ 
+          Port: ]] .. (info.HTTPSPort or 0) .. [[ 
 
           SOCKS Proxy:
-          ]] .. socksproxy
+          Enabled: ]] .. (info.SOCKSEnable == 1 and "Yes" or "No") .. [[ 
+          Server: ]] .. (info.SOCKSProxy or "") .. [[ 
+          Port: ]] .. (info.SOCKSPort or 0)
         hs.focus()
-        hs.dialog.blockAlert("Proxy Configuration", header)
+        hs.dialog.blockAlert("Proxy Configuration", content)
       end
     },
 
