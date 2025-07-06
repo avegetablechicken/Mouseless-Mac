@@ -883,13 +883,10 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
                 if curProxy == enabledProxy and curMode == enabledMode then
                   goto L_PROXY_SET
                 end
-                for n, actFuncs in pairs(proxyActivateFuncs) do
-                  if n == name and actFuncs[mode] ~= nil then
-                    actFuncs[mode]()
-                    goto L_PROXY_SET
-                  end
-                end
-                if mode == "global" then
+                local actFunc = get(proxyActivateFuncs, name, mode)
+                if actFunc ~= nil then
+                  actFunc()
+                elseif mode == "global" then
                   enable_proxy_global(name, nil, loc)
                 elseif mode == "pac" then
                   enable_proxy_PAC(name, nil, loc)
