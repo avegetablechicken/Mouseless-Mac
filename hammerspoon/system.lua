@@ -1,8 +1,7 @@
 require "utils"
 
 -- menubar for caffeine
-local caffeine = hs.menubar.new()
-caffeine:autosaveName("CAFFEINE")
+local caffeine = hs.menubar.new(true, "CAFFEINE")
 
 local function setCaffeineDisplay(state)
   if state then
@@ -340,9 +339,8 @@ local proxyActivateFuncs = {
 }
 
 -- menubar for proxy
-local proxy = hs.menubar.new()
+local proxy = hs.menubar.new(true, "PROXY")
 proxy:setTitle("PROXY")
-proxy:autosaveName("PROXY")
 local proxyMenu = {}
 
 -- load proxy configs
