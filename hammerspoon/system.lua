@@ -320,6 +320,28 @@ local proxyActivateFuncs = {
   }
 }
 
+local shellCommandsExecutedOnLoading = {}
+local isLoaing = true
+local function executeProxyCondition(condition, returnCode)
+  if condition.shell_command then
+    if isLoaing then
+      local cmd = tfind(shellCommandsExecutedOnLoading, function(cmd)
+        return cmd[1] == condition.shell_command
+      end)
+      if cmd then
+        local status, rc = cmd[2], cmd[3]
+        return returnCode and rc or status
+      end
+    end
+    local _, status, _, rc = hs.execute(condition.shell_command)
+    if isLoaing then
+      tinsert(shellCommandsExecutedOnLoading,
+              { condition.shell_command, status, rc })
+    end
+    return returnCode and rc or status
+  end
+end
+
 -- menubar for proxy
 local proxy = hs.menubar.new(true, "PROXY")
 proxy:setTitle("PROXY")
@@ -332,16 +354,7 @@ local function parseProxyConfigurations(configs)
   for name, config in pairs(configs) do
     ProxyConfigs[name] = {}
     if config.condition ~= nil then
-      local shell_command = config.condition.shell_command
-      if shell_command ~= nil then
-        ProxyConfigs[name].condition = function()
-          local _, _, _, rc = hs.execute(shell_command)
-          if rc == 0 then return true
-          elseif rc == 1 then return false
-          else return nil
-          end
-        end
-      end
+      ProxyConfigs[name].condition = config.condition
       if config.locations ~= nil then
         ProxyConfigs[name].locations = config.locations
         for _, loc in ipairs(config.locations) do
@@ -487,14 +500,14 @@ local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
   local config, loc
   if ProxyConfigs[name].locations then
     local locations = ProxyConfigs[name].locations
-    local fullfilled = ProxyConfigs[name].condition()
-    if fullfilled == nil then return proxyMenuIdx end
-    loc = fullfilled and locations[1] or locations[2]
+    local rc = executeProxyCondition(ProxyConfigs[name].condition, true)
+    if rc >= 0 and #locations > rc then loc = locations[rc + 1]
+    else return proxyMenuIdx end
     config = ProxyConfigs[name][loc]
   else
-    if ProxyConfigs[name].condition then
-      local fullfilled = ProxyConfigs[name].condition()
-      if fullfilled ~= 0 then return proxyMenuIdx end
+    if ProxyConfigs[name].condition
+        and not executeProxyCondition(ProxyConfigs[name].condition) then
+      return proxyMenuIdx
     end
     config = ProxyConfigs[name]
   end
@@ -836,17 +849,6 @@ end
 local proxySettings
 if exists("config/misc.json") then
   proxySettings = hs.json.read("config/misc.json").proxy
-  for _, cfg in ipairs(proxySettings) do
-    if cfg.condition ~= nil then
-      local shell_command = cfg.condition["shell_command"]
-      if shell_command ~= nil then
-        cfg.condition = function()
-          local _, _, _, rc = hs.execute(shell_command)
-          return rc == 0
-        end
-      end
-    end
-  end
 end
 
 local lastIpv4State
@@ -863,20 +865,20 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
     tinsert(NetworkMonitorKeys, "Setup:/Network/Service/" .. curNetID .. "/Proxies")
     if lastIpv4State == nil and proxySettings ~= nil then
       for _, cfg in ipairs(proxySettings) do
-        if cfg.condition == nil or cfg.condition() then
+        if cfg.condition == nil or executeProxyCondition(cfg.condition) then
           for _, candidate in ipairs(cfg.candidates or {}) do
             local name, mode = candidate.name, candidate.mode
             if ProxyConfigs[name] ~= nil then
               local config, loc
               if ProxyConfigs[name].condition ~= nil then
-                local fullfilled = ProxyConfigs[name].condition()
                 if ProxyConfigs[name].locations then
                   local locations = ProxyConfigs[name].locations
-                  if fullfilled ~= nil then
-                    loc = fullfilled and locations[1] or locations[2]
+                  local rc = executeProxyCondition(ProxyConfigs[name].condition, true)
+                  if rc >= 0 and #locations > rc then loc = locations[rc + 1] end
+                  if loc then
                     config = ProxyConfigs[name][loc]
                   end
-                elseif fullfilled == 0 then
+                elseif executeProxyCondition(ProxyConfigs[name].condition) then
                   config = ProxyConfigs[name]
                 end
               else
@@ -2313,3 +2315,6 @@ function System_batteryChangedCallback()
     end
   end
 end
+
+shellCommandsExecutedOnLoading = {}
+isLoaing = false
