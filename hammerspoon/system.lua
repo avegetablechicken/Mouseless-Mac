@@ -874,7 +874,15 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
               end
               if config ~= nil then
                 enabledProxy = name
-                enabledMode = mode
+                if mode == "global" then
+                  enabledMode = "Global"
+                elseif mode == "pac" then
+                  enabledMode = "PAC"
+                end
+                local curProxy, curMode = parseProxyInfo(NetworkWatcher:proxies())
+                if curProxy == enabledProxy and curMode == enabledMode then
+                  goto L_PROXY_SET
+                end
                 for n, actFuncs in pairs(proxyActivateFuncs) do
                   if n == name and actFuncs[mode] ~= nil then
                     actFuncs[mode]()
@@ -897,11 +905,6 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
   end
   ::L_PROXY_SET::
   NetworkWatcher:monitorKeys(NetworkMonitorKeys)
-  if enabledMode == "global" then
-    enabledMode = "Global"
-  elseif enabledMode == "pac" then
-    enabledMode = "PAC"
-  end
   registerProxyMenu(true, enabledProxy, enabledMode)
   lastIpv4State = Ipv4State
 end
