@@ -341,6 +341,8 @@ local function parseProxyConfigurations(configs)
           else return nil
           end
         end
+      end
+      if config.locations ~= nil then
         ProxyConfigs[name].locations = config.locations
         for _, loc in ipairs(config.locations) do
           ProxyConfigs[name][loc] = {}
@@ -355,10 +357,9 @@ local function parseProxyConfigurations(configs)
             }
           end
         end
-      else
-        ProxyConfigs[name] = nil
       end
-    else
+    end
+    if config.locations == nil then
       local spec = config
       ProxyConfigs[name]["PAC"] = spec.pac
       if spec.global ~= nil then
@@ -484,14 +485,18 @@ end
 
 local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
   local config, loc
-  if ProxyConfigs[name].condition == nil then
-    config = ProxyConfigs[name]
-  else
+  if ProxyConfigs[name].locations then
     local locations = ProxyConfigs[name].locations
     local fullfilled = ProxyConfigs[name].condition()
     if fullfilled == nil then return proxyMenuIdx end
     loc = fullfilled and locations[1] or locations[2]
     config = ProxyConfigs[name][loc]
+  else
+    if ProxyConfigs[name].condition then
+      local fullfilled = ProxyConfigs[name].condition()
+      if fullfilled ~= 0 then return proxyMenuIdx end
+    end
+    config = ProxyConfigs[name]
   end
   if config ~= nil then
     tinsert(proxyMenu, { title = "-" })
@@ -543,7 +548,7 @@ local function parseProxyInfo(info, require_mode)
   local mode = nil
   if info.ProxyAutoConfigEnable == 1 then
     for appname, config in pairs(ProxyConfigs) do
-      if config.condition == nil then
+      if config.locations == nil then
         if config.PAC ~= nil
             and info.ProxyAutoConfigURLString:match(config.PAC) then
           enabledProxy = appname
