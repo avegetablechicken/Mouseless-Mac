@@ -868,15 +868,19 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
             local name, mode = candidate.name, candidate.mode
             if ProxyConfigs[name] ~= nil then
               local config, loc
-              if ProxyConfigs[name].condition == nil then
-                config = ProxyConfigs[name]
-              else
-                local locations = ProxyConfigs[name].locations
+              if ProxyConfigs[name].condition ~= nil then
                 local fullfilled = ProxyConfigs[name].condition()
-                if fullfilled ~= nil then
-                  loc = fullfilled and locations[1] or locations[2]
-                  config = ProxyConfigs[name][loc]
+                if ProxyConfigs[name].locations then
+                  local locations = ProxyConfigs[name].locations
+                  if fullfilled ~= nil then
+                    loc = fullfilled and locations[1] or locations[2]
+                    config = ProxyConfigs[name][loc]
+                  end
+                elseif fullfilled == 0 then
+                  config = ProxyConfigs[name]
                 end
+              else
+                config = ProxyConfigs[name]
               end
               if config ~= nil then
                 enabledProxy = name
