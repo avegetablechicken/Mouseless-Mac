@@ -612,8 +612,10 @@ local function registerWindowSwitcher()
     end
     if switcher == nil then
       local filter = hs.window.filter.new()
-      for appid, rule in pairs(ignoredApps) do
-        filter:setAppFilter(find(appid):name(), rule)
+        for appid, rule in pairs(ignoredApps) do
+        if find(appid) then
+          filter:setAppFilter(find(appid):name(), rule)
+        end
       end
       switcher = hs.window.switcher.new(filter)
     end
@@ -657,7 +659,9 @@ local function registerWindowSwitcher()
     if switcher == nil then
       local filter = hs.window.filter.new()
       for appid, rule in pairs(ignoredApps) do
-        filter:setAppFilter(find(appid):name(), rule)
+        if find(appid) then
+          filter:setAppFilter(find(appid):name(), rule)
+        end
       end
       switcher = hs.window.switcher.new(filter)
     end
@@ -874,7 +878,9 @@ bindWindowSwitch(misc["searchWindow"], 'Switch to Window',
 function()
   local wFilter = hs.window.filter.new()
   for appid, rule in pairs(ignoredApps) do
-    wFilter:setAppFilter(find(appid):name(), rule)
+    if find(appid) then
+      wFilter:setAppFilter(find(appid):name(), rule)
+    end
   end
   local allWindows = wFilter:getWindows()
   local choices = {}
