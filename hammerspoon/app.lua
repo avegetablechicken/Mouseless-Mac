@@ -6056,14 +6056,7 @@ end
 
 local function resendToFrontmostWindow(cond, nonFrontmost)
   return function(obj)
-    local app
-    if obj.application ~= nil then
-      app = obj:application()
-    elseif obj.asHSApplication ~= nil then
-      app = getAppFromDescendantElement(obj)
-    else
-      app = obj
-    end
+    local app = obj.application ~= nil and obj:application() or obj
     local frontWin = hs.window.frontmostWindow()
     if nonFrontmost then
       if frontWin ~= nil and windowCreatedSince
@@ -6272,9 +6265,9 @@ local function wrapCondition(obj, config, mode)
     if mods == nil or mods == "" or #mods == 0 then
       cond = noSelectedMenuBarItemFunc(cond)
     end
+    -- send key strokes to frontmost window instead of frontmost app
+    cond = resendToFrontmostWindow(cond, config.nonFrontmost)
   end
-  -- send key strokes to frontmost window instead of frontmost app
-  cond = resendToFrontmostWindow(cond, config.nonFrontmost or menu ~= nil)
   if win == true then
     local oldCond = cond
     cond = function()
