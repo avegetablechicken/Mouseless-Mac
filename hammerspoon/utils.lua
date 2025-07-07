@@ -1149,76 +1149,6 @@ local function parseStringsFile(file, keepOrder, keepAll)
   return localesDict
 end
 
-local function localizeByLoctableImpl(str, filePath, locale, localesDict)
-  if localesDict[locale] == nil then
-    local loctables = hs.plist.read(filePath)
-    localesDict[locale] = loctables[locale]
-    if localesDict[locale] == nil then return end
-    local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
-    for _, en in ipairs(enLocales) do
-      localesDict[en] = loctables[en]
-    end
-  end
-
-  local result = localesDict[locale][str]
-  if result ~= nil then return result end
-  if locale == 'en' then
-    local enLocales = tconcat({ 'English', 'Base' }, extraEnglishLocales)
-    for _, en in ipairs(enLocales) do
-      result = get(localesDict, en, str)
-      if result ~= nil then return result end
-    end
-  end
-
-  local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
-  for _, en in ipairs(enLocales) do
-    if localesDict[en] ~= nil then
-      local key = tindex(localesDict[en], str)
-      if key ~= nil then
-        return localesDict[locale][key]
-      end
-    end
-  end
-end
-
-local function localizeByLoctable(str, resourceDir, localeFile, locale, localesDict)
-  local loctableFiles = {}
-  if localeFile ~= nil then
-    if type(localeFile) == 'string' then
-      localeFile = { localeFile }
-    end
-    for file in hs.fs.dir(resourceDir) do
-      if file:sub(-9) == '.loctable' then
-        for _, p in ipairs(localeFile) do
-          if file:sub(1, -10):match('^' .. p .. '$') then
-            tinsert(loctableFiles, file:sub(1, -10))
-          end
-        end
-      end
-    end
-  else
-    loctableFiles = collectLocaleFiles(resourceDir, { loctable = true })
-    local preferentialLoctableFiles = {}
-    if #loctableFiles > 10 then
-      loctableFiles, preferentialLoctableFiles =
-          filterPreferentialLocaleFiles(loctableFiles)
-    end
-    tconcat(preferentialLoctableFiles, loctableFiles)
-    loctableFiles = preferentialLoctableFiles
-  end
-  if localesDict == nil then
-    localesDict = {}
-  end
-  for _, file in ipairs(loctableFiles) do
-    local fullPath = resourceDir .. '/' .. file .. '.loctable'
-    if localesDict[file] == nil then
-      localesDict[file] = {}
-    end
-    local result = localizeByLoctableImpl(str, fullPath, locale, localesDict[file])
-    if result ~= nil then return result end
-  end
-end
-
 local function isBinarayPlist(file)
   local f = io.open(file, "rb")
   if f == nil then return false end
@@ -1311,6 +1241,87 @@ local function parseNIBFile(file, keepOrder, keepAll)
     return parseBinaryPlistFile(file, keepOrder, keepAll)
   else
     return parseNIBArchive(file, keepOrder, keepAll)
+  end
+end
+
+local function localizeByLoctableImpl(str, filePath, locale, localesDict, baseNibFile)
+  if localesDict[locale] == nil then
+    local loctables = hs.plist.read(filePath)
+    localesDict[locale] = loctables[locale]
+    if localesDict[locale] == nil then return end
+    if baseNibFile == nil then
+      local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
+      for _, en in ipairs(enLocales) do
+        localesDict[en] = loctables[en]
+      end
+    else
+      localesDict['Base'] = parseNIBFile(baseNibFile)
+    end
+  end
+
+  local result = localesDict[locale][str]
+  if result ~= nil then return result end
+  if locale == 'en' then
+    local enLocales = tconcat({ 'English', 'Base' }, extraEnglishLocales)
+    for _, en in ipairs(enLocales) do
+      result = get(localesDict, en, str)
+      if result ~= nil then return result end
+    end
+  end
+
+  local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
+  for _, en in ipairs(enLocales) do
+    if localesDict[en] ~= nil then
+      local key = tindex(localesDict[en], str)
+      if key ~= nil then
+        return localesDict[locale][key]
+      end
+    end
+  end
+end
+
+local function localizeByLoctable(str, resourceDir, localeFile, locale, localesDict)
+  local loctableFiles = {}
+  if localeFile ~= nil then
+    if type(localeFile) == 'string' then
+      localeFile = { localeFile }
+    end
+    for file in hs.fs.dir(resourceDir) do
+      if file:sub(-9) == '.loctable' then
+        for _, p in ipairs(localeFile) do
+          if file:sub(1, -10):match('^' .. p .. '$') then
+            tinsert(loctableFiles, file:sub(1, -10))
+          end
+        end
+      end
+    end
+  else
+    loctableFiles = collectLocaleFiles(resourceDir, { loctable = true })
+    local preferentialLoctableFiles = {}
+    if #loctableFiles > 10 then
+      loctableFiles, preferentialLoctableFiles =
+          filterPreferentialLocaleFiles(loctableFiles)
+    end
+    tconcat(preferentialLoctableFiles, loctableFiles)
+    loctableFiles = preferentialLoctableFiles
+  end
+  if localesDict == nil then
+    localesDict = {}
+  end
+  for _, file in ipairs(loctableFiles) do
+    local fullPath = resourceDir .. '/' .. file .. '.loctable'
+    if localesDict[file] == nil then
+      localesDict[file] = {}
+    end
+    local baseNibFile
+    for _, en in ipairs{'Base', 'en', 'English'} do
+      local nibFile = resourceDir .. strfmt('/%s.lproj/%s.nib', en, file)
+      if exists(nibFile) then
+        baseNibFile = nibFile break
+      end
+    end
+    local result = localizeByLoctableImpl(str, fullPath, locale, localesDict[file], baseNibFile)
+    if result ~= nil then return result end
   end
 end
 
@@ -2389,14 +2400,18 @@ function localizedString(str, appid, params, force)
 end
 
 
-local function delocalizeByLoctableImpl(str, filePath, locale, localesDict)
+local function delocalizeByLoctableImpl(str, filePath, locale, localesDict, baseNibFile)
   if localesDict[locale] == nil then
     local loctables = hs.plist.read(filePath)
     localesDict[locale] = loctables[locale]
     if localesDict[locale] == nil then return end
-    local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
-    for _, en in ipairs(enLocales) do
-      localesDict[en] = loctables[en]
+    if baseNibFile == nil then
+      local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
+      for _, en in ipairs(enLocales) do
+        localesDict[en] = loctables[en]
+      end
+    else
+      localesDict['Base'] = parseNIBFile(baseNibFile)
     end
   end
 
@@ -2439,11 +2454,18 @@ local function delocalizeByLoctable(str, resourceDir, localeFile, locale, locale
     localesDict = {}
   end
   for _, file in ipairs(loctableFiles) do
+    local fullPath = resourceDir .. '/' .. file .. '.loctable'
     if localesDict[file] == nil then
       localesDict[file] = {}
     end
-    local result = delocalizeByLoctableImpl(
-        str, resourceDir .. '/' .. file .. '.loctable', locale, localesDict)
+    local baseNibFile
+    for _, en in ipairs{'Base', 'en', 'English'} do
+      local nibFile = resourceDir .. strfmt('/%s.lproj/%s.nib', en, file)
+      if exists(nibFile) then
+        baseNibFile = nibFile break
+      end
+    end
+    local result = delocalizeByLoctableImpl(str, fullPath, locale, localesDict, baseNibFile)
     if result ~= nil then return result end
   end
 end
