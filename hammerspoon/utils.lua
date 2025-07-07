@@ -2395,7 +2395,7 @@ local function delocalizeByLoctableImpl(str, filePath, locale, localesDict)
     localesDict[locale] = loctables[locale]
     if localesDict[locale] == nil then return end
     local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
-    for en in ipairs(enLocales) do
+    for _, en in ipairs(enLocales) do
       localesDict[en] = loctables[en]
     end
   end
