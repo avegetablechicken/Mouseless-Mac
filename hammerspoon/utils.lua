@@ -2465,7 +2465,7 @@ local function delocalizeByLoctable(str, resourceDir, localeFile, locale, locale
         baseNibFile = nibFile break
       end
     end
-    local result = delocalizeByLoctableImpl(str, fullPath, locale, localesDict, baseNibFile)
+    local result = delocalizeByLoctableImpl(str, fullPath, locale, localesDict[file], baseNibFile)
     if result ~= nil then return result end
   end
 end
