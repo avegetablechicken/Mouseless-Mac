@@ -33,7 +33,7 @@ local function getNetworkService(userDefinedName)
       local service = NetworkWatcher
           :contents("Setup:/Network/Service/" .. serviceID)
           ["Setup:/Network/Service/" .. serviceID]
-      return service and '"'..service.UserDefinedName..'"'
+      return service and service.UserDefinedName
     else
       return serviceID
     end
@@ -42,19 +42,19 @@ end
 
 local function disable_proxy(networkservice)
   networkservice = networkservice or getNetworkService()
-  hs.execute("networksetup -setproxyautodiscovery " .. networkservice .. ' off')
-  hs.execute("networksetup -setautoproxystate " .. networkservice .. ' off')
-  hs.execute("networksetup -setwebproxystate " .. networkservice .. ' off')
-  hs.execute("networksetup -setsecurewebproxystate " .. networkservice .. ' off')
-  hs.execute("networksetup -setsocksfirewallproxystate " .. networkservice .. ' off')
+  hs.execute('networksetup -setproxyautodiscovery "' .. networkservice .. '" off')
+  hs.execute('networksetup -setautoproxystate "' .. networkservice .. '" off')
+  hs.execute('networksetup -setwebproxystate "' .. networkservice .. '" off')
+  hs.execute('networksetup -setsecurewebproxystate "' .. networkservice .. '" off')
+  hs.execute('networksetup -setsocksfirewallproxystate "' .. networkservice .. '" off')
 end
 
 local function enable_proxy_PAC(client, networkservice, location)
   networkservice = networkservice or getNetworkService()
-  hs.execute("networksetup -setproxyautodiscovery " .. networkservice .. ' off')
-  hs.execute("networksetup -setwebproxystate " .. networkservice .. ' off')
-  hs.execute("networksetup -setsecurewebproxystate " .. networkservice .. ' off')
-  hs.execute("networksetup -setsocksfirewallproxystate " .. networkservice .. ' off')
+  hs.execute('networksetup -setproxyautodiscovery "' .. networkservice .. '" off')
+  hs.execute('networksetup -setwebproxystate "' .. networkservice .. '" off')
+  hs.execute('networksetup -setsecurewebproxystate "' .. networkservice .. '" off')
+  hs.execute('networksetup -setsocksfirewallproxystate "' .. networkservice .. '" off')
 
   if client ~= nil then
     local PACFile
@@ -63,15 +63,15 @@ local function enable_proxy_PAC(client, networkservice, location)
     else
       PACFile = ProxyConfigs[client][location].PAC
     end
-    hs.execute("networksetup -setautoproxyurl " .. networkservice .. ' ' .. PACFile)
+    hs.execute('networksetup -setautoproxyurl "' .. networkservice .. '" ' .. PACFile)
   end
-  hs.execute("networksetup -setautoproxystate " .. networkservice .. ' on')
+  hs.execute('networksetup -setautoproxystate "' .. networkservice .. '" on')
 end
 
 local function enable_proxy_global(client, networkservice, location)
   networkservice = networkservice or getNetworkService()
-  hs.execute("networksetup -setproxyautodiscovery " .. networkservice .. ' off')
-  hs.execute("networksetup -setautoproxystate " .. networkservice .. ' off')
+  hs.execute('networksetup -setproxyautodiscovery "' .. networkservice .. '" off')
+  hs.execute('networksetup -setautoproxystate "' .. networkservice .. '" off')
 
   if client ~= nil then
     local addrs
@@ -80,14 +80,14 @@ local function enable_proxy_global(client, networkservice, location)
     else
       addrs = ProxyConfigs[client][location].global
     end
-    hs.execute("networksetup -setwebproxy " .. networkservice .. ' ' .. addrs[1] .. ' ' .. addrs[2])
-    hs.execute("networksetup -setsecurewebproxy " .. networkservice .. ' ' .. addrs[3] .. ' ' .. addrs[4])
-    hs.execute("networksetup -setsocksfirewallproxy " .. networkservice .. ' ' .. addrs[5] .. ' ' .. addrs[6])
+    hs.execute('networksetup -setwebproxy "' .. networkservice .. '" ' .. addrs[1] .. ' ' .. addrs[2])
+    hs.execute('networksetup -setsecurewebproxy "' .. networkservice .. '" ' .. addrs[3] .. ' ' .. addrs[4])
+    hs.execute('networksetup -setsocksfirewallproxy "' .. networkservice .. '" ' .. addrs[5] .. ' ' .. addrs[6])
   end
 
-  hs.execute("networksetup -setwebproxystate " .. networkservice .. ' on')
-  hs.execute("networksetup -setsecurewebproxystate " .. networkservice .. ' on')
-  hs.execute("networksetup -setsocksfirewallproxystate " .. networkservice .. ' on')
+  hs.execute('networksetup -setwebproxystate "' .. networkservice .. '" on')
+  hs.execute('networksetup -setsecurewebproxystate "' .. networkservice .. '" on')
+  hs.execute('networksetup -setsocksfirewallproxystate "' .. networkservice .. '" on')
 end
 
 local proxyAppBundleIDs = {
@@ -351,7 +351,7 @@ local function executeProxyCondition(condition, returnCode)
   local interface = hs.network.primaryInterfaces()
   local interfaceName = getNetworkService(true)
   if condition.ssid then
-    if interfaceName == '"Wi-Fi"' then
+    if interfaceName == 'Wi-Fi' then
       local ssid = hs.wifi.currentNetwork()
       if ssid == nil then
         if hs.location.servicesEnabled() then
@@ -378,7 +378,7 @@ local function executeProxyCondition(condition, returnCode)
     end
   end
   if condition.etherNet then
-    if interfaceName:match('"^USB (.-) LAN$"') then
+    if interfaceName:match('^USB (.-) LAN$') then
       local ip = NetworkWatcher
         :contents("State:/Network/Interface/"..interface.."/IPv4")
         ["State:/Network/Interface/" .. interface .. "/IPv4"]
@@ -886,7 +886,7 @@ local function registerProxyMenu(retry, enabledProxy, mode)
       )
       return false
     end
-  elseif getNetworkService() == '"iPhone USB"' then
+  elseif getNetworkService() == 'iPhone USB' then
     local menu = {{
       title = "Proxy Configured on iPhone",
       disabled = true
