@@ -6033,35 +6033,21 @@ local function unregisterRunningAppHotKeys(appid)
   runningAppHotKeys[appid] = nil
 end
 
--- record windows created and alive since enabling of hotkeys
--- of a non-frontmost window belonging to a daemon application
--- the frontmost window created before the targeted window is ignored
-local windowCreatedSince
-WindowCreatedSinceWatcher = hs.window.filter.new(true)
-local function windowCreatedSinceCallback(win, appname, eventType)
-  if win == nil then return end
-  if eventType == hs.window.filter.windowCreated then
-    if windowCreatedSince then
-      windowCreatedSince[win:id()] = win:application():bundleID()
-    end
-  else
-    for wid, appid in pairs(windowCreatedSince or {}) do
-      if hs.window.get(wid) == nil
-          or hs.window.get(wid):application():bundleID() ~= appid then
-        windowCreatedSince[wid] = nil
-      end
-    end
-  end
-end
-
+WindowCreatedSinceFilter = hs.window.filter.new(true)
 local function resendToFrontmostWindow(cond, nonFrontmost)
   return function(obj)
     local app = obj.application ~= nil and obj:application() or obj
     local frontWin = hs.window.frontmostWindow()
     if nonFrontmost then
-      if frontWin ~= nil and windowCreatedSince
-          and windowCreatedSince[frontWin:id()] then
-        return false, CF.notFrontmostWindow
+      if frontWin ~= nil then
+        if frontWin:role() == AX.Sheet or frontWin:role() == AX.Popover then
+          return false, CF.notFrontmostWindow
+        end
+        local windowsSortByCreatedLast =
+            WindowCreatedSinceFilter:getWindows(hs.window.filter.sortByCreatedLast)
+        if windowsSortByCreatedLast[1]:id() ~= obj:id() then
+          return false, CF.notFrontmostWindow
+        end
       end
     else
       if app:focusedWindow() ~= nil and frontWin ~= nil
@@ -6806,12 +6792,16 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
         config.background = true
         if keybinding.nonFrontmost ~= nil then
           config.nonFrontmost = keybinding.nonFrontmost
-          if windowCreatedSince == nil then
-            windowCreatedSince = {}
-            WindowCreatedSinceWatcher:subscribe({
-              hs.window.filter.windowCreated,
-              hs.window.filter.windowDestroyed,
-            }, windowCreatedSinceCallback)
+          if type(windowFilter) == 'table' and windowFilter.allowRoles then
+            local allowRoles = windowFilter.allowRoles
+            if type(allowRoles) == 'string' then allowRoles = { allowRoles } end
+            local extraRoles = tfilter(allowRoles, function(role)
+                return hs.window.filter.allowedWindowRoles[role] == nil end)
+            if #extraRoles > 0 then
+              WindowCreatedSinceFilter:setAppFilter(app:name(), {
+                allowRoles = extraRoles,
+              })
+            end
           end
         end
         config.repeatedfn = config.repeatable and cfg.fn or nil
@@ -6833,8 +6823,6 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
                 daemonAppFocusedWindowHotkeys[wid] = nil
               end
             end
-            windowCreatedSince = nil
-            WindowCreatedSinceWatcher:unsubscribeAll()
             obs:stop()
             obs = nil
           end
