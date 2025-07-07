@@ -1602,7 +1602,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         local newAvailableNetworksString = table.concat(availableNetworks, "|")
         if newAvailableNetworksString ~= availableNetworksString then
           availableNetworksString = newAvailableNetworksString
-          for _, hotkey in ipairs(selectNetworkHotkeys) do
+          for _, hotkey in ipairs(selectNetworkHotkeys or {}) do
             hotkey:delete()
           end
           selectNetworkHotkeys = {}
