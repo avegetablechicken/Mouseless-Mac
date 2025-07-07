@@ -1340,7 +1340,7 @@ function()
   end
   if appid == "com.apple.Preview" and app:mainWindow() ~= nil then
     local doc = towinui(app:mainWindow()).AXDocument
-    if doc:sub(-4) == '.pdf' then
+    if doc and doc:sub(-4) == '.pdf' then
       PDFChooser()
       return
     end
