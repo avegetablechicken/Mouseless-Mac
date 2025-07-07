@@ -8072,6 +8072,64 @@ local appsQuitWithoutWindow = {}
 -- account for pseudo windows such as popover or sheet
 local appsHideWithNoPseudoWindow = {}
 local appsQuitWithNoPseudoWindow = {}
+-- some apps may first close a window before create a targeted one, so delay is needed before checking
+local appsWithoutWindowDelay = {}
+
+local appsHideWithoutWindowLoaded = ApplicationConfigs["hideWithoutWindow"] or {}
+local appsQuitWithoutWindowLoaded = ApplicationConfigs["quitWithoutWindow"] or {}
+
+for _, item in ipairs(appsHideWithoutWindowLoaded) do
+  if type(item) == 'string' then
+    appsHideWithoutWindow[item] = true
+  else
+    for appid, cfg in pairs(item) do
+      local windowFilter
+      for k, v in pairs(cfg) do
+        if (k == "allowPopover" or k == "allowSheet") and v then
+          appsHideWithNoPseudoWindow[appid] = {}
+          if k == "allowPopover" then
+            tinsert(appsHideWithNoPseudoWindow[appid], AX.Popover)
+          end
+          if k == "allowSheet" then
+            tinsert(appsHideWithNoPseudoWindow[appid], AX.Sheet)
+          end
+        elseif k == "delay" then
+          appsWithoutWindowDelay[appid] = v
+        else
+          if windowFilter == nil then windowFilter = {} end
+          windowFilter[k] = v
+        end
+      end
+      appsHideWithoutWindow[appid] = windowFilter or true
+    end
+  end
+end
+for _, item in ipairs(appsQuitWithoutWindowLoaded) do
+  if type(item) == 'string' then
+    appsQuitWithoutWindow[item] = true
+  else
+    for appid, cfg in pairs(item) do
+      local windowFilter
+      for k, v in pairs(cfg) do
+        if (k == "allowPopover" or k == "allowSheet") and v then
+          appsQuitWithNoPseudoWindow[appid] = {}
+          if k == "allowPopover" then
+            tinsert(appsQuitWithNoPseudoWindow[appid], AX.Popover)
+          end
+          if k == "allowSheet" then
+            tinsert(appsQuitWithNoPseudoWindow[appid], AX.Sheet)
+          end
+        elseif k == "delay" then
+          appsWithoutWindowDelay[appid] = v
+        else
+          if windowFilter == nil then windowFilter = {} end
+          windowFilter[k] = v
+        end
+      end
+      appsQuitWithoutWindow[appid] = windowFilter or true
+    end
+  end
+end
 
 local specialNoWindowRules = {
   ["com.apple.finder"] = function(app)
@@ -8094,9 +8152,9 @@ local specialNoWindowRules = {
     end) == nil
   end
 }
-local function processAppWithoutWindow(app, delay)
+local function processAppWithoutWindow(app)
+  local appid = app:bundleID()
   local fn = function()
-    local appid = app:bundleID()
     local quit = appsQuitWithoutWindow[appid] ~= nil
     local defaultRule = function()
       local windowFilterRules = quit and appsQuitWithoutWindow
@@ -8120,10 +8178,10 @@ local function processAppWithoutWindow(app, delay)
       end
     end
   end
-  if delay == nil then
+  if appsWithoutWindowDelay[appid] == nil then
     fn()
   else
-    hs.timer.doAfter(delay, fn)
+    hs.timer.doAfter(appsWithoutWindowDelay[appid], fn)
   end
 end
 
@@ -8133,7 +8191,7 @@ local specialNoPseudoWindowRules = {
   end
 }
 PseudoWindowDestroyObservers = {}
-local function registerPseudoWindowDestroyObserver(app, roles, delay)
+local function registerPseudoWindowDestroyObserver(app, roles)
   local appid = app:bundleID()
   local observer = PseudoWindowDestroyObservers[appid]
   local appUI = toappui(app)
@@ -8193,9 +8251,10 @@ local function registerPseudoWindowDestroyObserver(app, roles, delay)
             end,
             criterion, params)
         end
-        if delay then
+        if appsWithoutWindowDelay[appid] then
           pseudoWindowObserverCallback = function()
-            hs.timer.doAfter(delay, pseudoWindowObserverCallback)
+            hs.timer.doAfter(appsWithoutWindowDelay[appid],
+                             pseudoWindowObserverCallback)
           end
         end
         pseudoWindowObserver:callback(pseudoWindowObserverCallback)
@@ -8210,63 +8269,6 @@ local function registerPseudoWindowDestroyObserver(app, roles, delay)
   PseudoWindowDestroyObservers[appid] = observer
   stopOnQuit(appid, observer,
       function() PseudoWindowDestroyObservers[appid] = nil end)
-end
-
-local appsHideWithoutWindowLoaded = ApplicationConfigs["hideWithoutWindow"] or {}
-local appsQuitWithoutWindowLoaded = ApplicationConfigs["quitWithoutWindow"] or {}
--- some apps may first close a window before create a targeted one, so delay is needed before checking
-local appsWithoutWindowDelay = {}
-for _, item in ipairs(appsHideWithoutWindowLoaded) do
-  if type(item) == 'string' then
-    appsHideWithoutWindow[item] = true
-  else
-    for appid, cfg in pairs(item) do
-      local windowFilter
-      for k, v in pairs(cfg) do
-        if (k == "allowPopover" or k == "allowSheet") and v then
-          appsHideWithNoPseudoWindow[appid] = {}
-          if k == "allowPopover" then
-            tinsert(appsHideWithNoPseudoWindow[appid], AX.Popover)
-          end
-          if k == "allowSheet" then
-            tinsert(appsHideWithNoPseudoWindow[appid], AX.Sheet)
-          end
-        elseif k == "delay" then
-          appsWithoutWindowDelay[appid] = v
-        else
-          if windowFilter == nil then windowFilter = {} end
-          windowFilter[k] = v
-        end
-      end
-      appsHideWithoutWindow[appid] = windowFilter or true
-    end
-  end
-end
-for _, item in ipairs(appsQuitWithoutWindowLoaded) do
-  if type(item) == 'string' then
-    appsQuitWithoutWindow[item] = true
-  else
-    for appid, cfg in pairs(item) do
-      local windowFilter
-      for k, v in pairs(cfg) do
-        if (k == "allowPopover" or k == "allowSheet") and v then
-          appsQuitWithNoPseudoWindow[appid] = {}
-          if k == "allowPopover" then
-            tinsert(appsQuitWithNoPseudoWindow[appid], AX.Popover)
-          end
-          if k == "allowSheet" then
-            tinsert(appsQuitWithNoPseudoWindow[appid], AX.Sheet)
-          end
-        elseif k == "delay" then
-          appsWithoutWindowDelay[appid] = v
-        else
-          if windowFilter == nil then windowFilter = {} end
-          windowFilter[k] = v
-        end
-      end
-      appsQuitWithoutWindow[appid] = windowFilter or true
-    end
-  end
 end
 
 AutoHideQuitWindowFilter = hs.window.filter.new(false)
@@ -8287,8 +8289,7 @@ AutoHideQuitWindowFilter:subscribe(hs.window.filter.windowDestroyed,
   function(win)
     if win == nil or win:application() == nil then return end
     local appid = win:application():bundleID()
-    processAppWithoutWindow(win:application(),
-                            appsWithoutWindowDelay[appid])
+    processAppWithoutWindow(win:application())
   end)
 
 -- Hammerspoon only account standard windows, so add watchers for pseudo windows here
@@ -8298,8 +8299,7 @@ for _, configs in ipairs {
 } do
   for appid, roles in pairs(configs) do
     local func = function(app)
-      registerPseudoWindowDestroyObserver(app, roles,
-                                          appsWithoutWindowDelay[appid])
+      registerPseudoWindowDestroyObserver(app, roles)
     end
     local app = runningAppsOnLoading[appid]
     if app ~= nil then
