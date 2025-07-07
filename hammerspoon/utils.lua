@@ -1132,8 +1132,7 @@ end
 
 local function parseStringsFile(file, keepOrder, keepAll)
   if keepOrder == nil then keepOrder = true end
-  local jsonStr = hs.execute(strfmt("plutil -convert json -o - '%s'", file))
-  local jsonDict = hs.json.decode(jsonStr) or {}
+  local jsonDict = hs.plist.read(file) or {}
   if keepOrder then return jsonDict end
   local localesDict = {}
   for k, v in pairs(jsonDict) do
@@ -1230,6 +1229,7 @@ end
 
 local function parseBinaryPlistFile(file, keepOrder, keepAll)
   if keepOrder == nil then keepOrder = true end
+  -- do not use "hs.plist.read" for performance reasons
   local jsonStr = hs.execute([[
     plutil -convert xml1 ']]..file..[[' -o /dev/stdout | \
     awk '
@@ -1493,6 +1493,7 @@ local function localizeByNIB(str, localeDir, localeFile, appid)
     mkdir(tmpBaseDir)
 
     if isBinarayPlist(NIBPath) and isBinarayPlist(baseNIBPath) then
+      -- do not use "hs.plist.read" for performance reasons
       local xmlDir = tmpBaseDir .. '/' .. locale
       local xmlPath = xmlDir .. '/' .. file .. '.xml'
       if not exists(xmlPath) then
@@ -2584,6 +2585,7 @@ local function delocalizeByNIB(str, localeDir, localeFile, appid)
     mkdir(tmpBaseDir)
 
     if isBinarayPlist(NIBPath) and isBinarayPlist(baseNIBPath) then
+      -- do not use "hs.plist.read" for performance reasons
       local xmlDir = tmpBaseDir .. '/' .. locale
       local xmlPath = xmlDir .. '/' .. file .. '.xml'
       if not exists(xmlPath) then
