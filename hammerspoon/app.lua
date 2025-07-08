@@ -6704,11 +6704,44 @@ local function registerSingleWinFilterForApp(app, filter)
     -- affecting the return of "hs.window.filter.isWindowAllowed"
     -- we have to workaround it
     if notification == uinotifications.titleChanged then
-      windowFilter:subscribe(hs.window.filter.windowTitleChanged,
-        function(window)
-          hs.timer.doAfter(0.1, action)
-          windowFilter:unsubscribeAll()
-        end)
+      local function matchTitles(titles, t)
+        if type(titles) == 'string' then
+          titles = { titles }
+        end
+        for _, title in ipairs(titles) do
+          if t:match(title) then return true end
+        end
+      end
+      local allowTitles, rejectTitles =
+          actualFilter.allowTitles, actualFilter.rejectTitles
+      if allowTitles then
+        if type(allowTitles) == 'number' then
+          if #win:title() <= allowTitles then
+            unregisterInWinHotKeys(appid, false, filter)
+            return
+          end
+        elseif not matchTitles(allowTitles, win:title()) then
+          unregisterInWinHotKeys(appid, false, filter)
+          return
+        end
+      end
+      if rejectTitles and matchTitles(rejectTitles, win:title()) then
+        unregisterInWinHotKeys(appid, false, filter)
+        return
+      end
+      local tempFilter
+      local empty = true
+      tempFilter = {}
+      for k, v in pairs(actualFilter) do
+        if k ~= "allowTitles" and k ~= "rejectTitles" then
+          tempFilter[k] = v
+          empty = false
+        end
+      end
+      if empty then tempFilter = true end
+      windowFilter:setAppFilter(app:name(), tempFilter)
+      action()
+      windowFilter:setAppFilter(app:name(), actualFilter)
       return
     end
     action()
