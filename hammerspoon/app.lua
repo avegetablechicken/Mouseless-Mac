@@ -6829,6 +6829,8 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
         config.background = true
         if keybinding.nonFrontmost ~= nil then
           config.nonFrontmost = keybinding.nonFrontmost
+        end
+        if config.nonFrontmost then
           if type(windowFilter) == 'table' and windowFilter.allowRoles then
             local allowRoles = windowFilter.allowRoles
             if type(allowRoles) == 'string' then allowRoles = { allowRoles } end
