@@ -6045,7 +6045,9 @@ local function resendToFrontmostWindow(cond, nonFrontmost)
         end
         local windowsSortByCreatedLast =
             WindowCreatedSinceFilter:getWindows(hs.window.filter.sortByCreatedLast)
-        if windowsSortByCreatedLast[1]:id() ~= obj:id() then
+        local newestWindow = windowsSortByCreatedLast[1]:id() ~= 0
+            and windowsSortByCreatedLast[1] or windowsSortByCreatedLast[2]
+        if newestWindow:id() ~= obj:id() then
           return false, CF.notFrontmostWindow
         end
       end
