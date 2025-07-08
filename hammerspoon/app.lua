@@ -6034,6 +6034,7 @@ local function unregisterRunningAppHotKeys(appid)
 end
 
 WindowCreatedSinceFilter = hs.window.filter.new(true)
+local windowCreatedSinceTime = {}
 local function resendToFrontmostWindow(cond, nonFrontmost)
   return function(obj)
     local app = obj.application ~= nil and obj:application() or obj
@@ -6043,14 +6044,12 @@ local function resendToFrontmostWindow(cond, nonFrontmost)
         if frontWin:role() == AX.Sheet or frontWin:role() == AX.Popover then
           return false, CF.notFrontmostWindow
         end
-        local windowsSortByCreatedLast =
-            WindowCreatedSinceFilter:getWindows(hs.window.filter.sortByCreatedLast)
-        local newestWindow = tfind(windowsSortByCreatedLast, function(win)
-          return win:id() ~= 0 and (win:application():bundleID() ~= app:bundleID()
-              or win:id() == obj:id())
-        end)
-        if newestWindow:id() ~= obj:id() then
-          return false, CF.notFrontmostWindow
+        for wino, _ in pairs(WindowCreatedSinceFilter.windows) do
+          if wino.id == frontWin:id() then
+            if wino.timeCreated > windowCreatedSinceTime[obj:id()] then
+              return false, CF.notFrontmostWindow
+            end
+          end
         end
       end
     else
@@ -6842,6 +6841,13 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
               })
             end
           end
+          if windowCreatedSinceTime[wid] == nil then
+            -- tell "hs.window.filter" to record time of windows to be created
+            -- if no subscriptions have been made then this is necessary
+            -- WindowCreatedSinceFilter:subscribe(
+            --     hs.window.filter.windowCreated, function() end)
+            windowCreatedSinceTime[wid] = hs.timer.secondsSinceEpoch()
+          end
         end
         config.repeatedfn = config.repeatable and cfg.fn or nil
         local hotkey = WinBind(win, config)
@@ -6862,6 +6868,8 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
                 daemonAppFocusedWindowHotkeys[wid] = nil
               end
             end
+            -- WindowCreatedSinceFilter:unsubscribeAll()
+            windowCreatedSinceTime[wid] = nil
             obs:stop()
             obs = nil
           end
