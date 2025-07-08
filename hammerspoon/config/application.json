@@ -91,6 +91,11 @@
     }
   ],
 
+  "terminateSilently": [
+    "com.apple.MobileSMS",
+    "barrier"
+  ],
+
   "suspendHotkeysInRemoteDesktop": [
     "com.microsoft.rdc.macos",
     "com.devolutions.remotedesktopmanager",

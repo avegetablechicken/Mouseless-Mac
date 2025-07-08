@@ -8833,17 +8833,20 @@ function App_applicationCallback(appname, eventType, app)
   end
 end
 
--- `Messages` terminate silently, which is unexpected
-local messageAppBundleID = "com.apple.MobileSMS"
-local messageApp = find(messageAppBundleID)
-execOnLaunch(messageAppBundleID, function()
-  messageApp = find(messageAppBundleID)
-  ExecOnSilentQuit(messageAppBundleID, function()
-    App_applicationCallback(messageApp:name(),
-      hs.application.watcher.terminated, messageApp)
-    messageApp = nil
+-- some apps may terminate silently, which is unexpected
+local appsTerminateSilently = ApplicationConfigs["terminateSilently"] or {}
+AppsTerminateSilently = {}
+for _, appid in ipairs(appsTerminateSilently) do
+  AppsTerminateSilently[appid] = find(appid)
+  execOnLaunch(appid, function(app)
+    AppsTerminateSilently[appid] = app
+    ExecOnSilentQuit(appid, function()
+      App_applicationCallback(app:name(),
+          hs.application.watcher.terminated, app)
+      AppsTerminateSilently[appid] = nil
+    end)
   end)
-end)
+end
 
 local forbiddenApps = ApplicationConfigs["forbidden"] or {}
 function App_applicationInstalledCallback(files, flagTables)
