@@ -6790,12 +6790,7 @@ end
 local daemonAppFocusedWindowHotkeys = {}
 DaemonAppFocusedWindowObservers = {}
 local function registerDaemonAppInWinHotkeys(win, appid, filter)
-  local winUI
-  if win.asHSWindow then
-    winUI = win win = winUI:asHSWindow()
-  else
-    winUI = towinui(win)
-  end
+  local winUI = towinui(win)
   local wid = win:id()
   if daemonAppFocusedWindowHotkeys[wid] == nil then
     daemonAppFocusedWindowHotkeys[wid] = {}
@@ -6919,7 +6914,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
           app:name(), filter)
       if not windowFilter:isWindowAllowed(win) then return end
     end
-    registerDaemonAppInWinHotkeys(element, appid, filter)
+    registerDaemonAppInWinHotkeys(element:asHSWindow(), appid, filter)
   end)
   observer:start()
   if DaemonAppFocusedWindowObservers[appid] == nil then
