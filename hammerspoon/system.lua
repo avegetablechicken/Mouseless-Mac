@@ -321,11 +321,11 @@ local proxyActivateFuncs = {
 }
 
 local shellCommandsExecutedOnLoading = {}
-local isLoaing = true
+local isLoading = true
 local function executeProxyCondition(condition, returnCode)
   if condition.shell_command then
     local status, rc
-    if isLoaing then
+    if isLoading then
       local cmd = tfind(shellCommandsExecutedOnLoading, function(cmd)
         return cmd[1] == condition.shell_command
       end)
@@ -337,7 +337,7 @@ local function executeProxyCondition(condition, returnCode)
     end
     if rc == nil then
       _, status, _, rc = hs.execute(condition.shell_command)
-      if isLoaing then
+      if isLoading then
         tinsert(shellCommandsExecutedOnLoading,
           { condition.shell_command, status, rc })
       end
@@ -2370,4 +2370,4 @@ function System_batteryChangedCallback()
 end
 
 shellCommandsExecutedOnLoading = {}
-isLoaing = false
+isLoading = false
