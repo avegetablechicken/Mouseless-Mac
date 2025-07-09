@@ -1027,7 +1027,11 @@
         "mods": ["shift", "command"],
         "key": "O"
       },
-      "confirm": {
+      "ok": {
+        "mods": "",
+        "key": "Return"
+      },
+      "delete": {
         "mods": "",
         "key": "Return"
       },

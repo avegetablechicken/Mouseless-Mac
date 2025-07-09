@@ -1811,14 +1811,14 @@ appHotKeyCallbacks = {
     ["addPeopleWhenNewFaceTime"] = {
       message = localizedMessage("Add People"),
       windowFilter = {
-        allowSheet = true
-      },
-      condition = function(win)
-        local heading = getc(towinui(win), AX.Group, 1, AX.Group, 1,
+        allowSheet = true,
+        fn = function(win)
+          local heading = getc(towinui(win), AX.Group, 1, AX.Group, 1,
             AX.Group, 1, AX.Heading, 1)
-        return heading and heading.AXDescription ==
-            localizedString("New FaceTime", win:application():bundleID())
-      end,
+          return heading and heading.AXDescription ==
+              localizedString("New FaceTime", win:application():bundleID())
+        end,
+      },
       fn = function(win)
         local button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
             AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 1)
@@ -3376,29 +3376,42 @@ appHotKeyCallbacks = {
         click(position, app)
       end
     },
-    ["confirm"] = {
-      message = function(win)
-        if win.focusedWindow then
-          win = win:focusedWindow()
-          if win == nil then return "OK" end
-        end
-        local appid = win:application():bundleID()
-        local title = localizedString("OK", appid)
-        local bt = getc(towinui(win), AX.Button, title)
-        if bt then return title end
-        title = localizedString("Delete", appid)
-        bt = getc(towinui(win), AX.Button, title)
-        if bt then return title end
-      end,
+    ["ok"] = {
+      message = localizedMessage("OK"),
       bindCondition = versionGreaterEqual("4"),
-      windowFilter = { allowSheet = true },
+      windowFilter = {
+        allowSheet = true,
+        fn = function(win)
+          local appid = win:application():bundleID()
+          local title = localizedString("OK", appid)
+          local bt = getc(towinui(win), AX.Button, title)
+          return bt ~= nil
+        end
+      },
       condition = function(win)
         local appid = win:application():bundleID()
         local title = localizedString("OK", appid)
         local bt = getc(towinui(win), AX.Button, title)
-        if bt then return bt.AXEnabled, bt end
-        title = localizedString("Delete", appid)
-        bt = getc(towinui(win), AX.Button, title)
+        return bt and bt.AXEnabled, bt
+      end,
+      fn = click
+    },
+    ["delete"] = {
+      message = localizedMessage("Delete"),
+      bindCondition = versionGreaterEqual("4"),
+      windowFilter = {
+        allowSheet = true,
+        fn = function(win)
+          local appid = win:application():bundleID()
+          local title = localizedString("Delete", appid)
+          local bt = getc(towinui(win), AX.Button, title)
+          return bt ~= nil
+        end
+      },
+      condition = function(win)
+        local appid = win:application():bundleID()
+        local title = localizedString("Delete", appid)
+        local bt = getc(towinui(win), AX.Button, title)
         return bt and bt.AXEnabled, bt
       end,
       fn = click
@@ -3406,9 +3419,18 @@ appHotKeyCallbacks = {
     ["send"] = {
       message = localizedMessage("Send"),
       bindCondition = versionGreaterEqual("4"),
-      windowFilter = { allowSheet = true },
+      windowFilter = {
+        allowSheet = true,
+        fn = function(win)
+          local appid = win:application():bundleID()
+          local title = localizedString("Send", appid)
+          local bt = getc(towinui(win), AX.Button, title)
+          return bt ~= nil
+        end
+      },
       condition = function(win)
-        local title = localizedString("Send", win:application():bundleID())
+        local appid = win:application():bundleID()
+        local title = localizedString("Send", appid)
         local bt = getc(towinui(win), AX.Button, title)
         return bt and bt.AXEnabled, bt
       end,
@@ -4059,12 +4081,17 @@ appHotKeyCallbacks = {
     ["saveInSheet"] = {
       message = "Save",
       windowFilter = {
-        allowSheet = true
+        allowSheet = true,
+        fn = function(win)
+          local winUI = towinui(win)
+          local button = getc(winUI, AX.Button, "Save")
+          return button ~= nil
+        end,
       },
       condition = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, "Save")
-        return button ~= nil and button.AXEnabled == true, button
+        return button and button.AXEnabled, button
       end,
       fn = press
     }
