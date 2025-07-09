@@ -1114,46 +1114,6 @@
       "showMainWindow": {
         "mods": "command",
         "key": "0"
-      },
-      "back": {
-        "mods": "command",
-        "key": "["
-      },
-      "tab1": {
-        "mods": "command",
-        "key": "1"
-      },
-      "tab2": {
-        "mods": "command",
-        "key": "2"
-      },
-      "tab3": {
-        "mods": "command",
-        "key": "3"
-      },
-      "tab4": {
-        "mods": "command",
-        "key": "4"
-      },
-      "tab5": {
-        "mods": "command",
-        "key": "5"
-      },
-      "tab6": {
-        "mods": "command",
-        "key": "6"
-      },
-      "tab7": {
-        "mods": "command",
-        "key": "7"
-      },
-      "tab8": {
-        "mods": "command",
-        "key": "8"
-      },
-      "tab9": {
-        "mods": "command",
-        "key": "9"
       }
     },
     "com.nektony.App-Cleaner-SIII": {

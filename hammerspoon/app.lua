@@ -828,50 +828,6 @@ local function douyinDesktopPage(win)
   end
 end
 
-local douyinDesktopTabTitles = {}
-local function douyinDesktopTabTitle(idx)
-  return function(app)
-    if app:focusedWindow() == nil then return "tab " .. idx end
-    if #douyinDesktopTabTitles == 0 then
-      local webarea = douyinDesktopPage(app:focusedWindow())
-      local links = getc(webarea,
-            AX.Group, 2, AX.Group, 1, AX.Group, 2, AX.Group, 1,
-            AX.Group, 2, AX.Group, 1, AX.Group)
-          or getc(webarea,
-            AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-            AX.Group, 2, AX.Group, 1, AX.Group)
-          or getc(webarea,
-            AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-            AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group)
-      if links == nil then return end
-      for _, g in ipairs(links) do
-        local link = getc(g, AX.Link, 1)
-        if link then
-          tinsert(douyinDesktopTabTitles, link.AXDescription)
-        end
-      end
-    end
-    return douyinDesktopTabTitles[idx]
-  end
-end
-
-local function douyinDesktopTab(idx)
-  return function(app)
-    if app:focusedWindow() == nil then return false end
-    local webarea = douyinDesktopPage(app:focusedWindow())
-    local link = getc(webarea,
-        AX.Group, 2, AX.Group, 1, AX.Group, 2, AX.Group, 1,
-        AX.Group, 2, AX.Group, 1, AX.Group, idx, AX.Link, 1)
-      or getc(webarea,
-        AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-        AX.Group, 2, AX.Group, 1, AX.Group, idx, AX.Link, 1)
-      or getc(webarea,
-        AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-        AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Group, idx, AX.Link, 1)
-    return link ~= nil, link
-  end
-end
-
 -- ### Bartender
 local bartenderBarItemNames
 local bartenderBarItemIDs
@@ -3648,71 +3604,6 @@ appHotKeyCallbacks = {
       fn = function(app)
         app:selectMenuItem({ "窗口", "抖音窗口" })
       end
-    },
-    ["back"] = {
-      message = "返回",
-      condition = function(app)
-        if app:focusedWindow() == nil then return false end
-        local webarea = douyinDesktopPage(app:focusedWindow())
-        local btImage = getc(webarea, AX.Group, 2, AX.Group, 2,
-            AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-            AX.Group, 1, AX.Group, 2, AX.Image, 1)
-        if btImage ~= nil then
-          return true, btImage
-        end
-        local banner = getc(webarea, AX.Group, 2, AX.Group, 1,
-            AX.Group, 2, AX.Group, 1, AX.Group, 1)
-        if banner == nil or banner.AXSubrole ~= AX.LandmarkBanner then
-          return false
-        end
-        return true, getc(banner, AX.Group, 2, AX.Group, 1, AX.Image, 1)
-      end,
-      fn = click
-    },
-    ["tab1"] = {
-      message = douyinDesktopTabTitle(1),
-      condition = douyinDesktopTab(1),
-      fn = press
-    },
-    ["tab2"] = {
-      message = douyinDesktopTabTitle(2),
-      condition = douyinDesktopTab(2),
-      fn = press
-    },
-    ["tab3"] = {
-      message = douyinDesktopTabTitle(3),
-      condition = douyinDesktopTab(3),
-      fn = press
-    },
-    ["tab4"] = {
-      message = douyinDesktopTabTitle(4),
-      condition = douyinDesktopTab(4),
-      fn = press
-    },
-    ["tab5"] = {
-      message = douyinDesktopTabTitle(5),
-      condition = douyinDesktopTab(5),
-      fn = press
-    },
-    ["tab6"] = {
-      message = douyinDesktopTabTitle(6),
-      condition = douyinDesktopTab(6),
-      fn = press
-    },
-    ["tab7"] = {
-      message = douyinDesktopTabTitle(7),
-      condition = douyinDesktopTab(7),
-      fn = press
-    },
-    ["tab8"] = {
-      message = douyinDesktopTabTitle(8),
-      condition = douyinDesktopTab(8),
-      fn = press
-    },
-    ["tab9"] = {
-      message = douyinDesktopTabTitle(9),
-      condition = douyinDesktopTab(9),
-      fn = press
     }
   },
 
