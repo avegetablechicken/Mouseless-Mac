@@ -6489,22 +6489,22 @@ local function sameFilter(a, b)
   if a == b then return true end
   for k, av in pairs(a) do
     local bv = b[k]
-    if av == bv then
-      return true
-    elseif type(av) == 'table' then
-      if type(bv) ~= 'table' then return false end
-      for i=1,#av do
-        if av[i].equals then
-          if not av[i]:equals(bv[i]) then return false end
-        else
-          if av[i] ~= bv[i] then return false end
+    if av ~= bv then
+      if type(av) == 'table' then
+        if type(bv) ~= 'table' then return false end
+        for i=1,#av do
+          if av[i].equals then
+            if not av[i]:equals(bv[i]) then return false end
+          else
+            if av[i] ~= bv[i] then return false end
+          end
         end
-      end
-    else
-      if av.equals then
-        if not av:equals(bv) then return false end
       else
-        if av ~= bv then return false end
+        if av.equals then
+          if not av:equals(bv) then return false end
+        else
+          if av ~= bv then return false end
+        end
       end
     end
   end
