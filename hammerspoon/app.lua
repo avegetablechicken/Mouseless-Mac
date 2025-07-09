@@ -1452,11 +1452,12 @@ end
 -- possible reasons for failure of hotkey condition
 local CF = {
   uIElementNotFocused       = 0,
-  menubarItemSelected       = 1,
-  userConditionFail         = 2,
-  noMenuItemMatchKeybinding = 3,
-  windowFilterReject        = 4,
-  websiteFilterReject       = 5,
+  rightMenubarItemSelected  = 1,
+  leftMenubarItemSelected   = 2,
+  userConditionFail         = 3,
+  noMenuItemMatchKeybinding = 4,
+  windowFilterReject        = 5,
+  websiteFilterReject       = 6,
 }
 
 -- check whether the menu bar item is selected
@@ -1466,7 +1467,7 @@ local function noSelectedMenuBarItemFunc(fn)
     local app = obj.application ~= nil and obj:application() or obj
     for i, menuBarItem in ipairs(getMenuBarItems(app, false, false)) do
       if i > 1 and menuBarItem.AXSelected then
-        return false, CF.menubarItemSelected
+        return false, CF.leftMenuBarMenuSelected
       end
     end
     return fn(obj)
@@ -6061,8 +6062,33 @@ end
 
 WindowCreatedSinceFilter = hs.window.filter.new(true)
 local windowCreatedSinceTime = {}
-local function resendToFrontmostWindow(cond, nonFrontmost)
+
+MenuBarMenuSelectedObservers = {}
+local rightMenuBarMenuSelected = false
+-- note: this process takes a long time for each app
+local function registerMenuBarObserverForHotkeyValidity(app)
+  local appid = app:bundleID() or app:name()
+  if MenuBarMenuSelectedObservers[appid] then return end
+  local mainScreenLeft = hs.screen.mainScreen():fullFrame().x
+  local menuBar = getc(toappui(app), AX.MenuBar, -1)
+  if menuBar and menuBar.AXPosition.x ~= mainScreenLeft then
+    local observer = uiobserver.new(app:pid())
+    observer:addWatcher(toappui(app), uinotifications.menuOpened)
+    observer:addWatcher(toappui(app), uinotifications.menuClosed)
+    observer:callback(function(_, _, notification)
+      rightMenuBarMenuSelected = notification == uinotifications.menuOpened
+    end)
+    observer:start()
+    MenuBarMenuSelectedObservers[appid] = observer
+    stopOnQuit(appid, observer, function()
+      MenuBarMenuSelectedObservers[appid] = nil
+    end)
+  end
+end
+
+local function resendToFocusedUIElement(cond, nonFrontmost)
   return function(obj)
+    if rightMenuBarMenuSelected then return false, CF.rightMenubarItemSelected end
     local app = obj.application ~= nil and obj:application() or obj
     local frontWin = hs.window.frontmostWindow()
     if nonFrontmost then
@@ -6279,8 +6305,8 @@ local function wrapCondition(obj, config, mode)
     if mods == nil or mods == "" or #mods == 0 then
       cond = noSelectedMenuBarItemFunc(cond)
     end
-    -- send key strokes to frontmost window instead of frontmost app
-    cond = resendToFrontmostWindow(cond, config.nonFrontmost)
+    -- send key strokes to system focused UI element instead of frontmost app
+    cond = resendToFocusedUIElement(cond, config.nonFrontmost)
   end
   if win == true then
     local oldCond = cond
@@ -6306,8 +6332,11 @@ local function wrapCondition(obj, config, mode)
         func(obj)
       end
       return true
-    elseif result == CF.menubarItemSelected then
+    elseif result == CF.leftMenuBarMenuSelected then
       selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
+      return true
+    elseif result == CF.rightMenubarItemSelected then
+      safeGlobalKeyStroke(mods, key)
       return true
     elseif result == CF.uIElementNotFocused then
       selectMenuItemOrKeyStroke(hs.window.frontmostWindow():application(),
@@ -7975,6 +8004,13 @@ end
 
 -- register hotkeys for active app
 APPWIN_HOTKEY_ON_WINDOW_FOCUS = true
+RESEND_HOTKEY_TO_RIGHT_MENUBAR = false
+
+if RESEND_HOTKEY_TO_RIGHT_MENUBAR then
+  for _, app in pairs(runningAppsOnLoading) do
+    registerMenuBarObserverForHotkeyValidity(app)
+  end
+end
 
 onLaunchedAndActivated = function(app, reinvokeKey)
   local menuBarItems = getMenuBarItems(app)
@@ -8749,6 +8785,9 @@ function App_applicationCallback(appname, eventType, app)
     fullyLaunchCriterion, menuItemsPrepared = nil, nil
     for _, proc in ipairs(processesOnLaunch[appid] or {}) do
       proc(app)
+    end
+    if RESEND_HOTKEY_TO_RIGHT_MENUBAR then
+      registerMenuBarObserverForHotkeyValidity(app)
     end
   elseif eventType == hs.application.watcher.activated then
     if appid == nil then return end
