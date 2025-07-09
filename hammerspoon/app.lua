@@ -1453,7 +1453,7 @@ end
 local CF = {
   userConditionFail         = 0,
   noFocusedWindow           = 1,
-  notFrontmostWindow        = 2,
+  uIElementNotFocused       = 2,
   menubarItemSelected       = 3,
   noMenuItemMatchKeybinding = 4,
   windowFilterReject        = 5,
@@ -6069,12 +6069,12 @@ local function resendToFrontmostWindow(cond, nonFrontmost)
     if nonFrontmost then
       if frontWin ~= nil then
         if frontWin:role() == AX.Sheet or frontWin:role() == AX.Popover then
-          return false, CF.notFrontmostWindow
+          return false, CF.uIElementNotFocused
         end
         for wino, _ in pairs(WindowCreatedSinceFilter.windows) do
           if wino.id == frontWin:id() then
             if wino.timeCreated > windowCreatedSinceTime[obj:id()] then
-              return false, CF.notFrontmostWindow
+              return false, CF.uIElementNotFocused
             end
           end
         end
@@ -6082,10 +6082,10 @@ local function resendToFrontmostWindow(cond, nonFrontmost)
     else
       if app:focusedWindow() ~= nil and frontWin ~= nil
         and frontWin:application():bundleID() ~= app:bundleID() then
-        return false, CF.notFrontmostWindow
+        return false, CF.uIElementNotFocused
       elseif app:focusedWindow() == nil and frontWin ~= nil
           and hs.uielement.focusedElement() ~= nil then
-        return false, CF.notFrontmostWindow
+        return false, CF.uIElementNotFocused
       end
     end
     return cond(obj)
@@ -6311,7 +6311,7 @@ local function wrapCondition(obj, config, mode)
     elseif result == CF.menubarItemSelected then
       selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
       return true
-    elseif result == CF.notFrontmostWindow then
+    elseif result == CF.uIElementNotFocused then
       selectMenuItemOrKeyStroke(hs.window.frontmostWindow():application(),
                                 mods, key, resendToSystem)
       return true
