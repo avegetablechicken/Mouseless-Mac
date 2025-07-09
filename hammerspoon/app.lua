@@ -6499,6 +6499,8 @@ local function sameFilter(a, b)
             if av[i] ~= bv[i] then return false end
           end
         end
+      elseif type(av) == 'function' then
+        return false
       else
         if av.equals then
           if not av:equals(bv) then return false end
