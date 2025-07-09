@@ -1451,13 +1451,12 @@ end
 
 -- possible reasons for failure of hotkey condition
 local CF = {
-  userConditionFail         = 0,
-  noFocusedWindow           = 1,
-  uIElementNotFocused       = 2,
-  menubarItemSelected       = 3,
-  noMenuItemMatchKeybinding = 4,
-  windowFilterReject        = 5,
-  websiteFilterReject       = 6,
+  uIElementNotFocused       = 0,
+  menubarItemSelected       = 1,
+  userConditionFail         = 2,
+  noMenuItemMatchKeybinding = 3,
+  windowFilterReject        = 4,
+  websiteFilterReject       = 5,
 }
 
 -- check whether the menu bar item is selected
@@ -6231,9 +6230,8 @@ local function wrapCondition(obj, config, mode)
     end
     local oldCond = cond
     cond = function(win)
-      if win == nil then return false, CF.windowFilterReject end
       local wf = hs.window.filter.new(false):setAppFilter(
-        win:application():name(), actualFilter)
+          win:application():name(), actualFilter)
       if wf:isWindowAllowed(win)
           or (type(windowFilter) == 'table'
               and windowFilter.allowSheet and win:role() == AX.Sheet)
@@ -6287,7 +6285,7 @@ local function wrapCondition(obj, config, mode)
   if win == true then
     local oldCond = cond
     cond = function()
-      if app:focusedWindow() == nil then return false, CF.noFocusedWindow end
+      if app:focusedWindow() == nil then return false, CF.windowFilterReject end
       return oldCond(app:focusedWindow())
     end
   else
