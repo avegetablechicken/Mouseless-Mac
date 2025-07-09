@@ -6853,6 +6853,10 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
         if keybinding.nonFrontmost ~= nil then
           config.nonFrontmost = keybinding.nonFrontmost
         end
+        config.repeatedfn = config.repeatable and cfg.fn or nil
+        local hotkey = WinBind(win, config)
+        tinsert(daemonAppFocusedWindowHotkeys[wid], hotkey)
+
         if config.nonFrontmost then
           if type(windowFilter) == 'table' and windowFilter.allowRoles then
             local allowRoles = windowFilter.allowRoles
@@ -6873,9 +6877,7 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
             windowCreatedSinceTime[wid] = hs.timer.secondsSinceEpoch()
           end
         end
-        config.repeatedfn = config.repeatable and cfg.fn or nil
-        local hotkey = WinBind(win, config)
-        tinsert(daemonAppFocusedWindowHotkeys[wid], hotkey)
+
         if closeObserver == nil then
           closeObserver = uiobserver.new(app:pid())
           closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
