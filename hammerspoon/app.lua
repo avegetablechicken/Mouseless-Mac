@@ -6001,6 +6001,7 @@ local function resendToFocusedUIElement(cond, nonFrontmost)
             if wino.timeCreated > windowCreatedSinceTime[obj:id()] then
               return false, CF.uIElementNotFocused
             end
+            break
           end
         end
       end
