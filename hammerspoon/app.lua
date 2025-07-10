@@ -5947,10 +5947,17 @@ end
 local function unregisterRunningAppHotKeys(appid)
   if appHotKeyCallbacks[appid] == nil then return end
 
+  local allDeleted = true
   for _, hotkey in pairs(runningAppHotKeys[appid] or {}) do
-    hotkey:delete()
+    if not hotkey.persist then
+      hotkey:delete()
+    else
+      allDeleted = false
+    end
   end
-  runningAppHotKeys[appid] = nil
+  if allDeleted then
+    runningAppHotKeys[appid] = nil
+  end
 end
 
 WindowCreatedSinceFilter = hs.window.filter.new(true)
