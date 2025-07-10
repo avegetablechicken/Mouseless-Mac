@@ -5969,9 +5969,15 @@ local rightMenuBarMenuSelected = false
 local function registerMenuBarObserverForHotkeyValidity(app)
   local appid = app:bundleID() or app:name()
   if MenuBarMenuSelectedObservers[appid] then return end
+  if app:kind() < 0 then return end
   local mainScreenLeft = hs.screen.mainScreen():fullFrame().x
+  local appUI = toappui(app)
+  if not tcontain(appUI:attributeNames() or {}, "AXFocusedWindow") then return end
   local menuBar = getc(toappui(app), AX.MenuBar, -1)
-  if menuBar and menuBar.AXPosition.x ~= mainScreenLeft then
+  if menuBar and menuBar.AXPosition.x ~= mainScreenLeft
+      and tfind(getc(menuBar, AX.MenuBarItem), function(item)
+        return #item > 0
+      end) then
     local observer = uiobserver.new(app:pid())
     observer:addWatcher(toappui(app), uinotifications.menuOpened)
     observer:addWatcher(toappui(app), uinotifications.menuClosed)
