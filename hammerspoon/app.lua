@@ -3224,6 +3224,7 @@ appHotKeyCallbacks = {
         if versionLessThan("4")(app) then
           local chats = getc(winUI, AX.SplitGroup, 1,
               AX.ScrollArea, 1, AX.Table, 1, AX.Row)
+          if chats == nil then return end
           local curChatTitle = getc(winUI, AX.SplitGroup, 1,
               AX.SplitGroup, 1, AX.StaticText, 1)
               or getc(winUI, AX.SplitGroup, 1, AX.StaticText, 1)
@@ -3243,6 +3244,7 @@ appHotKeyCallbacks = {
         else
           local chats = getc(winUI, AX.Group, 1,
               AX.SplitGroup, 1, AX.List, -1, AX.StaticText)
+          if chats == nil then return end
           local curChatTitle = getc(winUI, AX.Group, 1,
               AX.SplitGroup, 1, AX.StaticText, -1)
           if curChatTitle == nil then
