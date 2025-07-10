@@ -6145,6 +6145,9 @@ local function wrapCondition(obj, config, mode)
     else
       actualFilter = windowFilter
     end
+    if type(actualFilter) == 'table' then
+      actualFilter.fn = nil
+    end
     local oldCond = cond
     cond = function(win)
       local wf = hs.window.filter.new(false):setAppFilter(
