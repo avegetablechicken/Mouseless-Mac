@@ -762,9 +762,9 @@ local QQLiveMainWindowFilter = {
   fn = existQQLiveChannel
 }
 local function getQQLiveChannelName(index)
-    return function(win)
+  return function(win)
     if win.focusedWindow then win = win:focusedWindow() end
-    if win == nil then return "频道" .. index end
+    if win == nil then return "频道" .. index, true end
     if #QQLiveChannelNames == 0 then
       local list = getc(towinui(win), AX.Group, 2)
       if list == nil or #list == 0 then return false end
@@ -949,7 +949,7 @@ end
 local function getBartenderSidebarItemTitle(index)
   return function(win)
     if win.focusedWindow then win = win:focusedWindow() end
-    if win == nil then return "View " .. index end
+    if win == nil then return "View " .. index, true end
     local winUI = towinui(win)
     local row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
         AX.Outline, 1, AX.Row, index, AX.Cell, 1, AX.StaticText, 1)
@@ -6503,8 +6503,9 @@ local function registerInWinHotKeys(obj, filter)
       end
       if hasKey and isForWindow and not isBackground and bindable()
           and (filter == nil or sameFilter(windowFilter, filter) )then
-        local msg = type(cfg.message) == 'string'
-            and cfg.message or cfg.message(obj)
+        local msg, fallback
+        if type(cfg.message) == 'string' then msg = cfg.message
+        else msg, fallback = cfg.message(obj) end
         if msg ~= nil then
           local config = tcopy(cfg)
           config.mods = keybinding.mods
@@ -6516,6 +6517,7 @@ local function registerInWinHotKeys(obj, filter)
           end
           config.background = false
           config.repeatedfn = config.repeatable and cfg.fn or nil
+          config.deleteOnDisable = fallback
           hotkeys[hkID] = AppWinBind(obj, config)
         end
       end
