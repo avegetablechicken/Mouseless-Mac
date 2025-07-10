@@ -5990,8 +5990,8 @@ local function resendToFocusedUIElement(cond, nonFrontmost)
   return function(obj)
     if rightMenuBarMenuSelected then return false, CF.rightMenubarItemSelected end
     local app = obj.application ~= nil and obj:application() or obj
-    local frontWin = hs.window.frontmostWindow()
     if nonFrontmost then
+      local frontWin = hs.window.frontmostWindow()
       if frontWin ~= nil then
         if frontWin:role() == AX.Sheet or frontWin:role() == AX.Popover then
           return false, CF.uIElementNotFocused
@@ -6006,11 +6006,9 @@ local function resendToFocusedUIElement(cond, nonFrontmost)
         end
       end
     else
-      if app:focusedWindow() ~= nil and frontWin ~= nil
-        and frontWin:application():bundleID() ~= app:bundleID() then
-        return false, CF.uIElementNotFocused
-      elseif app:focusedWindow() == nil and frontWin ~= nil
-          and hs.uielement.focusedElement() ~= nil then
+      local focusedApp = hs.axuielement.systemWideElement().AXFocusedApplication
+      if focusedApp ~= nil
+          and focusedApp:asHSApplication():bundleID() ~= app:bundleID() then
         return false, CF.uIElementNotFocused
       end
     end
@@ -6243,7 +6241,8 @@ local function wrapCondition(obj, config, mode)
       safeGlobalKeyStroke(mods, key)
       return true
     elseif result == CF.uIElementNotFocused then
-      selectMenuItemOrKeyStroke(hs.window.frontmostWindow():application(),
+      local focusedApp = hs.axuielement.systemWideElement().AXFocusedApplication
+      selectMenuItemOrKeyStroke(focusedApp:asHSApplication(),
                                 mods, key, resendToSystem)
       return true
     end

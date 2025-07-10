@@ -446,16 +446,14 @@ local function loadAppHotkeys(t, showOrSearch)
     if type(hotkey) == 'table' then
       hotkey.source = HK_SOURCE.APP
       hotkey.modal = HK_MODAL.REGULAR
+      if hotkey.valid and tfind(t, function(hk)
+          return hk.valid and hk.idx == hotkey.idx end) then
+        hotkey.valid = false
+      end
       if hotkey.valid then
-        local frontWin = hs.window.frontmostWindow()
-        if (frontWin ~= nil and activeApp:focusedWindow() ~= nil
-            and frontWin:application():bundleID() ~= activeApp:bundleID())
-            or (frontWin ~= nil and activeApp:focusedWindow() == nil
-            and hs.uielement.focusedElement() ~= nil) then
-          hotkey.valid = false
-        end
-        if hotkey.valid and tfind(t, function(hk)
-            return hk.valid and hk.idx == hotkey.idx end) then
+        local focusedApp = hs.axuielement.systemWideElement().AXFocusedApplication
+        if focusedApp ~= nil
+            and focusedApp:asHSApplication():bundleID() ~= activeApp:bundleID() then
           hotkey.valid = false
         end
       end
