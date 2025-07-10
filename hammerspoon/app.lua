@@ -7884,7 +7884,8 @@ local frontWinAppID = frontWin and frontWin:application():bundleID() or nil
 for appid, appConfig in pairs(appHotKeyCallbacks) do
   registerRunningAppHotKeys(appid)
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
-  for hkID, cfg in pairs(appConfig) do
+  local hasNotPersistentBackgroundHotkey =
+      hs.fnutils.some(appConfig, function(cfg, hkID)
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isBackground = keybinding.background ~= nil
@@ -7892,11 +7893,11 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     local isPersistent = keybinding.persist ~= nil
         and keybinding.persist or cfg.persist
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
-    if hasKey and not isForWindow and isBackground and not isPersistent then
-      execOnLaunch(appid, bind(registerRunningAppHotKeys, appid))
-      execOnQuit(appid, bind(unregisterRunningAppHotKeys, appid))
-      break
-    end
+    return hasKey and not isForWindow and isBackground and not isPersistent
+  end)
+  if hasNotPersistentBackgroundHotkey then
+    execOnLaunch(appid, bind(registerRunningAppHotKeys, appid))
+    execOnQuit(appid, bind(unregisterRunningAppHotKeys, appid))
   end
 end
 
@@ -7948,25 +7949,25 @@ if frontApp then
   onLaunchedAndActivated(frontApp)
 end
 
--- register watchers for focused window belonging to daemon app
+-- register watchers for window belonging to daemon app
 for appid, appConfig in pairs(appHotKeyCallbacks) do
+  local app = runningAppsOnLoading[appid]
+  if app ~= nil then
+    registerWinFiltersForDaemonApp(app, appConfig)
+  end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
-  for hkID, cfg in pairs(appConfig) do
+  local hasDaemonAppWindowHotkey = hs.fnutils.some(appConfig, function(cfg, hkID)
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
-    if hasKey and isForWindow and isBackground then
-      local app = runningAppsOnLoading[appid]
-      if app ~= nil then
-        registerWinFiltersForDaemonApp(app, appConfig)
-      end
-      execOnLaunch(appid, function(app)
-        registerWinFiltersForDaemonApp(app, appConfig)
-      end)
-      break
-    end
+    return hasKey and isForWindow and isBackground
+  end)
+  if hasDaemonAppWindowHotkey then
+    execOnLaunch(appid, function(app)
+      registerWinFiltersForDaemonApp(app, appConfig)
+    end)
   end
 end
 
@@ -7993,6 +7994,7 @@ if frontWin ~= nil then
   end
 end
 
+-- register hotkeys for non-frontmost window belonging to daemon app
 for appid, _ in pairs(DaemonAppFocusedWindowObservers) do
   local app = runningAppsOnLoading[appid]
   if app then
@@ -8033,22 +8035,22 @@ end
 
 -- register watchers for menu of menubar app
 for appid, appConfig in pairs(appHotKeyCallbacks) do
+  local app = runningAppsOnLoading[appid]
+  if app ~= nil then
+    registerObserversForMenuBarMenu(app, appConfig)
+  end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
-  for hkID, cfg in pairs(appConfig) do
+  local hasMenuBarMenuHotkey = hs.fnutils.some(appConfig, function(cfg, hkID)
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isMenuBarMenu = keybinding.menubarFilter ~= nil
         or cfg.menubarFilter ~= nil
-    if hasKey and isMenuBarMenu then
-      local app = runningAppsOnLoading[appid]
-      if app ~= nil then
-        registerObserversForMenuBarMenu(app, appConfig)
-      end
-      execOnLaunch(appid, function(app)
-        registerObserversForMenuBarMenu(app, appConfig)
-      end)
-      break
-    end
+    return hasKey and isMenuBarMenu
+  end)
+  if hasMenuBarMenuHotkey then
+    execOnLaunch(appid, function(app)
+      registerObserversForMenuBarMenu(app, appConfig)
+    end)
   end
 end
 
