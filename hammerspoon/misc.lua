@@ -1170,13 +1170,6 @@ hkKeybinding.kind = HK.PRIVELLEGE
 tinsert(DoubleTapModalList, hkKeybinding)
 
 
-local function getCurrentApplication()
-  local app = hs.window.frontmostWindow():application()
-  local appid = app:bundleID()
-  local appname = app:name()
-  return app, appname, appid
-end
-
 -- show info of current window
 bindHotkeySpec(misc["showCurrentWindowInfo"], "Show Info of Current Window",
 function()
@@ -1191,7 +1184,7 @@ function()
   end
   local pid = win:pid()
   local frame = win:frame()
-  local app, appname, appid = getCurrentApplication()
+  local app = win:application()
   hs.focus()
   hs.dialog.blockAlert("Current Window",
     strfmt([[
@@ -1203,7 +1196,7 @@ function()
 
       App: %s (%s)]],
     title, id, role, pid, frame.x, frame.y, frame.w, frame.h,
-    appname, appid))
+    app:name(), app:bundleID()))
 end)
 
 local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey",
