@@ -854,16 +854,6 @@ local function getQQLiveChannel(index)
   end
 end
 
---- ### Douyin Desktop
-local function douyinDesktopPage(win)
-  local winUI = towinui(win)
-  if getc(winUI, AX.WebArea, 2, AX.Group, 2) == nil then
-    return getc(winUI, AX.WebArea, 2, AX.Group, 1)
-  else
-    return getc(winUI, AX.WebArea, 2)
-  end
-end
-
 -- ### Bartender
 local bartenderBarItemNames
 local bartenderBarItemIDs
