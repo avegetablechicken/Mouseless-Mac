@@ -216,26 +216,30 @@ end
 
 local observersStopOnDeactivated = {}
 local function stopOnDeactivated(appid, observer, action)
+  execOnDeactivated(appid, function()
+    observer:stop()
+    if action then action(observer, appid) end
+    observer = nil
+  end)
+
   if observersStopOnDeactivated[appid] == nil then
     observersStopOnDeactivated[appid] = {}
   end
-  tinsert(observersStopOnDeactivated[appid], { observer, action })
+  tinsert(observersStopOnDeactivated[appid], observer)
 end
 
 local observersStopOnQuit = {}
 local function stopOnQuit(appid, observer, action)
-  if isLSUIElement(appid) then
-    ExecOnSilentQuit(appid, function()
-      observer:stop()
-      if action then action(observer, appid) end
-    end)
-    return
-  end
+  execOnQuit(appid, function()
+    observer:stop()
+    if action then action(observer, appid) end
+    observer = nil
+  end)
 
   if observersStopOnQuit[appid] == nil then
     observersStopOnQuit[appid] = {}
   end
-  tinsert(observersStopOnQuit[appid], { observer, action })
+  tinsert(observersStopOnQuit[appid], observer)
 end
 
 -- # hotkeys in specific application
@@ -6875,7 +6879,9 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
           end
           closeObserver:callback(callback)
           closeObserver:start()
-          stopOnQuit(appid, closeObserver, callback)
+          stopOnQuit(appid, closeObserver, function()
+            callback(closeObserver)
+          end)
         end
       end
     end
@@ -7043,7 +7049,9 @@ local function registerInMenuHotkeys(app)
           end
           closeObserver:callback(callback)
           closeObserver:start()
-          stopOnQuit(appid, closeObserver, callback)
+          stopOnQuit(appid, closeObserver, function()
+            callback(closeObserver)
+          end)
         end
       end
     end
@@ -8768,11 +8776,6 @@ function App_applicationCallback(appname, eventType, app)
         proc(app)
       end
       processesOnDeactivated[appid] = nil
-      for _, ob in ipairs(observersStopOnDeactivated[appid] or {}) do
-        local observer, func = ob[1], ob[2]
-        observer:stop()
-        if func ~= nil then func(observer, appid) end
-      end
       observersStopOnDeactivated[appid] = nil
     end
   elseif eventType == hs.application.watcher.terminated then
@@ -8784,17 +8787,7 @@ function App_applicationCallback(appname, eventType, app)
       proc()
     end
     processesOnQuit[appid] = nil
-    for _, ob in ipairs(observersStopOnDeactivated[appid] or {}) do
-      local observer, func = ob[1], ob[2]
-      observer:stop()
-      if func ~= nil then func(observer, appid) end
-    end
     observersStopOnDeactivated[appid] = nil
-    for _, ob in ipairs(observersStopOnQuit[appid] or {}) do
-      local observer, func = ob[1], ob[2]
-      observer:stop()
-      if func ~= nil then func(observer, appid) end
-    end
     observersStopOnQuit[appid] = nil
   elseif eventType == hs.application.watcher.deactivated then
     for id, processes in pairs(processesOnDeactivated) do
@@ -8803,6 +8796,7 @@ function App_applicationCallback(appname, eventType, app)
           proc()
         end
         processesOnDeactivated[id] = nil
+        observersStopOnDeactivated[id] = nil
       end
     end
     for id, processes in pairs(processesOnQuit) do
@@ -8811,25 +8805,6 @@ function App_applicationCallback(appname, eventType, app)
           proc()
         end
         processesOnQuit[id] = nil
-      end
-    end
-    for id, obs in pairs(observersStopOnDeactivated) do
-      if find(id) == nil then
-        for _, ob in ipairs(obs) do
-          local observer, func = ob[1], ob[2]
-          observer:stop()
-          if func ~= nil then func(observer, id) end
-        end
-        observersStopOnDeactivated[id] = nil
-      end
-    end
-    for id, obs in pairs(observersStopOnQuit) do
-      if find(id) == nil then
-        for _, ob in ipairs(obs) do
-          local observer, func = ob[1], ob[2]
-          observer:stop()
-          if func ~= nil then func(observer, id) end
-        end
         observersStopOnQuit[id] = nil
       end
     end
