@@ -6058,7 +6058,7 @@ local function noSelectedMenuBarItemFunc(fn)
     local app = obj.application ~= nil and obj:application() or obj
     for i, menuBarItem in ipairs(getMenuBarItems(app, false, false)) do
       if i > 1 and menuBarItem.AXSelected then
-        return false, CF.leftMenuBarMenuSelected
+        return false, CF.leftMenubarItemSelected
       end
     end
     return fn(obj)
@@ -6283,7 +6283,7 @@ local function wrapCondition(obj, config, mode)
         func(obj)
       end
       return true
-    elseif result == CF.leftMenuBarMenuSelected then
+    elseif result == CF.leftMenubarItemSelected then
       selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
       return true
     elseif result == CF.rightMenubarItemSelected then
