@@ -6350,7 +6350,9 @@ local function bindImpl(obj, config, ...)
     end
     cond = appendConditionChain(app, config, pressedfn, repeatedfn, cond)
     pressedfn = wrapConditionChain(app, pressedfn, KEY_MODE.PRESS, config)
-    repeatedfn = wrapConditionChain(app, repeatedfn, KEY_MODE.REPEAT, config)
+    if repeatedfn ~= nil then
+      repeatedfn = wrapConditionChain(app, repeatedfn, KEY_MODE.REPEAT, config)
+    end
   end
 
   if config.condition ~= nil then  -- executing condition may take too much time
