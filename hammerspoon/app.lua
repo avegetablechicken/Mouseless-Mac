@@ -8308,9 +8308,9 @@ local function registerPseudoWindowDestroyObserver(app, roles)
             criterion, params)
         end
         if appsWithoutWindowDelay[appid] then
+          local oldCallback = pseudoWindowObserverCallback
           pseudoWindowObserverCallback = function()
-            hs.timer.doAfter(appsWithoutWindowDelay[appid],
-                             pseudoWindowObserverCallback)
+            hs.timer.doAfter(appsWithoutWindowDelay[appid], oldCallback)
           end
         end
         pseudoWindowObserver:callback(pseudoWindowObserverCallback)
