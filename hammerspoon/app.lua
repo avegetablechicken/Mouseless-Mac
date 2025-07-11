@@ -242,6 +242,38 @@ local function stopOnQuit(appid, observer, action)
   tinsert(observersStopOnQuit[appid], observer)
 end
 
+-- get hs.application from AXUIElement
+local function getAppFromDescendantElement(elem)
+  local appUI = elem
+  repeat
+    appUI = appUI.AXParent
+  until appUI.AXParent == nil
+  return appUI:asHSApplication()
+end
+
+local function onElementDestroy(element, callback, stopWhen, callbackOnStop)
+  local app = getAppFromDescendantElement(element)
+  local closeObserver = uiobserver.new(app:pid())
+  closeObserver:addWatcher(element, uinotifications.uIElementDestroyed)
+  closeObserver:callback(function(obs, ...)
+    callback(obs, ...) obs:stop() obs = nil
+  end)
+  closeObserver:start()
+
+  if type(stopWhen) == 'number' then
+    stopWhen = { stopWhen }
+  end
+  for _, ev in ipairs(stopWhen or {}) do
+    if ev == hs.application.watcher.deactivated then
+      stopOnDeactivated(app:bundleID(), closeObserver, callbackOnStop and callback)
+    elseif ev == hs.application.watcher.terminated then
+      stopOnQuit(app:bundleID(), closeObserver, callbackOnStop and callback)
+    end
+  end
+
+  return closeObserver
+end
+
 -- # hotkeys in specific application
 local appHotKeyCallbacks
 
@@ -905,14 +937,10 @@ local function getBartenderBarItemTitle(index, rightClick)
             tinsert(bartenderBarItemIDs, i)
           end
         end
-        local closeObserver = uiobserver.new(app:pid())
-        closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
-        closeObserver:callback(function(obs)
+        onElementDestroy(winUI, function()
           bartenderBarItemNames = nil
           bartenderBarItemIDs = nil
-          obs:stop() obs = nil
         end)
-        closeObserver:start()
       end
     end
     if bartenderBarItemNames ~= nil and index <= #bartenderBarItemNames then
@@ -991,7 +1019,6 @@ local barbeeBarWindowFilter = {
     return false
   end
 }
-BarbeeBarObserver = nil
 local function getBarbeeBarItemTitle(index)
   return function(win)
     if barbeeBarItemNames == nil then
@@ -1000,14 +1027,9 @@ local function getBarbeeBarItemTitle(index)
       barbeeBarItemNames = hs.fnutils.map(buttons, function(bt)
         return bt.AXHelp
       end)
-      BarbeeBarObserver = uiobserver.new(win:application():pid())
-      BarbeeBarObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
-      BarbeeBarObserver:callback(
-          function()
-            barbeeBarItemNames = nil
-            BarbeeBarObserver:stop()
-            BarbeeBarObserver = nil
-          end)
+      onElementDestroy(winUI, function()
+        barbeeBarItemNames = nil
+      end)
     end
     if barbeeBarItemNames ~= nil and index <= #barbeeBarItemNames then
       return "Click "
@@ -1292,15 +1314,6 @@ local function dumpPlistKeyBinding(mode, mods, key)
   end
   key = hs.keycodes.map[key]
   return modIdx, key
-end
-
--- get hs.application from AXUIElement
-local function getAppFromDescendantElement(elem)
-  local appUI = elem
-  repeat
-    appUI = appUI.AXParent
-  until appUI.AXParent == nil
-  return appUI:asHSApplication()
 end
 
 -- fetch localized string as hotkey message after activating the app
@@ -6592,16 +6605,10 @@ local function registerInWinHotKeys(obj, filter)
       ActivatedAppConditionChain[appid] = nil
     end)
   elseif needCloseWatcher then
-    local observer = uiobserver.new(app:pid())
-    observer:addWatcher(towinui(obj), uinotifications.uIElementDestroyed)
-    observer:callback(function(obs)
-      unregisterInWinHotKeys(appid, true, filter)
-      obs:stop() obs = nil
-    end)
-    observer:start()
-    stopOnDeactivated(appid, observer, function()
-      unregisterInWinHotKeys(appid, true, filter)
-    end)
+    onElementDestroy(towinui(obj),
+      function() unregisterInWinHotKeys(appid, true, filter) end,
+      hs.application.watcher.deactivated, true
+    )
   end
 end
 
@@ -6857,10 +6864,8 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
           end
         end
 
-        if closeObserver == nil then
-          closeObserver = uiobserver.new(app:pid())
-          closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
-          local callback = function(obs)
+        closeObserver = closeObserver or onElementDestroy(winUI,
+          function()
             if daemonAppFocusedWindowHotkeys[wid] ~= nil then
               for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[wid]) do
                 if hotkey.idx ~= nil then
@@ -6875,15 +6880,9 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
             end
             -- WindowCreatedSinceFilter:unsubscribeAll()
             windowCreatedSinceTime[wid] = nil
-            obs:stop()
-            obs = nil
-          end
-          closeObserver:callback(callback)
-          closeObserver:start()
-          stopOnQuit(appid, closeObserver, function()
-            callback(closeObserver)
-          end)
-        end
+          end,
+          hs.application.watcher.terminated, true
+        )
       end
     end
   end
@@ -7456,17 +7455,14 @@ local function registerForOpenSavePanel(app)
     end
 
     if dontSaveButton == nil and #sidebarCells == 0 then return end
-    local closeObserver = uiobserver.new(app:pid())
-    closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
-    closeObserver:callback(function(obs)
-      for _, hotkey in ipairs(openSavePanelHotkeys) do
-        hotkey:delete()
-      end
-      openSavePanelHotkeys = {}
-      obs:stop() obs = nil
-    end)
-    closeObserver:start()
-    stopOnDeactivated(appid, closeObserver)
+    onElementDestroy(winUI,
+      function()
+        for _, hotkey in ipairs(openSavePanelHotkeys) do
+          hotkey:delete()
+        end
+        openSavePanelHotkeys = {}
+      end,
+      hs.application.watcher.deactivated)
   end
   if app:focusedWindow() ~= nil then
     actionFunc(towinui(app:focusedWindow()))
@@ -8270,12 +8266,7 @@ local function registerPseudoWindowDestroyObserver(app, roles)
           pseudoWindowObserver = nil
         end
         local role = results[1].AXRole
-        pseudoWindowObserver = uiobserver.new(app:pid())
-        pseudoWindowObserver:addWatcher(
-          results[1],
-          uinotifications.uIElementDestroyed
-        )
-        local pseudoWindowObserverCallback = function(obs)
+        local pseudoWindowObserverCallback = function()
           appUI:elementSearch(function(newMsg, newResults, newCount)
               if newCount == 0 then
                 local defaultRule = function()
@@ -8300,8 +8291,6 @@ local function registerPseudoWindowDestroyObserver(app, roles)
                   else
                     app:hide()
                   end
-                  obs:stop()
-                  obs = nil
                 end
               end
             end,
@@ -8313,9 +8302,11 @@ local function registerPseudoWindowDestroyObserver(app, roles)
             hs.timer.doAfter(appsWithoutWindowDelay[appid], oldCallback)
           end
         end
-        pseudoWindowObserver:callback(pseudoWindowObserverCallback)
-        pseudoWindowObserver:start()
-        stopOnDeactivated(appid, pseudoWindowObserver)
+        pseudoWindowObserver = onElementDestroy(
+          results[1],
+          pseudoWindowObserverCallback,
+          hs.application.watcher.deactivated
+        )
       end
     end,
     criterion, params)
