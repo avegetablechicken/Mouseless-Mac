@@ -6686,6 +6686,7 @@ local function registerSingleWinFilterForApp(app, filter)
   end
   observer:callback(function(_, element, notification)
     win = app:focusedWindow()
+    if win == nil then return end
     if notification == uinotifications.focusedUIElementChanged
         and win:role() ~= AX.Popover then
       return
