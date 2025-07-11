@@ -1423,20 +1423,6 @@ local CF = {
   websiteFilterReject       = 6,
 }
 
--- check whether the menu bar item is selected
--- if a menu is extended, hotkeys with no modifiers are disabled
-local function noSelectedMenuBarItemFunc(fn)
-  return function(obj)
-    local app = obj.application ~= nil and obj:application() or obj
-    for i, menuBarItem in ipairs(getMenuBarItems(app, false, false)) do
-      if i > 1 and menuBarItem.AXSelected then
-        return false, CF.leftMenuBarMenuSelected
-      end
-    end
-    return fn(obj)
-  end
-end
-
 -- check if the menu item whose key binding is specified is enabled
 -- if so, return the path of the menu item
 local function checkMenuItemByKeybinding(mods, key)
@@ -6062,6 +6048,20 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
       return false, CF.uIElementNotFocused
     end
     return cond(obj)
+  end
+end
+
+-- check whether the menu bar item is selected
+-- if a menu is extended, hotkeys with no modifiers are disabled
+local function noSelectedMenuBarItemFunc(fn)
+  return function(obj)
+    local app = obj.application ~= nil and obj:application() or obj
+    for i, menuBarItem in ipairs(getMenuBarItems(app, false, false)) do
+      if i > 1 and menuBarItem.AXSelected then
+        return false, CF.leftMenuBarMenuSelected
+      end
+    end
+    return fn(obj)
   end
 end
 
