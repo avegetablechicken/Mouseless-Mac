@@ -182,17 +182,17 @@ end
 -- send key strokes to the system. but if the key binding is registered, disable it temporally
 function safeGlobalKeyStroke(mods, key)
   local idx = hotkeyIdx(mods, key)
-  local conflicted = tfilter(hs.hotkey.getHotkeys(), function(hk)
+  local conflicted = tfind(hs.hotkey.getHotkeys(), function(hk)
     return hk.idx == idx
   end)
-  if conflicted[1] ~= nil then
-    conflicted[1]:disable()
+  if conflicted then
+    conflicted:disable()
   end
   hs.eventtap.keyStroke(mods, key)
-  if conflicted[1] ~= nil then
+  if conflicted then
     hs.timer.doAfter(1, function()
-      if conflicted[1].enable ~= nil then
-        conflicted[1]:enable()
+      if conflicted.enable ~= nil then
+        conflicted:enable()
       end
     end)
   end
