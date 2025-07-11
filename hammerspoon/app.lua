@@ -172,21 +172,21 @@ local function isLSUIElement(appid)
   return info and info.LSUIElement == true
 end
 
-local processesOnLaunch = {}
-local function execOnLaunch(appid, action)
+local processesOnLaunched = {}
+local function onLaunched(appid, action)
   if isLSUIElement(appid) then
     ExecOnSilentLaunch(appid, action)
     return
   end
 
-  if processesOnLaunch[appid] == nil then
-    processesOnLaunch[appid] = {}
+  if processesOnLaunched[appid] == nil then
+    processesOnLaunched[appid] = {}
   end
-  tinsert(processesOnLaunch[appid], action)
+  tinsert(processesOnLaunched[appid], action)
 end
 
 local processesOnActivated = {}
-local function execOnActivated(appid, action)
+local function onActivated(appid, action)
   if processesOnActivated[appid] == nil then
     processesOnActivated[appid] = {}
   end
@@ -194,29 +194,29 @@ local function execOnActivated(appid, action)
 end
 
 local processesOnDeactivated = {}
-local function execOnDeactivated(appid, action)
+local function onDeactivated(appid, action)
   if processesOnDeactivated[appid] == nil then
     processesOnDeactivated[appid] = {}
   end
   tinsert(processesOnDeactivated[appid], action)
 end
 
-local processesOnQuit = {}
-local function execOnQuit(appid, action)
+local processesOnTerminated = {}
+local function onTerminated(appid, action)
   if isLSUIElement(appid) then
     ExecOnSilentQuit(appid, action)
     return
   end
 
-  if processesOnQuit[appid] == nil then
-    processesOnQuit[appid] = {}
+  if processesOnTerminated[appid] == nil then
+    processesOnTerminated[appid] = {}
   end
-  tinsert(processesOnQuit[appid], action)
+  tinsert(processesOnTerminated[appid], action)
 end
 
 local observersStopOnDeactivated = {}
 local function stopOnDeactivated(appid, observer, action)
-  execOnDeactivated(appid, function()
+  onDeactivated(appid, function()
     observer:stop()
     if action then action(observer, appid) end
     observer = nil
@@ -228,18 +228,18 @@ local function stopOnDeactivated(appid, observer, action)
   tinsert(observersStopOnDeactivated[appid], observer)
 end
 
-local observersStopOnQuit = {}
-local function stopOnQuit(appid, observer, action)
-  execOnQuit(appid, function()
+local observersStopOnTerminated = {}
+local function stopOnTerminated(appid, observer, action)
+  onTerminated(appid, function()
     observer:stop()
     if action then action(observer, appid) end
     observer = nil
   end)
 
-  if observersStopOnQuit[appid] == nil then
-    observersStopOnQuit[appid] = {}
+  if observersStopOnTerminated[appid] == nil then
+    observersStopOnTerminated[appid] = {}
   end
-  tinsert(observersStopOnQuit[appid], observer)
+  tinsert(observersStopOnTerminated[appid], observer)
 end
 
 -- get hs.application from AXUIElement
@@ -251,7 +251,7 @@ local function getAppFromDescendantElement(elem)
   return appUI:asHSApplication()
 end
 
-local function onElementDestroy(element, callback, stopWhen, callbackOnStop)
+local function onDestroy(element, callback, stopWhen, callbackOnStop)
   local app = getAppFromDescendantElement(element)
   local closeObserver = uiobserver.new(app:pid())
   closeObserver:addWatcher(element, uinotifications.uIElementDestroyed)
@@ -267,7 +267,7 @@ local function onElementDestroy(element, callback, stopWhen, callbackOnStop)
     if ev == hs.application.watcher.deactivated then
       stopOnDeactivated(app:bundleID(), closeObserver, callbackOnStop and callback)
     elseif ev == hs.application.watcher.terminated then
-      stopOnQuit(app:bundleID(), closeObserver, callbackOnStop and callback)
+      stopOnTerminated(app:bundleID(), closeObserver, callbackOnStop and callback)
     end
   end
 
@@ -818,7 +818,7 @@ local function getQQLiveChannelName(index)
           tinsert(QQLiveChannelNames, row.AXValue)
         end
       end
-      execOnDeactivated(win:application():bundleID(),
+      onDeactivated(win:application():bundleID(),
           function() QQLiveChannelNames = {} end)
     end
     return QQLiveChannelNames[index]
@@ -937,7 +937,7 @@ local function getBartenderBarItemTitle(index, rightClick)
             tinsert(bartenderBarItemIDs, i)
           end
         end
-        onElementDestroy(winUI, function()
+        onDestroy(winUI, function()
           bartenderBarItemNames = nil
           bartenderBarItemIDs = nil
         end)
@@ -1001,7 +1001,7 @@ local function clickBartenderSidebarItem(index)
 end
 
 -- to notify hammerspoon's window filter
-execOnLaunch("com.surteesstudios.Bartender", function(app)
+onLaunched("com.surteesstudios.Bartender", function(app)
   app:activate() hs.timer.doAfter(0.5, function() app:hide() end)
 end)
 
@@ -1027,7 +1027,7 @@ local function getBarbeeBarItemTitle(index)
       barbeeBarItemNames = hs.fnutils.map(buttons, function(bt)
         return bt.AXHelp
       end)
-      onElementDestroy(winUI, function()
+      onDestroy(winUI, function()
         barbeeBarItemNames = nil
       end)
     end
@@ -6004,7 +6004,7 @@ local function registerMenuBarObserverForHotkeyValidity(app)
     end)
     observer:start()
     MenuBarMenuSelectedObservers[appid] = observer
-    stopOnQuit(appid, observer, function()
+    stopOnTerminated(appid, observer, function()
       MenuBarMenuSelectedObservers[appid] = nil
     end)
   end
@@ -6449,10 +6449,10 @@ local function registerInAppHotKeys(app)
     end
   end
 
-  execOnDeactivated(appid, function()
+  onDeactivated(appid, function()
     unregisterInAppHotKeys(appid)
   end)
-  execOnQuit(appid, function()
+  onTerminated(appid, function()
     unregisterInAppHotKeys(appid, true)
     ActivatedAppConditionChain[appid] = nil
   end)
@@ -6597,15 +6597,15 @@ local function registerInWinHotKeys(obj, filter)
   end
 
   if filter == nil then
-    execOnDeactivated(appid, function()
+    onDeactivated(appid, function()
       unregisterInWinHotKeys(appid)
     end)
-    execOnQuit(appid, function()
+    onTerminated(appid, function()
       unregisterInWinHotKeys(appid, true)
       ActivatedAppConditionChain[appid] = nil
     end)
   elseif needCloseWatcher then
-    onElementDestroy(towinui(obj),
+    onDestroy(towinui(obj),
       function() unregisterInWinHotKeys(appid, true, filter) end,
       hs.application.watcher.deactivated, true
     )
@@ -6864,7 +6864,7 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
           end
         end
 
-        closeObserver = closeObserver or onElementDestroy(winUI,
+        closeObserver = closeObserver or onDestroy(winUI,
           function()
             if daemonAppFocusedWindowHotkeys[wid] ~= nil then
               for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[wid]) do
@@ -6932,7 +6932,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
     DaemonAppFocusedWindowObservers[appid] = {}
   end
   DaemonAppFocusedWindowObservers[appid][filter] = observer
-  stopOnQuit(appid, observer, function()
+  stopOnTerminated(appid, observer, function()
     DaemonAppFocusedWindowObservers[appid][filter] = nil
   end)
 end
@@ -7049,7 +7049,7 @@ local function registerInMenuHotkeys(app)
           end
           closeObserver:callback(callback)
           closeObserver:start()
-          stopOnQuit(appid, closeObserver, function()
+          stopOnTerminated(appid, closeObserver, function()
             callback(closeObserver)
           end)
         end
@@ -7080,7 +7080,7 @@ local function registerObserversForMenuBarMenu(app, appConfig)
         observer:callback(bind(registerInMenuHotkeys, app))
         observer:start()
         MenuBarMenuObservers[appid] = observer
-        stopOnQuit(appid, observer, function()
+        stopOnTerminated(appid, observer, function()
           MenuBarMenuObservers[appid] = nil
         end)
       end
@@ -7140,7 +7140,7 @@ local function remapPreviousTab(app, menuItems)
       chainedCond = remapPreviousTabHotkey.chainedCond,
       idx = remapPreviousTabHotkey.idx
     }
-    execOnDeactivated(appid, function()
+    onDeactivated(appid, function()
       disableConditionInChain(appid, info, true)
       info = nil
     end)
@@ -7217,7 +7217,7 @@ local function registerOpenRecent(app)
       chainedCond = openRecentHotkey.chainedCond,
       idx = openRecentHotkey.idx
     }
-    execOnDeactivated(appid, function()
+    onDeactivated(appid, function()
       disableConditionInChain(appid, info, true)
       info = nil
     end)
@@ -7276,7 +7276,7 @@ local function registerZoomHotkeys(app)
         chainedCond = zoomHotkeys[hkID].chainedCond,
         idx = zoomHotkeys[hkID].idx
       }
-      execOnDeactivated(appid, function()
+      onDeactivated(appid, function()
         disableConditionInChain(appid, info, true)
         info = nil
       end)
@@ -7455,7 +7455,7 @@ local function registerForOpenSavePanel(app)
     end
 
     if dontSaveButton == nil and #sidebarCells == 0 then return end
-    onElementDestroy(winUI,
+    onDestroy(winUI,
       function()
         for _, hotkey in ipairs(openSavePanelHotkeys) do
           hotkey:delete()
@@ -7853,7 +7853,7 @@ local function watchMenuBarItems(app)
       altMenuBarItem(app)
     end
   end)
-  execOnDeactivated(appid, function()
+  onDeactivated(appid, function()
     StopExecContinuously(watcher)
     appsMenuBarItemTitlesString[appid] = nil
   end)
@@ -7950,8 +7950,8 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     return hasKey and not isForWindow and isBackground and not isPersistent
   end)
   if hasNotPersistentBackgroundHotkey then
-    execOnLaunch(appid, bind(registerRunningAppHotKeys, appid))
-    execOnQuit(appid, bind(unregisterRunningAppHotKeys, appid))
+    onLaunched(appid, bind(registerRunningAppHotKeys, appid))
+    onTerminated(appid, bind(unregisterRunningAppHotKeys, appid))
   end
 end
 
@@ -8018,7 +8018,7 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     return hasKey and isForWindow and isBackground
   end)
   if hasDaemonAppWindowHotkey then
-    execOnLaunch(appid, function(app)
+    onLaunched(appid, function(app)
       registerWinFiltersForDaemonApp(app, appConfig)
     end)
   end
@@ -8101,7 +8101,7 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     return hasKey and isMenuBarMenu
   end)
   if hasMenuBarMenuHotkey then
-    execOnLaunch(appid, function(app)
+    onLaunched(appid, function(app)
       registerObserversForMenuBarMenu(app, appConfig)
     end)
   end
@@ -8302,7 +8302,7 @@ local function registerPseudoWindowDestroyObserver(app, roles)
             hs.timer.doAfter(appsWithoutWindowDelay[appid], oldCallback)
           end
         end
-        pseudoWindowObserver = onElementDestroy(
+        pseudoWindowObserver = onDestroy(
           results[1],
           pseudoWindowObserverCallback,
           hs.application.watcher.deactivated
@@ -8314,7 +8314,7 @@ local function registerPseudoWindowDestroyObserver(app, roles)
   observer:callback(observerCallback)
   observer:start()
   PseudoWindowDestroyObservers[appid] = observer
-  stopOnQuit(appid, observer,
+  stopOnTerminated(appid, observer,
       function() PseudoWindowDestroyObservers[appid] = nil end)
 end
 
@@ -8328,7 +8328,7 @@ for _, configs in ipairs{appsHideWithoutWindow, appsQuitWithoutWindow} do
     if app ~= nil then
       func(app)
     else
-      execOnLaunch(appid, func)
+      onLaunched(appid, func)
     end
   end
 end
@@ -8352,7 +8352,7 @@ for _, configs in ipairs {
     if app ~= nil then
       func(app)
     end
-    execOnLaunch(appid, func)
+    onLaunched(appid, func)
   end
 end
 
@@ -8414,7 +8414,7 @@ if mountainDuckConfig ~= nil and mountainDuckConfig.connections ~= nil then
       end
     end
   end
-  execOnLaunch("io.mountainduck", function(app)
+  onLaunched("io.mountainduck", function(app)
     for _, connection in ipairs(mountainDuckConfig.connections) do
       connectMountainDuckEntries(app, connection)
     end
@@ -8439,13 +8439,13 @@ if hs.application.pathForBundleID("barrier") ~= nil
     observer:addWatcher(toappui(app), uinotifications.windowCreated)
     observer:callback(function(_, winUI) winUI:asHSWindow():focus() end)
     observer:start()
-    stopOnQuit("barrier", observer)
+    stopOnTerminated("barrier", observer)
   end
   local app = find("barrier")
   if app then
     func(app)
   end
-  execOnLaunch("barrier", func)
+  onLaunched("barrier", func)
 end
 
 -- ## remote desktop apps
@@ -8485,7 +8485,7 @@ if hs.application.nameForBundleID("com.microsoft.rdc.macos") == "Windows App" th
   if find("com.microsoft.rdc.macos") ~= nil then
     preLocalizeWindowsApp()
   end
-  execOnActivated("com.microsoft.rdc.macos", preLocalizeWindowsApp)
+  onActivated("com.microsoft.rdc.macos", preLocalizeWindowsApp)
 else
   MicrosoftRemoteDesktopWindowFilter = {
     rejectTitles = {
@@ -8583,7 +8583,7 @@ if frontApp and remoteDesktopsMappingModifiers[frontAppID] then
   RemoteDesktopModifierTapper:start()
 end
 for appid, _ in pairs(remoteDesktopsMappingModifiers) do
-  execOnActivated(appid, function()
+  onActivated(appid, function()
     if not RemoteDesktopModifierTapper:isEnabled() then
       RemoteDesktopModifierTapper:start()
     end
@@ -8613,7 +8613,7 @@ for _, appid in ipairs(remoteDesktopAppsRequireSuspendHotkeys) do
   if frontAppID == appid then
     suspendHotkeysInRemoteDesktop(frontApp)
   end
-  execOnActivated(appid, suspendHotkeysInRemoteDesktop)
+  onActivated(appid, suspendHotkeysInRemoteDesktop)
 end
 
 RemoteDesktopObserver = nil
@@ -8624,7 +8624,7 @@ local function watchForRemoteDesktopWindow(app)
   observer:callback(bind(suspendHotkeysInRemoteDesktop, app))
   observer:start()
   stopOnDeactivated(app:bundleID(), observer)
-  stopOnQuit(app:bundleID(), observer)
+  stopOnTerminated(app:bundleID(), observer)
   RemoteDesktopObserver = observer
 end
 
@@ -8632,7 +8632,7 @@ for _, appid in ipairs(remoteDesktopAppsRequireSuspendHotkeys) do
   if frontAppID == appid then
     watchForRemoteDesktopWindow(frontApp)
   end
-  execOnActivated(appid, watchForRemoteDesktopWindow)
+  onActivated(appid, watchForRemoteDesktopWindow)
 end
 
 -- ## hold cmd+w to close window for iOS apps because it will quit them
@@ -8731,7 +8731,7 @@ function App_applicationCallback(appname, eventType, app)
       end
     end
     fullyLaunchCriterion, menuItemsPrepared = nil, nil
-    for _, proc in ipairs(processesOnLaunch[appid] or {}) do
+    for _, proc in ipairs(processesOnLaunched[appid] or {}) do
       proc(app)
     end
     if RESEND_HOTKEY_TO_RIGHT_MENUBAR and TEST_RIGHT_MENUBAR_BY_OBSERVER then
@@ -8775,12 +8775,12 @@ function App_applicationCallback(appname, eventType, app)
       proc()
     end
     processesOnDeactivated[appid] = nil
-    for _, proc in ipairs(processesOnQuit[appid] or {}) do
+    for _, proc in ipairs(processesOnTerminated[appid] or {}) do
       proc()
     end
-    processesOnQuit[appid] = nil
+    processesOnTerminated[appid] = nil
     observersStopOnDeactivated[appid] = nil
-    observersStopOnQuit[appid] = nil
+    observersStopOnTerminated[appid] = nil
   elseif eventType == hs.application.watcher.deactivated then
     for id, processes in pairs(processesOnDeactivated) do
       if find(id) == nil then
@@ -8791,13 +8791,13 @@ function App_applicationCallback(appname, eventType, app)
         observersStopOnDeactivated[id] = nil
       end
     end
-    for id, processes in pairs(processesOnQuit) do
+    for id, processes in pairs(processesOnTerminated) do
       if find(id) == nil then
         for _, proc in ipairs(processes) do
           proc()
         end
-        processesOnQuit[id] = nil
-        observersStopOnQuit[id] = nil
+        processesOnTerminated[id] = nil
+        observersStopOnTerminated[id] = nil
       end
     end
   end
@@ -8816,7 +8816,7 @@ local appsTerminateSilently = ApplicationConfigs["terminateSilently"] or {}
 AppsTerminateSilently = {}
 for _, appid in ipairs(appsTerminateSilently) do
   AppsTerminateSilently[appid] = find(appid)
-  execOnLaunch(appid, function(app)
+  onLaunched(appid, function(app)
     AppsTerminateSilently[appid] = app
     ExecOnSilentQuit(appid, function()
       App_applicationCallback(app:name(),
