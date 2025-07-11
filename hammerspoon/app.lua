@@ -227,7 +227,7 @@ local function stopOnQuit(appid, observer, action)
   if isLSUIElement(appid) then
     ExecOnSilentQuit(appid, function()
       observer:stop()
-      action(observer, appid)
+      if action then action(observer, appid) end
     end)
     return
   end
