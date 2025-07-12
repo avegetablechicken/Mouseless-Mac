@@ -7963,7 +7963,16 @@ onLaunchedAndActivated = function(app, reinvokeKey)
   altMenuBarItem(app, reinvokeKey)
   if localeUpdated or menuBarChanged then
     unregisterInAppHotKeys(app, true)
-    if not APPWIN_HOTKEY_ON_WINDOW_FOCUS then
+    if APPWIN_HOTKEY_ON_WINDOW_FOCUS then
+      local appid = app:bundleID()
+      foreach(FocusedWindowObservers[appid] or {},
+        function(observer) observer:stop() end)
+      FocusedWindowObservers[appid] = nil
+      foreach(inWinHotKeys[appid] or {}, function(hotkeys)
+        foreach(hotkeys, function(hk) hk:delete() end)
+      end)
+      inWinHotKeys[appid] = nil
+    else
       unregisterInWinHotKeys(app, true)
     end
     ActivatedAppConditionChain[app:bundleID()] = nil
