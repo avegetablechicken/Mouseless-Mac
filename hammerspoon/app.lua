@@ -356,10 +356,6 @@ end
 -- ### Finder
 local function getFinderSidebarItemTitle(idx)
   return function(win)
-    if win.focusedWindow then
-      win = win:focusedWindow()
-      if win == nil then return end
-    end
     local outline = getc(towinui(win), AX.SplitGroup, 1,
         AX.ScrollArea, 1, AX.Outline, 1)
     if outline == nil then return end
@@ -799,8 +795,6 @@ local QQLiveMainWindowFilter = {
 }
 local function getQQLiveChannelName(index)
   return function(win)
-    if win.focusedWindow then win = win:focusedWindow() end
-    if win == nil then return "频道" .. index, true end
     if #QQLiveChannelNames == 0 then
       local list = getc(towinui(win), AX.Group, 2)
       if list == nil or #list == 0 then return false end
@@ -970,8 +964,6 @@ end
 
 local function getBartenderSidebarItemTitle(index)
   return function(win)
-    if win.focusedWindow then win = win:focusedWindow() end
-    if win == nil then return "View " .. index, true end
     local winUI = towinui(win)
     local row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
         AX.Outline, 1, AX.Row, index, AX.Cell, 1, AX.StaticText, 1)
@@ -1419,8 +1411,7 @@ local CF = {
   rightMenubarItemSelected  = 2,
   leftMenubarItemSelected   = 3,
   userConditionFail         = 4,
-  windowFilterReject        = 5,
-  websiteFilterReject       = 6,
+  websiteFilterReject       = 5,
 }
 
 -- check if the menu item whose key binding is specified is enabled
@@ -6159,7 +6150,6 @@ end
 local function wrapCondition(obj, config, mode)
   local mods, key = config.mods, config.key
   local func = mode == KEY_MODE.REPEAT and config.repeatedfn or config.fn
-  local windowFilter = config.windowFilter
   local websiteFilter = config.websiteFilter
   local condition = config.condition
   local cond = function(obj)
@@ -6174,52 +6164,16 @@ local function wrapCondition(obj, config, mode)
   local app, win, menu
   if obj.application ~= nil then
     app = obj:application()
-    -- WinBind or AppWinBind (APPWIN_HOTKEY_ON_WINDOW_FOCUS)
+    -- WinBind or AppWinBind
     win = config.background and obj or true
   elseif obj.asHSApplication ~= nil then
     -- MenuBarBind
     menu = obj app = getAppFromDescendantElement(obj)
   else
     app = obj  -- APPBIND
-    if windowFilter ~= nil then
-      -- AppWinBind (not APPWIN_HOTKEY_ON_WINDOW_FOCUS)
-      win = true
-    end
   end
   obj = nil
 
-  -- testify window filter and return TF & extra result
-  if windowFilter ~= nil then
-    local actualFilter  -- remove self-customed properties
-    if type(windowFilter) == 'table' then
-      for k, v in pairs(windowFilter) do
-        if k ~= "allowSheet" and k ~= "allowPopover" then
-          if actualFilter == nil then actualFilter = {} end
-          actualFilter[k] = v
-        end
-      end
-      if actualFilter == nil then actualFilter = false end
-    else
-      actualFilter = windowFilter
-    end
-    if type(actualFilter) == 'table' then
-      actualFilter.fn = nil
-    end
-    local oldCond = cond
-    cond = function(win)
-      local wf = hs.window.filter.new(false):setAppFilter(
-          win:application():name(), actualFilter)
-      if wf:isWindowAllowed(win)
-          or (type(windowFilter) == 'table'
-              and windowFilter.allowSheet and win:role() == AX.Sheet)
-          or (type(windowFilter) == 'table'
-              and windowFilter.allowPopover and win:role() == AX.Popover) then
-        return oldCond(win)
-      else
-        return false, CF.windowFilterReject
-      end
-    end
-  end
   -- testify website filter and return TF, valid URL & extra result
   if websiteFilter ~= nil then
     local oldCond = cond
@@ -6262,7 +6216,6 @@ local function wrapCondition(obj, config, mode)
   if win == true then
     local oldCond = cond
     cond = function()
-      if app:focusedWindow() == nil then return false, CF.windowFilterReject end
       return oldCond(app:focusedWindow())
     end
   else
@@ -6324,8 +6277,7 @@ local function bindImpl(obj, config, ...)
   end
   local pressedfn, cond = wrapCondition(obj, config, KEY_MODE.PRESS)
   if config.repeatedfn == nil
-      and (config.condition ~= nil or config.windowFilter ~= nil
-           or config.websiteFilter ~= nil) then
+      and (config.condition ~= nil or config.websiteFilter ~= nil) then
     -- if hotkey condition is not satisfied, holding event should be passed to the app
     -- so callback for holding event must always be registered
     config.repeatedfn = function() end
@@ -6335,8 +6287,7 @@ local function bindImpl(obj, config, ...)
     repeatedfn = wrapCondition(obj, config, KEY_MODE.REPEAT)
   end
 
-  if config.websiteFilter ~= nil or config.windowFilter ~= nil
-      or config.condition ~= nil then
+  if config.websiteFilter ~= nil or config.condition ~= nil then
     -- multiple conditioned hotkeys may share a common keybinding
     -- they are cached in a linked list.
     -- each condition will be tested until one is satisfied
@@ -6478,11 +6429,8 @@ unregisterInAppHotKeys = function(appid, delete)
   end
 end
 
-function AppWinBind(obj, config, ...)
-  -- in new impl (APPWIN_HOTKEY_ON_WINDOW_FOCUS is true), obj has to be a window
-  -- in old impl, obj can be either an application or a window,
-  -- but if obj is a window, user must take care of its lifetime
-  local hotkey = bindImpl(obj, config, ...)
+function AppWinBind(win, config, ...)
+  local hotkey = bindImpl(win, config, ...)
   hotkey.kind = HK.IN_APP
   hotkey.subkind = HK.IN_APP_.WINDOW
   return hotkey
@@ -6525,8 +6473,8 @@ local function sameFilter(a, b)
 end
 
 local unregisterInWinHotKeys
-local function registerInWinHotKeys(obj, filter)
-  local app = obj.application and obj:application() or obj
+local function registerInWinHotKeys(win, filter)
+  local app = win:application()
   local appid = app:bundleID()
   if appHotKeyCallbacks[appid] == nil then return end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
@@ -6534,13 +6482,10 @@ local function registerInWinHotKeys(obj, filter)
   if not inWinHotKeys[appid] then
     inWinHotKeys[appid] = {}
   end
-  local hotkeys = inWinHotKeys[appid]
-  if filter ~= nil then
-    if not hotkeys[filter] then
-      hotkeys[filter] = {}
-    end
-    hotkeys = hotkeys[filter]
+  if not inWinHotKeys[appid][filter] then
+    inWinHotKeys[appid][filter] = {}
   end
+  local hotkeys = inWinHotKeys[appid][filter]
   local needCloseWatcher = true
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
     if hotkeys[hkID] == nil then
@@ -6562,23 +6507,23 @@ local function registerInWinHotKeys(obj, filter)
         return cfg.bindCondition == nil or cfg.bindCondition(app)
       end
       if hasKey and isForWindow and not isBackground and bindable()
-          and (filter == nil or sameFilter(windowFilter, filter) )then
+          and sameFilter(windowFilter, filter) then
         local msg, fallback
         if type(cfg.message) == 'string' then msg = cfg.message
-        else msg, fallback = cfg.message(obj) end
+        else msg, fallback = cfg.message(win) end
         if msg ~= nil then
           local config = tcopy(cfg)
           config.mods = keybinding.mods
           config.key = keybinding.key
           config.message = msg
-          config.windowFilter = filter == nil and windowFilter or nil
+          config.windowFilter = nil
           if keybinding.repeatable ~= nil then
             config.repeatable = keybinding.repeatable
           end
           config.background = false
           config.repeatedfn = config.repeatable and cfg.fn or nil
           config.deleteOnDisable = fallback
-          hotkeys[hkID] = AppWinBind(obj, config)
+          hotkeys[hkID] = AppWinBind(win, config)
         end
       end
     else
@@ -6588,16 +6533,8 @@ local function registerInWinHotKeys(obj, filter)
     end
   end
 
-  if filter == nil then
-    onDeactivated(appid, function()
-      unregisterInWinHotKeys(appid)
-    end)
-    onTerminated(appid, function()
-      unregisterInWinHotKeys(appid, true)
-      ActivatedAppConditionChain[appid] = nil
-    end)
-  elseif needCloseWatcher then
-    onDestroy(towinui(obj),
+  if needCloseWatcher then
+    onDestroy(towinui(win),
       function() unregisterInWinHotKeys(appid, true, filter) end,
       hs.application.watcher.deactivated, true
     )
@@ -6606,8 +6543,7 @@ end
 
 unregisterInWinHotKeys = function(appid, delete, filter)
   if type(appid) ~= 'string' then appid = appid:bundleID() end
-  local hotkeys = inWinHotKeys[appid]
-  if hotkeys and filter ~= nil then hotkeys = hotkeys[filter] end
+  local hotkeys = get(inWinHotKeys, appid, filter)
   if appHotKeyCallbacks[appid] == nil or hotkeys == nil then
     return
   end
@@ -6632,11 +6568,7 @@ unregisterInWinHotKeys = function(appid, delete, filter)
     end
   end
   if allDeleted then
-    if filter then
-      inWinHotKeys[appid][filter] = nil
-    else
-      inWinHotKeys[appid] = nil
-    end
+    inWinHotKeys[appid][filter] = nil
   end
 end
 
@@ -7948,8 +7880,6 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
 end
 
 -- register hotkeys for active app
-APPWIN_HOTKEY_ON_WINDOW_FOCUS = true
-
 if RESEND_HOTKEY_TO_RIGHT_MENUBAR and TEST_RIGHT_MENUBAR_BY_OBSERVER then
   for _, app in pairs(runningAppsOnLoading) do
     registerMenuBarObserverForHotkeyValidity(app)
@@ -7963,26 +7893,18 @@ onLaunchedAndActivated = function(app, reinvokeKey)
   altMenuBarItem(app, reinvokeKey)
   if localeUpdated or menuBarChanged then
     unregisterInAppHotKeys(app, true)
-    if APPWIN_HOTKEY_ON_WINDOW_FOCUS then
-      local appid = app:bundleID()
-      foreach(FocusedWindowObservers[appid] or {},
+    local appid = app:bundleID()
+    foreach(FocusedWindowObservers[appid] or {},
         function(observer) observer:stop() end)
-      FocusedWindowObservers[appid] = nil
-      foreach(inWinHotKeys[appid] or {}, function(hotkeys)
-        foreach(hotkeys, function(hk) hk:delete() end)
-      end)
-      inWinHotKeys[appid] = nil
-    else
-      unregisterInWinHotKeys(app, true)
-    end
-    ActivatedAppConditionChain[app:bundleID()] = nil
+    FocusedWindowObservers[appid] = nil
+    foreach(inWinHotKeys[appid] or {}, function(hotkeys)
+      foreach(hotkeys, function(hk) hk:delete() end)
+    end)
+    inWinHotKeys[appid] = nil
+    ActivatedAppConditionChain[appid] = nil
   end
   registerInAppHotKeys(app)
-  if APPWIN_HOTKEY_ON_WINDOW_FOCUS then
-    registerWinFiltersForApp(app)
-  else
-    registerInWinHotKeys(app)
-  end
+  registerWinFiltersForApp(app)
   remapPreviousTab(app)
   registerOpenRecent(app)
   registerZoomHotkeys(app)
