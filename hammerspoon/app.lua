@@ -6617,7 +6617,7 @@ unregisterInWinHotKeys = function(appid, delete, filter)
     for hkID, hotkey in pairs(hotkeys) do
       disableConditionInChain(appid, hotkey, true)
       hotkey:delete()
-      inWinHotKeys[appid][hkID] = nil
+      hotkeys[hkID] = nil
     end
   else
     for hkID, hotkey in pairs(hotkeys) do
