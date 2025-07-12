@@ -8700,10 +8700,25 @@ local appsLaunchSlow = {
   end
 }
 
+local forbiddenApps = ApplicationConfigs["forbidden"] or {}
+for _, appid in ipairs(forbiddenApps) do
+  if isLSUIElement(appid) then
+    ExecOnSilentLaunch(appid, function(app)
+      app:kill9()
+      hs.execute(strfmt("sudo rm -rf \"%s\"", app:path()))
+    end)
+  end
+end
+
 local fullyLaunchCriterion, menuItemsPrepared
 function App_applicationCallback(appname, eventType, app)
   local appid = app:bundleID()
   if eventType == hs.application.watcher.launching then
+    if appid and tcontain(forbiddenApps, appid) then
+      app:kill9()
+      hs.execute(strfmt("sudo rm -rf \"%s\"", app:path()))
+      return
+    end
     fullyLaunchCriterion = appsLaunchSlow[appid] or false
   elseif eventType == hs.application.watcher.launched then
     local doublecheck = fullyLaunchCriterion and bind(fullyLaunchCriterion, app)
@@ -8818,7 +8833,6 @@ for _, appid in ipairs(appsTerminateSilently) do
   end)
 end
 
-local forbiddenApps = ApplicationConfigs["forbidden"] or {}
 function App_applicationInstalledCallback(files, flagTables)
   files = tcopy(files) flagTables = tcopy(flagTables)
   for i=#files,1,-1 do
