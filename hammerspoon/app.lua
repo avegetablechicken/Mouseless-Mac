@@ -1414,11 +1414,11 @@ end
 
 -- possible reasons for failure of hotkey condition
 local CF = {
-  uIElementNotFocused       = 0,
-  rightMenubarItemSelected  = 1,
-  leftMenubarItemSelected   = 2,
-  userConditionFail         = 3,
-  noMenuItemMatchKeybinding = 4,
+  noMenuItemMatchKeybinding = 0,
+  uIElementNotFocused       = 1,
+  rightMenubarItemSelected  = 2,
+  leftMenubarItemSelected   = 3,
+  userConditionFail         = 4,
   windowFilterReject        = 5,
   websiteFilterReject       = 6,
 }
