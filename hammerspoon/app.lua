@@ -3645,26 +3645,17 @@ appHotKeyCallbacks = {
     ["confirmRemove"] = {
       message = localizedMessage('Remove'),
       condition = confirmButtonValidForAppCleanerUninstaller('Remove'),
-      fn = function(position, app)
-        -- fixme: false click
-        leftClick(position, app)
-      end
+      fn = leftClick  -- fixme: false click
     },
     ["confirmUpdate"] = {
       message = localizedMessage('Update'),
       condition = confirmButtonValidForAppCleanerUninstaller('Update'),
-      fn = function(position, app)
-        -- fixme: false click
-        leftClick(position, app)
-      end
+      fn = leftClick  -- fixme: false click
     },
     ["confirmRetry"] = {
       message = localizedMessage('Retry'),
       condition = confirmButtonValidForAppCleanerUninstaller('Retry'),
-      fn = function(position, app)
-        -- fixme: false click
-        leftClick(position, app)
-      end
+      fn = leftClick  -- fixme: false click
     }
   },
 
@@ -3699,26 +3690,17 @@ appHotKeyCallbacks = {
     ["confirmRemove"] = {
       message = localizedMessage('PartialRemove_Remove'),
       condition = confirmButtonValidForAppCleanerUninstaller('PartialRemove_Remove'),
-      fn = function(position, app)
-        -- fixme: false click
-        leftClick(position, app)
-      end
+      fn = leftClick  -- fixme: false click
     },
     ["confirmUpdate"] = {
       message = localizedMessage('UpdateButtonTitle'),
       condition = confirmButtonValidForAppCleanerUninstaller('UpdateButtonTitle'),
-      fn = function(position, app)
-        -- fixme: false click
-        leftClick(position, app)
-      end
+      fn = leftClick  -- fixme: false click
     },
     ["confirmRetry"] = {
       message = localizedMessage('PartialRemove_Retry'),
       condition = confirmButtonValidForAppCleanerUninstaller('PartialRemove_Retry'),
-      fn = function(position, app)
-        -- fixme: false click
-        leftClick(position, app)
-      end
+      fn = leftClick  -- fixme: false click
     }
   },
 
