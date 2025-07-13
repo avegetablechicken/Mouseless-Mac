@@ -3418,6 +3418,10 @@ electronLocale = function(app, localesPath)
   local locales = localeInfo['locale']
   local localeFiles = localeInfo['file']
   for _, locale in ipairs(locales) do
+    local result = get(deLocaleMap, appid, locale, item.AXTitle)
+    if result ~= nil then return locale end
+  end
+  for _, locale in ipairs(locales) do
     local matchedFiles = {}
     for _, file in ipairs(localeFiles) do
       if file:sub(1, #locale + 1) == locale .. '/' then
@@ -3426,7 +3430,20 @@ electronLocale = function(app, localesPath)
     end
     local result = delocalizeByElectron(
         item.AXTitle, appid, locale, matchedFiles, localesPath)
-    if result ~= nil then return locale end
+    if result ~= nil then
+      if deLocaleMap[appid] == nil then
+        deLocaleMap[appid] = {}
+      end
+      if deLocaleMap[appid][locale] == nil then
+        deLocaleMap[appid][locale] = {}
+      end
+      deLocaleMap[appid][locale][item.AXTitle] = result
+      if not exists(localeTmpDir) then
+        hs.execute(strfmt("mkdir -p '%s'", localeTmpDir))
+      end
+      hs.json.write(deLocaleMap, menuItemTmpFile, false, true)
+      return locale
+    end
   end
 end
 
@@ -3444,18 +3461,37 @@ javaLocale = function(app, javahome, localesPath)
 
   local localeFiles = getJavaLocales(appid, javahome, localesPath)
   if localeFiles == nil then return end
-  for _, file in ipairs(localeFiles) do
+  local locales = foreach(localeFiles, function(file)
+    local paths = strsplit(file, '/')
+    local filename = paths[#paths]:gsub('-', '_')
+    local splits = strsplit(filename, '_')
+    if splits[#splits]:upper() == splits[#splits] then
+      return splits[#splits - 1] .. '_' .. splits[#splits]
+    else
+      return splits[#splits]
+    end
+  end)
+  for _, locale in ipairs(locales) do
+    local result = get(deLocaleMap, appid, locale, item.AXTitle)
+    if result ~= nil then return locale end
+  end
+  for i, file in ipairs(localeFiles) do
     local result = delocalizeByJava(
-      item.AXTitle, appid, { file }, javahome)
+        item.AXTitle, appid, { file }, javahome)
     if result ~= nil then
-      local paths = strsplit(file, '/')
-      local filename = paths[#paths]:gsub('-', '_')
-      local splits = strsplit(filename, '_')
-      if splits[#splits]:upper() == splits[#splits] then
-        return splits[#splits - 1] .. '_' .. splits[#splits]
-      else
-        return splits[#splits]
+      local locale = locales[i]
+      if deLocaleMap[appid] == nil then
+        deLocaleMap[appid] = {}
       end
+      if deLocaleMap[appid][locale] == nil then
+        deLocaleMap[appid][locale] = {}
+      end
+      deLocaleMap[appid][locale][item.AXTitle] = result
+      if not exists(localeTmpDir) then
+        hs.execute(strfmt("mkdir -p '%s'", localeTmpDir))
+      end
+      hs.json.write(deLocaleMap, menuItemTmpFile, false, true)
+      return locale
     end
   end
 end
