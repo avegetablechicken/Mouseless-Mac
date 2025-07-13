@@ -1394,8 +1394,7 @@ local function localizeByStrings(str, localeDir, localeFile, localesDict, locale
           elseif exists(baseLocaleDir .. '/' .. fileStem .. '.strings.1') then
             invDict = parseStringsFile(baseLocaleDir .. '/' .. fileStem .. '.strings.1',
                                        false, true)
-          elseif exists(baseLocaleDir .. '/' .. fileStem .. '.nib')
-              and exists(localeDir .. '/' .. fileStem .. '.strings') then
+          elseif exists(baseLocaleDir .. '/' .. fileStem .. '.nib') then
             local fullPath = baseLocaleDir .. '/' .. fileStem .. '.nib'
             if isdir(fullPath) then
               if exists(fullPath .. '/keyedobjects.nib') then
@@ -1408,6 +1407,9 @@ local function localizeByStrings(str, localeDir, localeFile, localesDict, locale
               end
             end
             invDict = parseNIBFile(fullPath, false, true)
+            if not exists(localeDir .. '/' .. fileStem .. '.strings') then
+              if invDict and invDict[str] then return str end
+            end
           end
         end
         local searchFromDict = function(dict)
