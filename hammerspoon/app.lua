@@ -3377,6 +3377,26 @@ appHotKeyCallbacks = {
         return bt and bt.AXEnabled, bt
       end,
       fn = click
+    },
+    ["finish"] = {
+      message = localizedMessage("Finish"),
+      bindCondition = versionGreaterEqual("4"),
+      windowFilter = {
+        allowSheet = true,
+        fn = function(win)
+          local appid = win:application():bundleID()
+          local title = localizedString("Finish", appid)
+          local bt = getc(towinui(win), AX.Button, title)
+          return bt ~= nil
+        end
+      },
+      condition = function(win)
+        local appid = win:application():bundleID()
+        local title = localizedString("Finish", appid)
+        local bt = getc(towinui(win), AX.Button, title)
+        return bt and bt.AXEnabled, bt
+      end,
+      fn = click
     }
   },
 
