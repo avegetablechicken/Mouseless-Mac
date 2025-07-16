@@ -430,8 +430,9 @@ function()
   local screen = win:screen()
   local max = screen:frame()
 
-  f.x = (max.x + max.x + max.w - f.w) / 2
-  f.y = (max.y + max.y + max.h - f.h) / 2
+  -- make the bahavior consistent with the system "Center" shortcut
+  f.x = max.x + math.ceil((max.w - f.w) / 2)
+  f.y = max.y + math.ceil((max.h - f.h + 1) / 2)
   win:setFrame(f)
 end)
 
