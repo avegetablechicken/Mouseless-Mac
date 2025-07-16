@@ -683,16 +683,12 @@ local function VSCodeToggleSideBarSection(winUI, sidebar, section)
   end
 
   local elem = getc(ancestor, AX.Group, 2, AX.Heading, 1)
-      or getc(ancestor, AX.Group, 2, AX.Group, 1, AX.Group, 1, nil, 1)
+      or getc(ancestor, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Heading, 1)
   if elem and elem.AXTitle:sub(1, #sidebar) == sidebar then
-    local sections
-    if elem.AXRole == AX.Group then
-      sections = getc(ancestor, AX.Group, 2, AX.Group, 2,
+    local sections = getc(ancestor, AX.Group, 2, AX.Group, 2,
           AX.Group, 1, AX.Group, 2, AX.Group)
-    else
-      sections = getc(ancestor, AX.Group, 2, AX.Group, 1,
+        or getc(ancestor, AX.Group, 2, AX.Group, 1,
           AX.Group, 1, AX.Group, 2, AX.Group)
-    end
     for _, sec in ipairs(sections) do
       local button = getc(sec, AX.Button, 1)
           or getc(sec, AX.Group, 1, AX.Button, 1)
