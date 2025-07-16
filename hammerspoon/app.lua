@@ -5966,8 +5966,8 @@ local function registerMenuBarObserverForHotkeyValidity(app)
         return #item > 0
       end) then
     local observer = uiobserver.new(app:pid())
-    observer:addWatcher(toappui(app), uinotifications.menuOpened)
-    observer:addWatcher(toappui(app), uinotifications.menuClosed)
+    observer:addWatcher(appUI, uinotifications.menuOpened)
+    observer:addWatcher(appUI, uinotifications.menuClosed)
     observer:callback(function(_, _, notification)
       rightMenuBarMenuSelected = notification == uinotifications.menuOpened
     end)
