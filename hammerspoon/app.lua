@@ -5956,7 +5956,7 @@ local rightMenuBarMenuSelected = false
 local function registerMenuBarObserverForHotkeyValidity(app)
   local appid = app:bundleID() or app:name()
   if MenuBarMenuSelectedObservers[appid] then return end
-  if app:kind() < 0 then return end
+  if app:kind() < 0 or appid == "com.apple.WebKit.WebContent" then return end
   local mainScreenLeft = hs.screen.mainScreen():fullFrame().x
   local appUI = toappui(app)
   if not tcontain(appUI:attributeNames() or {}, "AXFocusedWindow") then return end
