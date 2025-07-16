@@ -5998,7 +5998,6 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
       end
       if toTest then
         -- note: this process takes a long time
-        FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = false
         local mainSceenLeft = hs.screen.mainScreen():fullFrame().x
         for _, app in ipairs(hs.application.runningApplications()) do
           if app:kind() >= 0 and app:bundleID() ~= "com.apple.WebKit.WebContent" then
@@ -6015,6 +6014,7 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
             end
           end
         end
+        FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = false
       end
     end
 
