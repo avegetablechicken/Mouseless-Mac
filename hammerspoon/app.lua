@@ -6074,7 +6074,6 @@ local function registerMenuBarObserverForHotkeyValidity(app)
     return
   end
   local appUI = toappui(app)
-  if not tcontain(appUI:attributeNames() or {}, "AXFocusedWindow") then return end
   local menuBar = getc(appUI, AX.MenuBar, -1)
   if menuBar and menuBar.AXPosition.x ~= hs.screen.mainScreen():fullFrame().x
       and tfind(getc(menuBar, AX.MenuBarItem), function(item)
@@ -6119,14 +6118,12 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
               or hs.window.filter.ignoreAlways[app:name()]
               or app:kind() < 0) then
             local appUI = toappui(app)
-            if tcontain(appUI:attributeNames() or {}, "AXFocusedWindow") then
-              local rightMenuBar = getc(appUI, AX.MenuBar, -1)
-              if rightMenuBar and rightMenuBar.AXPosition.x ~= mainSceenLeft then
-                if tfind(getc(rightMenuBar, AX.MenuBarItem),
-                    function(item) return item.AXSelected end) then
-                  FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = true
-                  return false, CF.rightMenubarItemSelected
-                end
+            local rightMenuBar = getc(appUI, AX.MenuBar, -1)
+            if rightMenuBar and rightMenuBar.AXPosition.x ~= mainSceenLeft then
+              if tfind(getc(rightMenuBar, AX.MenuBarItem),
+                  function(item) return item.AXSelected end) then
+                FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = true
+                return false, CF.rightMenubarItemSelected
               end
             end
           end
