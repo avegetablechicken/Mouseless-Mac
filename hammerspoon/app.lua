@@ -5956,7 +5956,12 @@ local rightMenuBarMenuSelected = false
 local function registerMenuBarObserverForHotkeyValidity(app)
   local appid = app:bundleID() or app:name()
   if MenuBarMenuSelectedObservers[appid] then return end
-  if app:kind() < 0 or appid == "com.apple.WebKit.WebContent" then return end
+  if hs.window.filter.ignoreAlways[appid]
+      or hs.window.filter.ignoreAlways[app:name()]
+      or appid == "com.apple.WebKit.WebContent"
+      or app:kind() < 0 then
+    return
+  end
   local mainScreenLeft = hs.screen.mainScreen():fullFrame().x
   local appUI = toappui(app)
   if not tcontain(appUI:attributeNames() or {}, "AXFocusedWindow") then return end
@@ -6000,7 +6005,10 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
         -- note: this process takes a long time
         local mainSceenLeft = hs.screen.mainScreen():fullFrame().x
         for _, app in ipairs(hs.application.runningApplications()) do
-          if app:kind() >= 0 and app:bundleID() ~= "com.apple.WebKit.WebContent" then
+          if not (hs.window.filter.ignoreAlways[appid]
+              or hs.window.filter.ignoreAlways[app:name()]
+              or appid == "com.apple.WebKit.WebContent"
+              or app:kind() < 0) then
             local appUI = toappui(app)
             if tcontain(appUI:attributeNames() or {}, "AXFocusedWindow") then
               local rightMenuBar = getc(appUI, AX.MenuBar, -1)
