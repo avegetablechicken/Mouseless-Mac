@@ -3459,9 +3459,9 @@ javaLocale = function(app, javahome, localesPath)
     item = menubar[math.min(3, #menubar)]
   end
 
-  local localeFiles = getJavaLocales(appid, javahome, localesPath)
+  local localeFiles = getJavaLocales(appid, javahome, localesPath.java)
   if localeFiles == nil then return end
-  local locales = foreach(localeFiles, function(file)
+  local locales = hs.fnutils.map(localeFiles, function(file)
     local paths = strsplit(file, '/')
     local filename = paths[#paths]:gsub('-', '_')
     local splits = strsplit(filename, '_')
