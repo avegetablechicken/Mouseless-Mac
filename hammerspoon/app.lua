@@ -7310,6 +7310,11 @@ local function registerForOpenSavePanel(app)
   end
 
   local actionFunc = function(winUI)
+    for _, hotkey in ipairs(openSavePanelHotkeys) do
+      hotkey:delete()
+    end
+    openSavePanelHotkeys = {}
+
     local dontSaveButton, sidebarCells = getUIElements(winUI)
     local header
     local i = 1
