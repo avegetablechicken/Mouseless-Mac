@@ -83,6 +83,8 @@ towinui = hs.axuielement.windowElement
 uiobserver = hs.axuielement.observer
 uinotifications = hs.axuielement.observer.notifications
 
+hs.window.filter.ignoreAlways["com.apple.WebKit.WebContent"] = true
+
 FLAGS = {}
 
 HYPER = nil

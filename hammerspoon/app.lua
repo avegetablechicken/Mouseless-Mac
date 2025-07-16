@@ -5958,7 +5958,6 @@ local function registerMenuBarObserverForHotkeyValidity(app)
   if MenuBarMenuSelectedObservers[appid] then return end
   if hs.window.filter.ignoreAlways[appid]
       or hs.window.filter.ignoreAlways[app:name()]
-      or appid == "com.apple.WebKit.WebContent"
       or app:kind() < 0 then
     return
   end
@@ -6006,7 +6005,6 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
         for _, app in ipairs(hs.application.runningApplications()) do
           if not (hs.window.filter.ignoreAlways[appid]
               or hs.window.filter.ignoreAlways[app:name()]
-              or appid == "com.apple.WebKit.WebContent"
               or app:kind() < 0) then
             local appUI = toappui(app)
             if tcontain(appUI:attributeNames() or {}, "AXFocusedWindow") then
