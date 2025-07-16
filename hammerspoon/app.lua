@@ -5960,7 +5960,7 @@ local function registerMenuBarObserverForHotkeyValidity(app)
   local mainScreenLeft = hs.screen.mainScreen():fullFrame().x
   local appUI = toappui(app)
   if not tcontain(appUI:attributeNames() or {}, "AXFocusedWindow") then return end
-  local menuBar = getc(toappui(app), AX.MenuBar, -1)
+  local menuBar = getc(appUI, AX.MenuBar, -1)
   if menuBar and menuBar.AXPosition.x ~= mainScreenLeft
       and tfind(getc(menuBar, AX.MenuBarItem), function(item)
         return #item > 0
