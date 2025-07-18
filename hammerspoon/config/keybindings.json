@@ -909,6 +909,34 @@
       "function6": {
         "mods": ["option", "command"],
         "key": "6"
+      },
+      "settingsTab1": {
+        "mods": ["option", "command"],
+        "key": "1"
+      },
+      "settingsTab2": {
+        "mods": ["option", "command"],
+        "key": "2"
+      },
+      "settingsTab3": {
+        "mods": ["option", "command"],
+        "key": "3"
+      },
+      "settingsTab4": {
+        "mods": ["option", "command"],
+        "key": "4"
+      },
+      "settingsTab5": {
+        "mods": ["option", "command"],
+        "key": "5"
+      },
+      "settingsTab6": {
+        "mods": ["option", "command"],
+        "key": "6"
+      },
+      "settingsTab7": {
+        "mods": ["option", "command"],
+        "key": "7"
       }
     },
     "com.openai.chat": {
