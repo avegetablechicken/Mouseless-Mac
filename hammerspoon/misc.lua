@@ -575,7 +575,6 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
   end
   allKeys = hs.fnutils.concat(allKeys, karaHotkeys or {})
 
-  FLAGS["BATCH_TEST_HOTKEY_VALIDITY"] = true
   for _, entry in ipairs(allKeys) do
     testValid(entry)
   end
@@ -649,8 +648,6 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
   if (showApp and not HSKeybindings.appHotkeysLoaded) or reload == true then
     loadAppHotkeys(HSKeybindings.buffer, true)
   end
-  FLAGS["BATCH_TEST_HOTKEY_VALIDITY"] = false
-  FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = nil
 
   local evFlagsRepr
   if evFlags ~= nil then
@@ -1242,7 +1239,6 @@ function()
     end
   end
 
-  FLAGS["BATCH_TEST_HOTKEY_VALIDITY"] = true
   for _, entry in ipairs(allKeys) do
     testValid(entry)
   end
@@ -1310,8 +1306,6 @@ function()
   end
 
   loadAppHotkeys(allKeys, false)
-  FLAGS["BATCH_TEST_HOTKEY_VALIDITY"] = false
-  FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = nil
 
   local choices = {}
   local msg = nil
