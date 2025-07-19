@@ -6326,7 +6326,7 @@ local function wrapCondition(obj, config, mode)
     if mods == nil or mods == "" or #mods == 0 then
       cond = noSelectedMenuBarItemFunc(cond)
     end
-    -- send key strokes to system focused UI element instead of frontmost app
+    -- send key strokes to system focused UI element instead of this obj
     cond = resendToFocusedUIElement(cond, config.nonFrontmost)
   end
   if win == true then
