@@ -2257,12 +2257,6 @@ local function localizedStringImpl(str, appid, params, force)
     return true
   end
 
-  if appLocaleAssetBuffer[appid] == nil
-      or get(appLocaleDir, appid, appLocale) ~= locale then
-    appLocaleAssetBuffer[appid] = {}
-  end
-  local localesDict = appLocaleAssetBuffer[appid]
-
   if framework.chromium then
     result = localizeByChromium(str, localeDir, appid)
     if result ~= nil or not setDefaultLocale() then
@@ -2315,14 +2309,21 @@ local function localizedStringImpl(str, appid, params, force)
   end
 
   local defaultAction = function(emptyCache)
-    result = localizeByLoctable(str, resourceDir, localeFile, locale, localesDict)
+    if emptyCache or appLocaleAssetBuffer[appid] == nil
+        or get(appLocaleDir, appid, appLocale) ~= locale then
+      appLocaleAssetBuffer[appid] = {}
+    end
+
+    result = localizeByLoctable(str, resourceDir, localeFile, locale,
+                                appLocaleAssetBuffer[appid])
     if result ~= nil then return result end
 
     if emptyCache or appLocaleAssetBufferInverse[appid] == nil
         or get(appLocaleDir, appid, appLocale) ~= locale then
       appLocaleAssetBufferInverse[appid] = {}
     end
-    result = localizeByStrings(str, localeDir, localeFile, localesDict,
+    result = localizeByStrings(str, localeDir, localeFile,
+                               appLocaleAssetBuffer[appid],
                                appLocaleAssetBufferInverse[appid])
     if result ~= nil then return result end
 
@@ -3317,12 +3318,12 @@ local function delocalizedStringImpl(str, appid, params, force)
   end
 
   local defaultAction = function(emptyCache)
-    if appLocaleAssetBuffer[appid] == nil
+    if emptyCache or appLocaleAssetBuffer[appid] == nil
         or get(appLocaleDir, appid, appLocale) ~= locale then
       appLocaleAssetBuffer[appid] = {}
     end
-    local localesDict = appLocaleAssetBuffer[appid]
-    result = delocalizeByLoctable(str, resourceDir, localeFile, locale, localesDict)
+    result = delocalizeByLoctable(str, resourceDir, localeFile, locale,
+                                  appLocaleAssetBuffer[appid])
     if result ~= nil then return result end
 
     if emptyCache or deLocaleInversedMap[appid] == nil
