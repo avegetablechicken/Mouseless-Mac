@@ -8149,6 +8149,7 @@ for appid, _ in pairs(MenuBarMenuObservers) do
   for _, menuBarItem in ipairs(getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)) do
     if menuBarItem.AXSelected then
       registerInMenuHotkeys(app)
+      break
     end
   end
 end
