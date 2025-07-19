@@ -6114,7 +6114,7 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
         -- note: this process takes a long time
         local mainSceenLeft = hs.screen.mainScreen():fullFrame().x
         for _, app in ipairs(hs.application.runningApplications()) do
-          if not (hs.window.filter.ignoreAlways[appid]
+          if not (hs.window.filter.ignoreAlways[app:bundleID() or app:name()]
               or hs.window.filter.ignoreAlways[app:name()]
               or app:kind() < 0) then
             local appUI = toappui(app)
