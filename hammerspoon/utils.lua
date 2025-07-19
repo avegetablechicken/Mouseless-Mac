@@ -2247,7 +2247,6 @@ local function localizedStringImpl(str, appid, params, force)
     if appid == '__macos' then return false end
     local oldLocale = locale
     resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
-    framework = {}
     if not exists(resourceDir) then return false end
     locale = getDefaultMatchedLocale(appLocale, resourceDir, 'lproj')
     if locale == nil then
