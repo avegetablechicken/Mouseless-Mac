@@ -6268,32 +6268,27 @@ local function wrapCondition(obj, config, mode)
   local func = mode == KEY_MODE.REPEAT and config.repeatedfn or config.fn
   local websiteFilter = config.websiteFilter
   local condition = config.condition
-  local cond = function(obj)
+  local cond = function(o)
     if condition == nil then return true end
-    local satisfied, result = condition(obj)
+    local satisfied, result = condition(o)
     if not satisfied then result = CF.userConditionFail end
     return satisfied, result
   end
   -- some apps only accept system key strokes and neglect key strokes targeted at them
   local resendToSystem = config.defaultResendToSystem
 
-  local app, win, menu
-  if obj.application ~= nil then
+  local app
+  if obj.focusedWindow then  -- AppBind
+    app = obj
+  elseif obj.application then  -- WinBind or AppWinBind
     app = obj:application()
-    -- WinBind or AppWinBind
-    win = config.background and obj or true
-  elseif obj.asHSApplication ~= nil then
-    -- MenuBarBind
-    menu = obj app = getAppFromDescendantElement(obj)
-  else
-    app = obj  -- APPBIND
+    if not config.background then obj = nil end
   end
-  obj = nil
 
   -- testify website filter and return TF, valid URL & extra result
   if websiteFilter ~= nil then
     local oldCond = cond
-    cond = function(obj)
+    cond = function(o)
       if app:focusedWindow() == nil
           or app:focusedWindow():subrole() ~= AX.StandardWindow then
         return false
@@ -6307,7 +6302,7 @@ local function wrapCondition(obj, config, mode)
         local satisfied, result
         for _, v in ipairs(allowURLs) do
           if url:match(v) ~= nil then
-            satisfied, result = oldCond(obj)
+            satisfied, result = oldCond(o)
             if satisfied then
               if result ~= nil then
                 return true, result, url
@@ -6321,7 +6316,7 @@ local function wrapCondition(obj, config, mode)
       end
     end
   end
-  if menu == nil then
+  if obj == nil or obj.asHSApplication == nil then
     -- if a menu is extended, hotkeys with no modifiers are disabled
     if mods == nil or mods == "" or #mods == 0 then
       cond = noSelectedMenuBarItemFunc(cond)
@@ -6329,27 +6324,24 @@ local function wrapCondition(obj, config, mode)
     -- send key strokes to system focused UI element instead of this obj
     cond = resendToFocusedUIElement(cond, config.nonFrontmost)
   end
-  if win == true then
-    local oldCond = cond
-    cond = function()
-      return oldCond(app:focusedWindow())
-    end
-  else
-    cond = bind(cond, win or menu or app)
+  local oldCond = cond
+  cond = function(o)
+    o = o or obj or app:focusedWindow()
+    return oldCond(o)
   end
   local fn = func
   fn = function()
-    local satisfied, result, url = cond()
+    local o = obj or app:focusedWindow()
+    local satisfied, result, url = cond(o)
     if satisfied then
-      local obj = win == true and app:focusedWindow() or (win or menu or app)
       if result ~= nil then  -- condition function can pass result to callback function
         if url ~= nil then
-          func(result, url, obj)
+          func(result, url, o)
         else
-          func(result, obj)
+          func(result, o)
         end
       else
-        func(obj)
+        func(o)
       end
       return true
     elseif result == CF.leftMenubarItemSelected then
