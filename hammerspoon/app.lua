@@ -6120,8 +6120,19 @@ local function registerMenuBarObserverForHotkeyValidity(app)
       local observer = uiobserver.new(app:pid())
       observer:addWatcher(appUI, uinotifications.menuOpened)
       observer:addWatcher(appUI, uinotifications.menuClosed)
-      observer:callback(function(_, _, notification)
-        rightMenuBarMenuSelected = notification == uinotifications.menuOpened
+      observer:callback(function(_, menu, notification)
+        if notification == uinotifications.menuClosed then
+          -- assume last menubar menu is closed before next menubar menu is opened
+          rightMenuBarMenuSelected = false
+        else
+          local elem = menu.AXParent
+          while elem and elem.AXRole ~= AX.MenuBar do
+            elem = elem.AXParent
+          end
+          if elem and elem.AXPosition.x ~= hs.screen.mainScreen():fullFrame().x then
+            rightMenuBarMenuSelected = true
+          end
+        end
       end)
       observer:start()
       MenuBarMenuSelectedObservers[appid] = observer
