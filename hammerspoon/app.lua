@@ -3699,8 +3699,11 @@ appHotKeyCallbacks = {
   ["com.tencent.meeting"] =
   {
     ["preferences"] = {
-      message = "偏好设置",
-      fn = function(app) app:selectMenuItem({ app:name(), "偏好设置" }) end
+      message = localizedMessage("Preferences"),
+      fn = function(app)
+        local title = localizedString("Preferences", app:bundleID())
+        app:selectMenuItem({ app:name(), title })
+      end
     }
   },
 
