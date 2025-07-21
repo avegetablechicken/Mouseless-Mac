@@ -1,6 +1,8 @@
 local tinsert = table.insert
 local tremove = table.remove
 
+local log = hs.logger.new('hotkey', 'info')
+
 local This = {}
 This.keys = {}
 This.eventtapper = nil
@@ -128,6 +130,7 @@ function This.bindNoSuspend(mods, ...)
   hotkey.msg = modsRepr .. hotkey.msg
   tinsert(This.keys[modsCode], hotkey)
   This._startEventTapper()
+  log.f('Enabled hotkey %s', hotkey.msg)
   return hotkey
 end
 
@@ -141,6 +144,7 @@ function This.bind(mods, ...)
   hotkey.msg = modsRepr .. hotkey.msg
   tinsert(This.keys[modsCode], hotkey)
   This._startEventTapper()
+  log.f('Enabled hotkey %s', hotkey.msg)
   return hotkey
 end
 

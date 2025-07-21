@@ -1,5 +1,7 @@
 local tinsert = table.insert
 
+local log = hs.logger.new('hotkey', 'info')
+
 local module = {}
 
 -- Leave Hyper Mode when Hyper is pressed
@@ -35,15 +37,19 @@ end
 -- Utility to bind handler to Hyper+modifiers+key
 function module:bindNoSuspend(mods, key, message, pressedfn, releasedfn, repeatfn)
   local hotkey = hs.hotkey.new(mods, key, pressedfn, releasedfn, repeatfn)
-  hotkey.msg = self.hyper .. hotkey.idx .. ": " .. message
+  local hyper = self.hyper == HYPER and "✧" or self.hyper
+  hotkey.msg = hyper .. hotkey.idx .. ": " .. message
   tinsert(self.hyperMode.keys, hotkey)
+  log.f('Enabled hotkey %s', hotkey.msg)
   return hotkey
 end
 
 function module:bind(...)
   local hotkey = newHotkey(...)
-  hotkey.msg = self.hyper .. hotkey.msg
+  local hyper = self.hyper == HYPER and "✧" or self.hyper
+  hotkey.msg = hyper .. hotkey.msg
   tinsert(self.hyperMode.keys, hotkey)
+  log.f('Enabled hotkey %s', hotkey.msg)
   return hotkey
 end
 

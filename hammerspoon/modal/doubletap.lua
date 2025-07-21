@@ -4,6 +4,8 @@ local timer    = require("hs.timer")
 local eventtap = require("hs.eventtap")
 local events   = eventtap.event.types
 
+local log = hs.logger.new('hotkey', 'info')
+
 local module   = {}
 
 local function getIndex(keycode) -- key for hotkeys table
@@ -166,11 +168,13 @@ end
 
 function module:enable()
   self.eventWatcher:start()
+  log.f('Enabled hotkey %s', self.msg or self.idx)
   return self
 end
 
 function module:disable()
   self.eventWatcher:stop()
+  log.f('Disabled hotkey %s', self.msg or self.idx)
   return self
 end
 
