@@ -3510,7 +3510,7 @@ appHotKeyCallbacks = {
   ["com.tencent.QQMusicMac"] =
   {
     ["back"] = {
-      message = "上一页",
+      message = "后退",
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local titleBar
@@ -3536,7 +3536,7 @@ appHotKeyCallbacks = {
       end
     },
     ["forward"] = {
-      message = "下一页",
+      message = "前进",
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local titleBar
