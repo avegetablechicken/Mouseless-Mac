@@ -6098,7 +6098,7 @@ local function hasStatusItems(app)
 end
 
 MenuBarMenuSelectedObservers = {}
-local rightMenuBarMenuSelected
+local rightMenubarItemSelected
 -- note: this process takes a long time for each app
 local function registerMenuBarObserverForHotkeyValidity(app)
   local appid = app:bundleID() or app:name()
@@ -6118,14 +6118,14 @@ local function registerMenuBarObserverForHotkeyValidity(app)
       observer:callback(function(_, menu, notification)
         if notification == uinotifications.menuClosed then
           -- assume last menubar menu is closed before next menubar menu is opened
-          rightMenuBarMenuSelected = false
+          rightMenubarItemSelected = false
         else
           local elem = menu.AXParent
           while elem and elem.AXRole ~= AX.MenuBar do
             elem = elem.AXParent
           end
           if elem and elem.AXPosition.x ~= hs.screen.mainScreen():fullFrame().x then
-            rightMenuBarMenuSelected = true
+            rightMenubarItemSelected = true
           end
         end
       end)
@@ -6144,17 +6144,17 @@ local windowCreatedSinceTime = {}
 
 local function resendToFocusedUIElement(cond, nonFrontmostWindow)
   return function(obj)
-    if rightMenuBarMenuSelected == nil
+    if rightMenubarItemSelected == nil
         and hs.axuielement.systemWideElement().AXFocusedApplication == nil then
       local apps = hs.application.runningApplications()
       local appMenuBarItems = hs.fnutils.map(apps, function(app)
         return registerMenuBarObserverForHotkeyValidity(app)
       end)
-      rightMenuBarMenuSelected = hs.fnutils.some(appMenuBarItems, function(items)
+      rightMenubarItemSelected = hs.fnutils.some(appMenuBarItems, function(items)
         return hs.fnutils.some(items, function(item) return item.AXSelected end)
       end)
     end
-    if rightMenuBarMenuSelected then return false, CF.rightMenubarItemSelected end
+    if rightMenubarItemSelected then return false, CF.rightMenubarItemSelected end
 
     if nonFrontmostWindow then
       local frontWin = hs.window.frontmostWindow()
@@ -8029,11 +8029,11 @@ if not LAZY_REGISTER_MENUBAR_OBSERVER then
   if focusedApp then
     local HSApp = focusedApp:asHSApplication()
     local menuBarItems = appMenuBarItems[HSApp:bundleID() or HSApp:name()] or {}
-    rightMenuBarMenuSelected = hs.fnutils.some(menuBarItems, function(item)
+    rightMenubarItemSelected = hs.fnutils.some(menuBarItems, function(item)
       return item.AXSelected
     end)
   else
-    rightMenuBarMenuSelected = hs.fnutils.some(appMenuBarItems, function(items)
+    rightMenubarItemSelected = hs.fnutils.some(appMenuBarItems, function(items)
       return hs.fnutils.some(items, function(item) return item.AXSelected end)
     end)
   end
@@ -8826,7 +8826,7 @@ function App_applicationCallback(appname, eventType, app)
     for _, proc in ipairs(processesOnLaunched[appid] or {}) do
       proc(app)
     end
-    if rightMenuBarMenuSelected ~= nil then
+    if rightMenubarItemSelected ~= nil then
       registerMenuBarObserverForHotkeyValidity(app)
     end
   elseif eventType == hs.application.watcher.activated then
