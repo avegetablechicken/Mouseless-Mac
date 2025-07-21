@@ -8025,7 +8025,7 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
 end
 
 -- register hotkeys for active app
-LAZY_REGISTER_MENUBAR_OBSERVER = true
+LAZY_REGISTER_MENUBAR_OBSERVER = false
 if not LAZY_REGISTER_MENUBAR_OBSERVER then
   local appMenuBarItems = hs.fnutils.map(runningAppsOnLoading, function(app)
     return registerMenuBarObserverForHotkeyValidity(app)
