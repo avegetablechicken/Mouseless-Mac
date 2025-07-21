@@ -7,7 +7,7 @@ local events   = eventtap.event.types
 local module   = {}
 
 local function getIndex(keycode) -- key for hotkeys table
-  if keycode == hs.keycodes.map[HYPER] then return "✧" end
+  if HYPER and keycode == hs.keycodes.map[HYPER] then return "✧" end
   local key = hs.keycodes.map[keycode]
   key = key and key:upper() or '[#'..keycode..']'
   return key
