@@ -573,7 +573,7 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
       end)
     end
   end
-  allKeys = hs.fnutils.concat(allKeys, karaHotkeys or {})
+  allKeys = tconcat(allKeys, karaHotkeys or {})
 
   for _, entry in ipairs(allKeys) do
     testValid(entry)
