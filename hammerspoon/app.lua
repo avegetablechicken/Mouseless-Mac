@@ -6058,6 +6058,49 @@ local function unregisterRunningAppHotKeys(appid)
   end
 end
 
+local function hasStatusItems(app)
+  local appid = app:bundleID()
+  local errorReadingDefaults = false
+  local plistPath, defaults
+  local prefix = "NSStatusItem Preferred Position "
+  plistPath = hs.fs.pathToAbsolute(strfmt(
+      "~/Library/Containers/%s/Data/Library/Preferences/%s.plist", appid, appid))
+  if plistPath ~= nil then
+    defaults = hs.plist.read(plistPath)
+    if defaults then
+      local prefix_len = #prefix
+      for k, v in pairs(defaults) do
+        if k:sub(1, prefix_len) == prefix then
+          return true
+        end
+      end
+    else
+      errorReadingDefaults = true
+    end
+  end
+  plistPath = hs.fs.pathToAbsolute(strfmt(
+      "~/Library/Preferences/%s.plist", appid))
+  if plistPath ~= nil then
+    defaults = hs.plist.read(plistPath)
+    if defaults then
+      local prefix_len = #prefix
+      for k, v in pairs(defaults) do
+        if k:sub(1, prefix_len) == prefix then
+          return true
+        end
+      end
+    else
+      errorReadingDefaults = true
+    end
+  end
+  if errorReadingDefaults then
+    local records, ok = hs.execute(strfmt([[
+      defaults read %s | grep '"%s'
+    ]], app:bundleID() or app:name(), prefix))
+    return ok == true
+  end
+  return false
+end
 
 MenuBarMenuSelectedObservers = {}
 local rightMenuBarMenuSelected
@@ -6070,10 +6113,9 @@ local function registerMenuBarObserverForHotkeyValidity(app)
       or app:kind() < 0 then
     return
   end
-  local appUI = toappui(app)
-  local menuBar = getc(appUI, AX.MenuBar, -1)
-  if menuBar and menuBar.AXPosition.x ~= hs.screen.mainScreen():fullFrame().x then
-    local menuBarItems = getc(menuBar, AX.MenuBarItem)
+  if hasStatusItems(app) then
+    local appUI = toappui(app)
+    local menuBarItems = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem) or {}
     if tfind(menuBarItems, function(item) return #item > 0 end) then
       local observer = uiobserver.new(app:pid())
       observer:addWatcher(appUI, uinotifications.menuOpened)
