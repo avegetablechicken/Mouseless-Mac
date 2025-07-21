@@ -6569,9 +6569,10 @@ unregisterInAppHotKeys = function(appid, delete)
 end
 
 function AppWinBind(win, config, ...)
-  local hotkey = bindImpl(win, config, ...)
+  local hotkey, cond = bindImpl(win, config, ...)
   hotkey.kind = HK.IN_APP
   hotkey.subkind = HK.IN_APP_.WINDOW
+  hotkey.condition = cond
   return hotkey
 end
 
