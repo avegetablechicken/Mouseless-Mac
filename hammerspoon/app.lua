@@ -8030,9 +8030,18 @@ if not LAZY_REGISTER_MENUBAR_OBSERVER then
   local appMenuBarItems = hs.fnutils.map(runningAppsOnLoading, function(app)
     return registerMenuBarObserverForHotkeyValidity(app)
   end)
-  rightMenuBarMenuSelected = hs.fnutils.some(appMenuBarItems, function(items)
-    return hs.fnutils.some(items, function(item) return item.AXSelected end)
-  end)
+  local focusedApp = hs.axuielement.systemWideElement().AXFocusedApplication
+  if focusedApp then
+    local HSApp = focusedApp:asHSApplication()
+    local menuBarItems = appMenuBarItems[HSApp:bundleID() or HSApp:name()] or {}
+    rightMenuBarMenuSelected = hs.fnutils.some(menuBarItems, function(item)
+      return item.AXSelected
+    end)
+  else
+    rightMenuBarMenuSelected = hs.fnutils.some(appMenuBarItems, function(items)
+      return hs.fnutils.some(items, function(item) return item.AXSelected end)
+    end)
+  end
 end
 
 onLaunchedAndActivated = function(app, reinvokeKey)
