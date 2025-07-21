@@ -868,7 +868,7 @@ local function getBartenderBarItemTitle(index, rightClick)
     if bartenderBarItemNames == nil then
       local winUI = towinui(win)
       local icons = getc(winUI, AX.ScrollArea, 1, AX.List, 1, AX.List, 1)
-      local appnames = hs.fnutils.map(getc(icons, AX.Group), function(g)
+      local appnames = tmap(getc(icons, AX.Group), function(g)
         return getc(g, AX.Image, 1).AXDescription
       end)
       if #appnames > 0 then
@@ -1012,7 +1012,7 @@ local function getBarbeeBarItemTitle(index)
     if barbeeBarItemNames == nil then
       local winUI = towinui(win)
       local buttons = getc(winUI, AX.Group, 1, AX.Button)
-      barbeeBarItemNames = hs.fnutils.map(buttons, function(bt)
+      barbeeBarItemNames = tmap(buttons, function(bt)
         return bt.AXHelp
       end)
       onDestroy(winUI, function()
@@ -6147,11 +6147,11 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
     if rightMenubarItemSelected == nil
         and hs.axuielement.systemWideElement().AXFocusedApplication == nil then
       local apps = hs.application.runningApplications()
-      local appMenuBarItems = hs.fnutils.map(apps, function(app)
+      local appMenuBarItems = tmap(apps, function(app)
         return registerMenuBarObserverForHotkeyValidity(app)
       end)
-      rightMenubarItemSelected = hs.fnutils.some(appMenuBarItems, function(items)
-        return hs.fnutils.some(items, function(item) return item.AXSelected end)
+      rightMenubarItemSelected = any(appMenuBarItems, function(items)
+        return any(items, function(item) return item.AXSelected end)
       end)
     end
     if rightMenubarItemSelected then return false, CF.rightMenubarItemSelected end
@@ -7665,7 +7665,7 @@ local function altMenuBarItem(app, reinvokeKey)
       end
       if #menus > 0 then
         useWindowMenuBar = true
-        menuBarItemTitles = hs.fnutils.map(menus, function(item)
+        menuBarItemTitles = tmap(menus, function(item)
           return item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "")
         end)
         tinsert(menuBarItemTitles, 1, app:name())
@@ -8003,7 +8003,7 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
   registerRunningAppHotKeys(appid)
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
   local hasNotPersistentBackgroundHotkey =
-      hs.fnutils.some(appConfig, function(cfg, hkID)
+      any(appConfig, function(cfg, hkID)
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isBackground = keybinding.background ~= nil
@@ -8022,19 +8022,19 @@ end
 -- register hotkeys for active app
 LAZY_REGISTER_MENUBAR_OBSERVER = false
 if not LAZY_REGISTER_MENUBAR_OBSERVER then
-  local appMenuBarItems = hs.fnutils.map(runningAppsOnLoading, function(app)
+  local appMenuBarItems = tmap(runningAppsOnLoading, function(app)
     return registerMenuBarObserverForHotkeyValidity(app)
   end)
   local focusedApp = hs.axuielement.systemWideElement().AXFocusedApplication
   if focusedApp then
     local HSApp = focusedApp:asHSApplication()
     local menuBarItems = appMenuBarItems[HSApp:bundleID() or HSApp:name()] or {}
-    rightMenubarItemSelected = hs.fnutils.some(menuBarItems, function(item)
+    rightMenubarItemSelected = any(menuBarItems, function(item)
       return item.AXSelected
     end)
   else
-    rightMenubarItemSelected = hs.fnutils.some(appMenuBarItems, function(items)
-      return hs.fnutils.some(items, function(item) return item.AXSelected end)
+    rightMenubarItemSelected = any(appMenuBarItems, function(items)
+      return any(items, function(item) return item.AXSelected end)
     end)
   end
 end
@@ -8085,7 +8085,7 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     registerWinFiltersForDaemonApp(app, appConfig)
   end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
-  local hasDaemonAppWindowHotkey = hs.fnutils.some(appConfig, function(cfg, hkID)
+  local hasDaemonAppWindowHotkey = any(appConfig, function(cfg, hkID)
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
@@ -8169,7 +8169,7 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     registerObserversForMenuBarMenu(app, appConfig)
   end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
-  local hasMenuBarMenuHotkey = hs.fnutils.some(appConfig, function(cfg, hkID)
+  local hasMenuBarMenuHotkey = any(appConfig, function(cfg, hkID)
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isMenuBarMenu = keybinding.menubarFilter ~= nil
@@ -8958,7 +8958,7 @@ function App_monitorChangedCallback()
   local screens = hs.screen.allScreens()
 
   -- only for built-in monitor
-  local builtinMonitorEnable = hs.fnutils.some(screens, function(screen)
+  local builtinMonitorEnable = any(screens, function(screen)
     return screen:name() == builtinMonitor
   end)
   if builtinMonitorEnable then

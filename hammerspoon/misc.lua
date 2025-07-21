@@ -139,8 +139,7 @@ local function parseVerificationCodeFromFirstMessage()
           return content:match(pattern.extract)
         end
       elseif type(pattern.filter) == 'table' then
-        if hs.fnutils.every(pattern.filter,
-              function(f) return content:find(f) end) then
+        if all(pattern.filter, function(f) return content:find(f) end) then
           return content:match(pattern.extract)
         end
       end

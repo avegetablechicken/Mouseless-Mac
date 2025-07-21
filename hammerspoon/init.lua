@@ -75,7 +75,10 @@ tfind = hs.fnutils.find
 tindex = hs.fnutils.indexOf
 tfilter = hs.fnutils.filter
 tifilter = hs.fnutils.ifilter
+tmap = hs.fnutils.map
 tcopy = hs.fnutils.copy
+any = hs.fnutils.some
+all = hs.fnutils.every
 foreach = hs.fnutils.each
 bind = hs.fnutils.partial
 toappui = hs.axuielement.applicationElement
@@ -381,7 +384,7 @@ ContinuousWatcher = hs.timer.new(1, function()
 end, true)
 
 local function reloadConfig(files)
-  if hs.fnutils.some(files, function(file) return file:sub(-4) == ".lua" end) then
+  if any(files, function(file) return file:sub(-4) == ".lua" end) then
     hs.reload()
   end
 end

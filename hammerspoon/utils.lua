@@ -1972,7 +1972,7 @@ local function localizeWPS(str, appLocale, localeFile)
     if file:sub(-3) == ".qm" then
       local valid = true
       if localeFile then
-        valid = hs.fnutils.some(localeFile, function(p)
+        valid = any(localeFile, function(p)
           return file:sub(1, -4):match('^' .. p .. '$')
         end)
       end
@@ -1992,7 +1992,7 @@ local function localizeWPS(str, appLocale, localeFile)
       if file:sub(-3) == ".qm" then
         local valid = true
         if localeFile then
-          valid = hs.fnutils.some(localeFile, function(p)
+          valid = any(localeFile, function(p)
             return file:sub(1, -4):match('^' .. p .. '$')
           end)
         end
@@ -2995,7 +2995,7 @@ local function delocalizeWPS(str, appLocale, localeFile)
     if file:sub(-3) == ".qm" then
       local valid = true
       if localeFile then
-        valid = hs.fnutils.some(localeFile, function(p)
+        valid = any(localeFile, function(p)
           return file:sub(1, -4):match('^' .. p .. '$')
         end)
       end
@@ -3461,7 +3461,7 @@ javaLocale = function(app, javahome, localesPath)
 
   local localeFiles = getJavaLocales(appid, javahome, localesPath.java)
   if localeFiles == nil then return end
-  local locales = hs.fnutils.map(localeFiles, function(file)
+  local locales = tmap(localeFiles, function(file)
     local paths = strsplit(file, '/')
     local filename = paths[#paths]:gsub('-', '_')
     local splits = strsplit(filename, '_')

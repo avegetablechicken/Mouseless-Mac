@@ -1785,10 +1785,10 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     until cb3 or not pane:isValid()
     if cb3 == nil then return end
     local cbs = getc(area, AX.CheckBox)
-    local cbIdents = hs.fnutils.map(cbs, function (cb)
+    local cbIdents = tmap(cbs, function (cb)
       return cb.AXIdentifier
     end)
-    local enableds = hs.fnutils.map(cbs, function (cb)
+    local enableds = tmap(cbs, function (cb)
       return cb.AXValue
     end)
     for i=1,3 do
@@ -2121,7 +2121,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     until button3 or not pane:isValid()
     if button3 then
       if OS_VERSION < OS.Ventura then
-        result = hs.fnutils.map(getc(pane, AX.Button),
+        result = tmap(getc(pane, AX.Button),
             function(bt) return bt.AXTitle end)
       else
         result = #getc(pane, AX.Button)
@@ -2330,7 +2330,7 @@ function System_monitorChangedCallback()
   local screens = hs.screen.allScreens()
 
   -- only for built-in monitor
-  local builtinMonitorEnable = hs.fnutils.some(screens,
+  local builtinMonitorEnable = any(screens,
     function(screen)
       return screen:name() == builtinMonitor
     end)
