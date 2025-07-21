@@ -993,11 +993,6 @@ local function clickBartenderSidebarItem(index)
   end
 end
 
--- to notify hammerspoon's window filter
-onLaunched("com.surteesstudios.Bartender", function(app)
-  app:activate() hs.timer.doAfter(0.5, function() app:hide() end)
-end)
-
 -- ### Barbee
 local barbeeBarItemNames
 local barbeeBarWindowFilter = {
