@@ -776,7 +776,7 @@ local function getQQLiveChannelName(index)
   return function(win)
     if #QQLiveChannelNames == 0 then
       local list = getc(towinui(win), AX.Group, 2)
-      if list == nil or #list == 0 then return false end
+      if list == nil or #list == 0 then return end
       local start
       for i, txt in ipairs(list) do
         if txt.AXValue == "频道" then
@@ -1176,7 +1176,7 @@ local function weiboSideBarTitle(idx, isCommon)
         if source == nil then return end
         _, start = source:find(header)
       end
-      if start == nil then return false end
+      if start == nil then return end
       stop = source:find(tailer, start + 1) or source:len()
     else
       local header = [[<h3 class="Home_title_[^>]-">自定义分组</h3>]]
@@ -1188,7 +1188,7 @@ local function weiboSideBarTitle(idx, isCommon)
         if source == nil then return end
         _, start = source:find(header)
       end
-      if start == nil then return false end
+      if start == nil then return end
       stop = source:find(tailer, start + 1) or source:len()
     end
     source = source:sub(start + 1, stop - 1)
