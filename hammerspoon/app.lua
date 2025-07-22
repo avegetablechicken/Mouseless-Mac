@@ -1369,7 +1369,8 @@ local function commonLocalizedMessage(message)
                                        'com.apple.AppStore',
                                        { locale = appLocale })
         if result ~= nil then
-          return result:gsub('App Store', appname)
+          result = result:gsub('App Store', appname)
+          return result
         end
       end
       return message .. ' ' .. appname
@@ -1398,7 +1399,8 @@ local function commonLocalizedMessage(message)
             framework = "AppKit.framework"
           }, true)
           if result ~= nil then
-            return result:gsub('“%%@”', ''):gsub('%%@', '')
+            result = result:gsub('“%%@”', ''):gsub('%%@', '')
+            return result
           end
         end
       end
@@ -7699,7 +7701,8 @@ local function altMenuBarItem(app, reinvokeKey)
       if #menus > 0 then
         useWindowMenuBar = true
         menuBarItemTitles = tmap(menus, function(item)
-          return item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "")
+          local t = item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "")
+          return t
         end)
         tinsert(menuBarItemTitles, 1, app:name())
         menuBarItems = menus
@@ -7749,7 +7752,8 @@ local function altMenuBarItem(app, reinvokeKey)
   if useWindowMenuBar then
     clickMenuCallback = function(title, k)
       local menuBarItem = tfind(menuBarItems, function(item)
-        return item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "") == title
+        local t = item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "") == title
+        return t
       end)
       if menuBarItem == nil then
         processInvalidAltMenu(app, k)
