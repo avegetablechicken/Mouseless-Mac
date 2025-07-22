@@ -6792,8 +6792,7 @@ local function registerSingleWinFilterForApp(app, filter)
           if t:match(title) then return true end
         end
       end
-      local allowTitles, rejectTitles =
-          actualFilter.allowTitles, actualFilter.rejectTitles
+      local allowTitles, rejectTitles = filter.allowTitles, filter.rejectTitles
       if allowTitles then
         if type(allowTitles) == 'number' then
           if #win:title() <= allowTitles then
