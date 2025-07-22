@@ -1179,8 +1179,16 @@ local function setTabUrl(app, url)
   end
 end
 
+local weiboSideBarCommonGroupTitles, weiboSideBarCommonGroupURLs
+local weiboSideBarCustomGroupTitles, weiboSideBarCustomGroupURLs
 local function weiboSideBarTitle(idx, isCommon)
   return function(win)
+    if isCommon and weiboSideBarCommonGroupTitles then
+      return weiboSideBarCommonGroupTitles[idx]
+    elseif not isCommon and weiboSideBarCustomGroupTitles then
+      return weiboSideBarCustomGroupTitles[idx]
+    end
+    local weiboSideBarTitles, weiboSideBarURLs = {}, {}
     local app = win:application()
     local source = getTabSource(app)
     if source == nil then return end
@@ -1211,55 +1219,44 @@ local function weiboSideBarTitle(idx, isCommon)
       stop = source:find(tailer, start + 1) or source:len()
     end
     source = source:sub(start + 1, stop - 1)
-    local cnt = 0
-    local mygroup = (isCommon and idx == 1) and '"' or 'mygroup'
-    for title in source:gmatch(strfmt(
-        [[<a class="ALink_none[^>]-href="/%s.- title="(.-)"]], mygroup)) do
-      cnt = cnt + 1
-      if cnt == idx then return title end
+    if isCommon then
+      local url, title = source:match(
+          [[<a class="ALink_none[^>]-href="/(.-)">.- title="(.-)"]])
+      tinsert(weiboSideBarTitles, title)
+      tinsert(weiboSideBarURLs, url)
     end
+    for url, title in source:gmatch(
+        [[<a class="ALink_none[^>]-href="/(mygroup.-)">.- title="(.-)"]]) do
+      tinsert(weiboSideBarTitles, title)
+      tinsert(weiboSideBarURLs, url)
+    end
+    if isCommon then
+      weiboSideBarCommonGroupTitles = weiboSideBarTitles
+      weiboSideBarCommonGroupURLs = weiboSideBarURLs
+      onDeactivated(app:bundleID(), function()
+        weiboSideBarCommonGroupTitles = nil
+        weiboSideBarCommonGroupURLs = nil
+      end)
+    else
+      weiboSideBarCustomGroupTitles = weiboSideBarTitles
+      weiboSideBarCustomGroupURLs = weiboSideBarURLs
+      onDeactivated(app:bundleID(), function()
+        weiboSideBarCustomGroupTitles = nil
+        weiboSideBarCustomGroupURLs = nil
+      end)
+    end
+    return weiboSideBarTitles[idx]
   end
 end
 
 local function weiboNavigateToSideBarCondition(idx, isCommon)
-  return function(win)
-    if idx == 1 and isCommon then
-      return true, ""
-    end
-    local app = win:application()
-    local source = getTabSource(app)
-    if source == nil then return end
-    local start, stop
-    if isCommon then
-      local header = [[<h2 class="Nav_title_[^>]-">首页</h2>]]
-      local tailer = [[<div class="[^>]-Home_split_[^>]-">]]
-      _, start = source:find(header)
-      if start == nil then
-        hs.timer.usleep(1 * 1000000)
-        source = getTabSource(app)
-        if source == nil then return end
-        _, start = source:find(header)
-      end
-      if start == nil then return false end
-      stop = source:find(tailer, start + 1) or source:len()
-    else
-      local header = [[<h3 class="Home_title_[^>]-">自定义分组</h3>]]
-      local tailer = [[<button class="[^>]-Home_btn_[^>]-">]]
-      _, start = source:find(header)
-      if start == nil then
-        hs.timer.usleep(1 * 1000000)
-        source = getTabSource(app)
-        if source == nil then return end
-        _, start = source:find(header)
-      end
-      if start == nil then return false end
-      stop = source:find(tailer, start + 1) or source:len()
-    end
-    source = source:sub(start + 1, stop - 1)
-    local cnt = isCommon and 1 or 0
-    for url in source:gmatch([[<a class="ALink_none[^>]-href="/(mygroup.-)">]]) do
-      cnt = cnt + 1
-      if cnt == idx then return true, url end
+  return function()
+    if isCommon and weiboSideBarCommonGroupURLs
+        and #weiboSideBarCommonGroupURLs >= idx then
+      return true, weiboSideBarCommonGroupURLs[idx]
+    elseif not isCommon and weiboSideBarCustomGroupURLs
+        and #weiboSideBarCustomGroupURLs >= idx then
+      return true, weiboSideBarCustomGroupURLs[idx]
     end
     return false
   end
@@ -1280,33 +1277,34 @@ local function weiboNavigateToCommonGroupCondition(idx)
   return weiboNavigateToSideBarCondition(idx, true)
 end
 
+local douyinTabTitles, douyinTabURLs
 local function douyinTabTitle(idx)
   return function(win)
+    if douyinTabTitles then return douyinTabTitles[idx] end
+    douyinTabTitles, douyinTabURLs = {}, {}
     local app = win:application()
     local source = getTabSource(app)
     if source == nil then return end
-    local cnt = 0
     local lastURL = ""
     for url, title in source:gmatch(
         [[<div class="tab\-[^>]-><a href="(.-)".-<span class=".-">(.-)</span>]]) do
-      if url ~= lastURL then cnt = cnt + 1 end
-      if cnt == idx then return title end
+      if url ~= lastURL then
+        tinsert(douyinTabTitles, title)
+        tinsert(douyinTabURLs, url)
+      end
       lastURL = url
     end
+    onDeactivated(app:bundleID(), function()
+      douyinTabTitles, douyinTabURLs = nil, nil
+    end)
+    return douyinTabTitles[idx]
   end
 end
 
 local function douyinNavigateToTabCondition(idx)
-  return function(win)
-    local app = win:application()
-    local source = getTabSource(app)
-    if source == nil then return end
-    local cnt = 0
-    local lastURL = ""
-    for url in source:gmatch([[<div class="tab\-[^>]-><a href="(.-)"]]) do
-      if url ~= lastURL then cnt = cnt + 1 end
-      if cnt == idx then return true, url end
-      lastURL = url
+  return function()
+    if douyinTabURLs and #douyinTabURLs >= idx then
+      return true, douyinTabURLs[idx]
     end
     return false
   end
