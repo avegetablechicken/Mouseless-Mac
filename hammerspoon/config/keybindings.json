@@ -1822,40 +1822,28 @@
     },
     "browsers": {
       "weiboNavigate1stCommonGroup": {
-        "mods": [
-          "ctrl",
-          "option"
-        ],
+        "mods": ["control", "option"],
         "key": "1",
         "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate2ndCommonGroup": {
-        "mods": [
-          "ctrl",
-          "option"
-        ],
+        "mods": ["control", "option"],
         "key": "2",
         "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate3rdCommonGroup": {
-        "mods": [
-          "ctrl",
-          "option"
-        ],
+        "mods": ["control", "option"],
         "key": "3",
         "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate4thCommonGroup": {
-        "mods": [
-          "ctrl",
-          "option"
-        ],
+        "mods": ["control", "option"],
         "key": "4",
         "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
