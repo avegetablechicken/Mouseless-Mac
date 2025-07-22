@@ -4051,7 +4051,7 @@ appHotKeyCallbacks = {
     },
     ["showMainWindow"] = {
       message = "Show",
-      menubarFilter = true,
+      menubarFilter = { allowIndices =  1 },
       condition = function(menu)
         local menuItem = getc(menu, AX.MenuItem, "Show")
         return menuItem and menuItem.AXEnabled, menuItem
@@ -4658,9 +4658,7 @@ appHotKeyCallbacks = {
         return app:name() .. ' > '
             .. localizedString('Preferences', app:bundleID())
       end,
-      menubarFilter = {
-        allowTitles = 'eul'
-      },
+      menubarFilter = { allowTitles = 'eul' },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
         local prefString = localizedString('Preferences', app:bundleID())
