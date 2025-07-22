@@ -6,7 +6,6 @@ local runningAppsOnLoading = {}
 foreach(hs.application.runningApplications(), function(app)
   runningAppsOnLoading[app:bundleID() or app:name()] = app
 end)
-local isLoading = true
 
 
 -- # appkeys
@@ -136,7 +135,7 @@ local function registerAppHotkeys()
     if appPath ~= nil then
       local appname
       if appid ~= nil then
-        if isLoading then
+        if FLAGS["SCRIPT_IS_LOADING"] then
           appname = displayName(runningAppsOnLoading[appid] or appid)
         else
           appname = displayName(appid)
@@ -6018,7 +6017,10 @@ local function registerRunningAppHotKeys(appid, app)
     else
       bindable = function()
         if not running then return false end
-        app = app or (isLoading and runningAppsOnLoading[appid] or find(appid))
+        if app == nil then
+          app = FLAGS["SCRIPT_IS_LOADING"]
+              and runningAppsOnLoading[appid] or find(appid)
+        end
         running = app ~= nil
         return app and (cfg.bindCondition == nil or cfg.bindCondition(app))
       end
@@ -6128,7 +6130,6 @@ local function hasStatusItems(app)
 end
 
 MenuBarMenuSelectedObservers = {}
-local rightMenubarItemSelected
 -- note: this process takes a long time for each app
 local function registerMenuBarObserverForHotkeyValidity(app)
   local appid = app:bundleID() or app:name()
@@ -6148,14 +6149,14 @@ local function registerMenuBarObserverForHotkeyValidity(app)
       observer:callback(function(_, menu, notification)
         if notification == uinotifications.menuClosed then
           -- assume last menubar menu is closed before next menubar menu is opened
-          rightMenubarItemSelected = false
+          FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = false
         else
           local elem = menu.AXParent
           while elem and elem.AXRole ~= AX.MenuBar do
             elem = elem.AXParent
           end
           if elem and elem.AXPosition.x ~= hs.screen.mainScreen():fullFrame().x then
-            rightMenubarItemSelected = true
+            FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = true
           end
         end
       end)
@@ -6174,17 +6175,19 @@ local windowCreatedSinceTime = {}
 
 local function resendToFocusedUIElement(cond, nonFrontmostWindow)
   return function(obj)
-    if rightMenubarItemSelected == nil
+    if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] == nil
         and hs.axuielement.systemWideElement().AXFocusedApplication == nil then
       local apps = hs.application.runningApplications()
       local appMenuBarItems = tmap(apps, function(app)
         return registerMenuBarObserverForHotkeyValidity(app)
       end)
-      rightMenubarItemSelected = any(appMenuBarItems, function(items)
+      FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = any(appMenuBarItems, function(items)
         return any(items, function(item) return item.AXSelected end)
       end)
     end
-    if rightMenubarItemSelected then return false, CF.rightMenubarItemSelected end
+    if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] then
+      return false, CF.rightMenubarItemSelected
+    end
 
     if nonFrontmostWindow then
       local frontWin = hs.window.frontmostWindow()
@@ -6389,14 +6392,14 @@ end
 -- keeping pressing a hotkey may lead to unexpected repeated triggering of callback function
 -- a workaround is to check if callback function is executing, if so, do nothing
 -- note that this workaround may not work when the callback lasts really too long
-local callBackExecuting = false
+FLAGS["CALLBACK_IS_EXECUTING"] = false
 local function callBackExecutingWrapper(fn)
   return function()
-    if callBackExecuting then return end
+    if FLAGS["CALLBACK_IS_EXECUTING"] then return end
     hs.timer.doAfter(0, function()
-      callBackExecuting = true
+      FLAGS["CALLBACK_IS_EXECUTING"] = true
       fn()
-      callBackExecuting = false
+      FLAGS["CALLBACK_IS_EXECUTING"] = false
     end)
   end
 end
@@ -8047,11 +8050,11 @@ if not LAZY_REGISTER_MENUBAR_OBSERVER then
   if focusedApp then
     local HSApp = focusedApp:asHSApplication()
     local menuBarItems = appMenuBarItems[HSApp:bundleID() or HSApp:name()] or {}
-    rightMenubarItemSelected = any(menuBarItems, function(item)
+    FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = any(menuBarItems, function(item)
       return item.AXSelected
     end)
   else
-    rightMenubarItemSelected = any(appMenuBarItems, function(items)
+    FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = any(appMenuBarItems, function(items)
       return any(items, function(item) return item.AXSelected end)
     end)
   end
@@ -8644,7 +8647,7 @@ local function remoteDesktopWindowFilter(app)
   end
   return nil
 end
-local justModifiedRemoteDesktopModifiers = false
+FLAGS["JUST_MODIFIED_MODIFIERS_FOR_MRD"] = false
 RemoteDesktopModifierTapper = hs.eventtap.new({
   hs.eventtap.event.types.flagsChanged,
   hs.eventtap.event.types.keyDown,
@@ -8653,8 +8656,8 @@ RemoteDesktopModifierTapper = hs.eventtap.new({
 function(ev)
   local rule = remoteDesktopWindowFilter(hs.application.frontmostApplication())
   if rule ~= nil then
-    if not justModifiedRemoteDesktopModifiers then
-      justModifiedRemoteDesktopModifiers = true
+    if not FLAGS["JUST_MODIFIED_MODIFIERS_FOR_MRD"] then
+      FLAGS["JUST_MODIFIED_MODIFIERS_FOR_MRD"] = true
       local evFlags =	ev:getFlags()
       local newEvFlags = {}
       for k, _ in pairs(evFlags) do
@@ -8668,7 +8671,7 @@ function(ev)
       ev:post()
       return true
     else
-      justModifiedRemoteDesktopModifiers = false
+      FLAGS["JUST_MODIFIED_MODIFIERS_FOR_MRD"] = false
     end
   end
   return false
@@ -8813,7 +8816,7 @@ for _, appid in ipairs(forbiddenApps) do
   end
 end
 
-local fullyLaunchCriterion, menuItemsPrepared
+local fullyLaunchCriterion
 function App_applicationCallback(appname, eventType, app)
   local appid = app:bundleID()
   if eventType == hs.application.watcher.launching then
@@ -8825,7 +8828,7 @@ function App_applicationCallback(appname, eventType, app)
     fullyLaunchCriterion = appsLaunchSlow[appid] or false
   elseif eventType == hs.application.watcher.launched then
     local doublecheck = fullyLaunchCriterion and bind(fullyLaunchCriterion, app)
-    if menuItemsPrepared ~= nil then
+    if FLAGS["MENUBAR_ITEMS_PREPARED"] ~= nil then
       local oldFn = doublecheck
       doublecheck = function()
         return hs.application.frontmostApplication():bundleID() == appid
@@ -8840,11 +8843,11 @@ function App_applicationCallback(appname, eventType, app)
         onLaunchedAndActivated(app)
       end
     end
-    fullyLaunchCriterion, menuItemsPrepared = nil, nil
+    fullyLaunchCriterion, FLAGS["MENUBAR_ITEMS_PREPARED"] = nil, nil
     for _, proc in ipairs(processesOnLaunched[appid] or {}) do
       proc(app)
     end
-    if rightMenubarItemSelected ~= nil then
+    if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] ~= nil then
       registerMenuBarObserverForHotkeyValidity(app)
     end
   elseif eventType == hs.application.watcher.activated then
@@ -8867,9 +8870,9 @@ function App_applicationCallback(appname, eventType, app)
 
     registerForOpenSavePanel(app)
     if fullyLaunchCriterion == nil then
-      menuItemsPrepared = onLaunchedAndActivated(app)
+      FLAGS["MENUBAR_ITEMS_PREPARED"] = onLaunchedAndActivated(app)
     elseif fullyLaunchCriterion == false then
-      menuItemsPrepared = false
+      FLAGS["MENUBAR_ITEMS_PREPARED"] = false
     end
   elseif eventType == hs.application.watcher.deactivated
       and appname ~= nil then
@@ -9016,4 +9019,3 @@ function App_usbChangedCallback(device)
 end
 
 runningAppsOnLoading = {}
-isLoading = false

@@ -1,6 +1,8 @@
 ---@diagnostic disable: lowercase-global
 
 local t = hs.timer.absoluteTime()
+FLAGS = {}
+FLAGS["SCRIPT_IS_LOADING"] = true
 
 OS = {
   Cheetah           = "10.00",
@@ -87,8 +89,6 @@ uiobserver = hs.axuielement.observer
 uinotifications = hs.axuielement.observer.notifications
 
 hs.window.filter.ignoreAlways["com.apple.WebKit.WebContent"] = true
-
-FLAGS = {}
 
 HYPER = nil
 KeybindingConfigs = nil
@@ -505,4 +505,5 @@ require "fs"
 -- miscellaneous function
 require "misc"
 
+FLAGS["SCRIPT_IS_LOADING"] = false
 print(strfmt("-- Loading time: %d ms", (hs.timer.absoluteTime() - t) // 1000000))
