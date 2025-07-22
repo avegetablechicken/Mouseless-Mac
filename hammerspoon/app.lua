@@ -6320,7 +6320,7 @@ local function wrapCondition(obj, config, mode)
     cond = function(o)
       if app:focusedWindow() == nil
           or app:focusedWindow():subrole() ~= AX.StandardWindow then
-        return false
+        return false, CF.websiteFilterReject
       end
       local url = getTabUrl(app)
       if url ~= nil then
