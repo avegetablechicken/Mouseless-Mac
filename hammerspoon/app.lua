@@ -12,32 +12,6 @@ local isLoading = true
 -- # appkeys
 
 -- launch or hide applications
-local function focusOrHideFinder(app)
-  local appid = app:bundleID()
-  local windowFilter = hs.window.filter.new(false):setAppFilter(app:name())
-  local windows = windowFilter:getWindows()
-  local nonDesktop = tfind(windows, function(win)
-    return win:id() ~= hs.window.desktop():id()
-  end) == nil
-  if nonDesktop then
-    app = hs.application.open(appid)
-  elseif hs.window.focusedWindow() ~= nil
-      and hs.window.focusedWindow():application() == app then
-    if hs.window.focusedWindow():id() == hs.window.desktop():id() then
-      hs.application.open(appid)
-      hs.window.focusedWindow():focus()
-    else
-      app:hide()
-    end
-  else
-    if app:focusedWindow() ~= nil then
-      app:focusedWindow():focus()
-    else
-      app:activate()
-    end
-  end
-end
-
 local function focusOrHide(hint)
   local app = nil
 
@@ -53,7 +27,29 @@ local function focusOrHide(hint)
   end
 
   if app ~= nil and app:bundleID() == "com.apple.finder" then
-    focusOrHideFinder(app)
+    local appid = app:bundleID()
+    local windowFilter = hs.window.filter.new(false):setAppFilter(app:name())
+    local windows = windowFilter:getWindows()
+    local nonDesktop = tfind(windows, function(win)
+      return win:id() ~= hs.window.desktop():id()
+    end) == nil
+    if nonDesktop then
+      app = hs.application.open(appid)
+    elseif hs.window.focusedWindow() ~= nil
+        and hs.window.focusedWindow():application() == app then
+      if hs.window.focusedWindow():id() == hs.window.desktop():id() then
+        hs.application.open(appid)
+        hs.window.focusedWindow():focus()
+      else
+        app:hide()
+      end
+    else
+      if app:focusedWindow() ~= nil then
+        app:focusedWindow():focus()
+      else
+        app:activate()
+      end
+    end
     return
   end
 
@@ -214,32 +210,20 @@ local function onTerminated(appid, action)
   tinsert(processesOnTerminated[appid], action)
 end
 
-local observersStopOnDeactivated = {}
 local function stopOnDeactivated(appid, observer, action)
   onDeactivated(appid, function()
     observer:stop()
     if action then action(observer, appid) end
     observer = nil
   end)
-
-  if observersStopOnDeactivated[appid] == nil then
-    observersStopOnDeactivated[appid] = {}
-  end
-  tinsert(observersStopOnDeactivated[appid], observer)
 end
 
-local observersStopOnTerminated = {}
 local function stopOnTerminated(appid, observer, action)
   onTerminated(appid, function()
     observer:stop()
     if action then action(observer, appid) end
     observer = nil
   end)
-
-  if observersStopOnTerminated[appid] == nil then
-    observersStopOnTerminated[appid] = {}
-  end
-  tinsert(observersStopOnTerminated[appid], observer)
 end
 
 -- get hs.application from AXUIElement
@@ -8862,7 +8846,6 @@ function App_applicationCallback(appname, eventType, app)
         proc(app)
       end
       processesOnDeactivated[appid] = nil
-      observersStopOnDeactivated[appid] = nil
     end
   elseif eventType == hs.application.watcher.terminated then
     for _, proc in ipairs(processesOnDeactivated[appid] or {}) do
@@ -8873,8 +8856,6 @@ function App_applicationCallback(appname, eventType, app)
       proc()
     end
     processesOnTerminated[appid] = nil
-    observersStopOnDeactivated[appid] = nil
-    observersStopOnTerminated[appid] = nil
   elseif eventType == hs.application.watcher.deactivated then
     for id, processes in pairs(processesOnDeactivated) do
       if find(id) == nil then
@@ -8882,7 +8863,6 @@ function App_applicationCallback(appname, eventType, app)
           proc()
         end
         processesOnDeactivated[id] = nil
-        observersStopOnDeactivated[id] = nil
       end
     end
     for id, processes in pairs(processesOnTerminated) do
@@ -8891,7 +8871,6 @@ function App_applicationCallback(appname, eventType, app)
           proc()
         end
         processesOnTerminated[id] = nil
-        observersStopOnTerminated[id] = nil
       end
     end
   end
