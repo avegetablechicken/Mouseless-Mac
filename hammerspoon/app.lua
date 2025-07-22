@@ -6281,24 +6281,24 @@ local function appendConditionChain(app, config, pressedfn, repeatedfn, cond)
 end
 
 local function enableConditionInChain(hotkey)
-  if hotkey.chainedCond == nil then return end
-  hotkey.chainedCond.enabled = true
+  if hotkey._chainedCond == nil then return end
+  hotkey._chainedCond.enabled = true
 end
 
 local function disableConditionInChain(appid, hotkey, delete)
-  if hotkey.chainedCond == nil then return end
-  hotkey.chainedCond.enabled = false
+  if hotkey._chainedCond == nil then return end
+  hotkey._chainedCond.enabled = false
   if delete or hotkey.deleteOnDisable then
-    if hotkey.chainedCond.previous then
-      hotkey.chainedCond.previous.next = hotkey.chainedCond.next
+    if hotkey._chainedCond.previous then
+      hotkey._chainedCond.previous.next = hotkey._chainedCond.next
     end
-    if hotkey.chainedCond.next then
-      hotkey.chainedCond.next.previous = hotkey.chainedCond.previous
+    if hotkey._chainedCond.next then
+      hotkey._chainedCond.next.previous = hotkey._chainedCond.previous
     else
       local chain = (hotkey.kind == HK.IN_WIN or hotkey.kind == HK.MENUBAR)
           and DaemonAppConditionChain or ActivatedAppConditionChain
       if chain[appid] then
-        chain[appid][hotkey.idx] = hotkey.chainedCond.previous
+        chain[appid][hotkey.idx] = hotkey._chainedCond.previous
       end
     end
   end
@@ -6466,18 +6466,17 @@ local function bindContextual(obj, config, ...)
                                 pressedfn, nil, repeatedfn, ...)
   hotkey.deleteOnDisable = config.deleteOnDisable
   if type(cond) == 'table' then
-    hotkey.chainedCond = cond
-    return hotkey
+    hotkey._chainedCond = cond
   else
-    return hotkey, cond
+    hotkey.condition = cond
   end
+  return hotkey
 end
 
 function AppBind(app, config, ...)
-  local hotkey, cond = bindContextual(app, config, ...)
+  local hotkey = bindContextual(app, config, ...)
   hotkey.kind = HK.IN_APP
   hotkey.subkind = HK.IN_APP_.APP
-  hotkey.condition = cond
   return hotkey
 end
 
@@ -6573,10 +6572,9 @@ unregisterInAppHotKeys = function(appid, delete)
 end
 
 function AppWinBind(win, config, ...)
-  local hotkey, cond = bindContextual(win, config, ...)
+  local hotkey = bindContextual(win, config, ...)
   hotkey.kind = HK.IN_APP
   hotkey.subkind = HK.IN_APP_.WINDOW
-  hotkey.condition = cond
   return hotkey
 end
 
@@ -6890,9 +6888,8 @@ local function registerWinFiltersForApp(app)
 end
 
 function WinBind(win, config, ...)
-  local hotkey, cond = bindContextual(win, config, ...)
+  local hotkey = bindContextual(win, config, ...)
   hotkey.kind = HK.IN_WIN
-  hotkey.condition = cond
   return hotkey
 end
 
@@ -7054,8 +7051,7 @@ end
 
 -- hotkeys for menu belonging to menubar app
 function MenuBarBind(menu, config)
-  local hotkey, cond = bindContextual(menu, config)
-  hotkey.condition = cond
+  local hotkey = bindContextual(menu, config)
   hotkey.kind = HK.MENUBAR
   return hotkey
 end
@@ -7233,7 +7229,7 @@ local function remapPreviousTab(app, menuItems)
     })
     assert(remapPreviousTabHotkey)
     local info = {
-      chainedCond = remapPreviousTabHotkey.chainedCond,
+      _chainedCond = remapPreviousTabHotkey._chainedCond,
       idx = remapPreviousTabHotkey.idx
     }
     onDeactivated(appid, function()
@@ -7310,7 +7306,7 @@ local function registerOpenRecent(app)
     })
     assert(openRecentHotkey)
     local info = {
-      chainedCond = openRecentHotkey.chainedCond,
+      _chainedCond = openRecentHotkey._chainedCond,
       idx = openRecentHotkey.idx
     }
     onDeactivated(appid, function()
@@ -7369,7 +7365,7 @@ local function registerZoomHotkeys(app)
         fn = fn, condition = cond
       })
       local info = {
-        chainedCond = zoomHotkeys[hkID].chainedCond,
+        _chainedCond = zoomHotkeys[hkID]._chainedCond,
         idx = zoomHotkeys[hkID].idx
       }
       onDeactivated(appid, function()
