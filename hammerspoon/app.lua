@@ -1161,6 +1161,48 @@ local function setTabUrl(app, url)
   end
 end
 
+local function weiboSideBarTitle(idx, isCommon)
+  return function(win)
+    local app = win:application()
+    local source = getTabSource(app)
+    if source == nil then return end
+    local start, stop
+    if isCommon then
+      local header = [[<h2 class="Nav_title_[^>]-">首页</h2>]]
+      local tailer = [[<div class="[^>]-Home_split_[^>]-">]]
+      _, start = source:find(header)
+      if start == nil then
+        hs.timer.usleep(1 * 1000000)
+        source = getTabSource(app)
+        if source == nil then return end
+        _, start = source:find(header)
+      end
+      if start == nil then return false end
+      stop = source:find(tailer, start + 1) or source:len()
+    else
+      local header = [[<h3 class="Home_title_[^>]-">自定义分组</h3>]]
+      local tailer = [[<button class="[^>]-Home_btn_[^>]-">]]
+      _, start = source:find(header)
+      if start == nil then
+        hs.timer.usleep(1 * 1000000)
+        source = getTabSource(app)
+        if source == nil then return end
+        _, start = source:find(header)
+      end
+      if start == nil then return false end
+      stop = source:find(tailer, start + 1) or source:len()
+    end
+    source = source:sub(start + 1, stop - 1)
+    local cnt = 0
+    local mygroup = (isCommon and idx == 1) and '"' or 'mygroup'
+    for title in source:gmatch(strfmt(
+        [[<a class="ALink_none[^>]-href="/%s.- title="(.-)"]], mygroup)) do
+      cnt = cnt + 1
+      if cnt == idx then return title end
+    end
+  end
+end
+
 local function weiboNavigateToSideBarCondition(idx, isCommon)
   return function(win)
     if idx == 1 and isCommon then
@@ -5798,72 +5840,72 @@ appHotKeyCallbacks = {
 
 local browserTabHotKeyCallbacks = {
   ["weiboNavigate1stCommonGroup"] = {
-    message = "全部关注",
+    message = weiboSideBarTitle(1, true),
     condition = weiboNavigateToCommonGroupCondition(1),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate2ndCommonGroup"] = {
-    message = "最新微博",
+    message = weiboSideBarTitle(2, true),
     condition = weiboNavigateToCommonGroupCondition(2),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate3rdCommonGroup"] = {
-    message = "特别关注",
+    message = weiboSideBarTitle(3, true),
     condition = weiboNavigateToCommonGroupCondition(3),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate4thCommonGroup"] = {
-    message = "好友圈",
+    message = weiboSideBarTitle(4, true),
     condition = weiboNavigateToCommonGroupCondition(4),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate1stCustomGroup"] = {
-    message = "自定义分组1",
+    message = weiboSideBarTitle(1),
     condition = weiboNavigateToCustomGroupCondition(1),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate2ndCustomGroup"] = {
-    message = "自定义分组2",
+    message = weiboSideBarTitle(2),
     condition = weiboNavigateToCustomGroupCondition(2),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate3rdCustomGroup"] = {
-    message = "自定义分组3",
+    message = weiboSideBarTitle(3),
     condition = weiboNavigateToCustomGroupCondition(3),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate4thCustomGroup"] = {
-    message = "自定义分组4",
+    message = weiboSideBarTitle(4),
     condition = weiboNavigateToCustomGroupCondition(4),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate5thCustomGroup"] = {
-    message = "自定义分组5",
+    message = weiboSideBarTitle(5),
     condition = weiboNavigateToCustomGroupCondition(5),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate6thCustomGroup"] = {
-    message = "自定义分组6",
+    message = weiboSideBarTitle(6),
     condition = weiboNavigateToCustomGroupCondition(6),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate7thCustomGroup"] = {
-    message = "自定义分组7",
+    message = weiboSideBarTitle(7),
     condition = weiboNavigateToCustomGroupCondition(7),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate8thCustomGroup"] = {
-    message = "自定义分组8",
+    message = weiboSideBarTitle(8),
     condition = weiboNavigateToCustomGroupCondition(8),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate9thCustomGroup"] = {
-    message = "自定义分组9",
+    message = weiboSideBarTitle(9),
     condition = weiboNavigateToCustomGroupCondition(9),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate10thCustomGroup"] = {
-    message = "自定义分组10",
+    message = weiboSideBarTitle(10),
     condition = weiboNavigateToCustomGroupCondition(10),
     fn = weiboNavigateToSideBar
   },
