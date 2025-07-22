@@ -6726,14 +6726,13 @@ local function isWebsiteAllowed(win, allowURLs)
     if type(allowURLs) == 'string' then
       allowURLs = { allowURLs }
     end
-    local satisfied, result
     for _, v in ipairs(allowURLs) do
       if url:match(v) ~= nil then
         return true
       end
     end
-    return false
   end
+  return false
 end
 
 FocusedWindowObservers = {}
