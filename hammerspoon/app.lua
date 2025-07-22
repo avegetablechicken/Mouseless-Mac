@@ -6420,7 +6420,7 @@ local function callBackExecutingWrapper(fn)
   end
 end
 
-local function bindImpl(obj, config, ...)
+local function bindContextual(obj, config, ...)
   if config.spec ~= nil then
     config.mods = config.spec.mods
     config.key = config.spec.key
@@ -6474,7 +6474,7 @@ local function bindImpl(obj, config, ...)
 end
 
 function AppBind(app, config, ...)
-  local hotkey, cond = bindImpl(app, config, ...)
+  local hotkey, cond = bindContextual(app, config, ...)
   hotkey.kind = HK.IN_APP
   hotkey.subkind = HK.IN_APP_.APP
   hotkey.condition = cond
@@ -6573,7 +6573,7 @@ unregisterInAppHotKeys = function(appid, delete)
 end
 
 function AppWinBind(win, config, ...)
-  local hotkey, cond = bindImpl(win, config, ...)
+  local hotkey, cond = bindContextual(win, config, ...)
   hotkey.kind = HK.IN_APP
   hotkey.subkind = HK.IN_APP_.WINDOW
   hotkey.condition = cond
@@ -6890,7 +6890,7 @@ local function registerWinFiltersForApp(app)
 end
 
 function WinBind(win, config, ...)
-  local hotkey, cond = bindImpl(win, config, ...)
+  local hotkey, cond = bindContextual(win, config, ...)
   hotkey.kind = HK.IN_WIN
   hotkey.condition = cond
   return hotkey
@@ -7054,7 +7054,7 @@ end
 
 -- hotkeys for menu belonging to menubar app
 function MenuBarBind(menu, config)
-  local hotkey, cond = bindImpl(menu, config)
+  local hotkey, cond = bindContextual(menu, config)
   hotkey.condition = cond
   hotkey.kind = HK.MENUBAR
   return hotkey
