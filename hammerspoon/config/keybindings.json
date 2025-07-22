@@ -1827,7 +1827,7 @@
           "option"
         ],
         "key": "1",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
@@ -1837,7 +1837,7 @@
           "option"
         ],
         "key": "2",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
@@ -1847,7 +1847,7 @@
           "option"
         ],
         "key": "3",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
@@ -1857,147 +1857,147 @@
           "option"
         ],
         "key": "4",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate1stCustomGroup": {
         "mods": "option",
         "key": "1",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate2ndCustomGroup": {
         "mods": "option",
         "key": "2",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate3rdCustomGroup": {
         "mods": "option",
         "key": "3",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate4thCustomGroup": {
         "mods": "option",
         "key": "4",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate5thCustomGroup": {
         "mods": "option",
         "key": "5",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate6thCustomGroup": {
         "mods": "option",
         "key": "6",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate7thCustomGroup": {
         "mods": "option",
         "key": "7",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate8thCustomGroup": {
         "mods": "option",
         "key": "8",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate9thCustomGroup": {
         "mods": "option",
         "key": "9",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate10thCustomGroup": {
         "mods": "option",
         "key": "0",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "douyinNavigate1stTab": {
         "mods": "option",
         "key": "1",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://www.douyin.com/", "://live.douyin.com/"]
         }
       },
       "douyinNavigate2ndTab": {
         "mods": "option",
         "key": "2",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://www.douyin.com/", "://live.douyin.com/"]
         }
       },
       "douyinNavigate3rdTab": {
         "mods": "option",
         "key": "3",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://www.douyin.com/", "://live.douyin.com/"]
         }
       },
       "douyinNavigate4thTab": {
         "mods": "option",
         "key": "4",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://www.douyin.com/", "://live.douyin.com/"]
         }
       },
       "douyinNavigate5thTab": {
         "mods": "option",
         "key": "5",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://www.douyin.com/", "://live.douyin.com/"]
         }
       },
       "douyinNavigate6thTab": {
         "mods": "option",
         "key": "6",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://www.douyin.com/", "://live.douyin.com/"]
         }
       },
       "douyinNavigate7thTab": {
         "mods": "option",
         "key": "7",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://www.douyin.com/", "://live.douyin.com/"]
         }
       },
       "douyinNavigate8thTab": {
         "mods": "option",
         "key": "8",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://www.douyin.com/", "://live.douyin.com/"]
         }
       },
       "douyinNavigate9thTab": {
         "mods": "option",
         "key": "9",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://www.douyin.com/", "://live.douyin.com/"]
         }
       },
       "douyinNavigate10thTab": {
         "mods": "option",
         "key": "0",
-        "websiteFilter": {
+        "windowFilter": {
           "allowURLs": ["://www.douyin.com/", "://live.douyin.com/"]
         }
       }

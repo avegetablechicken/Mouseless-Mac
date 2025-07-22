@@ -1162,10 +1162,11 @@ local function setTabUrl(app, url)
 end
 
 local function weiboNavigateToSideBarCondition(idx, isCommon)
-  return function(app)
+  return function(win)
     if idx == 1 and isCommon then
       return true, ""
     end
+    local app = win:application()
     local source = getTabSource(app)
     if source == nil then return end
     local start, stop
@@ -1204,11 +1205,11 @@ local function weiboNavigateToSideBarCondition(idx, isCommon)
   end
 end
 
-local function weiboNavigateToSideBar(result, url, app)
+local function weiboNavigateToSideBar(url, result, win)
   local schemeEnd = url:find("//")
   local domainEnd = url:find("/", schemeEnd + 2)
   local fullUrl = url:sub(1, domainEnd) .. result
-  setTabUrl(app, fullUrl)
+  setTabUrl(win:application(), fullUrl)
 end
 
 local function weiboNavigateToCustomGroupCondition(idx)
@@ -1220,7 +1221,8 @@ local function weiboNavigateToCommonGroupCondition(idx)
 end
 
 local function douyinNavigateToTabCondition(idx)
-  return function(app)
+  return function(win)
+    local app = win:application()
     local source = getTabSource(app)
     if source == nil then return end
     local cnt = 0
@@ -1234,7 +1236,7 @@ local function douyinNavigateToTabCondition(idx)
   end
 end
 
-local function douyinNavigateToTab(result, url, app)
+local function douyinNavigateToTab(url, result, win)
   local fullUrl
   if result:sub(1, 2) == '//' then
     local schemeEnd = url:find("//")
@@ -1242,7 +1244,7 @@ local function douyinNavigateToTab(result, url, app)
   else
     fullUrl = result
   end
-  setTabUrl(app, fullUrl)
+  setTabUrl(win:application(), fullUrl)
 end
 
 -- ## functin utilities for hotkey configs
@@ -1401,7 +1403,6 @@ local CF = {
   rightMenubarItemSelected  = 2,
   leftMenubarItemSelected   = 3,
   userConditionFail         = 4,
-  websiteFilterReject       = 5,
 }
 
 -- check if the menu item whose key binding is specified is enabled
@@ -6279,7 +6280,6 @@ end
 local function wrapCondition(obj, config, mode)
   local mods, key = config.mods, config.key
   local func = mode == KEY_MODE.REPEAT and config.repeatedfn or config.fn
-  local websiteFilter = config.websiteFilter
   local condition = config.condition
   local cond = function(o)
     if condition == nil then return true end
@@ -6298,37 +6298,6 @@ local function wrapCondition(obj, config, mode)
     if not config.background then obj = nil end
   end
 
-  -- testify website filter and return TF, valid URL & extra result
-  if websiteFilter ~= nil then
-    local oldCond = cond
-    cond = function(o)
-      if app:focusedWindow() == nil
-          or app:focusedWindow():subrole() ~= AX.StandardWindow then
-        return false, CF.websiteFilterReject
-      end
-      local url = getTabUrl(app)
-      if url ~= nil then
-        local allowURLs = websiteFilter.allowURLs
-        if type(allowURLs) == 'string' then
-          allowURLs = { allowURLs }
-        end
-        local satisfied, result
-        for _, v in ipairs(allowURLs) do
-          if url:match(v) ~= nil then
-            satisfied, result = oldCond(o)
-            if satisfied then
-              if result ~= nil then
-                return true, result, url
-              else
-                return true, url
-              end
-            end
-          end
-        end
-        return false, result or CF.websiteFilterReject
-      end
-    end
-  end
   if obj == nil or obj.asHSApplication == nil then
     -- if a menu is extended, hotkeys with no modifiers are disabled
     if mods == nil or mods == "" or #mods == 0 then
@@ -6397,8 +6366,7 @@ local function bindImpl(obj, config, ...)
     config.spec = nil
   end
   local pressedfn, cond = wrapCondition(obj, config, KEY_MODE.PRESS)
-  if config.repeatedfn == nil
-      and (config.condition ~= nil or config.websiteFilter ~= nil) then
+  if config.repeatedfn == nil and config.condition ~= nil then
     -- if hotkey condition is not satisfied, holding event should be passed to the app
     -- so callback for holding event must always be registered
     config.repeatedfn = function() end
@@ -6408,7 +6376,7 @@ local function bindImpl(obj, config, ...)
     repeatedfn = wrapCondition(obj, config, KEY_MODE.REPEAT)
   end
 
-  if config.websiteFilter ~= nil or config.condition ~= nil then
+  if config.condition ~= nil then
     -- multiple conditioned hotkeys may share a common keybinding
     -- they are cached in a linked list.
     -- each condition will be tested until one is satisfied
@@ -6447,11 +6415,7 @@ end
 function AppBind(app, config, ...)
   local hotkey, cond = bindImpl(app, config, ...)
   hotkey.kind = HK.IN_APP
-  if config.websiteFilter ~= nil then
-    hotkey.subkind = HK.IN_APP_.WEBSITE
-  else
-    hotkey.subkind = HK.IN_APP_.APP
-  end
+  hotkey.subkind = HK.IN_APP_.APP
   hotkey.condition = cond
   return hotkey
 end
@@ -6500,9 +6464,6 @@ local function registerInAppHotKeys(app)
           config.mods = keybinding.mods
           config.key = keybinding.key
           config.message = msg
-          if keybinding.websiteFilter ~= nil then
-            config.websiteFilter = keybinding.websiteFilter
-          end
           if keybinding.repeatable ~= nil then
             config.repeatable = keybinding.repeatable
           end
@@ -6609,6 +6570,7 @@ local function registerInWinHotKeys(win, filter)
   end
   local hotkeys = inWinHotKeys[appid][filter]
   local needCloseWatcher = true
+  local url
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
     if hotkeys[hkID] == nil then
       -- prefer properties specified in configuration file than in code
@@ -6643,6 +6605,10 @@ local function registerInWinHotKeys(win, filter)
             config.repeatable = keybinding.repeatable
           end
           config.background = false
+          if type(windowFilter) == 'table' and windowFilter.allowURLs then
+            url = url or getTabUrl(app)
+            config.fn = bind(config.fn, url)
+          end
           config.repeatedfn = config.repeatable and config.fn or nil
           config.deleteOnDisable = fallback
           hotkeys[hkID] = AppWinBind(win, config)
@@ -6694,6 +6660,25 @@ unregisterInWinHotKeys = function(appid, delete, filter)
   end
 end
 
+local function isWebsiteAllowed(win, allowURLs)
+  if win:subrole() ~= AX.StandardWindow then
+    return false
+  end
+  local url = getTabUrl(win:application())
+  if url ~= nil then
+    if type(allowURLs) == 'string' then
+      allowURLs = { allowURLs }
+    end
+    local satisfied, result
+    for _, v in ipairs(allowURLs) do
+      if url:match(v) ~= nil then
+        return true
+      end
+    end
+    return false
+  end
+end
+
 FocusedWindowObservers = {}
 local function registerSingleWinFilterForApp(app, filter)
   local appid = app:bundleID()
@@ -6704,12 +6689,14 @@ local function registerSingleWinFilterForApp(app, filter)
     end
   end
 
-  local actualFilter, allowSheet, allowPopover, condition
+  local actualFilter, allowSheet, allowPopover, condition, allowURLs
   if type(filter) == 'table' then
     actualFilter = tcopy(filter)
     allowSheet, allowPopover = filter.allowSheet, filter.allowPopover
-    condition = actualFilter.fn
-    actualFilter.fn = nil
+    actualFilter.allowSheet, actualFilter.allowPopover = nil, nil
+    condition, allowURLs = actualFilter.fn, actualFilter.allowURLs
+    actualFilter.fn, actualFilter.allowURLs = nil, nil
+    if sameFilter(actualFilter, {}) then actualFilter = true end
   else
     actualFilter = filter
   end
@@ -6720,7 +6707,8 @@ local function registerSingleWinFilterForApp(app, filter)
 
   local observer = uiobserver.new(app:pid())
   local win = app:focusedWindow()
-  if win and ((allowSheet and win:role() == AX.Sheet)
+  if win and (allowURLs == nil or isWebsiteAllowed(win, allowURLs))
+      and ((allowSheet and win:role() == AX.Sheet)
         or (allowPopover and win:role() == AX.Popover)
         or windowFilter:isWindowAllowed(win))
       and (condition == nil or condition(win)) then
@@ -6733,8 +6721,8 @@ local function registerSingleWinFilterForApp(app, filter)
   if allowPopover then
     observer:addWatcher(appUI, uinotifications.focusedUIElementChanged)
   end
-  if win and (type(filter) == 'table'
-      and (filter.allowTitles or filter.rejectTitles)) then
+  if win and (allowURLs or (type(filter) == 'table'
+      and (filter.allowTitles or filter.rejectTitles))) then
     observer:addWatcher(towinui(win), uinotifications.titleChanged)
   end
   observer:callback(function(_, element, notification)
@@ -6745,8 +6733,8 @@ local function registerSingleWinFilterForApp(app, filter)
       return
     end
     if notification == uinotifications.focusedWindowChanged
-        and win ~= nil and (type(filter) == 'table'
-            and (filter.allowTitles or filter.rejectTitles)) then
+        and win ~= nil and (allowURLs or (type(filter) == 'table'
+            and (filter.allowTitles or filter.rejectTitles))) then
       observer:addWatcher(towinui(win), uinotifications.titleChanged)
     end
     if notification == uinotifications.windowMiniaturized then
@@ -6755,7 +6743,8 @@ local function registerSingleWinFilterForApp(app, filter)
     if not element:isValid() then return end
 
     local action = function()
-      if win ~= nil and ((allowSheet and win:role() == AX.Sheet)
+      if win ~= nil and (allowURLs == nil or isWebsiteAllowed(win, allowURLs))
+          and ((allowSheet and win:role() == AX.Sheet)
             or (allowPopover and win:role() == AX.Popover)
             or windowFilter:isWindowAllowed(win))
           and (condition == nil or condition(win)) then
@@ -6767,7 +6756,8 @@ local function registerSingleWinFilterForApp(app, filter)
     -- "hs.window.filter" waits for stop of changing title,
     -- affecting the return of "hs.window.filter.isWindowAllowed"
     -- we have to workaround it
-    if notification == uinotifications.titleChanged then
+    if notification == uinotifications.titleChanged and (type(filter) == 'table'
+        and (filter.allowTitles or filter.rejectTitles)) then
       local function matchTitles(titles, t)
         if type(titles) == 'string' then
           titles = { titles }
