@@ -1261,6 +1261,22 @@ local function weiboNavigateToCommonGroupCondition(idx)
   return weiboNavigateToSideBarCondition(idx, true)
 end
 
+local function douyinTabTitle(idx)
+  return function(win)
+    local app = win:application()
+    local source = getTabSource(app)
+    if source == nil then return end
+    local cnt = 0
+    local lastURL = ""
+    for url, title in source:gmatch(
+        [[<div class="tab\-[^>]-><a href="(.-)".-<span class=".-">(.-)</span>]]) do
+      if url ~= lastURL then cnt = cnt + 1 end
+      if cnt == idx then return title end
+      lastURL = url
+    end
+  end
+end
+
 local function douyinNavigateToTabCondition(idx)
   return function(win)
     local app = win:application()
@@ -5910,52 +5926,52 @@ local browserTabHotKeyCallbacks = {
   },
 
   ["douyinNavigate1stTab"] = {
-    message = "Tab 1",
+    message = douyinTabTitle(1),
     condition = douyinNavigateToTabCondition(1),
     fn = douyinNavigateToTab
   },
   ["douyinNavigate2ndTab"] = {
-    message = "Tab 2",
+    message = douyinTabTitle(2),
     condition = douyinNavigateToTabCondition(2),
     fn = douyinNavigateToTab
   },
   ["douyinNavigate3rdTab"] = {
-    message = "Tab 3",
+    message = douyinTabTitle(3),
     condition = douyinNavigateToTabCondition(3),
     fn = douyinNavigateToTab
   },
   ["douyinNavigate4thTab"] = {
-    message = "Tab 4",
+    message = douyinTabTitle(4),
     condition = douyinNavigateToTabCondition(4),
     fn = douyinNavigateToTab
   },
   ["douyinNavigate5thTab"] = {
-    message = "Tab 5",
+    message = douyinTabTitle(5),
     condition = douyinNavigateToTabCondition(5),
     fn = douyinNavigateToTab
   },
   ["douyinNavigate6thTab"] = {
-    message = "Tab 6",
+    message = douyinTabTitle(6),
     condition = douyinNavigateToTabCondition(6),
     fn = douyinNavigateToTab
   },
   ["douyinNavigate7thTab"] = {
-    message = "Tab 7",
+    message = douyinTabTitle(7),
     condition = douyinNavigateToTabCondition(7),
     fn = douyinNavigateToTab
   },
   ["douyinNavigate8thTab"] = {
-    message = "Tab 8",
+    message = douyinTabTitle(8),
     condition = douyinNavigateToTabCondition(8),
     fn = douyinNavigateToTab
   },
   ["douyinNavigate9thTab"] = {
-    message = "Tab 9",
+    message = douyinTabTitle(9),
     condition = douyinNavigateToTabCondition(9),
     fn = douyinNavigateToTab
   },
   ["douyinNavigate10thTab"] = {
-    message = "Tab 10",
+    message = douyinTabTitle(10),
     condition = douyinNavigateToTabCondition(10),
     fn = douyinNavigateToTab
   }
