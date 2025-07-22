@@ -6522,7 +6522,7 @@ local function registerInAppHotKeys(app)
           if keybinding.repeatable ~= nil then
             config.repeatable = keybinding.repeatable
           end
-          config.repeatedfn = config.repeatable and cfg.fn or nil
+          config.repeatedfn = config.repeatable and config.fn or nil
           inAppHotKeys[appid][hkID] = AppBind(app, config)
         end
       end
@@ -6659,7 +6659,7 @@ local function registerInWinHotKeys(win, filter)
             config.repeatable = keybinding.repeatable
           end
           config.background = false
-          config.repeatedfn = config.repeatable and cfg.fn or nil
+          config.repeatedfn = config.repeatable and config.fn or nil
           config.deleteOnDisable = fallback
           hotkeys[hkID] = AppWinBind(win, config)
         end
@@ -6900,7 +6900,7 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
         if keybinding.nonFrontmost ~= nil then
           config.nonFrontmost = keybinding.nonFrontmost
         end
-        config.repeatedfn = config.repeatable and cfg.fn or nil
+        config.repeatedfn = config.repeatable and config.fn or nil
         local hotkey = WinBind(win, config)
         tinsert(daemonAppFocusedWindowHotkeys[wid], hotkey)
 
@@ -7087,7 +7087,7 @@ local function registerInMenuHotkeys(app)
         if keybinding.repeatable ~= nil then
           config.repeatable = keybinding.repeatable
         end
-        config.repeatedfn = config.repeatable and cfg.fn or nil
+        config.repeatedfn = config.repeatable and config.fn or nil
         tinsert(menuBarMenuHotkeys[appid], MenuBarBind(menu, config))
         if closeObserver == nil then
           closeObserver = uiobserver.new(app:pid())
