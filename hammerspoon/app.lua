@@ -1946,16 +1946,7 @@ appHotKeyCallbacks = {
   {
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
-      condition = function(app)
-        local ok, url = hs.osascript.applescript(strfmt([[
-          tell application id "%s" to return URL of front document
-        ]], app:bundleID()))
-        if ok and url:sub(1, 7) == "file://" then
-          return true, url
-        else
-          return false
-        end
-      end,
+      windowFilter = { allowURLs = "^file://" },
       fn = function(url) hs.execute('open -R "' .. url .. '"') end
     },
     ["openRecent"] = {
@@ -1982,16 +1973,7 @@ appHotKeyCallbacks = {
   {
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
-      condition = function(app)
-        local ok, url = hs.osascript.applescript(strfmt([[
-          tell application id "%s" to return URL of active tab of front window
-        ]], app:bundleID()))
-        if ok and url:sub(1, 7) == "file://" then
-          return true, url
-        else
-          return false
-        end
-      end,
+      windowFilter = { allowURLs = "^file://" },
       fn = function(url) hs.execute('open -R "' .. url .. '"') end
     }
   },
