@@ -700,6 +700,21 @@ local function VSCodeToggleSideBarSection(winUI, sidebar, section)
       hs.timer.usleep(0.05 * 1000000)
       totalDelay = totalDelay + 0.05
     until totalDelay > 0.2
+    local hasToClick = false
+    if sections == nil then
+      leftClickAndRestore(tab, winUI:asHSWindow())
+      repeat
+        sections = getc(ancestor, AX.Group, 2, AX.Group, 1,
+                        AX.Group, 1, AX.Group, 2, AX.Group)
+            or getc(ancestor, AX.Group, 2, AX.Group, 2,
+                    AX.Group, 1, AX.Group, 2, AX.Group)
+        if sections then break end
+          hs.timer.usleep(0.05 * 1000000)
+          totalDelay = totalDelay + 0.05
+      until totalDelay > 2.0
+      if sections == nil then return end
+      hasToClick = true
+    end
     for _, sec in ipairs(sections) do
       local button = getc(sec, AX.Button, 1)
           or getc(sec, AX.Group, 1, AX.Button, 1)
@@ -707,7 +722,11 @@ local function VSCodeToggleSideBarSection(winUI, sidebar, section)
         local records = getc(sec, AX.Group, 1, AX.Outline, 1, AX.Group, 1)
             or getc(sec, AX.Group, 1)
         if records == nil or #records == 1 then
-          press(button)
+          if hasToClick then
+            leftClickAndRestore(button)
+          else
+            press(button)
+          end
           break
         end
       end
