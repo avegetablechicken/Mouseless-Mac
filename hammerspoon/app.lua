@@ -1475,7 +1475,7 @@ local function checkMenuItem(menuItemTitle, params)
 end
 
 -- possible reasons for failure of hotkey condition
-local CF = {
+CF = {
   noMenuItemMatchKeybinding = 0,
   uIElementNotFocused       = 1,
   rightMenubarItemSelected  = 2,
@@ -6248,7 +6248,7 @@ local function noSelectedMenuBarItemFunc(fn)
   end
 end
 
-local KEY_MODE = {
+KEY_MODE = {
   PRESS = 1,
   REPEAT = 2,
 }
