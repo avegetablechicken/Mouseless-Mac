@@ -1269,14 +1269,6 @@ local function weiboNavigateToSideBar(url, result, win)
   setTabUrl(win:application(), fullUrl)
 end
 
-local function weiboNavigateToCustomGroupCondition(idx)
-  return weiboNavigateToSideBarCondition(idx, false)
-end
-
-local function weiboNavigateToCommonGroupCondition(idx)
-  return weiboNavigateToSideBarCondition(idx, true)
-end
-
 local douyinTabTitles, douyinTabURLs
 local function douyinTabTitle(idx)
   return function(win)
@@ -5855,72 +5847,72 @@ appHotKeyCallbacks = {
 local browserTabHotKeyCallbacks = {
   ["weiboNavigate1stCommonGroup"] = {
     message = weiboSideBarTitle(1, true),
-    condition = weiboNavigateToCommonGroupCondition(1),
+    condition = weiboNavigateToSideBarCondition(1, true),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate2ndCommonGroup"] = {
     message = weiboSideBarTitle(2, true),
-    condition = weiboNavigateToCommonGroupCondition(2),
+    condition = weiboNavigateToSideBarCondition(2, true),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate3rdCommonGroup"] = {
     message = weiboSideBarTitle(3, true),
-    condition = weiboNavigateToCommonGroupCondition(3),
+    condition = weiboNavigateToSideBarCondition(3, true),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate4thCommonGroup"] = {
     message = weiboSideBarTitle(4, true),
-    condition = weiboNavigateToCommonGroupCondition(4),
+    condition = weiboNavigateToSideBarCondition(4, true),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate1stCustomGroup"] = {
     message = weiboSideBarTitle(1),
-    condition = weiboNavigateToCustomGroupCondition(1),
+    condition = weiboNavigateToSideBarCondition(1),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate2ndCustomGroup"] = {
     message = weiboSideBarTitle(2),
-    condition = weiboNavigateToCustomGroupCondition(2),
+    condition = weiboNavigateToSideBarCondition(2),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate3rdCustomGroup"] = {
     message = weiboSideBarTitle(3),
-    condition = weiboNavigateToCustomGroupCondition(3),
+    condition = weiboNavigateToSideBarCondition(3),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate4thCustomGroup"] = {
     message = weiboSideBarTitle(4),
-    condition = weiboNavigateToCustomGroupCondition(4),
+    condition = weiboNavigateToSideBarCondition(4),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate5thCustomGroup"] = {
     message = weiboSideBarTitle(5),
-    condition = weiboNavigateToCustomGroupCondition(5),
+    condition = weiboNavigateToSideBarCondition(5),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate6thCustomGroup"] = {
     message = weiboSideBarTitle(6),
-    condition = weiboNavigateToCustomGroupCondition(6),
+    condition = weiboNavigateToSideBarCondition(6),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate7thCustomGroup"] = {
     message = weiboSideBarTitle(7),
-    condition = weiboNavigateToCustomGroupCondition(7),
+    condition = weiboNavigateToSideBarCondition(7),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate8thCustomGroup"] = {
     message = weiboSideBarTitle(8),
-    condition = weiboNavigateToCustomGroupCondition(8),
+    condition = weiboNavigateToSideBarCondition(8),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate9thCustomGroup"] = {
     message = weiboSideBarTitle(9),
-    condition = weiboNavigateToCustomGroupCondition(9),
+    condition = weiboNavigateToSideBarCondition(9),
     fn = weiboNavigateToSideBar
   },
   ["weiboNavigate10thCustomGroup"] = {
     message = weiboSideBarTitle(10),
-    condition = weiboNavigateToCustomGroupCondition(10),
+    condition = weiboNavigateToSideBarCondition(10),
     fn = weiboNavigateToSideBar
   },
 
