@@ -6643,7 +6643,6 @@ local function registerInWinHotKeys(win, filter)
           config.mods = keybinding.mods
           config.key = keybinding.key
           config.message = msg
-          config.windowFilter = nil
           if keybinding.repeatable ~= nil then
             config.repeatable = keybinding.repeatable
           end
@@ -6908,7 +6907,6 @@ local function registerDaemonAppInWinHotkeys(win, appid, filter)
         config.mods = keybinding.mods
         config.key = keybinding.key
         config.message = msg
-        config.windowFilter = nil
         if keybinding.repeatable ~= nil then
           config.repeatable = keybinding.repeatable
         end
