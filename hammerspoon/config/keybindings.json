@@ -280,8 +280,8 @@
         "mods": "${hyper.hyper}",
         "key": "C",
         "bundleID": [
-          "com.tencent.yuanbao",
-          "com.openai.chat"
+          "com.openai.chat",
+          "com.tencent.yuanbao"
         ]
       },
       {
