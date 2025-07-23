@@ -346,6 +346,8 @@ local registerInMenuHotkeys
 -- ## function utilities for hotkey configs of specific application
 
 -- ### Finder
+local finderSidebarItemObserver
+local lastRowCountChangedTimer
 local function getFinderSidebarItemTitle(idx)
   return function(win)
     local outline = getc(towinui(win), AX.SplitGroup, 1,
@@ -355,12 +357,46 @@ local function getFinderSidebarItemTitle(idx)
     local cnt = 0
     for _, row in ipairs(getc(outline, AX.Row)) do
       if #row == 0 then hs.timer.usleep(0.3 * 1000000) end
-      if getc(row, AX.Cell, 1, AX.StaticText, 1).AXIdentifier ~= nil then
-        header = getc(row, AX.Cell, 1, AX.StaticText, 1).AXValue
-      else
+      local titleElem = getc(row, AX.Cell, 1, AX.StaticText, 1)
+      if titleElem and titleElem.AXIdentifier ~= nil then
+        header = titleElem.AXValue
+      elseif titleElem then
         cnt = cnt + 1
         if cnt == idx then
-          local itemTitle = getc(row, AX.Cell, 1, AX.StaticText, 1).AXValue
+          local itemTitle = titleElem.AXValue
+          if finderSidebarItemObserver == nil then
+            local app = win:application()
+            local appid = app:bundleID()
+            local observer = uiobserver.new(app:pid())
+            observer:addWatcher(outline, uinotifications.rowCountChanged)
+            observer:callback(function()
+              if lastRowCountChangedTimer then
+                lastRowCountChangedTimer:setNextTrigger(0.1)
+                return
+              end
+              lastRowCountChangedTimer = hs.timer.doAfter(0.1, function()
+                lastRowCountChangedTimer = nil
+                for _, hotkeys in pairs(inWinHotKeys[appid]) do
+                  for hkID, hotkey in pairs(hotkeys) do
+                    if hkID:match('^open(.-)SidebarItem$') then
+                      hotkey:delete()
+                      hotkeys[hkID] = nil
+                    end
+                  end
+                end
+                for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
+                  if hkID:match('^open(.-)SidebarItem$') then
+                    registerInWinHotKeys(app:focusedWindow(), cfg.windowFilter)
+                    break
+                  end
+                end
+              end)
+            end)
+            observer:start()
+            finderSidebarItemObserver = observer
+            stopOnDeactivated(appid, finderSidebarItemObserver,
+                function() finderSidebarItemObserver = nil end)
+          end
           return header .. ' > ' .. itemTitle
         end
       end
@@ -375,7 +411,8 @@ local function getFinderSidebarItem(idx)
     if outline == nil then return false end
     local cnt = 0
     for _, row in ipairs(getc(outline, AX.Row)) do
-      if getc(row, AX.Cell, 1, AX.StaticText, 1).AXIdentifier == nil then
+      local titleElem = getc(row, AX.Cell, 1, AX.StaticText, 1)
+      if titleElem and titleElem.AXIdentifier == nil then
         cnt = cnt + 1
       end
       if cnt == idx then
