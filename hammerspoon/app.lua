@@ -257,9 +257,6 @@ local function onDestroy(element, callback, stopWhen, callbackOnStop)
   return closeObserver
 end
 
--- # hotkeys in specific application
-local appHotKeyCallbacks
-
 local function versionCompare(versionStr, comp)
   return function(app)
     local appMajor, appMinor, appPatch = applicationVersion(app:bundleID())
@@ -333,6 +330,18 @@ local function press(pressable)
     event:setFlags(flags):post()
   end
 end
+
+-- # hotkeys in specific application
+local appHotKeyCallbacks
+local runningAppHotKeys = {}
+local inAppHotKeys = {}
+local inWinHotKeys = {}
+local daemonAppFocusedWindowHotkeys = {}
+local menuBarMenuHotkeys = {}
+local registerInAppHotKeys, unregisterInAppHotKeys
+local registerInWinHotKeys, unregisterInWinHotKeys
+local registerDaemonAppInWinHotkeys
+local registerInMenuHotkeys
 
 -- ## function utilities for hotkey configs of specific application
 
@@ -5986,10 +5995,6 @@ for _, appid in ipairs(supportedBrowsers) do
   end
 end
 
-local runningAppHotKeys = {}
-local inAppHotKeys = {}
-local inWinHotKeys = {}
-
 -- hotkeys for background apps
 local function registerRunningAppHotKeys(appid, app)
   if appHotKeyCallbacks[appid] == nil then return end
@@ -6472,8 +6477,7 @@ function AppBind(app, config, ...)
 end
 
 -- hotkeys for active app
-local unregisterInAppHotKeys
-local function registerInAppHotKeys(app)
+registerInAppHotKeys = function(app)
   local appid = app:bundleID()
   if appHotKeyCallbacks[appid] == nil then return end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
@@ -6605,8 +6609,7 @@ local function sameFilter(a, b)
   return true
 end
 
-local unregisterInWinHotKeys
-local function registerInWinHotKeys(win, filter)
+registerInWinHotKeys = function(win, filter)
   local app = win:application()
   local appid = app:bundleID()
   if appHotKeyCallbacks[appid] == nil then return end
@@ -6884,9 +6887,8 @@ end
 
 -- hotkeys for focused window belonging to daemon app
 -- the window is frontmost unless specified "nonFrontmost"
-local daemonAppFocusedWindowHotkeys = {}
 DaemonAppFocusedWindowObservers = {}
-local function registerDaemonAppInWinHotkeys(win, appid, filter)
+registerDaemonAppInWinHotkeys = function(win, appid, filter)
   local winUI = towinui(win)
   local wid = win:id()
   if daemonAppFocusedWindowHotkeys[wid] == nil then
@@ -7044,8 +7046,7 @@ function MenuBarBind(menu, config)
   return hotkey
 end
 
-local menuBarMenuHotkeys = {}
-local function registerInMenuHotkeys(app)
+registerInMenuHotkeys = function(app)
   local appid = app:bundleID()
   local appUI = toappui(app)
   local appConfig = appHotKeyCallbacks[appid]
