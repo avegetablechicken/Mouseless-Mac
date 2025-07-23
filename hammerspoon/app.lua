@@ -7607,6 +7607,7 @@ local function registerForOpenSavePanel(app, callByObserver)
     onDestroy(winUI,
       function()
         for _, hotkey in ipairs(openSavePanelHotkeys) do
+          disableConditionInChain(appid, hotkey, true)
           hotkey:delete()
         end
         openSavePanelHotkeys = {}
