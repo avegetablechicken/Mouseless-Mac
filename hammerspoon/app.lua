@@ -8378,8 +8378,8 @@ local function processAppWithoutWindow(app)
           or appsHideWithoutWindow
       local windowFilter = hs.window.filter.new(false):setAppFilter(
           app:name(), windowFilterRules[appid])
-      return tfind(app:visibleWindows() or {}, function(win)
-        return windowFilter:isWindowAllowed(win)
+      return tfind(app:visibleWindows(), function(win)
+        return win:application() and windowFilter:isWindowAllowed(win)
       end) == nil
     end
     local specialRule = specialNoWindowRules[appid]
