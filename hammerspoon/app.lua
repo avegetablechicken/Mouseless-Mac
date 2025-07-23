@@ -5976,11 +5976,10 @@ local browserTabHotKeyCallbacks = {
     fn = douyinNavigateToTab
   }
 }
-local supportedBrowsers = {
+for _, appid in ipairs{
   "com.apple.Safari", "com.google.Chrome",
   "com.microsoft.edgemac", "com.microsoft.edgemac.Dev"
-}
-for _, appid in ipairs(supportedBrowsers) do
+} do
   if appHotKeyCallbacks[appid] == nil then
     appHotKeyCallbacks[appid] = {}
   end
