@@ -7444,7 +7444,7 @@ local specialConfirmFuncs = {
   end
 }
 
-local function registerForOpenSavePanel(app)
+local function registerForOpenSavePanel(app, callByObserver)
   for _, hotkey in ipairs(openSavePanelHotkeys) do
     hotkey:delete()
   end
@@ -7511,8 +7511,8 @@ local function registerForOpenSavePanel(app)
     local i = 1
     for _, cell in ipairs(sidebarCells) do
       if i > 10 then break end
-      if getc(cell, AX.StaticText, 1) == nil
-          and appid == "com.kingsoft.wpsoffice.mac" then
+      local titleElem = getc(cell, AX.StaticText, 1)
+      if titleElem == nil and appid == "com.kingsoft.wpsoffice.mac" then
         local suffix
         if i == 1 then suffix = "st"
         elseif i == 2 then suffix = "nd"
@@ -7542,9 +7542,9 @@ local function registerForOpenSavePanel(app)
           tinsert(openSavePanelHotkeys, hotkey)
           i = i + 1
         end
-      elseif getc(cell, AX.StaticText, 1).AXIdentifier ~= nil then
-        header = getc(cell, AX.StaticText, 1).AXValue
-      else
+      elseif titleElem and titleElem.AXIdentifier ~= nil then
+        header = titleElem.AXValue
+      elseif titleElem then
         local suffix
         if i == 1 then suffix = "st"
         elseif i == 2 then suffix = "nd"
@@ -7562,6 +7562,33 @@ local function registerForOpenSavePanel(app)
           i = i + 1
         end
       end
+    end
+    if appid ~= "com.kingsoft.wpsoffice.mac" and #sidebarCells > 0
+        and callByObserver ~= true then
+      local observer = uiobserver.new(app:pid())
+      observer:addWatcher(sidebarCells[1].AXParent.AXParent, uinotifications.rowCountChanged)
+      observer:callback(function()
+        if lastRowCountChangedTimer then
+          lastRowCountChangedTimer:setNextTrigger(0.1)
+          return
+        end
+        lastRowCountChangedTimer = hs.timer.doAfter(0.1, function()
+          lastRowCountChangedTimer = nil
+          for _, hotkey in ipairs(openSavePanelHotkeys) do
+            disableConditionInChain(appid, hotkey, true)
+            hotkey:delete()
+          end
+          openSavePanelHotkeys = {}
+          registerForOpenSavePanel(app, true)
+        end)
+      end)
+      observer:start()
+      onDestroy(winUI, function()
+        if observer then
+          observer:stop() observer = nil
+        end
+      end,
+      hs.application.watcher.deactivated, true)
     end
 
     if dontSaveButton ~= nil then
