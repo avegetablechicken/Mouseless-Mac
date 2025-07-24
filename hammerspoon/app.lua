@@ -7553,7 +7553,7 @@ local function registerForOpenSavePanel(app, callByObserver)
         local hkID = strfmt("open%d%sSidebarItemOnOpenSavePanel", i, suffix)
         local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
         if spec ~= nil then
-          local folder = getc(cell, AX.StaticText, 1).AXValue
+          local folder = titleElem.AXValue
           local hotkey = AppWinBind(app:focusedWindow(), {
             spec = spec, message = header .. ' > ' .. folder,
             fn = function() cell:performAction(AX.Open) end,
