@@ -344,10 +344,14 @@ local registerDaemonAppInWinHotkeys
 local registerInMenuHotkeys
 
 -- ## function utilities for hotkey configs of specific application
+local appBuf, winBuf = {}, {}
+function winBuf:register(winUI, key, value)
+  onDestroy(winUI, function() winBuf[key] = nil end)
+  winBuf[key] = value
+  return winBuf[key]
+end
 
 -- ### Finder
-local finderSidebarItemObserver
-local lastRowCountChangedTimer
 local function getFinderSidebarItemTitle(idx)
   return function(win)
     local outline = getc(towinui(win), AX.SplitGroup, 1,
@@ -364,18 +368,18 @@ local function getFinderSidebarItemTitle(idx)
         cnt = cnt + 1
         if cnt == idx then
           local itemTitle = titleElem.AXValue
-          if finderSidebarItemObserver == nil then
+          if appBuf.finderSidebarItemObserver == nil then
             local app = win:application()
             local appid = app:bundleID()
             local observer = uiobserver.new(app:pid())
             observer:addWatcher(outline, uinotifications.rowCountChanged)
             observer:callback(function()
-              if lastRowCountChangedTimer then
-                lastRowCountChangedTimer:setNextTrigger(0.1)
+              if appBuf.lastRowCountChangedTimer then
+                appBuf.lastRowCountChangedTimer:setNextTrigger(0.1)
                 return
               end
-              lastRowCountChangedTimer = hs.timer.doAfter(0.1, function()
-                lastRowCountChangedTimer = nil
+              appBuf.lastRowCountChangedTimer = hs.timer.doAfter(0.1, function()
+                appBuf.lastRowCountChangedTimer = nil
                 for _, hotkeys in pairs(inWinHotKeys[appid]) do
                   for hkID, hotkey in pairs(hotkeys) do
                     if hkID:match('^open(.-)SidebarItem$') then
@@ -393,9 +397,8 @@ local function getFinderSidebarItemTitle(idx)
               end)
             end)
             observer:start()
-            finderSidebarItemObserver = observer
-            stopOnDeactivated(appid, finderSidebarItemObserver,
-                function() finderSidebarItemObserver = nil end)
+            appBuf.finderSidebarItemObserver = observer
+            stopOnDeactivated(appid, appBuf.finderSidebarItemObserver)
           end
           return header .. ' > ' .. itemTitle
         end
@@ -823,7 +826,6 @@ local function confirmButtonValidForAppCleanerUninstaller(title)
 end
 
 --- ### QQLive
-local QQLiveChannelNames = {}
 local QQLiveMainWindowFilter = {
   fn = function(win)
     local list = getc(towinui(win), AX.Group, 2)
@@ -837,6 +839,7 @@ local QQLiveMainWindowFilter = {
 }
 local function getQQLiveChannelName(index)
   return function(win)
+    local QQLiveChannelNames = appBuf.QQLiveChannelNames or {}
     if #QQLiveChannelNames == 0 then
       local list = getc(towinui(win), AX.Group, 2)
       if list == nil or #list == 0 then return end
@@ -854,8 +857,7 @@ local function getQQLiveChannelName(index)
           tinsert(QQLiveChannelNames, row.AXValue)
         end
       end
-      onDeactivated(win:application():bundleID(),
-          function() QQLiveChannelNames = {} end)
+      appBuf.QQLiveChannelNames = QQLiveChannelNames
     end
     return QQLiveChannelNames[index]
   end
@@ -909,12 +911,10 @@ do
 end
 
 -- ### Bartender
-local bartenderBarItemNames
-local bartenderBarItemIDs
 local bartenderBarWindowFilter = { allowTitles = "^Bartender Bar$" }
 local function getBartenderBarItemTitle(index, rightClick)
   return function(win)
-    if bartenderBarItemNames == nil then
+    if winBuf.bartenderBarItemNames == nil then
       local winUI = towinui(win)
       local icons = getc(winUI, AX.ScrollArea, 1, AX.List, 1, AX.List, 1)
       local appnames = tmap(getc(icons, AX.Group), function(g)
@@ -932,8 +932,8 @@ local function getBartenderBarItemTitle(index, rightClick)
         if barSplitterIndex ~= nil then
           splitterIndex = splitterIndex - (#appnames - (barSplitterIndex - 1))
         end
-        bartenderBarItemNames = {}
-        bartenderBarItemIDs = {}
+        winBuf:register(winUI, 'bartenderBarItemNames', {})
+        winBuf:register(winUI, 'bartenderBarItemIDs', {})
         local missedItemCnt = 0
         local plistPath = hs.fs.pathToAbsolute(strfmt(
             "~/Library/Preferences/%s.plist", appid))
@@ -955,41 +955,37 @@ local function getBartenderBarItemTitle(index, rightClick)
             local id, idx = itemID:match("(.-)%-Item%-(%d+)$")
             if id ~= nil then
               if idx == "0" then
-                tinsert(bartenderBarItemNames, appname)
+                tinsert(winBuf.bartenderBarItemNames, appname)
               else
-                tinsert(bartenderBarItemNames,
+                tinsert(winBuf.bartenderBarItemNames,
                     strfmt("%s (Item %s)", appname, idx))
               end
-              tinsert(bartenderBarItemIDs, itemID)
+              tinsert(winBuf.bartenderBarItemIDs, itemID)
             else
               local appByName = find(appname)
               if appByName == nil or
                   appByName:bundleID() ~= itemID:sub(1, #appByName:bundleID()) then
-                tinsert(bartenderBarItemNames, appname)
-                tinsert(bartenderBarItemIDs, itemID)
+                tinsert(winBuf.bartenderBarItemNames, appname)
+                tinsert(winBuf.bartenderBarItemIDs, itemID)
               elseif appByName ~= nil then
                 local itemShortName = itemID:sub(#appByName:bundleID() + 2)
-                tinsert(bartenderBarItemNames,
+                tinsert(winBuf.bartenderBarItemNames,
                     strfmt("%s (%s)", appname, itemShortName))
-                tinsert(bartenderBarItemIDs, itemID)
+                tinsert(winBuf.bartenderBarItemIDs, itemID)
               end
             end
           end
         else
           for i = 1, #appnames do
-            tinsert(bartenderBarItemNames, appnames[i])
-            tinsert(bartenderBarItemIDs, i)
+            tinsert(winBuf.bartenderBarItemNames, appnames[i])
+            tinsert(winBuf.bartenderBarItemIDs, i)
           end
         end
-        onDestroy(winUI, function()
-          bartenderBarItemNames = nil
-          bartenderBarItemIDs = nil
-        end)
       end
     end
-    if bartenderBarItemNames ~= nil and index <= #bartenderBarItemNames then
+    if winBuf.bartenderBarItemNames ~= nil and index <= #winBuf.bartenderBarItemNames then
       return (rightClick and "Right-click " or "Click ")
-          .. bartenderBarItemNames[index]
+          .. winBuf.bartenderBarItemNames[index]
     end
   end
 end
@@ -997,10 +993,10 @@ end
 local function clickBartenderBarItem(index, rightClick)
   return function(win)
     local appid = win:application():bundleID()
-    local itemID = bartenderBarItemIDs[index]
+    local itemID = winBuf.bartenderBarItemIDs[index]
     if type(itemID) == 'string' then
       local script = strfmt('tell application id "%s" to activate "%s"',
-          appid, bartenderBarItemIDs[index])
+          appid, winBuf.bartenderBarItemIDs[index])
       if rightClick then
         script = script .. " with right click"
       end
@@ -1043,7 +1039,6 @@ local function clickBartenderSidebarItem(index)
 end
 
 -- ### Barbee
-local barbeeBarItemNames
 local barbeeBarWindowFilter = {
   allowRoles = AX.SystemDialog,
   allowTitles = "^$",
@@ -1058,19 +1053,16 @@ local barbeeBarWindowFilter = {
 }
 local function getBarbeeBarItemTitle(index)
   return function(win)
-    if barbeeBarItemNames == nil then
+    if winBuf.barbeeBarItemNames == nil then
       local winUI = towinui(win)
       local buttons = getc(winUI, AX.Group, 1, AX.Button)
-      barbeeBarItemNames = tmap(buttons, function(bt)
+      winBuf:register(winUI, 'barbeeBarItemNames', tmap(buttons, function(bt)
         return bt.AXHelp
-      end)
-      onDestroy(winUI, function()
-        barbeeBarItemNames = nil
-      end)
+      end))
     end
-    if barbeeBarItemNames ~= nil and index <= #barbeeBarItemNames then
+    if winBuf.barbeeBarItemNames ~= nil and index <= #winBuf.barbeeBarItemNames then
       return "Click "
-          .. barbeeBarItemNames[#barbeeBarItemNames + 1 - index]
+          .. winBuf.barbeeBarItemNames[#winBuf.barbeeBarItemNames + 1 - index]
     end
   end
 end
@@ -1226,14 +1218,12 @@ local function setTabUrl(app, url)
   end
 end
 
-local weiboSideBarCommonGroupTitles, weiboSideBarCommonGroupURLs
-local weiboSideBarCustomGroupTitles, weiboSideBarCustomGroupURLs
 local function weiboSideBarTitle(idx, isCommon)
   return function(win)
-    if isCommon and weiboSideBarCommonGroupTitles then
-      return weiboSideBarCommonGroupTitles[idx]
-    elseif not isCommon and weiboSideBarCustomGroupTitles then
-      return weiboSideBarCustomGroupTitles[idx]
+    if isCommon and appBuf.weiboSideBarCommonGroupTitles then
+      return appBuf.weiboSideBarCommonGroupTitles[idx]
+    elseif not isCommon and appBuf.weiboSideBarCustomGroupTitles then
+      return appBuf.weiboSideBarCustomGroupTitles[idx]
     end
     local weiboSideBarTitles, weiboSideBarURLs = {}, {}
     local app = win:application()
@@ -1278,19 +1268,11 @@ local function weiboSideBarTitle(idx, isCommon)
       tinsert(weiboSideBarURLs, url)
     end
     if isCommon then
-      weiboSideBarCommonGroupTitles = weiboSideBarTitles
-      weiboSideBarCommonGroupURLs = weiboSideBarURLs
-      onDeactivated(app:bundleID(), function()
-        weiboSideBarCommonGroupTitles = nil
-        weiboSideBarCommonGroupURLs = nil
-      end)
+      appBuf.weiboSideBarCommonGroupTitles = weiboSideBarTitles
+      appBuf.weiboSideBarCommonGroupURLs = weiboSideBarURLs
     else
-      weiboSideBarCustomGroupTitles = weiboSideBarTitles
-      weiboSideBarCustomGroupURLs = weiboSideBarURLs
-      onDeactivated(app:bundleID(), function()
-        weiboSideBarCustomGroupTitles = nil
-        weiboSideBarCustomGroupURLs = nil
-      end)
+      appBuf.weiboSideBarCustomGroupTitles = weiboSideBarTitles
+      appBuf.weiboSideBarCustomGroupURLs = weiboSideBarURLs
     end
     return weiboSideBarTitles[idx]
   end
@@ -1298,12 +1280,12 @@ end
 
 local function weiboNavigateToSideBarCondition(idx, isCommon)
   return function()
-    if isCommon and weiboSideBarCommonGroupURLs
-        and #weiboSideBarCommonGroupURLs >= idx then
-      return true, weiboSideBarCommonGroupURLs[idx]
-    elseif not isCommon and weiboSideBarCustomGroupURLs
-        and #weiboSideBarCustomGroupURLs >= idx then
-      return true, weiboSideBarCustomGroupURLs[idx]
+    if isCommon and appBuf.weiboSideBarCommonGroupURLs
+        and #appBuf.weiboSideBarCommonGroupURLs >= idx then
+      return true, appBuf.weiboSideBarCommonGroupURLs[idx]
+    elseif not isCommon and appBuf.weiboSideBarCustomGroupURLs
+        and #appBuf.weiboSideBarCustomGroupURLs >= idx then
+      return true, appBuf.weiboSideBarCustomGroupURLs[idx]
     end
     return false
   end
@@ -1316,11 +1298,10 @@ local function weiboNavigateToSideBar(url, result, win)
   setTabUrl(win:application(), fullUrl)
 end
 
-local douyinTabTitles, douyinTabURLs
 local function douyinTabTitle(idx)
   return function(win)
-    if douyinTabTitles then return douyinTabTitles[idx] end
-    douyinTabTitles, douyinTabURLs = {}, {}
+    if appBuf.douyinTabTitles then return appBuf.douyinTabTitles[idx] end
+    appBuf.douyinTabTitles, appBuf.douyinTabURLs = {}, {}
     local app = win:application()
     local source = getTabSource(app)
     if source == nil then return end
@@ -1328,22 +1309,19 @@ local function douyinTabTitle(idx)
     for url, title in source:gmatch(
         [[<div class="tab\-[^>]-><a href="(.-)".-<span class=".-">(.-)</span>]]) do
       if url ~= lastURL then
-        tinsert(douyinTabTitles, title)
-        tinsert(douyinTabURLs, url)
+        tinsert(appBuf.douyinTabTitles, title)
+        tinsert(appBuf.douyinTabURLs, url)
       end
       lastURL = url
     end
-    onDeactivated(app:bundleID(), function()
-      douyinTabTitles, douyinTabURLs = nil, nil
-    end)
-    return douyinTabTitles[idx]
+    return appBuf.douyinTabTitles[idx]
   end
 end
 
 local function douyinNavigateToTabCondition(idx)
   return function()
-    if douyinTabURLs and #douyinTabURLs >= idx then
-      return true, douyinTabURLs[idx]
+    if appBuf.douyinTabURLs and #appBuf.douyinTabURLs >= idx then
+      return true, appBuf.douyinTabURLs[idx]
     end
     return false
   end
@@ -7578,12 +7556,12 @@ local function registerForOpenSavePanel(app)
       local observer = uiobserver.new(app:pid())
       observer:addWatcher(sidebarCells[1].AXParent.AXParent, uinotifications.rowCountChanged)
       observer:callback(function()
-        if lastRowCountChangedTimer then
-          lastRowCountChangedTimer:setNextTrigger(0.1)
+        if appBuf.lastRowCountChangedTimer then
+          appBuf.lastRowCountChangedTimer:setNextTrigger(0.1)
           return
         end
-        lastRowCountChangedTimer = hs.timer.doAfter(0.1, function()
-          lastRowCountChangedTimer = nil
+        appBuf.lastRowCountChangedTimer = hs.timer.doAfter(0.1, function()
+          appBuf.lastRowCountChangedTimer = nil
           for _, hotkey in ipairs(openSavePanelHotkeys) do
             disableConditionInChain(appid, hotkey, true)
             hotkey:delete()
@@ -8931,6 +8909,7 @@ function App_applicationCallback(appname, eventType, app)
       registerMenuBarObserverForHotkeyValidity(app)
     end
   elseif eventType == hs.application.watcher.activated then
+    appBuf = {}
     if appid == nil then return end
     if RemoteDesktopObserver ~= nil then
       if FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] ~= nil then
