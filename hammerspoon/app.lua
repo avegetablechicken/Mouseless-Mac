@@ -7444,7 +7444,7 @@ local specialConfirmFuncs = {
   end
 }
 
-local function registerForOpenSavePanel(app, callByObserver)
+local function registerForOpenSavePanel(app)
   for _, hotkey in ipairs(openSavePanelHotkeys) do
     hotkey:delete()
   end
@@ -7500,8 +7500,10 @@ local function registerForOpenSavePanel(app, callByObserver)
     return dontSaveButton, sidebarCells
   end
 
-  local actionFunc = function(winUI)
+  local actionFunc
+  actionFunc = function(winUI, callByObserver)
     for _, hotkey in ipairs(openSavePanelHotkeys) do
+      disableConditionInChain(appid, hotkey, true)
       hotkey:delete()
     end
     openSavePanelHotkeys = {}
@@ -7553,6 +7555,9 @@ local function registerForOpenSavePanel(app, callByObserver)
         local hkID = strfmt("open%d%sSidebarItemOnOpenSavePanel", i, suffix)
         local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
         if spec ~= nil then
+          if not titleElem:isValid() then
+            actionFunc(winUI)
+          end
           local folder = titleElem.AXValue
           local hotkey = AppWinBind(app:focusedWindow(), {
             spec = spec, message = header .. ' > ' .. folder,
@@ -7565,6 +7570,10 @@ local function registerForOpenSavePanel(app, callByObserver)
     end
     if appid ~= "com.kingsoft.wpsoffice.mac" and #sidebarCells > 0
         and callByObserver ~= true then
+      if not sidebarCells[1]:isValid() then
+        actionFunc(winUI)
+        return
+      end
       local observer = uiobserver.new(app:pid())
       observer:addWatcher(sidebarCells[1].AXParent.AXParent, uinotifications.rowCountChanged)
       observer:callback(function()
@@ -7579,7 +7588,7 @@ local function registerForOpenSavePanel(app, callByObserver)
             hotkey:delete()
           end
           openSavePanelHotkeys = {}
-          registerForOpenSavePanel(app, true)
+          actionFunc(winUI, true)
         end)
       end)
       observer:start()
@@ -7607,7 +7616,6 @@ local function registerForOpenSavePanel(app, callByObserver)
     onDestroy(winUI,
       function()
         for _, hotkey in ipairs(openSavePanelHotkeys) do
-          disableConditionInChain(appid, hotkey, true)
           hotkey:delete()
         end
         openSavePanelHotkeys = {}
@@ -7621,7 +7629,7 @@ local function registerForOpenSavePanel(app, callByObserver)
   local observer = uiobserver.new(app:pid())
   observer:addWatcher(toappui(app), uinotifications.focusedWindowChanged)
   observer:callback(function(_, element, notifications)
-    actionFunc(element)
+    hs.timer.doAfter(0.2, bind(actionFunc, element))
   end)
   observer:start()
   stopOnDeactivated(appid, observer)
