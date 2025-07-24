@@ -823,19 +823,17 @@ local function confirmButtonValidForAppCleanerUninstaller(title)
 end
 
 --- ### QQLive
-local function existQQLiveChannel(win)
-  local list = getc(towinui(win), AX.Group, 2)
-  if list == nil or #list == 0 then return false end
-  return tfind(list.AXChildren, function(txt)
-    return txt.AXValue == "频道"
-  end) ~= nil and tfind(list.AXChildren, function(txt)
-    return txt.AXValue == "全部频道"
-  end) ~= nil
-end
-
 local QQLiveChannelNames = {}
 local QQLiveMainWindowFilter = {
-  fn = existQQLiveChannel
+  fn = function(win)
+    local list = getc(towinui(win), AX.Group, 2)
+    if list == nil or #list == 0 then return false end
+    return tfind(list.AXChildren, function(txt)
+      return txt.AXValue == "频道"
+    end) ~= nil and tfind(list.AXChildren, function(txt)
+      return txt.AXValue == "全部频道"
+    end) ~= nil
+  end
 }
 local function getQQLiveChannelName(index)
   return function(win)
@@ -893,19 +891,22 @@ local function getQQLiveChannel(index)
 end
 
 --- ### EuDic
-local EuDicName = displayName("com.eusoft.freeeudic")
-local EuDicMainWindowFilter = {
-  allowTitles = EuDicName,
-  allowRoles = AX.StandardWindow
-}
-local EuDicSettingsWindowFilter = {
-  rejectTitles = EuDicName,
-  allowRoles = AX.StandardWindow
-}
-onLaunched("com.eusoft.freeeudic", function(app)
-  EuDicMainWindowFilter.allowTitles = app:name()
-  EuDicSettingsWindowFilter.rejectTitles = app:name()
-end)
+local EuDicMainWindowFilter, EuDicSettingsWindowFilter
+do
+  local EuDicName = displayName("com.eusoft.freeeudic")
+  EuDicMainWindowFilter = {
+    allowTitles = EuDicName,
+    allowRoles = AX.StandardWindow
+  }
+  EuDicSettingsWindowFilter = {
+    rejectTitles = EuDicName,
+    allowRoles = AX.StandardWindow
+  }
+  onLaunched("com.eusoft.freeeudic", function(app)
+    EuDicMainWindowFilter.allowTitles = app:name()
+    EuDicSettingsWindowFilter.rejectTitles = app:name()
+  end)
+end
 
 -- ### Bartender
 local bartenderBarItemNames
@@ -8300,58 +8301,60 @@ local appsQuitWithNoPseudoWindow = {}
 -- some apps may first close a window before create a targeted one, so delay is needed before checking
 local appsWithoutWindowDelay = {}
 
-local appsHideWithoutWindowLoaded = ApplicationConfigs["hideWithoutWindow"] or {}
-local appsQuitWithoutWindowLoaded = ApplicationConfigs["quitWithoutWindow"] or {}
+do
+  local appsHideWithoutWindowLoaded = ApplicationConfigs["hideWithoutWindow"] or {}
+  local appsQuitWithoutWindowLoaded = ApplicationConfigs["quitWithoutWindow"] or {}
 
-for _, item in ipairs(appsHideWithoutWindowLoaded) do
-  if type(item) == 'string' then
-    appsHideWithoutWindow[item] = true
-  else
-    for appid, cfg in pairs(item) do
-      local windowFilter
-      for k, v in pairs(cfg) do
-        if (k == "allowPopover" or k == "allowSheet") and v then
-          appsHideWithNoPseudoWindow[appid] = {}
-          if k == "allowPopover" then
-            tinsert(appsHideWithNoPseudoWindow[appid], AX.Popover)
+  for _, item in ipairs(appsHideWithoutWindowLoaded) do
+    if type(item) == 'string' then
+      appsHideWithoutWindow[item] = true
+    else
+      for appid, cfg in pairs(item) do
+        local windowFilter
+        for k, v in pairs(cfg) do
+          if (k == "allowPopover" or k == "allowSheet") and v then
+            appsHideWithNoPseudoWindow[appid] = {}
+            if k == "allowPopover" then
+              tinsert(appsHideWithNoPseudoWindow[appid], AX.Popover)
+            end
+            if k == "allowSheet" then
+              tinsert(appsHideWithNoPseudoWindow[appid], AX.Sheet)
+            end
+          elseif k == "delay" then
+            appsWithoutWindowDelay[appid] = v
+          else
+            if windowFilter == nil then windowFilter = {} end
+            windowFilter[k] = v
           end
-          if k == "allowSheet" then
-            tinsert(appsHideWithNoPseudoWindow[appid], AX.Sheet)
-          end
-        elseif k == "delay" then
-          appsWithoutWindowDelay[appid] = v
-        else
-          if windowFilter == nil then windowFilter = {} end
-          windowFilter[k] = v
         end
+        appsHideWithoutWindow[appid] = windowFilter or true
       end
-      appsHideWithoutWindow[appid] = windowFilter or true
     end
   end
-end
-for _, item in ipairs(appsQuitWithoutWindowLoaded) do
-  if type(item) == 'string' then
-    appsQuitWithoutWindow[item] = true
-  else
-    for appid, cfg in pairs(item) do
-      local windowFilter
-      for k, v in pairs(cfg) do
-        if (k == "allowPopover" or k == "allowSheet") and v then
-          appsQuitWithNoPseudoWindow[appid] = {}
-          if k == "allowPopover" then
-            tinsert(appsQuitWithNoPseudoWindow[appid], AX.Popover)
+  for _, item in ipairs(appsQuitWithoutWindowLoaded) do
+    if type(item) == 'string' then
+      appsQuitWithoutWindow[item] = true
+    else
+      for appid, cfg in pairs(item) do
+        local windowFilter
+        for k, v in pairs(cfg) do
+          if (k == "allowPopover" or k == "allowSheet") and v then
+            appsQuitWithNoPseudoWindow[appid] = {}
+            if k == "allowPopover" then
+              tinsert(appsQuitWithNoPseudoWindow[appid], AX.Popover)
+            end
+            if k == "allowSheet" then
+              tinsert(appsQuitWithNoPseudoWindow[appid], AX.Sheet)
+            end
+          elseif k == "delay" then
+            appsWithoutWindowDelay[appid] = v
+          else
+            if windowFilter == nil then windowFilter = {} end
+            windowFilter[k] = v
           end
-          if k == "allowSheet" then
-            tinsert(appsQuitWithNoPseudoWindow[appid], AX.Sheet)
-          end
-        elseif k == "delay" then
-          appsWithoutWindowDelay[appid] = v
-        else
-          if windowFilter == nil then windowFilter = {} end
-          windowFilter[k] = v
         end
+        appsQuitWithoutWindow[appid] = windowFilter or true
       end
-      appsQuitWithoutWindow[appid] = windowFilter or true
     end
   end
 end
@@ -8566,36 +8569,38 @@ local function connectMountainDuckEntries(app, connection)
     end
   end
 end
-local mountainDuckConfig = ApplicationConfigs["io.mountainduck"]
-if mountainDuckConfig ~= nil and mountainDuckConfig.connections ~= nil then
-  for _, connection in ipairs(mountainDuckConfig.connections) do
-    if type(connection) == 'table' then
-      local shell_command = get(connection, "condition", "shell_command")
-      if shell_command ~= nil then
-        connection.condition = function()
-          local _, _, _, rc = hs.execute(shell_command)
-          if rc == 0 then
-            return true
-          elseif rc == 1 then
-            return false
-          else
-            return nil
+do
+  local mountainDuckConfig = ApplicationConfigs["io.mountainduck"]
+  if mountainDuckConfig ~= nil and mountainDuckConfig.connections ~= nil then
+    for _, connection in ipairs(mountainDuckConfig.connections) do
+      if type(connection) == 'table' then
+        local shell_command = get(connection, "condition", "shell_command")
+        if shell_command ~= nil then
+          connection.condition = function()
+            local _, _, _, rc = hs.execute(shell_command)
+            if rc == 0 then
+              return true
+            elseif rc == 1 then
+              return false
+            else
+              return nil
+            end
           end
+        else
+          connection.condition = nil
         end
-      else
-        connection.condition = nil
       end
     end
-  end
-  onLaunched("io.mountainduck", function(app)
-    for _, connection in ipairs(mountainDuckConfig.connections) do
-      connectMountainDuckEntries(app, connection)
-    end
-  end)
-  local app = find("io.mountainduck")
-  if app ~= nil then
-    for _, connection in ipairs(mountainDuckConfig.connections) do
-      connectMountainDuckEntries(app, connection)
+    onLaunched("io.mountainduck", function(app)
+      for _, connection in ipairs(mountainDuckConfig.connections) do
+        connectMountainDuckEntries(app, connection)
+      end
+    end)
+    local app = find("io.mountainduck")
+    if app ~= nil then
+      for _, connection in ipairs(mountainDuckConfig.connections) do
+        connectMountainDuckEntries(app, connection)
+      end
     end
   end
 end
