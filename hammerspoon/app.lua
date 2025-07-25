@@ -895,18 +895,19 @@ end
 --- ### EuDic
 local EuDicMainWindowFilter, EuDicSettingsWindowFilter
 do
-  local EuDicName = displayName("com.eusoft.freeeudic")
+  local appid = "com.eusoft.freeeudic"
+  local appname = displayName(appid)
   EuDicMainWindowFilter = {
-    allowTitles = EuDicName,
+    allowTitles = '^' .. appname .. '$',
     allowRoles = AX.StandardWindow
   }
   EuDicSettingsWindowFilter = {
-    rejectTitles = EuDicName,
+    rejectTitles = '^' .. appname .. '$',
     allowRoles = AX.StandardWindow
   }
-  onLaunched("com.eusoft.freeeudic", function(app)
-    EuDicMainWindowFilter.allowTitles = app:name()
-    EuDicSettingsWindowFilter.rejectTitles = app:name()
+  onLaunched(appid, function(app)
+    EuDicMainWindowFilter.allowTitles = '^' .. app:name() .. '$'
+    EuDicSettingsWindowFilter.rejectTitles = '^' .. app:name() .. '$'
   end)
 end
 
