@@ -1484,6 +1484,7 @@ end
 -- if so, return the path of the menu item
 local function checkMenuItem(menuItemTitle, params)
   return function(app)
+    if app.application then app = app:application() end
     local menuItem, locTitle = findMenuItem(app, menuItemTitle, params)
     return menuItem ~= nil and menuItem.enabled, locTitle
   end
@@ -1514,6 +1515,7 @@ end
 -- select the menu item returned by the condition
 -- work as hotkey callback
 local function receiveMenuItem(menuItemTitle, app)
+  if app.application then app = app:application() end
   app:selectMenuItem(menuItemTitle)
 end
 
