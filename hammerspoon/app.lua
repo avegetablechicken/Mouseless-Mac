@@ -552,6 +552,18 @@ local function deleteAllMessages(messageItems, app)
 end
 
 -- ### FaceTime
+local FaceTimeMainWindowFilter
+do
+  local appid = "com.apple.FaceTime"
+  local appname = displayName(appid)
+  FaceTimeMainWindowFilter = {
+    allowTitles = '^' .. appname .. '$'
+  }
+  onLaunched(appid, function(app)
+    FaceTimeMainWindowFilter.allowTitles = '^' .. app:name() .. '$'
+  end)
+end
+
 local function deleteMousePositionCall(win)
   local app = win:application()
   local appid = app:bundleID()
@@ -1825,24 +1837,19 @@ appHotKeyCallbacks = {
   ["com.apple.FaceTime"] = {
     ["removeFromRecents"] = {
       message = localizedMessage("Remove from Recents"),
-      condition = function(app)
-        return app:focusedWindow() ~= nil, app:focusedWindow()
-      end,
+      windowFilter = FaceTimeMainWindowFilter,
       fn = deleteMousePositionCall
     },
     ["clearAllRecents"] = {
       message = localizedMessage("Clear All Recents"),
-      condition = function(app)
-        return app:focusedWindow() ~= nil, app:focusedWindow()
-      end,
+      windowFilter = FaceTimeMainWindowFilter,
       fn = deleteAllCalls
     },
     ["newFaceTime"] = {
       message = localizedMessage("New FaceTime"),
-      condition = function(app)
-        if app:focusedWindow() == nil then return false end
-        local winUI = towinui(app:focusedWindow())
-        local button = getc(winUI, AX.Group, 1, AX.Group, 1,
+      windowFilter = FaceTimeMainWindowFilter,
+      condition = function(win)
+        local button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
             AX.Group, 1, AX.Group, 1, AX.Button, 2)
         return button ~= nil, button
       end,
