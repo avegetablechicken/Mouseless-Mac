@@ -2877,13 +2877,13 @@ appHotKeyCallbacks = {
     },
     ["back"] = {
       message = localizedMessage("Back"),
-      condition = function(app)
-        if app:focusedWindow() == nil then return false end
-        local winUI = towinui(app:focusedWindow())
-        if winUI.AXIdentifier ~= "ChatGPTSettingsAppWindow" then
-          return false
+      windowFilter = {
+        fn = function(win)
+          return towinui(win).AXIdentifier == "ChatGPTSettingsAppWindow"
         end
-        local button = getc(winUI, AX.Toolbar, 1, AX.Button, 1, AX.Button, 1)
+      },
+      condition = function(win)
+        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 1, AX.Button, 1)
         return button ~= nil and button.AXEnabled, button
       end,
       fn = press
