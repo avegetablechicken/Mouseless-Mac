@@ -7464,7 +7464,7 @@ local function registerForOpenSavePanel(app)
 
   local getUIElements = function(winUI)
     local windowIdent = winUI.AXIdentifier
-    local dontSaveButton, sidebarCells = nil, {}
+    local dontSaveButton, sidebarCells
     if get(KeybindingConfigs.hotkeys, appid, "confirmDelete") == nil then
       local specialConfirmFunc = specialConfirmFuncs[appid]
       if specialConfirmFunc ~= nil then
@@ -7481,6 +7481,7 @@ local function registerForOpenSavePanel(app)
     if windowIdent == "open-panel" or windowIdent == "save-panel" then
       local outline = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1, AX.Outline, 1)
       if outline ~= nil then
+        sidebarCells = {}
         for _, row in ipairs(getc(outline, AX.Row)) do
           if #row == 0 then hs.timer.usleep(0.3 * 1000000) end
           tinsert(sidebarCells, row[1])
@@ -7492,6 +7493,7 @@ local function registerForOpenSavePanel(app)
         if getc(winUI, AX.SplitGroup, 1, AX.StaticText, windowTitle) ~= nil then
           local outline = getc(winUI, AX.SplitGroup, 1, AX.List, 1)
           if outline ~= nil then
+            sidebarCells = {}
             for _, row in ipairs(getc(outline, AX.StaticText)) do
               if row.AXSize.h > 20 then
                 tinsert(sidebarCells, row)
@@ -7515,7 +7517,7 @@ local function registerForOpenSavePanel(app)
     local dontSaveButton, sidebarCells = getUIElements(winUI)
     local header
     local i = 1
-    for _, cell in ipairs(sidebarCells) do
+    for _, cell in ipairs(sidebarCells or {}) do
       if i > 10 then break end
       local titleElem = getc(cell, AX.StaticText, 1)
       if titleElem == nil and appid == "com.kingsoft.wpsoffice.mac" then
@@ -7572,9 +7574,9 @@ local function registerForOpenSavePanel(app)
         end
       end
     end
-    if appid ~= "com.kingsoft.wpsoffice.mac" and #sidebarCells > 0
+    if appid ~= "com.kingsoft.wpsoffice.mac" and sidebarCells
         and callByObserver ~= true then
-      if not sidebarCells[1]:isValid() then
+      if sidebarCells[1] and not sidebarCells[1]:isValid() then
         actionFunc(winUI)
         return
       end
@@ -7616,7 +7618,7 @@ local function registerForOpenSavePanel(app)
       end
     end
 
-    if dontSaveButton == nil and #sidebarCells == 0 then return end
+    if dontSaveButton == nil and sidebarCells == nil then return end
     onDestroy(winUI,
       function()
         for _, hotkey in ipairs(openSavePanelHotkeys) do
