@@ -910,6 +910,19 @@ do
   end)
 end
 
+--- ### Parallels Desktop
+local ParallelsControlCenterWindowFilter
+do
+  local appid = "com.parallels.desktop.console"
+  local title = localizedString("Control Center", appid)
+  ParallelsControlCenterWindowFilter = {
+    allowTitles = '^' .. title .. '$'
+  }
+  onLaunched(appid, function(app)
+    ParallelsControlCenterWindowFilter.allowTitles = '^' .. app:name() .. '$'
+  end)
+end
+
 -- ### Bartender
 local bartenderBarWindowFilter = { allowTitles = "^Bartender Bar$" }
 local function getBartenderBarItemTitle(index, rightClick)
@@ -5234,11 +5247,13 @@ appHotKeyCallbacks = {
     },
     ["expandedView"] = {
       message = localizedMessage("Expanded View"),
+      windowFilter = ParallelsControlCenterWindowFilter,
       condition = checkMenuItem({ "View", "Expanded View" }),
       fn = receiveMenuItem
     },
     ["compactView"] = {
       message = localizedMessage("Compact View"),
+      windowFilter = ParallelsControlCenterWindowFilter,
       condition = checkMenuItem({ "View", "Compact View" }),
       fn = receiveMenuItem
     },
