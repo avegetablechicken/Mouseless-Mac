@@ -8644,7 +8644,7 @@ for _, rules in pairs(remoteDesktopsMappingModifiers) do
   end
 end
 
-MicrosoftRemoteDesktopWindowFilter = nil
+local MicrosoftRemoteDesktopWindowFilter
 if hs.application.nameForBundleID("com.microsoft.rdc.macos") == "Windows App" then
   MicrosoftRemoteDesktopWindowFilter = { rejectTitles = {} }
   local preLocalizeWindowsApp = function ()
