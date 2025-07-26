@@ -1522,7 +1522,8 @@ CF = {
   uIElementNotFocused       = 1,
   rightMenubarItemSelected  = 2,
   leftMenubarItemSelected   = 3,
-  userConditionFail         = 4,
+  nonEmptyTextFieldFocused  = 4,
+  userConditionFail         = 5,
 }
 
 -- check if the menu item whose key binding is specified is enabled
@@ -6283,6 +6284,17 @@ local function noSelectedMenuBarItemFunc(fn)
   end
 end
 
+-- if a text field with value is focused, hotkeys with no modifiers are disabled
+local function noFocusedNonEmptyTextFieldFunc(fn)
+  return function(obj)
+    local focused = hs.axuielement.systemWideElement().AXFocusedUIElement
+    if focused and focused.AXRole == AX.TextField and focused.AXValue ~= nil then
+      return false, CF.nonEmptyTextFieldFocused
+    end
+    return fn(obj)
+  end
+end
+
 KEY_MODE = {
   PRESS = 1,
   REPEAT = 2,
@@ -6398,7 +6410,7 @@ local function wrapCondition(obj, config, mode)
   if obj == nil or obj.asHSApplication == nil then
     -- if a menu is extended, hotkeys with no modifiers are disabled
     if mods == nil or mods == "" or #mods == 0 then
-      cond = noSelectedMenuBarItemFunc(cond)
+      cond = noFocusedNonEmptyTextFieldFunc(noSelectedMenuBarItemFunc(cond))
     end
     -- send key strokes to system focused UI element instead of this obj
     cond = resendToFocusedUIElement(cond, config.nonFrontmost)
@@ -6423,7 +6435,8 @@ local function wrapCondition(obj, config, mode)
         func(o)
       end
       return true
-    elseif result == CF.leftMenubarItemSelected then
+    elseif result == CF.leftMenubarItemSelected
+        or result == CF.nonEmptyTextFieldFocused then
       selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
       return true
     elseif result == CF.rightMenubarItemSelected then
