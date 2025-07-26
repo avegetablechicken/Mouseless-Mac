@@ -6272,7 +6272,7 @@ end
 
 -- check whether the menu bar item is selected
 -- if a menu is extended, hotkeys with no modifiers are disabled
-local function noSelectedMenuBarItemFunc(fn)
+local function noSelectedLeftMenuBarItemFunc(fn)
   return function(obj)
     local app = obj.application ~= nil and obj:application() or obj
     for i, menuBarItem in ipairs(getMenuBarItems(app, false, false)) do
@@ -6410,7 +6410,7 @@ local function wrapCondition(obj, config, mode)
   if obj == nil or obj.asHSApplication == nil then
     -- if a menu is extended, hotkeys with no modifiers are disabled
     if mods == nil or mods == "" or #mods == 0 then
-      cond = noFocusedNonEmptyTextFieldFunc(noSelectedMenuBarItemFunc(cond))
+      cond = noFocusedNonEmptyTextFieldFunc(noSelectedLeftMenuBarItemFunc(cond))
     end
     -- send key strokes to system focused UI element instead of this obj
     cond = resendToFocusedUIElement(cond, config.nonFrontmost)
