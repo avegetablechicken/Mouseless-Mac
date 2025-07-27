@@ -5266,10 +5266,8 @@ appHotKeyCallbacks = {
     ["minimize"] = {
       mods = "⌘", key = "M",
       message = localizedMessage("Minimize"),
-      repeatable = true,
-      fn = function(app)
-        selectMenuItem(app, { "Window", "Minimize" })
-      end
+      condition = checkMenuItem({ "Window", "Minimize" }),
+      fn = receiveMenuItem
     },
     ["closeWindow"] = {
       mods = "⌘", key = "W",
