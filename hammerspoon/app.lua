@@ -2029,6 +2029,11 @@ appHotKeyCallbacks = {
 
   ["com.google.Chrome"] =
   {
+    ["openRecent"] = {
+      message = localizedMessage("Search Tabs…"),
+      condition = checkMenuItem({ "Tab", "Search Tabs…" }),
+      fn = receiveMenuItem
+    },
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
       windowFilter = { allowURLs = "^file://" },
