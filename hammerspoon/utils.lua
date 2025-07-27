@@ -1381,6 +1381,7 @@ local function localizeByStrings(str, localeDir, localeFile, localesDict, locale
   local result = searchFunc(str, preferentialStringsFiles)
   if result ~= nil then return result end
 
+  local maybeStrIsInBaseLocale = false
   local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
   local invSearchFunc = function(str, files)
     local dirs = appendExtraEnglishLocaleDirs(resourceDir, baseLocaleDirs)
@@ -1408,7 +1409,10 @@ local function localizeByStrings(str, localeDir, localeFile, localesDict, locale
             end
             invDict = parseNIBFile(fullPath, false, true)
             if not exists(localeDir .. '/' .. fileStem .. '.strings') then
-              if invDict and invDict[str] then return str end
+              if invDict and invDict[str] then
+                maybeStrIsInBaseLocale = true
+                return
+              end
             end
           end
         end
@@ -1470,6 +1474,8 @@ local function localizeByStrings(str, localeDir, localeFile, localesDict, locale
 
   result = invSearchFunc(str, baseStringsFiles)
   if result ~= nil then return result end
+
+  if maybeStrIsInBaseLocale then return true end
 end
 
 local function localizeByNIB(str, localeDir, localeFile, appid)
@@ -2308,6 +2314,7 @@ local function localizedStringImpl(str, appid, params, force)
     return result, appLocale, locale
   end
 
+  local maybeStrIsInBaseLocale = false
   local defaultAction = function(emptyCache)
     if emptyCache or appLocaleAssetBuffer[appid] == nil
         or get(appLocaleDir, appid, appLocale) ~= locale then
@@ -2325,6 +2332,7 @@ local function localizedStringImpl(str, appid, params, force)
     result = localizeByStrings(str, localeDir, localeFile,
                                appLocaleAssetBuffer[appid],
                                appLocaleAssetBufferInverse[appid])
+    if result == true then maybeStrIsInBaseLocale = true result = nil end
     if result ~= nil then return result end
 
     result = localizeByNIB(str, localeDir, localeFile, appid)
@@ -2355,7 +2363,7 @@ local function localizedStringImpl(str, appid, params, force)
     end
   end
 
-  return nil, appLocale, locale
+  return maybeStrIsInBaseLocale and str or nil, appLocale, locale
 end
 
 function localizedString(str, appid, params, force)
