@@ -2185,13 +2185,6 @@ appHotKeyCallbacks = {
       condition = checkMenuItem({ "File", "Open File Location" }),
       fn = receiveMenuItem
     },
-    ["pasteAsPlainText"] = {
-      message = localizedMessage("Paste as Plain Text"),
-      repeatable = true,
-      fn = function(app)
-        selectMenuItem(app, { "Edit", "Paste as Plain Text" })
-      end
-    },
     ["openRecent"] = {
       message = localizedMessage("Open Recent"),
       condition = function(app)

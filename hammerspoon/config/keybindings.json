@@ -703,10 +703,6 @@
       "openFileLocation": {
         "mods": ["shift", "command"],
         "key": "O"
-      },
-      "pasteAsPlainText": {
-        "mods": ["shift", "option", "command"],
-        "key": "V"
       }
     },
     "com.superace.updf.mac": {
