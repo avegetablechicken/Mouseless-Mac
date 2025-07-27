@@ -2546,18 +2546,12 @@ appHotKeyCallbacks = {
     ["exportToPDF"] = {  -- File > Export To > PDF…
       message = localizedMessage({ "Export To", "PDF…" }),
       condition = checkMenuItem({ "File", "Export To", "PDF…" }),
-      fn = function(menuItemTitle, app)
-        app:selectMenuItem({ menuItemTitle[1], menuItemTitle[2] })
-        app:selectMenuItem(menuItemTitle)
-      end
+      fn = receiveMenuItem
     },
     ["exportToPPT"] = {  -- File > Export To > PowerPoint…
       message = localizedMessage({ "Export To", "PowerPoint…" }),
       condition = checkMenuItem({ "File", "Export To", "PowerPoint…" }),
-      fn = function(menuItemTitle, app)
-        app:selectMenuItem({ menuItemTitle[1], menuItemTitle[2] })
-        app:selectMenuItem(menuItemTitle)
-      end
+      fn = receiveMenuItem
     },
     ["pasteAndMatchStyle"] = {  -- Edit > Paste and Match Style
       message = localizedMessage("Paste and Match Style"),
@@ -2626,18 +2620,12 @@ appHotKeyCallbacks = {
     ["exportToPDF"] = {  -- File > Export To > PDF…
       message = localizedMessage({ "Export To", "PDF…" }),
       condition = checkMenuItem({ "File", "Export To", "PDF…" }),
-      fn = function(menuItemTitle, app)
-        app:selectMenuItem({ menuItemTitle[1], menuItemTitle[2] })
-        app:selectMenuItem(menuItemTitle)
-      end
+      fn = receiveMenuItem
     },
     ["exportToWord"] = {  -- File > Export To > Word…
       message = localizedMessage({ "Export To", "Word…" }),
       condition = checkMenuItem({ "File", "Export To", "Word…" }),
-      fn = function(menuItemTitle, app)
-        app:selectMenuItem({ menuItemTitle[1], menuItemTitle[2] })
-        app:selectMenuItem(menuItemTitle)
-      end
+      fn = receiveMenuItem
     },
     ["pasteAndMatchStyle"] = {  -- Edit > Paste and Match Style
       message = localizedMessage("Paste and Match Style"),
@@ -2672,18 +2660,12 @@ appHotKeyCallbacks = {
     ["exportToPDF"] = {  -- File > Export To > PDF…
       message = localizedMessage({ "Export To", "PDF…" }),
       condition = checkMenuItem({ "File", "Export To", "PDF…" }),
-      fn = function(menuItemTitle, app)
-        app:selectMenuItem({ menuItemTitle[1], menuItemTitle[2] })
-        app:selectMenuItem(menuItemTitle)
-      end
+      fn = receiveMenuItem
     },
     ["exportToExcel"] = {  -- File > Export To > Excel…
       message = localizedMessage({ "Export To", "Excel…" }),
       condition = checkMenuItem({ "File", "Export To", "Excel…" }),
-      fn = function(menuItemTitle, app)
-        app:selectMenuItem({ menuItemTitle[1], menuItemTitle[2] })
-        app:selectMenuItem(menuItemTitle)
-      end
+      fn = receiveMenuItem
     },
     ["pasteAndMatchStyle"] = {  -- Edit > Paste and Match Style
       message = localizedMessage("Paste and Match Style"),
