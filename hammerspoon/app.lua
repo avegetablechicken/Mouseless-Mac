@@ -4977,9 +4977,7 @@ appHotKeyCallbacks = {
       },
       condition = getPasswordRecordPosition(1),
       background = true,
-      fn = function(position, win)
-        return click(position, win:application())
-      end
+      fn = click
     },
     ["record2"] = {
       message = "Record 2",
@@ -4989,9 +4987,7 @@ appHotKeyCallbacks = {
       },
       condition = getPasswordRecordPosition(2),
       background = true,
-      fn = function(position, win)
-        return click(position, win:application())
-      end
+      fn = click
     },
     ["record3"] = {
       message = "Record 3",
@@ -5001,9 +4997,7 @@ appHotKeyCallbacks = {
       },
       condition = getPasswordRecordPosition(3),
       background = true,
-      fn = function(position, win)
-        return click(position, win:application())
-      end
+      fn = click
     },
     ["record4"] = {
       message = "Record 4",
@@ -5013,9 +5007,7 @@ appHotKeyCallbacks = {
       },
       condition = getPasswordRecordPosition(4),
       background = true,
-      fn = function(position, win)
-        return click(position, win:application())
-      end
+      fn = click
     },
     ["record5"] = {
       message = "Record 5",
@@ -5025,9 +5017,7 @@ appHotKeyCallbacks = {
       },
       condition = getPasswordRecordPosition(5),
       background = true,
-      fn = function(position, win)
-        return click(position, win:application())
-      end
+      fn = click
     },
     ["record6"] = {
       message = "Record 6",
@@ -5037,9 +5027,7 @@ appHotKeyCallbacks = {
       },
       condition = getPasswordRecordPosition(6),
       background = true,
-      fn = function(position, win)
-        return click(position, win:application())
-      end
+      fn = click
     },
     ["record7"] = {
       message = "Record 7",
@@ -5049,9 +5037,7 @@ appHotKeyCallbacks = {
       },
       condition = getPasswordRecordPosition(7),
       background = true,
-      fn = function(position, win)
-        return click(position, win:application())
-      end
+      fn = click
     },
     ["record8"] = {
       message = "Record 8",
@@ -5061,9 +5047,7 @@ appHotKeyCallbacks = {
       },
       condition = getPasswordRecordPosition(8),
       background = true,
-      fn = function(position, win)
-        return click(position, win:application())
-      end
+      fn = click
     }
   },
 
