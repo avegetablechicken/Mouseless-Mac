@@ -3923,6 +3923,15 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["com.charliemonroe.Downie-4"] =
+  {
+    ["openRecent"] = {
+      message = localizedMessage("Show History"),
+      condition = checkMenuItem({ "Window", "Show History" }),
+      fn = receiveMenuItem
+    }
+  },
+
   ["barrier"] =
   {
     ["toggleBarrierConnect"] = {
