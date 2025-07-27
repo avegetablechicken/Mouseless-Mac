@@ -5486,9 +5486,8 @@ appHotKeyCallbacks = {
   {
     ["showInFinder"] = {
       message = localizedMessage("Show In Finder"),
-      fn = function(app)
-        selectMenuItem(app, { "Actions", "Show In Finder" })
-      end
+      condition = checkMenuItem({ "Actions", "Show In Finder" }),
+      fn = receiveMenuItem
     }
   },
 
