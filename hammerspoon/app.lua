@@ -840,13 +840,9 @@ end
 --- ### QQLive
 local QQLiveMainWindowFilter = {
   fn = function(win)
-    local list = getc(towinui(win), AX.Group, 2)
-    if list == nil or #list == 0 then return false end
-    return tfind(list.AXChildren, function(txt)
-      return txt.AXValue == "频道"
-    end) ~= nil and tfind(list.AXChildren, function(txt)
-      return txt.AXValue == "全部频道"
-    end) ~= nil
+    local winUI = towinui(win)
+    return getc(winUI, AX.Group, 2, nil, "频道") ~= nil
+        and getc(winUI, AX.Group, 2, nil, "全部频道") ~= nil
   end
 }
 local function getQQLiveChannelName(index)
