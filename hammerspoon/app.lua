@@ -8634,14 +8634,12 @@ end
 
 local MicrosoftRemoteDesktopWindowFilter
 if hs.application.nameForBundleID("com.microsoft.rdc.macos") == "Windows App" then
-  MicrosoftRemoteDesktopWindowFilter = { rejectTitles = {} }
   local preLocalizeWindowsApp = function ()
+    MicrosoftRemoteDesktopWindowFilter = { rejectTitles = {} }
     for _, title in ipairs {"Favorites", "Devices", "Apps",
       "Settings", "About", "Device View Options", "App View Options" } do
       local locTitle = "^" .. localizedString(title, "com.microsoft.rdc.macos") .. "$"
-      if not tcontain(MicrosoftRemoteDesktopWindowFilter.rejectTitles, locTitle) then
-        tinsert(MicrosoftRemoteDesktopWindowFilter.rejectTitles, locTitle)
-      end
+      tinsert(MicrosoftRemoteDesktopWindowFilter.rejectTitles, locTitle)
     end
   end
   if find("com.microsoft.rdc.macos") ~= nil then
