@@ -1508,11 +1508,22 @@ end
 
 -- check if the menu item whose path is specified is enabled
 -- if so, return the path of the menu item
-local function checkMenuItem(menuItemTitle, params)
+local function checkMenuItem(menuItemTitle, params, ...)
+  local args = { menuItemTitle, params, ... }
+  params = nil
+  if #args > 0 and (type(args[#args]) == 'string' or #args[#args] == 0) then
+    params = args[#args]
+    args[#args] = nil
+  end
   return function(app)
     if app.application then app = app:application() end
-    local menuItem, locTitle = findMenuItem(app, menuItemTitle, params)
-    return menuItem ~= nil and menuItem.enabled, locTitle
+    for _, title in ipairs(args) do
+      local menuItem, locTitle = findMenuItem(app, title, params)
+      if menuItem ~= nil and menuItem.enabled then
+        return true, locTitle
+      end
+    end
+    return false
   end
 end
 
@@ -1878,11 +1889,8 @@ appHotKeyCallbacks = {
   ["com.apple.Notes"] = {
     ["toggleFolders"] = {
       message = localizedMessage("Show Folders"),
-      condition = function(app)
-        local enabled, menuItem = checkMenuItem({ "View", "Show Folders" })(app)
-        if enabled then return true, menuItem end
-        return checkMenuItem({ "View", "Hide Folders" })(app)
-      end,
+      condition = checkMenuItem({ "View", "Show Folders" },
+                                { "View", "Hide Folders" }),
       fn = receiveMenuItem
     }
   },
@@ -2088,15 +2096,8 @@ appHotKeyCallbacks = {
     },
     ["openRecent"] = {
       message = "Open Recent",
-      condition = function(app)
-        local enabled, menuItem =
-            checkMenuItem({ "File", "Open Recent", "More…" })(app)
-        if enabled then
-          return true, menuItem
-        else
-          return checkMenuItem({ "File", "Open Recent" })(app)
-        end
-      end,
+      condition = checkMenuItem({ "File", "Open Recent", "More…" },
+                                { "File", "Open Recent" }),
       fn = function(menuItemTitle, app)
         if #menuItemTitle == 3 then
           app:selectMenuItem(menuItemTitle)
