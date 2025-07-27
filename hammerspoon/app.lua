@@ -83,13 +83,13 @@ local function getParallelsVMPath(osname)
   end
 end
 
-local appHotkeys = {}
+local appkeys = {}
 
-local function registerAppHotkeys()
-  for _, hotkey in ipairs(appHotkeys) do
+local function registerAppKeys()
+  for _, hotkey in ipairs(appkeys) do
     hotkey:delete()
   end
-  appHotkeys = {}
+  appkeys = {}
   HyperModal.hyperMode.keys = tfilter(HyperModal.hyperMode.keys,
       function(hotkey) return hotkey.idx ~= nil end)
 
@@ -153,12 +153,12 @@ local function registerAppHotkeys()
       else
         hotkey.appPath = appPath
       end
-      tinsert(appHotkeys, hotkey)
+      tinsert(appkeys, hotkey)
     end
   end
 end
 
-registerAppHotkeys()
+registerAppKeys()
 
 
 -- ## function utilities for process management on app switching
@@ -9012,14 +9012,14 @@ function App_applicationInstalledCallback(files, flagTables)
   for i, file in ipairs(files) do
     local appid = hs.application.infoForBundlePath(file).CFBundleIdentifier
     if flagTables[i].itemRemoved then
-      for _, appkey in ipairs(appHotkeys) do
+      for _, appkey in ipairs(appkeys) do
         if appkey.appid == appid or appkey.appPath == file then
-          registerAppHotkeys()
+          registerAppKeys()
           return
         end
       end
     elseif flagTables[i].itemCreated then
-      registerAppHotkeys()
+      registerAppKeys()
       if appid then
         registerRunningAppHotKeys(appid)
       end
