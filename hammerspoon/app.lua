@@ -8647,7 +8647,7 @@ if hs.application.nameForBundleID("com.microsoft.rdc.macos") == "Windows App" th
   if find("com.microsoft.rdc.macos") ~= nil then
     preLocalizeWindowsApp()
   end
-  onActivated("com.microsoft.rdc.macos", preLocalizeWindowsApp)
+  onLaunched("com.microsoft.rdc.macos", preLocalizeWindowsApp)
 else
   MicrosoftRemoteDesktopWindowFilter = {
     rejectTitles = {
