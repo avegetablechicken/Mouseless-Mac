@@ -3789,9 +3789,7 @@ appHotKeyCallbacks = {
     },
     ["showMainWindow"] = {
       message = "抖音窗口",
-      fn = function(app)
-        app:selectMenuItem({ "窗口", "抖音窗口" })
-      end
+      fn = bind(receiveMenuItem, { "窗口", "抖音窗口" })
     }
   },
 
@@ -5569,9 +5567,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to CLion"
       },
-      fn = function(win)
-        win:application():selectMenuItem({"File", "Open..."})
-      end
+      fn = bind(receiveMenuItem, {"File", "Open..."})
     }
   },
 
@@ -5598,9 +5594,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to CLion"
       },
-      fn = function(win)
-        win:application():selectMenuItem({"File", "Open..."})
-      end
+      fn = bind(receiveMenuItem, {"File", "Open..."})
     }
   },
 
@@ -5627,9 +5621,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to IntelliJ IDEA"
       },
-      fn = function(win)
-        win:application():selectMenuItem({"File", "Open..."})
-      end
+      fn = bind(receiveMenuItem, {"File", "Open..."})
     }
   },
 
@@ -5656,9 +5648,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to PyCharm"
       },
-      fn = function(win)
-        win:application():selectMenuItem({"File", "Open..."})
-      end
+      fn = bind(receiveMenuItem, {"File", "Open..."})
     }
   },
 
