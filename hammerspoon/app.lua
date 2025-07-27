@@ -5262,13 +5262,15 @@ appHotKeyCallbacks = {
       fn = receiveMenuItem
     },
     ["minimize"] = {
-      mods = "⌘", key = "M",
+      mods = specialCommonHotkeyConfigs["minimize"].mods,
+      key = specialCommonHotkeyConfigs["minimize"].key,
       message = localizedMessage("Minimize"),
       condition = checkMenuItem({ "Window", "Minimize" }),
       fn = receiveMenuItem
     },
     ["closeWindow"] = {
-      mods = "⌘", key = "W",
+      mods = specialCommonHotkeyConfigs["closeWindow"].mods,
+      key = specialCommonHotkeyConfigs["closeWindow"].key,
       message = localizedMessage("Close Window"),
       condition = function(app)
         local menuItem, menuItemTitle =
@@ -5295,7 +5297,8 @@ appHotKeyCallbacks = {
   ["org.wireshark.Wireshark"] =
   {
     ["closeWindow"] = {
-      mods = "⌘", key = "W",
+      mods = specialCommonHotkeyConfigs["closeWindow"].mods,
+      key = specialCommonHotkeyConfigs["closeWindow"].key,
       message = localizedMessage("Close"),
       condition = function(app)
         local menuItem, menuItemTitle =
