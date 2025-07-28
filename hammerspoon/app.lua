@@ -8844,6 +8844,9 @@ function App_applicationCallback(appname, eventType, app)
         proc(app)
       end
       onLaunchedAndActivated(app)
+      if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] ~= nil then
+        registerMenuBarObserverForHotkeyValidity(app)
+      end
     end
     if doublecheck and not doublecheck() then
       hs.timer.waitUntil(doublecheck, action, 0.01)
@@ -8851,9 +8854,6 @@ function App_applicationCallback(appname, eventType, app)
       action()
     end
     fullyLaunchCriterion, FLAGS["MENUBAR_ITEMS_PREPARED"] = nil, nil
-    if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] ~= nil then
-      registerMenuBarObserverForHotkeyValidity(app)
-    end
   elseif eventType == hs.application.watcher.activated then
     appBuf = {}
     if appid == nil then return end
