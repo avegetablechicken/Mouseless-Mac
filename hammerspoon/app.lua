@@ -182,7 +182,7 @@ end
 
 local function onRunning(appid, action)
   onLaunched(appid, action)
-  local app = runningAppsOnLoading[appid] or find(appid)
+  local app = FLAGS["LOADING"] and runningAppsOnLoading[appid] or find(appid)
   if app then action(app) end
 end
 
