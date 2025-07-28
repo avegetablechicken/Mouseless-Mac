@@ -8879,8 +8879,7 @@ function App_applicationCallback(appname, eventType, app)
     elseif fullyLaunchCriterion == false then
       FLAGS["MENUBAR_ITEMS_PREPARED"] = false
     end
-  elseif eventType == hs.application.watcher.deactivated
-      and appname ~= nil then
+  elseif eventType == hs.application.watcher.deactivated and appname ~= nil then
     if appid then
       for _, proc in ipairs(processesOnDeactivated[appid] or {}) do
         proc(app)
@@ -8896,7 +8895,7 @@ function App_applicationCallback(appname, eventType, app)
       proc()
     end
     processesOnTerminated[appid] = nil
-  elseif eventType == hs.application.watcher.deactivated then
+  elseif eventType == hs.application.watcher.deactivated and appname == nil then
     for id, processes in pairs(processesOnDeactivated) do
       if find(id) == nil then
         for _, proc in ipairs(processes) do
