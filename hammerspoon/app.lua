@@ -8982,7 +8982,15 @@ end
 local appsTerminateSilently = ApplicationConfigs["terminateSilently"] or {}
 AppsTerminateSilently = {}
 for _, appid in ipairs(appsTerminateSilently) do
-  AppsTerminateSilently[appid] = find(appid)
+  local app = runningAppsOnLoading[appid]
+  AppsTerminateSilently[appid] = app
+  if app then
+    ExecOnSilentQuit(appid, function()
+      App_applicationCallback(app:name(),
+          hs.application.watcher.terminated, app)
+      AppsTerminateSilently[appid] = nil
+    end)
+  end
   onLaunched(appid, function(app)
     AppsTerminateSilently[appid] = app
     ExecOnSilentQuit(appid, function()
