@@ -8893,18 +8893,18 @@ function App_applicationCallback(appname, eventType, app)
             and (not oldFn or oldFn())
       end
     end
-    if doublecheck then
-      if not doublecheck() then
-        hs.timer.waitUntil(doublecheck,
-                           bind(onLaunchedAndActivated, app), 0.01)
-      else
-        onLaunchedAndActivated(app)
+    local action = function()
+      for _, proc in ipairs(processesOnLaunched[appid] or {}) do
+        proc(app)
       end
+      onLaunchedAndActivated(app)
+    end
+    if doublecheck and not doublecheck() then
+      hs.timer.waitUntil(doublecheck, action, 0.01)
+    else
+      action()
     end
     fullyLaunchCriterion, FLAGS["MENUBAR_ITEMS_PREPARED"] = nil, nil
-    for _, proc in ipairs(processesOnLaunched[appid] or {}) do
-      proc(app)
-    end
     if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] ~= nil then
       registerMenuBarObserverForHotkeyValidity(app)
     end
