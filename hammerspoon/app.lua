@@ -180,6 +180,12 @@ local function onLaunched(appid, action)
   tinsert(processesOnLaunched[appid], action)
 end
 
+local function onRunning(appid, action)
+  onLaunched(appid, action)
+  local app = runningAppsOnLoading[appid] or find(appid)
+  if app then action(app) end
+end
+
 local processesOnActivated = {}
 local function onActivated(appid, action)
   if processesOnActivated[appid] == nil then
@@ -552,17 +558,10 @@ local function deleteAllMessages(messageItems, app)
 end
 
 -- ### FaceTime
-local FaceTimeMainWindowFilter
-do
-  local appid = "com.apple.FaceTime"
-  local appname = displayName(appid)
-  FaceTimeMainWindowFilter = {
-    allowTitles = '^' .. appname .. '$'
-  }
-  onLaunched(appid, function(app)
-    FaceTimeMainWindowFilter.allowTitles = '^' .. app:name() .. '$'
-  end)
-end
+local FaceTimeMainWindowFilter = {}
+onRunning("com.apple.FaceTime", function(app)
+  FaceTimeMainWindowFilter.allowTitles = '^' .. app:name() .. '$'
+end)
 
 local function deleteMousePositionCall(win)
   local app = win:application()
@@ -901,36 +900,18 @@ local function getQQLiveChannel(index)
 end
 
 --- ### EuDic
-local EuDicMainWindowFilter, EuDicSettingsWindowFilter
-do
-  local appid = "com.eusoft.freeeudic"
-  local appname = displayName(appid)
-  EuDicMainWindowFilter = {
-    allowTitles = '^' .. appname .. '$',
-    allowRoles = AX.StandardWindow
-  }
-  EuDicSettingsWindowFilter = {
-    rejectTitles = '^' .. appname .. '$',
-    allowRoles = AX.StandardWindow
-  }
-  onLaunched(appid, function(app)
-    EuDicMainWindowFilter.allowTitles = '^' .. app:name() .. '$'
-    EuDicSettingsWindowFilter.rejectTitles = '^' .. app:name() .. '$'
-  end)
-end
+local EuDicMainWindowFilter = { allowRoles = AX.StandardWindow }
+local EuDicSettingsWindowFilter = { allowRoles = AX.StandardWindow }
+onRunning("com.eusoft.freeeudic", function(app)
+  EuDicMainWindowFilter.allowTitles = '^' .. app:name() .. '$'
+  EuDicSettingsWindowFilter.rejectTitles = '^' .. app:name() .. '$'
+end)
 
 --- ### Parallels Desktop
-local ParallelsControlCenterWindowFilter
-do
-  local appid = "com.parallels.desktop.console"
-  local title = localizedString("Control Center", appid)
-  ParallelsControlCenterWindowFilter = {
-    allowTitles = '^' .. title .. '$'
-  }
-  onLaunched(appid, function(app)
-    ParallelsControlCenterWindowFilter.allowTitles = '^' .. app:name() .. '$'
-  end)
-end
+local ParallelsControlCenterWindowFilter = {}
+onRunning("com.parallels.desktop.console", function(app)
+  ParallelsControlCenterWindowFilter.allowTitles = '^' .. app:name() .. '$'
+end)
 
 -- ### Bartender
 local bartenderBarWindowFilter = { allowTitles = "^Bartender Bar$" }
@@ -8157,10 +8138,6 @@ end
 
 -- register watchers for window belonging to daemon app
 for appid, appConfig in pairs(appHotKeyCallbacks) do
-  local app = runningAppsOnLoading[appid]
-  if app ~= nil then
-    registerWinFiltersForDaemonApp(app, appConfig)
-  end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
   local hasDaemonAppWindowHotkey = any(appConfig, function(cfg, hkID)
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
@@ -8171,7 +8148,7 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     return hasKey and isForWindow and isBackground
   end)
   if hasDaemonAppWindowHotkey then
-    onLaunched(appid, function(app)
+    onRunning(appid, function(app)
       registerWinFiltersForDaemonApp(app, appConfig)
     end)
   end
@@ -8241,10 +8218,6 @@ end
 
 -- register watchers for menu of menubar app
 for appid, appConfig in pairs(appHotKeyCallbacks) do
-  local app = runningAppsOnLoading[appid]
-  if app ~= nil then
-    registerObserversForMenuBarMenu(app, appConfig)
-  end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
   local hasMenuBarMenuHotkey = any(appConfig, function(cfg, hkID)
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
@@ -8254,7 +8227,7 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     return hasKey and isMenuBarMenu
   end)
   if hasMenuBarMenuHotkey then
-    onLaunched(appid, function(app)
+    onRunning(appid, function(app)
       registerObserversForMenuBarMenu(app, appConfig)
     end)
   end
@@ -8477,15 +8450,9 @@ end
 AutoHideQuitWindowFilter = hs.window.filter.new(false)
 for _, configs in ipairs{appsHideWithoutWindow, appsQuitWithoutWindow} do
   for appid, cfg in pairs(configs) do
-    local func = function(app)
+    onRunning(appid, function(app)
       AutoHideQuitWindowFilter:setAppFilter(app:name(), cfg)
-    end
-    local app = runningAppsOnLoading[appid]
-    if app ~= nil then
-      func(app)
-    else
-      onLaunched(appid, func)
-    end
+    end)
   end
 end
 AutoHideQuitWindowFilter:subscribe(hs.window.filter.windowDestroyed,
@@ -8501,14 +8468,9 @@ for _, configs in ipairs {
   appsQuitWithNoPseudoWindow,
 } do
   for appid, roles in pairs(configs) do
-    local func = function(app)
+    onRunning(appid, function(app)
       registerPseudoWindowDestroyObserver(app, roles)
-    end
-    local app = runningAppsOnLoading[appid]
-    if app ~= nil then
-      func(app)
-    end
-    onLaunched(appid, func)
+    end)
   end
 end
 
@@ -8571,17 +8533,11 @@ do
         end
       end
     end
-    onLaunched("io.mountainduck", function(app)
+    onRunning("io.mountainduck", function(app)
       for _, connection in ipairs(mountainDuckConfig.connections) do
         connectMountainDuckEntries(app, connection)
       end
     end)
-    local app = find("io.mountainduck")
-    if app ~= nil then
-      for _, connection in ipairs(mountainDuckConfig.connections) do
-        connectMountainDuckEntries(app, connection)
-      end
-    end
   end
 end
 
@@ -8592,18 +8548,13 @@ end
 --       we use uielement observer instead
 if hs.application.pathForBundleID("barrier") ~= nil
     and hs.application.pathForBundleID("barrier") ~= "" then
-  local func = function(app)
+  onRunning("barrier", function(app)
     local observer = uiobserver.new(app:pid())
     observer:addWatcher(toappui(app), uinotifications.windowCreated)
     observer:callback(function(_, winUI) winUI:asHSWindow():focus() end)
     observer:start()
     stopOnTerminated("barrier", observer)
-  end
-  local app = find("barrier")
-  if app then
-    func(app)
-  end
-  onLaunched("barrier", func)
+  end)
 end
 
 -- ## remote desktop apps
@@ -8630,18 +8581,14 @@ end
 
 local MicrosoftRemoteDesktopWindowFilter
 if hs.application.nameForBundleID("com.microsoft.rdc.macos") == "Windows App" then
-  local preLocalizeWindowsApp = function ()
+  onRunning("com.microsoft.rdc.macos", function()
     MicrosoftRemoteDesktopWindowFilter = { rejectTitles = {} }
     for _, title in ipairs {"Favorites", "Devices", "Apps",
       "Settings", "About", "Device View Options", "App View Options" } do
       local locTitle = "^" .. localizedString(title, "com.microsoft.rdc.macos") .. "$"
       tinsert(MicrosoftRemoteDesktopWindowFilter.rejectTitles, locTitle)
     end
-  end
-  if find("com.microsoft.rdc.macos") ~= nil then
-    preLocalizeWindowsApp()
-  end
-  onLaunched("com.microsoft.rdc.macos", preLocalizeWindowsApp)
+  end)
 else
   MicrosoftRemoteDesktopWindowFilter = {
     rejectTitles = {
@@ -8982,16 +8929,7 @@ end
 local appsTerminateSilently = ApplicationConfigs["terminateSilently"] or {}
 AppsTerminateSilently = {}
 for _, appid in ipairs(appsTerminateSilently) do
-  local app = runningAppsOnLoading[appid]
-  AppsTerminateSilently[appid] = app
-  if app then
-    ExecOnSilentQuit(appid, function()
-      App_applicationCallback(app:name(),
-          hs.application.watcher.terminated, app)
-      AppsTerminateSilently[appid] = nil
-    end)
-  end
-  onLaunched(appid, function(app)
+  onRunning(appid, function(app)
     AppsTerminateSilently[appid] = app
     ExecOnSilentQuit(appid, function()
       App_applicationCallback(app:name(),
