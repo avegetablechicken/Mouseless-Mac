@@ -135,7 +135,7 @@ local function registerAppKeys()
     if appPath ~= nil then
       local appname
       if appid ~= nil then
-        if FLAGS["SCRIPT_IS_LOADING"] then
+        if FLAGS["LOADING"] then
           appname = displayName(runningAppsOnLoading[appid] or appid)
         else
           appname = displayName(appid)
@@ -6012,7 +6012,7 @@ local function registerRunningAppHotKeys(appid, app)
       bindable = function()
         if not running then return false end
         if app == nil then
-          app = FLAGS["SCRIPT_IS_LOADING"]
+          app = FLAGS["LOADING"]
               and runningAppsOnLoading[appid] or find(appid)
         end
         running = app ~= nil

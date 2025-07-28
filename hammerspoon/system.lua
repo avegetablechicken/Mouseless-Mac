@@ -324,7 +324,7 @@ local shellCommandsExecutedOnLoading = {}
 local function executeProxyCondition(condition, returnCode)
   if condition.shell_command then
     local status, rc
-    if FLAGS["SCRIPT_IS_LOADING"] then
+    if FLAGS["LOADING"] then
       local cmd = tfind(shellCommandsExecutedOnLoading, function(cmd)
         return cmd[1] == condition.shell_command
       end)
@@ -336,7 +336,7 @@ local function executeProxyCondition(condition, returnCode)
     end
     if rc == nil then
       _, status, _, rc = hs.execute(condition.shell_command)
-      if FLAGS["SCRIPT_IS_LOADING"] then
+      if FLAGS["LOADING"] then
         tinsert(shellCommandsExecutedOnLoading,
           { condition.shell_command, status, rc })
       end

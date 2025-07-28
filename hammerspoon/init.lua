@@ -2,7 +2,7 @@
 
 local t = hs.timer.absoluteTime()
 FLAGS = {}
-FLAGS["SCRIPT_IS_LOADING"] = true
+FLAGS["LOADING"] = true
 
 OS = {
   Cheetah           = "10.00",
@@ -505,5 +505,5 @@ require "fs"
 -- miscellaneous function
 require "misc"
 
-FLAGS["SCRIPT_IS_LOADING"] = false
+FLAGS["LOADING"] = false
 print(strfmt("-- Loading time: %d ms", (hs.timer.absoluteTime() - t) // 1000000))
