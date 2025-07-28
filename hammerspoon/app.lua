@@ -6586,7 +6586,7 @@ local function sameFilter(a, b)
             if av[i] ~= bv[i] then return false end
           end
         end
-      elseif type(av) == 'function' then
+      elseif type(av) == 'function' or type(av) == 'boolean' then
         return false
       else
         if av.equals then
