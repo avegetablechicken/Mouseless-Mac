@@ -4020,7 +4020,7 @@ function loadStatusItemsAutosaveName(app)
     end
   end
 
-  if app:bundleID() == 'com.apple.controlcenter' then
+  if appid == 'com.apple.controlcenter' then
     local enabledItems = {}
     local visiblePrefix = "NSStatusItem Visible "
     local prefix_len = #visiblePrefix
