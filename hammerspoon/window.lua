@@ -521,19 +521,23 @@ end
 
 -- visible windows on all user spaces (wallpaper apps excluded)
 -- fixme: full screen space will be ignored if not once focused
-local ignoredAppsLoaded = ApplicationConfigs["windowSwitcherIgnore"] or {}
-local ignoredApps = tfind(ignoredAppsLoaded,
-    function(item) return type(item) == 'table' end)
-if ignoredApps then
-  ignoredApps = tcopy(ignoredApps)
-else
-  ignoredApps = {}
-end
-for _, appid in ipairs(ignoredAppsLoaded) do
-  if type(appid) == 'string' then
-    ignoredApps[appid] = false
+local ignoredApps
+do
+  local ignoredAppsLoaded = ApplicationConfigs["windowSwitcherIgnore"] or {}
+  ignoredApps = tfind(ignoredAppsLoaded,
+      function(item) return type(item) == 'table' end)
+  if ignoredApps then
+    ignoredApps = tcopy(ignoredApps)
+  else
+    ignoredApps = {}
+  end
+  for _, appid in ipairs(ignoredAppsLoaded) do
+    if type(appid) == 'string' then
+      ignoredApps[appid] = false
+    end
   end
 end
+
 local switcher
 
 local hotkeyEnabledByWindowSwitcher = false
