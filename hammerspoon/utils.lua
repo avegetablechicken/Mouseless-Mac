@@ -133,10 +133,11 @@ function findMenuItem(app, menuItemTitle, params)
   local menuItem = app:findMenuItem(menuItemTitle)
   if menuItem ~= nil then return menuItem, menuItemTitle end
   local targetMenuItem = {}
-  local locStr = localizedMenuBarItem(menuItemTitle[1], app:bundleID())
+  local appid = app:bundleID() or app:name()
+  local locStr = localizedMenuBarItem(menuItemTitle[1], appid)
   tinsert(targetMenuItem, locStr or menuItemTitle[1])
   for i=2,#menuItemTitle do
-    locStr = localizedString(menuItemTitle[i], app:bundleID(), params)
+    locStr = localizedString(menuItemTitle[i], appid, params)
     if type(locStr) == 'table' then
       for _, s in ipairs(locStr) do
         tinsert(targetMenuItem, s)
@@ -166,10 +167,11 @@ function selectMenuItem(app, menuItemTitle, params, show)
   else
     if app:selectMenuItem(menuItemTitle) then return true end
     local targetMenuItem = {}
-    local locStr = localizedMenuBarItem(menuItemTitle[1], app:bundleID())
+    local appid = app:bundleID() or app:name()
+    local locStr = localizedMenuBarItem(menuItemTitle[1], appid)
     tinsert(targetMenuItem, locStr or menuItemTitle[1])
     for i=2,#menuItemTitle do
-    locStr = localizedString(menuItemTitle[i], app:bundleID(), params)
+    locStr = localizedString(menuItemTitle[i], appid, params)
     if type(locStr) == 'table' then
       for _, s in ipairs(locStr) do
         tinsert(targetMenuItem, s)

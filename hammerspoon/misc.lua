@@ -418,7 +418,7 @@ local function getMenuHotkeys(app, titleAsEntry, titlePrefix)
   local appHotkeys = {}
   for _, menuItem in ipairs(app:getMenuItems() or {}) do
     getSubMenuHotkeys(appHotkeys, menuItem,
-        titleAsEntry, titlePrefix, app:bundleID())
+        titleAsEntry, titlePrefix, app:bundleID() or app:name())
   end
   return appHotkeys
 end
@@ -490,7 +490,8 @@ local function testValid(entry)
       valid = entry.condition()
     elseif entry.kind == HK.IN_APP then
       local app = hs.application.frontmostApplication()
-      local hotkeyInfo = get(ActivatedAppConditionChain, app:bundleID(), entry.idx)
+      local appid = app:bundleID() or app:name()
+      local hotkeyInfo = get(ActivatedAppConditionChain, appid, entry.idx)
       if hotkeyInfo ~= nil then
         local actualMsg
         valid, actualMsg = getValidMessage(hotkeyInfo)
