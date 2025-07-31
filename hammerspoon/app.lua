@@ -1390,9 +1390,9 @@ local function getAppId(app)
   if type(app) == 'string' then
     return app
   elseif app.application ~= nil then
-    return app:application():bundleID()
+    return app:application():bundleID() or app:application():name()
   else
-    return app:bundleID()
+    return app:bundleID() or app:name()
   end
 end
 
@@ -6473,7 +6473,7 @@ end
 
 -- hotkeys for active app
 registerInAppHotKeys = function(app)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   if appHotKeyCallbacks[appid] == nil then return end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
 
@@ -6534,7 +6534,7 @@ registerInAppHotKeys = function(app)
 end
 
 unregisterInAppHotKeys = function(appid, delete)
-  if type(appid) ~= 'string' then appid = appid:bundleID() end
+  if type(appid) ~= 'string' then appid = appid:bundleID() or appid:name() end
   if appHotKeyCallbacks[appid] == nil then return end
 
   local allDeleted = delete
@@ -6606,7 +6606,7 @@ end
 
 registerInWinHotKeys = function(win, filter)
   local app = win:application()
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   if appHotKeyCallbacks[appid] == nil then return end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
 
@@ -6677,7 +6677,7 @@ registerInWinHotKeys = function(win, filter)
 end
 
 unregisterInWinHotKeys = function(appid, delete, filter)
-  if type(appid) ~= 'string' then appid = appid:bundleID() end
+  if type(appid) ~= 'string' then appid = appid:bundleID() or appid:name() end
   local hotkeys = get(inWinHotKeys, appid, filter)
   if appHotKeyCallbacks[appid] == nil or hotkeys == nil then
     return
@@ -6727,7 +6727,7 @@ end
 
 FocusedWindowObservers = {}
 local function registerSingleWinFilterForApp(app, filter)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   for f, _ in pairs(FocusedWindowObservers[appid] or {}) do
     -- a window filter can be shared by multiple hotkeys
     if sameFilter(f, filter) then
@@ -6856,7 +6856,7 @@ local function registerSingleWinFilterForApp(app, filter)
 end
 
 local function registerWinFiltersForApp(app)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   for hkID, cfg in pairs(appHotKeyCallbacks[appid] or {}) do
     local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID)
         or { mods = cfg.mods, key = cfg.key }
@@ -7167,7 +7167,7 @@ end
 
 local appLocales = {} -- if app locale changes, it may change its menu bar items, so need to rebind
 local function updateAppLocale(appid)
-  if type(appid) ~= 'string' then appid = appid:bundleID() end
+  if type(appid) ~= 'string' then appid = appid:bundleID() or appid:name() end
   local appLocale = applicationLocale(appid)
   local oldAppLocale = appLocales[appid] or SYSTEM_LOCALE
   appLocales[appid] = appLocale
@@ -7192,7 +7192,7 @@ local function remapPreviousTab(app, menuItems)
     remapPreviousTabHotkey:delete()
     remapPreviousTabHotkey = nil
   end
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   local spec = get(KeybindingConfigs.hotkeys.shared, "remapPreviousTab")
   local specApp = get(appHotKeyCallbacks[appid], "remapPreviousTab")
   if specApp ~= nil or spec == nil or tcontain(spec.excluded or {}, appid) then
@@ -7231,7 +7231,7 @@ local function registerOpenRecent(app)
     openRecentHotkey:delete()
     openRecentHotkey = nil
   end
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   local spec = get(KeybindingConfigs.hotkeys.shared, "openRecent")
   local specApp = get(appHotKeyCallbacks[appid], "openRecent")
   if specApp ~= nil or spec == nil or tcontain(spec.excluded or {}, appid) then
@@ -7239,7 +7239,7 @@ local function registerOpenRecent(app)
   end
   local localizedFile = 'File'
   if app:findMenuItem({ localizedFile }) == nil then
-    localizedFile = localizedMenuBarItem("File", app:bundleID())
+    localizedFile = localizedMenuBarItem("File", appid)
     if localizedFile == nil then return end
     if app:findMenuItem({ localizedFile }) == nil then return end
   end
@@ -7306,7 +7306,7 @@ local function registerZoomHotkeys(app)
     hotkey:delete()
   end
   zoomHotkeys = {}
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   local menuItemTitles = { 'Zoom', 'Zoom All' }
   for i, hkID in ipairs { 'zoom', 'zoomAll' } do
     local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
@@ -7319,7 +7319,7 @@ local function registerZoomHotkeys(app)
     local menuItemPath = { 'Window', title }
     local menuItem = app:findMenuItem(menuItemPath)
     if menuItem == nil then
-      local localizedWindow = localizedMenuBarItem('Window', app:bundleID())
+      local localizedWindow = localizedMenuBarItem('Window', appid)
       local localizedTitle = localizedString(title, {
         localeFile = 'MenuCommands', framework = "AppKit.framework",
       })
@@ -7409,7 +7409,7 @@ local function registerForOpenSavePanel(app)
   end
   openSavePanelHotkeys = {}
 
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   if appid == "com.apple.finder" or appid == "com.apple.dock" then return end
   local appUI = toappui(app)
   if not appUI:isValid() then
@@ -7645,7 +7645,7 @@ local windowOnBindAltMenu
 
 local onLaunchedAndActivated
 local function processInvalidAltMenu(app, reinvokeKey)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   local curWin = app:focusedWindow() and app:focusedWindow():id() or false
   local isSameWin = curWin == windowOnBindAltMenu
   if isSameWin then
@@ -7685,10 +7685,10 @@ local function altMenuBarItem(app, reinvokeKey)
   altMenuBarItemHotkeys = {}
   windowOnBindAltMenu = nil
 
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   if appid == nil then return end
   -- check whether called by window filter (possibly with delay)
-  if appid ~= hs.application.frontmostApplication():bundleID() then
+  if app:bundleID() ~= hs.application.frontmostApplication():bundleID() then
     return
   end
   local enableIndex = get(KeybindingConfigs.hotkeys,
@@ -7954,7 +7954,7 @@ local function getMenuBarItemTitlesString(app)
 end
 
 local function watchMenuBarItems(app)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   appsMenuBarItemTitlesString[appid], appsWinMenuBarItemTitlesString[appid]
       = getMenuBarItemTitlesString(app)
   local watcher = ExecContinuously(function()
@@ -7995,7 +7995,7 @@ if exists(appsMayChangeMenuBarTmpFile) then
 end
 
 local function appMenuBarChangeCallback(app)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   local menuBarItemStr, winMenuBarItemStr = getMenuBarItemTitlesString(app)
   if menuBarItemStr == appsMenuBarItemTitlesString[appid] then
     if winMenuBarItemStr ~= appsWinMenuBarItemTitlesString[appid] then
@@ -8010,7 +8010,7 @@ local function appMenuBarChangeCallback(app)
   registerOpenRecent(app)
   registerZoomHotkeys(app)
   hs.timer.doAfter(1, function()
-    if hs.application.frontmostApplication():bundleID() ~= appid then
+    if hs.application.frontmostApplication():bundleID() ~= app:bundleID() then
       return
     end
     local newMenuBarItemTitlesString = getMenuBarItemTitlesString(app)
@@ -8025,8 +8025,7 @@ local function appMenuBarChangeCallback(app)
 end
 
 local function registerObserverForMenuBarChange(app)
-  local appid = app:bundleID()
-  if appid == nil then return end
+  local appid = app:bundleID() or app:name()
 
   if tcontain(appsWatchMenuBarItems, appid) then
     watchMenuBarItems(app)
@@ -8105,7 +8104,7 @@ onLaunchedAndActivated = function(app, reinvokeKey)
   altMenuBarItem(app, reinvokeKey)
   if localeUpdated or menuBarChanged then
     unregisterInAppHotKeys(app, true)
-    local appid = app:bundleID()
+    local appid = app:bundleID() or app:name()
     foreach(FocusedWindowObservers[appid] or {},
         function(observer) observer:stop() end)
     FocusedWindowObservers[appid] = nil
@@ -8824,9 +8823,9 @@ end
 
 local fullyLaunchCriterion
 function App_applicationCallback(appname, eventType, app)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or appname
   if eventType == hs.application.watcher.launching then
-    if appid and tcontain(forbiddenApps, appid) then
+    if tcontain(forbiddenApps, appid) then
       app:kill9()
       hs.execute(strfmt("sudo rm -rf \"%s\"", app:path()))
       return
@@ -8837,7 +8836,7 @@ function App_applicationCallback(appname, eventType, app)
     if FLAGS["MENUBAR_ITEMS_PREPARED"] ~= nil then
       local oldFn = doublecheck
       doublecheck = function()
-        return hs.application.frontmostApplication():bundleID() == appid
+        return hs.application.frontmostApplication():bundleID() == app:bundleID()
             and (not oldFn or oldFn())
       end
     end
@@ -8858,7 +8857,6 @@ function App_applicationCallback(appname, eventType, app)
     fullyLaunchCriterion, FLAGS["MENUBAR_ITEMS_PREPARED"] = nil, nil
   elseif eventType == hs.application.watcher.activated then
     appBuf = {}
-    if appid == nil then return end
     if RemoteDesktopObserver ~= nil then
       if FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] ~= nil then
         FLAGS["SUSPEND"] = not FLAGS["SUSPEND_IN_REMOTE_DESKTOP"]
@@ -8882,12 +8880,10 @@ function App_applicationCallback(appname, eventType, app)
       FLAGS["MENUBAR_ITEMS_PREPARED"] = false
     end
   elseif eventType == hs.application.watcher.deactivated and appname ~= nil then
-    if appid then
-      for _, proc in ipairs(processesOnDeactivated[appid] or {}) do
-        proc(app)
-      end
-      processesOnDeactivated[appid] = nil
+    for _, proc in ipairs(processesOnDeactivated[appid] or {}) do
+      proc(app)
     end
+    processesOnDeactivated[appid] = nil
   elseif eventType == hs.application.watcher.terminated then
     for _, proc in ipairs(processesOnDeactivated[appid] or {}) do
       proc()
