@@ -8710,7 +8710,6 @@ local function suspendHotkeysInRemoteDesktop(app)
   end
 end
 
-RemoteDesktopObserver = nil
 local function watchForRemoteDesktopWindow(app)
   local appUI = toappui(app)
   local observer = uiobserver.new(app:pid())
@@ -8719,7 +8718,6 @@ local function watchForRemoteDesktopWindow(app)
   observer:start()
   stopOnDeactivated(app:bundleID(), observer)
   stopOnTerminated(app:bundleID(), observer)
-  RemoteDesktopObserver = observer
 end
 
 for _, appid in ipairs(ApplicationConfigs["suspendHotkeysInRemoteDesktop"] or {}) do
@@ -8850,11 +8848,9 @@ function App_applicationCallback(appname, eventType, app)
     fullyLaunchCriterion, FLAGS["MENUBAR_ITEMS_PREPARED"] = nil, nil
   elseif eventType == hs.application.watcher.activated then
     appBuf = {}
-    if RemoteDesktopObserver ~= nil then
-      if FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] ~= nil then
-        FLAGS["SUSPEND"] = not FLAGS["SUSPEND_IN_REMOTE_DESKTOP"]
-        FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] = nil
-      end
+    if FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] ~= nil then
+      FLAGS["SUSPEND"] = not FLAGS["SUSPEND_IN_REMOTE_DESKTOP"]
+      FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] = nil
     end
     for _, proc in ipairs(processesOnActivated[appid] or {}) do
       proc(app)
