@@ -8710,15 +8710,6 @@ local function suspendHotkeysInRemoteDesktop(app)
   end
 end
 
-local remoteDesktopAppsRequireSuspendHotkeys =
-    ApplicationConfigs["suspendHotkeysInRemoteDesktop"] or {}
-for _, appid in ipairs(remoteDesktopAppsRequireSuspendHotkeys) do
-  if frontAppID == appid then
-    suspendHotkeysInRemoteDesktop(frontApp)
-  end
-  onActivated(appid, suspendHotkeysInRemoteDesktop)
-end
-
 RemoteDesktopObserver = nil
 local function watchForRemoteDesktopWindow(app)
   local appUI = toappui(app)
@@ -8731,10 +8722,12 @@ local function watchForRemoteDesktopWindow(app)
   RemoteDesktopObserver = observer
 end
 
-for _, appid in ipairs(remoteDesktopAppsRequireSuspendHotkeys) do
+for _, appid in ipairs(ApplicationConfigs["suspendHotkeysInRemoteDesktop"] or {}) do
   if frontAppID == appid then
     watchForRemoteDesktopWindow(frontApp)
+    suspendHotkeysInRemoteDesktop(frontApp)
   end
+  onActivated(appid, suspendHotkeysInRemoteDesktop)
   onActivated(appid, watchForRemoteDesktopWindow)
 end
 
@@ -8764,9 +8757,9 @@ end
 -- ## application callbacks
 
 -- specify input source for apps
-local appsInputSourceMap = ApplicationConfigs["inputSource"] or {}
 local function selectInputSourceInApp(app)
-  local inputSource = appsInputSourceMap[app:bundleID() or app:name()]
+  local inputSource = get(ApplicationConfigs, "inputSource",
+      app:bundleID() or app:name())
   if inputSource ~= nil then
     local currentSourceID = hs.keycodes.currentSourceID()
     if type(inputSource) == 'string' then
@@ -8923,9 +8916,8 @@ function App_applicationCallback(appname, eventType, app)
 end
 
 -- some apps may terminate silently, which is unexpected
-local appsTerminateSilently = ApplicationConfigs["terminateSilently"] or {}
 AppsTerminateSilently = {}
-for _, appid in ipairs(appsTerminateSilently) do
+for _, appid in ipairs(ApplicationConfigs["terminateSilently"] or {}) do
   onRunning(appid, function(app)
     AppsTerminateSilently[appid] = app
     ExecOnSilentQuit(appid, function()
