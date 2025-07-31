@@ -3965,7 +3965,7 @@ function rightClickAndRestore(point, obj, delay)
 end
 
 function loadStatusItemsAutosaveName(app)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   local preferredPositions = {}
   local errorReadingDefaults = false
   local plistPath, defaults
@@ -4006,7 +4006,7 @@ function loadStatusItemsAutosaveName(app)
   if #preferredPositions == 0 and errorReadingDefaults then
     local records = hs.execute(strfmt([[
       defaults read %s | grep '"%s'
-    ]], app:bundleID() or app:name(), prefix))
+    ]], appid, prefix))
     records = strsplit(records, '\n')
     records[#records] = nil
     for _, r in ipairs(records) do
@@ -4256,7 +4256,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
     app = find(appid)
     if app == nil then return false end
   else
-    app = appid appid = app:bundleID()
+    app = appid appid = app:bundleID() or app:name()
   end
 
   if type(menuItemPath) ~= 'table' then

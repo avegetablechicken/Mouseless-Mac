@@ -253,10 +253,11 @@ local function onDestroy(element, callback, stopWhen, callbackOnStop)
     stopWhen = { stopWhen }
   end
   for _, ev in ipairs(stopWhen or {}) do
+    local appid = app:bundleID() or app:name()
     if ev == hs.application.watcher.deactivated then
-      stopOnDeactivated(app:bundleID(), closeObserver, callbackOnStop and callback)
+      stopOnDeactivated(appid, closeObserver, callbackOnStop and callback)
     elseif ev == hs.application.watcher.terminated then
-      stopOnTerminated(app:bundleID(), closeObserver, callbackOnStop and callback)
+      stopOnTerminated(appid, closeObserver, callbackOnStop and callback)
     end
   end
 
@@ -6080,7 +6081,7 @@ local function unregisterRunningAppHotKeys(appid)
 end
 
 local function hasStatusItems(app)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   local errorReadingDefaults = false
   local plistPath, defaults
   local prefix = "NSStatusItem Preferred Position "
@@ -6117,7 +6118,7 @@ local function hasStatusItems(app)
   if errorReadingDefaults then
     local records, ok = hs.execute(strfmt([[
       defaults read %s | grep '"%s'
-    ]], app:bundleID() or app:name(), prefix))
+    ]], appid, prefix))
     return ok == true
   end
   return false
@@ -6244,7 +6245,7 @@ KEY_MODE = {
 ActivatedAppConditionChain = {}
 DaemonAppConditionChain = {}
 local function appendConditionChain(app, config, pressedfn, repeatedfn, cond)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   local mods, key = config.mods, config.key
   local message = config.message
   local chain = config.background and DaemonAppConditionChain
@@ -6301,7 +6302,7 @@ local function wrapConditionChain(app, fn, mode, config)
     local hkIdx = hotkeyIdx(config.mods, config.key)
     local chain = config.background and DaemonAppConditionChain
         or ActivatedAppConditionChain
-    local cb = chain[app:bundleID()][hkIdx]
+    local cb = chain[app:bundleID() or app:name()][hkIdx]
     while cb do
       if cb.enabled then
         local f = mode == KEY_MODE.PRESS and cb.pressedfn or cb.repeatedfn
@@ -6966,7 +6967,7 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
 end
 
 local function registerSingleWinFilterForDaemonApp(app, filter)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   for f, _ in pairs(DaemonAppFocusedWindowObservers[appid] or {}) do
     -- a window filter can be shared by multiple hotkeys
     if sameFilter(f, filter) then
@@ -7015,7 +7016,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
 end
 
 local function registerWinFiltersForDaemonApp(app, appConfig)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   for hkID, cfg in pairs(appConfig) do
     local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID)
         or { mods = cfg.mods, key = cfg.key }
@@ -7041,7 +7042,7 @@ function MenuBarBind(menu, config)
 end
 
 registerInMenuHotkeys = function(app)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   local appUI = toappui(app)
   local appConfig = appHotKeyCallbacks[appid]
   if menuBarMenuHotkeys[appid] == nil then
@@ -7135,7 +7136,7 @@ end
 
 MenuBarMenuObservers = {}
 local function registerObserversForMenuBarMenu(app, appConfig)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   for hkID, cfg in pairs(appConfig) do
     local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID)
         or { mods = cfg.mods, key = cfg.key }
@@ -8051,9 +8052,10 @@ end
 -- register hotekys & watchers for hotkeys
 
 local frontApp = hs.application.frontmostApplication()
-local frontAppID = frontApp and frontApp:bundleID() or nil
+local frontAppID = frontApp and (frontApp:bundleID()  or frontApp:name()) or nil
 local frontWin = hs.window.frontmostWindow()
-local frontWinAppID = frontWin and frontWin:application():bundleID() or nil
+local frontWinAppID = frontWin
+    and (frontWin:application():bundleID() or frontWin:application():name()) or nil
 
 -- register hotkeys for background apps
 for appid, appConfig in pairs(appHotKeyCallbacks) do
@@ -8333,7 +8335,7 @@ local specialNoWindowRules = {
   end
 }
 local function processAppWithoutWindow(app)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   local fn = function()
     local quit = appsQuitWithoutWindow[appid] ~= nil
     local defaultRule = function()
@@ -8372,7 +8374,7 @@ local specialNoPseudoWindowRules = {
 }
 PseudoWindowDestroyObservers = {}
 local function registerPseudoWindowDestroyObserver(app, roles)
-  local appid = app:bundleID()
+  local appid = app:bundleID() or app:name()
   local observer = PseudoWindowDestroyObservers[appid]
   local appUI = toappui(app)
   if observer ~= nil then observer:start() return end
@@ -8765,7 +8767,7 @@ end
 -- specify input source for apps
 local appsInputSourceMap = ApplicationConfigs["inputSource"] or {}
 local function selectInputSourceInApp(app)
-  local inputSource = appsInputSourceMap[app:bundleID()]
+  local inputSource = appsInputSourceMap[app:bundleID() or app:name()]
   if inputSource ~= nil then
     local currentSourceID = hs.keycodes.currentSourceID()
     if type(inputSource) == 'string' then
@@ -8914,7 +8916,8 @@ function App_applicationCallback(appname, eventType, app)
     end
   end
   if eventType == hs.application.watcher.deactivated then
-    local frontAppID = hs.application.frontmostApplication():bundleID()
+    local frontApp = hs.application.frontmostApplication()
+    local frontAppID = frontApp:bundleID() or frontApp:name()
     if remoteDesktopsMappingModifiers[frontAppID] == nil then
       if RemoteDesktopModifierTapper:isEnabled() then
         RemoteDesktopModifierTapper:stop()

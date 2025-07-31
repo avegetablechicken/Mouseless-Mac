@@ -1193,7 +1193,7 @@ function()
 
       App: %s (%s)]],
     title, id, role, pid, frame.x, frame.y, frame.w, frame.h,
-    app:name(), app:bundleID()))
+    app:name(), app:bundleID() or app:name()))
 end)
 
 local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey",
@@ -1342,15 +1342,15 @@ function()
           end
         end
       elseif entry.kind == HK.IN_APP then
-        image = hs.image.imageFromAppBundle(
-            hs.application.frontmostApplication():bundleID())
+        local frontApp = hs.application.frontmostApplication()
+        image = hs.image.imageFromAppBundle(frontApp:bundleID() or frontApp:name())
       elseif entry.kind == HK.IN_WIN then
         if hs.window.frontmostWindow() then
-          image = hs.image.imageFromAppBundle(
-              hs.window.frontmostWindow():application():bundleID())
+          local frontWinApp = hs.window.frontmostWindow():application()
+          image = hs.image.imageFromAppBundle(frontWinApp:bundleID() or frontWinApp:name())
         else
-          image = hs.image.imageFromAppBundle(
-              hs.application.frontmostApplication():bundleID())
+          local frontApp = hs.application.frontmostApplication()
+          image = hs.image.imageFromAppBundle(frontApp:bundleID() or frontApp:name())
         end
       elseif entry.kind == HK.MENUBAR
           and entry.subkind == HK.MENUBAR_.CONTROL_CENTER then
