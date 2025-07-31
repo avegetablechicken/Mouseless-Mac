@@ -1821,98 +1821,98 @@
         "mods": ["control", "option"],
         "key": "1",
         "windowFilter": {
-          "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
+          "allowURLs": ["://weibo%.com/$", "://weibo%.com/%?", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate2ndCommonGroup": {
         "mods": ["control", "option"],
         "key": "2",
         "windowFilter": {
-          "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
+          "allowURLs": ["://weibo%.com/$", "://weibo%.com/%?", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate3rdCommonGroup": {
         "mods": ["control", "option"],
         "key": "3",
         "windowFilter": {
-          "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
+          "allowURLs": ["://weibo%.com/$", "://weibo%.com/%?", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate4thCommonGroup": {
         "mods": ["control", "option"],
         "key": "4",
         "windowFilter": {
-          "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
+          "allowURLs": ["://weibo%.com/$", "://weibo%.com/%?", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate1stCustomGroup": {
         "mods": "option",
         "key": "1",
         "windowFilter": {
-          "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
+          "allowURLs": ["://weibo%.com/$", "://weibo%.com/%?", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate2ndCustomGroup": {
         "mods": "option",
         "key": "2",
         "windowFilter": {
-          "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
+          "allowURLs": ["://weibo%.com/$", "://weibo%.com/%?", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate3rdCustomGroup": {
         "mods": "option",
         "key": "3",
         "windowFilter": {
-          "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
+          "allowURLs": ["://weibo%.com/$", "://weibo%.com/%?", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate4thCustomGroup": {
         "mods": "option",
         "key": "4",
         "windowFilter": {
-          "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
+          "allowURLs": ["://weibo%.com/$", "://weibo%.com/%?", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate5thCustomGroup": {
         "mods": "option",
         "key": "5",
         "windowFilter": {
-          "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
+          "allowURLs": ["://weibo%.com/$", "://weibo%.com/%?", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate6thCustomGroup": {
         "mods": "option",
         "key": "6",
         "windowFilter": {
-          "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
+          "allowURLs": ["://weibo%.com/$", "://weibo%.com/%?", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate7thCustomGroup": {
         "mods": "option",
         "key": "7",
         "windowFilter": {
-          "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
+          "allowURLs": ["://weibo%.com/$", "://weibo%.com/%?", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate8thCustomGroup": {
         "mods": "option",
         "key": "8",
         "windowFilter": {
-          "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
+          "allowURLs": ["://weibo%.com/$", "://weibo%.com/%?", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate9thCustomGroup": {
         "mods": "option",
         "key": "9",
         "windowFilter": {
-          "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
+          "allowURLs": ["://weibo%.com/$", "://weibo%.com/%?", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "weiboNavigate10thCustomGroup": {
         "mods": "option",
         "key": "0",
         "windowFilter": {
-          "allowURLs": ["://weibo%.com/$", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
+          "allowURLs": ["://weibo%.com/$", "://weibo%.com/%?", "://weibo%.com/mygroup", "://weibo%.com/u/", "://weibo%.com/%d+"]
         }
       },
       "douyinNavigate1stTab": {
