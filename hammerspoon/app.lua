@@ -3464,15 +3464,29 @@ appHotKeyCallbacks = {
     },
     ["openInDefaultBrowser"] = {
       message = localizedMessage("Open in Default Browser"),
-      windowFilter = { fn = function(win)
-        local winUI = towinui(win)
-        local g = getc(winUI, AX.Group, 1)
-        return g ~= nil and g.AXDOMClassList ~= nil
-      end },
+      windowFilter = {
+        fn = function(win)
+          local winUI = towinui(win)
+          if versionGreaterEqual("4.0.6")(win:application()) then
+            local button = getc(winUI, AX.Group, 1,
+                AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Button, 1)
+            return button ~= nil
+          else
+            local g = getc(winUI, AX.Group, 1)
+            return g ~= nil and g.AXDOMClassList ~= nil
+          end
+        end
+      },
       fn = function(win)
-        local frame = win:frame()
-        local position = { frame.x + frame.w - 60, frame.y + 23 }
-        click(position, win)
+        if versionGreaterEqual("4.0.6")(win:application()) then
+          local button = getc(towinui(win), AX.Group, 1,
+              AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Button, 1)
+          if button then press(button) end
+        else
+          local frame = win:frame()
+          local position = { frame.x + frame.w - 60, frame.y + 23 }
+          click(position, win)
+        end
       end
     },
     ["ok"] = {
