@@ -308,6 +308,12 @@ local function versionLessEqual(version)
   return versionCompare(version, "<=")
 end
 
+local function versionRange(version)
+  return function(app)
+    return versionGreaterEqual(version)(app) and versionLessThan(version)(app)
+  end
+end
+
 local function press(pressable)
   local flags = hs.eventtap.checkKeyboardModifiers()
   if not flags['ctrl'] then
