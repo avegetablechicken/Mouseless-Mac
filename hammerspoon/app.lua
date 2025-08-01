@@ -308,9 +308,9 @@ local function versionLessEqual(version)
   return versionCompare(version, "<=")
 end
 
-local function versionRange(version)
+local function versionRange(version1, version2)
   return function(app)
-    return versionGreaterEqual(version)(app) and versionLessThan(version)(app)
+    return versionGreaterEqual(version1)(app) and versionLessThan(version2)(app)
   end
 end
 
@@ -3265,6 +3265,7 @@ appHotKeyCallbacks = {
           return localizedString("Back", app:bundleID())
         end
       end,
+      bindCondition = versionLessThan("4.0.6"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local appid = app:bundleID()
@@ -3358,6 +3359,7 @@ appHotKeyCallbacks = {
           return localizedString("Hide", app:bundleID())
         end
       end,
+      bindCondition = versionLessThan("4.0.6"),
       condition = function(app)
         if app:focusedWindow() == nil then return end
         local winUI = towinui(app:focusedWindow())
@@ -3475,7 +3477,7 @@ appHotKeyCallbacks = {
     },
     ["ok"] = {
       message = localizedMessage("OK"),
-      bindCondition = versionGreaterEqual("4"),
+      bindCondition = versionRange("4", "4.0.6"),
       windowFilter = {
         allowSheet = true,
         fn = function(win)
@@ -3495,7 +3497,7 @@ appHotKeyCallbacks = {
     },
     ["delete"] = {
       message = localizedMessage("Delete"),
-      bindCondition = versionGreaterEqual("4"),
+      bindCondition = versionRange("4", "4.0.6"),
       windowFilter = {
         allowSheet = true,
         fn = function(win)
@@ -3515,7 +3517,7 @@ appHotKeyCallbacks = {
     },
     ["send"] = {
       message = localizedMessage("Send"),
-      bindCondition = versionGreaterEqual("4"),
+      bindCondition = versionRange("4", "4.0.6"),
       windowFilter = {
         allowSheet = true,
         fn = function(win)
@@ -3535,7 +3537,7 @@ appHotKeyCallbacks = {
     },
     ["finish"] = {
       message = localizedMessage("Finish"),
-      bindCondition = versionGreaterEqual("4"),
+      bindCondition = versionRange("4", "4.0.6"),
       windowFilter = {
         allowSheet = true,
         fn = function(win)
