@@ -3456,16 +3456,15 @@ appHotKeyCallbacks = {
     },
     ["openInDefaultBrowser"] = {
       message = localizedMessage("Open in Default Browser"),
-      condition = function(app)
-        if app:focusedWindow() == nil then return false end
-        local winUI = towinui(app:focusedWindow())
+      windowFilter = { fn = function(win)
+        local winUI = towinui(win)
         local g = getc(winUI, AX.Group, 1)
         return g ~= nil and g.AXDOMClassList ~= nil
-      end,
-      fn = function(app)
-        local frame = app:focusedWindow():frame()
+      end },
+      fn = function(win)
+        local frame = win:frame()
         local position = { frame.x + frame.w - 60, frame.y + 23 }
-        click(position, app)
+        click(position, win)
       end
     },
     ["ok"] = {
