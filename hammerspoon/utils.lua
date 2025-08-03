@@ -151,26 +151,13 @@ function findMenuItem(app, menuItemTitle, params)
   return app:findMenuItem(targetMenuItem), targetMenuItem
 end
 
-function selectMenuItem(app, menuItemTitle, params, show)
-  if type(params) == "boolean" then
-    show = params params = nil
-  end
-
-  if show then
-    local menuItem, targetMenuItem = findMenuItem(app, menuItemTitle, params)
-    if menuItem ~= nil then
-      showMenuItemWrapper(function()
-        app:selectMenuItem({targetMenuItem[1]})
-      end)()
-      return app:selectMenuItem(targetMenuItem)
-    end
-  else
-    if app:selectMenuItem(menuItemTitle) then return true end
-    local targetMenuItem = {}
-    local appid = app:bundleID() or app:name()
-    local locStr = localizedMenuBarItem(menuItemTitle[1], appid)
-    tinsert(targetMenuItem, locStr or menuItemTitle[1])
-    for i=2,#menuItemTitle do
+function selectMenuItem(app, menuItemTitle, params)
+  if app:selectMenuItem(menuItemTitle) then return true end
+  local targetMenuItem = {}
+  local appid = app:bundleID() or app:name()
+  local locStr = localizedMenuBarItem(menuItemTitle[1], appid)
+  tinsert(targetMenuItem, locStr or menuItemTitle[1])
+  for i=2,#menuItemTitle do
     locStr = localizedString(menuItemTitle[i], appid, params)
     if type(locStr) == 'table' then
       for _, s in ipairs(locStr) do
@@ -182,8 +169,7 @@ function selectMenuItem(app, menuItemTitle, params, show)
       tinsert(targetMenuItem, locStr or menuItemTitle[i])
     end
   end
-    return app:selectMenuItem(targetMenuItem)
-  end
+  return app:selectMenuItem(targetMenuItem)
 end
 
 local function findMenuItemByKeyBindingImpl(mods, key, menuItem)
