@@ -6,6 +6,7 @@
 
   "hideWithoutWindow": [
     "org.hammerspoon.Hammerspoon",
+    "com.renfei.SnippetsLab",
     "com.surteesstudios.Bartender",
     "com.gaosun.eul",
     "com.jetbrains.toolbox",
