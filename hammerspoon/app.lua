@@ -7752,8 +7752,7 @@ local function altMenuBarItem(app, reinvokeKey)
       if #menus > 0 then
         useWindowMenuBar = true
         menuBarItemTitles = tmap(menus, function(item)
-          local t = item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "")
-          return t
+          return item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "")
         end)
         tinsert(menuBarItemTitles, 1, app:name())
         menuBarItems = menus
@@ -7803,8 +7802,7 @@ local function altMenuBarItem(app, reinvokeKey)
   if useWindowMenuBar then
     clickMenuCallback = function(title, k)
       local menuBarItem = tfind(menuBarItems, function(item)
-        local t = item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "") == title
-        return t
+        return item.AXTitle:gsub("[%c%s]+$", ""):gsub("^[%c%s]+", "") == title
       end)
       if menuBarItem == nil then
         processInvalidAltMenu(app, k)
