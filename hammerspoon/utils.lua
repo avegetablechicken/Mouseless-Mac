@@ -88,17 +88,6 @@ function getMenuBarItems(app, ignoreAppMenu, ignoreAppleMenu)
   return menuBarItems
 end
 
-function showMenuItemWrapper(fn)
-  return function()
-    if menuBarVisible() then
-      fn()
-    else
-      hs.eventtap.keyStroke('fn⌃', 'F2')
-      hs.timer.doAfter(0.1, fn)
-    end
-  end
-end
-
 SPECIAL_KEY_SIMBOL_MAP = {
   ['\b'] = '⌫',
   ['\t'] = '⇥',

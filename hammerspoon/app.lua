@@ -1543,15 +1543,24 @@ end
 
 -- show the menu item returned by the condition
 -- work as hotkey callback
+local function showMenuItemWrapper(fn)
+  return function()
+    if menuBarVisible() then
+      fn()
+    else
+      hs.eventtap.keyStroke('fn⌃', 'F2')
+      hs.timer.doAfter(0.1, fn)
+    end
+  end
+end
+
 local function showMenuItem(menuItemTitle, app)
-  local fn = function()
+  showMenuItemWrapper(function()
     app:selectMenuItem({ menuItemTitle[1] })
     if #menuItemTitle > 1 then
       app:selectMenuItem(menuItemTitle)
     end
-  end
-  fn = showMenuItemWrapper(fn)
-  fn()
+  end)()
 end
 
 -- click the position returned by the condition
