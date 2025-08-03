@@ -3475,37 +3475,42 @@ appHotKeyCallbacks = {
       message = localizedMessage("Open in Default Browser"),
       windowFilter = {
         fn = function(win)
-          local exBundleID = versionLessThan("4")(win:application())
-              and "com.tencent.xinWeChat.WeChatAppEx" or "com.tencent.flue.WeChatAppEx"
-          local exApp = find(exBundleID)
-          if exApp then
-            local menuItem = findMenuItem(exApp, { "File", "Back" })
-            return menuItem ~= nil
-          else
-            return false
-          end
-        end
-      },
-      condition = function(win)
-        local winUI = towinui(win)
-        if versionGreaterEqual("4.0.6")(win:application()) then
-          local button = getc(winUI, AX.Group, 1,
-              AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Button, 1)
-          return button ~= nil
-        else
-          local g = getc(winUI, AX.Group, 1)
+          local g = getc(towinui(win), AX.Group, 1)
           return g ~= nil and g.AXDOMClassList ~= nil
         end
-      end,
+      },
       fn = function(win)
-        if versionGreaterEqual("4.0.6")(win:application()) then
-          local button = getc(towinui(win), AX.Group, 1,
-              AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Button, 1)
-          if button then press(button) end
-        else
+        local app = win:application()
+        if versionLessThan("4")(app) then
           local frame = win:frame()
           local position = { frame.x + frame.w - 60, frame.y + 23 }
           click(position, win)
+          return
+        end
+
+        local button = getc(towinui(win), AX.Group, 1,
+            AX.Group, 1, AX.Group, 1, AX.Group, 1, nil, 1)
+        if button then press(button) end
+        if button and button.AXRole == AX.PopUpButton then
+          local menuWin, totalDelay = nil, 0
+          repeat
+            menuWin = tfind(getc(toappui(app), AX.Window), function(win)
+              return #win ==  1
+            end)
+            if menuWin == nil then
+              hs.timer.usleep(0.05 * 1000000)
+              totalDelay = totalDelay + 0.05
+            end
+          until menuWin or totalDelay > 1
+          local menuItems = getc(menuWin, AX.Group, 1, AX.Menu, 1, AX.MenuItem)
+          if menuItems and #menuItems > 0 then
+            local exBundleID = "com.tencent.flue.WeChatAppEx"
+            local title = localizedString("Open in default browser", exBundleID)
+            local menuItem = tfind(menuItems, function(item)
+              return item.AXDescription == title
+            end)
+            if menuItem then press(menuItem) end
+          end
         end
       end
     },
