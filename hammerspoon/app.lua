@@ -3475,17 +3475,28 @@ appHotKeyCallbacks = {
       message = localizedMessage("Open in Default Browser"),
       windowFilter = {
         fn = function(win)
-          local winUI = towinui(win)
-          if versionGreaterEqual("4.0.6")(win:application()) then
-            local button = getc(winUI, AX.Group, 1,
-                AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Button, 1)
-            return button ~= nil
+          local exBundleID = versionLessThan("4")(win:application())
+              and "com.tencent.xinWeChat.WeChatAppEx" or "com.tencent.flue.WeChatAppEx"
+          local exApp = find(exBundleID)
+          if exApp then
+            local menuItem = findMenuItem(exApp, { "File", "Back" })
+            return menuItem ~= nil
           else
-            local g = getc(winUI, AX.Group, 1)
-            return g ~= nil and g.AXDOMClassList ~= nil
+            return false
           end
         end
       },
+      condition = function(win)
+        local winUI = towinui(win)
+        if versionGreaterEqual("4.0.6")(win:application()) then
+          local button = getc(winUI, AX.Group, 1,
+              AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Button, 1)
+          return button ~= nil
+        else
+          local g = getc(winUI, AX.Group, 1)
+          return g ~= nil and g.AXDOMClassList ~= nil
+        end
+      end,
       fn = function(win)
         if versionGreaterEqual("4.0.6")(win:application()) then
           local button = getc(towinui(win), AX.Group, 1,
