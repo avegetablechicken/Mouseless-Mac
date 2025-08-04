@@ -1066,6 +1066,10 @@
       "finish": {
         "mods": "command",
         "key": "Return"
+      },
+      "confirm": {
+        "mods": "command",
+        "key": "Return"
       }
     },
     "com.tencent.QQMusicMac": {

@@ -3593,6 +3593,16 @@ appHotKeyCallbacks = {
         return bt and bt.AXEnabled, bt
       end,
       fn = click
+    },
+    ["confirm"] = {
+      message = commonLocalizedMessage("Confirm"),
+      bindCondition = versionGreaterEqual("4.0.6"),
+      windowFilter = { allowSheet = true },
+      fn = function(win)
+        local frame = win:frame()
+        local position = { frame.x + frame.w - 80, frame.y + frame.h - 47 }
+        click(position, win)
+      end
     }
   },
 
