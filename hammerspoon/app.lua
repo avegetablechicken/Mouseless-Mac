@@ -2195,7 +2195,7 @@ appHotKeyCallbacks = {
       end,
       fn = function(result, app)
         if result[1] == 1 then
-          receiveMenuItem(result[2], app)
+          app:selectMenuItem(result[2])
         else
           showMenuItem(result[2], app)
         end
