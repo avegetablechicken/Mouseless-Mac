@@ -630,14 +630,23 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
     end
     local app = hs.application.frontmostApplication()
     local menuBarItems = getMenuBarItems(app, true)
-    for i, item in ipairs(menuBarItems) do
+    for _, item in ipairs(menuBarItems) do
       local entry = tfind(enabledAltMenuHotkeys, function(menuHK)
         return menuHK.msg:sub(-#item.AXTitle-2) == ': ' .. item.AXTitle
+            and menuHK.msg:sub(-#item.AXTitle-3, -#item.AXTitle-3):match('[A-Z]')
       end)
       if entry ~= nil then
-        tinsert(allKeys, insertIdx + i - 1, entry)
+        tinsert(allKeys, insertIdx, entry)
+        insertIdx = insertIdx + 1
       end
     end
+    foreach(enabledAltMenuHotkeys, function(menuHK)
+      local pos = menuHK.msg:find(': ')
+      if pos and menuHK.msg:sub(pos - 1, pos - 1):match('[^A-Z]') then
+        tinsert(allKeys, insertIdx, menuHK)
+        insertIdx = insertIdx + 1
+      end
+    end)
     enabledAltMenuHotkeys = nil
   end
 
@@ -1294,14 +1303,23 @@ function()
     end
     local app = hs.application.frontmostApplication()
     local menuBarItems = getMenuBarItems(app, true)
-    for i, item in ipairs(menuBarItems) do
+    for _, item in ipairs(menuBarItems) do
       local entry = tfind(enabledAltMenuHotkeys, function(menuHK)
         return menuHK.msg:sub(-#item.AXTitle-2) == ': ' .. item.AXTitle
+            and menuHK.msg:sub(-#item.AXTitle-3, -#item.AXTitle-3):match('[A-Z]')
       end)
       if entry ~= nil then
-        tinsert(allKeys, insertIdx + i - 1, entry)
+        tinsert(allKeys, insertIdx, entry)
+        insertIdx = insertIdx + 1
       end
     end
+    foreach(enabledAltMenuHotkeys, function(menuHK)
+      local pos = menuHK.msg:find(': ')
+      if pos and menuHK.msg:sub(pos - 1, pos - 1):match('[^A-Z]') then
+        tinsert(allKeys, insertIdx, menuHK)
+        insertIdx = insertIdx + 1
+      end
+    end)
     enabledAltMenuHotkeys = nil
   end
 
