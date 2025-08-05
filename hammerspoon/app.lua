@@ -3808,7 +3808,9 @@ appHotKeyCallbacks = {
     },
     ["showMainWindow"] = {
       message = "抖音窗口",
-      fn = bind(receiveMenuItem, { "窗口", "抖音窗口" })
+      fn = function(app)
+        app:selectMenuItem({ "窗口", "抖音窗口" })
+      end
     }
   },
 
