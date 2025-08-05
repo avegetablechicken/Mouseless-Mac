@@ -2180,24 +2180,16 @@ appHotKeyCallbacks = {
     },
     ["openRecent"] = {
       message = localizedMessage("Open Recent"),
-      condition = function(app)
-        local enabled, menuItemPath =
-            checkMenuItem({ "File", "Open Quickly…" })(app)
-        if enabled then
-          return true, { 1, menuItemPath }
-        end
-        enabled, menuItemPath =
-            checkMenuItem({ "File", "Open Recent" })(app)
-        if enabled then
-          return true, { 2, menuItemPath }
-        end
-        return false
-      end,
-      fn = function(result, app)
-        if result[1] == 1 then
-          app:selectMenuItem(result[2])
+      condition = checkMenuItem({ "File", "Open Quickly…" },
+                                { "File", "Open Recent" }),
+      fn = function(menuItemTitle, app)
+        local menuItem = getc(toappui(app), AX.MenuBar, 1,
+            AX.MenuBarItem, menuItemTitle[1], AX.Menu, 1,
+            AX.MenuItem, menuItemTitle[2])
+        if #menuItem == 0 then
+          app:selectMenuItem(menuItemTitle)
         else
-          showMenuItem(result[2], app)
+          showMenuItem(menuItemTitle, app)
         end
       end
     }
