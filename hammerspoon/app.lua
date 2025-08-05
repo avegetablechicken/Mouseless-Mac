@@ -1543,24 +1543,11 @@ end
 
 -- show the menu item returned by the condition
 -- work as hotkey callback
-local function showMenuItemWrapper(fn)
-  return function()
-    if menuBarVisible() then
-      fn()
-    else
-      hs.eventtap.keyStroke('fn⌃', 'F2')
-      hs.timer.doAfter(0.1, fn)
-    end
-  end
-end
-
 local function showMenuItem(menuItemTitle, app)
-  showMenuItemWrapper(function()
-    app:selectMenuItem({ menuItemTitle[1] })
-    if #menuItemTitle > 1 then
-      app:selectMenuItem(menuItemTitle)
-    end
-  end)()
+  app:selectMenuItem({ menuItemTitle[1] })
+  if #menuItemTitle > 1 then
+    app:selectMenuItem(menuItemTitle)
+  end
 end
 
 -- click the position returned by the condition
@@ -7651,7 +7638,6 @@ end
 local altMenuBarItemHotkeys = {}
 
 local function bindAltMenu(app, mods, key, message, fn)
-  fn = showMenuItemWrapper(fn)
   local config = {
     mods = mods, key = key, message = message, fn = fn,
   }
