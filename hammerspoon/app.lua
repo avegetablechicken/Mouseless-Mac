@@ -7914,7 +7914,6 @@ local function altMenuBarItem(app, reinvokeKey)
         #menuBarItemTitles > 11 and 10 or (#menuBarItemTitles - 1)
     local hotkey = bindAltMenu(app, "⌥", "`", menuBarItemTitles[1],
       function() app:selectMenuItem({ menuBarItemTitles[1] }) end)
-    hotkey.subkind = 0
     tinsert(altMenuBarItemHotkeys, hotkey)
 
     local itemTitles = {}
