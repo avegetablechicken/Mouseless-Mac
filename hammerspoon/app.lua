@@ -1538,16 +1538,19 @@ end
 -- work as hotkey callback
 local function receiveMenuItem(menuItemTitle, app)
   if app.application then app = app:application() end
-  app:selectMenuItem(menuItemTitle)
-end
-
--- show the menu item returned by the condition
--- work as hotkey callback
-local function showMenuItem(menuItemTitle, app)
-  app:selectMenuItem({ menuItemTitle[1] })
-  if #menuItemTitle > 1 then
+  if #menuItemTitle == 0 then
     app:selectMenuItem(menuItemTitle)
+    return
   end
+  local menuItem = getc(toappui(app), AX.MenuBar, 1,
+      AX.MenuBarItem, menuItemTitle[1])
+  for i=2,#menuItemTitle do
+    menuItem = getc(menuItem, AX.Menu, 1, AX.MenuItem, menuItemTitle[i])
+  end
+  if #menuItem ~= 0 then
+    app:selectMenuItem({ menuItemTitle[1] })
+  end
+  app:selectMenuItem(menuItemTitle)
 end
 
 -- click the position returned by the condition
@@ -1628,7 +1631,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Recent Folders"),
       condition = checkMenuItem({ "Go", "Recent Folders" }),
-      fn = showMenuItem
+      fn = receiveMenuItem
     },
     ["open1stSidebarItem"] = {
       mods = get(KeybindingConfigs.hotkeys.shared,
@@ -1998,7 +2001,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Recently Closed"),
       condition = checkMenuItem({ "History", "Recently Closed" }),
-      fn = showMenuItem
+      fn = receiveMenuItem
     }
   },
 
@@ -2078,13 +2081,7 @@ appHotKeyCallbacks = {
       message = "Open Recent",
       condition = checkMenuItem({ "File", "Open Recent", "More…" },
                                 { "File", "Open Recent" }),
-      fn = function(menuItemTitle, app)
-        if #menuItemTitle == 3 then
-          app:selectMenuItem(menuItemTitle)
-        else
-          showMenuItem(menuItemTitle, app)
-        end
-      end
+      fn = receiveMenuItem
     }
   },
 
@@ -2154,7 +2151,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Recent Documents"),
       condition = checkMenuItem({ "File", "Recent Documents" }),
-      fn = showMenuItem
+      fn = receiveMenuItem
     }
   },
 
@@ -2169,16 +2166,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Open Recent"),
       condition = checkMenuItem({ "File", "Open Quickly…" },
                                 { "File", "Open Recent" }),
-      fn = function(menuItemTitle, app)
-        local menuItem = getc(toappui(app), AX.MenuBar, 1,
-            AX.MenuBarItem, menuItemTitle[1], AX.Menu, 1,
-            AX.MenuItem, menuItemTitle[2])
-        if #menuItem == 0 then
-          app:selectMenuItem(menuItemTitle)
-        else
-          showMenuItem(menuItemTitle, app)
-        end
-      end
+      fn = receiveMenuItem
     }
   },
 
@@ -2562,12 +2550,12 @@ appHotKeyCallbacks = {
     ["insertShape"] = {  -- Insert > Shape
       message = localizedMessage({ "Insert", "Shape" }),
       condition = checkMenuItem({ "Insert", "Shape" }),
-      fn = showMenuItem
+      fn = receiveMenuItem
     },
     ["insertLine"] = {  -- Insert > Line
       message = localizedMessage({ "Insert", "Line" }),
       condition = checkMenuItem({ "Insert", "Line" }),
-      fn = showMenuItem
+      fn = receiveMenuItem
     },
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
@@ -3066,7 +3054,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Recent libraries"),
       condition = checkMenuItem({ "File", "Recent libraries" }),
-      fn = showMenuItem
+      fn = receiveMenuItem
     },
     ["remapPreviousTab"] = {
       message = localizedMessage("Previous library"),
@@ -3230,7 +3218,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Open Library"),
       condition = checkMenuItem({ "File", "Open Library" }),
-      fn = showMenuItem
+      fn = receiveMenuItem
     }
   },
 
@@ -5166,7 +5154,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Open Recent"),
       condition = checkMenuItem({ "Game", "Open Recent" }),
-      fn = showMenuItem
+      fn = receiveMenuItem
     },
   },
 
@@ -5175,7 +5163,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Open Recent"),
       condition = checkMenuItem({ "Connect", "Open Recent" }),
-      fn = showMenuItem
+      fn = receiveMenuItem
     },
   },
 
@@ -5651,7 +5639,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("&Recent Forms"),
       condition = checkMenuItem({ "File", "&Recent Forms" }),
-      fn = showMenuItem
+      fn = receiveMenuItem
     }
   },
 
@@ -5660,7 +5648,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Recently Opened &Files"),
       condition = checkMenuItem({ "File", "Recently Opened &Files" }),
-      fn = showMenuItem
+      fn = receiveMenuItem
     }
   },
 
@@ -7316,7 +7304,7 @@ local function registerOpenRecent(app)
     end
   end
   if menuItem ~= nil then
-    local fn = function() showMenuItem(menuItemPath, app) end
+    local fn = function() receiveMenuItem(menuItemPath, app) end
     local cond = function()
       local menuItemCond = app:findMenuItem(menuItemPath)
       return menuItemCond ~= nil and menuItemCond.enabled
