@@ -7386,6 +7386,96 @@ local function registerZoomHotkeys(app)
   end
 end
 
+local settingsNavigationHotkeys = {}
+local function registerNavigationForSettingsWindow(app)
+  local win = app:focusedWindow()
+  if win == nil then return end
+  local winUI = towinui(win)
+  local toolbar = getc(winUI, AX.Toolbar, 1)
+  if toolbar == nil then return end
+  for i, button in ipairs(getc(toolbar, AX.Button)) do
+    local suffix
+    if i == 1 then suffix = "st"
+    elseif i == 2 then suffix = "nd"
+    elseif i == 3 then suffix = "rd"
+    else suffix = "th" end
+    local hkID = strfmt("open%d%sToolbarItemOnSettingsWindow", i, suffix)
+    local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
+    if spec then
+      local hotkey = AppWinBind(win, {
+        spec = spec, message = button.AXTitle,
+        fn = function() press(button) end,
+      })
+      tinsert(settingsNavigationHotkeys, hotkey)
+    end
+  end
+  local deleteFunc = function ()
+    for _, hotkey in ipairs(settingsNavigationHotkeys) do
+      disableConditionInChain(app:bundleID(), hotkey, true)
+      hotkey:delete()
+    end
+    settingsNavigationHotkeys = {}
+  end
+  local closeObserver = uiobserver.new(app:pid())
+  closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
+  closeObserver:addWatcher(winUI, uinotifications.windowMiniaturized)
+  closeObserver:addWatcher(toappui(app), uinotifications.focusedWindowChanged)
+  closeObserver:callback(function(obs, elem, notification)
+    if notification == uinotifications.uIElementDestroyed then
+      obs:stop() obs = nil
+      deleteFunc()
+      return
+    elseif notification == uinotifications.windowMiniaturized then
+      closeObserver:addWatcher(winUI, uinotifications.windowDeminiaturized)
+      closeObserver:removeWatcher(winUI, uinotifications.windowMiniaturized)
+    elseif notification == uinotifications.windowDeminiaturized then
+      closeObserver:addWatcher(winUI, uinotifications.windowMiniaturized)
+      closeObserver:removeWatcher(winUI, uinotifications.windowDeminiaturized)
+    end
+    if app:focusedWindow() and app:focusedWindow():id() == win:id() then
+      for _, hotkey in ipairs(settingsNavigationHotkeys) do
+        hotkey:enable()
+        enableConditionInChain(hotkey)
+      end
+    else
+      for _, hotkey in ipairs(settingsNavigationHotkeys) do
+        disableConditionInChain(app:bundleID(), hotkey)
+        hotkey:disable()
+      end
+    end
+  end)
+  closeObserver:start()
+  local appid = app:bundleID()
+  stopOnDeactivated(appid, closeObserver, deleteFunc)
+  stopOnTerminated(appid, closeObserver, deleteFunc)
+end
+
+local function registerObserverForSettingsMenuItem(app)
+  local appUI = toappui(app)
+  local appMenuItems = getc(appUI, AX.MenuBar, 1,
+      AX.MenuBarItem, 2, AX.Menu, 1, AX.MenuItem)
+  if appMenuItems == nil or #appMenuItems == 0 then return end
+  local sets = commonLocalizedMessage("Settings…")(app)
+  local prefs = commonLocalizedMessage("Preferences…")(app)
+  local settingsMenu = tfind(appMenuItems, function(item)
+    return item.AXTitle:find(sets) or item.AXTitle:find(prefs)
+  end)
+  settingsMenu = settingsMenu or tfind(appMenuItems, function(item)
+    return item.AXTitle:find(sets:sub(1, -4))
+        or item.AXTitle:find(prefs:sub(1, -4))
+  end)
+  if settingsMenu == nil then return end
+  local observer = uiobserver.new(app:pid())
+  observer:addWatcher(appUI, uinotifications.menuItemSelected)
+  observer:callback(function (_, elem)
+    if elem.AXTitle == settingsMenu.AXTitle then
+      registerNavigationForSettingsWindow(app)
+    end
+  end)
+  observer:start()
+  stopOnDeactivated(app:bundleID(), observer)
+end
+
 -- bind hotkeys for open or save panel that are similar in `Finder`
 -- & hotkey to confirm delete
 local openSavePanelHotkeys = {}
@@ -8142,6 +8232,7 @@ onLaunchedAndActivated = function(app, reinvokeKey)
   registerOpenRecent(app)
   registerZoomHotkeys(app)
   registerObserverForMenuBarChange(app)
+  registerObserverForSettingsMenuItem(app)
 
   if HSKeybindings ~= nil and HSKeybindings.isShowing then
     local validOnly = HSKeybindings.validOnly

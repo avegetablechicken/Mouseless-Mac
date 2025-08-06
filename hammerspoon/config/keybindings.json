@@ -374,6 +374,66 @@
       "open10thSidebarItemOnOpenSavePanel": {
         "mods": ["option", "command"],
         "key": "0"
+      },
+      "open1stToolbarItemOnSettingsWindow": {
+        "mods": ["option", "command"],
+        "key": "1"
+      },
+      "open2ndToolbarItemOnSettingsWindow": {
+        "mods": ["option", "command"],
+        "key": "2"
+      },
+      "open3rdToolbarItemOnSettingsWindow": {
+        "mods": ["option", "command"],
+        "key": "3"
+      },
+      "open4thToolbarItemOnSettingsWindow": {
+        "mods": ["option", "command"],
+        "key": "4"
+      },
+      "open5thToolbarItemOnSettingsWindow": {
+        "mods": ["option", "command"],
+        "key": "5"
+      },
+      "open6thToolbarItemOnSettingsWindow": {
+        "mods": ["option", "command"],
+        "key": "6"
+      },
+      "open7thToolbarItemOnSettingsWindow": {
+        "mods": ["option", "command"],
+        "key": "7"
+      },
+      "open8thToolbarItemOnSettingsWindow": {
+        "mods": ["option", "command"],
+        "key": "8"
+      },
+      "open9thToolbarItemOnSettingsWindow": {
+        "mods": ["option", "command"],
+        "key": "9"
+      },
+      "open10thToolbarItemOnSettingsWindow": {
+        "mods": ["option", "command"],
+        "key": "0"
+      },
+      "open11thToolbarItemOnSettingsWindow": {
+        "mods": ["option", "command"],
+        "key": "F1"
+      },
+      "open12thToolbarItemOnSettingsWindow": {
+        "mods": ["option", "command"],
+        "key": "F2"
+      },
+      "open13thToolbarItemOnSettingsWindow": {
+        "mods": ["option", "command"],
+        "key": "F3"
+      },
+      "open14thToolbarItemOnSettingsWindow": {
+        "mods": ["option", "command"],
+        "key": "F4"
+      },
+      "open15thToolbarItemOnSettingsWindow": {
+        "mods": ["option", "command"],
+        "key": "F5"
       }
     },
 
