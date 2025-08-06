@@ -908,10 +908,8 @@ end
 
 --- ### EuDic
 local EuDicMainWindowFilter = { allowRoles = AX.StandardWindow }
-local EuDicSettingsWindowFilter = { allowRoles = AX.StandardWindow }
 onRunning("com.eusoft.freeeudic", function(app)
   EuDicMainWindowFilter.allowTitles = '^' .. app:name() .. '$'
-  EuDicSettingsWindowFilter.rejectTitles = '^' .. app:name() .. '$'
 end)
 
 --- ### Parallels Desktop
@@ -2728,83 +2726,6 @@ appHotKeyCallbacks = {
       windowFilter = EuDicMainWindowFilter,
       fn = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 6)
-        press(button)
-      end
-    },
-    ["settingsTab1"] = {
-      message = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 1)
-        if button then return button.AXTitle end
-      end,
-      windowFilter = EuDicSettingsWindowFilter,
-      fn = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 1)
-        press(button)
-      end
-    },
-    ["settingsTab2"] = {
-      message = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 2)
-        if button then return button.AXTitle end
-      end,
-      windowFilter = EuDicSettingsWindowFilter,
-      fn = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 2)
-        press(button)
-      end
-    },
-    ["settingsTab3"] = {
-      message = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 3)
-        if button then return button.AXTitle end
-      end,
-      windowFilter = EuDicSettingsWindowFilter,
-      fn = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 3)
-        press(button)
-      end
-    },
-    ["settingsTab4"] = {
-      message = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 4)
-        if button then return button.AXTitle end
-      end,
-      windowFilter = EuDicSettingsWindowFilter,
-      fn = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 4)
-        press(button)
-      end
-    },
-    ["settingsTab5"] = {
-      message = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 5)
-        if button then return button.AXTitle end
-      end,
-      windowFilter = EuDicSettingsWindowFilter,
-      fn = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 5)
-        press(button)
-      end
-    },
-    ["settingsTab6"] = {
-      message = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 6)
-        if button then return button.AXTitle end
-      end,
-      windowFilter = EuDicSettingsWindowFilter,
-      fn = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 6)
-        press(button)
-      end
-    },
-    ["settingsTab7"] = {
-      message = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 7)
-        if button then return button.AXTitle end
-      end,
-      windowFilter = EuDicSettingsWindowFilter,
-      fn = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 7)
         press(button)
       end
     }
