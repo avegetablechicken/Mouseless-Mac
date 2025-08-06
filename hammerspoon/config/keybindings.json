@@ -1678,6 +1678,10 @@
         "key": "B",
         "persist": true
       },
+      "changeSettings": {
+        "mods": "command",
+        "key": ","
+      },
       "serverMode": {
         "mods": ["shift", "command"],
         "key": "S"

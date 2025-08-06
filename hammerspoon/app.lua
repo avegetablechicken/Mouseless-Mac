@@ -3873,6 +3873,18 @@ appHotKeyCallbacks = {
         end
       end
     },
+    ["changeSettings"] = {
+      message = "Change Settings",
+      condition = function(app)
+        local menuBarItems = getMenuBarItems(app, true)
+        local menuBarItem = tfind(menuBarItems, function(item)
+          return item.AXTitle == "Barrier"
+        end)
+        local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, "Change Settings")
+        return menuItem and menuItem.AXEnabled, menuItem
+      end,
+      fn = press
+    },
     ["reload"] = {
       message = "Reload",
       windowFilter = {
