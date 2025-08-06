@@ -917,7 +917,8 @@ end)
 --- ### Parallels Desktop
 local ParallelsControlCenterWindowFilter = {}
 onRunning("com.parallels.desktop.console", function(app)
-  ParallelsControlCenterWindowFilter.allowTitles = '^' .. app:name() .. '$'
+  local title = localizedString("Control Center", app:bundleID())
+  ParallelsControlCenterWindowFilter.allowTitles = '^' .. title .. '$'
 end)
 
 -- ### Bartender
