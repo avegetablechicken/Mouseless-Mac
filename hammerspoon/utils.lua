@@ -3838,7 +3838,7 @@ end
 
 -- helpers for click menubar to the right
 
-function leftClick(point, obj)
+local function clickImpl(leftClick, point, obj)
   if point.AXPosition ~= nil then
     point = hs.geometry.point {
       point.AXPosition.x + point.AXSize.w / 2,
@@ -3858,16 +3858,20 @@ function leftClick(point, obj)
       if appid ~= targetApp:bundleID() then return false end
     end
   end
-  hs.eventtap.leftClick(point)
+  if leftClick then
+    hs.eventtap.leftClick(point)
+  else
+    hs.eventtap.rightClick(point)
+  end
   return true
 end
 
-function leftClickAndRestore(point, obj, delay)
+local function clickAndRestoreImpl(leftClick, point, obj, delay)
   if type(obj) == 'number' then
     delay = obj obj = nil
   end
   local mousePosition = hs.mouse.absolutePosition()
-  if leftClick(point, obj) then
+  if clickImpl(leftClick, point, obj) then
     if delay then
       hs.timer.doAfter(delay, function()
         hs.mouse.absolutePosition(mousePosition)
@@ -3878,48 +3882,22 @@ function leftClickAndRestore(point, obj, delay)
     return true
   end
   return false
+end
+
+function leftClick(point, obj)
+  return clickImpl(true, point, obj)
 end
 
 function rightClick(point, obj)
-  if point.AXPosition ~= nil then
-    point = hs.geometry.point {
-      point.AXPosition.x + point.AXSize.w / 2,
-      point.AXPosition.y + point.AXSize.h / 2
-    }
-  elseif point.x == nil then
-    point = hs.geometry.point(point)
-  end
-  if obj ~= nil then
-    local appHere = hs.axuielement.systemElementAtPosition(point)
-    while appHere ~= nil and appHere.AXParent ~= nil do
-      appHere = appHere.AXParent
-    end
-    if appHere then
-      local appid = appHere:asHSApplication():bundleID()
-      local targetApp = obj.application and obj:application() or obj
-      if appid ~= targetApp:bundleID() then return false end
-    end
-  end
-  hs.eventtap.rightClick(point)
-  return true
+  return clickImpl(false, point, obj)
+end
+
+function leftClickAndRestore(point, obj, delay)
+  return clickAndRestoreImpl(true, point, obj, delay)
 end
 
 function rightClickAndRestore(point, obj, delay)
-  if type(obj) == 'number' then
-    delay = obj obj = nil
-  end
-  local mousePosition = hs.mouse.absolutePosition()
-  if rightClick(point, obj) then
-    if delay then
-      hs.timer.doAfter(delay, function()
-        hs.mouse.absolutePosition(mousePosition)
-      end)
-    else
-      hs.mouse.absolutePosition(mousePosition)
-    end
-    return true
-  end
-  return false
+  return clickAndRestoreImpl(false, point, obj, delay)
 end
 
 function loadStatusItemsAutosaveName(app)
