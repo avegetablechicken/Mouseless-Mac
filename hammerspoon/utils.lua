@@ -475,14 +475,6 @@ function applicationLocale(appid)
   return SYSTEM_LOCALE
 end
 
-local function dirNotExistOrEmpty(dir)
-  if not exists(dir) then return true end
-  for file in hs.fs.dir(dir) do
-    if file:sub(1, 1) ~= '.' then return false end
-  end
-  return true
-end
-
 function getResourceDir(appid, frameworkName)
   if frameworkName == nil then
     frameworkName = localizationFrameworks[appid]
@@ -1807,7 +1799,7 @@ local function localizeByChromium(str, localeDir, appid)
           mkdir(baseDir)
           local enTmpBaseDir = baseDir .. '/' .. enLocale
           local enTmpdir = enTmpBaseDir .. '/' .. fileStem
-          if dirNotExistOrEmpty(enTmpdir) then
+          if not exists(enTmpdir) then
             mkdir(enTmpBaseDir)
             hs.execute(strfmt("scripts/pak -u '%s' '%s'",
                               fullPath, enTmpdir))
@@ -1819,7 +1811,7 @@ local function localizeByChromium(str, localeDir, appid)
             local matchFile = output:match("^.*/(.*)$")
             local tmpBaseDir = baseDir .. '/' .. locale
             local tmpdir = tmpBaseDir .. '/' .. fileStem
-            if dirNotExistOrEmpty(tmpdir) then
+            if not exists(tmpdir) then
               mkdir(tmpBaseDir)
               hs.execute(strfmt("scripts/pak -u '%s' '%s'",
                                 localeDir .. '/' .. file, tmpdir))
@@ -2843,7 +2835,7 @@ local function delocalizeByChromium(str, localeDir, appid)
       mkdir(baseDir)
       local tmpBaseDir = baseDir .. '/' .. locale
       local tmpdir = tmpBaseDir .. '/' .. fileStem
-      if dirNotExistOrEmpty(tmpdir) then
+      if not exists(tmpdir) then
         mkdir(tmpBaseDir)
         hs.execute(strfmt("scripts/pak  -u '%s' '%s'",
                           localeDir .. '/' .. file, tmpdir))
@@ -2859,7 +2851,7 @@ local function delocalizeByChromium(str, localeDir, appid)
           if exists(fullPath) then
             local enTmpBaseDir = baseDir .. '/' .. enLocale
             local enTmpdir = enTmpBaseDir .. '/' .. fileStem
-            if dirNotExistOrEmpty(enTmpdir) then
+            if not exists(enTmpdir) then
               mkdir(enTmpBaseDir)
               hs.execute(strfmt("scripts/pak  -u '%s' '%s'", fullPath, enTmpdir))
             end
