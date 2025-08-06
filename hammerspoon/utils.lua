@@ -3807,18 +3807,7 @@ function displayName(app)
   local locale = get(appLocaleDir, appid, appLocale)
   if locale == false then return basename end
   if locale == nil or not exists(resourceDir .. "/" .. locale .. ".lproj") then
-    local shouldSave = locale == nil
     locale = getDefaultMatchedLocale(appLocale, resourceDir, 'lproj')
-    if shouldSave then
-      if appLocaleDir[appid] == nil then
-        appLocaleDir[appid] = {}
-      end
-      appLocaleDir[appid][appLocale] = locale or false
-      if not exists(localeTmpDir) then
-        hs.execute(strfmt("mkdir -p '%s'", localeTmpDir))
-      end
-      hs.json.write(appLocaleDir, localeMatchTmpFile, false, true)
-    end
     if locale == nil then return basename end
   end
   if exists(resourceDir .. '/InfoPlist.loctable') then
