@@ -2669,10 +2669,8 @@ appHotKeyCallbacks = {
         if button then return button.AXTitle end
       end,
       windowFilter = EuDicMainWindowFilter,
-      fn = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 1)
-        press(button)
-      end
+      condition = checkMenuItem({ "功能", "返回首页" }),
+      fn = receiveMenuItem
     },
     ["function2"] = {
       message = function(win)
