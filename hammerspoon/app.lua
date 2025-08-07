@@ -7410,6 +7410,45 @@ local function registerObserverForSettingsMenuItem(app)
   stopOnDeactivated(app:bundleID(), observer)
 end
 
+-- fixme: menuItemSelected event seems to escape for menu item in right
+-- menu bar menu, so the code below does not work as expected actually
+local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
+  local oldCallback = observer:callback()
+  local callback = function(obs, elem, notification)
+    if notification == uinotifications.menuOpened
+        and elem.AXParent.AXRole == AX.MenuBar then
+      local menuItems = getc(elem, AX.MenuItem)
+      local sets = commonLocalizedMessage("Settings…")(app)
+      local prefs = commonLocalizedMessage("Preferences…")(app)
+      local settingsMenu = tfind(menuItems, function(item)
+        return item.AXTitle:find(sets) or item.AXTitle:find(prefs)
+      end)
+      settingsMenu = settingsMenu or tfind(menuItems, function(item)
+        return item.AXTitle:find(sets:sub(1, -4))
+            or item.AXTitle:find(prefs:sub(1, -4))
+      end)
+      if settingsMenu ~= nil then
+        observer:addWatcher(toappui(app), uinotifications.menuItemSelected)
+      end
+    elseif notification == uinotifications.menuClosed
+        and elem.AXParent.AXRole == AX.MenuBar then
+      observer:removeWatcher(toappui(app), uinotifications.menuItemSelected)
+    elseif notification == uinotifications.menuItemSelected
+        and elem.AXParent.AXParent.AXRole == AX.MenuBar then
+      local sets = commonLocalizedMessage("Settings…")(app)
+      local prefs = commonLocalizedMessage("Preferences…")(app)
+      if elem.AXTitle:find(sets:sub(1, -4))
+          or elem.AXTitle:find(prefs:sub(1, -4)) then
+        registerNavigationForSettingsWindow(app)
+      end
+    end
+    if oldCallback then
+      oldCallback(obs, elem, notification)
+    end
+  end
+  observer:callback(callback)
+end
+
 -- bind hotkeys for open or save panel that are similar in `Finder`
 -- & hotkey to confirm delete
 local openSavePanelHotkeys = {}
@@ -8291,6 +8330,11 @@ for appid, _ in pairs(MenuBarMenuObservers) do
   end
 end
 
+-- register watchers for preferences menu item in right menu bar menu
+for appid, observer in pairs(MenuBarMenuSelectedObservers) do
+  local app = runningAppsOnLoading[appid]
+  registerObserverForRightMenuBarSettingsMenuItem(app, observer)
+end
 
 -- auto hide or quit apps with no windows (including pseudo windows such as popover or sheet)
 local appsHideWithoutWindow = {}
@@ -8885,6 +8929,10 @@ function App_applicationCallback(appname, eventType, app)
       onLaunchedAndActivated(app)
       if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] ~= nil then
         registerMenuBarObserverForHotkeyValidity(app)
+        local observer = MenuBarMenuSelectedObservers[appid]
+        if observer then
+          registerObserverForRightMenuBarSettingsMenuItem(app, observer)
+        end
       end
     end
     if doublecheck and not doublecheck() then
