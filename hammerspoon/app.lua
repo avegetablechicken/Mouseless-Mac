@@ -9009,13 +9009,8 @@ end
 -- some apps may terminate silently, which is unexpected
 AppsTerminateSilently = {}
 for _, appid in ipairs(ApplicationConfigs["terminateSilently"] or {}) do
-  onRunning(appid, function(app)
-    AppsTerminateSilently[appid] = app
-    ExecOnSilentQuit(appid, function()
-      App_applicationCallback(app:name(),
-          hs.application.watcher.terminated, app)
-      AppsTerminateSilently[appid] = nil
-    end)
+  onRunning(appid, function()
+    ExecOnSilentQuit(appid, function() end)
   end)
 end
 

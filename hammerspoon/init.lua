@@ -367,7 +367,7 @@ function StopExecContinuously(timeKey)
   processesExecEvery[timeKey] = nil
 end
 
-ContinuousWatcher = hs.timer.new(1, function()
+ContinuousWatcher = hs.timer.new(0.25, function()
   for _, proc in pairs(processesExecEvery) do
     proc()
   end
@@ -385,14 +385,14 @@ end
 
 -- for apps that launch silently
 local processesOnSilentLaunch = {}
-local hasLaunched = {}
+local launchedApps = {}
 function ExecOnSilentLaunch(appid, action)
   if processesOnSilentLaunch[appid] == nil then
     processesOnSilentLaunch[appid] = {}
   end
 
   tinsert(processesOnSilentLaunch[appid], action)
-  hasLaunched[appid] = find(appid) ~= nil
+  launchedApps[appid] = find(appid)
 end
 
 local processesOnSilentQuit = {}
@@ -401,33 +401,37 @@ function ExecOnSilentQuit(appid, action)
     processesOnSilentQuit[appid] = {}
   end
   tinsert(processesOnSilentQuit[appid], action)
-  hasLaunched[appid] = find(appid) ~= nil
+  launchedApps[appid] = find(appid)
 end
 
 ExecContinuously(function()
-  local hasLaunchedTmp = {}
+  local launchedAppsTmp = {}
   for appid, processes in pairs(processesOnSilentLaunch) do
     local app = find(appid)
-    if hasLaunched[appid] == false and app ~= nil then
+    if launchedApps[appid] == nil and app ~= nil then
+      applicationCallback(app:name(), hs.application.watcher.launching, app)
       for _, proc in ipairs(processes) do
         proc(app)
       end
+      applicationCallback(app:name(), hs.application.watcher.launched, app)
     end
-    hasLaunchedTmp[appid] = app ~= nil
+    launchedAppsTmp[appid] = app
   end
 
   for appid, processes in pairs(processesOnSilentQuit) do
     local app = find(appid)
-    if hasLaunched[appid] == true and app == nil then
+    if launchedApps[appid] and app == nil then
       for _, proc in ipairs(processes) do
         proc(appid)
       end
+      applicationCallback(launchedApps[appid]:name(),
+          hs.application.watcher.terminated, launchedApps[appid])
       processesOnSilentQuit[appid] = nil
     end
-    hasLaunchedTmp[appid] = app ~= nil
+    launchedAppsTmp[appid] = app
   end
 
-  hasLaunched = hasLaunchedTmp
+  launchedApps = launchedAppsTmp
 end)
 
 local function applicationInstalledCallback(files, flagTables)
