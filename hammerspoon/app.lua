@@ -1438,11 +1438,12 @@ local function commonLocalizedMessage(message)
       local appid = getAppId(app)
       local appLocale = applicationValidLocale(appid)
       if appLocale ~= nil then
-        for _, stem in ipairs{ 'MenuCommands', 'Menus', 'Common' } do
+        for i, stem in ipairs{ 'MenuCommands', 'Menus', 'Common' } do
+          local retry = i > 1
           local result = localizedString(message, {
             locale = appLocale, localeFile = stem,
             framework = "AppKit.framework"
-          }, true)
+          }, retry)
           if result ~= nil then
             result = result:gsub('“%%@”', ''):gsub('%%@', '')
             return result
