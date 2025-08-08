@@ -8913,6 +8913,7 @@ function App_applicationCallback(appname, eventType, app)
       return
     end
     fullyLaunchCriterion = appsLaunchSlow[appid] or false
+    FLAGS["APP_LAUNCHING"] = true
   elseif eventType == hs.application.watcher.launched then
     local doublecheck = fullyLaunchCriterion and bind(fullyLaunchCriterion, app)
     if FLAGS["MENUBAR_ITEMS_PREPARED"] ~= nil then
@@ -8934,6 +8935,7 @@ function App_applicationCallback(appname, eventType, app)
           registerObserverForRightMenuBarSettingsMenuItem(app, observer)
         end
       end
+      FLAGS["APP_LAUNCHING"] = nil
     end
     if doublecheck and not doublecheck() then
       hs.timer.waitUntil(doublecheck, action, 0.01)

@@ -442,6 +442,14 @@ function applicationLocale(appid)
     end
   end
 
+  if FLAGS["APP_LAUNCHING"] then
+    local locales = hs.execute(
+        strfmt("defaults read %s AppleLanguages | tr -d '()\" \\n'", appid))
+    if locales ~= "" then
+      return strsplit(locales, ',')[1]
+    end
+  end
+
   local errorReadingDefaults = false
   local plistPath = hs.fs.pathToAbsolute(strfmt(
       "~/Library/Containers/%s/Data/Library/Preferences/%s.plist", appid, appid))
