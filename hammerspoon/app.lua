@@ -8904,7 +8904,7 @@ for _, appid in ipairs(forbiddenApps) do
   end
 end
 
-local fullyLaunchCriterion
+local fullyLaunchCriterion, launchTimer
 function App_applicationCallback(appname, eventType, app)
   local appid = app:bundleID() or appname
   if eventType == hs.application.watcher.launching then
@@ -8925,6 +8925,7 @@ function App_applicationCallback(appname, eventType, app)
       end
     end
     local action = function()
+      launchTimer = nil
       for _, proc in ipairs(processesOnLaunched[appid] or {}) do
         proc(app)
       end
@@ -8941,12 +8942,15 @@ function App_applicationCallback(appname, eventType, app)
       FLAGS["APP_LAUNCHING"] = nil
     end
     if doublecheck and not doublecheck() then
-      hs.timer.waitUntil(doublecheck, action, 0.01)
+      launchTimer = hs.timer.waitUntil(doublecheck, action, 0.01)
     else
       action()
     end
     fullyLaunchCriterion, FLAGS["MENUBAR_ITEMS_PREPARED"] = nil, nil
   elseif eventType == hs.application.watcher.activated then
+    if launchTimer then
+      launchTimer:stop() launchTimer = nil
+    end
     appBuf = {}
     if FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] ~= nil then
       FLAGS["SUSPEND"] = not FLAGS["SUSPEND_IN_REMOTE_DESKTOP"]
