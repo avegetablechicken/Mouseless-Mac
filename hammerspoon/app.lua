@@ -8928,6 +8928,7 @@ function App_applicationCallback(appname, eventType, app)
       for _, proc in ipairs(processesOnLaunched[appid] or {}) do
         proc(app)
       end
+      FLAGS["NO_RESHOW_KEYBINDING"] = true
       onLaunchedAndActivated(app)
       if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] ~= nil then
         registerMenuBarObserverForHotkeyValidity(app)
@@ -8936,6 +8937,7 @@ function App_applicationCallback(appname, eventType, app)
           registerObserverForRightMenuBarSettingsMenuItem(app, observer)
         end
       end
+      FLAGS["NO_RESHOW_KEYBINDING"] = false
       FLAGS["APP_LAUNCHING"] = nil
     end
     if doublecheck and not doublecheck() then
@@ -8955,17 +8957,15 @@ function App_applicationCallback(appname, eventType, app)
     end
     mayRequireHoldToCloseWindow(app)
     selectInputSourceInApp(app)
-    FLAGS["NO_RESHOW_KEYBINDING"] = true
-    hs.timer.doAfter(3, function()
-      FLAGS["NO_RESHOW_KEYBINDING"] = false
-    end)
 
+    FLAGS["NO_RESHOW_KEYBINDING"] = true
     registerForOpenSavePanel(app)
     if fullyLaunchCriterion == nil then
       FLAGS["MENUBAR_ITEMS_PREPARED"] = onLaunchedAndActivated(app)
     elseif fullyLaunchCriterion == false then
       FLAGS["MENUBAR_ITEMS_PREPARED"] = false
     end
+    FLAGS["NO_RESHOW_KEYBINDING"] = false
   elseif eventType == hs.application.watcher.deactivated and appname ~= nil then
     for _, proc in ipairs(processesOnDeactivated[appid] or {}) do
       proc(app)
