@@ -909,7 +909,9 @@ end
 --- ### EuDic
 local EuDicMainWindowFilter = { allowRoles = AX.StandardWindow }
 onRunning("com.eusoft.freeeudic", function(app)
-  EuDicMainWindowFilter.allowTitles = '^' .. app:name() .. '$'
+  local title = "欧路词典"
+  title = localizedString(title, app:bundleID()) or title
+  EuDicMainWindowFilter.allowTitles = '^' .. title .. '$'
 end)
 
 --- ### Parallels Desktop
