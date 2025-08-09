@@ -8904,7 +8904,7 @@ for _, appid in ipairs(forbiddenApps) do
   end
 end
 
-local fullyLaunchCriterion, launchTimer
+local launchTimer
 function App_applicationCallback(appname, eventType, app)
   local appid = app:bundleID() or appname
   if eventType == hs.application.watcher.launching then
@@ -8913,10 +8913,15 @@ function App_applicationCallback(appname, eventType, app)
       hs.execute(strfmt("sudo rm -rf \"%s\"", app:path()))
       return
     end
-    fullyLaunchCriterion = appsLaunchSlow[appid] or false
+    if FLAGS["APP_LAUNCHING"] then
+      FLAGS["APP_LAUNCHING_OVERRIDE"] = true
+    end
     FLAGS["APP_LAUNCHING"] = true
   elseif eventType == hs.application.watcher.launched then
-    local doublecheck = fullyLaunchCriterion and bind(fullyLaunchCriterion, app)
+    local doublecheck
+    if FLAGS["APP_LAUNCHING"] and appsLaunchSlow[appid] then
+      doublecheck = bind(appsLaunchSlow[appid], app)
+    end
     if FLAGS["MENUBAR_ITEMS_PREPARED"] ~= nil then
       local oldFn = doublecheck
       doublecheck = function()
@@ -8946,11 +8951,14 @@ function App_applicationCallback(appname, eventType, app)
     else
       action()
     end
-    fullyLaunchCriterion, FLAGS["MENUBAR_ITEMS_PREPARED"] = nil, nil
+    FLAGS["MENUBAR_ITEMS_PREPARED"] = nil
   elseif eventType == hs.application.watcher.activated then
     if launchTimer then
       launchTimer:stop() launchTimer = nil
+      FLAGS["APP_LAUNCHING"] = FLAGS["APP_LAUNCHING_OVERRIDE"]
+      FLAGS["APP_LAUNCHING_OVERRIDE"] = nil
     end
+
     appBuf = {}
     if FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] ~= nil then
       FLAGS["SUSPEND"] = not FLAGS["SUSPEND_IN_REMOTE_DESKTOP"]
@@ -8964,9 +8972,9 @@ function App_applicationCallback(appname, eventType, app)
 
     FLAGS["NO_RESHOW_KEYBINDING"] = true
     registerForOpenSavePanel(app)
-    if fullyLaunchCriterion == nil then
+    if not FLAGS["APP_LAUNCHING"] then
       FLAGS["MENUBAR_ITEMS_PREPARED"] = onLaunchedAndActivated(app)
-    elseif fullyLaunchCriterion == false then
+    elseif FLAGS["APP_LAUNCHING"] and appsLaunchSlow[appid] == nil then
       FLAGS["MENUBAR_ITEMS_PREPARED"] = false
     end
     FLAGS["NO_RESHOW_KEYBINDING"] = false
