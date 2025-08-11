@@ -363,9 +363,12 @@ local function executeProxyCondition(condition, returnCode)
         end
       end
       if ssid == nil then
-        ssid = hs.execute(strfmt([[
-          ipconfig getsummary %s | awk -F ' SSID : '  '/ SSID : / {print $2}' | tr -d '\n'
-        ]], interface))
+        local osv = hs.host.operatingSystemVersion()
+        if osv.major < 15 or (osv.major == 15 and osv.minor < 6) then
+          ssid = hs.execute(strfmt([[
+            ipconfig getsummary %s | awk -F ' SSID : '  '/ SSID : / {print $2}' | tr -d '\n'
+          ]], interface))
+        end
       end
       if ssid and ssid ~= "" then
         local ssidPatterns = type(condition.ssid) == 'string'
