@@ -746,8 +746,10 @@ local function getQtMatchedLocale(appLocale, resourceDir)
   end
   local dirs = { resourceDir }
   for file in hs.fs.dir(resourceDir) do
-    if isdir(resourceDir .. '/' .. file) then
-      tinsert(dirs, resourceDir .. '/' .. file)
+    if file ~= '.' and file ~= '..' then
+      if isdir(resourceDir .. '/' .. file) then
+        tinsert(dirs, resourceDir .. '/' .. file)
+      end
     end
   end
   local matchedLocales = {}
