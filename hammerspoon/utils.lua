@@ -401,14 +401,14 @@ function applicationLocale(appid)
         local file = getc(toappui(app),
             AX.MenuBar, 1, AX.MenuBarItem, 3)
         if file == nil then return SYSTEM_LOCALE end
-        if file.AXTitle == "File" then return "en"
+        if file.AXTitle == "File" then return "en", true
         elseif file.AXTitle == localizedString('File', {
           locale = 'zh_CN',
           localeFile = 'MenuCommands',
           framework = "AppKit.framework",
-        }) then return "zh-Hans"
+        }) then return "zh-Hans", true
         else
-          return 'zh-Hant'
+          return 'zh-Hant', true
         end
       else
         return SYSTEM_LOCALE
@@ -424,7 +424,8 @@ function applicationLocale(appid)
           locale = electronLocale(app, localizationFrameworks[appid])
         end
       end
-      return locale or SYSTEM_LOCALE
+      if locale then return locale, true
+      else return SYSTEM_LOCALE end
     elseif localizationFrameworks[appid].java then
       local locale
       local appContentPath = hs.application.pathForBundleID(appid) .. "/Contents"
@@ -438,7 +439,8 @@ function applicationLocale(appid)
           locale = javaLocale(app, resourceDir, localizationFrameworks[appid])
         end
       end
-      return locale or SYSTEM_LOCALE
+      if locale then return locale, true
+      else return SYSTEM_LOCALE end
     elseif localizationFrameworks[appid].qt then
       local app, locale = find(appid)
       if app then
@@ -459,7 +461,8 @@ function applicationLocale(appid)
           end
         end
       end
-      return locale or 'en'
+      if locale then return locale, true
+      else return 'en' end
     end
   end
 
@@ -3996,7 +3999,8 @@ function localizedMenuBarItem(title, appid, params)
 end
 
 function applicationValidLocale(appid)
-  local appLocale = applicationLocale(appid)
+  local appLocale, valid = applicationLocale(appid)
+  if valid then return appLocale end
   local resourceDir, framework = getResourceDir(appid)
   local locale = getMatchedLocale(appid, appLocale,
       resourceDir, framework, appLocaleDir)
