@@ -921,6 +921,34 @@ onRunning("com.parallels.desktop.console", function(app)
   ParallelsControlCenterWindowFilter.allowTitles = '^' .. title .. '$'
 end)
 
+--- ### Barrier
+local function barrierLocalizedMessage(message, params)
+  return function()
+    local str = localizedString(message, 'barrier', params) or message
+    str = type(str) == 'string' and str or str[1]
+    if message:find('&') then
+      str = str:gsub("%(&%a%)", ""):gsub('&', '')
+    end
+    if message:sub(#message) == ':' then
+      local len = utf8.len(str)
+      local lastChar = str:sub(utf8.offset(str, len))
+      if lastChar == ':' or lastChar == '：' then
+        str = str:sub(1, utf8.offset(str, len) - 1)
+      end
+    end
+    return str
+  end
+end
+
+local function barrierLocalizedString(message, params)
+  local str = localizedString(message, 'barrier', params) or message
+  str = type(str) == 'string' and str or str[1]
+  if message:find('&') then
+    str = str:gsub('&', "")
+  end
+  return str
+end
+
 -- ### Bartender
 local bartenderBarWindowFilter = { allowTitles = "^Bartender Bar$" }
 local function getBartenderBarItemTitle(index, rightClick)
@@ -3875,55 +3903,60 @@ appHotKeyCallbacks = {
       end
     },
     ["changeSettings"] = {
-      message = "Change Settings",
+      message = barrierLocalizedMessage("Change &Settings"),
       condition = function(app)
         local menuBarItems = getMenuBarItems(app, true)
         local menuBarItem = tfind(menuBarItems, function(item)
           return item.AXTitle == "Barrier"
         end)
-        local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, "Change Settings")
+        local title = localizedString("Change &Settings", app:bundleID()) or "Change &Settings"
+        title = title:gsub("%(&%a%)", ""):gsub("&", "")
+        local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, title)
         return menuItem and menuItem.AXEnabled, menuItem
       end,
       fn = press
     },
     ["reload"] = {
-      message = "Reload",
+      message = barrierLocalizedMessage("&Reload"),
       windowFilter = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
         local winUI = towinui(win)
-        local reload = getc(winUI, AX.Button, "Reload")
+        local title = barrierLocalizedString("&Reload", win:application():bundleID())
+        local reload = getc(winUI, AX.Button, title)
         return reload ~= nil and #reload:actionNames() > 0, reload
       end,
       fn = press
     },
     ["start"] = {
-      message = "Start",
+      message = barrierLocalizedMessage("&Start"),
       windowFilter = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
         local winUI = towinui(win)
-        local start = getc(winUI, AX.Button, "Start")
+        local title = barrierLocalizedString("&Start", win:application():bundleID())
+        local start = getc(winUI, AX.Button, title)
         return start ~= nil and #start:actionNames() > 0, start
       end,
       fn = press
     },
     ["stop"] = {
-      message = "Stop",
+      message = barrierLocalizedMessage("&Stop"),
       windowFilter = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
         local winUI = towinui(win)
-        local stop = getc(winUI, AX.Button, "Stop")
+        local title = barrierLocalizedString("&Stop", win:application():bundleID())
+        local stop = getc(winUI, AX.Button, title)
         return stop ~= nil and #stop:actionNames() > 0, stop
       end,
       fn = press
     },
     ["serverMode"] = {
-      message = "Toggle Server Mode",
+      message = barrierLocalizedMessage("&Server (share this computer's mouse and keyboard)"),
       windowFilter = {
         allowTitles = "^Barrier$"
       },
@@ -3934,7 +3967,7 @@ appHotKeyCallbacks = {
       end
     },
     ["clientMode"] = {
-      message = "Toggle Client Mode",
+      message = barrierLocalizedMessage("&Client (use another computer's mouse and keyboard):"),
       windowFilter = {
         allowTitles = "^Barrier$"
       },
@@ -3945,53 +3978,56 @@ appHotKeyCallbacks = {
       end
     },
     ["configureInteractively"] = {
-      message = "Configure interactively",
+      message = barrierLocalizedMessage("Configure interactively:"),
       windowFilter = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
         local winUI = towinui(win)
-        local configure = getc(winUI, AX.CheckBox, 1,
-            AX.RadioButton, "Configure interactively:")
+        local title = barrierLocalizedString("Configure interactively:",
+            win:application():bundleID())
+        local configure = getc(winUI, AX.CheckBox, 1, AX.RadioButton, title)
         return configure ~= nil and #configure:actionNames() > 0, configure
       end,
       fn = press
     },
     ["useExistingConfiguration"] = {
-      message = "Use existing configuration",
+      message = barrierLocalizedMessage("Use existing configuration:"),
       windowFilter = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
         local winUI = towinui(win)
-        local configure = getc(winUI, AX.CheckBox, 1,
-            AX.RadioButton, "Use existing configuration:")
+        local title = barrierLocalizedString("Use existing configuration:",
+            win:application():bundleID())
+        local configure = getc(winUI, AX.CheckBox, 1, AX.RadioButton, title)
         return configure ~= nil and #configure:actionNames() > 0, configure
       end,
       fn = press
     },
     ["configureServer"] = {
-      message = "Configure Server...",
+      message = barrierLocalizedMessage("&Configure Server..."),
       windowFilter = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
         local winUI = towinui(win)
-        local configure = getc(winUI, AX.CheckBox, 1,
-            AX.Button, "Configure Server...")
+        local title = barrierLocalizedString("&Configure Server...", win:application():bundleID())
+        local configure = getc(winUI, AX.CheckBox, 1, AX.Button, title)
         return configure ~= nil and #configure:actionNames() > 0, configure
       end,
       fn = press
     },
     ["configurationFile"] = {
-      message = "Configuration file",
+      message = barrierLocalizedMessage("&Configuration file:"),
       windowFilter = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
         local winUI = towinui(win)
-        local textField = getc(winUI, AX.CheckBox, 1,
-            AX.TextField, "Configuration file:")
+        local title = barrierLocalizedString("&Configuration file:",
+            win:application():bundleID())
+        local textField = getc(winUI, AX.CheckBox, 1, AX.TextField, title)
         return textField ~= nil and #textField:actionNames() > 0, textField
       end,
       fn = function(textField)
@@ -3999,34 +4035,35 @@ appHotKeyCallbacks = {
       end
     },
     ["browse"] = {
-      message = "Browse",
+      message = barrierLocalizedMessage("&Browse..."),
       windowFilter = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
         local winUI = towinui(win)
-        local browse = getc(winUI, AX.CheckBox, 1, AX.Button, "Browse...")
+        local title = barrierLocalizedString("&Browse...", win:application():bundleID())
+        local browse = getc(winUI, AX.CheckBox, 1, AX.Button, title)
         return browse ~= nil and #browse:actionNames() > 0, browse
       end,
       fn = press
     },
     ["autoConfig"] = {
-      message = "Toggle Auto config",
+      message = barrierLocalizedMessage("Auto config"),
       windowFilter = {
         allowTitles = "^Barrier$"
       },
       condition = function(win)
         local winUI = towinui(win)
-        local autoconfig = getc(winUI, AX.CheckBox, 2,
-            AX.CheckBox, "Auto config")
+        local title = barrierLocalizedString("Auto config", win:application():bundleID())
+        local autoconfig = getc(winUI, AX.CheckBox, 2, AX.CheckBox, title)
         return autoconfig ~= nil and #autoconfig:actionNames() > 0, autoconfig
       end,
       fn = function(checkbox, win)
         local toSpecify = checkbox.AXValue == 1
         press(checkbox)
         if toSpecify then
-          local textField = getc(towinui(win), AX.CheckBox, 2,
-              AX.TextField, "Server IP:")
+          local title = barrierLocalizedString("&Server IP:", win:application():bundleID())
+          local textField = getc(towinui(win), AX.CheckBox, 2, AX.TextField, title)
           if textField then
             textField:performAction(AX.Raise)
           end
@@ -4034,10 +4071,12 @@ appHotKeyCallbacks = {
       end
     },
     ["showMainWindow"] = {
-      message = "Show",
+      message = barrierLocalizedMessage("Show"),
       menubarFilter = { allowIndices =  1 },
       condition = function(menu)
-        local menuItem = getc(menu, AX.MenuItem, "Show")
+        local app = getAppFromDescendantElement(menu)
+        local title = localizedString("Show", app:bundleID()) or "Show"
+        local menuItem = getc(menu, AX.MenuItem, title)
         return menuItem and menuItem.AXEnabled, menuItem
       end,
       fn = press

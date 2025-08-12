@@ -390,7 +390,7 @@ local function systemLocales()
 end
 SYSTEM_LOCALE = systemLocales()
 
-local electronLocale, javaLocale
+local electronLocale, javaLocale, qtExecutableLocale
 function applicationLocale(appid)
   -- locale of `WeChat` and apps whose localization is enabled by Electron or Java
   -- cannot be aquired in preferences files
@@ -439,6 +439,27 @@ function applicationLocale(appid)
         end
       end
       return locale or SYSTEM_LOCALE
+    elseif localizationFrameworks[appid].qt then
+      local app, locale = find(appid)
+      if app then
+        if appid == "barrier" then
+          local menuBarMenuItems = getc(toappui(app),
+              AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1, AX.MenuItem)
+          local baseTitles = { "Start", "Stop", "Show Log", "Hide", "Show", "Quit" }
+          local idx = 0
+          for _, menu in ipairs(menuBarMenuItems or {}) do
+            if menu.AXTitle ~= "" then
+              idx = idx + 1
+              if menu.AXTitle ~= baseTitles[idx] then
+                locale = qtExecutableLocale(app, menu.AXTitle,
+                    localizationFrameworks[appid].qt)
+                break
+              end
+            end
+          end
+        end
+      end
+      return locale or 'en'
     end
   end
 
@@ -802,6 +823,30 @@ local function getQtMatchedLocale(appLocale, resourceDir)
   if #matchedLocales == 0 then return end
   local bestMatch = getBestMatchedLocale(localDetails, matchedLocales, true, true)
   return bestMatch.locale, bestMatch.extra
+end
+
+local qtExecutableLocales = {}
+local function getQtExecutableLocales(appid, executable, prefix)
+  if qtExecutableLocales[appid] then
+    return qtExecutableLocales[appid]
+  end
+
+  local tmpBaseDir = localeTmpDir .. appid
+  local localesFile = tmpBaseDir .. '/locales.json'
+  if exists(localesFile) then
+    qtExecutableLocales[appid] = hs.json.read(localesFile)
+  else
+    local localesStr, ok = hs.execute(strfmt(
+        [[/usr/bin/python3 scripts/qt_locales.py '%s' '%s']], executable, prefix))
+    if ok then
+      local localeFiles = strsplit(localesStr, "\n")
+      localeFiles[#localeFiles] = nil
+      qtExecutableLocales[appid] = localeFiles
+      mkdir(tmpBaseDir)
+      hs.json.write(qtExecutableLocales[appid], localesFile)
+    end
+  end
+  return qtExecutableLocales[appid]
 end
 
 local jimageLocales = {}
@@ -1649,11 +1694,17 @@ local function poStrToCtxt(str)
 end
 
 local function localizeByQtImpl(str, file)
-  local cmd = hs.execute("which lconvert | tr -d '\\n'", true)
-  if cmd == nil then return end
-  local output, status = hs.execute(strfmt(
-    '%s -i "%s" -of po | %s', cmd, file, poIdToStr(str)))
-  if status and output ~= "" then return output end
+  if file:sub(-3) == '.qm' then
+    local cmd = hs.execute("which lconvert | tr -d '\\n'", true)
+    if cmd == nil then return end
+    local output, status = hs.execute(strfmt(
+      '%s -i "%s" -of po | %s', cmd, file, poIdToStr(str)))
+    if status and output ~= "" then return output end
+  else
+    local output, status = hs.execute(strfmt(
+      'cat "%s" | %s', file, poIdToStr(str)))
+    if status and output ~= "" then return output end
+  end
 end
 
 local function localizeByQt(str, localeDir)
@@ -1670,6 +1721,73 @@ local function localizeByQt(str, localeDir)
         local result = localizeByQtImpl(str, localeDir .. '/' .. file)
         if result ~= nil then return result end
       end
+    end
+  end
+end
+
+local QM_MAGIC_NUMBER = string.char(
+  0x3C, 0xB8, 0x64, 0x18, 0xCA, 0xEF, 0x9C, 0x95,
+  0xCD, 0x21, 0x1C, 0xBF, 0x60, 0xA1, 0xBD, 0xDD
+)
+local function extractQMSegments(input_path, cacheDir, cacheFileNames)
+  local cmd = hs.execute("which lconvert | tr -d '\\n'", true)
+  if cmd == nil then return end
+
+  local file = io.open(input_path, "rb")
+  if not file then return end
+  local data = file:read("*all")
+  file:close()
+
+  local positions = {}
+  local start = 1
+  while true do
+    local found = data:find(QM_MAGIC_NUMBER, start, true)
+    if not found then break end
+    table.insert(positions, found)
+    start = found + #QM_MAGIC_NUMBER
+  end
+  if #positions < 2 then return end
+
+  local count = 0
+  for i = 1, #positions - 1 do
+    local startIdx = positions[i]
+    local endIdx = positions[i + 1] - 1
+    local chunk = data:sub(startIdx, endIdx)
+
+    if #chunk > 0 then
+      local qmFile = cacheDir .. '/' .. cacheFileNames[i]
+      local f = io.open(qmFile, "wb")
+      if f then
+        f:write(chunk)
+        f:close()
+        hs.execute(strfmt(
+            '%s -i "%s" -of po -o "%s"', cmd, qmFile, qmFile:sub(1, -4)..'.po'))
+        count = count + 1
+      end
+    end
+  end
+end
+
+local function localizeByQtExecutable(str, appid, appLocale, prefix)
+  local executable = hs.application.infoForBundleID(appid).CFBundleExecutable
+  executable = hs.application.pathForBundleID(appid)
+      .. '/Contents/MacOS/' .. executable
+  local localeFiles = getQtExecutableLocales(appid, executable, prefix)
+  if localeFiles == nil or #localeFiles == 0 then return end
+  local tmpBaseDir = localeTmpDir .. appid
+  if not exists(tmpBaseDir .. '/' .. localeFiles[1]:sub(1, -4) .. '.po') then
+    extractQMSegments(executable, tmpBaseDir, localeFiles)
+  end
+  local locale, extra = getQtMatchedLocale(appLocale, tmpBaseDir)
+  if locale == nil or locale == 'en' then return str, 'en' end
+  if type(extra) == 'string' then
+    local file = extra
+    local result = localizeByQtImpl(str, file:sub(1, -4) .. '.po')
+    if result then return result, locale end
+  elseif type(extra) == 'table' then
+    for _, file in ipairs(extra) do
+      local result = localizeByQtImpl(str, file:sub(1, -4) .. '.po')
+      if result then return result, locale end
     end
   end
 end
@@ -2190,6 +2308,10 @@ local function localizedStringImpl(str, appid, params, force)
   elseif appid:find("org.qt%-project") ~= nil then
     result, locale = localizeQt(str, appid, appLocale)
     return result, appLocale, locale
+  elseif localizationFrameworks[appid] and localizationFrameworks[appid].qt then
+    result, locale = localizeByQtExecutable(str, appid, appLocale,
+                                            localizationFrameworks[appid].qt)
+    return result, appLocale, locale
   elseif appid == "com.kingsoft.wpsoffice.mac" then
     result, locale = localizeWPS(str, appLocale, localeFile)
     return result, appLocale, locale
@@ -2694,11 +2816,17 @@ local function delocalizeByNIB(str, localeDir, localeFile, appid)
 end
 
 local function delocalizeByQtImpl(str, file)
-  local cmd = hs.execute("which lconvert | tr -d '\\n'", true)
-  if cmd == nil then return end
-  local output, status = hs.execute(strfmt(
-    '%s -i "%s" -of po | %s', cmd, file, poStrToId(str)))
-  if status and output ~= "" then return output end
+  if file:sub(-3) == '.qm' then
+    local cmd = hs.execute("which lconvert | tr -d '\\n'", true)
+    if cmd == nil then return end
+    local output, status = hs.execute(strfmt(
+      '%s -i "%s" -of po | %s', cmd, file, poStrToId(str)))
+    if status and output ~= "" then return output end
+  else
+    local output, status = hs.execute(strfmt(
+      'cat "%s" | %s', file, poStrToId(str)))
+    if status and output ~= "" then return output end
+  end
 end
 
 local function delocalizeByQt(str, localeDir)
@@ -2715,6 +2843,31 @@ local function delocalizeByQt(str, localeDir)
         local result = delocalizeByQtImpl(str, localeDir .. '/' .. file)
         if result ~= "" then return result end
       end
+    end
+  end
+end
+
+local function delocalizeByQtExecutable(str, appid, appLocale, prefix)
+  local executable = hs.application.infoForBundleID(appid).CFBundleExecutable
+  executable = hs.application.pathForBundleID(appid)
+      .. '/Contents/MacOS/' .. executable
+  local localeFiles = getQtExecutableLocales(appid, executable, prefix)
+  if localeFiles == nil then return end
+  local tmpBaseDir = localeTmpDir .. appid
+  if not exists(tmpBaseDir .. '/' .. localeFiles[1]:sub(1, -4) .. '.po') then
+    extractQMSegments(executable, tmpBaseDir, localeFiles)
+  end
+  local locale, extra = getQtMatchedLocale(appLocale, tmpBaseDir)
+  if locale == nil then return end
+  if locale == 'en' then return str:gsub('[^%s]-&(%a)', '%1'), locale end
+  if type(extra) == 'string' then
+    local file = extra
+    local result = delocalizeByQtImpl(str, extra:sub(1, -4) .. '.po')
+    if result then return result, locale end
+  elseif type(extra) == 'table' then
+    for _, file in ipairs(extra) do
+      local result = delocalizeByQtImpl(str, file:sub(1, -4) .. '.po')
+      if result then return result, locale end
     end
   end
 end
@@ -3198,6 +3351,10 @@ local function delocalizedStringImpl(str, appid, params, force)
   elseif appid:find("org.qt%-project") ~= nil then
     result, locale = delocalizeQt(str, appid, appLocale)
     return result, appLocale, locale
+  elseif localizationFrameworks[appid] and localizationFrameworks[appid].qt then
+    result, locale = delocalizeByQtExecutable(str, appid, appLocale,
+                                              localizationFrameworks[appid].qt)
+    return result, appLocale, locale
   elseif appid == "com.kingsoft.wpsoffice.mac" then
     result, locale = delocalizeWPS(str, appLocale, localeFile)
     return result, appLocale, locale
@@ -3480,6 +3637,45 @@ javaLocale = function(app, javahome, localesPath)
       end
       hs.json.write(deLocaleMap, menuItemTmpFile, false, true)
       return locale
+    end
+  end
+end
+
+local availableLanguages = {}
+foreach(hs.host.locale.availableLocales(), function(locale)
+  local pos = locale:find('_')
+  lang = pos and locale:sub(1, pos - 1) or locale
+  availableLanguages[lang] = true
+end)
+qtExecutableLocale = function(app, str, prefix)
+  local appid = app:bundleID()
+  local executable = hs.application.infoForBundleID(appid).CFBundleExecutable
+  executable = hs.application.pathForBundleID(appid)
+      .. '/Contents/MacOS/' .. executable
+  local localeFiles = getQtExecutableLocales(appid, executable, prefix)
+  if localeFiles == nil then return end
+  local tmpBaseDir = localeTmpDir .. appid
+  mkdir(tmpBaseDir)
+  if not exists(tmpBaseDir .. '/' .. localeFiles[1]:sub(1, -4) .. '.po') then
+    extractQMSegments(executable, tmpBaseDir, localeFiles)
+  end
+  for _, file in ipairs(localeFiles) do
+    local po = file:sub(1, -4) .. '.po'
+    if exists(tmpBaseDir .. '/' .. po) then
+      local _, ok = hs.execute(strfmt(
+          [[cat '%s' | grep '%s' | grep '^msgstr ']], tmpBaseDir .. '/' .. po, str))
+      if ok then
+        local start = 1
+        while start and start < #po do
+          local tmp = po:gsub('-', '_')
+          local pos = tmp:find('_', start)
+          if pos == nil or availableLanguages[po:sub(start, pos - 1)] then
+            return po:sub(start, #po - 3)
+          else
+            start = pos + 1
+          end
+        end
+      end
     end
   end
 end

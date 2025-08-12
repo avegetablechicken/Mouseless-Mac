@@ -12,7 +12,8 @@
     "com.tencent.meeting": "WeMeetResource.bundle",
     "com.tencent.yuanbao": [{ "electron": "locales" }, "locales"],
     "net.xmind.vana.app": { "electron": "static/locales" },
-    "JabRef": { "java": "org.jabref/l10n" }
+    "JabRef": { "java": "org.jabref/l10n" },
+    "barrier": { "qt": "gui" }
   },
 
   "com.baidu.BaiduNetdisk-mac": {
