@@ -641,6 +641,7 @@ local function getBestMatchedLocale(appLocale, locales, combineExtras, multipleP
         bestMatch = locale
         break
       end
+      bestMatch = bestMatch or locale
     end
     local score = 0
     if locale.scriptCode == appLocale.scriptCode then
