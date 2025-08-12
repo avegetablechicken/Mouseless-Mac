@@ -1694,6 +1694,7 @@ local function poStrToCtxt(str)
 end
 
 local function localizeByQtImpl(str, file)
+  str = str:gsub('%(', '\\('):gsub('%)', '\\)')
   if file:sub(-3) == '.qm' then
     local cmd = hs.execute("which lconvert | tr -d '\\n'", true)
     if cmd == nil then return end
@@ -2816,6 +2817,7 @@ local function delocalizeByNIB(str, localeDir, localeFile, appid)
 end
 
 local function delocalizeByQtImpl(str, file)
+  str = str:gsub('%(', '\\('):gsub('%)', '\\)')
   if file:sub(-3) == '.qm' then
     local cmd = hs.execute("which lconvert | tr -d '\\n'", true)
     if cmd == nil then return end
