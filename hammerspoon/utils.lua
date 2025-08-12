@@ -758,7 +758,7 @@ local function getQtMatchedLocale(appLocale, resourceDir)
       if file:sub(-3) == '.qm' then
         local lowerFile = file:sub(1, -4):lower()
         local fileSplits = strsplit(lowerFile:gsub('_', '-'), '-')
-        for i = #fileSplits, #fileSplits - 2, -1 do
+        for i = #fileSplits, math.max(1, #fileSplits - 2), -1 do
           if fileSplits[i] == language then
             local thisCountry, thisScript
             if i + 2 == #fileSplits then
@@ -771,9 +771,9 @@ local function getQtMatchedLocale(appLocale, resourceDir)
                 thisScript = fileSplits[i + 1]
               end
             end
-            local localeStartPos = 0
+            local localeStartPos = 1
             for j = 1, i - 1 do
-              localeStartPos = localeStartPos + #fileSplits[i - 1]
+              localeStartPos = localeStartPos + #fileSplits[j] + 1
             end
             local locale = file:sub(localeStartPos, -4)
             if script == nil or thisScript == nil or thisScript == script then
