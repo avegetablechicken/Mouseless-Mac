@@ -440,6 +440,9 @@ local function loadAppHotkeys(t, showOrSearch)
     HSKeybindings.appHotkeysLoaded = true
   end
   local activeApp = hs.application.frontmostApplication()
+  if activeApp:bundleID() == "com.valvesoftware.steam.helper" then
+    activeApp = find("com.valvesoftware.steam") or activeApp
+  end
   local appHotkeys = getMenuHotkeys(activeApp, showOrSearch, true)
   for _, hotkey in ipairs(appHotkeys) do
     if type(hotkey) == 'table' then
@@ -491,6 +494,10 @@ local function testValid(entry)
     elseif entry.kind == HK.IN_APP then
       local app = hs.application.frontmostApplication()
       local appid = app:bundleID() or app:name()
+      if entry.subkind == HK.IN_APP_.MENU
+          and appid == "com.valvesoftware.steam.helper" then
+        appid = "com.valvesoftware.steam"
+      end
       local hotkeyInfo = get(ActivatedAppConditionChain, appid, entry.idx)
       if hotkeyInfo ~= nil then
         local actualMsg
@@ -629,6 +636,9 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
       if hotkey.kind >= HK.IN_APP then insertIdx = i break end
     end
     local app = hs.application.frontmostApplication()
+    if app:bundleID() == "com.valvesoftware.steam.helper" then
+      app = find("com.valvesoftware.steam") or app
+    end
     local menuBarItems = getMenuBarItems(app, true)
     for _, item in ipairs(menuBarItems) do
       local entry = tfind(enabledAltMenuHotkeys, function(menuHK)

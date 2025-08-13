@@ -7735,6 +7735,17 @@ local function bindAltMenu(app, mods, key, message, fn)
   }
   if app:bundleID() == "com.valvesoftware.steam" then
     config.nonFrontmost = true
+    config.condition = function()
+      local focusedApp = hs.axuielement.systemWideElement().AXFocusedApplication
+      if focusedApp then
+        focusedApp = focusedApp:asHSApplication()
+      end
+      if focusedApp and (focusedApp:bundleID() ~= app:bundleID()
+          and focusedApp:bundleID() ~= "com.valvesoftware.steam.helper" ) then
+        return false, CF.uIElementNotFocused
+      end
+      return true
+    end
   end
   local hotkey = AppBind(app, config)
   hotkey.subkind = HK.IN_APP_.MENU
