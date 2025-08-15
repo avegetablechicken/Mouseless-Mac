@@ -1929,7 +1929,8 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then return false end
         local list = getc(towinui(app:focusedWindow()), AX.Group, 1,
             AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
-        if list.AXDescription == localizedString("Location List", app:bundleID()) then
+        if list and list.AXDescription
+            == localizedString("Location List", app:bundleID()) then
           for i = 1, #list do
             if list[i].AXSelected then
               return true, list[(i - 2) % #list + 1][1]
@@ -1947,7 +1948,8 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then return false end
         local list = getc(towinui(app:focusedWindow()), AX.Group, 1,
           AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
-        if list.AXDescription == localizedString("Location List", app:bundleID()) then
+        if list and list.AXDescription
+            == localizedString("Location List", app:bundleID()) then
           for i = 1, #list do
             if list[i].AXSelected then
               return true, list[i % #list + 1][1]
@@ -1964,7 +1966,8 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then return false end
         local list = getc(towinui(app:focusedWindow()), AX.Group, 1,
             AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
-        if list.AXDescription == localizedString("Location List", app:bundleID()) then
+        if list and list.AXDescription ==
+            localizedString("Location List", app:bundleID()) then
           local selected = tfind(list.AXChildren or {},
               function(item) return item.AXSelected end)
           return selected ~= nil, selected
