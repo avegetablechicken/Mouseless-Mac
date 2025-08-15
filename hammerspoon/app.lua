@@ -7363,6 +7363,50 @@ local function registerZoomHotkeys(app)
   end
 end
 
+local function getToolbarButtons(winUI)
+  local toolbar = getc(winUI, AX.Toolbar, 1)
+  return getc(toolbar, AX.Button) or {}
+end
+
+local function getTabGroupButtons(winUI)
+  local tabgroup = getc(winUI, AX.TabGroup, 1)
+  local buttons = {}
+  for _, elem in ipairs(tabgroup or {}) do
+    if elem.AXRole == AX.RadioButton and elem.AXSubrole == AX.TabButton then
+      tinsert(buttons, elem)
+    else
+      return buttons
+    end
+  end
+end
+
+local specialToolbarButtons = {
+  ["com.apple.TextEdit"] = getTabGroupButtons,
+  ["org.xquartz.X11"] = getTabGroupButtons,
+  ["com.superace.updf.mac"] = function(winUI)
+    local buttons = {}
+    for _, elem in ipairs(winUI) do
+      if elem.AXRole == AX.Button and elem.AXSubrole == nil then
+        tinsert(buttons, elem)
+      else
+        return buttons
+      end
+    end
+  end,
+  ["org.klatexformula.klatexformula"] = function(winUI)
+    local buttons = {}
+    local found = false
+    for _, elem in ipairs(winUI) do
+      if elem.AXRole == AX.CheckBox then
+        found = true
+        tinsert(buttons, elem)
+      elseif found then
+        return buttons, true
+      end
+    end
+  end,
+}
+
 local settingsToolbarHotkeys = {}
 local function registerNavigationForSettingsToolbar(app)
   local deleteFunc = function ()
@@ -7375,11 +7419,22 @@ local function registerNavigationForSettingsToolbar(app)
   deleteFunc()
 
   local win = app:focusedWindow()
+  if win == nil then
+    local totalDelay = 0
+    repeat
+      hs.timer.usleep(10000)
+      totalDelay = totalDelay + 0.01
+      win = app:focusedWindow()
+    until win or totalDelay > 0.1
+  end
   if win == nil then return end
+  local appid = app:bundleID() or app:name()
   local winUI = towinui(win)
-  local toolbar = getc(winUI, AX.Toolbar, 1)
-  if toolbar == nil then return end
-  for i, button in ipairs(getc(toolbar, AX.Button)) do
+  local func = specialToolbarButtons[appid] or getToolbarButtons
+  local buttons, toClick = func(winUI)
+  local callback = not toClick and press
+      or function(button) click(button, app) end
+  for i, button in ipairs(buttons) do
     local suffix
     if i == 1 then suffix = "st"
     elseif i == 2 then suffix = "nd"
@@ -7389,8 +7444,9 @@ local function registerNavigationForSettingsToolbar(app)
     local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
     if spec then
       local hotkey = AppWinBind(win, {
-        spec = spec, message = button.AXTitle,
-        fn = function() press(button) end,
+        spec = spec,
+        message = button.AXTitle or button.AXDescription,
+        fn = bind(callback, button)
       })
       tinsert(settingsToolbarHotkeys, hotkey)
     end
@@ -7424,7 +7480,6 @@ local function registerNavigationForSettingsToolbar(app)
     end
   end)
   closeObserver:start()
-  local appid = app:bundleID()
   stopOnDeactivated(appid, closeObserver, deleteFunc)
   stopOnTerminated(appid, closeObserver, deleteFunc)
 end
@@ -7442,6 +7497,16 @@ local function registerObserverForSettingsMenuItem(app)
   settingsMenu = settingsMenu or tfind(appMenuItems, function(item)
     return item.AXTitle:find(sets:sub(1, -4))
         or item.AXTitle:find(prefs:sub(1, -4))
+  end)
+  settingsMenu = settingsMenu or tfind(appMenuItems, function(item)
+    if item.AXMenuItemCmdChar == ','
+        and item.AXMenuItemCmdModifiers == 0 then
+      local title = delocalizedString(item.AXTitle, app:bundleID())
+      if title then
+        return title:find("Settings") or title:find("Preferences")
+      end
+    end
+    return false
   end)
   if settingsMenu == nil then return end
   local observer = uiobserver.new(app:pid())
