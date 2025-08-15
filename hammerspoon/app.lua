@@ -7360,8 +7360,8 @@ local function registerZoomHotkeys(app)
   end
 end
 
-local settingsNavigationHotkeys = {}
-local function registerNavigationForSettingsWindow(app)
+local settingsToolbarHotkeys = {}
+local function registerNavigationForSettingsToolbar(app)
   local win = app:focusedWindow()
   if win == nil then return end
   local winUI = towinui(win)
@@ -7380,15 +7380,15 @@ local function registerNavigationForSettingsWindow(app)
         spec = spec, message = button.AXTitle,
         fn = function() press(button) end,
       })
-      tinsert(settingsNavigationHotkeys, hotkey)
+      tinsert(settingsToolbarHotkeys, hotkey)
     end
   end
   local deleteFunc = function ()
-    for _, hotkey in ipairs(settingsNavigationHotkeys) do
+    for _, hotkey in ipairs(settingsToolbarHotkeys) do
       disableConditionInChain(app:bundleID(), hotkey, true)
       hotkey:delete()
     end
-    settingsNavigationHotkeys = {}
+    settingsToolbarHotkeys = {}
   end
   local closeObserver = uiobserver.new(app:pid())
   closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
@@ -7407,12 +7407,12 @@ local function registerNavigationForSettingsWindow(app)
       closeObserver:removeWatcher(winUI, uinotifications.windowDeminiaturized)
     end
     if app:focusedWindow() and app:focusedWindow():id() == win:id() then
-      for _, hotkey in ipairs(settingsNavigationHotkeys) do
+      for _, hotkey in ipairs(settingsToolbarHotkeys) do
         hotkey:enable()
         enableConditionInChain(hotkey)
       end
     else
-      for _, hotkey in ipairs(settingsNavigationHotkeys) do
+      for _, hotkey in ipairs(settingsToolbarHotkeys) do
         disableConditionInChain(app:bundleID(), hotkey)
         hotkey:disable()
       end
@@ -7443,7 +7443,7 @@ local function registerObserverForSettingsMenuItem(app)
   observer:addWatcher(appUI, uinotifications.menuItemSelected)
   observer:callback(function (_, elem)
     if elem.AXTitle == settingsMenu.AXTitle then
-      registerNavigationForSettingsWindow(app)
+      registerNavigationForSettingsToolbar(app)
     end
   end)
   observer:start()
@@ -7479,7 +7479,7 @@ local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
       local prefs = commonLocalizedMessage("Preferences…")(app)
       if elem.AXTitle:find(sets:sub(1, -4))
           or elem.AXTitle:find(prefs:sub(1, -4)) then
-        registerNavigationForSettingsWindow(app)
+        registerNavigationForSettingsToolbar(app)
       end
     end
     if oldCallback then
