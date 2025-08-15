@@ -7362,6 +7362,15 @@ end
 
 local settingsToolbarHotkeys = {}
 local function registerNavigationForSettingsToolbar(app)
+  local deleteFunc = function ()
+    for _, hotkey in ipairs(settingsToolbarHotkeys) do
+      disableConditionInChain(app:bundleID(), hotkey, true)
+      hotkey:delete()
+    end
+    settingsToolbarHotkeys = {}
+  end
+  deleteFunc()
+
   local win = app:focusedWindow()
   if win == nil then return end
   local winUI = towinui(win)
@@ -7382,13 +7391,6 @@ local function registerNavigationForSettingsToolbar(app)
       })
       tinsert(settingsToolbarHotkeys, hotkey)
     end
-  end
-  local deleteFunc = function ()
-    for _, hotkey in ipairs(settingsToolbarHotkeys) do
-      disableConditionInChain(app:bundleID(), hotkey, true)
-      hotkey:delete()
-    end
-    settingsToolbarHotkeys = {}
   end
   local closeObserver = uiobserver.new(app:pid())
   closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
