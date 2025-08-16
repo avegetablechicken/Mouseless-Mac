@@ -6608,6 +6608,7 @@ local function sameFilter(a, b)
 end
 
 registerInWinHotKeys = function(win, filter)
+  if win == nil then return end
   local app = win:application()
   local appid = app:bundleID() or app:name()
   if appHotKeyCallbacks[appid] == nil then return end
