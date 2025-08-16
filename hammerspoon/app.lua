@@ -30,7 +30,7 @@ local function focusOrHide(hint)
     local windowFilter = hs.window.filter.new(false):setAppFilter(app:name())
     local windows = windowFilter:getWindows()
     local nonDesktop = tfind(windows, function(win)
-      return win:id() ~= hs.window.desktop():id()
+      return hs.window.desktop() == nil or win:id() ~= hs.window.desktop():id()
     end) == nil
     if nonDesktop then
       app = hs.application.open(appid)
@@ -8526,12 +8526,12 @@ end
 
 local specialNoWindowRules = {
   ["com.apple.finder"] = function(app)
-    if #hs.window.visibleWindows() == 1
-        and hs.window.visibleWindows()[1]:id() == hs.window.desktop():id() then
+    if #hs.window.visibleWindows() == 1 and (hs.window.desktop()
+        and hs.window.visibleWindows()[1]:id() == hs.window.desktop():id()) then
       return false
     end
     local nonDesktopWindows = tifilter(app:visibleWindows(), function(win)
-      return win:id() ~= hs.window.desktop():id()
+      return hs.window.desktop() == nil or win:id() ~= hs.window.desktop():id()
     end)
     if #nonDesktopWindows == 0 then return true end
     local appid = app:bundleID()
