@@ -2535,10 +2535,11 @@ local function delocalizeByLoctableImpl(str, filePath, locale, localesDict, base
   if key == nil then return end
   local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
   for _, en in ipairs(enLocales) do
-    if localesDict[en] ~= nil then
+    if localesDict[en] and localesDict[en][key] then
       return localesDict[en][key]
     end
   end
+  return key
 end
 
 local function delocalizeByLoctable(str, resourceDir, localeFile, locale, localesDict)
