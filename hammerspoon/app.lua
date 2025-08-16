@@ -5277,6 +5277,15 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["re.rizin.cutter"] =
+  {
+    ["preferences"] = {
+      message = localizedMessage("Preferences"),
+      condition = checkMenuItem({ "Edit", "Preferences" }),
+      fn = receiveMenuItem
+    }
+  },
+
   ["com.apple.Terminal"] =
   {
     ["tmuxPreviousPane"] = {

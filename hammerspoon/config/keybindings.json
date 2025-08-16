@@ -1838,6 +1838,12 @@
         "key": "O"
       }
     },
+    "re.rizin.cutter": {
+      "preferences": {
+        "mods": "command",
+        "key": ","
+      }
+    },
     "com.apple.dt.Xcode": {
       "showInFinder": {
         "mods": ["shift", "command"],
