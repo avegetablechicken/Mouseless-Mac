@@ -8339,14 +8339,6 @@ onLaunchedAndActivated = function(app, reinvokeKey)
   registerObserverForMenuBarChange(app)
   registerObserverForSettingsMenuItem(app)
 
-  if HSKeybindings ~= nil and HSKeybindings.isShowing then
-    local validOnly = HSKeybindings.validOnly
-    local showHS = HSKeybindings.showHS
-    local showApp = HSKeybindings.showApp
-    HSKeybindings:reset()
-    HSKeybindings:update(validOnly, showHS, showApp, true)
-  end
-  FLAGS["NO_RESHOW_KEYBINDING"] = false
   return #menuBarItems > 0
 end
 if frontApp then
@@ -9074,7 +9066,6 @@ function App_applicationCallback(appname, eventType, app)
           registerObserverForRightMenuBarSettingsMenuItem(app, observer)
         end
       end
-      FLAGS["NO_RESHOW_KEYBINDING"] = false
       FLAGS["APP_LAUNCHING"] = nil
     end
     if doublecheck and not doublecheck() then
@@ -9108,7 +9099,6 @@ function App_applicationCallback(appname, eventType, app)
     elseif FLAGS["APP_LAUNCHING"] and appsLaunchSlow[appid] == nil then
       FLAGS["MENUBAR_ITEMS_PREPARED"] = false
     end
-    FLAGS["NO_RESHOW_KEYBINDING"] = false
   elseif eventType == hs.application.watcher.deactivated and appname ~= nil then
     for _, proc in ipairs(processesOnDeactivated[appid] or {}) do
       proc(app)
@@ -9142,6 +9132,14 @@ function App_applicationCallback(appname, eventType, app)
     end
   end
   if eventType == hs.application.watcher.deactivated then
+    FLAGS["NO_RESHOW_KEYBINDING"] = false
+    if HSKeybindings ~= nil and HSKeybindings.isShowing then
+      local validOnly = HSKeybindings.validOnly
+      local showHS = HSKeybindings.showHS
+      local showApp = HSKeybindings.showApp
+      HSKeybindings:reset()
+      HSKeybindings:update(validOnly, showHS, showApp, true)
+    end
     local frontApp = hs.application.frontmostApplication()
     local frontAppID = frontApp:bundleID() or frontApp:name()
     if remoteDesktopsMappingModifiers[frontAppID] == nil then
