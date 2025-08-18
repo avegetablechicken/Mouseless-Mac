@@ -537,7 +537,8 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
     tinsert(allKeys, { idx = modal.idx, msg = modal.msg,
                        condition = modal.condition,
                        kind = modal.kind, subkind = modal.subkind,
-                       suspendable = modal.suspendable, source = 1 })
+                       suspendable = modal.suspendable,
+                       source = HK_SOURCE.HS })
   end
 
   for _, modal in ipairs(HyperModalList) do
@@ -546,14 +547,16 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
         tinsert(allKeys, { idx = hotkey.idx, msg = hotkey.msg,
                            condition = hotkey.condition,
                            kind = hotkey.kind, subkind = hotkey.subkind,
-                           suspendable = hotkey.suspendable, source = 1 })
+                           suspendable = hotkey.suspendable,
+                           source = HK_SOURCE.HS })
       end
     end
   end
 
   for _, hotkeys in pairs(trackpad.keys) do
     for _, hotkey in ipairs(hotkeys) do
-      tinsert(allKeys, { idx = hotkey.idx, msg = hotkey.msg, source = 1 })
+      tinsert(allKeys, { idx = hotkey.idx, msg = hotkey.msg,
+                         source = HK_SOURCE.HS })
     end
   end
 
@@ -562,7 +565,8 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
       local newEntry = { idx = entry.idx, msg = entry.msg,
                          condition = entry.condition,
                          kind = entry.kind, subkind = entry.subkind,
-                         suspendable = entry.suspendable, source = 1 }
+                         suspendable = entry.suspendable,
+                         source = HK_SOURCE.HS }
       if entry.kind == HK.IN_APP and entry.subkind == HK.IN_APP_.MENU then
         tinsert(enabledAltMenuHotkeys, newEntry)
       else
@@ -729,8 +733,8 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
         menu = menu.."<li><div class='menutext'>".." "..entry.."</div></li>"
         kind = HK.IN_APP
       end
-    elseif ((entry.source == HK_SOURCE.KARABINER and showHS)
-             or (entry.source == HK_SOURCE.APP and showApp))
+    elseif (((entry.source == HK_SOURCE.HS or entry.source == HK_SOURCE.KARABINER)
+        and showHS) or (entry.source == HK_SOURCE.APP and showApp))
         and (entry.valid or (not validOnly and entry.msg:find(": ") ~= nil)) then
       local msg
       if entry.kind ~= kind then
