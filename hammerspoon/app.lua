@@ -9135,10 +9135,10 @@ function App_applicationCallback(appname, eventType, app)
     FLAGS["NO_RESHOW_KEYBINDING"] = false
     if HSKeybindings ~= nil and HSKeybindings.isShowing then
       local validOnly = HSKeybindings.validOnly
-      local showHS = HSKeybindings.showHS
+      local showCustom = HSKeybindings.showCustom
       local showApp = HSKeybindings.showApp
       HSKeybindings:reset()
-      HSKeybindings:update(validOnly, showHS, showApp, true)
+      HSKeybindings:update(validOnly, showCustom, showApp, true)
     end
     local frontApp = hs.application.frontmostApplication()
     local frontAppID = frontApp:bundleID() or frontApp:name()

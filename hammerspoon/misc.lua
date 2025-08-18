@@ -182,7 +182,7 @@ end
 function HSKeybindings:reset()
   HSKeybindings.buffer = nil
   self.validOnly = true
-  self.showHS = true
+  self.showCustom = true
   self.showApp = false
   self.evFlags = nil
   self.appHotkeysLoaded = false
@@ -524,7 +524,7 @@ end
 
 local trackpad = require('modal.trackpad')
 local karaHotkeys
-local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
+local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
   local allKeys = {}
   local enabledAltMenuHotkeys = {}
 
@@ -731,7 +731,7 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
         end
       end
       if canShow then
-        if kind < HK.IN_APP and showHS then
+        if kind < HK.IN_APP and showCustom then
           ix = ix + 1
           if ((ix - 1) % 15) == 0 then
             if ix > 1 then
@@ -755,7 +755,7 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
         kind = HK.IN_APP
       end
     elseif (((entry.source == HK_SOURCE.HS or entry.source == HK_SOURCE.KARABINER)
-        and showHS) or (entry.source == HK_SOURCE.APP and showApp))
+        and showCustom) or (entry.source == HK_SOURCE.APP and showApp))
         and (entry.valid or (not validOnly and entry.msg:find(": ") ~= nil)) then
       local msg
       if entry.kind ~= kind then
@@ -856,7 +856,7 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
       end
     end
     if entry.kind ~= nil and entry.valid
-        and ((entry.source == HK_SOURCE.HS and showHS)
+        and ((entry.source == HK_SOURCE.HS and showCustom)
              or (entry.source == HK_SOURCE.APP and showApp)) then
       kind = entry.kind
     end
@@ -873,17 +873,17 @@ if jsFile then
     js = jsFile:read("*all")
     jsFile:close()
 end
-local function generateHtml(validOnly, showHS, showApp, evFlags, reload)
+local function generateHtml(validOnly, showCustom, showApp, evFlags, reload)
   local title
-  if showHS == true and showApp == false then
+  if showCustom == true and showApp == false then
     title = "Keybindings of Hammerspoon & Karabiner-Elements"
-  elseif showHS == false and showApp == true then
+  elseif showCustom == false and showApp == true then
     title = "Keybindings of Activated Application: "
         .. hs.application.frontmostApplication():name()
   else
     title = "Keybindings of Hammerspoon, Karabiner-Elements and Activated Application"
   end
-  local allmenuitems = processHotkeys(validOnly, showHS, showApp, evFlags, reload)
+  local allmenuitems = processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
 
   local html = [[
       <!DOCTYPE html>
@@ -1055,12 +1055,12 @@ function HSKeybindings:show()
   loadAppHotkeys(self.buffer, true)
 end
 
-function HSKeybindings:update(validOnly, showHS, showApp, reload)
+function HSKeybindings:update(validOnly, showCustom, showApp, reload)
   if validOnly ~= nil then self.validOnly = validOnly end
-  if showHS ~= nil then self.showHS = showHS end
+  if showCustom ~= nil then self.showCustom = showCustom end
   if showApp ~= nil then self.showApp = showApp end
   local webcontent = generateHtml(
-      self.validOnly, self.showHS, self.showApp, self.evFlags, reload)
+      self.validOnly, self.showCustom, self.showApp, self.evFlags, reload)
   self.sheetView:html(webcontent)
   self.sheetView:show()
   self.isShowing = true
@@ -1142,7 +1142,7 @@ function()
         if not hkKeybindingsSpacePressed then
           hkKeybindingsSpacePressed = true
           HSKeybindings:update(false,
-                               HSKeybindings.showHS,
+                               HSKeybindings.showCustom,
                                HSKeybindings.showApp)
         end
         return true
@@ -1168,7 +1168,7 @@ function()
       elseif ev:getKeyCode() == hs.keycodes.map["Space"] then
         hkKeybindingsSpacePressed = false
         HSKeybindings:update(true,
-                             HSKeybindings.showHS,
+                             HSKeybindings.showCustom,
                              HSKeybindings.showApp)
         return true
       end
