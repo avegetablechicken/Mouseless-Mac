@@ -575,6 +575,27 @@ local function processHotkeys(validOnly, showHS, showApp, evFlags, reload)
     end
   end
 
+  tinsert(allKeys, {
+    idx = "SPACE", msg = "SPACE: Show Disabled Hotkeys",
+    kind = HK.PRIVELLEGE, subkind = -1,
+    source = HK_SOURCE.HS
+  })
+  tinsert(allKeys, {
+    idx = "1", msg = "1: Show Hammerspoon & Karabiner-Elements Keybindings",
+    kind = HK.PRIVELLEGE, subkind = -1,
+    source = HK_SOURCE.HS
+  })
+  tinsert(allKeys, {
+    idx = "2", msg = "2: Show Activated Application's Keybindings",
+    kind = HK.PRIVELLEGE, subkind = -1,
+    source = HK_SOURCE.HS
+  })
+  tinsert(allKeys, {
+    idx = "3", msg = "3: Show All Keybindings",
+    kind = HK.PRIVELLEGE, subkind = -1,
+    source = HK_SOURCE.HS
+  })
+
   if karaHotkeys == nil then
     local _, karaIsRunning = hs.execute("pgrep Karabiner-VirtualHIDDevice-Daemon")
     if karaIsRunning then
