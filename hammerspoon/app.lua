@@ -241,6 +241,7 @@ local function getAppFromDescendantElement(elem)
 end
 
 local function onDestroy(element, callback, stopWhen, callbackOnStop)
+  if not element:isValid() then return end
   local app = getAppFromDescendantElement(element)
   local closeObserver = uiobserver.new(app:pid())
   closeObserver:addWatcher(element, uinotifications.uIElementDestroyed)
