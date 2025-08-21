@@ -637,7 +637,7 @@ local function parseProxyInfo(info, require_mode)
     end
   elseif info.HTTPEnable == 1 and info.HTTPSEnable == 1 then
     for appname, config in pairs(ProxyConfigs) do
-      if config.condition == nil then
+      if config.locations == nil then
         if config.global ~= nil
           and config.global[1] == info.HTTPProxy
           and config.global[2] == tostring(info.HTTPPort)
