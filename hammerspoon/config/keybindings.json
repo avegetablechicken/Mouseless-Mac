@@ -1119,6 +1119,10 @@
         "mods": "",
         "key": "Return"
       },
+      "clear": {
+        "mods": "",
+        "key": "Return"
+      },
       "send": {
         "mods": "command",
         "key": "Return"

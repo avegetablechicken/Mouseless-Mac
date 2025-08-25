@@ -3479,6 +3479,26 @@ appHotKeyCallbacks = {
       end,
       fn = click
     },
+    ["clear"] = {
+      message = localizedMessage("Clear"),
+      bindCondition = versionRange("4", "4.0.6"),
+      windowFilter = {
+        allowSheet = true,
+        fn = function(win)
+          local appid = win:application():bundleID()
+          local title = localizedString("Clear", appid)
+          local bt = getc(towinui(win), AX.Button, title)
+          return bt ~= nil
+        end
+      },
+      condition = function(win)
+        local appid = win:application():bundleID()
+        local title = localizedString("Clear", appid)
+        local bt = getc(towinui(win), AX.Button, title)
+        return bt and bt.AXEnabled, bt
+      end,
+      fn = click
+    },
     ["send"] = {
       message = localizedMessage("Send"),
       bindCondition = versionRange("4", "4.0.6"),
