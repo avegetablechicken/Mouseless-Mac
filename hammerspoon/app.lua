@@ -7515,7 +7515,11 @@ local function registerObserverForSettingsMenuItem(app)
   settingsMenu = settingsMenu or tfind(appMenuItems, function(item)
     if item.AXMenuItemCmdChar == ','
         and item.AXMenuItemCmdModifiers == 0 then
-      local title = delocalizedString(item.AXTitle, app:bundleID())
+      local title = item.AXTitle
+      if title:find("Settings") or title:find("Preferences") then
+        return true
+      end
+      title = delocalizedString(item.AXTitle, app:bundleID())
       if title then
         return title:find("Settings") or title:find("Preferences")
       end
