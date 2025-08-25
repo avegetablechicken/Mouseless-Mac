@@ -910,9 +910,12 @@ end
 --- ### EuDic
 local EuDicMainWindowFilter = { allowRoles = AX.StandardWindow }
 onRunning("com.eusoft.freeeudic", function(app)
-  local title = "欧路词典"
-  title = localizedString(title, app:bundleID()) or title
-  EuDicMainWindowFilter.allowTitles = '^' .. title .. '$'
+  local functionName = "词 典"
+  functionName = localizedString(functionName, app:bundleID()) or functionName
+  EuDicMainWindowFilter.fn = function(win)
+    local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 1)
+    return button and button.AXTitle == functionName
+  end
 end)
 
 --- ### Parallels Desktop
