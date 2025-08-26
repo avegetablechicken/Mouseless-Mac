@@ -345,11 +345,8 @@ local function press(pressable)
   end
 end
 
-local function safeClick(position, app)
-  if app.application ~= nil then
-    app = app:application()
-  end
-  leftClickAndRestore(position, app)
+local function safeClick(position, obj)
+  leftClickAndRestore(position, obj)
 end
 
 local function click(position)
