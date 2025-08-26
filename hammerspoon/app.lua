@@ -345,6 +345,38 @@ local function press(pressable)
   end
 end
 
+local function safeClick(position, app)
+  if app.application ~= nil then
+    app = app:application()
+  end
+  leftClickAndRestore(position, app)
+end
+
+local function click(position)
+  leftClickAndRestore(position)
+end
+
+local function clickable(element, offset)
+  if offset == nil then
+    offset = { element.AXSize.w / 2, element.AXSize.h / 2 }
+  end
+  local point = hs.geometry.point {
+    element.AXPosition.x + offset[1],
+    element.AXPosition.y + offset[2],
+  }
+  local appHere = hs.axuielement.systemElementAtPosition(point)
+  while appHere ~= nil and appHere.AXParent ~= nil do
+    appHere = appHere.AXParent
+  end
+  if appHere then
+    local appid = appHere:asHSApplication():bundleID()
+    local targetApp = getAppFromDescendantElement(element)
+    if appid ~= targetApp:bundleID() then return false end
+  end
+  return true, point
+end
+
+
 -- # hotkeys in specific application
 local appHotKeyCallbacks
 local runningAppHotKeys = {}
@@ -803,13 +835,17 @@ local function VSCodeToggleSideBarSection(winUI, sidebar, section)
 end
 
 -- ### JabRef
-local function JabRefShowLibraryByIndex(idx)
+local function JabRefShowLibraryByIndex(idx, testClickable)
   return function(app)
     if app:focusedWindow() == nil then return false end
     local winUI = towinui(app:focusedWindow())
     local tab = getc(winUI, AX.TabGroup, 1, AX.RadioButton, idx)
     if tab ~= nil then
-      return true, { x = tab.AXPosition.x + 10, y = tab.AXPosition.y + 10 }
+      if testClickable or testClickable == nil then
+        return clickable(tab, { 10, 10 })
+      else
+        return true
+      end
     else
       return false
     end
@@ -840,7 +876,8 @@ local function confirmButtonValidForAppCleanerUninstaller(title)
     if cancel == nil then return false end
     local locTitle = localizedString(title,app:bundleID())
     local button = getc(winUI, AX.StaticText, locTitle)
-    return button ~= nil, button ~= nil and button.AXPosition
+    if button == nil then return false end
+    return clickable(button)
   end
 end
 
@@ -894,13 +931,13 @@ local function getQQLiveChannel(index)
       local row = list[start + index]
       if row.AXPosition.y > list.AXPosition.y
           and row.AXPosition.y + row.AXSize.h < list[#list].AXPosition.y - 15 then
-        return true, row
+        return clickable(row)
       elseif row.AXPosition.y <= list.AXPosition.y
           and row.AXPosition.y + row.AXSize.h > list.AXPosition.y then
-        return true, uioffset(row, { row.AXSize.w / 2, row.AXSize.h })
+        return clickable(row, { row.AXSize.w / 2, row.AXSize.h })
       elseif row.AXPosition.y + row.AXSize.h >= list[#list].AXPosition.y - 15
           and row.AXPosition.y < list[#list].AXPosition.y - 15 then
-        return true, uioffset(row, { row.AXSize.w / 2, 0 })
+        return clickable(row, { row.AXSize.w / 2, 0 })
       end
     end
     return false
@@ -1180,7 +1217,7 @@ local function getPasswordRecordPosition(index)
       local row = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
         AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index)
       if row ~= nil then
-        return true, { row.AXPosition.x + 10, row.AXPosition.y + 10 }
+        return clickable(row, { 10, 10 })
       end
     end
     return false
@@ -1587,15 +1624,6 @@ local function receiveMenuItem(menuItemTitle, app)
   app:selectMenuItem(menuItemTitle)
 end
 
--- click the position returned by the condition
--- work as hotkey callback
-local function click(position, app)
-  if app.application ~= nil then
-    app = app:application()
-  end
-  leftClickAndRestore(position, app)
-end
-
 -- send key strokes to the app. but if the key binding is found, select corresponding menu item
 local function selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
   local menuItemPath, enabled = findMenuItemByKeyBinding(app, mods, key)
@@ -1778,7 +1806,7 @@ appHotKeyCallbacks = {
         local winUI = towinui(app:focusedWindow())
         local searchField = getc(winUI, AX.Toolbar, 1, AX.Group, 2, AX.TextField, 1)
         if searchField == nil then return false end
-        return true, uioffset(searchField, { 10, 2 })
+        return clickable(searchField, { 10, 2 })
       end,
       fn = click
     }
@@ -2313,7 +2341,7 @@ appHotKeyCallbacks = {
         local maxX = buttons[#buttons].AXPosition.x
         maxX = math.max(maxX, buttons[#buttons - 1].AXPosition.x)
         maxX = math.max(maxX, buttons[#buttons - 2].AXPosition.x)
-        click({ maxX + 100, buttons[#buttons].AXPosition.y }, win)
+        safeClick({ maxX + 100, buttons[#buttons].AXPosition.y }, win)
       end
     },
     ["openRecent"] = {
@@ -2347,7 +2375,7 @@ appHotKeyCallbacks = {
           end
         end
         if firstSplitLine == 4 then
-          click(groups[1], app)
+          safeClick(groups[1], app)
         end
         return false
       end,
@@ -2368,7 +2396,7 @@ appHotKeyCallbacks = {
             break
           end
         end
-        if firstSplitLine == 4 then return true, groups[3] end
+        if firstSplitLine == 4 then return clickable(groups[3]) end
         return false
       end,
       fn = click
@@ -2394,7 +2422,7 @@ appHotKeyCallbacks = {
           end
         end
         if secondSplitLine == nil or (secondSplitLine - firstSplitLine > 2) then
-          return true, groups[firstSplitLine + 2]
+          return clickable(groups[firstSplitLine + 2])
         end
         return false
       end,
@@ -2423,7 +2451,7 @@ appHotKeyCallbacks = {
           end
         end
         if thirdSplitLine ~= nil and thirdSplitLine - secondSplitLine > 2 then
-          return true, groups[secondSplitLine + 2]
+          return clickable(groups[secondSplitLine + 2])
         end
         return false
       end,
@@ -2452,7 +2480,7 @@ appHotKeyCallbacks = {
           end
         end
         if thirdSplitLine ~= nil and thirdSplitLine - secondSplitLine > 3 then
-          return true, groups[secondSplitLine + 3]
+          return clickable(groups[secondSplitLine + 3])
         end
         return false
       end,
@@ -2481,7 +2509,7 @@ appHotKeyCallbacks = {
           end
         end
         if thirdSplitLine ~= nil and thirdSplitLine - secondSplitLine > 4 then
-          return true, groups[secondSplitLine + 4]
+          return clickable(groups[secondSplitLine + 4])
         end
         return false
       end,
@@ -2837,7 +2865,7 @@ appHotKeyCallbacks = {
         end
       end,
       fn = function(button, app)
-        if app ~= nil then click(button, app) return end
+        if app ~= nil then safeClick(button, app) return end
         app = button
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.windowCreated)
@@ -2847,7 +2875,7 @@ appHotKeyCallbacks = {
           if webarea then
             for _, g in ipairs(getc(webarea, AX.Group)) do
               if g[1] and g[1].AXValue == "设置" then
-                click(g[1], app) break
+                safeClick(g[1], app) break
               end
             end
             obs:stop()
@@ -2954,7 +2982,7 @@ appHotKeyCallbacks = {
             if webarea then
               for _, g in ipairs(getc(webarea, AX.Group)) do
                 if g[1] and g[1].AXValue == "打开迷你对话窗" then
-                  click(g[1], app)
+                  safeClick(g[1], app)
                   break
                 end
               end
@@ -3021,7 +3049,7 @@ appHotKeyCallbacks = {
     },
     ["remapPreviousTab"] = {
       message = localizedMessage("Previous library"),
-      condition = JabRefShowLibraryByIndex(2),
+      condition = JabRefShowLibraryByIndex(2, false),
       repeatable = true,
       fn = function(app) hs.eventtap.keyStroke('⇧⌃', 'Tab', nil, app) end
     },
@@ -3029,7 +3057,7 @@ appHotKeyCallbacks = {
       mods = specialCommonHotkeyConfigs["showPrevTab"].mods,
       key = specialCommonHotkeyConfigs["showPrevTab"].key,
       message = localizedMessage("Previous library"),
-      condition = JabRefShowLibraryByIndex(2),
+      condition = JabRefShowLibraryByIndex(2, false),
       repeatable = true,
       fn = function(app) hs.eventtap.keyStroke('⇧⌃', 'Tab', nil, app) end
     },
@@ -3037,7 +3065,7 @@ appHotKeyCallbacks = {
       mods = specialCommonHotkeyConfigs["showNextTab"].mods,
       key = specialCommonHotkeyConfigs["showNextTab"].key,
       message = localizedMessage("Next library"),
-      condition = JabRefShowLibraryByIndex(2),
+      condition = JabRefShowLibraryByIndex(2, false),
       repeatable = true,
       fn = function(app) hs.eventtap.keyStroke('⌃', 'Tab', nil, app) end
     },
@@ -3228,13 +3256,17 @@ appHotKeyCallbacks = {
           local back = localizedString("Back", appid)
           local bt = getc(winUI, AX.Group, 1,
               AX.SplitGroup, 1, AX.Button, back)
-          if bt then return true, { 2, bt.AXPosition } end
+          if bt then
+            local ok, position = clickable(bt)
+            return ok, { 2, position }
+          end
 
           -- Moments
           if app:focusedWindow():title():find(app:name()) == nil then
             local moments = localizedString("Moments", appid)
             if app:focusedWindow():title() == moments then
-              return true, { 2, getc(winUI, AX.Button, 1).AXPosition }
+              local ok, position = clickable(getc(winUI, AX.Button, 1))
+              return ok, { 2, position }
             end
             return false
           end
@@ -3263,7 +3295,8 @@ appHotKeyCallbacks = {
           local detail = localizedString("SNS_Feed_Detail_Title", appid)
           if app:focusedWindow():title():find(album .. '-') == 1
               or app:focusedWindow():title() == moments .. '-' .. detail then
-            return true, { 2, getc(winUI, AX.Button, 1).AXPosition }
+            local ok, position = clickable(getc(winUI, AX.Button, 1))
+            return ok, { 2, position }
           end
           return false
         end
@@ -3286,7 +3319,7 @@ appHotKeyCallbacks = {
         elseif result[1] == 1 then
           press(result[2])
         elseif result[1] == 2 then
-          click(result[2], app)
+          click(result[2])
         end
       end
     },
@@ -3360,7 +3393,7 @@ appHotKeyCallbacks = {
             if menu and menu.AXRole == AX.Menu then
               local title = localizedString("Hide", app:bundleID())
               local hide = getc(menu, AX.MenuItem, title)
-              if hide then click(hide, app) end
+              if hide then safeClick(hide, app) end
             end
           end)
         end
@@ -3414,7 +3447,7 @@ appHotKeyCallbacks = {
         if versionLessThan("4")(app) then
           local frame = win:frame()
           local position = { frame.x + frame.w - 60, frame.y + 23 }
-          click(position, win)
+          safeClick(position, win)
           return
         end
 
@@ -3460,7 +3493,7 @@ appHotKeyCallbacks = {
         local appid = win:application():bundleID()
         local title = localizedString("OK", appid)
         local bt = getc(towinui(win), AX.Button, title)
-        return bt and bt.AXEnabled, bt
+        if bt and bt.AXEnabled then return clickable(bt) end
       end,
       fn = click
     },
@@ -3480,7 +3513,7 @@ appHotKeyCallbacks = {
         local appid = win:application():bundleID()
         local title = localizedString("Delete", appid)
         local bt = getc(towinui(win), AX.Button, title)
-        return bt and bt.AXEnabled, bt
+        if bt and bt.AXEnabled then return clickable(bt) end
       end,
       fn = click
     },
@@ -3500,7 +3533,7 @@ appHotKeyCallbacks = {
         local appid = win:application():bundleID()
         local title = localizedString("Clear", appid)
         local bt = getc(towinui(win), AX.Button, title)
-        return bt and bt.AXEnabled, bt
+        if bt and bt.AXEnabled then return clickable(bt) end
       end,
       fn = click
     },
@@ -3520,7 +3553,7 @@ appHotKeyCallbacks = {
         local appid = win:application():bundleID()
         local title = localizedString("Send", appid)
         local bt = getc(towinui(win), AX.Button, title)
-        return bt and bt.AXEnabled, bt
+        if bt and bt.AXEnabled then return clickable(bt) end
       end,
       fn = click
     },
@@ -3540,7 +3573,7 @@ appHotKeyCallbacks = {
         local appid = win:application():bundleID()
         local title = localizedString("Finish", appid)
         local bt = getc(towinui(win), AX.Button, title)
-        return bt and bt.AXEnabled, bt
+        if bt and bt.AXEnabled then return clickable(bt) end
       end,
       fn = click
     },
@@ -3551,7 +3584,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         local frame = win:frame()
         local position = { frame.x + frame.w - 80, frame.y + frame.h - 47 }
-        click(position, win)
+        safeClick(position, win)
       end
     }
   },
@@ -3824,17 +3857,17 @@ appHotKeyCallbacks = {
     ["confirmRemove"] = {
       message = localizedMessage('Remove'),
       condition = confirmButtonValidForAppCleanerUninstaller('Remove'),
-      fn = leftClick  -- fixme: false click
+      fn = function(position) leftClick(position) end  -- fixme: false click
     },
     ["confirmUpdate"] = {
       message = localizedMessage('Update'),
       condition = confirmButtonValidForAppCleanerUninstaller('Update'),
-      fn = leftClick  -- fixme: false click
+      fn = function(position) leftClick(position) end  -- fixme: false click
     },
     ["confirmRetry"] = {
       message = localizedMessage('Retry'),
       condition = confirmButtonValidForAppCleanerUninstaller('Retry'),
-      fn = leftClick  -- fixme: false click
+      fn = function(position) leftClick(position) end  -- fixme: false click
     }
   },
 
@@ -3869,17 +3902,17 @@ appHotKeyCallbacks = {
     ["confirmRemove"] = {
       message = localizedMessage('PartialRemove_Remove'),
       condition = confirmButtonValidForAppCleanerUninstaller('PartialRemove_Remove'),
-      fn = leftClick  -- fixme: false click
+      fn = function(position) leftClick(position) end  -- fixme: false click
     },
     ["confirmUpdate"] = {
       message = localizedMessage('UpdateButtonTitle'),
       condition = confirmButtonValidForAppCleanerUninstaller('UpdateButtonTitle'),
-      fn = leftClick  -- fixme: false click
+      fn = function(position) leftClick(position) end  -- fixme: false click
     },
     ["confirmRetry"] = {
       message = localizedMessage('PartialRemove_Retry'),
       condition = confirmButtonValidForAppCleanerUninstaller('PartialRemove_Retry'),
-      fn = leftClick  -- fixme: false click
+      fn = function(position) leftClick(position) end  -- fixme: false click
     }
   },
 
@@ -4598,7 +4631,7 @@ appHotKeyCallbacks = {
             end)
           end)
         else
-          click(icon, app)
+          safeClick(icon, app)
         end
       end
     },
@@ -4913,7 +4946,7 @@ appHotKeyCallbacks = {
             AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, 2,
             AX.Cell, 1, AX.StaticText, 2)
         assert(field)
-        click(field, win)
+        safeClick(field, win)
         clickRightMenuBarItem(win:application())
       end
     },
@@ -4941,7 +4974,7 @@ appHotKeyCallbacks = {
           field = getc(outline, AX.Row, 4, AX.Cell, 1, AX.StaticText, 2)
         end
         assert(field)
-        click(field, win)
+        safeClick(field, win)
         clickRightMenuBarItem(win:application())
       end
     },
@@ -4967,7 +5000,7 @@ appHotKeyCallbacks = {
       end,
       background = true,
       fn = function(field, win)
-        click(field, win)
+        safeClick(field, win)
         clickRightMenuBarItem(win:application())
       end
     },
@@ -5200,7 +5233,7 @@ appHotKeyCallbacks = {
         local winUI = towinui(win)
         local searchField = getc(winUI, AX.TextField, 1)
         if searchField ~= nil then
-          click(uioffset(searchField, { 5, 5 }), win)
+          safeClick(uioffset(searchField, { 5, 5 }), win)
         end
       end
     },
@@ -5555,7 +5588,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          click(button, win)
+          safeClick(button, win)
         end
       end
     },
@@ -5582,7 +5615,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          click(button, win)
+          safeClick(button, win)
         end
       end
     },
@@ -5609,7 +5642,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          click(button, win)
+          safeClick(button, win)
         end
       end
     },
@@ -5636,7 +5669,7 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          click(button, win)
+          safeClick(button, win)
         end
       end
     },
@@ -7472,7 +7505,7 @@ local function registerNavigationForSettingsToolbar(app)
   local func = specialToolbarButtons[appid] or getToolbarButtons
   local buttons, toClick = func(winUI)
   local callback = not toClick and press
-      or function(button) click(button, app) end
+      or function(button) safeClick(button, app) end
   for i, button in ipairs(buttons) do
     local suffix
     if i == 1 then suffix = "st"
@@ -7737,7 +7770,7 @@ local function registerForOpenSavePanel(app)
                   if row.AXSize.h > 20 then
                     cnt = cnt + 1
                     if cnt == idx then
-                      click(row, app)
+                      safeClick(row, app)
                     end
                   end
                 end
