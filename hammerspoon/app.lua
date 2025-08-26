@@ -2185,6 +2185,11 @@ appHotKeyCallbacks = {
 
   ["com.vallettaventures.Texpad"] =
   {
+    ["toggleOutline"] = {
+      message = localizedMessage("Toggle Outline"),
+      condition = checkMenuItem({ "Workspace", "Toggle Outline" }),
+      fn = receiveMenuItem
+    },
     ["openRecent"] = {
       message = localizedMessage("Recent Documents"),
       condition = checkMenuItem({ "File", "Recent Documents" }),

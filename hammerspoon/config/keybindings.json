@@ -759,6 +759,12 @@
         "key": "O"
       }
     },
+    "com.vallettaventures.Texpad": {
+      "toggleOutline": {
+        "mods": ["control", "command"],
+        "key": "S"
+      }
+    },
     "abnerworks.Typora": {
       "openFileLocation": {
         "mods": ["shift", "command"],
