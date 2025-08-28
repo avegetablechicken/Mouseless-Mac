@@ -3476,8 +3476,23 @@ appHotKeyCallbacks = {
     },
     ["confirm"] = {
       message = function(win)
-        local bt = getc(towinui(win), nil, -1)
-        if bt then return bt.AXTitle end
+        local bt
+        local winUI = towinui(win)
+        if #winUI == 4 then
+          bt = getc(winUI, nil, -1)
+        else
+          repeat
+            winUI = winUI[1]
+          until #winUI ~= 1
+          bt = getc(winUI, AX.Button, 1)
+        end
+        if bt then
+          if bt.AXTitle ~= "" then
+            return bt.AXTitle
+          else
+            return bt.AXDescription
+          end
+        end
       end,
       bindCondition = versionRange("4", "4.0.6"),
       deleteOnDisable = true,
@@ -3485,15 +3500,35 @@ appHotKeyCallbacks = {
         allowSheet = true,
         fn = function(win)
           local winUI = towinui(win)
-          return #winUI == 4
-              and winUI[1].AXRole == AX.StaticText
+          if #winUI == 4 then
+            return winUI[1].AXRole == AX.StaticText
               and winUI[3].AXRole == AX.Button
               and winUI[4].AXRole == AX.Button
               and winUI[4].AXEnabled
+          elseif #winUI == 1 then
+            repeat
+              winUI = winUI[1]
+            until #winUI ~= 1
+            return #winUI == 3
+              and winUI[1].AXRole == AX.StaticText
+              and winUI[2].AXRole == AX.Button
+              and winUI[3].AXRole == AX.Button
+              and winUI[3].AXEnabled
+          end
         end
       },
       condition = function(win)
-        return clickable(getc(towinui(win), nil, -1))
+        local bt
+        local winUI = towinui(win)
+        if #winUI == 4 then
+          bt = getc(winUI, nil, -1)
+        else
+          repeat
+            winUI = winUI[1]
+          until #winUI ~= 1
+          bt = getc(winUI, AX.Button, 1)
+        end
+        if bt then return clickable(bt) end
       end,
       fn = click
     },
