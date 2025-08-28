@@ -5224,13 +5224,14 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "^(Real)VNC Viewer$"
       },
-      fn = function(win)
+      condition = function(win)
         local winUI = towinui(win)
         local searchField = getc(winUI, AX.TextField, 1)
         if searchField ~= nil then
-          safeClick(uioffset(searchField, { 5, 5 }), win)
+          return clickable(searchField, { 5, 5 })
         end
-      end
+      end,
+      fn = click
     },
     ["toggleSidebar"] = {
       message = "Toggle sidebar",
@@ -5576,16 +5577,17 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to CLion"
       },
-      fn = function(win)
+      condition = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          safeClick(button, win)
+          return clickable(button)
         end
-      end
+      end,
+      fn = click
     },
     ["open..."] = {
       message = "Open...",
@@ -5603,16 +5605,17 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to CLion"
       },
-      fn = function(win)
+      condition = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          safeClick(button, win)
+          return clickable(button)
         end
-      end
+      end,
+      fn = click
     },
     ["open..."] = {
       message = "Open...",
@@ -5637,9 +5640,10 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          safeClick(button, win)
+          return clickable(button)
         end
-      end
+      end,
+      fn = click
     },
     ["open..."] = {
       message = "Open...",
@@ -5664,9 +5668,10 @@ appHotKeyCallbacks = {
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
         if button ~= nil then
-          safeClick(button, win)
+          return clickable(button)
         end
-      end
+      end,
+      fn = click
     },
     ["open..."] = {
       message = "Open...",
