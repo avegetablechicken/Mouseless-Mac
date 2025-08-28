@@ -7506,8 +7506,7 @@ local function registerNavigationForSettingsToolbar(app)
   local winUI = towinui(win)
   local func = specialToolbarButtons[appid] or getToolbarButtons
   local buttons, toClick = func(winUI)
-  local callback = not toClick and press
-      or function(button) safeClick(button, app) end
+  local callback = toClick and click or press
   for i, button in ipairs(buttons) do
     local suffix
     if i == 1 then suffix = "st"
@@ -7517,9 +7516,14 @@ local function registerNavigationForSettingsToolbar(app)
     local hkID = strfmt("open%d%sToolbarItemOnSettingsWindow", i, suffix)
     local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
     if spec then
+      local condition
+      if toClick then
+        condition = function() return clickable(button) end
+      end
       local hotkey = AppWinBind(win, {
         spec = spec,
         message = button.AXTitle or button.AXDescription,
+        condition = condition,
         fn = bind(callback, button)
       })
       tinsert(settingsToolbarHotkeys, hotkey)
