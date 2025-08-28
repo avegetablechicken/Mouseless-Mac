@@ -1117,15 +1117,7 @@
         "mods": ["shift", "command"],
         "key": "O"
       },
-      "ok": {
-        "mods": "",
-        "key": "Return"
-      },
-      "delete": {
-        "mods": "",
-        "key": "Return"
-      },
-      "clear": {
+      "confirm": {
         "mods": "",
         "key": "Return"
       },
@@ -1137,7 +1129,7 @@
         "mods": "command",
         "key": "Return"
       },
-      "confirm": {
+      "confirmAll": {
         "mods": "command",
         "key": "Return"
       }

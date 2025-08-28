@@ -3474,63 +3474,26 @@ appHotKeyCallbacks = {
         end
       end
     },
-    ["ok"] = {
-      message = localizedMessage("OK"),
-      bindCondition = versionRange("4", "4.0.6"),
-      windowFilter = {
-        allowSheet = true,
-        fn = function(win)
-          local appid = win:application():bundleID()
-          local title = localizedString("OK", appid)
-          local bt = getc(towinui(win), AX.Button, title)
-          return bt ~= nil
-        end
-      },
-      condition = function(win)
-        local appid = win:application():bundleID()
-        local title = localizedString("OK", appid)
-        local bt = getc(towinui(win), AX.Button, title)
-        if bt and bt.AXEnabled then return clickable(bt) end
+    ["confirm"] = {
+      message = function(win)
+        local bt = getc(towinui(win), nil, -1)
+        if bt then return bt.AXTitle end
       end,
-      fn = click
-    },
-    ["delete"] = {
-      message = localizedMessage("Delete"),
       bindCondition = versionRange("4", "4.0.6"),
+      deleteOnDisable = true,
       windowFilter = {
         allowSheet = true,
         fn = function(win)
-          local appid = win:application():bundleID()
-          local title = localizedString("Delete", appid)
-          local bt = getc(towinui(win), AX.Button, title)
-          return bt ~= nil
+          local winUI = towinui(win)
+          return #winUI == 4
+              and winUI[1].AXRole == AX.StaticText
+              and winUI[3].AXRole == AX.Button
+              and winUI[4].AXRole == AX.Button
+              and winUI[4].AXEnabled
         end
       },
       condition = function(win)
-        local appid = win:application():bundleID()
-        local title = localizedString("Delete", appid)
-        local bt = getc(towinui(win), AX.Button, title)
-        if bt and bt.AXEnabled then return clickable(bt) end
-      end,
-      fn = click
-    },
-    ["clear"] = {
-      message = localizedMessage("Clear"),
-      bindCondition = versionRange("4", "4.0.6"),
-      windowFilter = {
-        allowSheet = true,
-        fn = function(win)
-          local appid = win:application():bundleID()
-          local title = localizedString("Clear", appid)
-          local bt = getc(towinui(win), AX.Button, title)
-          return bt ~= nil
-        end
-      },
-      condition = function(win)
-        local appid = win:application():bundleID()
-        local title = localizedString("Clear", appid)
-        local bt = getc(towinui(win), AX.Button, title)
-        if bt and bt.AXEnabled then return clickable(bt) end
+        return clickable(getc(towinui(win), nil, -1))
       end,
       fn = click
     },
@@ -3574,7 +3537,7 @@ appHotKeyCallbacks = {
       end,
       fn = click
     },
-    ["confirm"] = {
+    ["confirmAll"] = {
       message = commonLocalizedMessage("Confirm"),
       bindCondition = versionGreaterEqual("4.0.6"),
       windowFilter = { allowSheet = true },
