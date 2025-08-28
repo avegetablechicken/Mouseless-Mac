@@ -2344,7 +2344,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Recent"),
       fn = function(app)
-        if app:focusedWindow() == nil then return false end
+        if app:focusedWindow() == nil then return end
         local home = localizedString("Home", app:bundleID())
         local winUI = towinui(app:focusedWindow())
         if app:focusedWindow():title() ~= home then
@@ -2374,7 +2374,6 @@ appHotKeyCallbacks = {
         if firstSplitLine == 4 then
           safeClick(groups[1], app)
         end
-        return false
       end,
     },
     ["goToShare"] = {
