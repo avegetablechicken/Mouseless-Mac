@@ -6729,7 +6729,7 @@ registerInWinHotKeys = function(win, filter)
             config.fn = bind(config.fn, url)
           end
           config.repeatedfn = config.repeatable and config.fn or nil
-          config.deleteOnDisable = fallback
+          config.deleteOnDisable = config.deleteOnDisable or fallback
           hotkeys[hkID] = AppWinBind(win, config)
         end
       end
