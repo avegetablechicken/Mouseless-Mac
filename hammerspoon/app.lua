@@ -7725,15 +7725,12 @@ local function registerForOpenSavePanel(app)
       end
     elseif appid == "com.kingsoft.wpsoffice.mac" then
       if winUI.AXSubrole == AX.Dialog then
-        local windowTitle = localizedString("Open File", appid)
-        if getc(winUI, AX.SplitGroup, 1, AX.StaticText, windowTitle) ~= nil then
-          local outline = getc(winUI, AX.SplitGroup, 1, AX.List, 1)
-          if outline ~= nil then
-            sidebarCells = {}
-            for _, row in ipairs(getc(outline, AX.StaticText)) do
-              if row.AXSize.h > 20 then
-                tinsert(sidebarCells, row)
-              end
+        local outline = getc(winUI, AX.SplitGroup, 1, AX.List, 1)
+        if outline ~= nil then
+          sidebarCells = {}
+          for _, row in ipairs(getc(outline, AX.StaticText)) do
+            if row.AXSize.h > 24 then
+              tinsert(sidebarCells, row)
             end
           end
         end
@@ -7773,7 +7770,7 @@ local function registerForOpenSavePanel(app)
               local cnt = 0
               if outline ~= nil then
                 for _, row in ipairs(getc(outline, AX.StaticText)) do
-                  if row.AXSize.h > 20 then
+                  if row.AXSize.h > 24 then
                     cnt = cnt + 1
                     if cnt == idx then
                       return clickable(row)
