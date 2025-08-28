@@ -7768,7 +7768,7 @@ local function registerForOpenSavePanel(app)
           local idx = i
           local hotkey = AppWinBind(app:focusedWindow(), {
             spec = spec, message = 'Location ' .. i,
-            fn = function()
+            condition = function()
               local outline = getc(winUI, AX.SplitGroup, 1, AX.List, 1)
               local cnt = 0
               if outline ~= nil then
@@ -7776,12 +7776,13 @@ local function registerForOpenSavePanel(app)
                   if row.AXSize.h > 20 then
                     cnt = cnt + 1
                     if cnt == idx then
-                      safeClick(row, app)
+                      return clickable(row)
                     end
                   end
                 end
               end
             end,
+            fn = click
           })
           tinsert(openSavePanelHotkeys, hotkey)
           i = i + 1
