@@ -1548,7 +1548,7 @@ local function menuItemMessage(mods, key, titleIndex, sep)
     else
       if sep == nil then sep = ' > ' end
       local menuItem = findMenuItemByKeyBinding(app, mods, key, true)
-      assert(menuItem)
+      if menuItem == nil then return end
       local str = menuItem[titleIndex[1]]
       for i=2,#titleIndex do
         str = str .. sep .. menuItem[titleIndex[i]]
@@ -3934,13 +3934,13 @@ appHotKeyCallbacks = {
           menu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1)
         end
         local start = getc(menu, AX.MenuItem, "Start")
-        assert(start)
+        if start == nil then return end
         if start.AXEnabled then
           press(start)
           hs.alert("Barrier started")
         else
           local stop = getc(menu, AX.MenuItem, "Stop")
-          assert(stop)
+          if stop == nil then return end
           press(stop)
           hs.alert("Barrier stopped")
         end
@@ -3951,12 +3951,12 @@ appHotKeyCallbacks = {
         else
           local winUI = towinui(app:focusedWindow())
           local start = getc(winUI, AX.Button, "Start")
-          assert(start)
+          if start == nil then return end
           press(start)
           hs.alert("Barrier started")
           hs.timer.doAfter(0.5, function()
             local close = getc(winUI, AX.Button, 4)
-            assert(close)
+            if close == nil then return end
             press(close)
           end)
         end
@@ -4940,9 +4940,10 @@ appHotKeyCallbacks = {
         local field = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
             AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, 2,
             AX.Cell, 1, AX.StaticText, 2)
-        assert(field)
-        safeClick(field, win)
-        clickRightMenuBarItem(win:application())
+        if field then
+          safeClick(field, win)
+          clickRightMenuBarItem(win:application())
+        end
       end
     },
     ["copyPassword"] = {
@@ -4968,9 +4969,10 @@ appHotKeyCallbacks = {
         else
           field = getc(outline, AX.Row, 4, AX.Cell, 1, AX.StaticText, 2)
         end
-        assert(field)
-        safeClick(field, win)
-        clickRightMenuBarItem(win:application())
+        if field then
+          safeClick(field, win)
+          clickRightMenuBarItem(win:application())
+        end
       end
     },
     ["copyVerificationCode"] = {
