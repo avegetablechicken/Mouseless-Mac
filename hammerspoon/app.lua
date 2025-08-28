@@ -2855,13 +2855,13 @@ appHotKeyCallbacks = {
           end) ~= nil
         end)
         if button ~= nil and button.AXPosition.x ~= winUI.AXPosition.x then
-          return true, button
+          return clickable(button)
         else
           return false
         end
       end,
       fn = function(button, app)
-        if app ~= nil then safeClick(button, app) return end
+        if app ~= nil then click(button) return end
         app = button
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.windowCreated)
