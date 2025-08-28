@@ -3576,11 +3576,11 @@ appHotKeyCallbacks = {
       message = commonLocalizedMessage("Confirm"),
       bindCondition = versionGreaterEqual("4.0.6"),
       windowFilter = { allowSheet = true },
-      fn = function(win)
+      condition = function(win)
         local frame = win:frame()
-        local position = { frame.x + frame.w - 80, frame.y + frame.h - 47 }
-        safeClick(position, win)
-      end
+        return clickable(towinui(win), { frame.w - 80, frame.h - 47 })
+      end,
+      fn = click
     }
   },
 
