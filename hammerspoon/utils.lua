@@ -2350,7 +2350,7 @@ local function localizedStringImpl(str, appid, params, force)
     for _, dir in ipairs(baseLocaleDirs) do
       if exists(dir) and hs.fs.attributes(localeDir).ino
                          == hs.fs.attributes(dir).ino then
-        return str
+        return true, appLocale, locale
       end
     end
   end
@@ -2501,7 +2501,9 @@ function localizedString(str, appid, params, force)
     appLocaleMap[appid][appLocale] = {}
   end
   if result ~= nil then
-    appLocaleMap[appid][appLocale][str] = result
+    if result ~= true then
+      appLocaleMap[appid][appLocale][str] = result
+    end
   else
     appLocaleMap[appid][appLocale][str] = false
   end
@@ -2511,8 +2513,12 @@ function localizedString(str, appid, params, force)
     hs.execute(strfmt("mkdir -p '%s'", localeTmpDir))
   end
   hs.json.write(appLocaleDir, localeMatchTmpFile, false, true)
-  hs.json.write(appLocaleMap, localeTmpFile, false, true)
-  return result
+  if result ~= true then
+    hs.json.write(appLocaleMap, localeTmpFile, false, true)
+    return result
+  else
+    return str
+  end
 end
 
 
@@ -3389,12 +3395,13 @@ local function delocalizedStringImpl(str, appid, params, force)
       getMatchedLocale(appid, appLocale, resourceDir, framework, appLocaleDir)
   if locale == nil then return end
   assert(framework)
-  if not framework.electron and not framework.java then
+  if not framework.electron and not framework.java
+      and (not framework.qt or (type(localeDir) ~= 'table' and isdir(localeDir))) then
     local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
     for _, dir in ipairs(baseLocaleDirs) do
       if exists(dir) and hs.fs.attributes(localeDir).ino
                          == hs.fs.attributes(dir).ino then
-        return str
+        return true, appLocale, locale
       end
     end
   end
@@ -3538,7 +3545,9 @@ function delocalizedString(str, appid, params, force)
     deLocaleMap[appid][appLocale] = {}
   end
   if result ~= nil then
-    deLocaleMap[appid][appLocale][str] = result
+    if result ~= true then
+      deLocaleMap[appid][appLocale][str] = result
+    end
   else
     deLocaleMap[appid][appLocale][str] = false
   end
@@ -3548,8 +3557,12 @@ function delocalizedString(str, appid, params, force)
     hs.execute(strfmt("mkdir -p '%s'", localeTmpDir))
   end
   hs.json.write(appLocaleDir, localeMatchTmpFile, false, true)
-  hs.json.write(deLocaleMap, menuItemTmpFile, false, true)
-  return result
+  if result ~= true then
+    hs.json.write(deLocaleMap, menuItemTmpFile, false, true)
+    return result
+  else
+    return str
+  end
 end
 
 electronLocale = function(app, localesPath)
