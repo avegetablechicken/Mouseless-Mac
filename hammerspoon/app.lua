@@ -182,7 +182,12 @@ end
 
 local function onRunning(appid, action)
   onLaunched(appid, action)
-  local app = FLAGS["LOADING"] and runningAppsOnLoading[appid] or find(appid)
+  local app
+  if FLAGS["LOADING"] then
+    app = runningAppsOnLoading[appid]
+  else
+    find(appid)
+  end
   if app then action(app) end
 end
 
@@ -6087,8 +6092,11 @@ local function registerRunningAppHotKeys(appid, app)
       bindable = function()
         if not running then return false end
         if app == nil then
-          app = FLAGS["LOADING"]
-              and runningAppsOnLoading[appid] or find(appid)
+          if FLAGS["LOADING"] then
+            app = runningAppsOnLoading[appid]
+          else
+            find(appid)
+          end
         end
         running = app ~= nil
         return app and (cfg.bindCondition == nil or cfg.bindCondition(app))
