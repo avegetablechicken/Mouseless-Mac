@@ -3949,9 +3949,8 @@ function localizedMenuBarItem(title, appid, params)
   -- the app may pretend being localized (e.g. Visual Studio Code)
   local appLocale = applicationLocale(appid)
   if find(appid) then
-    if type(params) == 'table' and params.locale ~= nil
-        and params.locale ==
-            matchLocale(appLocale, { params.locale }) then
+    if not (type(params) == 'table' and params.locale ~= nil
+        and params.locale ~= matchLocale(appLocale, { params.locale })) then
       if find(appid):findMenuItem({ title }) ~= nil then
         return title
       end
