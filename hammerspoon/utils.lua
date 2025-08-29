@@ -4003,6 +4003,21 @@ function applicationValidLocale(appid)
   local appLocale, valid = applicationLocale(appid)
   if valid then return appLocale end
   local resourceDir, framework = getResourceDir(appid)
+  if framework.chromium then
+    if find(appid) then
+      local menuBarItems = getMenuBarItems(find(appid), true)
+      if #menuBarItems ~= 0 then
+        for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
+          if tfind(menuBarItems,
+              function(item)
+                return item.AXTitle == title
+              end) ~= nil then
+            return 'en'
+          end
+        end
+      end
+    end
+  end
   local locale = getMatchedLocale(appid, appLocale,
       resourceDir, framework, appLocaleDir)
   return locale
