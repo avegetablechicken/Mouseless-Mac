@@ -329,7 +329,7 @@ function applicationVersion(appid)
 end
 
 local localeTmpDir = hs.fs.temporaryDirectory()
-    .. 'org.hammerspoon.Hammerspoon/locale/'
+    .. hs.settings.bundleID .. '/locale/'
 
 local locMap, delocMap = {}, {}
 localizationMapLoaded = { menubar = {}, strings = {} }

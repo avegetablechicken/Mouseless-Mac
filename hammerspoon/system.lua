@@ -978,7 +978,7 @@ registerProxyMenuWrapper()
 local menubarHK = KeybindingConfigs.hotkeys.global
 
 local proxyHotkey = bindHotkeySpec(menubarHK["showProxyMenu"], "Show Proxy Menu",
-    bind(clickRightMenuBarItem, {"org.hammerspoon.Hammerspoon", proxy:title()}))
+    bind(clickRightMenuBarItem, {hs.settings.bundleID, proxy:title()}))
 proxyHotkey.kind = HK.MENUBAR
 proxyHotkey.icon = hs.image.imageFromAppBundle("com.apple.systempreferences")
 

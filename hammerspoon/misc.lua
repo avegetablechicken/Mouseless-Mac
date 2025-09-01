@@ -1362,7 +1362,7 @@ function()
 
   local choices = {}
   local msg = nil
-  local HSImage = hs.image.imageFromAppBundle("org.hammerspoon.Hammerspoon")
+  local HSImage = hs.image.imageFromAppBundle(hs.settings.bundleID)
   local kind = HK.PRIVELLEGE
   for _, entry in ipairs(allKeys) do
     if entry.msg:find(": ") == nil then

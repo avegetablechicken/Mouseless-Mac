@@ -7934,7 +7934,7 @@ end
 
 local appsWatchMenuBarItems, appsMayChangeMenuBar
 local appsMayChangeMenuBarTmpDir =
-    hs.fs.temporaryDirectory() .. 'org.hammerspoon.Hammerspoon/application'
+    hs.fs.temporaryDirectory() .. hs.settings.bundleID .. '/application'
 local appsMayChangeMenuBarTmpFile =
     appsMayChangeMenuBarTmpDir .. '/variable_menubar.json'
 local windowOnBindAltMenu
