@@ -3478,6 +3478,43 @@ appHotKeyCallbacks = {
         end
       end
     },
+    ["closeWindow"] = {
+      mods = specialCommonHotkeyConfigs["closeWindow"].mods,
+      key = specialCommonHotkeyConfigs["closeWindow"].key,
+      message = function()
+        local exBundleID = "com.tencent.flue.WeChatAppEx"
+        return localizedString('Close All Tabs', exBundleID)
+      end,
+      bindCondition = versionGreaterEqual("4"),
+      windowFilter = {
+        fn = function(win)
+          local exBundleID = "com.tencent.flue.WeChatAppEx"
+          local menuItemPath = {
+            localizedMenuBarItem('File', exBundleID),
+            localizedString('Close All Tabs', exBundleID)
+          }
+          if #menuItemPath == 2 then
+            local menuItem = win:application():findMenuItem(menuItemPath)
+            if menuItem == nil or not menuItem.enabled then return false end
+          end
+          menuItemPath[2] = localizedString('Close Tab', exBundleID)
+          if #menuItemPath == 2 then
+            local menuItem = win:application():findMenuItem(menuItemPath)
+            return menuItem and not menuItem.enabled
+          end
+        end
+      },
+      condition = function(win)
+        local exBundleID = "com.tencent.flue.WeChatAppEx"
+        local menuItemPath = {
+          localizedMenuBarItem('File', exBundleID),
+          localizedString('Close All Tabs', exBundleID)
+        }
+        local menuItem = win:application():findMenuItem(menuItemPath)
+        return menuItem ~= nil and menuItem.enabled, menuItemPath
+      end,
+      fn = receiveMenuItem
+    },
     ["confirm"] = {
       message = function(win)
         local bt
