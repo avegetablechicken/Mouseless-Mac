@@ -3439,8 +3439,15 @@ appHotKeyCallbacks = {
       message = localizedMessage("Open in Default Browser"),
       windowFilter = {
         fn = function(win)
-          local g = getc(towinui(win), AX.Group, 1)
-          return g ~= nil and g.AXDOMClassList ~= nil
+          if versionLessThan("4")(win:application()) then
+            local g = getc(towinui(win), AX.Group, 1)
+            return g ~= nil and g.AXDOMClassList ~= nil
+          else
+            local bt = getc(towinui(win), AX.Group, 1,
+                AX.Group, 1, AX.Group, 1, AX.Group, 1, nil, 1)
+            return bt ~= nil
+                and (bt.AXRole == AX.Button or bt.AXRole == AX.PopUpButton)
+          end
         end
       },
       fn = function(win)
