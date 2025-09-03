@@ -268,6 +268,30 @@ local function getModsRepr(mods, likelyToFind)
 end
 
 function findMenuItemByKeyBinding(app, mods, key, likelyToFind, menuItems)
+  local fn = function(menuItems)
+    mods = getModsRepr(mods, likelyToFind)
+    for i=#menuItems,1,-1 do
+      local menuItem = menuItems[i]
+      local menuItemPath, enabled =
+          findMenuItemByKeyBindingImpl(mods, key, menuItem)
+      if menuItemPath ~= nil then
+        tinsert(menuItemPath, 1, menuItem.AXTitle)
+        return menuItemPath, enabled
+      end
+    end
+  end
+
+  if type(likelyToFind) == 'function' then
+    local callback = likelyToFind
+    likelyToFind = false
+    return app:getMenuItems(function(...)
+      local menuItemPath = fn(...)
+      if menuItemPath then
+        callback(menuItemPath)
+      end
+    end)
+  end
+
   if menuItems == nil then
     if likelyToFind then
       menuItems = getMenuBarItems(app)
@@ -276,16 +300,7 @@ function findMenuItemByKeyBinding(app, mods, key, likelyToFind, menuItems)
     end
     if menuItems == nil then return end
   end
-  mods = getModsRepr(mods, likelyToFind)
-  for i=#menuItems,1,-1 do
-    local menuItem = menuItems[i]
-    local menuItemPath, enabled =
-        findMenuItemByKeyBindingImpl(mods, key, menuItem)
-    if menuItemPath ~= nil then
-      tinsert(menuItemPath, 1, menuItem.AXTitle)
-      return menuItemPath, enabled
-    end
-  end
+  return fn(menuItems)
 end
 
 local function filterParallels(apps)
