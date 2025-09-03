@@ -269,6 +269,7 @@ end
 
 function findMenuItemByKeyBinding(app, mods, key, likelyToFind, menuItems)
   local fn = function(menuItems)
+    if menuItems == nil then return end
     mods = getModsRepr(mods, likelyToFind)
     for i=#menuItems,1,-1 do
       local menuItem = menuItems[i]
