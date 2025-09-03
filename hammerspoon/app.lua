@@ -7282,8 +7282,7 @@ local function remapPreviousTab(app, menuItems)
   if specApp ~= nil or spec == nil or tcontain(spec.excluded or {}, appid) then
     return
   end
-  local menuItemPath = findMenuItemByKeyBinding(app, '⇧⌃', '⇥', menuItems)
-  if menuItemPath ~= nil then
+  local callback = function(menuItemPath)
     local fn = function()
       app:selectMenuItem(menuItemPath)
     end
@@ -7304,6 +7303,12 @@ local function remapPreviousTab(app, menuItems)
       disableConditionInChain(appid, info, true)
       info = nil
     end)
+  end
+  if menuItems then
+    local menuItemPath = findMenuItemByKeyBinding(app, '⇧⌃', '⇥', menuItems)
+    callback(menuItemPath)
+  else
+    findMenuItemByKeyBinding(app, '⇧⌃', '⇥', callback)
   end
 end
 
