@@ -8002,6 +8002,8 @@ local function processInvalidAltMenu(app, reinvokeKey)
   end
   if isSameWin then
     tinsert(appsWatchMenuBarItems, appid)
+    local pos = tindex(appsMayChangeMenuBar, appid)
+    if pos then tremove(appsMayChangeMenuBar, pos) end
   else
     tinsert(appsMayChangeMenuBar, appid)
   end
@@ -8019,6 +8021,10 @@ local function processInvalidAltMenu(app, reinvokeKey)
   local key = isSameWin and "changing" or "onWindow"
   if json[key] == nil then json[key] = {} end
   tinsert(json[key], appid)
+  if isSameWin then
+    local pos = tindex(json["onWindow"] or {}, appid)
+    if pos then tremove(json["onWindow"], pos) end
+  end
   hs.json.write(json, appsMayChangeMenuBarTmpFile, false, true)
 end
 
