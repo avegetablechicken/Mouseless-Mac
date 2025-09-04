@@ -8264,8 +8264,8 @@ local function altMenuBarItem(app, reinvokeKey)
 end
 
 -- some apps may change their menu bar items irregularly
-appsWatchMenuBarItems = get(ApplicationConfigs,
-    "menuBarItems", 'changing') or {}
+appsWatchMenuBarItems = tcopy(get(ApplicationConfigs,
+    "menuBarItems", 'changing') or {})
 local appsMenuBarItemTitlesString = {}
 local appsWinMenuBarItemTitlesString = {}
 
@@ -8324,8 +8324,8 @@ local function watchMenuBarItems(app)
 end
 
 -- some apps may change their menu bar items based on the focused window
-appsMayChangeMenuBar = get(ApplicationConfigs,
-    "menuBarItems", 'changeOnWindow') or {}
+appsMayChangeMenuBar = tcopy(get(ApplicationConfigs,
+    "menuBarItems", 'changeOnWindow') or {})
 if exists(appsMayChangeMenuBarTmpFile) then
   local tmp = hs.json.read(appsMayChangeMenuBarTmpFile)
   for _, appid in ipairs(tmp['changing'] or {}) do
