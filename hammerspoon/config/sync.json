@@ -2,12 +2,17 @@
   "variable": {
     "CONFIG_DIR": "~/Documents/scripts/config-your-computer",
     "COMMON_CONFIG_DIR": "${CONFIG_DIR}/common",
-    "MACOS_CONFIG_DIR": "${CONFIG_DIR}/macos",
-    "HOMEBREW_PREFIX": "$(brew --prefix | tr -d '\\n')"
+    "MACOS_CONFIG_DIR": "${CONFIG_DIR}/macos"
   },
 
   "file": {
-    "${HOMEBREW_PREFIX}/etc/frp/frpc.ini": [
+    "/usr/local/etc/frp/frpc.ini": [
+      "${MACOS_CONFIG_DIR}/frp",
+      {
+        "post_process": "sed 's/token = \\(.*\\)/token = ******/'"
+      }
+    ],
+    "/opt/homebrew/etc/frp/frpc.ini": [
       "${MACOS_CONFIG_DIR}/frp",
       {
         "post_process": "sed 's/token = \\(.*\\)/token = ******/'"
