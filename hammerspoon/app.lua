@@ -3226,13 +3226,7 @@ appHotKeyCallbacks = {
   ["com.tencent.xinWeChat"] =
   {
     ["back"] = {
-      message = function(app)
-        if versionLessThan("4")(app) then
-          return localizedString("Common.Navigation.Back", app:bundleID())
-        else
-          return localizedString("Back", app:bundleID())
-        end
-      end,
+      message = commonLocalizedMessage("Back"),
       bindCondition = versionLessThan("4.0.6"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
@@ -3254,7 +3248,7 @@ appHotKeyCallbacks = {
 
           local winUI = towinui(app:focusedWindow())
           -- Minimized Groups
-          local back = localizedString("Back", appid)
+          local back = commonLocalizedMessage("Back")(app)
           local bt = getc(winUI, AX.Group, 1,
               AX.SplitGroup, 1, AX.Button, back)
           if bt then
