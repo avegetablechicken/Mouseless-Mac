@@ -6765,7 +6765,8 @@ registerInWinHotKeys = function(win, filter)
         local msg, fallback
         if type(cfg.message) == 'string' then msg = cfg.message
         else msg, fallback = cfg.message(win) end
-        if msg ~= nil then
+        if msg ~= nil and hotkeys[hkID] == nil then
+          -- double check for website-specific hotkeys
           local config = tcopy(cfg)
           config.mods = keybinding.mods
           config.key = keybinding.key
