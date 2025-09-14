@@ -61,8 +61,16 @@ function module:_new(hyper)
   o.hyper = hyper
   o.hyperMode = hs.hotkey.modal.new()
   o.hyperMode.Entered = false
-  o.trigger = hs.hotkey.bind("", o.hyper,
+  o.trigger = hs.hotkey.new("", o.hyper,
       function() o:enterHyperMode() end, function() o:exitHyperMode() end)
+  if o.hyper == HYPER then
+    o.trigger.msg = "✧"
+  end
+  local logLevel = hs.hotkey.getLogLevel()
+  hs.hotkey.setLogLevel('nothing')
+  o.trigger:enable()
+  hs.hotkey.setLogLevel(logLevel)
+  log.f('Enabled modal %s', o.trigger.msg)
   return o
 end
 
