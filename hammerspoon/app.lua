@@ -6288,8 +6288,8 @@ local windowCreatedSinceTime = {}
 
 local function resendToFocusedUIElement(cond, nonFrontmostWindow)
   return function(obj)
-    if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] == nil
-        and hs.axuielement.systemWideElement().AXFocusedApplication == nil then
+    local focusedApp = hs.axuielement.systemWideElement().AXFocusedApplication
+    if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] == nil and focusedApp == nil then
       local apps = hs.application.runningApplications()
       local appMenuBarItems = tmap(apps, function(app)
         return registerMenuBarObserverForHotkeyValidity(app)
@@ -6298,7 +6298,7 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
         return any(items, function(item) return item.AXSelected end)
       end)
     end
-    if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] then
+    if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] and focusedApp == nil then
       return false, CF.rightMenubarItemSelected
     end
 
@@ -6317,12 +6317,9 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
           end
         end
       end
-    else
+    elseif focusedApp then  -- supposed to be non-null
       local app = obj.application ~= nil and obj:application() or obj
-      local focusedApp = hs.axuielement.systemWideElement().AXFocusedApplication
-      if focusedApp and focusedApp:asHSApplication():bundleID() ~= app:bundleID() then
-        -- note: situation where selected right menubar menu belongs to frontmost
-        -- application is ignored if observers have not been registered
+      if focusedApp:asHSApplication():bundleID() ~= app:bundleID() then
         return false, CF.uIElementNotFocused
       end
     end
@@ -8419,11 +8416,7 @@ if not LAZY_REGISTER_MENUBAR_OBSERVER then
   end)
   local focusedApp = hs.axuielement.systemWideElement().AXFocusedApplication
   if focusedApp then
-    local HSApp = focusedApp:asHSApplication()
-    local menuBarItems = appMenuBarItems[HSApp:bundleID() or HSApp:name()] or {}
-    FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = any(menuBarItems, function(item)
-      return item.AXSelected
-    end)
+    FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = false
   else
     FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = any(appMenuBarItems, function(items)
       return any(items, function(item) return item.AXSelected end)
