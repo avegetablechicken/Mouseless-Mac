@@ -4898,7 +4898,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         clickRightMenuBarItem(win:application())
       end,
-      defaultResendToSystem = true
+      forwardToSystemOnFailure = true
     }
   },
 
@@ -6435,7 +6435,7 @@ local function wrapConditionChain(app, fn, mode, config)
       cb = cb.previous
     end
     local mods, key = config.mods, config.key
-    local resendToSystem = config.defaultResendToSystem
+    local resendToSystem = config.forwardToSystemOnFailure
     if menuItemNotFound then
       if resendToSystem then
         safeGlobalKeyStroke(mods, key)
@@ -6459,8 +6459,8 @@ local function wrapCondition(obj, config, mode)
     if not satisfied then result = CF.userConditionFail end
     return satisfied, result
   end
-  -- some apps only accept system key strokes and neglect key strokes targeted at them
-  local resendToSystem = config.defaultResendToSystem
+  -- some key strokes should be forwarded to system instead of targeted app
+  local resendToSystem = config.forwardToSystemOnFailure
 
   local app
   if obj.focusedWindow then  -- AppBind
