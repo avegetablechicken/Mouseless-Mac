@@ -1627,12 +1627,10 @@ local function receiveMenuItem(menuItemTitle, app)
 end
 
 -- send key strokes to the app. but if the key binding is found, select corresponding menu item
-local function selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
+local function selectMenuItemOrKeyStroke(app, mods, key)
   local menuItemPath, enabled = findMenuItemByKeyBinding(app, mods, key)
   if menuItemPath ~= nil and enabled then
     app:selectMenuItem(menuItemPath)
-  elseif resendToSystem then
-    safeGlobalKeyStroke(mods, key)
   else
     hs.eventtap.keyStroke(mods, key, nil, app)
   end
@@ -4897,8 +4895,7 @@ appHotKeyCallbacks = {
       },
       fn = function(win)
         clickRightMenuBarItem(win:application())
-      end,
-      forwardToSystemOnFailure = true
+      end
     }
   },
 
@@ -6435,16 +6432,11 @@ local function wrapConditionChain(app, fn, mode, config)
       cb = cb.previous
     end
     local mods, key = config.mods, config.key
-    local resendToSystem = config.forwardToSystemOnFailure
     if menuItemNotFound then
-      if resendToSystem then
-        safeGlobalKeyStroke(mods, key)
-      else
-        hs.eventtap.keyStroke(mods, key, nil, app)
-      end
+      hs.eventtap.keyStroke(mods, key, nil, app)
     else
       -- most of the time, directly selecting menu item costs less time than key strokes
-      selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
+      selectMenuItemOrKeyStroke(app, mods, key)
     end
   end
 end
@@ -6459,8 +6451,6 @@ local function wrapCondition(obj, config, mode)
     if not satisfied then result = CF.userConditionFail end
     return satisfied, result
   end
-  -- some key strokes should be forwarded to system instead of targeted app
-  local resendToSystem = config.forwardToSystemOnFailure
 
   local app
   if obj.focusedWindow then  -- AppBind
@@ -6499,7 +6489,7 @@ local function wrapCondition(obj, config, mode)
       end
       return true
     elseif result == CF.leftMenubarItemSelected then
-      selectMenuItemOrKeyStroke(app, mods, key, resendToSystem)
+      selectMenuItemOrKeyStroke(app, mods, key)
       return true
     elseif result == CF.rightMenubarItemSelected then
       safeGlobalKeyStroke(mods, key)
@@ -6509,8 +6499,7 @@ local function wrapCondition(obj, config, mode)
       return true
     elseif result == CF.uIElementNotFocused then
       local focusedApp = hs.axuielement.systemWideElement().AXFocusedApplication
-      selectMenuItemOrKeyStroke(focusedApp:asHSApplication(),
-                                mods, key, resendToSystem)
+      selectMenuItemOrKeyStroke(focusedApp:asHSApplication(), mods, key)
       return true
     end
     return false, result
