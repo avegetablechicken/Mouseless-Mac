@@ -3515,7 +3515,7 @@ appHotKeyCallbacks = {
       message = function(win)
         local bt
         local winUI = towinui(win)
-        if #winUI == 4 then
+        if #winUI > 1 then
           bt = getc(winUI, nil, -1)
         else
           repeat
@@ -3542,6 +3542,11 @@ appHotKeyCallbacks = {
               and winUI[3].AXRole == AX.Button
               and winUI[4].AXRole == AX.Button
               and winUI[4].AXEnabled
+          elseif #winUI == 3 then
+            return winUI[1].AXRole == AX.StaticText
+            and winUI[2].AXRole == AX.StaticText
+            and winUI[3].AXRole == AX.Button
+            and winUI[3].AXEnabled
           elseif #winUI == 1 then
             repeat
               winUI = winUI[1]
@@ -3557,7 +3562,7 @@ appHotKeyCallbacks = {
       condition = function(win)
         local bt
         local winUI = towinui(win)
-        if #winUI == 4 then
+        if #winUI > 1 then
           bt = getc(winUI, nil, -1)
         else
           repeat
