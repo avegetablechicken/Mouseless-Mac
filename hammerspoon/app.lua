@@ -359,6 +359,7 @@ local function click(position)
 end
 
 local function clickable(element, offset)
+  if element == nil then return false end
   if offset == nil then
     offset = { element.AXSize.w / 2, element.AXSize.h / 2 }
   end
@@ -878,7 +879,6 @@ local function confirmButtonValidForAppCleanerUninstaller(title)
     if cancel == nil then return false end
     local locTitle = localizedString(title,app:bundleID())
     local button = getc(winUI, AX.StaticText, locTitle)
-    if button == nil then return false end
     return clickable(button)
   end
 end
@@ -1218,9 +1218,7 @@ local function getPasswordRecordPosition(index)
     if searchField ~= nil then
       local row = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
         AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index)
-      if row ~= nil then
-        return clickable(row, { 10, 10 })
-      end
+      return clickable(row, { 10, 10 })
     end
     return false
   end
@@ -1805,7 +1803,6 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
         local searchField = getc(winUI, AX.Toolbar, 1, AX.Group, 2, AX.TextField, 1)
-        if searchField == nil then return false end
         return clickable(searchField, { 10, 2 })
       end,
       fn = click
@@ -3568,7 +3565,7 @@ appHotKeyCallbacks = {
           until #winUI ~= 1
           bt = getc(winUI, AX.Button, 1)
         end
-        if bt then return clickable(bt) end
+        return clickable(bt)
       end,
       fn = click
     },
@@ -5268,9 +5265,7 @@ appHotKeyCallbacks = {
       condition = function(win)
         local winUI = towinui(win)
         local searchField = getc(winUI, AX.TextField, 1)
-        if searchField ~= nil then
-          return clickable(searchField, { 5, 5 })
-        end
+        return clickable(searchField, { 5, 5 })
       end,
       fn = click
     },
@@ -5624,9 +5619,7 @@ appHotKeyCallbacks = {
         if button == nil then
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
-        if button ~= nil then
-          return clickable(button)
-        end
+        return clickable(button)
       end,
       fn = click
     },
@@ -5652,9 +5645,7 @@ appHotKeyCallbacks = {
         if button == nil then
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
-        if button ~= nil then
-          return clickable(button)
-        end
+        return clickable(button)
       end,
       fn = click
     },
@@ -5680,9 +5671,7 @@ appHotKeyCallbacks = {
         if button == nil then
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
-        if button ~= nil then
-          return clickable(button)
-        end
+        return clickable(button)
       end,
       fn = click
     },
@@ -5708,9 +5697,7 @@ appHotKeyCallbacks = {
         if button == nil then
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
-        if button ~= nil then
-          return clickable(button)
-        end
+        return clickable(button)
       end,
       fn = click
     },
