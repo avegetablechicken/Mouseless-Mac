@@ -3598,7 +3598,6 @@ appHotKeyCallbacks = {
       message = localizedMessage("Finish"),
       bindCondition = versionRange("4", "4.0.6"),
       windowFilter = {
-        allowSheet = true,
         fn = function(win)
           local appid = win:application():bundleID()
           local title = localizedString("Finish", appid)
