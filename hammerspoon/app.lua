@@ -5664,7 +5664,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to IntelliJ IDEA"
       },
-      fn = function(win)
+      condition = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
@@ -5690,7 +5690,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to PyCharm"
       },
-      fn = function(win)
+      condition = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
