@@ -3425,7 +3425,15 @@ appHotKeyCallbacks = {
       end
     },
     ["openInDefaultBrowser"] = {
-      message = localizedMessage("Open in Default Browser"),
+      message = function(win)
+        local app = win:application()
+        if versionLessThan("4")(app) then
+          return localizedString("Open in Default Browser", app:bundleID())
+        else
+          local exBundleID = "com.tencent.flue.WeChatAppEx"
+          return localizedString("Open in default browser", exBundleID)
+        end
+      end,
       windowFilter = {
         fn = function(win)
           if versionLessThan("4")(win:application()) then
