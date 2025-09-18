@@ -3975,16 +3975,18 @@ function localizedMenuBarItem(title, appid, params)
     local locTitle = tindex(delocMap[appid], title)
     if locTitle ~= nil then return locTitle end
   end
-  -- the app may pretend being localized (e.g. Visual Studio Code)
-  local appLocale = applicationLocale(appid)
-  if find(appid) then
-    if not (type(params) == 'table' and params.locale ~= nil
-        and params.locale ~= matchLocale(appLocale, { params.locale })) then
-      if find(appid):findMenuItem({ title }) ~= nil then
-        return title
-      end
+
+  local appLocale
+  if type(params) == 'table' and params.locale ~= nil then
+    appLocale = params.locale
+  else
+    appLocale = applicationLocale(appid)
+    -- the app may pretend being localized (e.g. Visual Studio Code)
+    if find(appid) and find(appid):findMenuItem({ title }) ~= nil then
+      return title
     end
   end
+
   if appLocale == matchLocale(SYSTEM_LOCALE, { appLocale }) then
     local locTitle = locMap.common[title]
     if locTitle ~= nil then
