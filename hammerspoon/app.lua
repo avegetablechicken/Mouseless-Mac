@@ -3594,25 +3594,6 @@ appHotKeyCallbacks = {
       end,
       fn = click
     },
-    ["finish"] = {
-      message = localizedMessage("Finish"),
-      bindCondition = versionRange("4", "4.0.6"),
-      windowFilter = {
-        fn = function(win)
-          local appid = win:application():bundleID()
-          local title = localizedString("Finish", appid)
-          local bt = getc(towinui(win), AX.Button, title)
-          return bt ~= nil
-        end
-      },
-      condition = function(win)
-        local appid = win:application():bundleID()
-        local title = localizedString("Finish", appid)
-        local bt = getc(towinui(win), AX.Button, title)
-        if bt and bt.AXEnabled then return clickable(bt) end
-      end,
-      fn = click
-    },
     ["confirmAll"] = {
       message = commonLocalizedMessage("Confirm"),
       bindCondition = versionGreaterEqual("4.0.6"),
