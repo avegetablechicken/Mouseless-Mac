@@ -3603,8 +3603,21 @@ appHotKeyCallbacks = {
       condition = function(win)
         local appid = win:application():bundleID()
         local title = localizedString("Send", appid)
-        local bt = getc(towinui(win), AX.Button, title)
-        if bt and bt.AXEnabled then return clickable(bt) end
+        local winUI = towinui(win)
+        local bt = getc(winUI, AX.Button, title)
+        if bt and bt.AXEnabled then
+          -- `WeChat` accessibility bug
+          local ref = getc(winUI, AX.List, 1)
+          if ref.AXPosition.x < winUI.AXPosition.x then
+            return clickable(winUI, {
+              bt.AXPosition.x - ref.AXPosition.x + bt.AXSize.w / 2,
+              winUI.AXSize.h - 13 - bt.AXSize.h / 2
+                  - (ref.AXPosition.y + ref.AXSize.h - bt.AXPosition.y - bt.AXSize.h)
+            })
+          else
+            return clickable(bt)
+          end
+        end
       end,
       fn = click
     },
