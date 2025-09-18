@@ -3238,7 +3238,7 @@ appHotKeyCallbacks = {
           if #menuItemPath == 2 then
             local menuItem = app:findMenuItem(menuItemPath)
             if menuItem ~= nil and menuItem.enabled then
-              return true, { 0, menuItemPath }
+              return true, menuItemPath
             end
           end
 
@@ -3248,16 +3248,14 @@ appHotKeyCallbacks = {
           local bt = getc(winUI, AX.Group, 1,
               AX.SplitGroup, 1, AX.Button, back)
           if bt then
-            local ok, position = clickable(bt)
-            return ok, { 2, position }
+            return clickable(bt)
           end
 
           -- Moments
           if app:focusedWindow():title():find(app:name()) == nil then
             local moments = findMenuItemByKeyBinding(app, "⌘", "4", true)
             if moments and app:focusedWindow():title() == moments[2] then
-              local ok, position = clickable(getc(winUI, AX.Button, 1))
-              return ok, { 2, position }
+              return clickable(getc(winUI, AX.Button, 1))
             end
             return false
           end
@@ -3274,7 +3272,7 @@ appHotKeyCallbacks = {
         if #menuItemPath == 2 then
           local menuItem = app:findMenuItem(menuItemPath)
           if menuItem ~= nil and menuItem.enabled then
-            return true, { 0, menuItemPath }
+            return true, menuItemPath
           end
         end
 
@@ -3286,8 +3284,7 @@ appHotKeyCallbacks = {
           local detail = localizedString("SNS_Feed_Detail_Title", appid)
           if app:focusedWindow():title():find(album .. '-') == 1
               or app:focusedWindow():title() == moments .. '-' .. detail then
-            local ok, position = clickable(getc(winUI, AX.Button, 1))
-            return ok, { 2, position }
+            return clickable(getc(winUI, AX.Button, 1))
           end
           return false
         end
@@ -3298,19 +3295,19 @@ appHotKeyCallbacks = {
         if g ~= nil then
           for _, bt in ipairs(getc(g, AX.Button)) do
             if bt.AXTitle == back then
-              return true, { 1, bt }
+              return true, bt
             end
           end
         end
         return false
       end,
       fn = function(result, app)
-        if result[1] == 0 then
-          app:selectMenuItem(result[2])
-        elseif result[1] == 1 then
-          press(result[2])
-        elseif result[1] == 2 then
-          click(result[2])
+        if #result > 0 then
+          app:selectMenuItem(result)
+        elseif result.AXTitle then
+          press(result)
+        elseif result.x then
+          click(result)
         end
       end
     },
