@@ -37,7 +37,8 @@
     "显示": "Show"
   }, {
     "Hide": "不显示",
-    "Send": "发送"
+    "Send": "发送",
+    "Send To (%d)": "分别发送(%d)"
   }],
   "com.kingsoft.wpsoffice.mac": [{
     "账户": "Account",

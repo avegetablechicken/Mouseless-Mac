@@ -3594,17 +3594,32 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowSheet = true,
         fn = function(win)
+          local winUI = towinui(win)
           local appid = win:application():bundleID()
           local title = localizedString("Send", appid)
-          local bt = getc(towinui(win), AX.Button, title)
+          local bt = getc(winUI, AX.Button, title)
+          if bt == nil then
+            title = localizedString("Send To (%d)", appid)
+            title = title:gsub("%(%%d%)", "%%(%%d%%)")
+            bt = tfind(getc(winUI, AX.Button), function(b)
+              return b.AXTitle:match(title)
+            end)
+          end
           return bt ~= nil
         end
       },
       condition = function(win)
+        local winUI = towinui(win)
         local appid = win:application():bundleID()
         local title = localizedString("Send", appid)
-        local winUI = towinui(win)
-        local bt = getc(winUI, AX.Button, title)
+        local bt = getc(towinui(win), AX.Button, title)
+        if bt == nil then
+          title = localizedString("Send To (%d)", appid)
+          title = title:gsub("%(%%d%)", "%%(%%d%%)")
+          bt = tfind(getc(winUI, AX.Button), function(b)
+            return b.AXTitle:match(title)
+          end)
+        end
         if bt and bt.AXEnabled then
           -- `WeChat` accessibility bug
           local ref = getc(winUI, AX.List, 1)
