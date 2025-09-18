@@ -3226,13 +3226,14 @@ appHotKeyCallbacks = {
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local appid = app:bundleID()
+        local appLocale = applicationLocale(appid)
 
         if versionGreaterEqual("4")(app) then
           -- CEF Window
           local exBundleID = "com.tencent.flue.WeChatAppEx"
           local menuItemPath = {
-            localizedMenuBarItem('File', exBundleID),
-            localizedString('Back', exBundleID)
+            localizedMenuBarItem('File', exBundleID, { locale = appLocale }),
+            localizedString('Back', exBundleID, { locale = appLocale })
           }
           if #menuItemPath == 2 then
             local menuItem = app:findMenuItem(menuItemPath)
@@ -3267,8 +3268,8 @@ appHotKeyCallbacks = {
         -- CEF Window
         local exBundleID = "com.tencent.xinWeChat.WeChatAppEx"
         local menuItemPath = {
-          localizedMenuBarItem('File', exBundleID),
-          localizedString('Back', exBundleID)
+          localizedMenuBarItem('File', exBundleID, { locale = appLocale }),
+          localizedString('Back', exBundleID, { locale = appLocale })
         }
         if #menuItemPath == 2 then
           local menuItem = app:findMenuItem(menuItemPath)
@@ -3431,7 +3432,9 @@ appHotKeyCallbacks = {
           return localizedString("Open in Default Browser", app:bundleID())
         else
           local exBundleID = "com.tencent.flue.WeChatAppEx"
-          return localizedString("Open in default browser", exBundleID)
+          local appLocale = applicationLocale(app:bundleID())
+          return localizedString("Open in default browser", exBundleID,
+                                 { locale = appLocale })
         end
       end,
       windowFilter = {
@@ -3473,7 +3476,9 @@ appHotKeyCallbacks = {
           local menuItems = getc(menuWin, AX.Group, 1, AX.Menu, 1, AX.MenuItem)
           if menuItems and #menuItems > 0 then
             local exBundleID = "com.tencent.flue.WeChatAppEx"
-            local title = localizedString("Open in default browser", exBundleID)
+            local appLocale = applicationLocale(app:bundleID())
+            local title = localizedString("Open in default browser", exBundleID,
+                                          { locale = appLocale })
             local menuItem = tfind(menuItems, function(item)
               return item.AXDescription == title
             end)
@@ -3485,23 +3490,26 @@ appHotKeyCallbacks = {
     ["closeWindow"] = {
       mods = specialCommonHotkeyConfigs["closeWindow"].mods,
       key = specialCommonHotkeyConfigs["closeWindow"].key,
-      message = function()
+      message = function(win)
         local exBundleID = "com.tencent.flue.WeChatAppEx"
-        return localizedString('Close All Tabs', exBundleID)
+        local appLocale = applicationLocale(win:application():bundleID())
+        return localizedString('Close All Tabs', exBundleID, { locale = appLocale })
       end,
       bindCondition = versionGreaterEqual("4"),
       windowFilter = {
         fn = function(win)
           local exBundleID = "com.tencent.flue.WeChatAppEx"
+          local appLocale = applicationLocale(win:application():bundleID())
           local menuItemPath = {
-            localizedMenuBarItem('File', exBundleID),
-            localizedString('Close All Tabs', exBundleID)
+            localizedMenuBarItem('File', exBundleID, { locale = appLocale }),
+            localizedString('Close All Tabs', exBundleID, { locale = appLocale })
           }
           if #menuItemPath == 2 then
             local menuItem = win:application():findMenuItem(menuItemPath)
             if menuItem == nil or not menuItem.enabled then return false end
           end
-          menuItemPath[2] = localizedString('Close Tab', exBundleID)
+          menuItemPath[2] = localizedString('Close Tab', exBundleID,
+                                            { locale = appLocale })
           if #menuItemPath == 2 then
             local menuItem = win:application():findMenuItem(menuItemPath)
             return menuItem and not menuItem.enabled
@@ -3510,9 +3518,10 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local exBundleID = "com.tencent.flue.WeChatAppEx"
+        local appLocale = applicationLocale(win:application():bundleID())
         local menuItemPath = {
-          localizedMenuBarItem('File', exBundleID),
-          localizedString('Close All Tabs', exBundleID)
+          localizedMenuBarItem('File', exBundleID, { locale = appLocale }),
+          localizedString('Close All Tabs', exBundleID, { locale = appLocale })
         }
         local menuItem = win:application():findMenuItem(menuItemPath)
         return menuItem ~= nil and menuItem.enabled, menuItemPath
