@@ -3254,8 +3254,8 @@ appHotKeyCallbacks = {
 
           -- Moments
           if app:focusedWindow():title():find(app:name()) == nil then
-            local moments = localizedString("Moments", appid)
-            if app:focusedWindow():title() == moments then
+            local moments = findMenuItemByKeyBinding(app, "⌘", "4", true)
+            if moments and app:focusedWindow():title() == moments[2] then
               local ok, position = clickable(getc(winUI, AX.Button, 1))
               return ok, { 2, position }
             end
