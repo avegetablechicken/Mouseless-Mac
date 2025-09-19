@@ -2915,21 +2915,28 @@ appHotKeyCallbacks = {
     },
     ["toggleSidebar"] = {
       message = commonLocalizedMessage("Show Sidebar"),
-      bindCondition = versionLessThan("1.15.0"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
         local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
             AX.ScrollArea, 1, AX.WebArea, 1)
         if webarea == nil then return false end
-        local button = tfind(getc(webarea, AX.Group), function(b)
-          return tfind(b.AXDOMClassList or {}, function(c)
-            return c:find("folder_foldIcon") ~= nil
-          end) ~= nil
-        end)
-        return button ~= nil, button
+        if versionLessThan("1.15.0")(app) then
+          local button = tfind(getc(webarea, AX.Group), function(b)
+            return tfind(b.AXDOMClassList or {}, function(c)
+              return c:find("folder_foldIcon") ~= nil
+            end) ~= nil
+          end)
+          return button ~= nil, button
+        else
+          local button = getc(webarea, AX.StaticText, "\xee\x84\x82")
+          return clickable(button)
+        end
       end,
-      fn = press
+      fn = function(result)
+        local action = result.AXTitle ~= nil and press or click
+        action(result)
+      end
     },
     ["maximize"] = {
       mods = get(KeybindingConfigs.hotkeys.shared, "zoom", "mods"),
