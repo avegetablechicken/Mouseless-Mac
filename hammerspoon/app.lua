@@ -2914,7 +2914,7 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["toggleSidebar"] = {
-      message = commonLocalizedMessage("Show Sidebar"),
+      message = localizedMessage("Show Sidebar"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
