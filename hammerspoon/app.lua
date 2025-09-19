@@ -2841,7 +2841,7 @@ appHotKeyCallbacks = {
   ["com.tencent.yuanbao"] =
   {
     ["settings"] = {
-      message = "设置",
+      message = localizedMessage("Settings"),
       condition = function(app)
         if versionGreaterEqual("2")(app) then return true end
         if app:focusedWindow() == nil then return false end
@@ -2869,8 +2869,9 @@ appHotKeyCallbacks = {
           local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
             AX.ScrollArea, 1, AX.WebArea, 1)
           if webarea then
+            local title = localizedString("Settings", app:bundleID())
             for _, g in ipairs(getc(webarea, AX.Group)) do
-              if g[1] and g[1].AXValue == "设置" then
+              if g[1] and g[1].AXValue == title then
                 safeClick(g[1], app) break
               end
             end
@@ -2894,7 +2895,7 @@ appHotKeyCallbacks = {
       end
     },
     ["newChat"] = {
-      message = "新建对话",
+      message = localizedMessage("New Chat"),
       bindCondition = versionLessThan("1.6.0"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
@@ -2976,8 +2977,9 @@ appHotKeyCallbacks = {
             local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
               AX.ScrollArea, 1, AX.WebArea, 1)
             if webarea then
+              local title = localizedString("Open Mini Chat", app:bundleID())
               for _, g in ipairs(getc(webarea, AX.Group)) do
-                if g[1] and g[1].AXValue == "打开迷你对话窗" then
+                if g[1] and g[1].AXValue == title then
                   safeClick(g[1], app)
                   break
                 end

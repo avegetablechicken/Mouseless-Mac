@@ -40,6 +40,13 @@
     "Send": "发送",
     "Send To (%d)": "分别发送(%d)"
   }],
+  "com.tencent.yuanbao": [{
+    "显示": "Display"
+  }, {
+    "Settings": "设置",
+    "New Chat": "新建对话",
+    "Open Mini Chat": "打开迷你对话窗"
+  }],
   "com.kingsoft.wpsoffice.mac": [{
     "账户": "Account",
     "账号": "Account",
