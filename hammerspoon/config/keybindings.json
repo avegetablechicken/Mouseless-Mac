@@ -1047,6 +1047,10 @@
         "mods": ["shift", "command"],
         "key": "O"
       },
+      "openRecordFile": {
+        "mods": "command",
+        "key": "Down"
+      },
       "newLibrary": {
         "mods": ["option", "command"],
         "key": "N"

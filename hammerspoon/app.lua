@@ -3074,6 +3074,24 @@ appHotKeyCallbacks = {
         end)
       end
     },
+    ["openRecordFile"] = {
+      message = localizedMessage("Open file"),
+      condition = function(app)
+        if app:focusedWindow() == nil then return false end
+        local winUI = towinui(app:focusedWindow())
+        local row = tfind(getc(winUI, AX.TabGroup, 1, AX.Table, 1, AX.Row) or {},
+          function(r) return r.AXFocused
+        end)
+        if row then
+          local cell = tfind(getc(row, AX.Cell), function(c)
+            local text = getc(c, AX.StaticText, 1)
+            return text ~= nil and text.AXValue == "\xf3\xb0\x88\xa5"
+          end)
+          return clickable(cell)
+        end
+      end,
+      fn = click
+    },
     ["remapPreviousTab"] = {
       message = localizedMessage("Previous library"),
       condition = JabRefShowLibraryByIndex(2, false),
