@@ -3053,6 +3053,27 @@ appHotKeyCallbacks = {
       condition = checkMenuItem({ "File", "Recent libraries" }),
       fn = receiveMenuItem
     },
+    ["revealLibrayInFinder"] = {
+      message = localizedMessage("Reveal in file explorer"),
+      condition = function(app)
+        if app:focusedWindow() == nil then return false end
+        local winUI = towinui(app:focusedWindow())
+        local tab = tfind(getc(winUI, AX.TabGroup, 1, AX.RadioButton) or {},
+          function(rb) return rb.AXValue == true
+              and rb.AXTitle ~= localizedString("untitled", app:bundleID())
+        end)
+        return tab ~= nil, tab
+      end,
+      fn = function(tab, app)
+        tab:performAction(AX.ShowMenu)
+        hs.timer.doAfter(0.1, function()
+          local title = "Reveal in file explorer"
+          title = localizedString(title, app:bundleID()) or title
+          local item = getc(toappui(app), AX.Menu, 1, AX.MenuItem, title)
+          if item then press(item) end
+        end)
+      end
+    },
     ["remapPreviousTab"] = {
       message = localizedMessage("Previous library"),
       condition = JabRefShowLibraryByIndex(2, false),

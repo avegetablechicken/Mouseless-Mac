@@ -1043,6 +1043,10 @@
         "mods": "command",
         "key": ","
       },
+      "revealLibrayInFinder": {
+        "mods": ["shift", "command"],
+        "key": "O"
+      },
       "newLibrary": {
         "mods": ["option", "command"],
         "key": "N"
