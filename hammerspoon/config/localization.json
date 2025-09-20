@@ -8,7 +8,6 @@
     "com.apple.iMovieApp": "Flexo.framework",
     "com.charliemonroe.Downie-4": "XUCore.framework",
     "com.charliemonroe.Permute-3": "XUCore.framework",
-    "com.tencent.xinWeChat": "WeChatAppEx Framework.framework",
     "com.tencent.meeting": "WeMeetResource.bundle",
     "com.tencent.yuanbao": [{ "electron": "locales" }, "locales"],
     "net.xmind.vana.app": { "electron": "static/locales" },
