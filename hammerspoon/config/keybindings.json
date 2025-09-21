@@ -1025,6 +1025,10 @@
         "mods": "command",
         "key": "N"
       },
+      "enterTemporaryChat": {
+        "mods": ["shift", "command"],
+        "key": "N"
+      },
       "toggleSidebar": {
         "mods": ["control", "command"],
         "key": "S"

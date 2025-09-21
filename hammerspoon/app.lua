@@ -2913,6 +2913,22 @@ appHotKeyCallbacks = {
       end,
       fn = press
     },
+    ["enterTemporaryChat"] = {
+      message = localizedMessage("Enter Temporary Chat"),
+      condition = function(app)
+        if app:focusedWindow() == nil then return false end
+        local winUI = towinui(app:focusedWindow())
+        local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
+            AX.ScrollArea, 1, AX.WebArea, 1)
+        if webarea == nil then return false end
+        local button = getc(webarea, AX.StaticText, "\xee\x84\x83")
+        if button == nil then
+          button = getc(webarea, AX.StaticText, "\xee\x82\xa8")
+        end
+        return clickable(button)
+      end,
+      fn = click
+    },
     ["toggleSidebar"] = {
       message = localizedMessage("Show Sidebar"),
       condition = function(app)
