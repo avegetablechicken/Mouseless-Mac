@@ -2843,25 +2843,63 @@ appHotKeyCallbacks = {
     ["settings"] = {
       message = localizedMessage("Settings"),
       condition = function(app)
-        if versionGreaterEqual("2")(app) then return true end
-        if app:focusedWindow() == nil then return false end
+        if app:focusedWindow() == nil then
+          return versionGreaterEqual("2")(app)
+        end
+
         local winUI = towinui(app:focusedWindow())
         local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
           AX.ScrollArea, 1, AX.WebArea, 1)
         if webarea == nil then return false end
+        local menu = getc(webarea, AX.Group, 8, AX.Group, 2, AX.Group, 1)
+
+        if menu then
+          local title = localizedString("Settings", app:bundleID())
+          local menuItem = getc(menu, AX.StaticText, title)
+          return clickable(menuItem)
+        end
+
         local button = tfind(getc(webarea, AX.Group), function(b)
           return tfind(b.AXDOMClassList or {}, function(c)
-            return c:find("side%-bar_name") ~= nil
+            return c:find("side%-bar_nickName") ~= nil
+                or c:find("side%-bar_name") ~= nil
           end) ~= nil
         end)
         if button ~= nil and button.AXPosition.x ~= winUI.AXPosition.x then
-          return clickable(button)
-        else
-          return false
+          local ok, position = clickable(button)
+          return ok, { position, button }
         end
+
+        return false
       end,
       fn = function(button, app)
-        if app ~= nil then click(button) return end
+        if app ~= nil then
+          if #button == 0 then
+            click(button) return
+          end
+          click(button[1]) button = button[2]
+
+          if tfind(button.AXDOMClassList or {}, function(c)
+            return c:find("nickName") ~= nil
+          end) ~= nil then
+            local menuItem
+            local timer = hs.timer.waitUntil(function()
+              local winUI = towinui(app:focusedWindow())
+              local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
+                  AX.ScrollArea, 1, AX.WebArea, 1)
+              local menu = getc(webarea, AX.Group, 8, AX.Group, 2, AX.Group, 1)
+              if menu then
+                local title = localizedString("Settings", app:bundleID())
+                menuItem = getc(menu, AX.StaticText, title)
+                return true
+              end
+            end,
+            function() safeClick(menuItem, app) end)
+            stopOnDeactivated(app:bundleID(), timer)
+          end
+          return
+        end
+
         app = button
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.windowCreated)
