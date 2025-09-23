@@ -1564,6 +1564,30 @@
       "click10thIceBarItem": {
         "mods": "",
         "key": "0"
+      },
+      "view1": {
+        "mods": "command",
+        "key": "1"
+      },
+      "view2": {
+        "mods": "command",
+        "key": "2"
+      },
+      "view3": {
+        "mods": "command",
+        "key": "3"
+      },
+      "view4": {
+        "mods": "command",
+        "key": "4"
+      },
+      "view5": {
+        "mods": "command",
+        "key": "5"
+      },
+      "view6": {
+        "mods": "command",
+        "key": "6"
       }
     },
     "cn.better365.iBar": {

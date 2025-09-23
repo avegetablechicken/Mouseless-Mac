@@ -1174,6 +1174,31 @@ local function clickIceBarItem(index)
   end
 end
 
+local iceSettingsWindowFilter = {
+  fn = function(win)
+    return towinui(win).AXIdentifier == "SettingsWindow"
+  end
+}
+local function getIceSidebarItemTitle(index)
+  return function(win)
+    local row = getc(towinui(win), AX.Group, 1,
+        AX.SplitGroup, 1, AX.Group, 1, AX.ScrollArea, 1,
+        AX.Outline, 1, AX.Row, index + 1, AX.Cell, 1, AX.StaticText, 1)
+    if row ~= nil then
+      return row.AXValue
+    end
+  end
+end
+
+local function clickIceSidebarItem(index)
+  return function(win)
+    local row = getc(towinui(win), AX.Group, 1,
+        AX.SplitGroup, 1, AX.Group, 1, AX.ScrollArea, 1,
+        AX.Outline, 1, AX.Row, index + 1)
+    if row then row.AXSelected = true end
+  end
+end
+
 -- ### iBar
 local iBarWindowFilter = {
   allowRoles = AX.SystemFloatingWindow,
@@ -4763,6 +4788,36 @@ appHotKeyCallbacks = {
       background = true,
       nonFrontmost = true,
       fn = clickIceBarItem(10)
+    },
+    ["view1"] = {
+      message = getIceSidebarItemTitle(1),
+      windowFilter = iceSettingsWindowFilter,
+      fn = clickIceSidebarItem(1)
+    },
+    ["view2"] = {
+      message = getIceSidebarItemTitle(2),
+      windowFilter = iceSettingsWindowFilter,
+      fn = clickIceSidebarItem(2)
+    },
+    ["view3"] = {
+      message = getIceSidebarItemTitle(3),
+      windowFilter = iceSettingsWindowFilter,
+      fn = clickIceSidebarItem(3)
+    },
+    ["view4"] = {
+      message = getIceSidebarItemTitle(4),
+      windowFilter = iceSettingsWindowFilter,
+      fn = clickIceSidebarItem(4)
+    },
+    ["view5"] = {
+      message = getIceSidebarItemTitle(5),
+      windowFilter = iceSettingsWindowFilter,
+      fn = clickIceSidebarItem(5)
+    },
+    ["view6"] = {
+      message = getIceSidebarItemTitle(6),
+      windowFilter = iceSettingsWindowFilter,
+      fn = clickIceSidebarItem(6)
     }
   },
 
