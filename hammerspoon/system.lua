@@ -2176,9 +2176,16 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     local button3
     repeat
       hs.timer.usleep(0.05 * 1000000)
-      button3 = getc(pane, AX.Button, 3)
+      if OS_VERSION >= OS.Tahoe then
+        button3 = getc(pane, AX.Group, 1, AX.Button, 3)
+      else
+        button3 = getc(pane, AX.Button, 3)
+      end
     until button3 or not pane:isValid()
     if button3 then
+      if OS_VERSION >= OS.Tahoe then
+        pane = getc(pane, AX.Group, 1)
+      end
       if OS_VERSION < OS.Ventura then
         result = tmap(getc(pane, AX.Button),
             function(bt) return bt.AXTitle end)
