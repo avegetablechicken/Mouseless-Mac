@@ -2091,7 +2091,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         if backgroundSoundsHotkeys == nil then
           backgroundSoundsHotkeys = {}
         end
-        for i=1,#cbs do
+        for i=1,math.min(#cbs, 10) do
           local msg
           if cbs[i].AXIdentifier ~= nil then
             local name = cbs[i].AXIdentifier:match("hearing%-(.+)%-button%-identifier")
