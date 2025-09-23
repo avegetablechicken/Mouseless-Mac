@@ -1266,9 +1266,15 @@ local function getPasswordRecordPosition(index)
     local winUI = towinui(win)
     local searchField = getc(winUI, AX.Group, 1, AX.TextField, 1)
     if searchField ~= nil then
-      local row = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-        AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index)
-      return clickable(row, { 10, 10 })
+      local row
+      if OS_VERSION > OS.Tahoe then
+        row = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+            AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index)
+      else
+        row = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+            AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index)
+      end
+      return clickable(row)
     end
     return false
   end
@@ -5238,9 +5244,15 @@ appHotKeyCallbacks = {
       background = true,
       fn = function(win)
         local winUI = towinui(win)
-        local field = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-            AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, 2,
-            AX.Cell, 1, AX.StaticText, 2)
+        local outline
+        if OS_VERSION >= OS.Tahoe then
+          outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+              AX.ScrollArea, 1, AX.Outline, 1)
+        else
+          outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+              AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1)
+        end
+        local field = getc(outline, AX.Row, 2, AX.Cell, 1, AX.StaticText, 2)
         if field then
           leftClickAndRestore(field, win)
           clickRightMenuBarItem(win:application())
@@ -5261,8 +5273,14 @@ appHotKeyCallbacks = {
       background = true,
       fn = function(win)
         local winUI = towinui(win)
-        local outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-            AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1)
+        local outline
+        if OS_VERSION >= OS.Tahoe then
+          outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+              AX.ScrollArea, 1, AX.Outline, 1)
+        else
+          outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+              AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1)
+        end
         local field
         if getc(outline, AX.Row, 3, AX.Cell, 1, AX.StaticText, 1).AXValue
             == localizedString("Password", win:application():bundleID()) then
@@ -5286,9 +5304,15 @@ appHotKeyCallbacks = {
         local winUI = towinui(win)
         local elem = getc(winUI, AX.Group, 1)[1]
         if elem.AXRole ~= AX.Button then return false end
-        local cell = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-            AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1,
-            AX.Row, 5, AX.Cell, 1)
+        local outline
+        if OS_VERSION >= OS.Tahoe then
+          outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+              AX.ScrollArea, 1, AX.Outline, 1)
+        else
+          outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+              AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1)
+        end
+        local cell = getc(outline, AX.Row, 5, AX.Cell, 1)
         local title = getc(cell, AX.StaticText, 1)
         if title and title.AXValue
             == localizedString("Verification Code", win:application():bundleID()) then
