@@ -1431,14 +1431,20 @@ function registerControlCenterHotKeys(panel, inMenuBar)
 
   -- pandel with a switch-off button
   if tcontain({"Wi‑Fi", "Bluetooth", "AirDrop"}, panel) then
-    local checkbox = tfind(getc(appUI, AX.Window, 1, AX.CheckBox), function(cb)
-      return cb.AXIdentifier and cb.AXIdentifier:find("%-header")
-    end)
-    if checkbox == nil then
-      checkbox = tfind(getc(appUI, AX.Window, 1, AX.Group, 1, AX.CheckBox), function(cb)
-        return cb.AXIdentifier and cb.AXIdentifier:find("%-header")
+    local checkbox
+    local totalDelay = 0
+    repeat
+      hs.timer.usleep(0.05 * 1000000)
+      totalDelay = totalDelay + 0.05
+      checkbox = tfind(getc(appUI, AX.Window, 1, AX.CheckBox), function(cb)
+        return cb.AXIdentifier ~= nil and cb.AXIdentifier:find("%-header") ~= nil
       end)
-    end
+      if checkbox == nil then
+        checkbox = tfind(getc(appUI, AX.Window, 1, AX.Group, 1, AX.CheckBox), function(cb)
+          return cb.AXIdentifier ~= nil and cb.AXIdentifier:find("%-header") ~= nil
+        end)
+      end
+    until checkbox or totalDelay > 1
     if checkbox then
       local hotkey = newControlCenter("", "Space",
         "Toggle " .. controlCenterLocalized(panel),
