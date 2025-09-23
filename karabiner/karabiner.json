@@ -1075,7 +1075,7 @@
                         ]
                     },
                     {
-                        "description": "Fn + A/B/D/H/K/M/P/R/S/W/X to show panel of Control Center",
+                        "description": "Fn (shift) + A/B/D/H/K/M/P/R/S/U/W/X to show panel of Control Center",
                         "manipulators": [
                             {
                                 "conditions": [
