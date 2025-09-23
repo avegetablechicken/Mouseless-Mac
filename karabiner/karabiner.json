@@ -1244,7 +1244,7 @@
                                     "key_code": "r",
                                     "modifiers": { "mandatory": "fn" }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://controlcenter?panel=Music%20Recognition'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://controlcenter?panel=Recognize%20Music'" }],
                                 "type": "basic"
                             },
                             {

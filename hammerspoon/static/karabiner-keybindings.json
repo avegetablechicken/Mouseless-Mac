@@ -75,7 +75,7 @@
     {
         "mods": "fn",
         "key": "R",
-        "message": "Control Center > Music Recognition",
+        "message": "Control Center > Recognize Music",
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },

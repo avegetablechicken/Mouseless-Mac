@@ -1034,6 +1034,9 @@ end
 
 local controlCenterPanelFuncs = {}
 hs.urlevent.bind("controlcenter", function(eventName, params)
+  if params["panel"] == "Music Recognition" then
+    params["panel"] = "Recognize Music"
+  end
   local fn = controlCenterPanelFuncs[params["panel"]]
   if fn then fn() end
 end)
@@ -1083,7 +1086,7 @@ local function testAlready(panel, pane, ident, role)
       end
     elseif panel == "Sound" then
       role = AX.Slider
-    elseif panel == "Music Recognition" then
+    elseif panel == "Recognize Music" or panel == "Music Recognition" then
       role = AX.Group
     elseif panel == "Hearing" then
       role = AX.StaticText
@@ -1125,22 +1128,32 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     local role, index
     if tcontain({ "Wi‑Fi", "Focus",
                   "Bluetooth", "AirDrop",
-                  "Music Recognition" }, panel) then
+                  "Recognize Music", "Music Recognition" }, panel) then
       role = AX.CheckBox index = 2
     elseif panel == "Screen Mirroring" then
-      if OS_VERSION < OS.Ventura then
-        role = AX.CheckBox index = 2
-      else
+      if OS_VERSION >= OS.Ventura and OS_VERSION <= OS.Sequoia then
         role = AX.Button index = 1
+      else
+        role = AX.CheckBox index = 2
       end
     elseif panel == "Display" then
-      role = OS_VERSION < OS.Ventura and AX.StaticText or AX.Group
+      if OS_VERSION >= OS.Ventura and OS_VERSION <= OS.Sequoia then
+        role = AX.Group
+      else
+        role = AX.StaticText
+      end
+      index = 1
+    elseif panel == "Keyboard Brightness" then
+      if OS_VERSION <= OS.Sequoia then
+        role = AX.Button
+      else
+        role = AX.StaticText
+      end
       index = 1
     elseif panel == "Sound" then
       role = AX.StaticText index = 1
     elseif tcontain({ "Accessibility Shortcuts",
-                      "Battery", "Hearing", "Users",
-                      "Keyboard Brightness" }, panel) then
+                      "Battery", "Hearing", "Users" }, panel) then
       role = AX.Button index = 1
     elseif panel == "Now Playing" then
       local ele = getc(pane, AX.Image, -1)
@@ -1169,6 +1182,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       end
     until ele or totalDelay > 0.9 or not pane:isValid()
     if ele then
+      if OS_VERSION >= OS.Tahoe then index = index + 1 end
       local act = ele:actionNames()[index]
       ele:performAction(act)
     end
@@ -1234,9 +1248,14 @@ end
 local controlCenterPanels = {
   "Accessibility Shortcuts", "AirDrop", "Battery", "Bluetooth",
   "Display", "Focus", "Hearing", "Keyboard Brightness",
-  "Music Recognition", "Now Playing", "Screen Mirroring", "Sound",
+  "Now Playing", "Screen Mirroring", "Sound",
   "Users", "Wi‑Fi"
 }
+if OS_VERSION >= OS.Tahoe then
+  tinsert(controlCenterPanels, "Recognize Music")
+else
+  tinsert(controlCenterPanels, "Music Recognition")
+end
 for _, panel in ipairs(controlCenterPanels) do
   bindControlCenterURL(panel, bind(popupControlCenterSubPanel, panel))
 end
@@ -1978,7 +1997,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         return
       end
     end
-  elseif panel == "Music Recognition" then
+  elseif panel == "Recognize Music" or panel == "Music Recognition" then
     local msg = "Start Listening"
     msg = controlCenterLocalized(panel, msg) or msg
     local hotkey = newControlCenter("", "Space", msg,
@@ -2218,13 +2237,28 @@ ControlCenterObserver:addWatcher(
 )
 
 local function controlCenterObserverCallback()
+  if controlCenter:focusedWindow() == nil then return end
   local controlCenterDestroyObserver =
       uiobserver.new(controlCenter:pid())
-  controlCenterDestroyObserver:addWatcher(
-    towinui(controlCenter:focusedWindow()),
-    uinotifications.uIElementDestroyed
-  )
+  if OS_VERSION >= OS.Tahoe then
+    controlCenterDestroyObserver:addWatcher(
+      toappui(controlCenter),
+      uinotifications.uIElementDestroyed
+    )
+  else
+    controlCenterDestroyObserver:addWatcher(
+      towinui(controlCenter:focusedWindow()),
+      uinotifications.uIElementDestroyed
+    )
+  end
   controlCenterDestroyObserver:callback(function()
+    if OS_VERSION >= OS.Tahoe then
+      local win = controlCenter:focusedWindow()
+      if win and win:title() == localizedString("Control Center",
+          controlCenter:bundleID()) then
+        return
+      end
+    end
     if selectNetworkWatcher ~= nil then
       StopExecContinuously(selectNetworkWatcher)
       selectNetworkWatcher = nil
