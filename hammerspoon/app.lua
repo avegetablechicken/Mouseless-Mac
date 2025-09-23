@@ -2020,9 +2020,15 @@ appHotKeyCallbacks = {
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
-        if toolbar and #toolbar == 2 and toolbar[1].AXRole == AX.Button
-            and toolbar[2].AXSubrole == AX.SearchField then
-          return true, toolbar[1]
+        if OS_VERSION >= OS.Tahoe then
+          if toolbar and #toolbar == 1 and toolbar[1].AXRole == AX.Button then
+            return true, toolbar[1]
+          end
+        else
+          if toolbar and #toolbar == 2 and toolbar[1].AXRole == AX.Button
+              and toolbar[2].AXSubrole == AX.SearchField then
+            return true, toolbar[1]
+          end
         end
         return false
       end,
@@ -2035,6 +2041,7 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then return false end
         local list = getc(towinui(app:focusedWindow()), AX.Group, 1,
             AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
+        if OS_VERSION >= OS.Tahoe then list = getc(list, AX.Group, 1) end
         if list and list.AXDescription
             == localizedString("Location List", app:bundleID()) then
           for i = 1, #list do
@@ -2053,7 +2060,8 @@ appHotKeyCallbacks = {
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local list = getc(towinui(app:focusedWindow()), AX.Group, 1,
-          AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
+            AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
+        if OS_VERSION >= OS.Tahoe then list = getc(list, AX.Group, 1) end
         if list and list.AXDescription
             == localizedString("Location List", app:bundleID()) then
           for i = 1, #list do
@@ -2072,6 +2080,7 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then return false end
         local list = getc(towinui(app:focusedWindow()), AX.Group, 1,
             AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
+        if OS_VERSION >= OS.Tahoe then list = getc(list, AX.Group, 1) end
         if list and list.AXDescription ==
             localizedString("Location List", app:bundleID()) then
           local selected = tfind(list.AXChildren or {},
