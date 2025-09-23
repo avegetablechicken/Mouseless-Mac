@@ -350,10 +350,6 @@ local function press(pressable)
   end
 end
 
-local function safeClick(position, obj)
-  leftClickAndRestore(position, obj)
-end
-
 local function click(position)
   leftClickAndRestore(position)
 end
@@ -2338,7 +2334,7 @@ appHotKeyCallbacks = {
         local maxX = buttons[#buttons].AXPosition.x
         maxX = math.max(maxX, buttons[#buttons - 1].AXPosition.x)
         maxX = math.max(maxX, buttons[#buttons - 2].AXPosition.x)
-        safeClick({ maxX + 100, buttons[#buttons].AXPosition.y }, win)
+        leftClickAndRestore({ maxX + 100, buttons[#buttons].AXPosition.y }, win)
       end
     },
     ["openRecent"] = {
@@ -2372,7 +2368,7 @@ appHotKeyCallbacks = {
           end
         end
         if firstSplitLine == 4 then
-          safeClick(groups[1], app)
+          leftClickAndRestore(groups[1], app)
         end
       end,
     },
@@ -2894,7 +2890,7 @@ appHotKeyCallbacks = {
                 return true
               end
             end,
-            function() safeClick(menuItem, app) end)
+            function() leftClickAndRestore(menuItem, app) end)
             stopOnDeactivated(app:bundleID(), timer)
           end
           return
@@ -2910,7 +2906,7 @@ appHotKeyCallbacks = {
             local title = localizedString("Settings", app:bundleID())
             for _, g in ipairs(getc(webarea, AX.Group)) do
               if g[1] and g[1].AXValue == title then
-                safeClick(g[1], app) break
+                leftClickAndRestore(g[1], app) break
               end
             end
             obs:stop()
@@ -3042,7 +3038,7 @@ appHotKeyCallbacks = {
               local title = localizedString("Open Mini Chat", app:bundleID())
               for _, g in ipairs(getc(webarea, AX.Group)) do
                 if g[1] and g[1].AXValue == title then
-                  safeClick(g[1], app)
+                  leftClickAndRestore(g[1], app)
                   break
                 end
               end
@@ -3484,7 +3480,7 @@ appHotKeyCallbacks = {
             if menu and menu.AXRole == AX.Menu then
               local title = localizedString("Hide", app:bundleID())
               local hide = getc(menu, AX.MenuItem, title)
-              if hide then safeClick(hide, app) end
+              if hide then leftClickAndRestore(hide, app) end
             end
           end)
         end
@@ -3555,7 +3551,7 @@ appHotKeyCallbacks = {
         if versionLessThan("4")(app) then
           local frame = win:frame()
           local position = { frame.x + frame.w - 60, frame.y + 23 }
-          safeClick(position, win)
+          leftClickAndRestore(position, win)
           return
         end
 
@@ -4793,7 +4789,7 @@ appHotKeyCallbacks = {
             end)
           end)
         else
-          safeClick(icon, app)
+          leftClickAndRestore(icon, app)
         end
       end
     },
@@ -5107,7 +5103,7 @@ appHotKeyCallbacks = {
             AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, 2,
             AX.Cell, 1, AX.StaticText, 2)
         if field then
-          safeClick(field, win)
+          leftClickAndRestore(field, win)
           clickRightMenuBarItem(win:application())
         end
       end
@@ -5136,7 +5132,7 @@ appHotKeyCallbacks = {
           field = getc(outline, AX.Row, 4, AX.Cell, 1, AX.StaticText, 2)
         end
         if field then
-          safeClick(field, win)
+          leftClickAndRestore(field, win)
           clickRightMenuBarItem(win:application())
         end
       end
@@ -5163,7 +5159,7 @@ appHotKeyCallbacks = {
       end,
       background = true,
       fn = function(field, win)
-        safeClick(field, win)
+        leftClickAndRestore(field, win)
         clickRightMenuBarItem(win:application())
       end
     },
