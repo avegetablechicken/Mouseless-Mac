@@ -2145,7 +2145,10 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
       windowFilter = { allowURLs = "^file://" },
-      fn = function(url) hs.execute('open -R "' .. url .. '"') end
+      fn = function(url)
+        hs.execute('open -R "' .. url .. '"')
+        find("com.apple.finder"):activate()
+      end
     },
     ["openRecent"] = {
       message = localizedMessage("Recently Closed"),
@@ -2163,7 +2166,10 @@ appHotKeyCallbacks = {
         local doc = towinui(app:mainWindow()).AXDocument
         return doc ~= nil, doc
       end,
-      fn = function(doc) hs.execute('open -R "' .. doc .. '"') end
+      fn = function(doc)
+        hs.execute('open -R "' .. doc .. '"')
+        find("com.apple.finder"):activate()
+      end
     }
   },
 
@@ -2177,7 +2183,10 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
       windowFilter = { allowURLs = "^file://" },
-      fn = function(url) hs.execute('open -R "' .. url .. '"') end
+      fn = function(url)
+        hs.execute('open -R "' .. url .. '"')
+        find("com.apple.finder"):activate()
+      end
     }
   },
 
@@ -2717,7 +2726,10 @@ appHotKeyCallbacks = {
         local doc = towinui(app:mainWindow()).AXDocument
         return doc ~= nil, doc
       end,
-      fn = function(doc) hs.execute('open -R "' .. doc .. '"') end
+      fn = function(doc)
+        hs.execute('open -R "' .. doc .. '"')
+        find("com.apple.finder"):activate()
+      end
     },
   },
 
@@ -2757,7 +2769,10 @@ appHotKeyCallbacks = {
         local doc = towinui(app:mainWindow()).AXDocument
         return doc ~= nil, doc
       end,
-      fn = function(doc) hs.execute('open -R "' .. doc .. '"') end
+      fn = function(doc)
+        hs.execute('open -R "' .. doc .. '"')
+        find("com.apple.finder"):activate()
+      end
     },
   },
 
@@ -2797,7 +2812,10 @@ appHotKeyCallbacks = {
         local doc = towinui(app:mainWindow()).AXDocument
         return doc ~= nil, doc
       end,
-      fn = function(doc) hs.execute('open -R "' .. doc .. '"') end
+      fn = function(doc)
+        hs.execute('open -R "' .. doc .. '"')
+        find("com.apple.finder"):activate()
+      end
     },
   },
 
