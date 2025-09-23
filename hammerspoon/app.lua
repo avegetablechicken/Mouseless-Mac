@@ -2110,6 +2110,7 @@ appHotKeyCallbacks = {
   {
     ["back"] = {
       message = localizedMessage("Back"),
+      bindCondition = function() return OS_VERSION < OS.Tahoe end,
       condition = function(app)
         local menuItem, menuItemTitle = findMenuItem(app, { "Store", "Back" })
         if menuItem ~= nil and menuItem.enabled then
