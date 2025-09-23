@@ -606,42 +606,51 @@ local function deleteMousePositionCall(win)
   local app = win:application()
   local appid = app:bundleID()
   local winUI = towinui(win)
-  local collection = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
-  if collection ~= nil and collection.AXDescription ==
-      localizedString("Recent Calls", appid) then
-    local section = getc(collection, AX.Button, 1)
-    if section ~= nil then
+
+  local section
+  if OS_VERSION >= OS.Tahoe then
+    local collection = getc(winUI, AX.Group, 1, AX.Group, 1,
+        AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+        AX.Group, 1)
+    section = getc(collection, AX.Group, 1, AX.Button, 1)
+  else
+    local collection = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
+    if collection ~= nil and collection.AXDescription ==
+        localizedString("Recent Calls", appid) then
+      section = getc(collection, AX.Button, 1)
+    end
+  end
+  if section ~= nil then
+    if not rightClick(hs.mouse.absolutePosition(), app) then
+      return
+    end
+    local popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+    local maxTime, time = 0.5, 0
+    while popup == nil and time < maxTime do
+      hs.timer.usleep(0.01 * 1000000)
+      time = time + 0.01
+      popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+    end
+    if popup == nil then
       if not rightClick(hs.mouse.absolutePosition(), app) then
         return
       end
-      local popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
-      local maxTime, time = 0.5, 0
+      popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+      time = 0
       while popup == nil and time < maxTime do
         hs.timer.usleep(0.01 * 1000000)
         time = time + 0.01
         popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
       end
-      if popup == nil then
-        if not rightClick(hs.mouse.absolutePosition(), app) then
-          return
-        end
-        popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
-        time = 0
-        while popup == nil and time < maxTime do
-          hs.timer.usleep(0.01 * 1000000)
-          time = time + 0.01
-          popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
-        end
-        if popup == nil then return end
-      end
-      local locTitle = localizedString("Remove from Recents", appid)
-      local menuItem = getc(popup, AX.MenuItem, locTitle)
-      if menuItem ~= nil then
-        press(menuItem)
-      end
+      if popup == nil then return end
     end
-    return
+    local locTitle = localizedString("Remove from Recents", appid)
+    local menuItem = getc(popup, AX.MenuItem, locTitle)
+    if menuItem ~= nil then
+      press(menuItem)
+    end
   end
+  return
   winUI:elementSearch(
     function(msg, results, count)
       if count == 0 then return end
@@ -679,44 +688,52 @@ local function deleteAllCalls(win)
   local app = win:application()
   local appid = app:bundleID()
   local winUI = towinui(win)
-  local collection = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
-  if collection ~= nil and collection.AXDescription ==
-      localizedString("Recent Calls", appid) then
-    local section = getc(collection, AX.Button, 1)
-    if section ~= nil then
+  local section
+  if OS_VERSION >= OS.Tahoe then
+    local collection = getc(winUI, AX.Group, 1, AX.Group, 1,
+        AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+        AX.Group, 1)
+    section = getc(collection, AX.Group, 1, AX.Button, 1)
+  else
+    local collection = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
+    if collection ~= nil and collection.AXDescription ==
+        localizedString("Recent Calls", appid) then
+      section = getc(collection, AX.Button, 1)
+    end
+  end
+  if section ~= nil then
+    if not rightClick(section, app) then
+      return
+    end
+    local popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+    local maxTime, time = 0.5, 0
+    while popup == nil and time < maxTime do
+      hs.timer.usleep(0.01 * 1000000)
+      time = time + 0.01
+      popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+    end
+    if popup == nil then
       if not rightClick(section, app) then
         return
       end
-      local popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
-      local maxTime, time = 0.5, 0
+      popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+      time = 0
       while popup == nil and time < maxTime do
         hs.timer.usleep(0.01 * 1000000)
         time = time + 0.01
         popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
       end
-      if popup == nil then
-        if not rightClick(section, app) then
-          return
-        end
-        popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
-        time = 0
-        while popup == nil and time < maxTime do
-          hs.timer.usleep(0.01 * 1000000)
-          time = time + 0.01
-          popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
-        end
-        if popup == nil then return end
-      end
-      local locTitle = localizedString("Remove from Recents", appid)
-      local menuItem = getc(popup, AX.MenuItem, locTitle)
-      if menuItem ~= nil then
-        press(menuItem)
-      end
-      hs.timer.usleep(0.1 * 1000000)
-      deleteAllCalls(win)
+      if popup == nil then return end
     end
-    return
+    local locTitle = localizedString("Remove from Recents", appid)
+    local menuItem = getc(popup, AX.MenuItem, locTitle)
+    if menuItem ~= nil then
+      press(menuItem)
+    end
+    hs.timer.usleep(0.1 * 1000000)
+    deleteAllCalls(win)
   end
+  return
   winUI:elementSearch(
     function(msg, results, count)
       if count == 0 then return end
@@ -1924,8 +1941,15 @@ appHotKeyCallbacks = {
       message = localizedMessage("New FaceTime"),
       windowFilter = FaceTimeMainWindowFilter,
       condition = function(win)
-        local button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
-            AX.Group, 1, AX.Group, 1, AX.Button, 2)
+        local button
+        if OS_VERSION < OS.Tahoe then
+          button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
+              AX.Group, 1, AX.Group, 1, AX.Button, 2)
+        else
+          button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
+              AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+              AX.Button, 2)
+        end
         return button ~= nil, button
       end,
       fn = press
