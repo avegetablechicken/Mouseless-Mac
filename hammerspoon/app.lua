@@ -510,8 +510,14 @@ end
 local function deleteSelectedMessage(app)
   if app:focusedWindow() == nil then return end
   local winUI = towinui(app:focusedWindow())
-  local button = getc(winUI, AX.Group, 1, AX.Group, 1,
-      AX.Group, 2, AX.Group, 1, AX.Button, 2)
+  local button
+  if OS_VERSION >= OS.Tahoe then
+    button = getc(winUI, AX.Group, 1, AX.Group, 1,
+        AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 2)
+  else
+    button = getc(winUI, AX.Group, 1, AX.Group, 1,
+        AX.Group, 2, AX.Group, 1, AX.Button, 2)
+  end
   if button ~= nil then
     press(button)
     hs.timer.doAfter(0.2, function()
@@ -538,8 +544,14 @@ end
 
 local function messageDeletable(app)
   local appUI = toappui(app)
-  local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-    AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
+  if OS_VERSION >= OS.Tahoe then
+    messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+        AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+        AX.StaticText)
+  else
+    messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+        AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
+  end
   if messageItems == nil or #messageItems == 0 then
     return false
   end
@@ -1853,8 +1865,14 @@ appHotKeyCallbacks = {
       message = localizedMessage("Delete Conversation…"),
       condition = function(app)
         local appUI = toappui(app)
-        local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-            AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
+        if OS_VERSION >= OS.Tahoe then
+          messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+              AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+              AX.StaticText)
+        else
+          messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+              AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
+        end
         local desc = localizedString('New Message', app:bundleID())
         local selected = tfind(messageItems or {}, function(msg)
           return msg.AXSelected == true and msg.AXDescription:sub(4) ~= desc
@@ -1876,8 +1894,14 @@ appHotKeyCallbacks = {
       message = menuItemMessage('⇧⌃', "⇥", 2),
       condition = function(app)
         local appUI = toappui(app)
-        local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-            AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
+        if OS_VERSION >= OS.Tahoe then
+          messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+              AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+              AX.StaticText)
+        else
+          messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+              AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
+        end
         local desc = localizedString('New Message', app:bundleID())
         if messageItems == nil or #messageItems == 0
             or (#messageItems == 1 and (messageItems[1].AXDescription == nil
@@ -1902,8 +1926,15 @@ appHotKeyCallbacks = {
       message = menuItemMessage('⌃', "⇥", 2),
       condition = function(app)
         local appUI = toappui(app)
-        local messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-            AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
+        local messageItems
+        if OS_VERSION >= OS.Tahoe then
+          messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+              AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+              AX.StaticText)
+        else
+          messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+              AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
+        end
         local desc = localizedString('New Message', app:bundleID())
         if messageItems == nil or #messageItems == 0
             or (#messageItems == 1 and (messageItems[1].AXDescription == nil
