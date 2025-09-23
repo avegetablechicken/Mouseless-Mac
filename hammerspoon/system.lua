@@ -1207,7 +1207,11 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     clickRightMenuBarItem({'com.apple.controlcenter', index})
     registerControlCenterHotKeys(panel, true)
   else
-    local menuBarItem = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 2)
+    local ident = controlCenterIdentifiers["Control Center"]
+    local menuBarItem = tfind(getc(appUI, AX.MenuBar, -1, AX.MenuBarItem),
+      function(item)
+        return item.AXIdentifier:find(ident) ~= nil
+      end)
     menuBarItem:performAction(AX.Press)
     pane = getc(appUI, AX.Window, 1)
     local winTotalDelay = 0
