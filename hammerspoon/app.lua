@@ -2007,6 +2007,7 @@ appHotKeyCallbacks = {
   ["com.apple.Notes"] = {
     ["toggleFolders"] = {
       message = localizedMessage("Show Folders"),
+      bindCondition = function() return OS_VERSION < OS.Tahoe end,
       condition = checkMenuItem({ "View", "Show Folders" },
                                 { "View", "Hide Folders" }),
       fn = receiveMenuItem
