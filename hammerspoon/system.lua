@@ -1098,7 +1098,8 @@ local function testAlready(panel, pane, ident, role)
             or (#getc(pane, AX.Button, mayLocalize("play"))
               + #getc(pane, AX.Button, mayLocalize("pause"))) > 1
       else
-        return #getc(pane, AX.Image) > 0 and #getc(pane, AX.Button) > 2
+        if OS_VERSION >= OS.Tahoe then pane = getc(pane, AX.Group, 1) end
+        return pane and #getc(pane, AX.Image) > 0 and #getc(pane, AX.Button) > 2
       end
     elseif panel == "Users" then
       return #pane == #getc(pane, AX.Button)
@@ -1156,16 +1157,30 @@ local function popupControlCenterSubPanel(panel, allowReentry)
                       "Battery", "Hearing", "Users" }, panel) then
       role = AX.Button index = 1
     elseif panel == "Now Playing" then
-      local ele = getc(pane, AX.Image, -1)
-      local totalDelay = 0
-      while ele == nil do
-        hs.timer.usleep(0.05 * 1000000)
-        totalDelay = totalDelay + 0.05
-        if totalDelay > 3 then return end
+      local ele
+      if OS_VERSION >= OS.Tahoe then
+        ele = tfind(getc(pane, AX.Group), function(g)
+          local bts = getc(g, AX.Button)
+          return #bts == 3 and bts[1].AXIdentifier:find("backward")
+            and bts[3].AXIdentifier:find("forward")
+            and (bts[2].AXIdentifier:find("play") or bts[2].AXIdentifier:find("pause"))
+        end)
+      else
         ele = getc(pane, AX.Image, -1)
+        local totalDelay = 0
+        while ele == nil do
+          hs.timer.usleep(0.05 * 1000000)
+          totalDelay = totalDelay + 0.05
+          if totalDelay > 3 then return end
+          ele = getc(pane, AX.Image, -1)
+        end
       end
-      local act = ele:actionNames()[1]
-      ele:performAction(act)
+      if ele then
+        local index = 1
+        if OS_VERSION >= OS.Tahoe then index = index + 1 end
+        local act = ele:actionNames()[index]
+        ele:performAction(act)
+      end
       return
     end
 
