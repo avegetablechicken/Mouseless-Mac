@@ -74,6 +74,13 @@
     },
     {
         "mods": "fn",
+        "key": "R",
+        "message": "Control Center > Music Recognition",
+        "kind": "MENUBAR",
+        "subkind": "CONTROL_CENTER"
+    },
+    {
+        "mods": "fn",
         "key": "S",
         "message": "Control Center > Sound",
         "kind": "MENUBAR",
