@@ -5424,6 +5424,7 @@ appHotKeyCallbacks = {
     ["closeWindow"] = {
       mods = "", key = "Escape",
       message = commonLocalizedMessage("Close Window"),
+      bindCondition = function() return OS_VERSION < OS.Tahoe end,
       windowFilter = {
         allowRoles = AX.SystemDialog
       },
