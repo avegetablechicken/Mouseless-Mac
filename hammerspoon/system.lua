@@ -1453,7 +1453,10 @@ function registerControlCenterHotKeys(panel, inMenuBar)
   -- panel with a slider
   if tcontain({"Display", "Sound", "Keyboard Brightness"}, panel) then
     local name = panel == "Sound" and "Volume" or "Brightness"
-    local actions = {{ '=', 'Up'}, {'-', 'Down'}, {'[', 'Min'}, {']', 'Max'}}
+    local actions = {{ '=', 'Up'}, {'-', 'Down'}}
+    if OS_VERSION < OS.Tahoe then
+      tconcat(actions, {{'[', 'Min'}, {']', 'Max'}})
+    end
     local enabledSliders
     repeat
       hs.timer.usleep(0.05 * 1000000)
@@ -1509,6 +1512,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         local name
         if OS_VERSION < OS.Ventura then
           name = cbs[i].AXTitle
+        elseif panel == "Bluetooth" and OS_VERSION >= OS.Tahoe then
+          name = cbs[i].AXAttributedDescription:getString()
         else
           name = cbs[i].AXIdentifier
           local _, nameIdx = name:find("device-", 1, true)
@@ -2002,7 +2007,12 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     msg = controlCenterLocalized(panel, msg) or msg
     local hotkey = newControlCenter("", "Space", msg,
       function()
-        local cb = getc(pane, AX.Group, 1, AX.CheckBox, 1)
+        local cb
+        if OS_VERSION < OS.Tahoe then
+          cb = getc(pane, AX.Group, 1, AX.CheckBox, 1)
+        else
+          cb = getc(pane, AX.Group, 1, AX.Group, 1, AX.CheckBox, 1)
+        end
         if cb then cb:performAction(AX.Press) end
       end)
     if not checkAndRegisterControlCenterHotKeys(hotkey) then
@@ -2057,7 +2067,10 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         if backgroundSoundsHotkeys == nil then
           backgroundSoundsHotkeys = {}
         end
-        local actions = {{ '=', 'Up'}, {'-', 'Down'}, {'[', 'Min'}, {']', 'Max'}}
+        local actions = {{ '=', 'Up'}, {'-', 'Down'}}
+        if OS_VERSION < OS.Tahoe then
+          tconcat(actions, {{'[', 'Min'}, {']', 'Max'}})
+        end
         for _, spec in pairs(actions) do
           local key = spec[1]
           local slid = enabledSliders[1]
