@@ -1687,7 +1687,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     if cb1 then
       local h = getc(pane, AX.CheckBox, 1).AXSize.h
       local cbs = tifilter(getc(pane, AX.CheckBox),
-          function(cb) return cb.AXSize.h == h end)
+          function(cb) return cb.AXSize.h >= h end)
       local toggleNames
       if OS_VERSION < OS.Ventura then
         toggleNames = hs.fnutils.imap(cbs,
@@ -1715,8 +1715,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
           return
         end
         local index
-        for i, cb in ipairs(getc(pane, AX.CheckBox)) do
-          if cb.AXSize.h < h then
+        for i, cb in ipairs(cbs) do
+          if cb.AXValue == 1 then
             index = i break
           end
         end
@@ -1730,10 +1730,15 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         focusOptionHotkeys = {}
         local opts = tifilter(getc(pane, AX.CheckBox),
             function(cb) return cb.AXSize.h < h end)
+        if #opts < 2 then
+          hs.timer.usleep(0.05 * 1000000)
+          opts = tifilter(getc(pane, AX.CheckBox),
+              function(cb) return cb.AXSize.h < h end)
+        end
         for i=1,#opts do
           local title = opts[i].AXAttributedDescription:getString()
           local hotkey = newControlCenter("⌘", tostring(i),
-              toggleNames[index - 1] .. " > " .. title,
+              toggleNames[index] .. " > " .. title,
               function() opts[i]:performAction(AX.Press) end)
           assert(hotkey) hotkey:enable()
           tinsert(focusOptionHotkeys, hotkey)
