@@ -4300,17 +4300,63 @@ MENUBAR_MANAGER_SHOW = {
 
   ["com.jordanbaird.Ice"] = function(manager, appid, index)
     local icon = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 1)
-    if icon then
-      leftClickAndRestore(icon)
-    end
-
+    if icon == nil then return end
     local useIceBar = hs.execute(
       [[defaults read com.jordanbaird.Ice UseIceBar | tr -d '\n']])
     if useIceBar == "0" then
+      leftClickAndRestore(icon)
       return false
     end
 
-    -- fixme: search and click
+    local app = find(appid)
+    local observer = uiobserver.new(manager:pid())
+    observer:addWatcher(toappui(manager), uinotifications.windowCreated)
+    observer:callback(function(obs, elem)
+      if not elem:isValid() then return end
+      if elem.AXTitle == "Ice Bar" then
+        for _, button in ipairs(getc(elem, AX.Group, 1,
+            AX.ScrollArea, 1, AX.Image)) do
+          local title = button.AXAttributedDescription:getString()
+          if title == hs.application.nameForBundleID(appid)
+              or title == app:name() then
+            leftClickAndRestore(button, elem:asHSWindow(), 0.1)
+            break
+          end
+        end
+      end
+      obs:stop() obs = nil
+    end)
+    observer:start()
+
+    if type(index) == 'string' then
+      map = map or loadStatusItemsAutosaveName(app)
+      index = map and map[index]
+      if index == nil then return false end
+    end
+    local iconAllwaysHidden = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 3)
+    if iconAllwaysHidden == nil then
+      leftClickAndRestore(icon)
+    end
+    local menuBarItem = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, index)
+    if menuBarItem.AXPosition.x > iconAllwaysHidden.AXPosition.x then
+      leftClickAndRestore(icon)
+    else
+      local oldPos = hs.mouse.absolutePosition()
+      point = hs.geometry.point {
+        icon.AXPosition.x + icon.AXSize.w / 2,
+        icon.AXPosition.y + icon.AXSize.h / 2
+      }
+      hs.mouse.absolutePosition(point)
+
+      hs.eventtap.event.newMouseEvent(
+          hs.eventtap.event.types.leftMouseDown, point, {"alt"}):post()
+      hs.timer.usleep(0.05 * 1000000)
+      hs.eventtap.event.newMouseEvent(
+          hs.eventtap.event.types.leftMouseUp, point, {"alt"}):post()
+
+      hs.mouse.absolutePosition(oldPos)
+    end
+
     return true
   end,
 
