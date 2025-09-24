@@ -1058,6 +1058,9 @@ local function controlCenterLocalized(panel, key)
   if panel == "Users" and key == "Users" then
     key = "User"
   end
+  if panel == "Recognize Music" then
+    panel = "Music Recognition"
+  end
   panel = panel:gsub(" ", ""):gsub("‑", "")
   local result = localizedString(key, "com.apple.controlcenter", panel)
   if result == nil and panel == "Focus" then
