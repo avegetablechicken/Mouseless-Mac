@@ -1185,10 +1185,10 @@ end
 local iceBarWindowFilter = { allowTitles = "^Ice Bar$" }
 local function getIceBarItemTitle(index)
   return function(win)
-    local buttons = getc(towinui(win), AX.Group, 1,
-        AX.ScrollArea, 1, AX.Image)
-    if #buttons >= index then
-      return "Click Item " .. index
+    local button = getc(towinui(win), AX.Group, 1,
+        AX.ScrollArea, 1, AX.Image, index)
+    if button then
+      return button.AXAttributedDescription:getString()
     end
   end
 end
