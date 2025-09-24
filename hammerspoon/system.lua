@@ -1407,7 +1407,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         end
       until button or not pane:isValid()
       if button then
-        local hotkey = newControlCenter("⌘", ",", result,
+        local hotkey = newControlCenter("⌘", ",", button.AXTitle,
             function() button:performAction(AX.Press) end)
         if not checkAndRegisterControlCenterHotKeys(hotkey) then
           return
