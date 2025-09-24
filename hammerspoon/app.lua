@@ -7880,36 +7880,48 @@ end
 
 local function registerObserverForSettingsMenuItem(app)
   local appUI = toappui(app)
-  local appMenuItems = getc(appUI, AX.MenuBar, 1,
-      AX.MenuBarItem, 2, AX.Menu, 1, AX.MenuItem)
-  if appMenuItems == nil or #appMenuItems == 0 then return end
-  local sets = commonLocalizedMessage("Settings…")(app)
-  local prefs = commonLocalizedMessage("Preferences…")(app)
-  local settingsMenu = tfind(appMenuItems, function(item)
-    return item.AXTitle:find(sets) or item.AXTitle:find(prefs)
-  end)
-  settingsMenu = settingsMenu or tfind(appMenuItems, function(item)
-    return item.AXTitle:find(sets:sub(1, -4))
-        or item.AXTitle:find(prefs:sub(1, -4))
-  end)
-  settingsMenu = settingsMenu or tfind(appMenuItems, function(item)
-    if item.AXMenuItemCmdChar == ','
-        and item.AXMenuItemCmdModifiers == 0 then
-      local title = item.AXTitle
-      if title:find("Settings") or title:find("Preferences") then
-        return true
+
+  local getMenuItem = function()
+    local appMenuItems = getc(appUI, AX.MenuBar, 1,
+        AX.MenuBarItem, 2, AX.Menu, 1, AX.MenuItem)
+    if appMenuItems == nil or #appMenuItems == 0 then return end
+
+    local sets = commonLocalizedMessage("Settings…")(app)
+    local prefs = commonLocalizedMessage("Preferences…")(app)
+    local settingsMenu = tfind(appMenuItems, function(item)
+      return item.AXTitle:find(sets) or item.AXTitle:find(prefs)
+    end)
+    settingsMenu = settingsMenu or tfind(appMenuItems, function(item)
+      return item.AXTitle:find(sets:sub(1, -4))
+          or item.AXTitle:find(prefs:sub(1, -4))
+    end)
+    settingsMenu = settingsMenu or tfind(appMenuItems, function(item)
+      if item.AXMenuItemCmdChar == ','
+          and item.AXMenuItemCmdModifiers == 0 then
+        local title = item.AXTitle
+        if title:find("Settings") or title:find("Preferences") then
+          return true
+        end
+        title = delocalizedString(item.AXTitle, app:bundleID())
+        if title then
+          return title:find("Settings") or title:find("Preferences")
+        end
       end
-      title = delocalizedString(item.AXTitle, app:bundleID())
-      if title then
-        return title:find("Settings") or title:find("Preferences")
-      end
-    end
-    return false
-  end)
+      return false
+    end)
+    return settingsMenu
+  end
+  local settingsMenu = getMenuItem()
   if settingsMenu == nil then return end
   local observer = uiobserver.new(app:pid())
   observer:addWatcher(appUI, uinotifications.menuItemSelected)
-  observer:callback(function (_, elem)
+  observer:callback(function(obs, elem)
+    if settingsMenu.AXTitle == nil then
+      settingsMenu = getMenuItem()
+      if settingsMenu == nil then
+        obs:stop() obs = nil
+      end
+    end
     if elem.AXTitle == settingsMenu.AXTitle then
       registerNavigationForSettingsToolbar(app)
     end
