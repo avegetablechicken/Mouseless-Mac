@@ -19,26 +19,5 @@
   "Stage Manager": "stagemanager",
   "Users": "user",
   "Video Effects": "video-effects",
-  "Wi‑Fi": "wifi",
-
-  "accessibility": {
-    "Focus": {
-      "Do Not Disturb": "focus-mode-activity-com.apple.donotdisturb.mode.default",
-      "Personal": "focus-mode-activity-com.apple.focus.personal-time",
-      "Work": "focus-mode-activity-com.apple.focus.work",
-      "Sleep": "focus-mode-activity-com.apple.sleep.sleep-mode",
-      "Mindfulness": "focus-mode-activity-com.apple.focus.mindfulness",
-      "Gaming": "focus-mode-activity-com.apple.focus.gaming",
-      "Reading": "focus-mode-activity-com.apple.focus.reading"
-    },
-    "AirDrop": {
-      "Contacts Only": "airdrop-mode-contactsOnly",
-      "Everyone": "airdrop-mode-everyone"
-    },
-    "Display": {
-      "Dark Mode": "display-setting-dark-mode",
-      "Night Shift": "display-setting-night-shift",
-      "True Tone": "display-setting-true-tone"
-    }
-  }
+  "Wi‑Fi": "wifi"
 }

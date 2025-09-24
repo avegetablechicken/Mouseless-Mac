@@ -1046,8 +1046,6 @@ local function bindControlCenterURL(panel, func)
 end
 
 local controlCenterIdentifiers = hs.json.read("static/controlcenter-identifies.json")
-local controlCenterAccessibiliyIdentifiers = controlCenterIdentifiers.accessibility
-controlCenterIdentifiers.accessibility = nil
 local defaultMusicAppForControlCenter
 defaultMusicAppForControlCenter = ApplicationConfigs["defaultMusicAppForControlCenter"]
 
@@ -1397,51 +1395,22 @@ function registerControlCenterHotKeys(panel, inMenuBar)
                 "Screen Mirroring", "Display", "Sound",
                 "Accessibility Shortcuts", "Battery",
                 "Hearing", "Users", }, panel) then
-    if OS_VERSION < OS.Ventura then
-      local button
-      repeat
-        hs.timer.usleep(0.05 * 1000000)
-        local buttons = getc(pane, AX.Button)
-        for i = #buttons, 1, -1 do
-          if buttons[i].AXTitle:find("…") then
-            button = buttons[i]
-            break
-          end
-        end
-      until button or not pane:isValid()
-      if button then
-        local hotkey = newControlCenter("⌘", ",", button.AXTitle,
-            function() button:performAction(AX.Press) end)
-        if not checkAndRegisterControlCenterHotKeys(hotkey) then
-          return
+    local button, title
+    repeat
+      hs.timer.usleep(0.05 * 1000000)
+      local buttons = getc(pane, AX.Button)
+      for i = #buttons, 1, -1 do
+        title = OS_VERSION < OS.Ventura and buttons[i].AXTitle
+            or buttons[i].AXAttributedDescription:getString()
+        if title:find("…") then
+          button = buttons[i]
+          break
         end
       end
-    else
-      local searchPanel = panel
-      local btnName
-      if panel == "Screen Mirroring" then
-        btnName = "Display"
-      elseif panel == "Keyboard Brightness" then
-        btnName = "Keyboard"
-      elseif panel == "Accessibility Shortcuts" then
-        btnName = "Accessibility"
-      elseif panel == "Hearing" then
-        searchPanel = "Accessibility Shortcuts"
-        btnName = "Accessibility"
-      elseif panel == "Users" then
-        btnName = "Users & Groups"
-      else
-        btnName = panel
-      end
-      btnName = btnName .. " Settings…"
-      btnName = controlCenterLocalized(searchPanel, btnName)
-      local hotkey = newControlCenter("⌘", ",", btnName,
-        function()
-          local button = getc(pane, AX.Button, -1)
-          if button then
-            button:performAction(AX.Press)
-          end
-        end)
+    until button or not pane:isValid()
+    if button then
+      local hotkey = newControlCenter("⌘", ",", title,
+          function() button:performAction(AX.Press) end)
       if not checkAndRegisterControlCenterHotKeys(hotkey) then
         return
       end
@@ -1698,16 +1667,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       if OS_VERSION < OS.Ventura then
         toggleNames = { cbs[1].AXTitle, cbs[2].AXTitle }
       else
-        local toggleIdents = { cbs[1].AXIdentifier, cbs[2].AXIdentifier }
-        toggleNames = {}
-        foreach(toggleIdents, function(ele)
-          for k, v in pairs(controlCenterAccessibiliyIdentifiers["AirDrop"]) do
-            if v == ele then
-              tinsert(toggleNames, mayLocalize(k))
-              break
-            end
-          end
-        end)
+        toggleNames = { cbs[1].AXAttributedDescription:getString(),
+                        cbs[2].AXAttributedDescription:getString() }
       end
       for i=1,2 do
         local hotkey = newControlCenter("", tostring(i), toggleNames[i],
@@ -1732,15 +1693,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         toggleNames = hs.fnutils.imap(cbs,
             function(cb) return cb.AXTitle end)
       else
-        toggleNames = {}
-        foreach(cbs, function(cb)
-          for k, v in pairs(controlCenterAccessibiliyIdentifiers[panel]) do
-            if v == cb.AXIdentifier then
-              tinsert(toggleNames, mayLocalize(k) or k)
-              break
-            end
-          end
-        end)
+        toggleNames = hs.fnutils.imap(cbs,
+            function(cb) return cb.AXAttributedDescription:getString() end)
       end
       for i=1,#toggleNames do
         local hotkey = newControlCenter("", tostring(i),
@@ -1777,14 +1731,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         local opts = tifilter(getc(pane, AX.CheckBox),
             function(cb) return cb.AXSize.h < h end)
         for i=1,#opts do
-          local title = i
-          if #opts == 2 then
-            if i == 1 then
-              title = controlCenterLocalized(panel, "For 1 hour") or i
-            else
-              title = controlCenterLocalized(panel, "Until tomorrow morning") or i
-            end
-          end
+          local title = opts[i].AXAttributedDescription:getString()
           local hotkey = newControlCenter("⌘", tostring(i),
               toggleNames[index - 1] .. " > " .. title,
               function() opts[i]:performAction(AX.Press) end)
@@ -1840,6 +1787,9 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     until cb3 or not pane:isValid()
     if cb3 == nil then return end
     local cbs = getc(area, AX.CheckBox)
+    local cbTitles = tmap(cbs, function (cb)
+      return cb.AXAttributedDescription:getString()
+    end)
     local cbIdents = tmap(cbs, function (cb)
       return cb.AXIdentifier
     end)
@@ -1847,16 +1797,15 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       return cb.AXValue
     end)
     for i=1,3 do
-      local cbIdent = cbIdents[i]
       local checkbox = tfind({"Dark Mode", "Night Shift", "True Tone"},
         function(ele)
-          return cbIdent == controlCenterAccessibiliyIdentifiers["Display"][ele]
+          return cbTitles[i]:find(mayLocalize(ele))
         end)
       local op = enableds[i] == 0 and "Enable" or "Disable"
       local hotkey = newControlCenter("", tostring(i),
         op .. " " .. mayLocalize(checkbox),
         function()
-          local cb = getc(area, AX.CheckBox, cbIdent)
+          local cb = getc(area, AX.CheckBox, i)
           if not cb then return end
           cb:performAction(AX.Press)
           enableds[i] = 1 - enableds[i]
@@ -2130,16 +2079,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
           backgroundSoundsHotkeys = {}
         end
         for i=1,math.min(#cbs, 10) do
-          local msg
-          if cbs[i].AXIdentifier ~= nil then
-            local name = cbs[i].AXIdentifier:match("hearing%-(.+)%-button%-identifier")
-            if name then
-              msg = "Play " .. name
-            end
-          end
-          if msg == nil then
-            msg = "Play No." .. i .. " Sound"
-          end
+          local msg = cbs[i].AXAttributedDescription:getString()
           local hotkey = newControlCenter("", tostring(i % 10), msg,
               function() cbs[i]:performAction(AX.Press) end)
           assert(hotkey) hotkey:enable()
