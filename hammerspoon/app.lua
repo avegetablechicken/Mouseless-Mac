@@ -971,6 +971,13 @@ local function getQQLiveChannel(index)
   end
 end
 
+--- ### Yuanbao
+local YuanbaoMainWindowFilter = {}
+onRunning("com.tencent.yuanbao", function(app)
+  local title = localizedString("Tencent Yuanbao", app:bundleID())
+  YuanbaoMainWindowFilter.allowTitles = '^' .. title .. '$'
+end)
+
 --- ### EuDic
 local EuDicMainWindowFilter = { allowRoles = AX.StandardWindow }
 onRunning("com.eusoft.freeeudic", function(app)
@@ -2957,6 +2964,10 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then
           return versionGreaterEqual("2")(app)
         end
+        if app:focusedWindow():title() ==
+            localizedString("Tencent Yuanbao Setting", app:bundleID()) then
+          return false
+        end
 
         local winUI = towinui(app:focusedWindow())
         local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
@@ -3069,10 +3080,9 @@ appHotKeyCallbacks = {
     },
     ["enterTemporaryChat"] = {
       message = localizedMessage("Enter Temporary Chat"),
-      condition = function(app)
-        if app:focusedWindow() == nil then return false end
-        local winUI = towinui(app:focusedWindow())
-        local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
+      windowFilter = YuanbaoMainWindowFilter,
+      condition = function(win)
+        local webarea = getc(towinui(win), AX.Group, 1, AX.Group, 1,
             AX.ScrollArea, 1, AX.WebArea, 1)
         if webarea == nil then return false end
         local button = getc(webarea, AX.StaticText, "\xee\x84\x83")
@@ -3085,13 +3095,12 @@ appHotKeyCallbacks = {
     },
     ["toggleSidebar"] = {
       message = localizedMessage("Show Sidebar"),
-      condition = function(app)
-        if app:focusedWindow() == nil then return false end
-        local winUI = towinui(app:focusedWindow())
-        local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
+      windowFilter = YuanbaoMainWindowFilter,
+      condition = function(win)
+        local webarea = getc(towinui(win), AX.Group, 1, AX.Group, 1,
             AX.ScrollArea, 1, AX.WebArea, 1)
         if webarea == nil then return false end
-        if versionLessThan("1.15.0")(app) then
+        if versionLessThan("1.15.0")(win:application()) then
           local button = tfind(getc(webarea, AX.Group), function(b)
             return tfind(b.AXDOMClassList or {}, function(c)
               return c:find("folder_foldIcon") ~= nil
@@ -3112,6 +3121,7 @@ appHotKeyCallbacks = {
       mods = get(KeybindingConfigs.hotkeys.shared, "zoom", "mods"),
       key = get(KeybindingConfigs.hotkeys.shared, "zoom", "key"),
       message = localizedMessage("Maximize"),
+      windowFilter = YuanbaoMainWindowFilter,
       condition = checkMenuItem({ "Window", "Maximize" }),
       fn = receiveMenuItem
     },
