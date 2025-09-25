@@ -1798,6 +1798,12 @@
         "persist": true
       }
     },
+    "com.apple.Passwords": {
+      "search": {
+        "mods": "command",
+        "key": "F"
+      }
+    },
     "com.apple.Passwords.MenuBarExtra": {
       "showPasswordsDialog": {
         "mods": "${hyper.daemon}",

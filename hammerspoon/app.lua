@@ -5225,6 +5225,20 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["com.apple.Passwords"] = {
+    ["search"] = {
+      message = localizedMessage("Search"),
+      bindCondition = function() return OS_VERSION >= OS.Tahoe end,
+      condition = function(app)
+        if app:focusedWindow() == nil then return false end
+        local searchButton = getc(towinui(app:focusedWindow()),
+            AX.Toolbar, 1, AX.Group, -1, AX.TextField, 1, AX.Button, 1)
+        return clickable(searchButton)
+      end,
+      fn = click
+    }
+  },
+
   ["com.apple.Passwords.MenuBarExtra"] =
   {
     ["showPasswordsDialog"] = {
