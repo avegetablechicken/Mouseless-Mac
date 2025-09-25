@@ -8009,6 +8009,7 @@ local function registerObserverForSettingsMenuItem(app)
       settingsMenu = getMenuItem()
       if settingsMenu == nil then
         obs:stop() obs = nil
+        return
       end
     end
     if elem.AXTitle == settingsMenu.AXTitle then
