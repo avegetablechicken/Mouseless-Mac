@@ -5292,7 +5292,11 @@ appHotKeyCallbacks = {
       end
     },
     ["copyVerificationCode"] = {
-      message = localizedMessage("Copy Verification Code"),
+      message = function(win)
+        local title = OS_VERSION >= OS.Tahoe and "Copy Code"
+            or "Copy Verification Code"
+        return localizedMessage(title)(win)
+      end,
       windowFilter = {
         allowRoles = AX.SystemDialog,
         allowTitles = "^$"
@@ -5311,8 +5315,9 @@ appHotKeyCallbacks = {
         end
         local cell = getc(outline, AX.Row, 5, AX.Cell, 1)
         local title = getc(cell, AX.StaticText, 1)
+        local target = OS_VERSION >= OS.Tahoe and "Code" or "Verification Code"
         if title and title.AXValue
-            == localizedString("Verification Code", win:application():bundleID()) then
+            == localizedString(target, win:application():bundleID()) then
           return true, getc(cell, AX.StaticText, 2)
         end
         return false
