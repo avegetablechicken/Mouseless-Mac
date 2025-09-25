@@ -2366,7 +2366,11 @@ local function localizedStringImpl(str, appid, params, force)
     for _, dir in ipairs(baseLocaleDirs) do
       if exists(dir) and hs.fs.attributes(localeDir).ino
                          == hs.fs.attributes(dir).ino then
-        return true, appLocale, locale
+        if appid == "__macos" or appid:match("^com%.apple%.") then
+          return str, appLocale, locale
+        else
+          return true, appLocale, locale
+        end
       end
     end
   end
