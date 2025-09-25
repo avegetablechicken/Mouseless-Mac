@@ -7899,8 +7899,8 @@ local function registerObserverForSettingsMenuItem(app)
   local appUI = toappui(app)
 
   local getMenuItem = function()
-    local appMenuItems = getc(appUI, AX.MenuBar, 1,
-        AX.MenuBarItem, 2, AX.Menu, 1, AX.MenuItem)
+    local appMenu = getc(appUI, AX.MenuBar, 1, AX.MenuBarItem, 2)
+    local appMenuItems = getc(appMenu, AX.Menu, 1, AX.MenuItem)
     if appMenuItems == nil or #appMenuItems == 0 then return end
 
     local sets = commonLocalizedMessage("Settings…")(app)
@@ -7909,6 +7909,12 @@ local function registerObserverForSettingsMenuItem(app)
       return item.AXTitle and
           (item.AXTitle:find(sets) or item.AXTitle:find(prefs))
     end)
+    if settingsMenu == nil then
+      if appMenu.AXTitle:find(sets:sub(1, -4))
+          or appMenu.AXTitle:find(prefs:sub(1, -4)) then
+        return
+      end
+    end
     settingsMenu = settingsMenu or tfind(appMenuItems, function(item)
       return item.AXTitle and
           (item.AXTitle:find(sets:sub(1, -4))
