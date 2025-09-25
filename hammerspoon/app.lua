@@ -8738,10 +8738,7 @@ end
 -- register hotekys & watchers for hotkeys
 
 local frontApp = hs.application.frontmostApplication()
-local frontAppID = frontApp and (frontApp:bundleID()  or frontApp:name()) or nil
 local frontWin = hs.window.frontmostWindow()
-local frontWinAppID = frontWin
-    and (frontWin:application():bundleID() or frontWin:application():name()) or nil
 
 -- register hotkeys for background apps
 for appid, appConfig in pairs(appHotKeyCallbacks) do
@@ -8832,6 +8829,7 @@ end
 
 -- register hotkeys for focused window belonging to daemon app
 if frontWin ~= nil then
+  local frontWinAppId = frontWin:application():bundleID() or frontWin:application():name()
   if DaemonAppFocusedWindowObservers[frontWinAppID] ~= nil then
     for filter, _ in pairs(DaemonAppFocusedWindowObservers[frontWinAppID]) do
       local allowSheet, allowPopover
@@ -9363,8 +9361,11 @@ function(ev)
   return false
 end)
 
-if frontApp and remoteDesktopsMappingModifiers[frontAppID] then
-  RemoteDesktopModifierTapper:start()
+if frontApp then
+  local frontAppID = frontApp:bundleID() or frontApp:name()
+  if remoteDesktopsMappingModifiers[frontAppID] then
+    RemoteDesktopModifierTapper:start()
+  end
 end
 for appid, _ in pairs(remoteDesktopsMappingModifiers) do
   onActivated(appid, function()
@@ -9402,6 +9403,7 @@ local function watchForRemoteDesktopWindow(app)
 end
 
 for _, appid in ipairs(ApplicationConfigs["suspendHotkeysInRemoteDesktop"] or {}) do
+  local frontAppID = frontApp and (frontApp:bundleID() or frontApp:name()) or nil
   if frontAppID == appid then
     watchForRemoteDesktopWindow(frontApp)
     suspendHotkeysInRemoteDesktop(frontApp)
