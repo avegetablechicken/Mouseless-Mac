@@ -3434,78 +3434,40 @@ appHotKeyCallbacks = {
 
   ["com.tencent.xinWeChat"] =
   {
-    ["back"] = {
+    ["backFromMinizedGroups"] = {
       message = commonLocalizedMessage("Back"),
-      bindCondition = versionLessThan("4.0.6"),
-      condition = function(app)
-        if app:focusedWindow() == nil then return false end
-        local appid = app:bundleID()
-        local appLocale = applicationLocale(appid)
-
-        if versionGreaterEqual("4")(app) then
-          -- CEF Window
-          local exBundleID = "com.tencent.flue.WeChatAppEx"
-          local menuItemPath = {
-            localizedMenuBarItem('File', exBundleID, { locale = appLocale }),
-            localizedString('Back', exBundleID, { locale = appLocale })
-          }
-          if #menuItemPath == 2 then
-            local menuItem = app:findMenuItem(menuItemPath)
-            if menuItem ~= nil and menuItem.enabled then
-              return true, menuItemPath
-            end
-          end
-
-          local winUI = towinui(app:focusedWindow())
-          -- Minimized Groups
-          local back = commonLocalizedMessage("Back")(app)
-          local bt = getc(winUI, AX.Group, 1,
-              AX.SplitGroup, 1, AX.Button, back)
-          if bt then
-            return clickable(bt)
-          end
-
-          -- Moments
-          if app:focusedWindow():title():find(app:name()) == nil then
-            local moments = findMenuItemByKeyBinding(app, "⌘", "4", true)
-            if moments and app:focusedWindow():title() == moments[2] then
-              return clickable(getc(winUI, AX.Button, 1))
-            end
-            return false
-          end
-
-          return false
+      bindCondition = versionRange("4", "4.0.6"),
+      windowFilter = {
+        fn = function(win)
+          local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
+          local appTitle = getc(toappui(win:application()),
+              AX.MenuBar, 1, AX.MenuBarItem, 2).AXTitle
+          return view1 and view1.AXTitle == appTitle
         end
-
-        -- CEF Window
-        local exBundleID = "com.tencent.xinWeChat.WeChatAppEx"
-        local menuItemPath = {
-          localizedMenuBarItem('File', exBundleID, { locale = appLocale }),
-          localizedString('Back', exBundleID, { locale = appLocale })
-        }
-        if #menuItemPath == 2 then
-          local menuItem = app:findMenuItem(menuItemPath)
-          if menuItem ~= nil and menuItem.enabled then
-            return true, menuItemPath
-          end
+      },
+      condition = function(win)
+        local back = commonLocalizedMessage("Back")(win:application())
+        local bt = getc(towinui(win), AX.Group, 1,
+            AX.SplitGroup, 1, AX.Button, back)
+        return clickable(bt)
+      end,
+      fn = click
+    },
+    ["backInOfficialAccounts"] = {
+      message = commonLocalizedMessage("Back"),
+      bindCondition = versionLessThan("4"),
+      windowFilter = {
+        fn = function(win)
+          local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
+          local appTitle = getc(toappui(win:application()),
+              AX.MenuBar, 1, AX.MenuBarItem, 2).AXTitle
+          return view1 and view1.AXTitle == appTitle
         end
-
-        local winUI = towinui(app:focusedWindow())
-        -- Moments
-        if app:focusedWindow():title():find(app:name()) == nil then
-          local album = localizedString("Album_WindowTitle", appid)
-          local moments = localizedString("SNS_Feed_Window_Title", appid)
-          local detail = localizedString("SNS_Feed_Detail_Title", appid)
-          if app:focusedWindow():title():find(album .. '-') == 1
-              or app:focusedWindow():title() == moments .. '-' .. detail then
-            return clickable(getc(winUI, AX.Button, 1))
-          end
-          return false
-        end
-
-        -- Official Accounts
-        local back = localizedString("Common.Navigation.Back", appid)
-        local g = getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1)
+      },
+      condition = function(win)
+        local back = localizedString("Common.Navigation.Back",
+                                     win:application():bundleID())
+        local g = getc(towinui(win), AX.SplitGroup, 1, AX.SplitGroup, 1)
         if g ~= nil then
           for _, bt in ipairs(getc(g, AX.Button)) do
             if bt.AXTitle == back then
@@ -3513,17 +3475,35 @@ appHotKeyCallbacks = {
             end
           end
         end
-        return false
       end,
-      fn = function(result, app)
-        if #result > 0 then
-          app:selectMenuItem(result)
-        elseif result.AXTitle then
-          press(result)
-        elseif result.x then
-          click(result)
+      fn = press
+    },
+    ["backInMoments"] = {
+      message = commonLocalizedMessage("Back"),
+      bindCondition = versionLessThan("4.0.6"),
+      windowFilter = {
+        fn = function(win)
+          local app = win:application()
+          local title = win:title()
+          if title:find(app:name()) == nil then
+            if versionGreaterEqual("4")(app) then
+              local moments = findMenuItemByKeyBinding(app, "⌘", "4", true)
+              return moments and title == moments[2]
+            else
+              local appid = app:bundleID()
+              local album = localizedString("Album_WindowTitle", appid)
+              local moments = localizedString("SNS_Feed_Window_Title", appid)
+              local detail = localizedString("SNS_Feed_Detail_Title", appid)
+              return title:find(album .. '-') == 1
+                  or title == moments .. '-' .. detail
+            end
+          end
         end
-      end
+      },
+      condition = function(win)
+        return clickable(getc(towinui(win), AX.Button, 1))
+      end,
+      fn = click
     },
     ["hideChat"] = {
       message = function(win)
