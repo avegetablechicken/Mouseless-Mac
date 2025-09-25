@@ -7243,6 +7243,13 @@ local function registerWinFiltersForApp(app)
     local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID)
         or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    if hasKey == false then
+      local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
+      if kbShared ~= nil then
+        keybinding = { mods = kbShared.mods, key = kbShared.key }
+        hasKey = true
+      end
+    end
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
