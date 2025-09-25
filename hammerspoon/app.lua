@@ -3526,7 +3526,8 @@ appHotKeyCallbacks = {
       end
     },
     ["hideChat"] = {
-      message = function(app)
+      message = function(win)
+        local app = win:application()
         if versionLessThan("4")(app) then
           return localizedString("Chats.Menu.Hide", app:bundleID())
         else
@@ -3534,9 +3535,17 @@ appHotKeyCallbacks = {
         end
       end,
       bindCondition = versionLessThan("4.0.6"),
-      condition = function(app)
-        if app:focusedWindow() == nil then return end
-        local winUI = towinui(app:focusedWindow())
+      windowFilter = {
+        fn = function(win)
+          local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
+          local appTitle = getc(toappui(win:application()),
+              AX.MenuBar, 1, AX.MenuBarItem, 2).AXTitle
+          return view1 and view1.AXTitle == appTitle
+        end
+      },
+      condition = function(win)
+        local app = win:application()
+        local winUI = towinui(win)
         if versionLessThan("4")(app) then
           local chats = getc(winUI, AX.SplitGroup, 1,
               AX.ScrollArea, 1, AX.Table, 1, AX.Row)
@@ -3580,7 +3589,7 @@ appHotKeyCallbacks = {
           return curChat ~= nil, curChat
         end
       end,
-      fn = function(chat, app)
+      fn = function(chat, win)
         chat:performAction(AX.ShowMenu)
         if chat.AXRole == AX.Cell then
           local menu = getc(chat, AX.Row, 1, AX.Menu, 1)
@@ -3590,6 +3599,7 @@ appHotKeyCallbacks = {
           end
         else
           hs.timer.doAfter(0.5, function()
+            local app = win:application()
             local menu = toappui(app):elementAtPosition(
                 uioffset(chat.AXPosition, { 1, 1 }))
             if menu and menu.AXRole == AX.Menu then
@@ -3604,20 +3614,27 @@ appHotKeyCallbacks = {
     ["showChatProfile"] = {
       message = localizedMessage("Chats.Menu.Profile"),
       bindCondition = versionLessThan("4"),
-      condition = function(app)
-        if app:focusedWindow() == nil then return end
-        local winUI = towinui(app:focusedWindow())
+      windowFilter = {
+        fn = function(win)
+          local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
+          local appTitle = getc(toappui(win:application()),
+              AX.MenuBar, 1, AX.MenuBarItem, 2).AXTitle
+          return view1 and view1.AXTitle == appTitle
+        end
+      },
+      condition = function(win)
+        local winUI = towinui(win)
         local curChatTitle = getc(winUI, AX.SplitGroup, 1,
             AX.SplitGroup, 1, AX.StaticText, 1)
         if curChatTitle == nil then return false end
-        local btTitle = localizedString("ComposeBar.VideoTooltip", app:bundleID())
+        local btTitle = localizedString("ComposeBar.VideoTooltip",
+                                        win:application():bundleID())
         local bt = getc(winUI, AX.SplitGroup, 1,
             AX.SplitGroup, 1, AX.Button, btTitle)
         return bt ~= nil, curChatTitle.AXValue
       end,
-      fn = function(title, app)
-        if app:focusedWindow() == nil then return end
-        local winUI = towinui(app:focusedWindow())
+      fn = function(title, win)
+        local winUI = towinui(win)
         local chats = getc(winUI, AX.SplitGroup, 1,
             AX.ScrollArea, 1, AX.Table, 1, AX.Row)
         local curChat = tfind(chats, function(c)
