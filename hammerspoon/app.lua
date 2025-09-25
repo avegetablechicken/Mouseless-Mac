@@ -3440,9 +3440,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         fn = function(win)
           local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
-          local appTitle = getc(toappui(win:application()),
-              AX.MenuBar, 1, AX.MenuBarItem, 2).AXTitle
-          return view1 and view1.AXTitle == appTitle
+          return view1 and view1.AXTitle == win:title()
         end
       },
       condition = function(win)
@@ -3459,9 +3457,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         fn = function(win)
           local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
-          local appTitle = getc(toappui(win:application()),
-              AX.MenuBar, 1, AX.MenuBarItem, 2).AXTitle
-          return view1 and view1.AXTitle == appTitle
+          return view1 and view1.AXTitle == win:title()
         end
       },
       condition = function(win)
@@ -3518,9 +3514,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         fn = function(win)
           local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
-          local appTitle = getc(toappui(win:application()),
-              AX.MenuBar, 1, AX.MenuBarItem, 2).AXTitle
-          return view1 and view1.AXTitle == appTitle
+          return view1 and view1.AXTitle == win:title()
         end
       },
       condition = function(win)
@@ -3597,9 +3591,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         fn = function(win)
           local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
-          local appTitle = getc(toappui(win:application()),
-              AX.MenuBar, 1, AX.MenuBarItem, 2).AXTitle
-          return view1 and view1.AXTitle == appTitle
+          return view1 and view1.AXTitle == win:title()
         end
       },
       condition = function(win)
