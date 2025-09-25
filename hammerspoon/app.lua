@@ -1676,12 +1676,13 @@ local function receiveMenuItem(menuItemTitle, app)
     app:selectMenuItem(menuItemTitle)
     return
   end
-  local menuItem = getc(toappui(app), AX.MenuBar, 1,
+  local menuBarItem = getc(toappui(app), AX.MenuBar, 1,
       AX.MenuBarItem, menuItemTitle[1])
+  local menuItem = menuBarItem
   for i=2,#menuItemTitle do
     menuItem = getc(menuItem, AX.Menu, 1, AX.MenuItem, menuItemTitle[i])
   end
-  if #menuItem ~= 0 then
+  if #menuItem ~= 0 and menuBarItem.AXSelected == false then
     app:selectMenuItem({ menuItemTitle[1] })
   end
   app:selectMenuItem(menuItemTitle)
