@@ -1719,7 +1719,7 @@
       }
     },
     "barrier": {
-      "toggleBarrierConnect": {
+      "toggleBarrier": {
         "mods": "${hyper.daemon}",
         "key": "B",
         "persist": true

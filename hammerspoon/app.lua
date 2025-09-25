@@ -4197,8 +4197,8 @@ appHotKeyCallbacks = {
 
   ["barrier"] =
   {
-    ["toggleBarrierConnect"] = {
-      message = "Toggle Barrier Connect",
+    ["toggleBarrier"] = {
+      message = "Toggle Barrier",
       background = true,
       fn = function(app)
         local appUI = toappui(app)
