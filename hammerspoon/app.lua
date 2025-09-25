@@ -3687,6 +3687,46 @@ appHotKeyCallbacks = {
         end
       end
     },
+    ["remapPreviousTab"] = {
+      message = function(win)
+        local appLocale = applicationLocale(win:application():bundleID())
+        local exBundleID = "com.tencent.flue.WeChatAppEx"
+        local params = { locale = appLocale }
+        return localizedString("Select Previous Tab", exBundleID, params)
+      end,
+      windowFilter = {
+        fn = function(win)
+          local app = win:application()
+          local appLocale = applicationLocale(app:bundleID())
+          local exBundleID = "com.tencent.flue.WeChatAppEx"
+          local params = { locale = appLocale }
+          local menuItemPath = {
+            localizedMenuBarItem("Window", exBundleID, params),
+            localizedString("Select Previous Tab", exBundleID, params)
+          }
+          if #menuItemPath == 2 then
+            local menuItem = app:findMenuItem(menuItemPath)
+            return menuItem ~= nil
+          end
+        end
+      },
+      condition = function(win)
+        local app = win:application()
+        local appLocale = applicationLocale(app:bundleID())
+        local exBundleID = "com.tencent.flue.WeChatAppEx"
+        local params = { locale = appLocale }
+        local menuItemPath = {
+          localizedMenuBarItem("Window", exBundleID, params),
+          localizedString("Select Previous Tab", exBundleID, params)
+        }
+        local menuItem = app:findMenuItem(menuItemPath)
+        if menuItem ~= nil and menuItem.enabled then
+          return true, menuItemPath
+        end
+      end,
+      repeatable = true,
+      fn = receiveMenuItem
+    },
     ["closeWindow"] = {
       mods = specialCommonHotkeyConfigs["closeWindow"].mods,
       key = specialCommonHotkeyConfigs["closeWindow"].key,
