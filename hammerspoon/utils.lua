@@ -2304,9 +2304,12 @@ local function localizedStringImpl(str, appid, params, force)
   local result
 
   if not force then
-    result = get(appLocaleMap, appid, appLocale, str)
-    if result == false then return nil
-    elseif result ~= nil then return result end
+    locale = get(appLocaleDir, appid, appLocale)
+    if locale then
+      result = get(appLocaleMap, appid, locale, str)
+      if result == false then return nil
+      elseif result ~= nil then return result end
+    end
   end
 
   if appid ~= '__macos'
@@ -2517,15 +2520,15 @@ function localizedString(str, appid, params, force)
   if appLocaleMap[appid] == nil then
     appLocaleMap[appid] = {}
   end
-  if appLocaleMap[appid][appLocale] == nil then
-    appLocaleMap[appid][appLocale] = {}
+  if appLocaleMap[appid][locale] == nil then
+    appLocaleMap[appid][locale] = {}
   end
   if result ~= nil then
     if result ~= true then
-      appLocaleMap[appid][appLocale][str] = result
+      appLocaleMap[appid][locale][str] = result
     end
   else
-    appLocaleMap[appid][appLocale][str] = false
+    appLocaleMap[appid][locale][str] = false
   end
 
   ::L_END_DUMP_LOCALIZED::
@@ -3363,9 +3366,12 @@ local function delocalizedStringImpl(str, appid, params, force)
   end
 
   if not force then
-    local result = get(deLocaleMap, appid, appLocale, str)
-    if result == false then return nil
-    elseif result ~= nil then return result end
+    local locale = get(appLocaleDir, appid, appLocale)
+    if locale then
+      local result = get(deLocaleMap, appid, locale, str)
+      if result == false then return nil
+      elseif result ~= nil then return result end
+    end
   end
   if appid == "com.openai.chat" then
     result, locale = delocalizeChatGPT(str, appLocale)
@@ -3561,15 +3567,15 @@ function delocalizedString(str, appid, params, force)
   if deLocaleMap[appid] == nil then
     deLocaleMap[appid] = {}
   end
-  if deLocaleMap[appid][appLocale] == nil then
-    deLocaleMap[appid][appLocale] = {}
+  if deLocaleMap[appid][locale] == nil then
+    deLocaleMap[appid][locale] = {}
   end
   if result ~= nil then
     if result ~= true then
-      deLocaleMap[appid][appLocale][str] = result
+      deLocaleMap[appid][locale][str] = result
     end
   else
-    deLocaleMap[appid][appLocale][str] = false
+    deLocaleMap[appid][locale][str] = false
   end
 
   ::L_END_DUMP_DELOCALIZED::
@@ -4021,8 +4027,9 @@ function localizedMenuBarItem(title, appid, params)
       delocMap[appid] = {}
     end
     delocMap[appid][locTitle] = title
-    if get(deLocaleMap[appid], appLocale, locTitle) ~= nil then
-      deLocaleMap[appid][appLocale][locTitle] = title
+    local locale = get(appLocaleDir, appid, appLocale)
+    if locale and get(deLocaleMap[appid], locale, locTitle) ~= nil then
+      deLocaleMap[appid][locale][locTitle] = title
       if not exists(localeTmpDir) then
         hs.execute(strfmt("mkdir -p '%s'", localeTmpDir))
       end
@@ -4062,23 +4069,23 @@ function displayName(app)
   local appid = app  -- assume app is installed
   local basename = hs.application.nameForBundleID(appid)
   local appLocale = applicationLocale(appid)
-  local appname = get(appLocaleMap, appid, appLocale, basename)
+  local locale = get(appLocaleDir, appid, appLocale)
+  local appname = get(appLocaleMap, appid, locale or appLocale, basename)
   if appname ~= nil then return appname end
+  if locale == false then return basename end
 
   local resourceDir = hs.application.pathForBundleID(appid)
       .. "/Contents/Resources"
-  local locale = get(appLocaleDir, appid, appLocale)
-  if locale == false then return basename end
   if locale == nil or not exists(resourceDir .. "/" .. locale .. ".lproj") then
     locale = getDefaultMatchedLocale(appLocale, resourceDir, 'lproj')
-    if locale == nil then return basename end
   end
-  if exists(resourceDir .. '/InfoPlist.loctable') then
+
+  if locale and exists(resourceDir .. '/InfoPlist.loctable') then
     appname = localizeByLoctable('CFBundleDisplayName',
                                  resourceDir, 'InfoPlist', locale)
         or localizeByLoctable('CFBundleName',
                               resourceDir, 'InfoPlist', locale)
-  else
+  elseif locale then
     local localeDir = resourceDir .. "/" .. locale .. ".lproj"
     if exists(localeDir .. '/InfoPlist.strings') then
       jsonDict = parseStringsFile(localeDir .. '/InfoPlist.strings')
@@ -4090,10 +4097,18 @@ function displayName(app)
   if appLocaleMap[appid] == nil then
     appLocaleMap[appid] = {}
   end
-  if appLocaleMap[appid][appLocale] == nil then
-    appLocaleMap[appid][appLocale] = {}
+  if locale and get(appLocaleDir, appid, appLocale) == nil then
+    if appLocaleDir[appid] == nil then
+      appLocaleDir[appid] = {}
+    end
+    appLocaleDir[appid][appLocale] = locale
+    hs.json.write(appLocaleDir, localeMatchTmpFile, false, true)
   end
-  appLocaleMap[appid][appLocale][basename] = appname
+  if locale == nil then locale = appLocale end
+  if appLocaleMap[appid][locale] == nil then
+    appLocaleMap[appid][locale] = {}
+  end
+  appLocaleMap[appid][locale][basename] = appname
   hs.json.write(appLocaleMap, localeTmpFile, false, true)
 
   return appname
