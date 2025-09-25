@@ -166,87 +166,196 @@ function()
 end)
 
 
+local function getScreenFrame(win)
+  local frame = win:screen():frame()
+  local manager = find("com.apple.WindowManager")
+  if manager then
+    local groups = getc(toappui(manager), AX.Group)
+    local g = tfind(groups or {}, function(g)
+      return g.AXPosition.x == frame.x
+    end)
+    if g then
+      local maxW = 0
+      local buttons = getc(g, AX.List, 1, AX.Button) or {}
+      if buttons[1] and buttons[1].AXPosition.x > g.AXPosition.x then
+        foreach(buttons, function(bt)
+          if bt.AXSize.w > maxW then maxW = bt.AXSize.w end
+        end)
+      end
+      maxW = (math.ceil(maxW / 10) - 3) * 10
+      frame.x = frame.x + maxW
+      frame.w = frame.w - maxW
+    end
+  end
+  return frame
+end
+
 -- move and zoom to left
 bindResizeWindowURL("left1/2",
 function()
-  if hs.window.focusedWindow() == nil then return end
-  hs.window.focusedWindow():moveToUnit(hs.layout.left50)
+  local win = hs.window.focusedWindow()
+  if win == nil then return end
+  local f = win:frame()
+  local max = getScreenFrame(win)
+  f.x = max.x
+  f.y = max.y
+  f.w = max.w / 2
+  f.h = max.h
+  win:setFrame(f)
 end)
 
 -- move and zoom to right
 bindResizeWindowURL("right1/2",
 function()
-  hs.window.focusedWindow():moveToUnit(hs.layout.right50)
+  local win = hs.window.focusedWindow()
+  if win == nil then return end
+  local f = win:frame()
+  local max = getScreenFrame(win)
+  f.x = max.x + max.w / 2
+  f.y = max.y
+  f.w = max.w / 2
+  f.h = max.h
+  win:setFrame(f)
 end)
 
 -- move and zoom to top
 bindResizeWindowURL("top1/2",
 function()
-  if hs.window.focusedWindow() == nil then return end
-  hs.window.focusedWindow():moveToUnit(hs.geometry.rect(0.0, 0.0, 1.0, 0.5))
+  local win = hs.window.focusedWindow()
+  if win == nil then return end
+  local f = win:frame()
+  local max = getScreenFrame(win)
+  f.x = max.x
+  f.y = max.y
+  f.w = max.w
+  f.h = max.h / 2
+  win:setFrame(f)
 end)
 
 -- move and zoom to bottom
 bindResizeWindowURL("bottom1/2",
 function()
-  if hs.window.focusedWindow() == nil then return end
-  hs.window.focusedWindow():moveToUnit(hs.geometry.rect(0.0, 0.5, 1.0, 0.5))
+  local win = hs.window.focusedWindow()
+  if win == nil then return end
+  local f = win:frame()
+  local max = getScreenFrame(win)
+  f.x = max.x
+  f.y = max.y + max.h / 2
+  f.w = max.w
+  f.h = max.h / 2
+  win:setFrame(f)
 end)
 
 -- move and zoom to top-left
 bindResizeWindowURL("top-left",
 function()
-  if hs.window.focusedWindow() == nil then return end
-  hs.window.focusedWindow():moveToUnit(hs.geometry.rect(0.0, 0.0, 0.5, 0.5))
+  local win = hs.window.focusedWindow()
+  if win == nil then return end
+  local f = win:frame()
+  local max = getScreenFrame(win)
+  f.x = max.x
+  f.y = max.y
+  f.w = max.w / 2
+  f.h = max.h / 2
+  win:setFrame(f)
 end)
 
 -- move and zoom to top-right
 bindResizeWindowURL("top-right",
 function()
-  if hs.window.focusedWindow() == nil then return end
-  hs.window.focusedWindow():moveToUnit(hs.geometry.rect(0.5, 0.0, 0.5, 0.5))
+  local win = hs.window.focusedWindow()
+  if win == nil then return end
+  local f = win:frame()
+  local max = getScreenFrame(win)
+  f.x = max.x + max.w / 2
+  f.y = max.y
+  f.w = max.w / 2
+  f.h = max.h / 2
+  win:setFrame(f)
 end)
 
 -- move and zoom to bottom-left
 bindResizeWindowURL("bottom-left",
 function()
-  if hs.window.focusedWindow() == nil then return end
-  hs.window.focusedWindow():moveToUnit(hs.geometry.rect(0.0, 0.5, 0.5, 0.5))
+  local win = hs.window.focusedWindow()
+  if win == nil then return end
+  local f = win:frame()
+  local max = getScreenFrame(win)
+  f.x = max.x
+  f.y = max.y + max.h / 2
+  f.w = max.w / 2
+  f.h = max.h / 2
+  win:setFrame(f)
 end)
 
 -- move and zoom to bottom-right
 bindResizeWindowURL("bottom-right",
 function()
-  if hs.window.focusedWindow() == nil then return end
-  hs.window.focusedWindow():moveToUnit(hs.geometry.rect(0.5, 0.5, 0.5, 0.5))
+  local win = hs.window.focusedWindow()
+  if win == nil then return end
+  local f = win:frame()
+  local max = getScreenFrame(win)
+  f.x = max.x + max.h / 2
+  f.y = max.y + max.h / 2
+  f.w = max.w / 2
+  f.h = max.h / 2
+  win:setFrame(f)
 end)
 
 -- move and zoom to left 1/3
 bindResizeWindowURL("left1/3",
 function()
-  if hs.window.focusedWindow() == nil then return end
-  hs.window.focusedWindow():moveToUnit(hs.geometry.rect(0.0, 0.0, 1.0 / 3, 1.0))
+  local win = hs.window.focusedWindow()
+  if win == nil then return end
+  local f = win:frame()
+  local max = getScreenFrame(win)
+  f.x = max.x
+  f.y = max.y
+  f.w = max.w / 3
+  f.h = max.h
+  win:setFrame(f)
 end)
 
 -- move and zoom to right 1/3
 bindResizeWindowURL("right1/3",
 function()
-  if hs.window.focusedWindow() == nil then return end
-  hs.window.focusedWindow():moveToUnit(hs.geometry.rect(2.0 / 3, 0.0, 1.0 / 3, 1.0))
+  local win = hs.window.focusedWindow()
+  if win == nil then return end
+  local f = win:frame()
+  local max = getScreenFrame(win)
+  f.x = max.x + max.w * 2 / 3
+  f.y = max.y
+  f.w = max.w / 3
+  f.h = max.h
+  win:setFrame(f)
 end)
 
 -- move and zoom to left 2/3
 bindResizeWindowURL("left2/3",
 function()
-  if hs.window.focusedWindow() == nil then return end
-  hs.window.focusedWindow():moveToUnit(hs.geometry.rect(0.0, 0.0, 2.0 / 3, 1.0))
+  local win = hs.window.focusedWindow()
+  if win == nil then return end
+  local f = win:frame()
+  local max = getScreenFrame(win)
+  f.x = max.x
+  f.y = max.y
+  f.w = max.w * 2 / 3
+  f.h = max.h
+  win:setFrame(f)
 end)
 
 -- move and zoom to right 2/3
 bindResizeWindowURL("right2/3",
 function()
-  if hs.window.focusedWindow() == nil then return end
-  hs.window.focusedWindow():moveToUnit(hs.geometry.rect(1.0 / 3, 0.0, 2.0 / 3, 1.0))
+  local win = hs.window.focusedWindow()
+  if win == nil then return end
+  local f = win:frame()
+  local max = getScreenFrame(win)
+  f.x = max.x + max.w * 2 / 3
+  f.y = max.y
+  f.w = max.w * 2 / 3
+  f.h = max.h
+  win:setFrame(f)
 end)
 
 -- maximize
@@ -259,7 +368,8 @@ function()
     frameCacheMaximize[win:id()] = nil
   else
     frameCacheMaximize[win:id()] = win:frame()
-    win:maximize()
+    local max = getScreenFrame(win)
+    win:setFrame(max)
   end
 end)
 
@@ -373,8 +483,7 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local screen = win:screen()
-  local max = screen:frame()
+  local max = getScreenFrame(win)
 
   f.x = max.x
   f.y = max.y
@@ -414,8 +523,7 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local screen = win:screen()
-  local max = screen:frame()
+  local max = getScreenFrame(win)
 
   f.x = max.x
   win:setFrame(f)
@@ -427,8 +535,7 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local screen = win:screen()
-  local max = screen:frame()
+  local max = getScreenFrame(win)
 
   -- make the bahavior consistent with the system "Center" shortcut
   f.x = max.x + math.ceil((max.w - f.w) / 2)
@@ -455,8 +562,7 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local screen = win:screen()
-  local max = screen:frame()
+  local max = getScreenFrame(win)
 
   f.x = max.x
   f.y = max.y + max.h - f.h
