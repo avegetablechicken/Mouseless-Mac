@@ -2978,10 +2978,15 @@ appHotKeyCallbacks = {
         end)
         if button ~= nil and button.AXPosition.x ~= winUI.AXPosition.x then
           local ok, position = clickable(button)
-          return ok, { position, button }
+          if ok then
+            local bt = getc(webarea, AX.StaticText, "\xee\x83\xbe")
+            if bt ~= nil then
+              return ok, { position, button }
+            end
+          end
         end
 
-        return false
+        return versionGreaterEqual("2")(app)
       end,
       fn = function(button, app)
         if app ~= nil then
