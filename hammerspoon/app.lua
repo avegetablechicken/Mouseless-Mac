@@ -7719,8 +7719,10 @@ local function registerOpenRecent(app)
   local menuItem = app:findMenuItem(menuItemPath)
   if menuItem == nil then
     if appid:sub(1, 10) == "com.apple." then
+      local appLocale = applicationLocale(appid)
       if localizedOpenRecent == nil then
         localizedOpenRecent = localizedString('Open Recent', {
+          locale = appLocale,
           localeFile = 'MenuCommands', framework = "AppKit.framework",
         })
       end
@@ -7730,6 +7732,7 @@ local function registerOpenRecent(app)
         local appLocale = applicationLocale(appid)
         if appLocale ~= SYSTEM_LOCALE and appLocale:sub(1, 2) ~= 'en' then
           local localized = localizedString('Open Recent', {
+            locale = appLocale,
             localeFile = 'MenuCommands', framework = "AppKit.framework",
           })
           menuItemPath = { localizedFile, localized }
@@ -7784,7 +7787,9 @@ local function registerZoomHotkeys(app)
     local menuItem = app:findMenuItem(menuItemPath)
     if menuItem == nil then
       local localizedWindow = localizedMenuBarItem('Window', appid)
+      local appLocale = applicationLocale(appid)
       local localizedTitle = localizedString(title, {
+        locale = appLocale,
         localeFile = 'MenuCommands', framework = "AppKit.framework",
       })
       if localizedTitle ~= nil then
