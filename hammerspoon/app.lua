@@ -7788,10 +7788,15 @@ local function registerZoomHotkeys(app)
     if menuItem == nil then
       local localizedWindow = localizedMenuBarItem('Window', appid)
       local appLocale = applicationLocale(appid)
-      local localizedTitle = localizedString(title, {
-        locale = appLocale,
-        localeFile = 'MenuCommands', framework = "AppKit.framework",
-      })
+      local localizedTitle
+      if title == 'Zoom' and OS_VERSION >= OS.Tahoe then
+        localizedTitle = localizedString(title, 'com.apple.AppStore')
+      else
+        localizedTitle = localizedString(title, {
+          locale = appLocale,
+          localeFile = 'MenuCommands', framework = "AppKit.framework",
+        })
+      end
       if localizedTitle ~= nil then
         menuItemPath = { localizedWindow, localizedTitle }
         menuItem = app:findMenuItem(menuItemPath)
