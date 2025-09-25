@@ -7906,11 +7906,13 @@ local function registerObserverForSettingsMenuItem(app)
     local sets = commonLocalizedMessage("Settings…")(app)
     local prefs = commonLocalizedMessage("Preferences…")(app)
     local settingsMenu = tfind(appMenuItems, function(item)
-      return item.AXTitle:find(sets) or item.AXTitle:find(prefs)
+      return item.AXTitle and
+          (item.AXTitle:find(sets) or item.AXTitle:find(prefs))
     end)
     settingsMenu = settingsMenu or tfind(appMenuItems, function(item)
-      return item.AXTitle:find(sets:sub(1, -4))
-          or item.AXTitle:find(prefs:sub(1, -4))
+      return item.AXTitle and
+          (item.AXTitle:find(sets:sub(1, -4))
+          or item.AXTitle:find(prefs:sub(1, -4)))
     end)
     settingsMenu = settingsMenu or tfind(appMenuItems, function(item)
       if item.AXMenuItemCmdChar == ','
@@ -7958,11 +7960,13 @@ local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
       local sets = commonLocalizedMessage("Settings…")(app)
       local prefs = commonLocalizedMessage("Preferences…")(app)
       local settingsMenu = tfind(menuItems, function(item)
-        return item.AXTitle:find(sets) or item.AXTitle:find(prefs)
+        return item.AXTitle and
+            (item.AXTitle:find(sets) or item.AXTitle:find(prefs))
       end)
       settingsMenu = settingsMenu or tfind(menuItems, function(item)
-        return item.AXTitle:find(sets:sub(1, -4))
-            or item.AXTitle:find(prefs:sub(1, -4))
+        return item.AXTitle and
+            (item.AXTitle:find(sets:sub(1, -4))
+            or item.AXTitle:find(prefs:sub(1, -4)))
       end)
       if settingsMenu ~= nil then
         observer:addWatcher(toappui(app), uinotifications.menuItemSelected)
