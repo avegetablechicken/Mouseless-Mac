@@ -8498,7 +8498,18 @@ local function altMenuBarItem(app, reinvokeKey)
     end
 
     -- process localized titles
-    itemTitles = delocalizeMenuBarItems(itemTitles, appid)
+    local itemLocTitles = delocalizeMenuBarItems(itemTitles, appid)
+    if #itemTitles ~= #itemLocTitles then
+      if appid == "com.tencent.xinWeChat" then
+        local exBundleID = versionLessThan("4")(app)
+            and "com.tencent.xinWeChat.WeChatAppEx" or "com.tencent.flue.WeChatAppEx"
+        local newItemLocTitles = delocalizeMenuBarItems(itemTitles, exBundleID)
+        if #itemTitles == #newItemLocTitles then
+          itemLocTitles = newItemLocTitles
+        end
+      end
+    end
+    itemTitles = itemLocTitles
     for i=#itemTitles,1,-1 do
       local letter = itemTitles[i][2]:match("[^%s]-&(%a)")
       if letter ~= nil then
