@@ -8219,8 +8219,10 @@ local function registerForOpenSavePanel(app)
             actionFunc(winUI)
           end
           local folder = titleElem.AXValue
+          local msg = folder
+          if header then msg = header .. ' > ' .. msg end
           local hotkey = AppWinBind(app:focusedWindow(), {
-            spec = spec, message = header .. ' > ' .. folder,
+            spec = spec, message = msg,
             fn = function() cell:performAction(AX.Open) end,
           })
           tinsert(openSavePanelHotkeys, hotkey)
