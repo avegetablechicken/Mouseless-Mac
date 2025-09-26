@@ -8386,7 +8386,10 @@ local function searchHotkeyByNth(itemTitles, alreadySetHotkeys, index)
   return notSetItems, alreadySetHotkeys
 end
 
-local appsWatchMenuBarItems, appsMayChangeMenuBar
+local appsMayChangeMenuBar = {
+  changing = tcopy(get(ApplicationConfigs, "menuBarItems", 'changing') or {}),
+  onWindow = tcopy(get(ApplicationConfigs, "menuBarItems", 'changeOnWindow') or {})
+}
 local appsMayChangeMenuBarTmpDir =
     hs.fs.temporaryDirectory() .. hs.settings.bundleID .. '/application'
 local appsMayChangeMenuBarTmpFile =
@@ -8406,11 +8409,11 @@ local function processInvalidAltMenu(app, reinvokeKey)
     end
   end
   if isSameWin then
-    tinsert(appsWatchMenuBarItems, appid)
-    local pos = tindex(appsMayChangeMenuBar, appid)
-    if pos then tremove(appsMayChangeMenuBar, pos) end
+    tinsert(appsMayChangeMenuBar.changing, appid)
+    local pos = tindex(appsMayChangeMenuBar.onWindow, appid)
+    if pos then tremove(appsMayChangeMenuBar.onWindow, pos) end
   else
-    tinsert(appsMayChangeMenuBar, appid)
+    tinsert(appsMayChangeMenuBar.onWindow, appid)
   end
   onLaunchedAndActivated(app, reinvokeKey)
 
@@ -8686,10 +8689,7 @@ local function altMenuBarItem(app, reinvokeKey)
 end
 
 -- some apps may change their menu bar items irregularly
-appsWatchMenuBarItems = tcopy(get(ApplicationConfigs,
-    "menuBarItems", 'changing') or {})
-local appsMenuBarItemTitlesString = {}
-local appsWinMenuBarItemTitlesString = {}
+local menuBarItemTitlesString = { app = {}, win = {} }
 
 local function getMenuBarItemTitlesStringImpl(menuBarItems)
   if #menuBarItems == 0 then return "" end
@@ -8719,56 +8719,54 @@ end
 
 local function watchMenuBarItems(app)
   local appid = app:bundleID() or app:name()
-  appsMenuBarItemTitlesString[appid], appsWinMenuBarItemTitlesString[appid]
+  menuBarItemTitlesString.app[appid], menuBarItemTitlesString.win[appid]
       = getMenuBarItemTitlesString(app)
   local watcher = ExecContinuously(function()
     local app = find(appid)
     if app == nil then return end
-    local menuBarItemTitlesString, winMenuBarItemTitlesString
+    local mbTitlesStr, mbTitlesStrWin
         = getMenuBarItemTitlesString(app)
     -- assume menu mars of app & window don't change at the same time
-    if menuBarItemTitlesString ~= appsMenuBarItemTitlesString[appid] then
-      appsMenuBarItemTitlesString[appid] = menuBarItemTitlesString
+    if mbTitlesStr ~= menuBarItemTitlesString.app[appid] then
+      menuBarItemTitlesString.app[appid] = mbTitlesStr
       altMenuBarItem(app)
       remapPreviousTab(app)
       registerOpenRecent(app)
       registerZoomHotkeys(app)
     end
-    if winMenuBarItemTitlesString ~= appsWinMenuBarItemTitlesString[appid] then
-      appsWinMenuBarItemTitlesString[appid] = winMenuBarItemTitlesString
+    if mbTitlesStrWin ~= menuBarItemTitlesString.win[appid] then
+      menuBarItemTitlesString.win[appid] = mbTitlesStrWin
       altMenuBarItem(app)
     end
   end)
   onDeactivated(appid, function()
     StopExecContinuously(watcher)
-    appsMenuBarItemTitlesString[appid] = nil
+    menuBarItemTitlesString.app[appid] = nil
   end)
 end
 
 -- some apps may change their menu bar items based on the focused window
-appsMayChangeMenuBar = tcopy(get(ApplicationConfigs,
-    "menuBarItems", 'changeOnWindow') or {})
 if exists(appsMayChangeMenuBarTmpFile) then
   local tmp = hs.json.read(appsMayChangeMenuBarTmpFile)
   for _, appid in ipairs(tmp['changing'] or {}) do
-    tinsert(appsWatchMenuBarItems, appid)
+    tinsert(appsMayChangeMenuBar.changing, appid)
   end
   for _, appid in ipairs(tmp['onWindow'] or {}) do
-    tinsert(appsMayChangeMenuBar, appid)
+    tinsert(appsMayChangeMenuBar.onWindow, appid)
   end
 end
 
 local function appMenuBarChangeCallback(app)
   local appid = app:bundleID() or app:name()
   local menuBarItemStr, winMenuBarItemStr = getMenuBarItemTitlesString(app)
-  if menuBarItemStr == appsMenuBarItemTitlesString[appid] then
-    if winMenuBarItemStr ~= appsWinMenuBarItemTitlesString[appid] then
-      appsWinMenuBarItemTitlesString[appid] = winMenuBarItemStr
+  if menuBarItemStr == menuBarItemTitlesString.app[appid] then
+    if winMenuBarItemStr ~= menuBarItemTitlesString.win[appid] then
+      menuBarItemTitlesString.win[appid] = winMenuBarItemStr
       altMenuBarItem(app)
     end
     return
   end
-  appsMenuBarItemTitlesString[appid] = menuBarItemStr
+  menuBarItemTitlesString.app[appid] = menuBarItemStr
   altMenuBarItem(app)
   remapPreviousTab(app)
   registerOpenRecent(app)
@@ -8779,7 +8777,7 @@ local function appMenuBarChangeCallback(app)
     end
     local newMenuBarItemTitlesString = getMenuBarItemTitlesString(app)
     if newMenuBarItemTitlesString ~= menuBarItemStr then
-      appsMenuBarItemTitlesString[appid] = newMenuBarItemTitlesString
+      menuBarItemTitlesString.app[appid] = newMenuBarItemTitlesString
       altMenuBarItem(app)
       remapPreviousTab(app)
       registerOpenRecent(app)
@@ -8791,15 +8789,15 @@ end
 local function registerObserverForMenuBarChange(app)
   local appid = app:bundleID() or app:name()
 
-  if tcontain(appsWatchMenuBarItems, appid) then
+  if tcontain(appsMayChangeMenuBar.changing, appid) then
     watchMenuBarItems(app)
   end
 
-  if not tcontain(appsMayChangeMenuBar, appid) then
+  if not tcontain(appsMayChangeMenuBar.onWindow, appid) then
     return
   end
 
-  appsMenuBarItemTitlesString[appid], appsWinMenuBarItemTitlesString[appid]
+  menuBarItemTitlesString.app[appid], menuBarItemTitlesString.win[appid]
       = getMenuBarItemTitlesString(app)
 
   local observer
