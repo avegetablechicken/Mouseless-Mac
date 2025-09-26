@@ -3513,7 +3513,8 @@ appHotKeyCallbacks = {
         end
       },
       condition = function(win)
-        return clickable(getc(towinui(win), AX.Button, 1))
+        local title = commonLocalizedMessage("Back")(win)
+        return clickable(getc(towinui(win), AX.Button, title))
       end,
       fn = click
     },
