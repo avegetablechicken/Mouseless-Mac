@@ -5731,6 +5731,11 @@ appHotKeyCallbacks = {
       message = localizedMessage("Preferences"),
       condition = checkMenuItem({ "Edit", "Preferences" }),
       fn = receiveMenuItem
+    },
+    ["quit"] = {
+      message = localizedMessage("Quit"),
+      condition = checkMenuItem({ "File", "Quit" }),
+      fn = receiveMenuItem
     }
   },
 

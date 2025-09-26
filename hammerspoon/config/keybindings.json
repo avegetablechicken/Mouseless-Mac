@@ -1894,6 +1894,10 @@
       "preferences": {
         "mods": "command",
         "key": ","
+      },
+      "quit": {
+        "mods": ["shift", "command"],
+        "key": "W"
       }
     },
     "com.apple.dt.Xcode": {
