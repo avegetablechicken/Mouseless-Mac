@@ -7932,6 +7932,7 @@ local function registerNavigationForSettingsToolbar(app)
       tinsert(settingsToolbarHotkeys, hotkey)
     end
   end
+  if #buttons == 0 then return end
   local closeObserver = uiobserver.new(app:pid())
   closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
   closeObserver:addWatcher(winUI, uinotifications.windowMiniaturized)
