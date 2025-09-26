@@ -4086,7 +4086,13 @@ function displayName(app)
   local basename = hs.application.nameForBundleID(appid)
   local appLocale = applicationLocale(appid)
   local locale = get(appLocaleDir, appid, appLocale)
-  local appname = get(appLocaleMap, appid, locale or appLocale, basename)
+  local appname
+  if locale then
+    appname = get(appLocaleMap, appid, locale, basename)
+  end
+  if appname == nil then
+    appname = get(appLocaleMap, appid, appLocale, basename)
+  end
   if appname ~= nil then return appname end
   if locale == false then return basename end
 
