@@ -781,6 +781,18 @@ local function deleteAllCalls(win)
   )
 end
 
+-- ### Games
+local GamesMainWindowFilter = {
+  fn = function(win)
+    local buttons = getc(towinui(win), AX.Toolbar, 1,
+        AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+    local button = tfind(buttons or {}, function(bt)
+      return bt.AXDescription == win:title()
+    end)
+    return button ~= nil
+  end
+}
+
 -- ### Visual Studio Code
 local function VSCodeToggleSideBarSection(winUI, sidebar, section)
   local ancestor = getc(winUI,
@@ -2025,6 +2037,86 @@ appHotKeyCallbacks = {
       condition = checkMenuItem({ "View", "Show Folders" },
                                 { "View", "Hide Folders" }),
       fn = receiveMenuItem
+    }
+  },
+
+  ["com.apple.games"] = {
+    ["back"] = {
+      message = commonLocalizedMessage("Back"),
+      windowFilter = GamesMainWindowFilter,
+      condition = function(win)
+        local buttons = getc(towinui(win), AX.Toolbar, 1, AX.Button)
+        local title = commonLocalizedMessage("Back")(win)
+        local button = tfind(buttons or {}, function(bt)
+          return bt.AXDescription == title
+        end)
+        return button ~= nil, button
+      end,
+      fn = press
+    },
+    ["view1"] = {
+      message = function(win)
+        local buttons = getc(towinui(win), AX.Toolbar, 1,
+            AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+        if buttons and #buttons >= 1 then
+          return buttons[1].AXDescription
+        end
+      end,
+      windowFilter = GamesMainWindowFilter,
+      fn = function(win)
+        local buttons = getc(towinui(win), AX.Toolbar, 1,
+            AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+        if buttons and #buttons >= 1 then
+          press(buttons[1])
+        end
+      end
+    },
+    ["view2"] = {
+      message = function(win)
+        local buttons = getc(towinui(win), AX.Toolbar, 1,
+            AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+        if buttons and #buttons >= 2 then
+          return buttons[2].AXDescription
+        end
+      end,
+      windowFilter = GamesMainWindowFilter,
+      fn = function(win)
+        local buttons = getc(towinui(win), AX.Toolbar, 1,
+            AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+        if buttons and #buttons >= 2 then
+          press(buttons[2])
+        end
+      end
+    },
+    ["view3"] = {
+      message = function(win)
+        local buttons = getc(towinui(win), AX.Toolbar, 1,
+            AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+        if buttons and #buttons >= 3 then
+          return buttons[3].AXDescription
+        end
+      end,
+      windowFilter = GamesMainWindowFilter,
+      fn = function(win)
+        local buttons = getc(towinui(win), AX.Toolbar, 1,
+            AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+        if buttons and #buttons >= 3 then
+          press(buttons[3])
+        end
+      end
+    },
+    ["search"] = {
+      message = commonLocalizedMessage("Search"),
+      windowFilter = GamesMainWindowFilter,
+      fn = function(win)
+        local buttons = getc(towinui(win), AX.Toolbar, 1,
+            AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+        local title = commonLocalizedMessage("Search")(win)
+        local button = tfind(buttons or {}, function(bt)
+          return bt.AXDescription == title
+        end)
+        if button then press(button) end
+      end
     }
   },
 

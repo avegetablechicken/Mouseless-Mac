@@ -669,6 +669,28 @@
         "key": "S"
       }
     },
+    "com.apple.games": {
+      "back": {
+        "mods": "command",
+        "key": "["
+      },
+      "view1": {
+        "mods": "command",
+        "key": "1"
+      },
+      "view2": {
+        "mods": "command",
+        "key": "2"
+      },
+      "view3": {
+        "mods": "command",
+        "key": "3"
+      },
+      "search": {
+        "mods": "command",
+        "key": "F"
+      }
+    },
     "com.apple.AppStore": {
       "back": {
         "mods": "command",
