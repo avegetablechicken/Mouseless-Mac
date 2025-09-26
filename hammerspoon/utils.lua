@@ -3730,10 +3730,6 @@ end
 -- should be use when localizing / delocalizing menu bar items
 -- and delocalizing menu items whose keybindings contain 'fn'
 function localizeCommonMenuItemTitles(locale, appid)
-  if locale == 'en' or locale == 'English'
-      or locale:sub(1, 3) == 'en-' or locale:sub(1, 3) == 'en_' then
-    return
-  end
   if locale == SYSTEM_LOCALE and appid ~= nil then return end
 
   local key = '__macos'
@@ -3771,8 +3767,13 @@ function localizeCommonMenuItemTitles(locale, appid)
   local localesDict = appLocaleAssetBuffer[target]
 
   for _, title in ipairs { 'File', 'View', 'Window', 'Help' } do
-    local localizedTitle = cachedLocMap[title] or localizeByLoctable(
-      title, resourceDir, 'MenuCommands', matchedLocale, localesDict)
+    local localizedTitle
+    if matchedLocale == 'en' then
+      localizedTitle = title
+    else
+      localizedTitle = cachedLocMap[title] or localizeByLoctable(
+        title, resourceDir, 'MenuCommands', matchedLocale, localesDict)
+    end
     if localizedTitle ~= nil then
       targetDelocMap[localizedTitle] = title
       targetLocMap[title] = localizedTitle
@@ -3784,8 +3785,13 @@ function localizeCommonMenuItemTitles(locale, appid)
     end
   end
   local title = 'Edit'
-  local localizedTitle = cachedLocMap[title] or localizeByLoctable(
-    title, resourceDir, 'InputManager', matchedLocale, localesDict)
+  local localizedTitle
+  if matchedLocale == 'en' then
+    localizedTitle = title
+  else
+    localizedTitle = cachedLocMap[title] or localizeByLoctable(
+        title, resourceDir, 'InputManager', matchedLocale, localesDict)
+  end
   if localizedTitle ~= nil then
     targetDelocMap[localizedTitle] = title
     targetLocMap[title] = localizedTitle
@@ -3808,8 +3814,13 @@ function localizeCommonMenuItemTitles(locale, appid)
     })
   end
   for _, title in ipairs(titleList) do
-    local localizedTitle = tindex(cachedDelocMap, title) or localizeByLoctable(
-      title, resourceDir, 'MenuCommands', matchedLocale, localesDict)
+    local localizedTitle
+    if matchedLocale == 'en' then
+      localizedTitle = title
+    else
+      localizedTitle = tindex(cachedDelocMap, title) or localizeByLoctable(
+          title, resourceDir, 'MenuCommands', matchedLocale, localesDict)
+    end
     if localizedTitle ~= nil then
       delocMap.common[localizedTitle] = title
       if cachedDelocMap[localizedTitle] == nil then
@@ -3819,8 +3830,13 @@ function localizeCommonMenuItemTitles(locale, appid)
     end
   end
   title = 'Emoji & Symbols'
-  local localizedTitle = tindex(cachedDelocMap, title) or localizeByLoctable(
-    title, resourceDir, 'InputManager', matchedLocale, localesDict)
+  local localizedTitle
+  if matchedLocale == 'en' then
+    localizedTitle = title
+  else
+    localizedTitle = tindex(cachedDelocMap, title) or localizeByLoctable(
+        title, resourceDir, 'InputManager', matchedLocale, localesDict)
+  end
   if localizedTitle ~= nil then
     delocMap.common[localizedTitle] = title
     if cachedDelocMap[localizedTitle] == nil then
