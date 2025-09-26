@@ -9827,14 +9827,12 @@ end
 -- ## monitor callbacks
 
 -- launch applications automatically when connected to an external monitor
-local builtinMonitor = "Built-in Retina Display"
-
 function App_monitorChangedCallback()
   local screens = hs.screen.allScreens()
 
   -- only for built-in monitor
   local builtinMonitorEnable = any(screens, function(screen)
-    return screen:name() == builtinMonitor
+    return screen:name() == "Built-in Retina Display"
   end)
   if builtinMonitorEnable then
     -- hs.application.launchOrFocusByBundleID("pl.maketheweb.TopNotch")
