@@ -7857,9 +7857,36 @@ local function getTabGroupButtons(winUI)
   end
 end
 
+local function waitForSettings(fn, maxWaitTime)
+  return function(winUI)
+    fn = fn or getToolbarButtons
+    local buttons, toClick = fn(winUI)
+    if #buttons == 0 then
+      local app = getAppFromDescendantElement(winUI)
+      local totalDelay = 0
+      maxWaitTime = maxWaitTime or 0.1
+      repeat
+        hs.timer.usleep(10000)
+        totalDelay = totalDelay + 0.01
+        local win = app:focusedWindow()
+        if win == nil then return {} end
+        winUI = towinui(win)
+        buttons, toClick = fn(winUI)
+      until #buttons > 0 or totalDelay > maxWaitTime
+    end
+    return buttons, toClick
+  end
+end
+
 local specialToolbarButtons = {
   ["com.apple.TextEdit"] = getTabGroupButtons,
   ["org.xquartz.X11"] = getTabGroupButtons,
+  ["com.apple.FaceTime"] = waitForSettings(),
+  ["com.torusknot.SourceTreeNotMAS"] = waitForSettings(
+    function(winUI)
+      return getToolbarButtons(winUI), true
+    end
+  ),
   ["com.superace.updf.mac"] = function(winUI)
     local buttons = {}
     for _, elem in ipairs(winUI) do
@@ -7933,6 +7960,11 @@ local function registerNavigationForSettingsToolbar(app)
     end
   end
   if #buttons == 0 then return end
+  local elem = buttons[1]
+  repeat
+    elem = elem.AXParent
+  until elem.AXRole == AX.Window
+  winUI = elem
   local closeObserver = uiobserver.new(app:pid())
   closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
   closeObserver:addWatcher(winUI, uinotifications.windowMiniaturized)
