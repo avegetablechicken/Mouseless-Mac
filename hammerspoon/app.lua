@@ -8873,7 +8873,7 @@ end
 
 -- register hotkeys for focused window belonging to daemon app
 if frontWin ~= nil then
-  local frontWinAppId = frontWin:application():bundleID() or frontWin:application():name()
+  local frontWinAppID = frontWin:application():bundleID() or frontWin:application():name()
   if DaemonAppFocusedWindowObservers[frontWinAppID] ~= nil then
     for filter, _ in pairs(DaemonAppFocusedWindowObservers[frontWinAppID]) do
       local allowSheet, allowPopover
