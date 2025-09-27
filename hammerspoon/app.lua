@@ -544,6 +544,7 @@ end
 
 local function messageDeletable(app)
   local appUI = toappui(app)
+  local messageItems
   if OS_VERSION >= OS.Tahoe then
     messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
         AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
