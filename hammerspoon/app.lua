@@ -1287,12 +1287,12 @@ local function getPasswordRecordPosition(index)
     local searchField = getc(winUI, AX.Group, 1, AX.TextField, 1)
     if searchField ~= nil then
       local row
-      if OS_VERSION > OS.Tahoe then
-        row = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-            AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index)
-      else
+      if OS_VERSION >= OS.Tahoe then
         row = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
             AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index)
+      else
+        row = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+            AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index)
       end
       return clickable(row)
     end
