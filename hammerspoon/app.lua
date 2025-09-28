@@ -8079,6 +8079,9 @@ local function registerNavigationForSettingsToolbar(app)
         hotkey:enable()
         enableConditionInChain(hotkey)
       end
+    elseif hs.window.get(win:id()) == nil then
+      obs:stop() obs = nil
+      deleteFunc()
     else
       for _, hotkey in ipairs(settingsToolbarHotkeys) do
         disableConditionInChain(app:bundleID(), hotkey)
