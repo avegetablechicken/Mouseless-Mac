@@ -1900,6 +1900,12 @@
         "key": "O"
       }
     },
+    "org.pqrs.Karabiner-Elements.Settings": {
+      "toggleSidebar": {
+        "mods": ["control", "command"],
+        "key": "S"
+      }
+    },
     "cn.better365.iCopy": {
       "setting": {
         "mods": "command",
