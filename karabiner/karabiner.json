@@ -1322,19 +1322,6 @@
                         ]
                     },
                     {
-                        "description": "Fn + 1 to Enter",
-                        "manipulators": [
-                            {
-                                "from": {
-                                    "key_code": "1",
-                                    "modifiers": { "mandatory": ["fn"] }
-                                },
-                                "to": [{ "key_code": "keypad_enter" }],
-                                "type": "basic"
-                            }
-                        ]
-                    },
-                    {
                         "description": "Fn + f1-f12 to f1-f12 to fix conflicts between Touch Bar & Karabiner",
                         "manipulators": [
                             {

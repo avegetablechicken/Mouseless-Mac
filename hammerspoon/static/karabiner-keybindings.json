@@ -433,11 +433,6 @@
         "message": "Back"
     },
     {
-        "mods": "fn",
-        "key": "1",
-        "message": "Return"
-    },
-    {
         "mods": "option",
         "key": "F10",
         "message": "Mute"
