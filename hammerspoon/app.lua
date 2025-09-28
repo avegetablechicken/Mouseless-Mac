@@ -8015,7 +8015,16 @@ local specialToolbarButtons = {
         return buttons, true
       end
     end
-  end
+  end,
+  ["com.tencent.qq"] = waitForSettings(function(winUI)
+    local groups = getc(winUI, AX.Group, 1, AX.Group, 1,
+        AX.Group, 1, AX.Group, 1, AX.WebArea, 1,
+        AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group)
+    local buttons = tmap(groups or {}, function(g)
+      return getc(g, AX.Group, 1, AX.StaticText, 1)
+    end)
+    return buttons, true
+  end)
 }
 
 local settingsToolbarHotkeys = {}
@@ -8057,11 +8066,18 @@ local function registerNavigationForSettingsToolbar(app)
       if toClick then
         condition = function() return clickable(button) end
       end
+      local msg
+      if button.AXRole == AX.StaticText then
+        msg = button.AXValue
+      else
+        msg = button.AXTitle or button.AXDescription
+      end
+      if msg == "" and button.AXAttributedDescription ~= nil then
+        msg = button.AXAttributedDescription:getString()
+      end
       local hotkey = AppWinBind(win, {
-        spec = spec,
-        message = button.AXTitle or button.AXDescription,
-        condition = condition,
-        fn = bind(callback, button)
+        spec = spec, message = msg,
+        condition = condition, fn = bind(callback, button)
       })
       tinsert(settingsToolbarHotkeys, hotkey)
     end
