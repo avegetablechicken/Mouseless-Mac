@@ -1241,6 +1241,11 @@ function()
     app:name(), app:bundleID() or app:name()))
 end)
 
+local keySymbolInvMap = {}
+for k, v in pairs(keySymbolMap) do
+  keySymbolInvMap[v] = k
+end
+
 local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey",
 function()
   local allKeys = {}
@@ -1499,12 +1504,13 @@ function()
   local chooser = hs.chooser.new(function(choice)
     if not choice then return end
     if not choice.valid then return end
+    local key = keySymbolInvMap[choice.key] or choice.key
     if choice.modal == HK_MODAL.REGULAR then
       if choice.source == HK_SOURCE.APP then
-        hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', 'fn'), choice.key,
+        hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', 'fn'), key,
                               nil, hs.application.frontmostApplication())
       else
-        hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', 'fn'), choice.key)
+        hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', 'fn'), key)
       end
     elseif choice.modal == HK_MODAL.HYPER then
       local modal = tfind(HyperModalList, function(modal)
@@ -1513,7 +1519,7 @@ function()
       for _, hotkey in ipairs(modal.hyperMode.keys) do
         hotkey:enable()
       end
-      hs.eventtap.keyStroke(choice.mods, choice.key)
+      hs.eventtap.keyStroke(choice.mods, key)
       hs.timer.doAfter(0.2, function()
         for _, hotkey in ipairs(modal.hyperMode.keys) do
           hotkey:disable()
@@ -1554,6 +1560,7 @@ function()
         event:setFlags({ [flag] = true }):post()
         event:setFlags({}):post()
       elseif mods == "" then
+        key = keySymbolInvMap[key] or key
         local keycode = hs.keycodes.map[key]
         mods = key:lower():match('^f%d+$') and 'fn' or ''
         hs.eventtap.event.newKeyEvent(mods, keycode, true):post()
@@ -1561,6 +1568,7 @@ function()
         hs.eventtap.event.newKeyEvent(mods, keycode, true):post()
         hs.eventtap.event.newKeyEvent(mods, keycode, false):post()
       else
+        key = keySymbolInvMap[key] or key
         local keycode = hs.keycodes.map[key]
         local modsList = {}
         if mods:find("⌘") then tinsert(modsList, 'cmd') end
