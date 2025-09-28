@@ -8072,6 +8072,7 @@ local function registerNavigationForSettingsToolbar(app)
     elem = elem.AXParent
   until elem.AXRole == AX.Window
   winUI = elem
+  win = winUI:asHSWindow()
   local closeObserver = uiobserver.new(app:pid())
   closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
   closeObserver:addWatcher(winUI, uinotifications.windowMiniaturized)
