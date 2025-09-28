@@ -8002,6 +8002,20 @@ local specialToolbarButtons = {
       end
     end
   end,
+  ["com.tencent.xinWeChat"] = function(winUI)
+    -- only in version < 4.0.6
+    local buttons = {}
+    local found = false
+    for _, elem in ipairs(winUI) do
+      if elem.AXRole == AX.Button and #elem == 2
+          and elem[1].AXRole == AX.Button and elem[2].AXRole == AX.StaticText then
+        found = true
+        tinsert(buttons, elem)
+      elseif found then
+        return buttons, true
+      end
+    end
+  end
 }
 
 local settingsToolbarHotkeys = {}
