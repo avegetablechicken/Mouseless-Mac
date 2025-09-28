@@ -1459,3 +1459,35 @@ function()
 
   browserChooser()
 end)
+
+-- window switcher for `Stage Manager`
+local stageManagerWindowSwitchFuncs = {}
+hs.urlevent.bind("stagemanager", function(eventName, params)
+  if params["index"] then
+    local index = tonumber(params["index"])
+    local fn = stageManagerWindowSwitchFuncs[index]
+    if fn then fn() end
+  end
+end)
+
+local function bindStageManagerWindow(index)
+  local fn = function()
+    local manager = find("com.apple.WindowManager")
+    if manager then
+      local frame = hs.screen.mainScreen():frame()
+      local groups = getc(toappui(manager), AX.Group)
+      local g = tfind(groups or {}, function(g)
+        return g.AXPosition.x == frame.x
+      end)
+      if g then
+        local button = getc(g, AX.List, 1, AX.Button, index)
+        if button then button:performAction(AX.Press) end
+      end
+    end
+  end
+  stageManagerWindowSwitchFuncs[index] = fn
+end
+
+for i=1,10 do
+  bindStageManagerWindow(i)
+end
