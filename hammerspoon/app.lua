@@ -5621,6 +5621,18 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["org.pqrs.Karabiner-Menu"] =
+  {
+    ["settings"] = {
+      message = "Settings...",
+      menubarFilter = { allowIndices = 1 },
+      fn = function(menu)
+        local menuItem = getc(menu, AX.MenuItem, "Settings...")
+        if menuItem then press(menuItem) end
+      end
+    }
+  },
+
   ["org.pqrs.Karabiner-EventViewer"] =
   {
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
