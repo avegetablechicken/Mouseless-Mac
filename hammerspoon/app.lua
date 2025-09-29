@@ -5707,6 +5707,14 @@ appHotKeyCallbacks = {
     },
   },
 
+  ["com.apple.clock"] = {
+    ["openRecent"] = {
+      message = localizedMessage("Start Recent Timer"),
+      condition = checkMenuItem({ "File", "Start Recent Timer" }),
+      fn = receiveMenuItem
+    },
+  },
+
   ["com.apple.ScreenSharing"] =
   {
     ["openRecent"] = {
