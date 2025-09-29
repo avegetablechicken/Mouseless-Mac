@@ -8,10 +8,14 @@ local module = {}
 function module:exitHyperMode()
   self.hyperMode:exit()
   self.hyperMode.Entered = false
-  self.hyperTapper:stop()
-  self.hyperTapper = nil
-  self.hyperTimer:stop()
-  self.hyperTimer = nil
+  if self.hyperTapper then
+    self.hyperTapper:stop()
+    self.hyperTapper = nil
+  end
+  if self.hyperTimer then
+    self.hyperTimer:stop()
+    self.hyperTimer = nil
+  end
 end
 
 function module:enterHyperMode()
