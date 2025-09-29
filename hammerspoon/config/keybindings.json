@@ -794,6 +794,10 @@
       }
     },
     "com.superace.updf.mac": {
+      "toggleSidebar": {
+        "mods": ["control", "command"],
+        "key": "S"
+      },
       "showInFinder": {
         "mods": ["shift", "command"],
         "key": "O"

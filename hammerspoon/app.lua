@@ -2442,6 +2442,26 @@ appHotKeyCallbacks = {
 
   ["com.superace.updf.mac"] =
   {
+    ["toggleSidebar"] = {
+      message = commonLocalizedMessage("Show Sidebar"),
+      condition = function(app)
+        local title = localizedString("View", app:bundleID())
+        local menuItems = getc(toappui(app), AX.MenuBar, 1,
+            AX.MenuBarItem, title, AX.Menu, 1, AX.MenuItem)
+        local firstSidebarMenuItem
+        for _, item in ipairs(menuItems or {}) do
+          if item.AXTitle == "" then break end
+          if #item == 0 then
+            if item.AXMenuItemMarkChar then
+              return true, item
+            end
+            firstSidebarMenuItem = firstSidebarMenuItem or item
+          end
+        end
+        return firstSidebarMenuItem ~= nil, firstSidebarMenuItem
+      end,
+      fn = press
+    },
     ["showPrevTab"] = specialCommonHotkeyConfigs["showPrevTab"],
     ["showNextTab"] = specialCommonHotkeyConfigs["showNextTab"],
     ["showInFinder"] = {
