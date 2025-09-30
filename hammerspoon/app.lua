@@ -6317,6 +6317,16 @@ appHotKeyCallbacks = {
         if mods == nil or key == nil then return end
         safeGlobalKeyStroke(mods, key)
       end
+    },
+    ["preferencesInMenuBarMenu"] = {
+      message = localizedMessage("Preferences"),
+      menubarFilter = { allowIndices = 1 },
+      fn = function(menu)
+        local app = getAppFromDescendantElement(menu)
+        local title = localizedString("Preferences", app:bundleID())
+        local menuItem = getc(menu, AX.MenuItem, title)
+        if menuItem then press(menuItem) end
+      end
     }
   },
 

@@ -1709,6 +1709,10 @@
         "mods": "${hyper.daemon}",
         "key": "O",
         "persist": true
+      },
+      "preferencesInMenuBarMenu": {
+        "mods": "command",
+        "key": ","
       }
     },
     "whbalzac.Dongtaizhuomian": {
