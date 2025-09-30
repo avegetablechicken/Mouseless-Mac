@@ -2442,6 +2442,23 @@ appHotKeyCallbacks = {
 
   ["com.superace.updf.mac"] =
   {
+    ["goToHome"] = {
+      message = localizedMessage("Home"),
+      windowFilter = {
+        allowTitles = "",
+        fn = function(win)
+          local title = localizedString("Home", win:application():bundleID())
+          if title == win:title() then return false end
+          local image = getc(towinui(win), AX.TabGroup, 1,
+              AX.Button, 1, AX.Image, 1)
+          return image ~= nil
+        end
+      },
+      fn = function(win)
+        local button = getc(towinui(win), AX.TabGroup, 1, AX.Button, 1)
+        if button then leftClickAndRestore(button, win) end
+      end
+    },
     ["toggleSidebar"] = {
       message = commonLocalizedMessage("Show Sidebar"),
       condition = function(app)

@@ -794,6 +794,10 @@
       }
     },
     "com.superace.updf.mac": {
+      "goToHome": {
+        "mods": ["shift", "command"],
+        "key": "H"
+      },
       "toggleSidebar": {
         "mods": ["control", "command"],
         "key": "S"
