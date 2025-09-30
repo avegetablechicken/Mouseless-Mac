@@ -4256,7 +4256,8 @@ function loadStatusItemsAutosaveName(app)
 
   if appid == 'com.apple.controlcenter' then
     local enabledItems = {}
-    local visiblePrefix = "NSStatusItem Visible "
+    local visiblePrefix = OS_VERSION >= OS.Tahoe
+        and "NSStatusItem VisibleCC " or "NSStatusItem Visible "
     local prefix_len = #visiblePrefix
     for k, v in pairs(defaults) do
       if v == true and k:sub(1, prefix_len) == visiblePrefix then
@@ -4270,6 +4271,11 @@ function loadStatusItemsAutosaveName(app)
   end
 
   local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+  if OS_VERSION >= OS.Tahoe then
+    menuBarItems = tifilter(menuBarItems, function(item)
+      return item.AXIdentifier ~= nil
+    end)
+  end
   local positions = {}
   for i, item in ipairs(menuBarItems) do
     tinsert(positions, { i, item.AXPosition.x })
