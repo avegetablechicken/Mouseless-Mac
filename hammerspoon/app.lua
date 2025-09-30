@@ -473,7 +473,7 @@ end
 
 local function openFinderSidebarItem(cell, win)
   local app = win:application()
-  local go = localizedString("Go", app:bundleID())
+  local go = localizedString("Go", app)
   local itemTitle = getc(cell, AX.StaticText, 1).AXValue
   if app:findMenuItem({ go, itemTitle }) ~= nil then
     app:selectMenuItem({ go, itemTitle })
@@ -556,7 +556,7 @@ local function messageDeletable(app)
   if messageItems == nil or #messageItems == 0 then
     return false
   end
-  local desc = localizedString('New Message', app:bundleID())
+  local desc = localizedString('New Message', app)
   if messageItems[1].AXDescription == nil
       or messageItems[1].AXDescription:sub(4) == desc then
     tremove(messageItems, 1)
@@ -617,7 +617,6 @@ end)
 
 local function deleteMousePositionCall(win)
   local app = win:application()
-  local appid = app:bundleID()
   local winUI = towinui(win)
 
   local section
@@ -629,7 +628,7 @@ local function deleteMousePositionCall(win)
   else
     local collection = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
     if collection ~= nil and collection.AXDescription ==
-        localizedString("Recent Calls", appid) then
+        localizedString("Recent Calls", app) then
       section = getc(collection, AX.Button, 1)
     end
   end
@@ -657,7 +656,7 @@ local function deleteMousePositionCall(win)
       end
       if popup == nil then return end
     end
-    local locTitle = localizedString("Remove from Recents", appid)
+    local locTitle = localizedString("Remove from Recents", app)
     local menuItem = getc(popup, AX.MenuItem, locTitle)
     if menuItem ~= nil then
       press(menuItem)
@@ -699,7 +698,6 @@ end
 
 local function deleteAllCalls(win)
   local app = win:application()
-  local appid = app:bundleID()
   local winUI = towinui(win)
   local section
   if OS_VERSION >= OS.Tahoe then
@@ -710,7 +708,7 @@ local function deleteAllCalls(win)
   else
     local collection = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
     if collection ~= nil and collection.AXDescription ==
-        localizedString("Recent Calls", appid) then
+        localizedString("Recent Calls", app) then
       section = getc(collection, AX.Button, 1)
     end
   end
@@ -738,7 +736,7 @@ local function deleteAllCalls(win)
       end
       if popup == nil then return end
     end
-    local locTitle = localizedString("Remove from Recents", appid)
+    local locTitle = localizedString("Remove from Recents", app)
     local menuItem = getc(popup, AX.MenuItem, locTitle)
     if menuItem ~= nil then
       press(menuItem)
@@ -899,7 +897,7 @@ local function buttonValidForAppCleanerUninstaller(title)
     local winUI = towinui(app:focusedWindow())
     local sg = getc(winUI, AX.SplitGroup, 1)
     if sg == nil then return false end
-    local locTitle = localizedString(title, app:bundleID())
+    local locTitle = localizedString(title, app)
     local button = tfind(getc(sg, AX.Button), function(bt)
       return bt.AXIdentifier == "uaid:RemoveSelectedItemsButton"
           and bt.AXTitle == locTitle and bt.AXEnabled
@@ -915,7 +913,7 @@ local function confirmButtonValidForAppCleanerUninstaller(title)
       return bt.AXIdentifier == "uaid:RemoveDialogSecondButton" and bt.AXEnabled
     end)
     if cancel == nil then return false end
-    local locTitle = localizedString(title,app:bundleID())
+    local locTitle = localizedString(title, app)
     local button = getc(winUI, AX.StaticText, locTitle)
     return clickable(button)
   end
@@ -987,7 +985,7 @@ end
 --- ### Yuanbao
 local YuanbaoMainWindowFilter = {}
 onRunning("com.tencent.yuanbao", function(app)
-  local title = localizedString("Tencent Yuanbao", app:bundleID())
+  local title = localizedString("Tencent Yuanbao", app)
   YuanbaoMainWindowFilter.allowTitles = '^' .. title .. '$'
 end)
 
@@ -995,7 +993,7 @@ end)
 local EuDicMainWindowFilter = { allowRoles = AX.StandardWindow }
 onRunning("com.eusoft.freeeudic", function(app)
   local functionName = "词 典"
-  functionName = localizedString(functionName, app:bundleID()) or functionName
+  functionName = localizedString(functionName, app) or functionName
   EuDicMainWindowFilter.fn = function(win)
     local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 1)
     return button and button.AXTitle == functionName
@@ -1005,14 +1003,14 @@ end)
 --- ### Parallels Desktop
 local ParallelsControlCenterWindowFilter = {}
 onRunning("com.parallels.desktop.console", function(app)
-  local title = localizedString("Control Center", app:bundleID())
+  local title = localizedString("Control Center", app)
   ParallelsControlCenterWindowFilter.allowTitles = '^' .. title .. '$'
 end)
 
 --- ### Barrier
 local function barrierLocalizedMessage(message, params)
-  return function()
-    local str = localizedString(message, 'barrier', params) or message
+  return function(app)
+    local str = localizedString(message, app, params) or message
     str = type(str) == 'string' and str or str[1]
     if message:find('&') then
       str = str:gsub("%(&%a%)", ""):gsub('&', '')
@@ -1901,7 +1899,7 @@ appHotKeyCallbacks = {
           messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
               AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
         end
-        local desc = localizedString('New Message', app:bundleID())
+        local desc = localizedString('New Message', app)
         local selected = tfind(messageItems or {}, function(msg)
           return msg.AXSelected == true and msg.AXDescription:sub(4) ~= desc
         end)
@@ -1931,7 +1929,7 @@ appHotKeyCallbacks = {
           messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
               AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
         end
-        local desc = localizedString('New Message', app:bundleID())
+        local desc = localizedString('New Message', app)
         if messageItems == nil or #messageItems == 0
             or (#messageItems == 1 and (messageItems[1].AXDescription == nil
               or messageItems[1].AXDescription:sub(4) == desc)) then
@@ -1964,7 +1962,7 @@ appHotKeyCallbacks = {
           messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
               AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
         end
-        local desc = localizedString('New Message', app:bundleID())
+        local desc = localizedString('New Message', app)
         if messageItems == nil or #messageItems == 0
             or (#messageItems == 1 and (messageItems[1].AXDescription == nil
               or messageItems[1].AXDescription:sub(4) == desc)) then
@@ -2022,7 +2020,7 @@ appHotKeyCallbacks = {
           local heading = getc(towinui(win), AX.Group, 1, AX.Group, 1,
             AX.Group, 1, AX.Heading, 1)
           return heading and heading.AXDescription ==
-              localizedString("New FaceTime", win:application():bundleID())
+              localizedString("New FaceTime", win)
         end,
       },
       fn = function(win)
@@ -2152,7 +2150,7 @@ appHotKeyCallbacks = {
             AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
         if OS_VERSION >= OS.Tahoe then list = getc(list, AX.Group, 1) end
         if list and list.AXDescription
-            == localizedString("Location List", app:bundleID()) then
+            == localizedString("Location List", app) then
           for i = 1, #list do
             if list[i].AXSelected then
               return true, list[(i - 2) % #list + 1][1]
@@ -2172,7 +2170,7 @@ appHotKeyCallbacks = {
             AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
         if OS_VERSION >= OS.Tahoe then list = getc(list, AX.Group, 1) end
         if list and list.AXDescription
-            == localizedString("Location List", app:bundleID()) then
+            == localizedString("Location List", app) then
           for i = 1, #list do
             if list[i].AXSelected then
               return true, list[i % #list + 1][1]
@@ -2191,7 +2189,7 @@ appHotKeyCallbacks = {
             AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
         if OS_VERSION >= OS.Tahoe then list = getc(list, AX.Group, 1) end
         if list and list.AXDescription ==
-            localizedString("Location List", app:bundleID()) then
+            localizedString("Location List", app) then
           local selected = tfind(list.AXChildren or {},
               function(item) return item.AXSelected end)
           return selected ~= nil, selected
@@ -2203,7 +2201,7 @@ appHotKeyCallbacks = {
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.menuOpened)
         observer:callback(function(obs, menu)
-          local title = localizedString("Delete", app:bundleID())
+          local title = localizedString("Delete", app)
           local delete = getc(menu, AX.MenuItem, title)
           if delete then
             press(delete) obs:stop() obs = nil
@@ -2449,7 +2447,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "",
         fn = function(win)
-          local title = localizedString("Home", win:application():bundleID())
+          local title = localizedString("Home", win)
           if title == win:title() then return false end
           local image = getc(towinui(win), AX.TabGroup, 1,
               AX.Button, 1, AX.Image, 1)
@@ -2464,7 +2462,7 @@ appHotKeyCallbacks = {
     ["toggleSidebar"] = {
       message = commonLocalizedMessage("Show Sidebar"),
       condition = function(app)
-        local title = localizedString("View", app:bundleID())
+        local title = localizedString("View", app)
         local menuItems = getc(toappui(app), AX.MenuBar, 1,
             AX.MenuBarItem, title, AX.Menu, 1, AX.MenuItem)
         local firstSidebarMenuItem
@@ -2500,7 +2498,7 @@ appHotKeyCallbacks = {
         if win == nil then return false end
         local winUI = towinui(win)
         local buttons = getc(winUI, AX.Button)
-        local title = localizedString("Don't Save", app:bundleID())
+        local title = localizedString("Don't Save", app)
         for _, button in ipairs(buttons) do
           if button.AXTitle == title then
             return true, button
@@ -2576,7 +2574,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Home"),
       condition = function(app)
         local win = app:focusedWindow()
-        local home = localizedString("Home", app:bundleID())
+        local home = localizedString("Home", app)
         return win ~= nil and win:title() ~= home, win
       end,
       fn = function(win)
@@ -2592,7 +2590,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Recent"),
       fn = function(app)
         if app:focusedWindow() == nil then return end
-        local home = localizedString("Home", app:bundleID())
+        local home = localizedString("Home", app)
         local winUI = towinui(app:focusedWindow())
         if app:focusedWindow():title() ~= home then
           local buttons = getc(winUI, AX.Button)
@@ -2627,7 +2625,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Share"),
       condition = function(app)
         local win = app:focusedWindow()
-        local home = localizedString("Home", app:bundleID())
+        local home = localizedString("Home", app)
         if win == nil or win:title() ~= home then return false end
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -2648,7 +2646,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("My Cloud Documents"),
       condition = function(app)
         local win = app:focusedWindow()
-        local home = localizedString("Home", app:bundleID())
+        local home = localizedString("Home", app)
         if win == nil or win:title() ~= home then return false end
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -2675,7 +2673,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("My Desktop"),
       condition = function(app)
         local win = app:focusedWindow()
-        local home = localizedString("Home", app:bundleID())
+        local home = localizedString("Home", app)
         if win == nil or win:title() ~= home then return false end
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -2704,7 +2702,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Documents"),
       condition = function(app)
         local win = app:focusedWindow()
-        local home = localizedString("Home", app:bundleID())
+        local home = localizedString("Home", app)
         if win == nil or win:title() ~= home then return false end
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -2733,7 +2731,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Downloads"),
       condition = function(app)
         local win = app:focusedWindow()
-        local home = localizedString("Home", app:bundleID())
+        local home = localizedString("Home", app)
         if win == nil or win:title() ~= home then return false end
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -2762,7 +2760,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Open File Location"),
       condition = function(app)
         local win = app:focusedWindow()
-        local home = localizedString("Home", app:bundleID())
+        local home = localizedString("Home", app)
         if win == nil or win:title() == home then return false end
         local winUI = towinui(win)
         for i=1,#winUI - 1 do
@@ -2774,7 +2772,7 @@ appHotKeyCallbacks = {
         return false
       end,
       fn = function(position, app)
-        local title = localizedString("Open File Location", app:bundleID())
+        local title = localizedString("Open File Location", app)
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.created)
         observer:callback(function(obs)
@@ -2837,7 +2835,7 @@ appHotKeyCallbacks = {
       fn = function(menuItemTitle, app)
         app:selectMenuItem(menuItemTitle)
         hs.timer.doAfter(0.5, function()
-          local winTitle = localizedString("Build Order", app:bundleID())
+          local winTitle = localizedString("Build Order", app)
           local window = tifilter(app:visibleWindows(), function(win)
             return win:title() == winTitle
           end)
@@ -3103,7 +3101,7 @@ appHotKeyCallbacks = {
           return versionGreaterEqual("2")(app)
         end
         if app:focusedWindow():title() ==
-            localizedString("Tencent Yuanbao Setting", app:bundleID()) then
+            localizedString("Tencent Yuanbao Setting", app) then
           return false
         end
 
@@ -3114,7 +3112,7 @@ appHotKeyCallbacks = {
         local menu = getc(webarea, AX.Group, 8, AX.Group, 2, AX.Group, 1)
 
         if menu then
-          local title = localizedString("Settings", app:bundleID())
+          local title = localizedString("Settings", app)
           local menuItem = getc(menu, AX.StaticText, title)
           return clickable(menuItem)
         end
@@ -3154,7 +3152,7 @@ appHotKeyCallbacks = {
                   AX.ScrollArea, 1, AX.WebArea, 1)
               local menu = getc(webarea, AX.Group, 8, AX.Group, 2, AX.Group, 1)
               if menu then
-                local title = localizedString("Settings", app:bundleID())
+                local title = localizedString("Settings", app)
                 menuItem = getc(menu, AX.StaticText, title)
                 return true
               end
@@ -3172,7 +3170,7 @@ appHotKeyCallbacks = {
           local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
             AX.ScrollArea, 1, AX.WebArea, 1)
           if webarea then
-            local title = localizedString("Settings", app:bundleID())
+            local title = localizedString("Settings", app)
             for _, g in ipairs(getc(webarea, AX.Group)) do
               if g[1] and g[1].AXValue == title then
                 leftClickAndRestore(g[1], app) break
@@ -3303,7 +3301,7 @@ appHotKeyCallbacks = {
             local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
               AX.ScrollArea, 1, AX.WebArea, 1)
             if webarea then
-              local title = localizedString("Open Mini Chat", app:bundleID())
+              local title = localizedString("Open Mini Chat", app)
               for _, g in ipairs(getc(webarea, AX.Group)) do
                 if g[1] and g[1].AXValue == title then
                   leftClickAndRestore(g[1], app)
@@ -3378,7 +3376,7 @@ appHotKeyCallbacks = {
         local winUI = towinui(app:focusedWindow())
         local tab = tfind(getc(winUI, AX.TabGroup, 1, AX.RadioButton) or {},
           function(rb) return rb.AXValue == true
-              and rb.AXTitle ~= localizedString("untitled", app:bundleID())
+              and rb.AXTitle ~= localizedString("untitled", app)
         end)
         return tab ~= nil, tab
       end,
@@ -3386,7 +3384,7 @@ appHotKeyCallbacks = {
         tab:performAction(AX.ShowMenu)
         hs.timer.doAfter(0.1, function()
           local title = "Reveal in file explorer"
-          title = localizedString(title, app:bundleID()) or title
+          title = localizedString(title, app) or title
           local item = getc(toappui(app), AX.Menu, 1, AX.MenuItem, title)
           if item then press(item) end
         end)
@@ -3614,8 +3612,7 @@ appHotKeyCallbacks = {
         end
       },
       condition = function(win)
-        local back = localizedString("Common.Navigation.Back",
-                                     win:application():bundleID())
+        local back = localizedString("Common.Navigation.Back", win)
         local g = getc(towinui(win), AX.SplitGroup, 1, AX.SplitGroup, 1)
         if g ~= nil then
           for _, bt in ipairs(getc(g, AX.Button)) do
@@ -3639,10 +3636,9 @@ appHotKeyCallbacks = {
               local moments = findMenuItemByKeyBinding(app, "⌘", "4", true)
               return moments and title == moments[2]
             else
-              local appid = app:bundleID()
-              local album = localizedString("Album_WindowTitle", appid)
-              local moments = localizedString("SNS_Feed_Window_Title", appid)
-              local detail = localizedString("SNS_Feed_Detail_Title", appid)
+              local album = localizedString("Album_WindowTitle", win)
+              local moments = localizedString("SNS_Feed_Window_Title", win)
+              local detail = localizedString("SNS_Feed_Detail_Title", win)
               return title:find(album .. '-') == 1
                   or title == moments .. '-' .. detail
             end
@@ -3657,11 +3653,10 @@ appHotKeyCallbacks = {
     },
     ["hideChat"] = {
       message = function(win)
-        local app = win:application()
-        if versionLessThan("4")(app) then
-          return localizedString("Chats.Menu.Hide", app:bundleID())
+        if versionLessThan("4")(win:application()) then
+          return localizedString("Chats.Menu.Hide", win)
         else
-          return localizedString("Hide", app:bundleID())
+          return localizedString("Hide", win)
         end
       end,
       bindCondition = versionLessThan("4.0.6"),
@@ -3731,7 +3726,7 @@ appHotKeyCallbacks = {
             local menu = toappui(app):elementAtPosition(
                 uioffset(chat.AXPosition, { 1, 1 }))
             if menu and menu.AXRole == AX.Menu then
-              local title = localizedString("Hide", app:bundleID())
+              local title = localizedString("Hide", app)
               local hide = getc(menu, AX.MenuItem, title)
               if hide then leftClickAndRestore(hide, app) end
             end
@@ -3753,8 +3748,7 @@ appHotKeyCallbacks = {
         local curChatTitle = getc(winUI, AX.SplitGroup, 1,
             AX.SplitGroup, 1, AX.StaticText, 1)
         if curChatTitle == nil then return false end
-        local btTitle = localizedString("ComposeBar.VideoTooltip",
-                                        win:application():bundleID())
+        local btTitle = localizedString("ComposeBar.VideoTooltip", win)
         local bt = getc(winUI, AX.SplitGroup, 1,
             AX.SplitGroup, 1, AX.Button, btTitle)
         return bt ~= nil, curChatTitle.AXValue
@@ -3783,7 +3777,7 @@ appHotKeyCallbacks = {
       message = function(win)
         local app = win:application()
         if versionLessThan("4")(app) then
-          return localizedString("Open in Default Browser", app:bundleID())
+          return localizedString("Open in Default Browser", app)
         else
           local exBundleID = "com.tencent.flue.WeChatAppEx"
           local appLocale = applicationLocale(app:bundleID())
@@ -3992,11 +3986,10 @@ appHotKeyCallbacks = {
         allowSheet = true,
         fn = function(win)
           local winUI = towinui(win)
-          local appid = win:application():bundleID()
-          local title = localizedString("Send", appid)
+          local title = localizedString("Send", win)
           local bt = getc(winUI, AX.Button, title)
           if bt == nil then
-            title = localizedString("Send To (%d)", appid)
+            title = localizedString("Send To (%d)", win)
             title = title:gsub("%(%%d%)", "%%(%%d%%)")
             bt = tfind(getc(winUI, AX.Button), function(b)
               return b.AXTitle:match(title)
@@ -4007,11 +4000,10 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local appid = win:application():bundleID()
-        local title = localizedString("Send", appid)
+        local title = localizedString("Send", win)
         local bt = getc(towinui(win), AX.Button, title)
         if bt == nil then
-          title = localizedString("Send To (%d)", appid)
+          title = localizedString("Send To (%d)", win)
           title = title:gsub("%(%%d%)", "%%(%%d%%)")
           bt = tfind(getc(winUI, AX.Button), function(b)
             return b.AXTitle:match(title)
@@ -4239,7 +4231,7 @@ appHotKeyCallbacks = {
     ["preferences"] = {
       message = localizedMessage("Preferences"),
       fn = function(app)
-        local title = localizedString("Preferences", app:bundleID())
+        local title = localizedString("Preferences", app)
         app:selectMenuItem({ app:name(), title })
       end
     }
@@ -4430,7 +4422,7 @@ appHotKeyCallbacks = {
         local menuBarItem = tfind(menuBarItems, function(item)
           return item.AXTitle == "Barrier"
         end)
-        local title = localizedString("Change &Settings", app:bundleID()) or "Change &Settings"
+        local title = localizedString("Change &Settings", app) or "Change &Settings"
         title = title:gsub("%(&%a%)", ""):gsub("&", "")
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, title)
         return menuItem and menuItem.AXEnabled, menuItem
@@ -4444,7 +4436,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local title = barrierLocalizedString("&Reload", win:application():bundleID())
+        local title = barrierLocalizedString("&Reload", win)
         local reload = getc(winUI, AX.Button, title)
         return reload ~= nil and #reload:actionNames() > 0, reload
       end,
@@ -4457,7 +4449,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local title = barrierLocalizedString("&Start", win:application():bundleID())
+        local title = barrierLocalizedString("&Start", win)
         local start = getc(winUI, AX.Button, title)
         return start ~= nil and #start:actionNames() > 0, start
       end,
@@ -4470,7 +4462,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local title = barrierLocalizedString("&Stop", win:application():bundleID())
+        local title = barrierLocalizedString("&Stop", win)
         local stop = getc(winUI, AX.Button, title)
         return stop ~= nil and #stop:actionNames() > 0, stop
       end,
@@ -4505,8 +4497,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local title = barrierLocalizedString("Configure interactively:",
-            win:application():bundleID())
+        local title = barrierLocalizedString("Configure interactively:", win)
         local configure = getc(winUI, AX.CheckBox, 1, AX.RadioButton, title)
         return configure ~= nil and #configure:actionNames() > 0, configure
       end,
@@ -4519,8 +4510,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local title = barrierLocalizedString("Use existing configuration:",
-            win:application():bundleID())
+        local title = barrierLocalizedString("Use existing configuration:", win)
         local configure = getc(winUI, AX.CheckBox, 1, AX.RadioButton, title)
         return configure ~= nil and #configure:actionNames() > 0, configure
       end,
@@ -4533,7 +4523,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local title = barrierLocalizedString("&Configure Server...", win:application():bundleID())
+        local title = barrierLocalizedString("&Configure Server...", win)
         local configure = getc(winUI, AX.CheckBox, 1, AX.Button, title)
         return configure ~= nil and #configure:actionNames() > 0, configure
       end,
@@ -4546,8 +4536,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local title = barrierLocalizedString("&Configuration file:",
-            win:application():bundleID())
+        local title = barrierLocalizedString("&Configuration file:", win)
         local textField = getc(winUI, AX.CheckBox, 1, AX.TextField, title)
         return textField ~= nil and #textField:actionNames() > 0, textField
       end,
@@ -4562,7 +4551,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local title = barrierLocalizedString("&Browse...", win:application():bundleID())
+        local title = barrierLocalizedString("&Browse...", win)
         local browse = getc(winUI, AX.CheckBox, 1, AX.Button, title)
         return browse ~= nil and #browse:actionNames() > 0, browse
       end,
@@ -4575,7 +4564,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local title = barrierLocalizedString("Auto config", win:application():bundleID())
+        local title = barrierLocalizedString("Auto config", win)
         local autoconfig = getc(winUI, AX.CheckBox, 2, AX.CheckBox, title)
         return autoconfig ~= nil and #autoconfig:actionNames() > 0, autoconfig
       end,
@@ -4583,7 +4572,7 @@ appHotKeyCallbacks = {
         local toSpecify = checkbox.AXValue == 1
         press(checkbox)
         if toSpecify then
-          local title = barrierLocalizedString("&Server IP:", win:application():bundleID())
+          local title = barrierLocalizedString("&Server IP:", win)
           local textField = getc(towinui(win), AX.CheckBox, 2, AX.TextField, title)
           if textField then
             textField:performAction(AX.Raise)
@@ -4596,7 +4585,7 @@ appHotKeyCallbacks = {
       menubarFilter = { allowIndices =  1 },
       condition = function(menu)
         local app = getAppFromDescendantElement(menu)
-        local title = localizedString("Show", app:bundleID()) or "Show"
+        local title = localizedString("Show", app) or "Show"
         local menuItem = getc(menu, AX.MenuItem, title)
         return menuItem and menuItem.AXEnabled, menuItem
       end,
@@ -5230,13 +5219,12 @@ appHotKeyCallbacks = {
     },
     ["preferencesInMenuBarMenu"] = {
       message = function(app)
-        return app:name() .. ' > '
-            .. localizedString('Preferences', app:bundleID())
+        return app:name() .. ' > ' .. localizedString('Preferences', app)
       end,
       menubarFilter = { allowTitles = 'eul' },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
-        local prefString = localizedString('Preferences', app:bundleID())
+        local prefString = localizedString('Preferences', app)
         local button = getc(menu, AX.MenuItem, 1, AX.Group, 1,
             AX.StaticText, prefString)
         leftClickAndRestore(button, app, 0.2)
@@ -5252,7 +5240,7 @@ appHotKeyCallbacks = {
       background = true,
       fn = function(app)
         clickRightMenuBarItem(app,
-            localizedString("In-app Screensaver", app:bundleID(),
+            localizedString("In-app Screensaver", app,
                             { localeFile = "HotkeyWindowController" }))
       end
     },
@@ -5261,7 +5249,7 @@ appHotKeyCallbacks = {
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
-        local title = localizedString("Preferences...", app:bundleID())
+        local title = localizedString("Preferences...", app)
         local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then press(menuItem) end
       end
@@ -5484,7 +5472,7 @@ appHotKeyCallbacks = {
         end
         local field
         if getc(outline, AX.Row, 3, AX.Cell, 1, AX.StaticText, 1).AXValue
-            == localizedString("Password", win:application():bundleID()) then
+            == localizedString("Password", win) then
           field = getc(outline, AX.Row, 3, AX.Cell, 1, AX.StaticText, 2)
         else
           field = getc(outline, AX.Row, 4, AX.Cell, 1, AX.StaticText, 2)
@@ -5520,8 +5508,7 @@ appHotKeyCallbacks = {
         local cell = getc(outline, AX.Row, 5, AX.Cell, 1)
         local title = getc(cell, AX.StaticText, 1)
         local target = OS_VERSION >= OS.Tahoe and "Code" or "Verification Code"
-        if title and title.AXValue
-            == localizedString(target, win:application():bundleID()) then
+        if title and title.AXValue == localizedString(target, win) then
           return true, getc(cell, AX.StaticText, 2)
         end
         return false
@@ -5779,7 +5766,7 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then return end
         local buttons = getc(towinui(app:focusedWindow()), AX.Toolbar, 1, AX.Button)
         if buttons == nil then return end
-        local btTitle = localizedString("Sidebar", app:bundleID())
+        local btTitle = localizedString("Sidebar", app)
         local button = tfind(buttons, function(bt)
           return bt.AXDescription == btTitle
         end)
@@ -6273,7 +6260,7 @@ appHotKeyCallbacks = {
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
-        local title = localizedString("Preferences…", app:bundleID())
+        local title = localizedString("Preferences…", app)
         local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then press(menuItem) end
       end
@@ -6283,7 +6270,7 @@ appHotKeyCallbacks = {
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
-        local title = localizedString("Open Connection…", app:bundleID())
+        local title = localizedString("Open Connection…", app)
         local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then press(menuItem) end
       end
@@ -6293,7 +6280,7 @@ appHotKeyCallbacks = {
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
-        local title = localizedString("History", app:bundleID())
+        local title = localizedString("History", app)
         local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then
           press(menu.AXParent)
@@ -6308,13 +6295,13 @@ appHotKeyCallbacks = {
     },
     ["quitInMenuBarMenu"] = {
       message = function(app)
-        local quit = localizedString("Quit", app:bundleID())
+        local quit = localizedString("Quit", app)
         return quit .. ' ' .. app:name()
       end,
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
-        local quit = localizedString("Quit", app:bundleID())
+        local quit = localizedString("Quit", app)
         local title = quit .. ' ' .. app:name()
         local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then press(menuItem) end
@@ -6328,7 +6315,7 @@ appHotKeyCallbacks = {
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
-        local title = localizedString("Preferences", app:bundleID())
+        local title = localizedString("Preferences", app)
         local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then press(menuItem) end
       end
@@ -6364,7 +6351,7 @@ appHotKeyCallbacks = {
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
-        local title = localizedString("Preferences", app:bundleID())
+        local title = localizedString("Preferences", app)
         local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then press(menuItem) end
       end
@@ -8280,7 +8267,7 @@ local function registerObserverForSettingsMenuItem(app)
         if title:find("Settings") or title:find("Preferences") then
           return true
         end
-        title = delocalizedString(item.AXTitle, app:bundleID())
+        title = delocalizedString(item.AXTitle, app)
         if title then
           return title:find("Settings") or title:find("Preferences")
         end
@@ -9507,7 +9494,7 @@ local function connectMountainDuckEntries(app, connection)
         press(menuItem)
       end
     end
-    local disconnect = localizedString('Disconnect', app:bundleID())
+    local disconnect = localizedString('Disconnect', app)
     for _, item in ipairs(disconnects) do
       local menuItem = getc(menuBar, AX.MenuItem, item,
           AX.Menu, 1, AX.MenuItem, disconnect)
@@ -9587,11 +9574,11 @@ end
 
 local MicrosoftRemoteDesktopWindowFilter
 if hs.application.nameForBundleID("com.microsoft.rdc.macos") == "Windows App" then
-  onRunning("com.microsoft.rdc.macos", function()
+  onRunning("com.microsoft.rdc.macos", function(app)
     MicrosoftRemoteDesktopWindowFilter = { rejectTitles = {} }
     for _, title in ipairs {"Favorites", "Devices", "Apps",
       "Settings", "About", "Device View Options", "App View Options" } do
-      local locTitle = "^" .. localizedString(title, "com.microsoft.rdc.macos") .. "$"
+      local locTitle = "^" .. localizedString(title, app) .. "$"
       tinsert(MicrosoftRemoteDesktopWindowFilter.rejectTitles, locTitle)
     end
   end)

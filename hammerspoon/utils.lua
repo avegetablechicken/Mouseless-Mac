@@ -2496,7 +2496,11 @@ local function localizedStringImpl(str, appid, params, force)
 end
 
 function localizedString(str, appid, params, force)
-  if type(appid) == 'table' then
+  if appid.bundleID then
+    appid = appid:bundleID()
+  elseif appid.application then
+    appid = appid:application():bundleID()
+  elseif type(appid) == 'table' then
     force = params params = appid appid = nil
   end
   if appid == nil and (type(params) ~= 'table' or params.framework == nil) then
@@ -3550,6 +3554,11 @@ local function delocalizedStringImpl(str, appid, params, force)
 end
 
 function delocalizedString(str, appid, params, force)
+  if appid.bundleID then
+    appid = appid:bundleID()
+  elseif appid.application then
+    appid = appid:application():bundleID()
+  end
   local result, appLocale, locale =
       delocalizedStringImpl(str, appid, params, force)
   if appLocale == nil then return result end
