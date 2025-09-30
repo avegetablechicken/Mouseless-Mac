@@ -1892,6 +1892,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Delete Conversation…"),
       condition = function(app)
         local appUI = toappui(app)
+        local messageItems
         if OS_VERSION >= OS.Tahoe then
           messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
               AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
@@ -1921,6 +1922,7 @@ appHotKeyCallbacks = {
       message = menuItemMessage('⇧⌃', "⇥", 2),
       condition = function(app)
         local appUI = toappui(app)
+        local messageItems
         if OS_VERSION >= OS.Tahoe then
           messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
               AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
