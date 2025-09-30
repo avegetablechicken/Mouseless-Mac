@@ -9546,7 +9546,7 @@ if hs.application.pathForBundleID("barrier") ~= nil
     observer:addWatcher(toappui(app), uinotifications.windowCreated)
     observer:callback(function(_, winUI) winUI:asHSWindow():focus() end)
     observer:start()
-    stopOnTerminated("barrier", observer)
+    stopOnTerminated(app:bundleID(), observer)
   end)
 end
 
