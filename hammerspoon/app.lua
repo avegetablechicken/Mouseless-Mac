@@ -9605,7 +9605,7 @@ local function isDefaultRemoteDesktopWindow(window)
       local winUI = towinui(window)
       local title = "Cancel"
       if window:application():name() == "Windows App" then
-        title = localizedString(title, "com.microsoft.rdc.macos") or title
+        title = localizedString(title, appid) or title
       end
       for _, bt in ipairs(getc(winUI, AX.Button)) do
         if bt.AXTitle == title then
