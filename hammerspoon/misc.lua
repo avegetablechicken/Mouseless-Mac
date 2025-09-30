@@ -1496,7 +1496,8 @@ function()
           key = key,
           modal = entry.modal,
           hyper = entry.hyper,
-          valid = entry.valid
+          valid = entry.valid,
+          source = entry.source
         })
 
     ::continue::
