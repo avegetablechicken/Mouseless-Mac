@@ -2469,6 +2469,11 @@ appHotKeyCallbacks = {
       condition = checkMenuItem({ "File", "Show in Finder" }),
       fn = receiveMenuItem
     },
+    ["openRecent"] = {
+      message = localizedMessage("Open Quickly…"),
+      condition = checkMenuItem({ "File", "Open Quickly…" }),
+      fn = receiveMenuItem
+    },
     ["confirmDelete"] = {
       message = localizedMessage("Don't Save"),
       condition = function(app)
