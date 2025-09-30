@@ -5329,13 +5329,16 @@ appHotKeyCallbacks = {
   ["com.apple.TextInputMenuAgent"] =
   {
     ["openKeyboardSettings"] = {
-      message = localizedMessage("Open Keyboard Settings…"),
+      message = function(app, menu)
+        local menuItem = getc(menu, AX.MenuItem, -1)
+        if menuItem then
+          return getc(menu, AX.MenuItem, -1).AXTitle
+        end
+      end,
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local app = getAppFromDescendantElement(menu)
-        local title = localizedString("Open Keyboard Settings…", app:bundleID())
-        local menuItem = getc(menu, AX.MenuItem, title)
-        if menuItem then press(menuItem) end
+        local menuItem = getc(menu, AX.MenuItem, -1)
+        press(menuItem)
       end
     }
   },
