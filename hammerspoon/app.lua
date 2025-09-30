@@ -7684,6 +7684,12 @@ registerInMenuHotkeys = function(app)
               menu = getc(item, AX.Menu, 1) break
             end
           end
+          if menu == nil then
+            for _, idx in ipairs(t) do
+              menu = getc(appUI, AX.MenuBar, -1, AX.Menu, idx)
+              if menu then break end
+            end
+          end
         elseif menubarFilter.allowTitles then
           local t = menubarFilter.allowTitles
           if type(t) ~= 'table' then t = { t } end
@@ -7694,6 +7700,15 @@ registerInMenuHotkeys = function(app)
               local item = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, idx)
               if item.AXSelected then
                 menu = getc(item, AX.Menu, 1) break
+              end
+            end
+          end
+          if menu == nil then
+            for _, title in ipairs(t) do
+              local idx = tindex(map, title)
+              if idx then
+                menu = getc(appUI, AX.MenuBar, -1, AX.Menu, idx)
+                if menu then break end
               end
             end
           end
