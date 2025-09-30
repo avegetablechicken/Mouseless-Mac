@@ -1028,8 +1028,8 @@ local function barrierLocalizedMessage(message, params)
   end
 end
 
-local function barrierLocalizedString(message, params)
-  local str = localizedString(message, 'barrier', params) or message
+local function barrierLocalizedString(message, appid, params)
+  local str = localizedString(message, appid, params) or message
   str = type(str) == 'string' and str or str[1]
   if message:find('&') then
     str = str:gsub('&', "")
