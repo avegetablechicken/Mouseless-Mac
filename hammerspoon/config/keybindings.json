@@ -1704,6 +1704,12 @@
         "key": "Q"
       }
     },
+    "com.better365.BetterAndBetterHelper": {
+      "preferencesInMenuBarMenu": {
+        "mods": "command",
+        "key": ","
+      }
+    },
     "cn.better365.iShotProHelper": {
       "OCR": {
         "mods": "${hyper.daemon}",
