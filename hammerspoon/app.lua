@@ -8395,7 +8395,9 @@ local function registerForOpenSavePanel(app)
       if specialConfirmFunc ~= nil then
         dontSaveButton = specialConfirmFunc(winUI)
       elseif windowIdent == "save-panel" then
-        for _, button in ipairs(getc(winUI, AX.Button)) do
+        local elem = winUI
+        if OS_VERSION >= OS.Tahoe then elem = getc(winUI, AX.SplitGroup, 1) end
+        for _, button in ipairs(getc(elem, AX.Button) or {}) do
           if button.AXIdentifier == "DontSaveButton" then
             dontSaveButton = button
             break
