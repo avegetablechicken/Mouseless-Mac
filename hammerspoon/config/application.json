@@ -24,6 +24,7 @@
     "com.apple.finder",
     "com.pigigaldi.pock",
     "io.mountainduck",
+    "com.wiheads.paste-direct",
     {
       "com.macosgame.iwallpaper": {
         "rejectTitles": "^$"
