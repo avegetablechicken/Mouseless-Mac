@@ -5083,8 +5083,9 @@ appHotKeyCallbacks = {
       background = true,
       fn = function(app)
         local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
-        local isAdvancedMode = hs.execute(
-          [[defaults read cn.better365.iBar advancedMode | tr -d '\n']])
+        local isAdvancedMode = hs.execute(strfmt([[
+          defaults read "%s" advancedMode | tr -d '\n'
+        ]], app:bundleID()))
         if isAdvancedMode ~= "1" then
           local position = hs.mouse.absolutePosition()
           hs.eventtap.event.newMouseEvent(

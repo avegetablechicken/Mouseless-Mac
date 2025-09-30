@@ -4317,39 +4317,36 @@ local function activateMenuBarItem(menuBarItem, click)
 end
 
 MENUBAR_MANAGER_SHOW = {
-  ["com.surteesstudios.Bartender"] = function(_, appid, index, map, click)
+  ["com.surteesstudios.Bartender"] = function(manager, appid, index, map, click)
     if type(index) == 'number' then
       map = map or loadStatusItemsAutosaveName(find(appid))
       index = map and map[index] or "Item-" .. tostring(index - 1)
     end
-    local rightClick = click == "right-click"
+    local clickMode = click == "right-click" and " with right click" or ""
     hs.osascript.applescript(strfmt([[
-      tell application id "com.surteesstudios.Bartender"
-        activate "%s-%s" %s
-      end
-    ]], appid, index, rightClick and "with right click" or ""))
+      tell application id "%s" to activate "%s-%s"%s
+    ]], manager:bundleID(), appid, index, clickMode))
     return true
   end,
 
-  ["com.HyperartFlow.Barbee"] = function(_, appid, index, map)
+  ["com.HyperartFlow.Barbee"] = function(manager, appid, index, map)
     if type(index) == 'number' then
       map = map or loadStatusItemsAutosaveName(find(appid))
       index = map and map[index] or "Item-" .. tostring(index - 1)
     end
     -- fixme: below script will force `Barbee` to kill itself
     hs.osascript.applescript(strfmt([[
-      tell application id "com.HyperartFlow.Barbee"
-        show item "%s-%s"
-      end
-    ]], appid, index))
+      tell application id "%s" to show item "%s-%s"
+    ]], manager:bundleID(), appid, index))
     return true
   end,
 
   ["com.jordanbaird.Ice"] = function(manager, appid, index)
     local icon = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 1)
     if icon == nil then return end
-    local useIceBar = hs.execute(
-      [[defaults read com.jordanbaird.Ice UseIceBar | tr -d '\n']])
+    local useIceBar = hs.execute(strfmt([[
+      defaults read "%s" UseIceBar | tr -d '\n'
+    ]], manager:bundleID()))
     if useIceBar == "0" then
       leftClickAndRestore(icon)
       return false
@@ -4412,8 +4409,9 @@ MENUBAR_MANAGER_SHOW = {
     if not icon then return end
     local app = find(appid)
 
-    local isAdvancedMode = hs.execute(
-      [[defaults read cn.better365.iBar advancedMode | tr -d '\n']])
+    local isAdvancedMode = hs.execute(strfmt([[
+      defaults read "%s" advancedMode | tr -d '\n'
+    ]], manager:bundleID()))
     if isAdvancedMode ~= "1" then
       if type(index) == 'string' then
         map = map or loadStatusItemsAutosaveName(app)
