@@ -8742,11 +8742,11 @@ local function altMenuBarItem(app, reinvokeKey)
       if itemDict[item.AXTitle] then
         if item.AXTitle == app:name() then
           -- ordinary menu bar item share the same title with app menu
-          -- e.t.c. "Barrier" menu in `Barrier`
+          -- e.g. "Barrier" menu in `Barrier`
           menuBarItemActualIndices[item.AXTitle] = i
         elseif itemDict[item.AXTitle].AXChildren == nil then
           -- two ordinary menu bar items share the same title, but the former is invalid
-          -- e.t.c. two "File" menus in `QQLive`
+          -- e.g. two "File" menus in `QQLive`
           local idx = tindex(menuBarItemTitles, item.AXTitle)
           tremove(menuBarItemTitles, idx)
           menuBarItemActualIndices[item.AXTitle] = i
