@@ -8734,6 +8734,11 @@ local function altMenuBarItem(app, reinvokeKey)
     local itemDict = {}
     menuBarItemTitles = {}
     for i, item in ipairs(menuBarItems) do
+      if item.AXTitle == nil then
+        -- invalid menu bar item
+        -- e.g. expected "Edit" menu in `Adblock Plus`
+        goto CHECK_MENU_ITEM_CONTINUE
+      end
       if itemDict[item.AXTitle] then
         if item.AXTitle == app:name() then
           -- ordinary menu bar item share the same title with app menu

@@ -327,7 +327,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
           and subItem.AXMenuItemMarkChar == ""
           and subItem.AXChildren == nil then
         if i == #menuItem.AXChildren[1]
-            and (menuItem.AXTitle == "Edit"
+            and (menuItem.AXTitle == "Edit" or menuItem.AXTitle == ""
                  or delocalizedMenuItem(menuItem.AXTitle, appid, true) == 'Edit')
             and (subItem.AXTitle == "Emoji & Symbols"
                  or delocalizedMenuItem(subItem.AXTitle, appid, true)
@@ -666,9 +666,10 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
     end
     local menuBarItems = getMenuBarItems(app, true)
     for _, item in ipairs(menuBarItems) do
+      local title = item.AXTitle or ""
       local entry = tfind(enabledAltMenuHotkeys, function(menuHK)
-        return menuHK.msg:sub(-#item.AXTitle-2) == ': ' .. item.AXTitle
-            and menuHK.msg:sub(-#item.AXTitle-3, -#item.AXTitle-3):match('[A-Z]')
+        return menuHK.msg:sub(-#title-2) == ': ' .. title
+            and menuHK.msg:sub(-#title-3, -#title-3):match('[A-Z]')
       end)
       if entry ~= nil then
         tinsert(allKeys, insertIdx, entry)
