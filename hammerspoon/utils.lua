@@ -4280,7 +4280,7 @@ function loadStatusItemsAutosaveName(app)
   end
 
   local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
-  if OS_VERSION >= OS.Tahoe then
+  if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
     menuBarItems = tifilter(menuBarItems, function(item)
       return item.AXIdentifier ~= nil
     end)
