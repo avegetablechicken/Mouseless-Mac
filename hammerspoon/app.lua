@@ -6309,6 +6309,10 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["org.adblockplus.adblockplussafarimac"] = {
+    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"]
+  },
+
   ["com.better365.BetterAndBetterHelper"] = {
     ["preferencesInMenuBarMenu"] = {
       message = localizedMessage("Preferences"),
