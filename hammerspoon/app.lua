@@ -7439,7 +7439,8 @@ local function registerSingleWinFilterForApp(app, filter)
     if not element:isValid() then return end
 
     local action = function()
-      if win ~= nil and (allowURLs == nil or isWebsiteAllowed(win, allowURLs))
+      if win ~= nil and win:application() ~= nil
+          and (allowURLs == nil or isWebsiteAllowed(win, allowURLs))
           and ((allowSheet and win:role() == AX.Sheet)
             or (allowPopover and win:role() == AX.Popover)
             or windowFilter:isWindowAllowed(win))
