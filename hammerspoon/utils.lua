@@ -4389,7 +4389,7 @@ MENUBAR_MANAGER_SHOW = {
     if type(index) == 'string' then
       map = map or loadStatusItemsAutosaveName(app)
       index = map and map[index]
-      if index == nil then return false end
+      if index == nil then return true end
     end
     local iconAllwaysHidden = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 3)
     if iconAllwaysHidden == nil then
