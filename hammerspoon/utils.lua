@@ -4396,7 +4396,13 @@ MENUBAR_MANAGER_SHOW = {
       leftClickAndRestore(icon)
       return true
     end
-    local menuBarItem = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, index)
+    local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+    if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
+      menuBarItems = tifilter(menuBarItems, function(item)
+        return item.AXIdentifier ~= nil
+      end)
+    end
+    menuBarItem = menuBarItems[index]
     if menuBarItem.AXPosition.x > iconAllwaysHidden.AXPosition.x then
       leftClickAndRestore(icon)
     else
@@ -4439,8 +4445,13 @@ MENUBAR_MANAGER_SHOW = {
         hs.eventtap.event.newMouseEvent(
             hs.eventtap.event.types.mouseMoved, uioffset(icon, {-20, 10})):post()
         hs.timer.doAfter(3, function()
-          local menuBarItem = getc(toappui(app), AX.MenuBar, -1,
-              AX.MenuBarItem, index or 1)
+          local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+          if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
+            menuBarItems = tifilter(menuBarItems, function(item)
+              return item.AXIdentifier ~= nil
+            end)
+          end
+          menuBarItem = menuBarItems[index or 1]
           if menuBarItem then
             hs.timer.doAfter(0, bind(activateMenuBarItem, menuBarItem, click))
           end
@@ -4539,8 +4550,13 @@ function hiddenByMenuBarManager(app, index, map)
     index = map and map[index]
     if index == nil then return false end
   end
-  local menuBarItem = getc(toappui(app), AX.MenuBar, -1,
-      AX.MenuBarItem, index or 1)
+  local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+  if app:bundleID() == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
+    menuBarItems = tifilter(menuBarItems, function(item)
+      return item.AXIdentifier ~= nil
+    end)
+  end
+  menuBarItem = menuBarItems[index or 1]
   local leftmostHorizontal = 0
   foreach(hs.screen.allScreens(), function(screen)
     leftmostHorizontal = math.min(screen:fullFrame().x, leftmostHorizontal)
@@ -4574,8 +4590,13 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
     menuBarIdx = map and map[menuBarIdx]
     if menuBarIdx == nil then return false end
   end
-  local menuBarItem = getc(toappui(app), AX.MenuBar, -1,
-      AX.MenuBarItem, menuBarIdx or 1)
+  local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+  if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
+    menuBarItems = tifilter(menuBarItems, function(item)
+      return item.AXIdentifier ~= nil
+    end)
+  end
+  menuBarItem = menuBarItems[menuBarIdx or 1]
   if menuBarItem == nil then return false end
 
   if show then
