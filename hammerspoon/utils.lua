@@ -4371,7 +4371,12 @@ MENUBAR_MANAGER_SHOW = {
             AX.ScrollArea, 1, AX.Image)) do
           local title = button.AXAttributedDescription:getString()
           if title == hs.application.nameForBundleID(appid)
-              or title == app:name() then
+              or title == app:name()
+              -- `Ice` set the display name of "com.apple.Passwords.MenuBarExtra"
+              -- to "Passwords" (see in https://github.com/jordanbaird/Ice/blob/
+              -- main/Ice/MenuBar/MenuBarItems/MenuBarItem.swift)
+              or (appid == "com.apple.Passwords.MenuBarExtra"
+                  and title == "Passwords") then
             leftClickAndRestore(button, elem:asHSWindow(), 0.1)
             break
           end
