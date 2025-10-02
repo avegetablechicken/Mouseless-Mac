@@ -4389,6 +4389,7 @@ MENUBAR_MANAGER_SHOW = {
     local iconAllwaysHidden = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 3)
     if iconAllwaysHidden == nil then
       leftClickAndRestore(icon)
+      return true
     end
     local menuBarItem = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, index)
     if menuBarItem.AXPosition.x > iconAllwaysHidden.AXPosition.x then
