@@ -4362,11 +4362,46 @@ MENUBAR_MANAGER_SHOW = {
     end
 
     local app = find(appid)
+    if type(index) == 'string' then
+      map = map or loadStatusItemsAutosaveName(app)
+      index = map and map[index]
+      if index == nil then return true end
+    end
+    local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+    if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
+      menuBarItems = tifilter(menuBarItems, function(item)
+        return item.AXIdentifier ~= nil
+      end)
+    end
+    menuBarItem = menuBarItems[index]
+    local iconAllwaysHidden = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 3)
+    local indicesForHidden = {}
+    for i=1,#menuBarItems do
+      if i ~= index then
+        if iconAllwaysHidden == nil
+            or (menuBarItem.AXPosition.x > iconAllwaysHidden.AXPosition.x
+                and menuBarItems[i].AXPosition.x > iconAllwaysHidden.AXPosition.x)
+            or (menuBarItem.AXPosition.x < iconAllwaysHidden.AXPosition.x
+                and menuBarItems[i].AXPosition.x < iconAllwaysHidden.AXPosition.x) then
+          tinsert(indicesForHidden, menuBarItems[i].AXPosition.x)
+        end
+      end
+    end
+    local indexInHidden = #indicesForHidden + 1
+    table.sort(indicesForHidden)
+    for i, x in ipairs(indicesForHidden) do
+      if x > menuBarItem.AXPosition.x then
+        indexInHidden = i
+        break
+      end
+    end
+
     local observer = uiobserver.new(manager:pid())
     observer:addWatcher(toappui(manager), uinotifications.windowCreated)
     observer:callback(function(obs, elem)
       if not elem:isValid() then return end
       if elem.AXTitle == "Ice Bar" then
+        local count = 0
         for _, button in ipairs(getc(elem, AX.Group, 1,
             AX.ScrollArea, 1, AX.Image)) do
           local title = button.AXAttributedDescription:getString()
@@ -4377,8 +4412,11 @@ MENUBAR_MANAGER_SHOW = {
               -- main/Ice/MenuBar/MenuBarItems/MenuBarItem.swift)
               or (appid == "com.apple.Passwords.MenuBarExtra"
                   and title == "Passwords") then
-            leftClickAndRestore(button, elem:asHSWindow(), 0.1)
-            break
+            count = count + 1
+            if count == indexInHidden then
+              leftClickAndRestore(button, elem:asHSWindow(), 0.1)
+              break
+            end
           end
         end
       end
@@ -4386,24 +4424,8 @@ MENUBAR_MANAGER_SHOW = {
     end)
     observer:start()
 
-    if type(index) == 'string' then
-      map = map or loadStatusItemsAutosaveName(app)
-      index = map and map[index]
-      if index == nil then return true end
-    end
-    local iconAllwaysHidden = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 3)
-    if iconAllwaysHidden == nil then
-      leftClickAndRestore(icon)
-      return true
-    end
-    local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
-    if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
-      menuBarItems = tifilter(menuBarItems, function(item)
-        return item.AXIdentifier ~= nil
-      end)
-    end
-    menuBarItem = menuBarItems[index]
-    if menuBarItem.AXPosition.x > iconAllwaysHidden.AXPosition.x then
+    if iconAllwaysHidden == nil
+        or (menuBarItem.AXPosition.x > iconAllwaysHidden.AXPosition.x) then
       leftClickAndRestore(icon)
     else
       local oldPos = hs.mouse.absolutePosition()
