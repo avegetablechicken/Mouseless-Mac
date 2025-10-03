@@ -1565,7 +1565,8 @@ local function commonLocalizedMessage(message, params)
       end
       return message .. ' ' .. appname
     end
-  elseif message == "Back" or message == "Forward" then
+  elseif message == "Back" or message == "Forward"
+      or (message == "Zoom" and OS_VERSION >= OS.Tahoe) then
     return function(app)
       local appid = getAppId(app)
       params = params and tcopy(params) or {}
@@ -1573,8 +1574,9 @@ local function commonLocalizedMessage(message, params)
         params.locale = applicationValidLocale(appid)
       end
       if params.locale ~= nil then
-        local result = localizedString(message, 'com.apple.systempreferences',
-                                       params)
+        local targetAppId = message == "Zoom" and "com.apple.AppStore"
+            or "com.apple.systempreferences"
+        local result = localizedString(message, targetAppId, params)
         if result ~= nil then
           return result
         end
@@ -8040,15 +8042,8 @@ local function registerZoomHotkeys(app)
     if menuItem == nil then
       local localizedWindow = localizedMenuBarItem('Window', appid)
       local appLocale = applicationLocale(appid)
-      local localizedTitle
-      if title == 'Zoom' and OS_VERSION >= OS.Tahoe then
-        localizedTitle = localizedString(title, 'com.apple.AppStore')
-      else
-        localizedTitle = localizedString(title, {
-          locale = appLocale,
-          localeFile = 'MenuCommands', framework = "AppKit.framework",
-        })
-      end
+      local localizedTitle = commonLocalizedMessage(
+          'Zoom', { locale = appLocale })(app)
       if localizedTitle ~= nil then
         menuItemPath = { localizedWindow, localizedTitle }
         menuItem = app:findMenuItem(menuItemPath)
