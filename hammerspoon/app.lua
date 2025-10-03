@@ -7971,22 +7971,15 @@ local function registerOpenRecent(app)
   local menuItem = app:findMenuItem(menuItemPath)
   if menuItem == nil then
     if appid:sub(1, 10) == "com.apple." then
-      local appLocale = applicationLocale(appid)
       if localizedOpenRecent == nil then
-        localizedOpenRecent = localizedString('Open Recent', {
-          locale = appLocale,
-          localeFile = 'MenuCommands', framework = "AppKit.framework",
-        })
+        localizedOpenRecent = commonLocalizedMessage('Open Recent')(app)
       end
       menuItemPath = { localizedFile, localizedOpenRecent }
       menuItem = app:findMenuItem(menuItemPath)
       if menuItem == nil then
         local appLocale = applicationLocale(appid)
         if appLocale ~= SYSTEM_LOCALE and appLocale:sub(1, 2) ~= 'en' then
-          local localized = localizedString('Open Recent', {
-            locale = appLocale,
-            localeFile = 'MenuCommands', framework = "AppKit.framework",
-          })
+          local localized = commonLocalizedMessage('Open Recent')(app)
           menuItemPath = { localizedFile, localized }
         end
       end
