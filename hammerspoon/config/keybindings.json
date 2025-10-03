@@ -867,6 +867,14 @@
       "openFileLocation": {
         "mods": ["shift", "command"],
         "key": "O"
+      },
+      "prevInSettings": {
+        "mods": "command",
+        "key": "["
+      },
+      "nextInSettings": {
+        "mods": "command",
+        "key": "]"
       }
     },
     "com.apple.iWork.Keynote": {

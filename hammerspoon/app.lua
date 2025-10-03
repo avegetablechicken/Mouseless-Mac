@@ -2802,7 +2802,41 @@ appHotKeyCallbacks = {
           observer = nil
         end
       end
-    }
+    },
+    ["prevInSettings"] = {
+      message = commonLocalizedMessage("Back"),
+      windowFilter = {
+        allowRoles = AX.Dialog,
+        fn = function(win)
+          local winUI = towinui(win)
+          return getc(winUI, AX.Button, "Prev") ~= nil
+              and getc(winUI, AX.Button, "Next") ~= nil
+        end
+      },
+      condition = function(win)
+        local winUI = towinui(win)
+        local button = getc(winUI, AX.Button, "Prev")
+        return button ~= nil, button
+      end,
+      fn = press
+    },
+    ["nextInSettings"] = {
+      message = commonLocalizedMessage("Forward"),
+      windowFilter = {
+        allowRoles = AX.Dialog,
+        fn = function(win)
+          local winUI = towinui(win)
+          return getc(winUI, AX.Button, "Prev") ~= nil
+              and getc(winUI, AX.Button, "Next") ~= nil
+        end
+      },
+      condition = function(win)
+        local winUI = towinui(win)
+        local button = getc(winUI, AX.Button, "Next")
+        return button ~= nil, button
+      end,
+      fn = press
+    },
   },
 
   ["com.apple.iWork.Keynote"] =
