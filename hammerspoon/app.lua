@@ -1563,12 +1563,12 @@ local function commonLocalizedMessage(message)
       end
       return message .. ' ' .. appname
     end
-  elseif message == "Back" then
+  elseif message == "Back" or message == "Forward" then
     return function(app)
       local appid = getAppId(app)
       local appLocale = applicationValidLocale(appid)
       if appLocale ~= nil then
-        local result = localizedString(message, 'com.apple.AppStore',
+        local result = localizedString(message, 'com.apple.systempreferences',
                                        { locale = appLocale })
         if result ~= nil then
           return result
