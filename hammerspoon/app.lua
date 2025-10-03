@@ -2839,6 +2839,10 @@ appHotKeyCallbacks = {
     },
   },
 
+  ["cn.wps.yunboxtool"] = {
+    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"]
+  },
+
   ["com.apple.iWork.Keynote"] =
   {
     ["exportToPDF"] = {  -- File > Export To > PDF…
