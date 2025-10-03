@@ -8143,6 +8143,23 @@ local specialToolbarButtons = {
       end
     end
   end,
+  ["com.kingsoft.wpsoffice.mac"] = function(winUI)
+    local lastText = 1
+    for i=#winUI,1,-1 do
+      if winUI[i].AXRole == AX.StaticText then
+        lastText = i break
+      end
+    end
+    local buttons = {}
+    for i=lastText+1,#winUI do
+      if winUI[i].AXRole == AX.Button then
+        tinsert(buttons, winUI[i])
+      elseif #buttons > 1 then
+        break
+      end
+    end
+    return buttons
+  end,
   ["org.klatexformula.klatexformula"] = function(winUI)
     local buttons = {}
     local found = false
