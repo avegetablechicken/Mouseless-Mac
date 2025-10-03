@@ -7071,13 +7071,11 @@ local function wrapCondition(obj, config, mode)
         func(o)
       end
       return true
-    elseif result == CF.leftMenubarItemSelected then
-      selectMenuItemOrKeyStroke(app, mods, key)
-      return true
     elseif result == CF.rightMenubarItemSelected then
       safeGlobalKeyStroke(mods, key)
       return true
-    elseif result == CF.nonEmptyTextFieldFocused then
+    elseif result == CF.leftMenubarItemSelected
+        or result == CF.nonEmptyTextFieldFocused then
       hs.eventtap.keyStroke(mods, key, nil, app)
       return true
     elseif result == CF.uIElementNotFocused then
