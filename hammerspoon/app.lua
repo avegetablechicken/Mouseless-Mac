@@ -7044,8 +7044,11 @@ local function wrapCondition(obj, config, mode)
   end
 
   if obj == nil or obj.asHSApplication == nil then
-    -- if a menu is extended, hotkeys with no modifiers are disabled
-    if mods == nil or mods == "" or #mods == 0 then
+    -- if a menu is extended, hotkeys with no modifiers or only 'shift' are disabled
+    -- currently allow hotkeys with 'option' or 'shift'+'option' as modifiers
+    if mods == nil or #mods == 0
+        or (type(mods) == 'string' and mods:lower() == 'shift')
+        or (type(mods) == 'table' and #mods == 1 and mods[1]:lower() == 'shift') then
       cond = noFocusedNonEmptyTextFieldFunc(noSelectedLeftMenuBarItemFunc(cond))
     end
     -- send key strokes to system focused UI element instead of this obj
