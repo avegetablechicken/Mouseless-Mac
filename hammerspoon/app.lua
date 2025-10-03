@@ -1708,16 +1708,6 @@ local function receiveMenuItem(menuItemTitle, app)
   app:selectMenuItem(menuItemTitle)
 end
 
--- send key strokes to the app. but if the key binding is found, select corresponding menu item
-local function selectMenuItemOrKeyStroke(app, mods, key)
-  local menuItemPath, enabled = findMenuItemByKeyBinding(app, mods, key)
-  if menuItemPath ~= nil and enabled then
-    app:selectMenuItem(menuItemPath)
-  else
-    hs.eventtap.keyStroke(mods, key, nil, app)
-  end
-end
-
 
 -- ## hotkey configs for apps
 
@@ -7015,12 +7005,15 @@ local function wrapConditionChain(app, fn, mode, config)
       cb = cb.previous
     end
     local mods, key = config.mods, config.key
-    if menuItemNotFound then
-      hs.eventtap.keyStroke(mods, key, nil, app)
-    else
+    if not menuItemNotFound then
       -- most of the time, directly selecting menu item costs less time than key strokes
-      selectMenuItemOrKeyStroke(app, mods, key)
+      local menuItemPath, enabled = findMenuItemByKeyBinding(app, mods, key)
+      if menuItemPath ~= nil and enabled then
+        app:selectMenuItem(menuItemPath)
+        return
+      end
     end
+    hs.eventtap.keyStroke(mods, key, nil, app)
   end
 end
 
@@ -7083,7 +7076,7 @@ local function wrapCondition(obj, config, mode)
       return true
     elseif result == CF.uIElementNotFocused then
       local focusedApp = hs.axuielement.systemWideElement().AXFocusedApplication
-      selectMenuItemOrKeyStroke(focusedApp:asHSApplication(), mods, key)
+      hs.eventtap.keyStroke(mods, key, nil, focusedApp:asHSApplication())
       return true
     end
     return false, result
