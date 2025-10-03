@@ -914,7 +914,7 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
   local Ipv4State = NetworkWatcher
       :contents("State:/Network/Global/IPv4")
       ["State:/Network/Global/IPv4"]
-  local enabledProxy, enabledMode = "", nil
+  local enabledProxy, enabledMode
   if Ipv4State ~= nil then
     local curNetID = Ipv4State["PrimaryService"]
     tinsert(NetworkMonitorKeys, "Setup:/Network/Service/" .. curNetID .. "/Proxies")
