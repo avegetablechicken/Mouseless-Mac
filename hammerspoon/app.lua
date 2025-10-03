@@ -1546,16 +1546,18 @@ local function getAppId(app)
   end
 end
 
-local function commonLocalizedMessage(message)
+local function commonLocalizedMessage(message, params)
   if message == "Hide" or message == "Quit" then
     return function(app)
       local appname = displayName(app.application and app:application() or app)
       local appid = getAppId(app)
-      local appLocale = applicationValidLocale(appid)
-      if appLocale ~= nil then
+      params = params and tcopy(params) or {}
+      if params.locale == nil then
+        params.locale = applicationValidLocale(appid)
+      end
+      if params.locale ~= nil then
         local result = localizedString(message .. ' App Store',
-                                       'com.apple.AppStore',
-                                       { locale = appLocale })
+                                       'com.apple.AppStore', params)
         if result ~= nil then
           result = result:gsub('App Store', appname)
           return result
@@ -1566,10 +1568,13 @@ local function commonLocalizedMessage(message)
   elseif message == "Back" or message == "Forward" then
     return function(app)
       local appid = getAppId(app)
-      local appLocale = applicationValidLocale(appid)
-      if appLocale ~= nil then
+      params = params and tcopy(params) or {}
+      if params.locale == nil then
+        params.locale = applicationValidLocale(appid)
+      end
+      if params.locale ~= nil then
         local result = localizedString(message, 'com.apple.systempreferences',
-                                       { locale = appLocale })
+                                       params)
         if result ~= nil then
           return result
         end
@@ -1579,14 +1584,16 @@ local function commonLocalizedMessage(message)
   else
     return function(app)
       local appid = getAppId(app)
-      local appLocale = applicationValidLocale(appid)
-      if appLocale ~= nil then
+      params = params and tcopy(params) or {}
+      if params.locale == nil then
+        params.locale = applicationValidLocale(appid)
+      end
+      if params.locale ~= nil then
+        params.framework = "AppKit.framework"
         for i, stem in ipairs{ 'MenuCommands', 'Menus', 'Common' } do
+          params.localeFile = stem
           local retry = i > 1
-          local result = localizedString(message, {
-            locale = appLocale, localeFile = stem,
-            framework = "AppKit.framework"
-          }, retry)
+          local result = localizedString(message, params, retry)
           if result ~= nil then
             result = result:gsub('“%%@”', ''):gsub('%%@', '')
             return result
