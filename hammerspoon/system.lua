@@ -1045,7 +1045,6 @@ local function bindControlCenterURL(panel, func)
   controlCenterPanelFuncs[panel] = func
 end
 
-local controlCenterIdentifiers = hs.json.read("static/controlcenter-identifies.json")
 local defaultMusicAppForControlCenter
 defaultMusicAppForControlCenter = ApplicationConfigs["defaultMusicAppForControlCenter"]
 
@@ -1072,25 +1071,25 @@ local function controlCenterLocalized(panel, key)
   return result
 end
 
-local function testAlready(panel, pane, ident, role)
+local function testAlready(panel, pane, role)
+  local locPanel = controlCenterLocalized(panel)
+
   if role == nil then
     if tcontain({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop",
                   "Keyboard Brightness", "Screen Mirroring",
-                  "Accessibility Shortcuts", "Battery" }, panel) then
-      role = AX.StaticText
+                  "Accessibility Shortcuts", "Battery",
+                  "Sound", "Hearing" }, panel) then
+      local elem = getc(pane, AX.StaticText, 1)
+      return elem and elem.AXValue == locPanel
     elseif panel == "Display" then
       local sa = getc(pane, OS_VERSION < OS.Ventura and AX.ScrollArea or AX.Group, 1)
-      if sa == nil then
-        return false
-      else
-        role = getc(sa, AX.Slider)
-      end
-    elseif panel == "Sound" then
-      role = AX.Slider
+      local elem = getc(sa, AX.DisclosureTriangle, 1)
+      local title = elem and (elem.AXTitle or elem.AXAttributedDescription:getString())
+      return elem and title == locPanel
     elseif panel == "Recognize Music" or panel == "Music Recognition" then
-      role = AX.Group
-    elseif panel == "Hearing" then
-      role = AX.StaticText
+      local elem = getc(pane, AX.Group, 1, AX.Group, 1, AX.CheckBox, 1)
+      local title = elem and (elem.AXTitle or elem.AXAttributedDescription:getString())
+      return elem and title:match('^'..locPanel)
     elseif panel == "Now Playing" then
       if OS_VERSION < OS.Ventura then
         local mayLocalize = bind(controlCenterLocalized, "Now Playing")
@@ -1107,21 +1106,13 @@ local function testAlready(panel, pane, ident, role)
     end
   end
 
-  local elems = role
-  if type(role) == 'string' then
-    elems = getc(pane, role)
-  end
-  for _, ele in ipairs(elems or {}) do
-    if ele.AXIdentifier ~= nil
-        and ele.AXIdentifier:find(ident:gsub('%-', '%%-')) then
-      return true
-    end
-  end
-  return false
+  return tfind(getc(pane, role) or {}, function(elem)
+    local title = elem.AXTitle or elem.AXAttributedDescription:getString()
+    if title == locPanel then return true end
+  end) ~= nil
 end
 
 local function popupControlCenterSubPanel(panel, allowReentry)
-  local ident = controlCenterIdentifiers[panel]
   local app = find("com.apple.controlcenter")
   local appUI = toappui(app)
   local pane
@@ -1187,10 +1178,15 @@ local function popupControlCenterSubPanel(panel, allowReentry)
 
     local ele
     local totalDelay = 0
+    local locPanel = controlCenterLocalized(panel)
     repeat
       ele = tfind(getc(pane, role), function(e)
-        return e.AXIdentifier ~= nil
-            and e.AXIdentifier:find(ident:gsub('%-', '%%-')) ~= nil
+        if role == AX.StaticText then
+          return e.AXValue == locPanel
+        else
+          local title = e.AXTitle or e.AXAttributedDescription:getString()
+          return title == locPanel
+        end
       end)
       if ele == nil then
         hs.timer.usleep(0.05 * 1000000)
@@ -1214,14 +1210,12 @@ local function popupControlCenterSubPanel(panel, allowReentry)
         pane = pane[1]
       end
     end
-    local wifiIdent = controlCenterIdentifiers["Wi‑Fi"]
-    local bluetoothIdent = controlCenterIdentifiers["Bluetooth"]
-    if testAlready("Wi‑Fi", pane, wifiIdent, AX.CheckBox)
-        and testAlready("Bluetooth", pane, bluetoothIdent, AX.CheckBox) then
+    if testAlready("Wi‑Fi", pane, AX.CheckBox)
+        and testAlready("Bluetooth", pane, AX.CheckBox) then
       enterPanel()
       registerControlCenterHotKeys(panel)
       return
-    elseif testAlready(panel, pane, ident) and not allowReentry then
+    elseif testAlready(panel, pane) and not allowReentry then
       return
     end
   end
@@ -1244,10 +1238,9 @@ local function popupControlCenterSubPanel(panel, allowReentry)
                           {}, OS_VERSION >= OS.Tahoe and "click" or nil)
     registerControlCenterHotKeys(panel, true)
   else
-    local ident = controlCenterIdentifiers["Control Center"]
     local menuBarItem = tfind(menuBarItems,
       function(item)
-        return item.AXIdentifier:find(ident) ~= nil
+        return item.AXIdentifier == "com.apple.menuextra.controlcenter"
       end)
     menuBarItem:performAction(AX.Press)
     pane = getc(appUI, AX.Window, 1)
@@ -1384,10 +1377,9 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         backgroundSoundsHotkeys = nil
       end
 
-      local ident = controlCenterIdentifiers["Control Center"]
       local menuBarItem = tfind(getc(appUI, AX.MenuBar, -1, AX.MenuBarItem),
         function(item)
-          return item.AXIdentifier:find(ident) ~= nil
+          return item.AXIdentifier == "com.apple.menuextra.controlcenter"
         end)
       menuBarItem:performAction(AX.Press)
     end)
@@ -1602,8 +1594,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
           or pane[1] == nil or pane[1].AXIdentifier == nil then
         return
       end
-      local ident = controlCenterIdentifiers[panel]
-      if pane[1].AXIdentifier:find(ident:gsub('%-', '%%-')) == nil then
+      if pane[1].AXValue ~= controlCenterLocalized(panel) then
         return
       end
       local sa
@@ -1716,8 +1707,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
             or pane[1] == nil or pane[1].AXIdentifier == nil then
           return
         end
-        local ident = controlCenterIdentifiers[panel]
-        if pane[1].AXIdentifier:find(ident:gsub('%-', '%%-')) == nil then
+        if pane[1].AXValue ~= controlCenterLocalized(panel) then
           return
         end
         local index
@@ -2311,8 +2301,8 @@ local function getActiveControlCenterPanel()
     pane = getc(pane, AX.Group, 1)
   end
 
-  for panel, ident in pairs(controlCenterIdentifiers) do
-    if testAlready(panel, pane, ident) then
+  for _, panel in pairs(controlCenterPanels) do
+    if testAlready(panel, pane) then
       return panel
     end
   end
