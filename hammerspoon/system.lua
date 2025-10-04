@@ -1120,7 +1120,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
   local appUI = toappui(app)
   local pane
 
-  local function enterPanel()
+  local function enterPanel()  -- assume in BentoBox-0 since macOS Tahoe
     local role, index
     if tcontain({ "Wi‑Fi", "Focus",
                   "Bluetooth", "AirDrop",
