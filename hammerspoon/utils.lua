@@ -4084,6 +4084,7 @@ function applicationValidLocale(appid)
       end
     end
   end
+  if resourceDir == nil then return end
   local locale = getMatchedLocale(appid, appLocale,
       resourceDir, framework, appLocaleDir)
   return locale
