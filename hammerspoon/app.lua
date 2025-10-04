@@ -8342,7 +8342,7 @@ local function registerObserverForSettingsMenuItem(app)
     end
   end)
   observer:start()
-  stopOnDeactivated(app:bundleID(), observer)
+  stopOnDeactivated(app:bundleID() or app:name(), observer)
 end
 
 -- fixme: menuItemSelected event seems to escape for menu item in right
