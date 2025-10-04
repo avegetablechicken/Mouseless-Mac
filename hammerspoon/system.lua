@@ -1102,7 +1102,9 @@ local function testAlready(panel, pane, role)
         return pane and #getc(pane, AX.Image) > 0 and #getc(pane, AX.Button) > 2
       end
     elseif panel == "Users" then
-      return #pane == #getc(pane, AX.Button)
+      local elem = pane[#pane]
+      local title = elem.AXTitle or elem.AXAttributedDescription:getString()
+      return title == controlCenterLocalized(panel, "Users & Groups Settings…")
     end
   end
 
