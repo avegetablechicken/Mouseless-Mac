@@ -1092,7 +1092,7 @@ local function testAlready(panel, pane, role)
       return elem and title:match('^'..locPanel)
     elseif panel == "Now Playing" then
       if OS_VERSION < OS.Ventura then
-        local mayLocalize = bind(controlCenterLocalized, "Now Playing")
+        local mayLocalize = bind(controlCenterLocalized, panel)
         return getc(pane, AX.Button, mayLocalize("rewind")) ~= nil
             or getc(pane, AX.Button, mayLocalize("previous")) ~= nil
             or (#getc(pane, AX.Button, mayLocalize("play"))
