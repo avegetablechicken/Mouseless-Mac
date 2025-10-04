@@ -1099,7 +1099,7 @@ local function testAlready(panel, pane, role)
               + #getc(pane, AX.Button, mayLocalize("pause"))) > 1
       else
         if OS_VERSION >= OS.Tahoe then pane = getc(pane, AX.Group, 1) end
-        return pane and #getc(pane, AX.Button) > 2
+        return pane and #getc(pane, AX.Button) > 1
             and (#getc(pane, AX.Image) > 0 or pane[1].AXRole == AX.Unknown)
       end
     elseif panel == "Users" then
@@ -2121,22 +2121,21 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     hearingFunc()
   elseif panel == "Now Playing" then
     local result
-    local button3
+    local button2
     repeat
       hs.timer.usleep(0.05 * 1000000)
       if OS_VERSION >= OS.Tahoe then
-        button3 = getc(pane, AX.Group, 1, AX.Button, 3)
+        button2 = getc(pane, AX.Group, 1, AX.Button, 2)
       else
-        button3 = getc(pane, AX.Button, 3)
+        button2 = getc(pane, AX.Button, 2)
       end
-    until button3 or not pane:isValid()
-    if button3 then
-      if OS_VERSION >= OS.Tahoe then
-        pane = getc(pane, AX.Group, 1)
-      end
+    until button2 or not pane:isValid()
+    if button2 then
       if OS_VERSION < OS.Ventura then
         result = tmap(getc(pane, AX.Button),
             function(bt) return bt.AXTitle end)
+      elseif OS_VERSION >= OS.Tahoe then
+        result = #getc(pane, AX.Group, 1, AX.Button)
       else
         result = #getc(pane, AX.Button)
       end
@@ -2199,14 +2198,26 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         else
           nEntries = #result / 2
         end
-        local hotkey
         for i = 1, nEntries do
           local buttonLabel = mayLocalize("play")
               .. "/" .. mayLocalize("pause")
-          hotkey = newControlCenter("", tostring(i),
+          local hotkey = newControlCenter("", tostring(i),
             type(result) == "number" and buttonLabel or result[2*i-1],
             function()
               local button = getc(pane, AX.Button, 2 * i - 1)
+              if button then button:performAction(AX.Press) end
+            end)
+          if not checkAndRegisterControlCenterHotKeys(hotkey) then
+            return
+          end
+        end
+      elseif result == 2 then
+        for i, g in ipairs(getc(pane, AX.Group)) do
+          local buttonLabel = mayLocalize("play")
+              .. "/" .. mayLocalize("pause")
+          local hotkey = newControlCenter("", tostring(i), buttonLabel,
+            function()
+              local button = getc(g, AX.Button, 1)
               if button then button:performAction(AX.Press) end
             end)
           if not checkAndRegisterControlCenterHotKeys(hotkey) then
