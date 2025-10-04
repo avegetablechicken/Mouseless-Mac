@@ -8117,11 +8117,27 @@ local specialToolbarButtons = {
   ["com.apple.TextEdit"] = getTabGroupButtons,
   ["org.xquartz.X11"] = getTabGroupButtons,
   ["com.apple.FaceTime"] = waitForSettings(),
-  ["com.torusknot.SourceTreeNotMAS"] = waitForSettings(
-    function(winUI)
-      return getToolbarButtons(winUI), true
+  ["com.torusknot.SourceTreeNotMAS"] = function(winUI)
+    local fn = getToolbarButtons
+    local buttons = fn(winUI)
+    if #buttons == 0 or tfind(buttons, function(bt)
+        return bt.AXTitle == winUI.AXTitle end) == nil then
+      local app = getAppFromDescendantElement(winUI)
+      local totalDelay = 0
+      local maxWaitTime = 0.1
+      repeat
+        hs.timer.usleep(10000)
+        totalDelay = totalDelay + 0.01
+        local win = app:focusedWindow()
+        if win == nil then return {} end
+        winUI = towinui(win)
+        buttons = fn(winUI)
+      until (#buttons > 0 and tfind(buttons, function(bt)
+            return bt.AXTitle == winUI.AXTitle end) ~= nil)
+          or totalDelay > maxWaitTime
     end
-  ),
+    return buttons, true
+  end,
   ["com.superace.updf.mac"] = function(winUI)
     local buttons = {}
     for _, elem in ipairs(winUI) do
