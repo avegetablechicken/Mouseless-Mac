@@ -1228,7 +1228,13 @@ local function popupControlCenterSubPanel(panel, allowReentry)
 
   local locPanel = controlCenterLocalized(panel)
   local index
-  for i, elem in ipairs(getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)) do
+  local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+  if OS_VERSION >= OS.Tahoe then
+    menuBarItems = tifilter(menuBarItems, function(item)
+      return item.AXIdentifier ~= nil
+    end)
+  end
+  for i, elem in ipairs(menuBarItems) do
     if elem.AXDescription and elem.AXDescription:find(locPanel) then
       index = i break
     end
@@ -1239,7 +1245,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     registerControlCenterHotKeys(panel, true)
   else
     local ident = controlCenterIdentifiers["Control Center"]
-    local menuBarItem = tfind(getc(appUI, AX.MenuBar, -1, AX.MenuBarItem),
+    local menuBarItem = tfind(menuBarItems,
       function(item)
         return item.AXIdentifier:find(ident) ~= nil
       end)
