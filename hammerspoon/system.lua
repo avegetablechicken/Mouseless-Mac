@@ -1099,7 +1099,8 @@ local function testAlready(panel, pane, role)
               + #getc(pane, AX.Button, mayLocalize("pause"))) > 1
       else
         if OS_VERSION >= OS.Tahoe then pane = getc(pane, AX.Group, 1) end
-        return pane and #getc(pane, AX.Image) > 0 and #getc(pane, AX.Button) > 2
+        return pane and #getc(pane, AX.Button) > 2
+            and (#getc(pane, AX.Image) > 0 or pane[1].AXRole == AX.Unknown)
       end
     elseif panel == "Users" then
       local elem = pane[#pane]
