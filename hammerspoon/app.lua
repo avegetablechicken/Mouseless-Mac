@@ -9993,10 +9993,12 @@ function App_applicationCallback(appname, eventType, app)
       HSKeybindings:update(validOnly, showCustom, showApp, true)
     end
     local frontApp = hs.application.frontmostApplication()
-    local frontAppID = frontApp:bundleID() or frontApp:name()
-    if remoteDesktopsMappingModifiers[frontAppID] == nil then
-      if RemoteDesktopModifierTapper:isEnabled() then
-        RemoteDesktopModifierTapper:stop()
+    if frontApp then
+      local frontAppID = frontApp:bundleID() or frontApp:name()
+      if remoteDesktopsMappingModifiers[frontAppID] == nil then
+        if RemoteDesktopModifierTapper:isEnabled() then
+          RemoteDesktopModifierTapper:stop()
+        end
       end
     end
   end
