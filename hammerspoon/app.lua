@@ -1203,11 +1203,73 @@ end
 local iceBarWindowFilter = { allowTitles = "^Ice Bar$" }
 local function getIceBarItemTitle(index)
   return function(win)
-    local button = getc(towinui(win), AX.Group, 1,
-        AX.ScrollArea, 1, AX.Image, index)
-    if button then
-      return button.AXAttributedDescription:getString()
+    if winBuf.IceBarItemNames == nil then
+      local winUI = towinui(win)
+      winBuf:register(winUI, 'IceBarItemNames', {})
+      local buttons = getc(winUI, AX.Group, 1,
+          AX.ScrollArea, 1, AX.Image) or {}
+      local alwaysHiddenBar = false
+      for _, button in ipairs(buttons) do
+        local appname = button.AXAttributedDescription:getString()
+        local hint = appname
+        if hint == "Passwords" then
+          hint = "com.apple.Passwords.MenuBarExtra"
+        end
+        local app = find(hint, true)
+        if app then
+          local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+          local alWaysHiddenMenuBarItems = {}
+          local iconAlwaysHidden = getc(toappui(win:application()),
+              AX.MenuBar, -1, AX.MenuBarItem, 3)
+          if iconAlwaysHidden then
+            alWaysHiddenMenuBarItems = tifilter(menuBarItems, function(item)
+              return item.AXPosition.x < iconAlwaysHidden.AXPosition.x
+            end)
+          end
+          if #alWaysHiddenMenuBarItems == #menuBarItems then
+            alwaysHiddenBar = true
+            break
+          end
+        end
+      end
+      for i, button in ipairs(buttons) do
+        local appname = button.AXAttributedDescription:getString()
+        local hint = appname
+        if hint == "Passwords" then
+          hint = "com.apple.Passwords.MenuBarExtra"
+        end
+        local msg = appname
+        local app = find(hint, true)
+        if app then
+          msg = app:name()
+          local indicesForHidden = {}
+          for j, bt in ipairs(buttons) do
+            if bt.AXAttributedDescription:getString() == appname then
+              tinsert(indicesForHidden, j)
+            end
+          end
+          local thisIndex = tindex(indicesForHidden, i)
+          local map = loadStatusItemsAutosaveName(app)
+          if map then
+            local iconAlwaysHidden = getc(toappui(win:application()),
+                AX.MenuBar, -1, AX.MenuBarItem, 3)
+            local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+            if iconAlwaysHidden and not alwaysHiddenBar then
+              local alWaysHiddenMenuBarItems = tifilter(menuBarItems, function(item)
+                return item.AXPosition.x < iconAlwaysHidden.AXPosition.x
+              end)
+              thisIndex = thisIndex + #alWaysHiddenMenuBarItems
+            end
+            local autosaveName = map[thisIndex]
+            if not (autosaveName == "Item-0" and #menuBarItems == 1) then
+              msg = msg..'-'..autosaveName
+            end
+          end
+        end
+        tinsert(winBuf.IceBarItemNames, msg)
+      end
     end
+    return winBuf.IceBarItemNames[index]
   end
 end
 
