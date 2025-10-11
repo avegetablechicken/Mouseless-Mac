@@ -1034,8 +1034,10 @@ end
 
 local controlCenterPanelFuncs = {}
 hs.urlevent.bind("controlcenter", function(eventName, params)
-  if params["panel"] == "Music Recognition" then
+  if params["panel"] == "Music Recognition" and OS_VERSION >= OS.Tahoe then
     params["panel"] = "Recognize Music"
+  elseif params["panel"] == "Recognize Music" and OS_VERSION < OS.Tahoe then
+    params["panel"] = "Music Recognition"
   end
   local fn = controlCenterPanelFuncs[params["panel"]]
   if fn then fn() end
@@ -1083,12 +1085,23 @@ local function testAlready(panel, pane, role)
       return elem and elem.AXValue == locPanel
     elseif panel == "Display" then
       local sa = getc(pane, OS_VERSION < OS.Ventura and AX.ScrollArea or AX.Group, 1)
-      local elem = getc(sa, AX.DisclosureTriangle, 1)
-      local title = elem and (elem.AXTitle or elem.AXAttributedDescription:getString())
-      return elem and title == locPanel
+      local title
+      if OS_VERSION >= OS.Tahoe then
+        local elem = getc(sa, AX.DisclosureTriangle, 1)
+        title = elem and elem.AXAttributedDescription:getString()
+      else
+        local elem = getc(sa, AX.StaticText, 1)
+        title = elem and elem.AXValue
+      end
+      return title == locPanel
     elseif panel == "Recognize Music" or panel == "Music Recognition" then
       local elem = getc(pane, AX.Group, 1, AX.Group, 1, AX.CheckBox, 1)
-      local title = elem and (elem.AXTitle or elem.AXAttributedDescription:getString())
+      local title
+      if elem and elem.AXTitle then
+        title = elem.AXTitle
+      elseif elem and elem.AXAttributedDescription then
+        title = elem.AXAttributedDescription:getString()
+      end
       return elem and title:match('^'..locPanel)
     elseif panel == "Now Playing" then
       if OS_VERSION < OS.Ventura then
@@ -1104,14 +1117,19 @@ local function testAlready(panel, pane, role)
       end
     elseif panel == "Users" then
       local elem = pane[#pane]
-      local title = elem.AXTitle or elem.AXAttributedDescription:getString()
+      local title
+      if elem and elem.AXTitle then
+        title = elem.AXTitle
+      elseif elem and elem.AXAttributedDescription then
+        title = elem.AXAttributedDescription:getString()
+      end
       return title == controlCenterLocalized(panel, "Users & Groups Settings…")
     end
   end
 
   return tfind(getc(pane, role) or {}, function(elem)
-    local title = elem.AXTitle or elem.AXAttributedDescription:getString()
-    if title == locPanel then return true end
+    return elem.AXTitle == locPanel
+        or elem.AXAttributedDescription:getString():match('^'..locPanel)
   end) ~= nil
 end
 
@@ -1184,11 +1202,14 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     local locPanel = controlCenterLocalized(panel)
     repeat
       ele = tfind(getc(pane, role), function(e)
-        if role == AX.StaticText then
+        if role == AX.Group then
+          local elem = getc(e, AX.StaticText, 1)
+          return elem and elem.AXValue == locPanel
+        elseif role == AX.StaticText then
           return e.AXValue == locPanel
         else
-          local title = e.AXTitle or e.AXAttributedDescription:getString()
-          return title == locPanel
+          return e.AXTitle == locPanel
+              or e.AXAttributedDescription:getString():match('^'..locPanel)
         end
       end)
       if ele == nil then
