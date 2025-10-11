@@ -4060,6 +4060,11 @@ appHotKeyCallbacks = {
               and winUI[2].AXRole == AX.Button
               and winUI[3].AXRole == AX.Button
               and winUI[3].AXEnabled
+          else
+            local title = localizedString("Send To", win)
+            local text = getc(winUI, AX.StaticText, 1)
+            return text and text.AXValue == title
+                and winUI[#winUI].AXRole == AX.Button
           end
         end
       },
