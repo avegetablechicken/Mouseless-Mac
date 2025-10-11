@@ -1047,9 +1047,6 @@ local function bindControlCenterURL(panel, func)
   controlCenterPanelFuncs[panel] = func
 end
 
-local defaultMusicAppForControlCenter
-defaultMusicAppForControlCenter = ApplicationConfigs["defaultMusicAppForControlCenter"]
-
 local function controlCenterLocalized(panel, key)
   if key == nil then
     key = panel
@@ -2172,6 +2169,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         local hotkey
         hotkey = newControlCenter("", "Space", result[2],
           function()
+            local defaultMusicAppForControlCenter =
+                ApplicationConfigs["defaultMusicAppForControlCenter"]
             if defaultMusicAppForControlCenter ~= nil then
               local appname = displayName('com.apple.Music')
               local appTitle = getc(pane, AX.StaticText, 1)
