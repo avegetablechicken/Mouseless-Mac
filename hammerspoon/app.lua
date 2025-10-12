@@ -4227,24 +4227,18 @@ appHotKeyCallbacks = {
     },
     ["playBarCloseSingleSong"] = {
       message = "关闭单曲",
-      condition = function(app)
-        if app:focusedWindow() == nil then return false end
-        if versionLessThan("9")(app) then
-          local winUI = towinui(app:focusedWindow())
-          local buttons = getc(winUI, AX.Button)
-          return #buttons > 4 and getc(winUI, AX.Button, '歌曲详情') ~= nil
-        else
-          if #app:visibleWindows() < 2 then return false end
-          local fWin, mWin = app:focusedWindow(), app:mainWindow()
-          local fFrame, mFrame = fWin:frame(), mWin:frame()
-          return fWin:id() ~= mWin:id()
+      windowFilter = {
+        allowRoles = AX.Unknown,
+        fn = function(win)
+          local mWin = win:application():mainWindow()
+          local fFrame, mFrame = win:frame(), mWin:frame()
+          return win:id() ~= mWin:id()
               and fFrame.x == mFrame.x and fFrame.y == mFrame.y
               and fFrame.w == mFrame.w and fFrame.h == mFrame.h
         end
-      end,
-      fn = function(app)
-        local winUI = towinui(app:focusedWindow())
-        local buttons = getc(winUI, AX.Button)
+      },
+      fn = function(win)
+        local buttons = getc(towinui(win), AX.Button)
         buttons[#buttons - 2]:performAction(AX.Press)
       end
     }
