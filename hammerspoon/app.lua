@@ -4168,16 +4168,18 @@ appHotKeyCallbacks = {
   {
     ["back"] = {
       message = "后退",
-      condition = function(app)
-        if app:focusedWindow() == nil then return false end
+      windowFilter = {
+        allowRoles = AX.StandardWindow,
+        allowTitles = "^$"
+      },
+      condition = function(win)
         local titleBar
-        if versionLessThan("10.3.0")(app) then
-          local appUI = toappui(app)
-          local frame = app:focusedWindow():frame()
+        if versionLessThan("10.3.0")(win:application()) then
+          local appUI = toappui(win:application())
+          local frame = win:frame()
           titleBar = appUI:elementAtPosition(frame.x + 100, frame.y + 10)
         else
-          local winUI = towinui(app:focusedWindow())
-          titleBar = getc(winUI, AX.Unknown, 3)
+          titleBar = getc(towinui(win), AX.Unknown, 3)
           if titleBar == nil then return false end
         end
         for _, button in ipairs(titleBar) do
@@ -4188,22 +4190,24 @@ appHotKeyCallbacks = {
         return false
       end,
       repeatable = true,
-      fn = function(button, app)
-        leftClickAndRestore(button, app, 0.1)
+      fn = function(button, win)
+        leftClickAndRestore(button, win, 0.1)
       end
     },
     ["forward"] = {
       message = "前进",
-      condition = function(app)
-        if app:focusedWindow() == nil then return false end
+      windowFilter = {
+        allowRoles = AX.StandardWindow,
+        allowTitles = "^$"
+      },
+      condition = function(win)
         local titleBar
-        if versionLessThan("10.3.0")(app) then
-          local appUI = toappui(app)
-          local frame = app:focusedWindow():frame()
+        if versionLessThan("10.3.0")(win:application()) then
+          local appUI = toappui(win:application())
+          local frame = win:frame()
           titleBar = appUI:elementAtPosition(frame.x + 100, frame.y + 10)
         else
-          local winUI = towinui(app:focusedWindow())
-          titleBar = getc(winUI, AX.Unknown, 3)
+          titleBar = getc(towinui(win), AX.Unknown, 3)
           if titleBar == nil then return false end
         end
         for _, button in ipairs(titleBar) do
@@ -4214,22 +4218,24 @@ appHotKeyCallbacks = {
         return false
       end,
       repeatable = true,
-      fn = function(button, app)
-        leftClickAndRestore(button, app, 0.1)
+      fn = function(button, win)
+        leftClickAndRestore(button, win, 0.1)
       end
     },
     ["refresh"] = {
       message = "刷新",
-      condition = function(app)
-        if app:focusedWindow() == nil then return false end
+      windowFilter = {
+        allowRoles = AX.StandardWindow,
+        allowTitles = "^$"
+      },
+      condition = function(win)
         local titleBar
-        if versionLessThan("10.3.0")(app) then
-          local appUI = toappui(app)
-          local frame = app:focusedWindow():frame()
+        if versionLessThan("10.3.0")(win:application()) then
+          local appUI = toappui(win:application())
+          local frame = win:frame()
           titleBar = appUI:elementAtPosition(frame.x + 100, frame.y + 10)
         else
-          local winUI = towinui(app:focusedWindow())
-          titleBar = getc(winUI, AX.Unknown, 3)
+          titleBar = getc(towinui(win), AX.Unknown, 3)
           if titleBar == nil then return false end
         end
         local refreshButton, searchButton
@@ -4244,8 +4250,8 @@ appHotKeyCallbacks = {
             and refreshButton.AXPosition.x ~= searchButton.AXPosition.x,
             refreshButton
       end,
-      fn = function(button, app)
-        leftClickAndRestore(button, app, 0.1)
+      fn = function(button, win)
+        leftClickAndRestore(button, win, 0.1)
       end
     },
     ["playBarCloseSingleSong"] = {
