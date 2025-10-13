@@ -2305,6 +2305,7 @@ local function extractWeChatSegments(cacheDir)
   end
 end
 
+-- seems it only works before edition 4.1
 local function localizeWeChat(str, appLocale)
   local appid = 'com.tencent.xinWeChat'
   local tmpBaseDir = localeTmpDir .. appid
@@ -3462,6 +3463,7 @@ local function delocalizeSteam(str, appLocale, locale)
   return nil, locale
 end
 
+-- seems it only works before edition 4.1
 local function delocalizeWeChat(str, appLocale)
   local appid = 'com.tencent.xinWeChat'
   local tmpBaseDir = localeTmpDir .. appid
