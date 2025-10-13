@@ -32,7 +32,12 @@
   "com.tencent.qq": {
     "切换全屏": "Toggle fullscreen"
   },
-  "com.tencent.yuanbao": [{}, {
+  "com.tencent.xinWeChat": {
+    "显示": "Show"
+  },
+  "com.tencent.yuanbao": [{
+    "显示": "Display"
+  }, {
     "Settings": "设置",
     "New Chat": "新建对话",
     "Enter Temporary Chat": "进入临时对话",
