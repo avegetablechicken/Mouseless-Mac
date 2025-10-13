@@ -3904,7 +3904,7 @@ appHotKeyCallbacks = {
         local app = win:application()
         if versionLessThan("4")(app) then
           local frame = win:frame()
-          local position = { frame.x + frame.w - 60, frame.y + 23 }
+          local position = uioffset(frame, { frame.w - 60, 23 })
           leftClickAndRestore(position, win)
           return
         end
@@ -4177,7 +4177,7 @@ appHotKeyCallbacks = {
         if versionLessThan("10.3.0")(win:application()) then
           local appUI = toappui(win:application())
           local frame = win:frame()
-          titleBar = appUI:elementAtPosition(frame.x + 100, frame.y + 10)
+          titleBar = appUI:elementAtPosition(uioffset(frame, { 100, 10 }))
         else
           titleBar = getc(towinui(win), AX.Unknown, 3)
           if titleBar == nil then return false end
@@ -4205,7 +4205,7 @@ appHotKeyCallbacks = {
         if versionLessThan("10.3.0")(win:application()) then
           local appUI = toappui(win:application())
           local frame = win:frame()
-          titleBar = appUI:elementAtPosition(frame.x + 100, frame.y + 10)
+          titleBar = appUI:elementAtPosition(uioffset(frame, { 100, 10 }))
         else
           titleBar = getc(towinui(win), AX.Unknown, 3)
           if titleBar == nil then return false end
@@ -4233,7 +4233,7 @@ appHotKeyCallbacks = {
         if versionLessThan("10.3.0")(win:application()) then
           local appUI = toappui(win:application())
           local frame = win:frame()
-          titleBar = appUI:elementAtPosition(frame.x + 100, frame.y + 10)
+          titleBar = appUI:elementAtPosition(uioffset(frame, { 100, 10 }))
         else
           titleBar = getc(towinui(win), AX.Unknown, 3)
           if titleBar == nil then return false end
