@@ -2275,13 +2275,15 @@ local function extractWeChatSegments(cacheDir)
     if pos then
       local s, e
       for i=pos-1,2,-1 do
-        if data:byte(i-1) == 0 and data:byte(i) == 0 then
+        if data:sub(i-1,i-1):match('%c') ~= nil and data:sub(i-1,i-1):match('%s') == nil
+            and data:sub(i,i):match('%c') ~= nil and data:sub(i,i):match('%s') == nil then
           s = i + 1
           break
         end
       end
       for i=pos+1,data:len()-1 do
-        if data:byte(i) == 0 and data:byte(i+1) == 0 then
+        if data:sub(i,i):match('%c') ~= nil and data:sub(i,i):match('%s') == nil
+            and data:sub(i+1,i+1):match('%c') ~= nil and data:sub(i+1,i+1):match('%s') == nil then
           e = i - 1
           break
         end
