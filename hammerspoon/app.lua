@@ -3755,7 +3755,9 @@ appHotKeyCallbacks = {
         if versionLessThan("4")(win:application()) then
           return localizedString("Chats.Menu.Hide", win)
         else
-          return localizedString("Hide", win)
+          local title = localizedString("Hide", win)
+          if type(title) == 'table' then title = title[#title] end
+          return title
         end
       end,
       bindCondition = versionLessThan("4.0.6"),
@@ -3826,6 +3828,7 @@ appHotKeyCallbacks = {
                 uioffset(chat.AXPosition, { 1, 1 }))
             if menu and menu.AXRole == AX.Menu then
               local title = localizedString("Hide", app)
+              if type(title) == 'table' then title = title[#title] end
               local hide = getc(menu, AX.MenuItem, title)
               if hide then leftClickAndRestore(hide, app) end
             end
@@ -4062,9 +4065,17 @@ appHotKeyCallbacks = {
               and winUI[3].AXEnabled
           else
             local title = localizedString("Send To", win)
-            local text = getc(winUI, AX.StaticText, 1)
-            return text and text.AXValue == title
-                and winUI[#winUI].AXRole == AX.Button
+            if type(title) ~= 'table' then
+              title = { title }
+            end
+            for _, t in ipairs(title) do
+              local text = getc(winUI, AX.StaticText, 1)
+              if text and text.AXValue == t
+                  and winUI[#winUI].AXRole == AX.Button then
+                return true
+              end
+            end
+            return false
           end
         end
       },
@@ -4094,10 +4105,16 @@ appHotKeyCallbacks = {
           local bt = getc(winUI, AX.Button, title)
           if bt == nil then
             title = localizedString("Send To (%d)", win)
-            title = title:gsub("%(%%d%)", "%%(%%d%%)")
-            bt = tfind(getc(winUI, AX.Button), function(b)
-              return b.AXTitle:match(title)
-            end)
+            if type(title) ~= 'table' then
+              title = { title }
+            end
+            for _, t in ipairs(title) do
+              t = t:gsub("%(%%d%)", "%%(%%d%%)")
+              bt = tfind(getc(winUI, AX.Button), function(b)
+                return b.AXTitle:match(t)
+              end)
+              if bt then break end
+            end
           end
           return bt ~= nil
         end
@@ -4108,10 +4125,16 @@ appHotKeyCallbacks = {
         local bt = getc(towinui(win), AX.Button, title)
         if bt == nil then
           title = localizedString("Send To (%d)", win)
-          title = title:gsub("%(%%d%)", "%%(%%d%%)")
-          bt = tfind(getc(winUI, AX.Button), function(b)
-            return b.AXTitle:match(title)
-          end)
+          if type(title) ~= 'table' then
+            title = { title }
+          end
+          for _, t in ipairs(title) do
+            t = t:gsub("%(%%d%)", "%%(%%d%%)")
+            bt = tfind(getc(winUI, AX.Button), function(b)
+              return b.AXTitle:match(t)
+            end)
+            if bt then break end
+          end
         end
         if bt and bt.AXEnabled then
           -- `WeChat` accessibility bug

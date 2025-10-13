@@ -32,14 +32,9 @@
   "com.tencent.qq": {
     "切换全屏": "Toggle fullscreen"
   },
-  "com.tencent.xinWeChat": [{
+  "com.tencent.xinWeChat": {
     "显示": "Show"
-  }, {
-    "Hide": "不显示",
-    "Send": "发送",
-    "Send To": "发送给",
-    "Send To (%d)": "分别发送(%d)"
-  }],
+  },
   "com.tencent.yuanbao": [{
     "显示": "Display"
   }, {

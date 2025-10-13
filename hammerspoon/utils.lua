@@ -2258,6 +2258,143 @@ local function localizeSteam(str, appLocale, locale)
   return nil, locale
 end
 
+local WeChatLocales = { "en", "zh_CN", "zh_TW" }
+local function extractWeChatSegments(cacheDir)
+  local appid = 'com.tencent.xinWeChat'
+  mkdir(cacheDir)
+  local executable = hs.application.infoForBundleID(appid).CFBundleExecutable
+  executable = hs.application.pathForBundleID(appid)
+      .. '/Contents/MacOS/' .. executable
+  local file = io.open(executable, "rb")
+  if not file then return end
+  local data = file:read("*all")
+  file:close()
+  local pos = 0
+  for _=1,#WeChatLocales do
+    pos = data:find('Copyright © 2011%-2025 Tencent%. All Rights Reserved%.', pos + 1)
+    if pos then
+      local s, e
+      for i=pos-1,2,-1 do
+        if data:byte(i-1) == 0 and data:byte(i) == 0 then
+          s = i + 1
+          break
+        end
+      end
+      for i=pos+1,data:len()-1 do
+        if data:byte(i) == 0 and data:byte(i+1) == 0 then
+          e = i - 1
+          break
+        end
+      end
+      if s and e then
+        local chunk = data:sub(s, e):gsub('%z', '\n')
+        local locale
+        if chunk:find('騰訊') then locale = 'zh_TW'
+        elseif chunk:find('腾讯') then locale = 'zh_CN'
+        else locale = 'en' end
+        local localeFile = cacheDir .. '/' .. locale .. '.txt'
+        local f = io.open(localeFile, "w")
+        if f then
+          f:write(chunk)
+          f:close()
+        end
+      end
+    end
+  end
+end
+
+local function localizeWeChat(str, appLocale)
+  local appid = 'com.tencent.xinWeChat'
+  local tmpBaseDir = localeTmpDir .. appid
+  local locale = matchLocale(appLocale, WeChatLocales)
+  if locale == 'en' then return str end
+  local localeFile = tmpBaseDir .. '/' .. locale .. '.txt'
+  local enLocaleFile = tmpBaseDir .. '/en.txt'
+  if not exists(localeFile) or not exists(enLocaleFile) then
+    extractWeChatSegments(tmpBaseDir)
+  end
+  local file = io.open(localeFile, "r")
+  if not file then return end
+  local data = file:read("*all")
+  file:close()
+  local strings = strsplit(data, '\n')
+  local indices = {}
+  for i, s in ipairs(strings) do
+    if s:find('%%d') then
+      tinsert(indices, i)
+    end
+  end
+  local enFile = io.open(enLocaleFile, "r")
+  if not enFile then return end
+  local enData = enFile:read("*all")
+  enFile:close()
+  local enStrings = strsplit(enData, '\n')
+  local enIndices = {}
+  for i, s in ipairs(enStrings) do
+    if s:find('%%d') then
+      tinsert(enIndices, i)
+    end
+  end
+  if #indices ~= #enIndices then return end
+  local localized = {}
+  for i, s in ipairs(enStrings) do
+    if s == str then
+      local gIndex = #enIndices
+      for k, ind in ipairs(enIndices) do
+        if ind > i then
+          gIndex = k - 1
+          break
+        end
+      end
+
+      local newIndices = {}
+      for j=indices[gIndex] or 1,indices[gIndex+1] or #strings do
+        if strings[j]:find('%%s') then
+          tinsert(newIndices, j)
+        end
+      end
+      local newEnIndices = {}
+      for j=enIndices[gIndex] or 1,enIndices[gIndex+1] or #enStrings do
+        if enStrings[j]:find('%%s') then
+          tinsert(newEnIndices, j)
+        end
+      end
+      if #newIndices ~= #newEnIndices or #newIndices == 0 then
+        local start = enIndices[gIndex] or 1
+        local end_ = enIndices[gIndex+1] or #enStrings
+        if i*2 > start + end_ then
+          tinsert(localized, strings[(indices[gIndex+1] or #strings) + i - end_])
+        else
+          tinsert(localized, strings[(indices[gIndex] or 1) + i - start])
+        end
+      else
+        local newGIndex = #newEnIndices
+        for k, ind in ipairs(newEnIndices) do
+          if ind > i then
+            newGIndex = k - 1
+            break
+          end
+        end
+
+        local start = newEnIndices[newGIndex] or enIndices[gIndex] or 1
+        local end_ = newEnIndices[newGIndex+1] or enIndices[gIndex+1] or #enStrings
+        if i*2 > start + end_ then
+          tinsert(localized,
+              strings[(newIndices[newGIndex+1] or indices[gIndex+1] or #strings) + i - end_])
+        else
+          tinsert(localized,
+              strings[(newIndices[newGIndex] or indices[gIndex] or 1) + i - start])
+        end
+      end
+    end
+  end
+  if #localized <= 1 then
+    return localized[1], locale
+  else
+    return localized, locale
+  end
+end
+
 local appLocaleDir = {}
 local localeMatchTmpFile = localeTmpDir .. 'map.json'
 if exists(localeMatchTmpFile) then
@@ -2337,6 +2474,9 @@ local function localizedStringImpl(str, appid, params, force)
     return result, appLocale, locale
   elseif appid == "com.kingsoft.wpsoffice.mac" then
     result, locale = localizeWPS(str, appLocale, localeFile)
+    return result, appLocale, locale
+  elseif appid == "com.tencent.xinWeChat" and applicationVersion(appid) >= 4 then
+    result, locale = localizeWeChat(str, appLocale)
     return result, appLocale, locale
   end
 
