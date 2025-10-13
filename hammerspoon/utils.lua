@@ -3460,6 +3460,98 @@ local function delocalizeSteam(str, appLocale, locale)
   return nil, locale
 end
 
+local function delocalizeWeChat(str, appLocale)
+  local appid = 'com.tencent.xinWeChat'
+  local tmpBaseDir = localeTmpDir .. appid
+  local locale = matchLocale(appLocale, WeChatLocales)
+  if locale == 'en' then return str end
+  local localeFile = tmpBaseDir .. '/' .. locale .. '.txt'
+  local enLocaleFile = tmpBaseDir .. '/en.txt'
+  if not exists(localeFile) or not exists(enLocaleFile) then
+    extractWeChatSegments(tmpBaseDir)
+  end
+  local file = io.open(localeFile, "r")
+  if not file then return end
+  local data = file:read("*all")
+  file:close()
+  local strings = strsplit(data, '\n')
+  local indices = {}
+  for i, s in ipairs(strings) do
+    if s:find('%%d') then
+      tinsert(indices, i)
+    end
+  end
+  local enFile = io.open(enLocaleFile, "r")
+  if not enFile then return end
+  local enData = enFile:read("*all")
+  enFile:close()
+  local enStrings = strsplit(enData, '\n')
+  local enIndices = {}
+  for i, s in ipairs(enStrings) do
+    if s:find('%%d') then
+      tinsert(enIndices, i)
+    end
+  end
+  if #indices ~= #enIndices then return end
+  local delocalized = {}
+  for i, s in ipairs(strings) do
+    if s == str then
+      local gIndex = #indices
+      for k, ind in ipairs(indices) do
+        if ind > i then
+          gIndex = k - 1
+          break
+        end
+      end
+
+      local newIndices = {}
+      for j=indices[gIndex] or 1,indices[gIndex+1] or #strings do
+        if strings[j]:find('%%s') then
+          tinsert(newIndices, j)
+        end
+      end
+      local newEnIndices = {}
+      for j=enIndices[gIndex] or 1,enIndices[gIndex+1] or #enStrings do
+        if enStrings[j]:find('%%s') then
+          tinsert(newEnIndices, j)
+        end
+      end
+      if #newIndices ~= #newEnIndices or #newIndices == 0 then
+        local start = indices[gIndex] or 1
+        local end_ = indices[gIndex+1] or #strings
+        if i*2 > start + end_ then
+          tinsert(delocalized, enStrings[(enIndices[gIndex+1] or #enStrings) + i - end_])
+        else
+          tinsert(delocalized, enStrings[(enIndices[gIndex] or 1) + i - start])
+        end
+      else
+        local newGIndex = #newIndices
+        for k, ind in ipairs(newIndices) do
+          if ind > i then
+            newGIndex = k - 1
+            break
+          end
+        end
+
+        local start = newIndices[newGIndex] or indices[gIndex] or 1
+        local end_ = newIndices[newGIndex+1] or indices[gIndex+1] or #strings
+        if i*2 > start + end_ then
+          tinsert(delocalized,
+              enStrings[(newEnIndices[newGIndex+1] or enIndices[gIndex+1] or #enStrings) + i - end_])
+        else
+          tinsert(delocalized,
+              enStrings[(newEnIndices[newGIndex] or enIndices[gIndex] or 1) + i - start])
+        end
+      end
+    end
+  end
+  if #delocalized <= 1 then
+    return delocalized[1], locale
+  else
+    return delocalized, locale
+  end
+end
+
 local function delocalizeMATLABFigureMenu(str, appLocale)
   local resourceDir = hs.application.pathForBundleID("com.mathworks.matlab")
                       .. "/resources/MATLAB"
@@ -3539,6 +3631,9 @@ local function delocalizedStringImpl(str, appid, params, force)
     return result, appLocale, locale
   elseif appid == "com.kingsoft.wpsoffice.mac" then
     result, locale = delocalizeWPS(str, appLocale, localeFile)
+    return result, appLocale, locale
+  elseif appid == "com.tencent.xinWeChat" and applicationVersion(appid) >= 4 then
+    result, locale = delocalizeWeChat(str, appLocale)
     return result, appLocale, locale
   end
 
