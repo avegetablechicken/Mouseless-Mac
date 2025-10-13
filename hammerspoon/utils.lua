@@ -4188,7 +4188,9 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
       local delocTitle
       if titleMap[title] ~= nil then
         delocTitle = titleMap[title]
-      elseif defaultTitleMap ~= nil and defaultTitleMap[title] ~= nil then
+      elseif defaultTitleMap ~= nil and defaultTitleMap[title] ~= nil
+          and (appid:sub(1, 10) == "com.apple."
+               or defaultTitleMap[title] ~= "View") then
         delocTitle = defaultTitleMap[title]
         titleMap[title] = delocTitle
       elseif localeFile == nil then
@@ -4200,6 +4202,11 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
         titleMap[title] = delocTitle
       else
         delocTitle = delocalizedString(title, appid, localeFile)
+        titleMap[title] = delocTitle
+      end
+      if delocTitle == nil and appid:sub(1, 10) ~= "com.apple."
+          and defaultTitleMap ~= nil and defaultTitleMap[title] == "View" then
+        delocTitle = defaultTitleMap[title]
         titleMap[title] = delocTitle
       end
       if delocTitle ~= nil then
