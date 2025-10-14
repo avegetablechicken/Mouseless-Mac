@@ -669,6 +669,12 @@
         "key": "S"
       }
     },
+    "com.apple.iCal": {
+      "toggleCalendarList": {
+        "mods": ["control", "command"],
+        "key": "S"
+      }
+    },
     "com.apple.games": {
       "back": {
         "mods": "command",

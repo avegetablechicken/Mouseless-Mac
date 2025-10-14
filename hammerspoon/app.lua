@@ -2102,6 +2102,16 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["com.apple.iCal"] =
+  {
+    ["toggleCalendarList"] = {
+      message = localizedMessage("Show Calendar List"),
+      condition = checkMenuItem({ "View", "Show Calendar List" },
+                                { "View", "Hide Calendar List" }),
+      fn = receiveMenuItem
+    }
+  },
+
   ["com.apple.games"] = {
     ["back"] = {
       message = commonLocalizedMessage("Back"),
