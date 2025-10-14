@@ -8830,6 +8830,10 @@ local function processInvalidAltMenu(app, reinvokeKey)
   hs.json.write(json, appsMayChangeMenuBarTmpFile, false, true)
 end
 
+local specialLocalizedCommonMenuBarTitle = {
+  ["com.tencent.xinWeChat"] = { View = "Show" },
+  ["com.tencent.yuanbao"] = { View = "Display" },
+}
 local function altMenuBarItem(app, reinvokeKey)
   -- delete previous hotkeys
   for _, hotkey in ipairs(altMenuBarItemHotkeys) do
@@ -8983,6 +8987,14 @@ local function altMenuBarItem(app, reinvokeKey)
 
     -- process localized titles
     local itemLocTitles = delocalizeMenuBarItems(itemTitles, appid)
+    local specialMap = specialLocalizedCommonMenuBarTitle[appid]
+    if specialMap then
+      for _, title in ipairs(itemLocTitles) do
+        if specialMap[title[2]] then
+          title[2] = specialMap[title[2]]
+        end
+      end
+    end
     if #itemTitles ~= #itemLocTitles then
       if appid == "com.tencent.xinWeChat" then
         local exBundleID = versionLessThan("4")(app)
