@@ -1443,11 +1443,13 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     repeat
       hs.timer.usleep(0.05 * 1000000)
       totalDelay = totalDelay + 0.05
-      checkbox = tfind(getc(appUI, AX.Window, 1, AX.CheckBox), function(cb)
+      local cbs = getc(appUI, AX.Window, 1, AX.CheckBox) or {}
+      checkbox = tfind(cbs, function(cb)
         return cb.AXIdentifier ~= nil and cb.AXIdentifier:find("%-header") ~= nil
       end)
       if checkbox == nil then
-        checkbox = tfind(getc(appUI, AX.Window, 1, AX.Group, 1, AX.CheckBox), function(cb)
+        cbs = getc(appUI, AX.Window, 1, AX.Group, 1, AX.CheckBox) or {}
+        checkbox = tfind(cbs, function(cb)
           return cb.AXIdentifier ~= nil and cb.AXIdentifier:find("%-header") ~= nil
         end)
       end
