@@ -4596,7 +4596,7 @@ MENUBAR_MANAGER_SHOW = {
     local useIceBar = hs.execute(strfmt([[
       defaults read "%s" UseIceBar | tr -d '\n'
     ]], manager:bundleID()))
-    if useIceBar == "0" then
+    if useIceBar ~= "1" then
       leftClickAndRestore(icon)
       return false
     end
