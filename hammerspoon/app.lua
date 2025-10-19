@@ -1045,7 +1045,8 @@ local function getBartenderBarItemTitle(index, rightClick)
       local appnames = tmap(getc(icons, AX.Group), function(g)
         return getc(g, AX.Image, 1).AXDescription
       end)
-      if #appnames > 0 then
+      if #appnames == 0 then return end
+      if versionLessThan("6")(win:application()) then
         local app = win:application()
         local appid = app:bundleID()
         local _, items = hs.osascript.applescript(strfmt([[
@@ -1106,6 +1107,63 @@ local function getBartenderBarItemTitle(index, rightClick)
             tinsert(winBuf.bartenderBarItemIDs, i)
           end
         end
+      elseif #appnames > 0 then
+        winBuf:register(winUI, 'bartenderBarItemNames', {})
+        winBuf:register(winUI, 'bartenderBarItemIDs', {})
+        local alwaysHiddenBar = false
+        for _, appname in ipairs(appnames) do
+          local hint = appname
+          if hint == "Passwords" then
+            hint = "com.apple.Passwords.MenuBarExtra"
+          end
+          local app = find(hint, true)
+          if app then
+            local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+            local iconAlwaysHiddenPosition = -7000
+            local alWaysHiddenMenuBarItems = tifilter(menuBarItems, function(item)
+              return item.AXPosition.x < iconAlwaysHiddenPosition
+            end)
+            if #alWaysHiddenMenuBarItems == #menuBarItems then
+              alwaysHiddenBar = true
+              break
+            end
+          end
+        end
+        for i, appname in ipairs(appnames) do
+          local msg = appname
+          local hint = appname
+          if hint == "Passwords" then
+            hint = "com.apple.Passwords.MenuBarExtra"
+          end
+          local app = find(hint, true)
+          if app then
+            msg = app:name()
+            local indicesForHidden = {}
+            for j, name in ipairs(appnames) do
+              if name == appname then
+                tinsert(indicesForHidden, j)
+              end
+            end
+            local thisIndex = tindex(indicesForHidden, i)
+            local map = loadStatusItemsAutosaveName(app)
+            if map then
+              local iconAlwaysHiddenPosition = -7000
+              local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+              if not alwaysHiddenBar then
+                local alWaysHiddenMenuBarItems = tifilter(menuBarItems, function(item)
+                  return item.AXPosition.x < iconAlwaysHiddenPosition
+                end)
+                thisIndex = thisIndex + #alWaysHiddenMenuBarItems
+              end
+              local autosaveName = map[thisIndex]
+              if not (autosaveName == "Item-0" and #menuBarItems == 1) then
+                msg = msg..'-'..autosaveName
+              end
+            end
+            tinsert(winBuf.bartenderBarItemNames, msg)
+            tinsert(winBuf.bartenderBarItemIDs, i)
+          end
+        end
       end
     end
     if winBuf.bartenderBarItemNames ~= nil and index <= #winBuf.bartenderBarItemNames then
@@ -1143,13 +1201,34 @@ local function clickBartenderBarItem(index, rightClick)
   end
 end
 
+local BartenderMainWindowFilter = {}
+onRunning("com.surteesstudios.Bartender", function(app)
+  if versionLessThan("6")(app) then
+    BartenderMainWindowFilter.allowTitles = app:name()
+  else
+    BartenderMainWindowFilter.fn = function(win)
+      return getc(towinui(win), AX.Group, 1, AX.SplitGroup, 1,
+          AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1) ~= nil
+    end
+  end
+end)
+
 local function getBartenderSidebarItemTitle(index)
   return function(win)
     local winUI = towinui(win)
-    local row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
-        AX.Outline, 1, AX.Row, index, AX.Cell, 1, AX.StaticText, 1)
-    if row ~= nil then
-      return row.AXValue
+    if versionLessThan("6")(win:application()) then
+      local row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
+          AX.Outline, 1, AX.Row, index, AX.Cell, 1, AX.StaticText, 1)
+      if row ~= nil then
+        return row.AXValue
+      end
+    else
+      local row = getc(winUI, AX.Group, 1, AX.SplitGroup, 1,
+          AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index,
+          AX.Cell, 1, AX.Unknown, 1)
+      if row ~= nil then
+        return row.AXAttributedDescription:getString()
+      end
     end
   end
 end
@@ -1157,9 +1236,16 @@ end
 local function clickBartenderSidebarItem(index)
   return function(win)
     local winUI = towinui(win)
-    local row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
-        AX.Outline, 1, AX.Row, index)
-    if row then row.AXSelected = true end
+    if versionLessThan("6")(win:application()) then
+      local row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
+          AX.Outline, 1, AX.Row, index, AX.Cell, 1, AX.StaticText, 1)
+      if row then row.AXSelected = true end
+    else
+      local row = getc(winUI, AX.Group, 1, AX.SplitGroup, 1,
+          AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index,
+        AX.Cell, 1, AX.Unknown, 1)
+      if row then press(row) end
+    end
   end
 end
 
@@ -4786,6 +4872,7 @@ appHotKeyCallbacks = {
   {
     ["toggleMenuBar"] = {
       message = "Toggle Menu Bar",
+      bindCondition = versionLessThan("6"),
       kind = HK.MENUBAR,
       background = true,
       fn = function(app)
@@ -4916,6 +5003,7 @@ appHotKeyCallbacks = {
     },
     ["searchMenuBar"] = {
       message = "Search Menu Bar",
+      bindCondition = versionLessThan("6"),
       kind = HK.MENUBAR,
       background = true,
       fn = function(app)
@@ -4929,6 +5017,7 @@ appHotKeyCallbacks = {
       kind = HK.MENUBAR,
       background = true,
       bindCondition = function(app)
+        if versionGreaterEqual("6") then return false end
         -- the property update in command line is not working
         local _, ok = hs.execute(strfmt(
             "defaults read '%s' hotkeyKeyboardNav", app:bundleID()))
@@ -4947,59 +5036,70 @@ appHotKeyCallbacks = {
     ["view1"] =
     {
       message = getBartenderSidebarItemTitle(1),
-      windowFilter = { allowTitles = "^Bartender 5$" },
+      windowFilter = BartenderMainWindowFilter,
       fn = clickBartenderSidebarItem(1)
     },
     ["view2"] =
     {
       message = getBartenderSidebarItemTitle(2),
-      windowFilter = { allowTitles = "^Bartender 5$" },
+      windowFilter = BartenderMainWindowFilter,
       fn = clickBartenderSidebarItem(2)
     },
     ["view3"] =
     {
       message = getBartenderSidebarItemTitle(3),
-      windowFilter = { allowTitles = "^Bartender 5$" },
+      windowFilter = BartenderMainWindowFilter,
       fn = clickBartenderSidebarItem(3)
     },
     ["view4"] =
     {
       message = getBartenderSidebarItemTitle(4),
-      windowFilter = { allowTitles = "^Bartender 5$" },
+      windowFilter = BartenderMainWindowFilter,
       fn = clickBartenderSidebarItem(4)
     },
     ["view5"] =
     {
       message = getBartenderSidebarItemTitle(5),
-      windowFilter = { allowTitles = "^Bartender 5$" },
+      windowFilter = BartenderMainWindowFilter,
       fn = clickBartenderSidebarItem(5)
     },
     ["view6"] =
     {
       message = getBartenderSidebarItemTitle(6),
-      windowFilter = { allowTitles = "^Bartender 5$" },
+      windowFilter = BartenderMainWindowFilter,
       fn = clickBartenderSidebarItem(6)
     },
     ["view7"] =
     {
       message = getBartenderSidebarItemTitle(7),
-      windowFilter = { allowTitles = "^Bartender 5$" },
+      windowFilter = BartenderMainWindowFilter,
       fn = clickBartenderSidebarItem(7)
     },
     ["view8"] =
     {
       message = getBartenderSidebarItemTitle(8),
-      windowFilter = { allowTitles = "^Bartender 5$" },
+      windowFilter = BartenderMainWindowFilter,
       fn = clickBartenderSidebarItem(8)
     },
     ["view9"] =
     {
       message = getBartenderSidebarItemTitle(9),
-      windowFilter = { allowTitles = "^Bartender 5$" },
+      windowFilter = BartenderMainWindowFilter,
       fn = clickBartenderSidebarItem(9)
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
-    ["minimize"] = specialCommonHotkeyConfigs["minimize"],
+    ["minimize"] = {
+      mods = specialCommonHotkeyConfigs["minimize"].mods,
+      key = specialCommonHotkeyConfigs["minimize"].key,
+      message = commonLocalizedMessage("Minimize"),
+      bindCondition = versionLessThan("6"),
+      condition = function(app)
+        local win = app:focusedWindow()
+        return win ~= nil and win:role() == AX.Window, win
+      end,
+      repeatable = true,
+      fn = function(win) win:minimize() end
+    },
     ["quit"] = specialCommonHotkeyConfigs["quit"],
     ["hide"] = specialCommonHotkeyConfigs["hide"],
   },

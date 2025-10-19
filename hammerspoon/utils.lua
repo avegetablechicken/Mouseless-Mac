@@ -4571,10 +4571,104 @@ MENUBAR_MANAGER_SHOW = {
       map = map or loadStatusItemsAutosaveName(find(appid))
       index = map and map[index] or "Item-" .. tostring(index - 1)
     end
-    local clickMode = click == "right-click" and " with right click" or ""
-    hs.osascript.applescript(strfmt([[
-      tell application id "%s" to activate "%s-%s"%s
-    ]], manager:bundleID(), appid, index, clickMode))
+    if applicationVersion(manager:bundleID()) < 6 then
+      local clickMode = click == "right-click" and " with right click" or ""
+      hs.osascript.applescript(strfmt([[
+        tell application id "%s" to activate "%s-%s"%s
+      ]], manager:bundleID(), appid, index, clickMode))
+      return true
+    end
+
+    local icon = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, "Bartender")
+    if icon == nil then return end
+    local useBartenderBar = hs.execute(strfmt([[
+      defaults read "%s" UseBartenderBar | tr -d '\n'
+    ]], manager:bundleID()))
+    if useBartenderBar ~= "1" then
+      leftClickAndRestore(icon)
+      return false
+    end
+
+    local app = find(appid)
+    if type(index) == 'string' then
+      map = map or loadStatusItemsAutosaveName(app)
+      index = map and map[index]
+      if index == nil then return true end
+    end
+    local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+    if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
+      menuBarItems = tifilter(menuBarItems, function(item)
+        return item.AXIdentifier ~= nil
+      end)
+    end
+    menuBarItem = menuBarItems[index]
+    local indicesForHidden = {}
+    local iconAllwaysHiddenPosition = -7000
+    for i=1,#menuBarItems do
+      if i ~= index then
+        if (menuBarItem.AXPosition.x > iconAllwaysHiddenPosition
+                and menuBarItems[i].AXPosition.x > iconAllwaysHiddenPosition)
+            or (menuBarItem.AXPosition.x < iconAllwaysHiddenPosition
+                and menuBarItems[i].AXPosition.x < iconAllwaysHiddenPosition) then
+          tinsert(indicesForHidden, menuBarItems[i].AXPosition.x)
+        end
+      end
+    end
+    local indexInHidden = #indicesForHidden + 1
+    table.sort(indicesForHidden)
+    for i, x in ipairs(indicesForHidden) do
+      if x > menuBarItem.AXPosition.x then
+        indexInHidden = i
+        break
+      end
+    end
+
+    local observer = uiobserver.new(manager:pid())
+    observer:addWatcher(toappui(manager), uinotifications.windowCreated)
+    observer:callback(function(obs, elem)
+      if not elem:isValid() then return end
+      if elem.AXTitle == "Bartender Bar" then
+        local icons = getc(elem, AX.ScrollArea, 1, AX.List, 1, AX.List, 1)
+        local appnames = tmap(getc(icons, AX.Group), function(g)
+          return getc(g, AX.Image, 1).AXDescription
+        end)
+        local count = 0
+        for i, title in ipairs(appnames) do
+          if title == hs.application.nameForBundleID(appid)
+              or title == app:name()
+              or (appid == "com.apple.Passwords.MenuBarExtra"
+                  and title == "Passwords") then
+            count = count + 1
+            if count == indexInHidden then
+              leftClickAndRestore(getc(icons, AX.Group, i), elem:asHSWindow(), 0.1)
+              break
+            end
+          end
+        end
+      end
+      obs:stop() obs = nil
+    end)
+    observer:start()
+
+    if menuBarItem.AXPosition.x > iconAllwaysHiddenPosition then
+      leftClickAndRestore(icon)
+    else
+      local oldPos = hs.mouse.absolutePosition()
+      point = hs.geometry.point {
+        icon.AXPosition.x + icon.AXSize.w / 2,
+        icon.AXPosition.y + icon.AXSize.h / 2
+      }
+      hs.mouse.absolutePosition(point)
+
+      hs.eventtap.event.newMouseEvent(
+          hs.eventtap.event.types.leftMouseDown, point, {"alt"}):post()
+      hs.timer.usleep(0.05 * 1000000)
+      hs.eventtap.event.newMouseEvent(
+          hs.eventtap.event.types.leftMouseUp, point, {"alt"}):post()
+
+      hs.mouse.absolutePosition(oldPos)
+    end
+
     return true
   end,
 
