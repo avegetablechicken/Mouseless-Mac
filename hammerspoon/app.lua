@@ -7865,7 +7865,7 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
   end
 end
 
-local function registerSingleWinFilterForDaemonApp(app, filter)
+local function registerSingleWinFilterForDaemonApp(app, filter, retry)
   local appid = app:bundleID() or app:name()
   for f, _ in pairs(DaemonAppFocusedWindowObservers[appid] or {}) do
     -- a window filter can be shared by multiple hotkeys
@@ -7876,6 +7876,14 @@ local function registerSingleWinFilterForDaemonApp(app, filter)
 
   local appUI = toappui(app)
   local observer = uiobserver.new(app:pid())
+  if not tcontain(appUI:attributeNames() or {}, "AXFocusedWindow") then
+    retry = retry and retry + 1 or 1
+    if not FLAGS["Loading"] and retry <= 3 then
+      hs.timer.doAfter(1,
+          bind(registerSingleWinFilterForDaemonApp, app, filter, retry))
+    end
+    return
+  end
   observer:addWatcher(appUI, uinotifications.windowCreated)
   if type(filter) == 'table' and filter.allowSheet then
     observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
