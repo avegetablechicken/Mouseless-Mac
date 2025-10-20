@@ -7629,13 +7629,23 @@ local function isWebsiteAllowed(win, allowURLs)
 end
 
 FocusedWindowObservers = {}
-local function registerSingleWinFilterForApp(app, filter)
+local function registerSingleWinFilterForApp(app, filter, retry)
   local appid = app:bundleID() or app:name()
   for f, _ in pairs(FocusedWindowObservers[appid] or {}) do
     -- a window filter can be shared by multiple hotkeys
     if sameFilter(f, filter) then
       return
     end
+  end
+
+  local appUI = toappui(app)
+  if not tcontain(appUI:attributeNames() or {}, "AXFocusedWindow") then
+    retry = retry and retry + 1 or 1
+    if not FLAGS["Loading"] and retry <= 3 then
+      hs.timer.doAfter(1,
+          bind(registerSingleWinFilterForApp, app, filter, retry))
+    end
+    return
   end
 
   local actualFilter, allowSheet, allowPopover, condition, allowURLs
@@ -7664,7 +7674,6 @@ local function registerSingleWinFilterForApp(app, filter)
     registerInWinHotKeys(win, filter)
   end
 
-  local appUI = toappui(app)
   observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
   observer:addWatcher(appUI, uinotifications.windowMiniaturized)
   if allowPopover then
