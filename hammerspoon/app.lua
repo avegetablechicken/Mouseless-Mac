@@ -5033,6 +5033,18 @@ appHotKeyCallbacks = {
         safeGlobalKeyStroke(mods, key)
       end
     },
+    ["toggleSidebar"] = {
+      message = commonLocalizedMessage("Show Sidebar"),
+      bindCondition = versionGreaterEqual("6"),
+      condition = function(app)
+        return app:focusedWindow() ~= nil, app:focusedWindow()
+      end,
+      fn = function(win)
+        local button = getc(towinui(win),
+            AX.Toolbar, 1, AX.Button, 1, AX.Button, 1)
+        if button then press(button) end
+      end
+    },
     ["view1"] =
     {
       message = getBartenderSidebarItemTitle(1),

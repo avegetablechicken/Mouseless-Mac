@@ -1489,6 +1489,10 @@
         "mods": "control",
         "key": "F1"
       },
+      "toggleSidebar": {
+        "mods": ["control", "command"],
+        "key": "S"
+      },
       "view1": {
         "mods": "command",
         "key": "1"
