@@ -1341,12 +1341,14 @@ local function PDFChooser()
         local activeIdx = tindex(winTabTitlesPDFExpert[choice.winID],
             allWindowsPDFExpert[choice.winID]:title()) or 0
         if activeIdx < choice.id then
+          local _, menuItemPath = findMenuItem(app, { "Window", "Go to Next Tab" })
           for _=1,choice.id-activeIdx do
-            selectMenuItem(app, { "Window", "Go to Next Tab" })
+            app:selectMenuItem(menuItemPath)
           end
         else
+          local _, menuItemPath = findMenuItem(app, { "Window", "Go to Previous Tab" })
           for _=1,activeIdx-choice.id do
-            selectMenuItem(app, { "Window", "Go to Previous Tab" })
+            app:selectMenuItem(menuItemPath)
           end
         end
       end
