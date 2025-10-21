@@ -1694,7 +1694,7 @@ local function getAppId(app)
   end
 end
 
-local function commonLocalizedMessage(message, params)
+local function TC(message, params)
   if message == "Hide" or message == "Quit" then
     return function(app)
       local appname = displayName(app.application and app:application() or app)
@@ -1755,7 +1755,7 @@ local function commonLocalizedMessage(message, params)
   end
 end
 
-local function localizedMessage(message, params, sep)
+local function T(message, params, sep)
   return function(app)
     local appid = getAppId(app)
     if type(message) == 'string' then
@@ -1863,7 +1863,7 @@ end
 local specialCommonHotkeyConfigs = {
   ["closeWindow"] = {
     mods = "⌘", key = "W",
-    message = commonLocalizedMessage("Close Window"),
+    message = TC("Close Window"),
     condition = function(app)
       local win = app:focusedWindow()
       return win ~= nil and win:role() == AX.Window, win
@@ -1873,7 +1873,7 @@ local specialCommonHotkeyConfigs = {
   },
   ["minimize"] = {
     mods = "⌘", key = "M",
-    message = commonLocalizedMessage("Minimize"),
+    message = TC("Minimize"),
     condition = function(app)
       local win = app:focusedWindow()
       return win ~= nil and win:role() == AX.Window, win
@@ -1883,12 +1883,12 @@ local specialCommonHotkeyConfigs = {
   },
   ["hide"] = {
     mods = "⌘", key = "H",
-    message = commonLocalizedMessage("Hide"),
+    message = TC("Hide"),
     fn = function(app) app:hide() end
   },
   ["quit"] = {
     mods = "⌘", key = "Q",
-    message = commonLocalizedMessage("Quit"),
+    message = TC("Quit"),
     fn = function(app) app:kill() end
   },
   ["showPrevTab"] = {
@@ -1911,7 +1911,7 @@ appHotKeyCallbacks = {
   ["com.apple.finder"] =
   {
     ["openRecent"] = {
-      message = localizedMessage("Recent Folders"),
+      message = T("Recent Folders"),
       condition = checkMenuItem({ "Go", "Recent Folders" }),
       fn = select
     },
@@ -2020,7 +2020,7 @@ appHotKeyCallbacks = {
   ["com.apple.ActivityMonitor"] =
   {
     ["search"] = {
-      message = commonLocalizedMessage("Search"),
+      message = TC("Search"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
@@ -2034,7 +2034,7 @@ appHotKeyCallbacks = {
   ["com.apple.MobileSMS"] =
   {
     ["deleteConversation"] = {
-      message = localizedMessage("Delete Conversation…"),
+      message = T("Delete Conversation…"),
       condition = function(app)
         local appUI = toappui(app)
         local messageItems
@@ -2059,7 +2059,7 @@ appHotKeyCallbacks = {
       fn = select
     },
     ["deleteAllConversations"] = {
-      message = localizedMessage("Delete All"),
+      message = T("Delete All"),
       condition = messageDeletable,
       fn = deleteAllMessages
     },
@@ -2133,17 +2133,17 @@ appHotKeyCallbacks = {
 
   ["com.apple.FaceTime"] = {
     ["removeFromRecents"] = {
-      message = localizedMessage("Remove from Recents"),
+      message = T("Remove from Recents"),
       windowFilter = FaceTimeMainWindowFilter,
       fn = deleteMousePositionCall
     },
     ["clearAllRecents"] = {
-      message = localizedMessage("Clear All Recents"),
+      message = T("Clear All Recents"),
       windowFilter = FaceTimeMainWindowFilter,
       fn = deleteAllCalls
     },
     ["newFaceTime"] = {
-      message = localizedMessage("New FaceTime"),
+      message = T("New FaceTime"),
       windowFilter = FaceTimeMainWindowFilter,
       condition = function(win)
         local button
@@ -2160,7 +2160,7 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["addPeopleWhenNewFaceTime"] = {
-      message = localizedMessage("Add People"),
+      message = T("Add People"),
       windowFilter = {
         allowSheet = true,
         fn = function(win)
@@ -2180,7 +2180,7 @@ appHotKeyCallbacks = {
 
   ["com.apple.Notes"] = {
     ["toggleFolders"] = {
-      message = localizedMessage("Show Folders"),
+      message = T("Show Folders"),
       bindCondition = function() return OS_VERSION < OS.Tahoe end,
       condition = checkMenuItem({ "View", "Show Folders" },
                                 { "View", "Hide Folders" }),
@@ -2191,7 +2191,7 @@ appHotKeyCallbacks = {
   ["com.apple.iCal"] =
   {
     ["toggleCalendarList"] = {
-      message = localizedMessage("Show Calendar List"),
+      message = T("Show Calendar List"),
       condition = checkMenuItem({ "View", "Show Calendar List" },
                                 { "View", "Hide Calendar List" }),
       fn = select
@@ -2200,11 +2200,11 @@ appHotKeyCallbacks = {
 
   ["com.apple.games"] = {
     ["back"] = {
-      message = commonLocalizedMessage("Back"),
+      message = TC("Back"),
       windowFilter = GamesMainWindowFilter,
       condition = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1, AX.Button)
-        local title = commonLocalizedMessage("Back")(win)
+        local title = TC("Back")(win)
         local button = tfind(buttons or {}, function(bt)
           return bt.AXDescription == title
         end)
@@ -2264,12 +2264,12 @@ appHotKeyCallbacks = {
       end
     },
     ["search"] = {
-      message = commonLocalizedMessage("Search"),
+      message = TC("Search"),
       windowFilter = GamesMainWindowFilter,
       fn = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1,
             AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
-        local title = commonLocalizedMessage("Search")(win)
+        local title = TC("Search")(win)
         local button = tfind(buttons or {}, function(bt)
           return bt.AXDescription == title
         end)
@@ -2280,7 +2280,7 @@ appHotKeyCallbacks = {
 
   ["com.apple.weather"] = {
     ["toggleSidebar"] = {
-      message = commonLocalizedMessage("Show Sidebar"),
+      message = TC("Show Sidebar"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
@@ -2339,7 +2339,7 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["deleteLocation"] = {
-      message = commonLocalizedMessage("Delete"),
+      message = TC("Delete"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local list = getc(towinui(app:focusedWindow()), AX.Group, 1,
@@ -2373,7 +2373,7 @@ appHotKeyCallbacks = {
   ["com.apple.AppStore"] =
   {
     ["back"] = {
-      message = localizedMessage("Back"),
+      message = T("Back"),
       bindCondition = function() return OS_VERSION < OS.Tahoe end,
       condition = function(app)
         local menuItem, menuItemTitle = findMenuItem(app, { "Store", "Back" })
@@ -2407,13 +2407,13 @@ appHotKeyCallbacks = {
   ["com.apple.Safari"] =
   {
     ["toggleSidebar"] = {
-      message = localizedMessage("Show Sidebar"),
+      message = T("Show Sidebar"),
       condition = checkMenuItem({ "View", "Show Sidebar" },
                                 { "View", "Hide Sidebar" }),
       fn = select
     },
     ["showInFinder"] = {
-      message = commonLocalizedMessage("Show in Finder"),
+      message = TC("Show in Finder"),
       windowFilter = { allowURLs = "^file://" },
       fn = function(url)
         hs.execute('open -R "' .. url .. '"')
@@ -2423,7 +2423,7 @@ appHotKeyCallbacks = {
       end
     },
     ["openRecent"] = {
-      message = localizedMessage("Recently Closed"),
+      message = T("Recently Closed"),
       condition = checkMenuItem({ "History", "Recently Closed" }),
       fn = select
     }
@@ -2432,7 +2432,7 @@ appHotKeyCallbacks = {
   ["com.apple.Preview"] =
   {
     ["showInFinder"] = {
-      message = commonLocalizedMessage("Show in Finder"),
+      message = TC("Show in Finder"),
       condition = function(app)
         if app:mainWindow() == nil then return end
         local doc = towinui(app:mainWindow()).AXDocument
@@ -2450,12 +2450,12 @@ appHotKeyCallbacks = {
   ["com.google.Chrome"] =
   {
     ["openRecent"] = {
-      message = localizedMessage("Search Tabs…"),
+      message = T("Search Tabs…"),
       condition = checkMenuItem({ "Tab", "Search Tabs…" }),
       fn = select
     },
     ["showInFinder"] = {
-      message = commonLocalizedMessage("Show in Finder"),
+      message = TC("Show in Finder"),
       windowFilter = { allowURLs = "^file://" },
       fn = function(url)
         hs.execute('open -R "' .. url .. '"')
@@ -2539,27 +2539,27 @@ appHotKeyCallbacks = {
   ["com.renfei.SnippetsLab"] =
   {
     ["showMainWindow"] = {
-      message = localizedMessage("Show Main Window"),
+      message = T("Show Main Window"),
       condition = checkMenuItem({ "Window", "Show Main Window" }),
       fn = select
     },
     ["moveFocusToSidebar"] = {
-      message = localizedMessage("Move Focus to Sidebar"),
+      message = T("Move Focus to Sidebar"),
       condition = checkMenuItem({ "View", "Move Focus to Sidebar" }),
       fn = select
     },
     ["moveFocusToSnippetsList"] = {
-      message = localizedMessage("Move Focus to Snippets List"),
+      message = T("Move Focus to Snippets List"),
       condition = checkMenuItem({ "View", "Move Focus to Snippets List" }),
       fn = select
     },
     ["moveFocusToEditor"] = {
-      message = localizedMessage("Move Focus to Editor"),
+      message = T("Move Focus to Editor"),
       condition = checkMenuItem({ "View", "Move Focus to Editor" }),
       fn = select
     },
     ["moveFocusToPreview"] = {
-      message = localizedMessage("Move Focus to Preview"),
+      message = T("Move Focus to Preview"),
       condition = checkMenuItem({ "View", "Move Focus to Preview" }),
       fn = select
     }
@@ -2568,12 +2568,12 @@ appHotKeyCallbacks = {
   ["com.readdle.PDFExpert-Mac"] =
   {
     ["showInFinder"] = {
-      message = localizedMessage("Show in Finder"),
+      message = T("Show in Finder"),
       condition = checkMenuItem({ "File", "Show in Finder" }),
       fn = select
     },
     ["remapPreviousTab"] = {
-      message = localizedMessage("Go to Previous Tab"),
+      message = T("Go to Previous Tab"),
       condition = checkMenuItem({ "Window", "Go to Previous Tab" }),
       repeatable = true,
       fn = select
@@ -2583,12 +2583,12 @@ appHotKeyCallbacks = {
   ["com.vallettaventures.Texpad"] =
   {
     ["toggleOutline"] = {
-      message = localizedMessage("Toggle Outline"),
+      message = T("Toggle Outline"),
       condition = checkMenuItem({ "Workspace", "Toggle Outline" }),
       fn = select
     },
     ["openRecent"] = {
-      message = localizedMessage("Recent Documents"),
+      message = T("Recent Documents"),
       condition = checkMenuItem({ "File", "Recent Documents" }),
       fn = select
     }
@@ -2597,12 +2597,12 @@ appHotKeyCallbacks = {
   ["abnerworks.Typora"] =
   {
     ["openFileLocation"] = {
-      message = localizedMessage("Open File Location"),
+      message = T("Open File Location"),
       condition = checkMenuItem({ "File", "Open File Location" }),
       fn = select
     },
     ["openRecent"] = {
-      message = localizedMessage("Open Recent"),
+      message = T("Open Recent"),
       condition = checkMenuItem({ "File", "Open Quickly…" },
                                 { "File", "Open Recent" }),
       fn = select
@@ -2612,7 +2612,7 @@ appHotKeyCallbacks = {
   ["com.superace.updf.mac"] =
   {
     ["goToHome"] = {
-      message = localizedMessage("Home"),
+      message = T("Home"),
       windowFilter = {
         allowTitles = "",
         fn = function(win)
@@ -2629,7 +2629,7 @@ appHotKeyCallbacks = {
       end
     },
     ["toggleSidebar"] = {
-      message = commonLocalizedMessage("Show Sidebar"),
+      message = TC("Show Sidebar"),
       condition = function(app)
         local title = localizedString("View", app)
         local menuItems = getc(toappui(app), AX.MenuBar, 1,
@@ -2651,17 +2651,17 @@ appHotKeyCallbacks = {
     ["showPrevTab"] = specialCommonHotkeyConfigs["showPrevTab"],
     ["showNextTab"] = specialCommonHotkeyConfigs["showNextTab"],
     ["showInFinder"] = {
-      message = localizedMessage("Show in Finder"),
+      message = T("Show in Finder"),
       condition = checkMenuItem({ "File", "Show in Finder" }),
       fn = select
     },
     ["openRecent"] = {
-      message = localizedMessage("Open Quickly…"),
+      message = T("Open Quickly…"),
       condition = checkMenuItem({ "File", "Open Quickly…" }),
       fn = select
     },
     ["confirmDelete"] = {
-      message = localizedMessage("Don't Save"),
+      message = T("Don't Save"),
       condition = function(app)
         local win = app:focusedWindow()
         if win == nil then return false end
@@ -2705,42 +2705,42 @@ appHotKeyCallbacks = {
       fn = function(app) hs.eventtap.keyStroke("⇧⌘", "End", nil, app) end
     },
     ["properties"] = {
-      message = localizedMessage("Properties..."),
+      message = T("Properties..."),
       condition = checkMenuItem({ "File", "Properties..." }),
       fn = select
     },
     ["exportToPDF"] = {
-      message = localizedMessage("Export to PDF..."),
+      message = T("Export to PDF..."),
       condition = checkMenuItem({ "File", "Export to PDF..." }),
       fn = select
     },
     ["insertTextBox"] = {
-      message = localizedMessage({ "Insert", "Text Box" }),
+      message = T{"Insert", "Text Box"},
       condition = checkMenuItem({ "Insert", "Text Box", "Horizontal Text Box" }),
       fn = select
     },
     ["insertEquation"] = {
-      message = localizedMessage({ "Insert", "LaTeXEquation..." }),
+      message = T{"Insert", "LaTeXEquation..."},
       condition = checkMenuItem({ "Insert", "LaTeXEquation..." }),
       fn = select
     },
     ["pdfHightlight"] = {
-      message = localizedMessage("Highlight"),
+      message = T("Highlight"),
       condition = checkMenuItem({ "Comment", "Highlight" }),
       fn = select
     },
     ["pdfUnderline"] = {
-      message = localizedMessage("Underline"),
+      message = T("Underline"),
       condition = checkMenuItem({ "Comment", "Underline" }),
       fn = select
     },
     ["pdfStrikethrough"] = {
-      message = localizedMessage("Strikethrough"),
+      message = T("Strikethrough"),
       condition = checkMenuItem({ "Comment", "Strikethrough" }),
       fn = select
     },
     ["goToHome"] = {
-      message = localizedMessage("Home"),
+      message = T("Home"),
       condition = function(app)
         local win = app:focusedWindow()
         local home = localizedString("Home", app)
@@ -2756,7 +2756,7 @@ appHotKeyCallbacks = {
       end
     },
     ["openRecent"] = {
-      message = localizedMessage("Recent"),
+      message = T("Recent"),
       fn = function(app)
         if app:focusedWindow() == nil then return end
         local home = localizedString("Home", app)
@@ -2791,7 +2791,7 @@ appHotKeyCallbacks = {
       end,
     },
     ["goToShare"] = {
-      message = localizedMessage("Share"),
+      message = T("Share"),
       condition = function(app)
         local win = app:focusedWindow()
         local home = localizedString("Home", app)
@@ -2812,7 +2812,7 @@ appHotKeyCallbacks = {
       fn = click
     },
     ["goToMyCloudDocuments"] = {
-      message = localizedMessage("My Cloud Documents"),
+      message = T("My Cloud Documents"),
       condition = function(app)
         local win = app:focusedWindow()
         local home = localizedString("Home", app)
@@ -2839,7 +2839,7 @@ appHotKeyCallbacks = {
       fn = click
     },
     ["goToMyDesktop"] = {
-      message = localizedMessage("My Desktop"),
+      message = T("My Desktop"),
       condition = function(app)
         local win = app:focusedWindow()
         local home = localizedString("Home", app)
@@ -2868,7 +2868,7 @@ appHotKeyCallbacks = {
       fn = click
     },
     ["goToDocuments"] = {
-      message = localizedMessage("Documents"),
+      message = T("Documents"),
       condition = function(app)
         local win = app:focusedWindow()
         local home = localizedString("Home", app)
@@ -2897,7 +2897,7 @@ appHotKeyCallbacks = {
       fn = click
     },
     ["goToDownloads"] = {
-      message = localizedMessage("Downloads"),
+      message = T("Downloads"),
       condition = function(app)
         local win = app:focusedWindow()
         local home = localizedString("Home", app)
@@ -2926,7 +2926,7 @@ appHotKeyCallbacks = {
       fn = click
     },
     ["openFileLocation"] = {
-      message = localizedMessage("Open File Location"),
+      message = T("Open File Location"),
       condition = function(app)
         local win = app:focusedWindow()
         local home = localizedString("Home", app)
@@ -2973,7 +2973,7 @@ appHotKeyCallbacks = {
       end
     },
     ["prevInSettings"] = {
-      message = commonLocalizedMessage("Back"),
+      message = TC("Back"),
       windowFilter = {
         allowRoles = AX.Dialog,
         fn = function(win)
@@ -2990,7 +2990,7 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["nextInSettings"] = {
-      message = commonLocalizedMessage("Forward"),
+      message = TC("Forward"),
       windowFilter = {
         allowRoles = AX.Dialog,
         fn = function(win)
@@ -3015,29 +3015,29 @@ appHotKeyCallbacks = {
   ["com.apple.iWork.Keynote"] =
   {
     ["exportToPDF"] = {  -- File > Export To > PDF…
-      message = localizedMessage({ "Export To", "PDF…" }),
+      message = T{"Export To", "PDF…"},
       condition = checkMenuItem({ "File", "Export To", "PDF…" }),
       fn = select
     },
     ["exportToPPT"] = {  -- File > Export To > PowerPoint…
-      message = localizedMessage({ "Export To", "PowerPoint…" }),
+      message = T{"Export To", "PowerPoint…"},
       condition = checkMenuItem({ "File", "Export To", "PowerPoint…" }),
       fn = select
     },
     ["pasteAndMatchStyle"] = {  -- Edit > Paste and Match Style
-      message = localizedMessage("Paste and Match Style"),
+      message = T("Paste and Match Style"),
       condition = checkMenuItem({ "Edit", "Paste and Match Style" }),
       repeatable = true,
       fn = select
     },
     ["paste"] = {  -- Edit > Paste
-      message = localizedMessage("Paste"),
+      message = T("Paste"),
       condition = checkMenuItem({ "Edit", "Paste" }),
       repeatable = true,
       fn = select
     },
     ["showBuildOrder"] = {  -- View > Show Build Order
-      message = localizedMessage("Show Build Order"),
+      message = T("Show Build Order"),
       condition = checkMenuItem({ "View", "Show Build Order" }),
       fn = function(menuItemTitle, app)
         app:selectMenuItem(menuItemTitle)
@@ -3051,32 +3051,32 @@ appHotKeyCallbacks = {
       end
     },
     ["toggleFormatInspector"] = {  -- View > Inspector > Format
-      message = localizedMessage({ "Inspector", "Format" }),
+      message = T{"Inspector", "Format"},
       condition = checkMenuItem({ "View", "Inspector", "Format" }),
       fn = select
     },
     ["play"] = {  -- Play > Play Slideshow
-      message = localizedMessage("Play Slideshow"),
+      message = T("Play Slideshow"),
       condition = checkMenuItem({ "Play", "Play Slideshow" }),
       fn = select
     },
     ["insertTextBox"] = {  -- Insert > Text Box
-      message = localizedMessage({ "Insert", "Text Box" }),
+      message = T{"Insert", "Text Box"},
       condition = checkMenuItem({ "Insert", "Text Box" }),
       fn = select
     },
     ["insertShape"] = {  -- Insert > Shape
-      message = localizedMessage({ "Insert", "Shape" }),
+      message = T{"Insert", "Shape"},
       condition = checkMenuItem({ "Insert", "Shape" }),
       fn = select
     },
     ["insertLine"] = {  -- Insert > Line
-      message = localizedMessage({ "Insert", "Line" }),
+      message = T{"Insert", "Line"},
       condition = checkMenuItem({ "Insert", "Line" }),
       fn = select
     },
     ["showInFinder"] = {
-      message = commonLocalizedMessage("Show in Finder"),
+      message = TC("Show in Finder"),
       condition = function(app)
         if app:mainWindow() == nil then return end
         local doc = towinui(app:mainWindow()).AXDocument
@@ -3094,34 +3094,34 @@ appHotKeyCallbacks = {
   ["com.apple.iWork.Pages"] =
   {
     ["exportToPDF"] = {  -- File > Export To > PDF…
-      message = localizedMessage({ "Export To", "PDF…" }),
+      message = T{"Export To", "PDF…"},
       condition = checkMenuItem({ "File", "Export To", "PDF…" }),
       fn = select
     },
     ["exportToWord"] = {  -- File > Export To > Word…
-      message = localizedMessage({ "Export To", "Word…" }),
+      message = T{"Export To", "Word…"},
       condition = checkMenuItem({ "File", "Export To", "Word…" }),
       fn = select
     },
     ["pasteAndMatchStyle"] = {  -- Edit > Paste and Match Style
-      message = localizedMessage("Paste and Match Style"),
+      message = T("Paste and Match Style"),
       condition = checkMenuItem({ "Edit", "Paste and Match Style" }),
       repeatable = true,
       fn = select
     },
     ["paste"] = {  -- Edit > Paste
-      message = localizedMessage("Paste"),
+      message = T("Paste"),
       condition = checkMenuItem({ "Edit", "Paste" }),
       repeatable = true,
       fn = select
     },
     ["toggleFormatInspector"] = {  -- View > Inspector > Format
-      message = localizedMessage({ "Inspector", "Format" }),
+      message = T{"Inspector", "Format"},
       condition = checkMenuItem({ "View", "Inspector", "Format" }),
       fn = select
     },
     ["showInFinder"] = {
-      message = commonLocalizedMessage("Show in Finder"),
+      message = TC("Show in Finder"),
       condition = function(app)
         if app:mainWindow() == nil then return end
         local doc = towinui(app:mainWindow()).AXDocument
@@ -3139,34 +3139,34 @@ appHotKeyCallbacks = {
   ["com.apple.iWork.Numbers"] =
   {
     ["exportToPDF"] = {  -- File > Export To > PDF…
-      message = localizedMessage({ "Export To", "PDF…" }),
+      message = T{"Export To", "PDF…"},
       condition = checkMenuItem({ "File", "Export To", "PDF…" }),
       fn = select
     },
     ["exportToExcel"] = {  -- File > Export To > Excel…
-      message = localizedMessage({ "Export To", "Excel…" }),
+      message = T{"Export To", "Excel…"},
       condition = checkMenuItem({ "File", "Export To", "Excel…" }),
       fn = select
     },
     ["pasteAndMatchStyle"] = {  -- Edit > Paste and Match Style
-      message = localizedMessage("Paste and Match Style"),
+      message = T("Paste and Match Style"),
       condition = checkMenuItem({ "Edit", "Paste and Match Style" }),
       repeatable = true,
       fn = select
     },
     ["paste"] = {  -- Edit > Paste
-      message = localizedMessage("Paste"),
+      message = T("Paste"),
       condition = checkMenuItem({ "Edit", "Paste" }),
       repeatable = true,
       fn = select
     },
     ["toggleFormatInspector"] = {  -- View > Inspector > Format
-      message = localizedMessage({ "Inspector", "Format" }),
+      message = T{"Inspector", "Format"},
       condition = checkMenuItem({ "View", "Inspector", "Format" }),
       fn = select
     },
     ["showInFinder"] = {
-      message = commonLocalizedMessage("Show in Finder"),
+      message = TC("Show in Finder"),
       condition = function(app)
         if app:mainWindow() == nil then return end
         local doc = towinui(app:mainWindow()).AXDocument
@@ -3184,12 +3184,12 @@ appHotKeyCallbacks = {
   ["net.xmind.vana.app"] =
   {
     ["exportToPDF"] = {
-      message = localizedMessage({ "Export", "PDF" }),
+      message = T{"Export", "PDF"},
       condition = checkMenuItem({ "File", "Export", "PDF" }),
       fn = select
     },
     ["insertEquation"] = {
-      message = localizedMessage({ "Insert", "Equation" }),
+      message = T{"Insert", "Equation"},
       condition = checkMenuItem({ 'Insert', "Equation" }),
       fn = select
     }
@@ -3266,13 +3266,13 @@ appHotKeyCallbacks = {
   ["com.openai.chat"] =
   {
     ["toggleSidebar"] = {
-      message = localizedMessage("Toggle Sidebar"),
+      message = T("Toggle Sidebar"),
       bindCondition = versionLessEqual("1.2024.332"),
       condition = checkMenuItem({ "View", "Toggle Sidebar" }),
       fn = select
     },
     ["back"] = {
-      message = localizedMessage("Back"),
+      message = T("Back"),
       windowFilter = {
         fn = function(win)
           return towinui(win).AXIdentifier == "ChatGPTSettingsAppWindow"
@@ -3308,7 +3308,7 @@ appHotKeyCallbacks = {
   ["com.tencent.yuanbao"] =
   {
     ["settings"] = {
-      message = localizedMessage("Settings"),
+      message = T("Settings"),
       condition = function(app)
         if app:focusedWindow() == nil then
           return versionGreaterEqual("2")(app)
@@ -3409,7 +3409,7 @@ appHotKeyCallbacks = {
       end
     },
     ["newChat"] = {
-      message = localizedMessage("New Chat"),
+      message = T("New Chat"),
       bindCondition = versionLessThan("1.6.0"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
@@ -3428,7 +3428,7 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["enterTemporaryChat"] = {
-      message = localizedMessage("Enter Temporary Chat"),
+      message = T("Enter Temporary Chat"),
       windowFilter = YuanbaoMainWindowFilter,
       condition = function(win)
         local webarea = getc(towinui(win), AX.Group, 1, AX.Group, 1,
@@ -3443,7 +3443,7 @@ appHotKeyCallbacks = {
       fn = click
     },
     ["toggleSidebar"] = {
-      message = localizedMessage("Show Sidebar"),
+      message = T("Show Sidebar"),
       windowFilter = YuanbaoMainWindowFilter,
       condition = function(win)
         local webarea = getc(towinui(win), AX.Group, 1, AX.Group, 1,
@@ -3469,13 +3469,13 @@ appHotKeyCallbacks = {
     ["maximize"] = {
       mods = get(KeybindingConfigs.hotkeys.shared, "zoom", "mods"),
       key = get(KeybindingConfigs.hotkeys.shared, "zoom", "key"),
-      message = localizedMessage("Maximize"),
+      message = T("Maximize"),
       windowFilter = YuanbaoMainWindowFilter,
       condition = checkMenuItem({ "Window", "Maximize" }),
       fn = select
     },
     ["back"] = {
-      message = commonLocalizedMessage("Back"),
+      message = TC("Back"),
       bindCondition = versionLessThan("2"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
@@ -3554,7 +3554,7 @@ appHotKeyCallbacks = {
       end
     },
     ["showMainWindow"] = {
-      message = localizedMessage("Open Yuanbao"),
+      message = T("Open Yuanbao"),
       windowFilter = {
         allowRoles = AX.SystemDialog
       },
@@ -3568,22 +3568,22 @@ appHotKeyCallbacks = {
   ["JabRef"] =
   {
     ["preferences"] = {
-      message = localizedMessage("Preferences"),
+      message = T("Preferences"),
       condition = checkMenuItem({ "File", "Preferences" }),
       fn = select
     },
     ["newLibrary"] = {
-      message = localizedMessage("New library"),
+      message = T("New library"),
       condition = checkMenuItem({ "File", "New library" }),
       fn = select
     },
     ["openRecent"] = {
-      message = localizedMessage("Recent libraries"),
+      message = T("Recent libraries"),
       condition = checkMenuItem({ "File", "Recent libraries" }),
       fn = select
     },
     ["revealLibrayInFinder"] = {
-      message = localizedMessage("Reveal in file explorer"),
+      message = T("Reveal in file explorer"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
@@ -3604,7 +3604,7 @@ appHotKeyCallbacks = {
       end
     },
     ["openRecordFile"] = {
-      message = localizedMessage("Open file"),
+      message = T("Open file"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
@@ -3622,7 +3622,7 @@ appHotKeyCallbacks = {
       fn = click
     },
     ["remapPreviousTab"] = {
-      message = localizedMessage("Previous library"),
+      message = T("Previous library"),
       condition = JabRefShowLibraryByIndex(2, false),
       repeatable = true,
       fn = function(app) hs.eventtap.keyStroke('⇧⌃', 'Tab', nil, app) end
@@ -3630,7 +3630,7 @@ appHotKeyCallbacks = {
     ["showPrevLibrary"] = {
       mods = specialCommonHotkeyConfigs["showPrevTab"].mods,
       key = specialCommonHotkeyConfigs["showPrevTab"].key,
-      message = localizedMessage("Previous library"),
+      message = T("Previous library"),
       condition = JabRefShowLibraryByIndex(2, false),
       repeatable = true,
       fn = function(app) hs.eventtap.keyStroke('⇧⌃', 'Tab', nil, app) end
@@ -3638,7 +3638,7 @@ appHotKeyCallbacks = {
     ["showNextLibrary"] = {
       mods = specialCommonHotkeyConfigs["showNextTab"].mods,
       key = specialCommonHotkeyConfigs["showNextTab"].key,
-      message = localizedMessage("Next library"),
+      message = T("Next library"),
       condition = JabRefShowLibraryByIndex(2, false),
       repeatable = true,
       fn = function(app) hs.eventtap.keyStroke('⌃', 'Tab', nil, app) end
@@ -3698,7 +3698,7 @@ appHotKeyCallbacks = {
 
   ["org.zotero.zotero"] = {
     ["newCollection"] = {
-      message = localizedMessage("New Collection…"),
+      message = T("New Collection…"),
       condition = checkMenuItem({ "File", "New Collection…" }),
       fn = select
     }
@@ -3776,12 +3776,12 @@ appHotKeyCallbacks = {
   ["com.apple.iMovieApp"] =
   {
     ["export"] = {
-      message = localizedMessage({ "Share", "File…" }),
+      message = T{"Share", "File…"},
       condition = checkMenuItem({ "File", "Share", "File…" }),
       fn = select
     },
     ["openRecent"] = {
-      message = localizedMessage("Open Library"),
+      message = T("Open Library"),
       condition = checkMenuItem({ "File", "Open Library" }),
       fn = select
     }
@@ -3799,7 +3799,7 @@ appHotKeyCallbacks = {
   ["com.tencent.xinWeChat"] =
   {
     ["backFromMinizedGroups"] = {
-      message = commonLocalizedMessage("Back"),
+      message = TC("Back"),
       bindCondition = versionRange("4", "4.0.6"),
       windowFilter = {
         fn = function(win)
@@ -3808,7 +3808,7 @@ appHotKeyCallbacks = {
         end
       },
       condition = function(win)
-        local back = commonLocalizedMessage("Back")(win:application())
+        local back = TC("Back")(win:application())
         local bt = getc(towinui(win), AX.Group, 1,
             AX.SplitGroup, 1, AX.Button, back)
         return clickable(bt)
@@ -3816,7 +3816,7 @@ appHotKeyCallbacks = {
       fn = click
     },
     ["backInOfficialAccounts"] = {
-      message = commonLocalizedMessage("Back"),
+      message = TC("Back"),
       bindCondition = versionLessThan("4"),
       windowFilter = {
         fn = function(win)
@@ -3838,7 +3838,7 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["backInMoments"] = {
-      message = commonLocalizedMessage("Back"),
+      message = TC("Back"),
       bindCondition = versionLessThan("4.0.6"),
       windowFilter = {
         fn = function(win)
@@ -3859,7 +3859,7 @@ appHotKeyCallbacks = {
         end
       },
       condition = function(win)
-        local title = commonLocalizedMessage("Back")(win)
+        local title = TC("Back")(win)
         return clickable(getc(towinui(win), AX.Button, title))
       end,
       fn = click
@@ -3951,7 +3951,7 @@ appHotKeyCallbacks = {
       end
     },
     ["showChatProfile"] = {
-      message = localizedMessage("Chats.Menu.Profile"),
+      message = T("Chats.Menu.Profile"),
       bindCondition = versionLessThan("4"),
       windowFilter = {
         fn = function(win)
@@ -4209,7 +4209,7 @@ appHotKeyCallbacks = {
       fn = click
     },
     ["send"] = {
-      message = localizedMessage("Send"),
+      message = T("Send"),
       bindCondition = versionRange("4", "4.0.6"),
       windowFilter = {
         allowSheet = true,
@@ -4267,7 +4267,7 @@ appHotKeyCallbacks = {
       fn = click
     },
     ["confirmAll"] = {
-      message = commonLocalizedMessage("Confirm"),
+      message = TC("Confirm"),
       bindCondition = versionGreaterEqual("4.0.6"),
       windowFilter = { allowSheet = true },
       condition = function(win)
@@ -4470,7 +4470,7 @@ appHotKeyCallbacks = {
   ["com.tencent.meeting"] =
   {
     ["preferences"] = {
-      message = localizedMessage("Preferences"),
+      message = T("Preferences"),
       fn = function(app)
         local title = localizedString("Preferences", app)
         app:selectMenuItem({ app:name(), title })
@@ -4498,7 +4498,7 @@ appHotKeyCallbacks = {
   {
     ["closeWindow"] = {
       mods = "", key = "Escape",
-      message = commonLocalizedMessage("Close Window"),
+      message = TC("Close Window"),
       windowFilter = {
         allowRoles = AX.Unknown
       },
@@ -4513,48 +4513,48 @@ appHotKeyCallbacks = {
   ["com.nektony.App-Cleaner-SIII"] =
   {
     ["uninstall"] = {
-      message = localizedMessage('Uninstall'),
+      message = T('Uninstall'),
       condition = buttonValidForAppCleanerUninstaller('Uninstall'),
       fn = press
     },
     ["remove"] = {
-      message = localizedMessage('Remove'),
+      message = T('Remove'),
       condition = buttonValidForAppCleanerUninstaller('Remove'),
       fn = press
     },
     ["enable"] = {
-      message = localizedMessage('Enable'),
+      message = T('Enable'),
       condition = buttonValidForAppCleanerUninstaller('Enable'),
       fn = press
     },
     ["disable"] = {
-      message = localizedMessage('Disable'),
+      message = T('Disable'),
       condition = buttonValidForAppCleanerUninstaller('Disable'),
       fn = press
     },
     ["update"] = {
-      message = localizedMessage('Update'),
+      message = T('Update'),
       condition = buttonValidForAppCleanerUninstaller('Update'),
       fn = press
     },
     ["launchApp"] = {
-      message = localizedMessage('Launch App'),
+      message = T('Launch App'),
       bindCondition = versionGreaterEqual("8.6"),
       condition = buttonValidForAppCleanerUninstaller('Launch App'),
       fn = press
     },
     ["confirmRemove"] = {
-      message = localizedMessage('Remove'),
+      message = T('Remove'),
       condition = confirmButtonValidForAppCleanerUninstaller('Remove'),
       fn = function(position) leftClick(position) end  -- fixme: false click
     },
     ["confirmUpdate"] = {
-      message = localizedMessage('Update'),
+      message = T('Update'),
       condition = confirmButtonValidForAppCleanerUninstaller('Update'),
       fn = function(position) leftClick(position) end  -- fixme: false click
     },
     ["confirmRetry"] = {
-      message = localizedMessage('Retry'),
+      message = T('Retry'),
       condition = confirmButtonValidForAppCleanerUninstaller('Retry'),
       fn = function(position) leftClick(position) end  -- fixme: false click
     }
@@ -4563,43 +4563,43 @@ appHotKeyCallbacks = {
   ["com.nektony.App-Cleaner-SIIICn"] =
   {
     ["remove"] = {
-      message = localizedMessage('Remove_Button_Title'),
+      message = T('Remove_Button_Title'),
       condition = buttonValidForAppCleanerUninstaller('Remove_Button_Title'),
       fn = press
     },
     ["enable"] = {
-      message = localizedMessage('EnableMenuItemTitle'),
+      message = T('EnableMenuItemTitle'),
       condition = buttonValidForAppCleanerUninstaller('EnableMenuItemTitle'),
       fn = press
     },
     ["disable"] = {
-      message = localizedMessage('DisableMenuItemTitle'),
+      message = T('DisableMenuItemTitle'),
       condition = buttonValidForAppCleanerUninstaller('DisableMenuItemTitle'),
       fn = press
     },
     ["update"] = {
-      message = localizedMessage('UpdateButtonTitle'),
+      message = T('UpdateButtonTitle'),
       condition = buttonValidForAppCleanerUninstaller('UpdateButtonTitle'),
       fn = press
     },
     ["launchApp"] = {
-      message = localizedMessage('LaunchAppButtonTitle'),
+      message = T('LaunchAppButtonTitle'),
       bindCondition = versionGreaterEqual("8.6"),
       condition = buttonValidForAppCleanerUninstaller('LaunchAppButtonTitle'),
       fn = press
     },
     ["confirmRemove"] = {
-      message = localizedMessage('PartialRemove_Remove'),
+      message = T('PartialRemove_Remove'),
       condition = confirmButtonValidForAppCleanerUninstaller('PartialRemove_Remove'),
       fn = function(position) leftClick(position) end  -- fixme: false click
     },
     ["confirmUpdate"] = {
-      message = localizedMessage('UpdateButtonTitle'),
+      message = T('UpdateButtonTitle'),
       condition = confirmButtonValidForAppCleanerUninstaller('UpdateButtonTitle'),
       fn = function(position) leftClick(position) end  -- fixme: false click
     },
     ["confirmRetry"] = {
-      message = localizedMessage('PartialRemove_Retry'),
+      message = T('PartialRemove_Retry'),
       condition = confirmButtonValidForAppCleanerUninstaller('PartialRemove_Retry'),
       fn = function(position) leftClick(position) end  -- fixme: false click
     }
@@ -4608,7 +4608,7 @@ appHotKeyCallbacks = {
   ["com.charliemonroe.Downie-4"] =
   {
     ["openRecent"] = {
-      message = localizedMessage("Show History"),
+      message = T("Show History"),
       condition = checkMenuItem({ "Window", "Show History" }),
       fn = select
     }
@@ -5052,7 +5052,7 @@ appHotKeyCallbacks = {
       end
     },
     ["toggleSidebar"] = {
-      message = commonLocalizedMessage("Show Sidebar"),
+      message = TC("Show Sidebar"),
       bindCondition = versionGreaterEqual("6"),
       condition = function(app)
         return app:focusedWindow() ~= nil, app:focusedWindow()
@@ -5121,7 +5121,7 @@ appHotKeyCallbacks = {
     ["minimize"] = {
       mods = specialCommonHotkeyConfigs["minimize"].mods,
       key = specialCommonHotkeyConfigs["minimize"].key,
-      message = commonLocalizedMessage("Minimize"),
+      message = TC("Minimize"),
       bindCondition = versionLessThan("6"),
       condition = function(app)
         local win = app:focusedWindow()
@@ -5160,7 +5160,7 @@ appHotKeyCallbacks = {
       end
     },
     ["toggleSidebar"] = {
-      message = commonLocalizedMessage("Show Sidebar"),
+      message = TC("Show Sidebar"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local button = tfind(getc(towinui(app:focusedWindow()),
@@ -5502,7 +5502,7 @@ appHotKeyCallbacks = {
   ["whbalzac.Dongtaizhuomian"] =
   {
     ["invokeInAppScreenSaver"] = {
-      message = localizedMessage("In-app Screensaver",
+      message = T("In-app Screensaver",
                                 { localeFile = "HotkeyWindowController" }),
       background = true,
       fn = function(app)
@@ -5512,7 +5512,7 @@ appHotKeyCallbacks = {
       end
     },
     ["preferences"] = {
-      message = localizedMessage("Preferences..."),
+      message = T("Preferences..."),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
@@ -5625,7 +5625,7 @@ appHotKeyCallbacks = {
 
   ["com.apple.Passwords"] = {
     ["search"] = {
-      message = localizedMessage("Search"),
+      message = T("Search"),
       bindCondition = function() return OS_VERSION >= OS.Tahoe end,
       condition = function(app)
         if app:focusedWindow() == nil then return false end
@@ -5645,7 +5645,7 @@ appHotKeyCallbacks = {
       fn = clickRightMenuBarItem
     },
     ["newPassword"] = {
-      message = localizedMessage("New Password"),
+      message = T("New Password"),
       windowFilter = {
         allowRoles = AX.SystemDialog,
         allowTitles = "^$"
@@ -5659,7 +5659,7 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["showAllPasswords"] = {
-      message = localizedMessage("Show all passwords"),
+      message = T("Show all passwords"),
       windowFilter = {
         allowRoles = AX.SystemDialog,
         allowTitles = "^$"
@@ -5673,7 +5673,7 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["back"] = {
-      message = localizedMessage("Back"),
+      message = T("Back"),
       windowFilter = {
         allowRoles = AX.SystemDialog,
         allowTitles = "^$"
@@ -5687,7 +5687,7 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["copyUserName"] = {
-      message = localizedMessage("Copy User Name"),
+      message = T("Copy User Name"),
       windowFilter = {
         allowRoles = AX.SystemDialog,
         allowTitles = "^$"
@@ -5716,7 +5716,7 @@ appHotKeyCallbacks = {
       end
     },
     ["copyPassword"] = {
-      message = localizedMessage("Copy Password"),
+      message = T("Copy Password"),
       windowFilter = {
         allowRoles = AX.SystemDialog,
         allowTitles = "^$"
@@ -5754,7 +5754,7 @@ appHotKeyCallbacks = {
       message = function(win)
         local title = OS_VERSION >= OS.Tahoe and "Copy Code"
             or "Copy Verification Code"
-        return localizedMessage(title)(win)
+        return T(title)(win)
       end,
       windowFilter = {
         allowRoles = AX.SystemDialog,
@@ -5870,7 +5870,7 @@ appHotKeyCallbacks = {
 
   ["com.apple.weather.menu"] = {
     ["openWeather"] = {
-      message = localizedMessage("Open Weather"),
+      message = T("Open Weather"),
       windowFilter = {
         allowRoles = AX.SystemDialog
       },
@@ -5883,7 +5883,7 @@ appHotKeyCallbacks = {
     },
     ["closeWindow"] = {
       mods = "", key = "Escape",
-      message = commonLocalizedMessage("Close Window"),
+      message = TC("Close Window"),
       bindCondition = function() return OS_VERSION < OS.Tahoe end,
       windowFilter = {
         allowRoles = AX.SystemDialog
@@ -6003,7 +6003,7 @@ appHotKeyCallbacks = {
   ["com.apple.Chess"] =
   {
     ["openRecent"] = {
-      message = localizedMessage("Open Recent"),
+      message = T("Open Recent"),
       condition = checkMenuItem({ "Game", "Open Recent" }),
       fn = select
     },
@@ -6011,7 +6011,7 @@ appHotKeyCallbacks = {
 
   ["com.apple.clock"] = {
     ["openRecent"] = {
-      message = localizedMessage("Start Recent Timer"),
+      message = T("Start Recent Timer"),
       condition = checkMenuItem({ "File", "Start Recent Timer" }),
       fn = select
     },
@@ -6020,7 +6020,7 @@ appHotKeyCallbacks = {
   ["com.apple.ScreenSharing"] =
   {
     ["openRecent"] = {
-      message = localizedMessage("Open Recent"),
+      message = T("Open Recent"),
       condition = checkMenuItem({ "Connect", "Open Recent" }),
       fn = select
     },
@@ -6028,7 +6028,7 @@ appHotKeyCallbacks = {
 
   ["com.microsoft.rdc.macos"] = {
     ["toggleSidebar"] = {
-      message = commonLocalizedMessage("Show Sidebar"),
+      message = TC("Show Sidebar"),
       condition = function(app)
         if app:focusedWindow() == nil then return end
         local buttons = getc(towinui(app:focusedWindow()), AX.Toolbar, 1, AX.Button)
@@ -6072,29 +6072,29 @@ appHotKeyCallbacks = {
   {
     ["new..."] = {
       mods = "⌘", key = "N",
-      message = localizedMessage("New..."),
+      message = T("New..."),
       condition = checkMenuItem({ "File", "New..." }),
       fn = select
     },
     ["open..."] = {
       mods = "⌘", key = "O",
-      message = localizedMessage("Open..."),
+      message = T("Open..."),
       condition = checkMenuItem({ "File", "Open..." }),
       fn = select
     },
     ["showControlCenter"] = {
-      message = localizedMessage("Control Center"),
+      message = T("Control Center"),
       condition = checkMenuItem({ "Window", "Control Center" }),
       fn = select
     },
     ["expandedView"] = {
-      message = localizedMessage("Expanded View"),
+      message = T("Expanded View"),
       windowFilter = ParallelsControlCenterWindowFilter,
       condition = checkMenuItem({ "View", "Expanded View" }),
       fn = select
     },
     ["compactView"] = {
-      message = localizedMessage("Compact View"),
+      message = T("Compact View"),
       windowFilter = ParallelsControlCenterWindowFilter,
       condition = checkMenuItem({ "View", "Compact View" }),
       fn = select
@@ -6102,14 +6102,14 @@ appHotKeyCallbacks = {
     ["minimize"] = {
       mods = specialCommonHotkeyConfigs["minimize"].mods,
       key = specialCommonHotkeyConfigs["minimize"].key,
-      message = localizedMessage("Minimize"),
+      message = T("Minimize"),
       condition = checkMenuItem({ "Window", "Minimize" }),
       fn = select
     },
     ["closeWindow"] = {
       mods = specialCommonHotkeyConfigs["closeWindow"].mods,
       key = specialCommonHotkeyConfigs["closeWindow"].key,
-      message = localizedMessage("Close Window"),
+      message = T("Close Window"),
       condition = function(app)
         local menuItem, menuItemTitle =
             findMenuItem(app, { "File", "Close Window" })
@@ -6137,7 +6137,7 @@ appHotKeyCallbacks = {
     ["closeWindow"] = {
       mods = specialCommonHotkeyConfigs["closeWindow"].mods,
       key = specialCommonHotkeyConfigs["closeWindow"].key,
-      message = localizedMessage("Close"),
+      message = T("Close"),
       condition = function(app)
         local menuItem, menuItemTitle =
             findMenuItem(app, { "File", "Close" })
@@ -6161,12 +6161,12 @@ appHotKeyCallbacks = {
   ["re.rizin.cutter"] =
   {
     ["preferences"] = {
-      message = localizedMessage("Preferences"),
+      message = T("Preferences"),
       condition = checkMenuItem({ "Edit", "Preferences" }),
       fn = select
     },
     ["quit"] = {
-      message = localizedMessage("Quit"),
+      message = T("Quit"),
       condition = checkMenuItem({ "File", "Quit" }),
       fn = select
     }
@@ -6383,7 +6383,7 @@ appHotKeyCallbacks = {
   ["com.torusknot.SourceTreeNotMAS"] =
   {
     ["showInFinder"] = {
-      message = localizedMessage("Show In Finder"),
+      message = T("Show In Finder"),
       condition = checkMenuItem({ "Actions", "Show In Finder" }),
       fn = select
     }
@@ -6505,7 +6505,7 @@ appHotKeyCallbacks = {
   ["org.qt-project.Designer"] =
   {
     ["openRecent"] = {
-      message = localizedMessage("&Recent Forms"),
+      message = T("&Recent Forms"),
       condition = checkMenuItem({ "File", "&Recent Forms" }),
       fn = select
     }
@@ -6514,7 +6514,7 @@ appHotKeyCallbacks = {
   ["org.qt-project.Linguist"] =
   {
     ["openRecent"] = {
-      message = localizedMessage("Recently Opened &Files"),
+      message = T("Recently Opened &Files"),
       condition = checkMenuItem({ "File", "Recently Opened &Files" }),
       fn = select
     }
@@ -6523,7 +6523,7 @@ appHotKeyCallbacks = {
   ["io.mountainduck"] =
   {
     ["preferencesInMenuBarMenu"] = {
-      message = localizedMessage("Preferences…"),
+      message = T("Preferences…"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
@@ -6533,7 +6533,7 @@ appHotKeyCallbacks = {
       end
     },
     ["openConnectionInMenuBarMenu"] = {
-      message = localizedMessage("Open Connection…"),
+      message = T("Open Connection…"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
@@ -6543,7 +6543,7 @@ appHotKeyCallbacks = {
       end
     },
     ["historyInMenuBarMenu"] = {
-      message = localizedMessage("History"),
+      message = T("History"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
@@ -6582,7 +6582,7 @@ appHotKeyCallbacks = {
 
   ["com.better365.BetterAndBetterHelper"] = {
     ["preferencesInMenuBarMenu"] = {
-      message = localizedMessage("Preferences"),
+      message = T("Preferences"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
@@ -6618,7 +6618,7 @@ appHotKeyCallbacks = {
       end
     },
     ["preferencesInMenuBarMenu"] = {
-      message = localizedMessage("Preferences"),
+      message = T("Preferences"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
@@ -6640,7 +6640,7 @@ appHotKeyCallbacks = {
   ["cn.better365.iCopy"] =
   {
     ["setting"] = {
-      message = localizedMessage("Setting"),
+      message = T("Setting"),
       windowFilter = iCopyWindowFilter,
       fn = function(win)
         local winUI = towinui(win)
@@ -8222,14 +8222,14 @@ local function registerOpenRecent(app)
   if menuItem == nil then
     if appid:sub(1, 10) == "com.apple." then
       if localizedOpenRecent == nil then
-        localizedOpenRecent = commonLocalizedMessage('Open Recent')(app)
+        localizedOpenRecent = TC('Open Recent')(app)
       end
       menuItemPath = { localizedFile, localizedOpenRecent }
       menuItem = app:findMenuItem(menuItemPath)
       if menuItem == nil then
         local appLocale = applicationLocale(appid)
         if appLocale ~= SYSTEM_LOCALE and appLocale:sub(1, 2) ~= 'en' then
-          local localized = commonLocalizedMessage('Open Recent')(app)
+          local localized = TC('Open Recent')(app)
           menuItemPath = { localizedFile, localized }
         end
       end
@@ -8283,7 +8283,7 @@ local function registerZoomHotkeys(app)
     if menuItem == nil then
       local localizedWindow = localizedMenuBarItem('Window', appid)
       local appLocale = applicationLocale(appid)
-      local localizedTitle = commonLocalizedMessage(
+      local localizedTitle = TC(
           'Zoom', { locale = appLocale })(app)
       if localizedTitle ~= nil then
         menuItemPath = { localizedWindow, localizedTitle }
@@ -8555,8 +8555,8 @@ local function registerObserverForSettingsMenuItem(app)
     local appMenuItems = getc(appMenu, AX.Menu, 1, AX.MenuItem)
     if appMenuItems == nil or #appMenuItems == 0 then return end
 
-    local sets = commonLocalizedMessage("Settings…")(app)
-    local prefs = commonLocalizedMessage("Preferences…")(app)
+    local sets = TC("Settings…")(app)
+    local prefs = TC("Preferences…")(app)
     local settingsMenu = tfind(appMenuItems, function(item)
       return item.AXTitle and
           (item.AXTitle:find(sets) or item.AXTitle:find(prefs))
@@ -8616,8 +8616,8 @@ local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
     if notification == uinotifications.menuOpened
         and elem.AXParent.AXRole == AX.MenuBar then
       local menuItems = getc(elem, AX.MenuItem)
-      local sets = commonLocalizedMessage("Settings…")(app)
-      local prefs = commonLocalizedMessage("Preferences…")(app)
+      local sets = TC("Settings…")(app)
+      local prefs = TC("Preferences…")(app)
       local settingsMenu = tfind(menuItems, function(item)
         return item.AXTitle and
             (item.AXTitle:find(sets) or item.AXTitle:find(prefs))
@@ -8635,8 +8635,8 @@ local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
       observer:removeWatcher(toappui(app), uinotifications.menuItemSelected)
     elseif notification == uinotifications.menuItemSelected
         and elem.AXParent.AXParent.AXRole == AX.MenuBar then
-      local sets = commonLocalizedMessage("Settings…")(app)
-      local prefs = commonLocalizedMessage("Preferences…")(app)
+      local sets = TC("Settings…")(app)
+      local prefs = TC("Preferences…")(app)
       if elem.AXTitle:find(sets:sub(1, -4))
           or elem.AXTitle:find(prefs:sub(1, -4)) then
         registerNavigationForSettingsToolbar(app)
