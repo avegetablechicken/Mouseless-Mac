@@ -722,6 +722,10 @@
       }
     },
     "com.apple.Safari": {
+      "toggleSidebar": {
+        "mods": ["control", "command"],
+        "key": "S"
+      },
       "showInFinder": {
         "mods": ["shift", "command"],
         "key": "O"

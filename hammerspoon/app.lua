@@ -2406,6 +2406,12 @@ appHotKeyCallbacks = {
 
   ["com.apple.Safari"] =
   {
+    ["toggleSidebar"] = {
+      message = localizedMessage("Show Sidebar"),
+      condition = checkMenuItem({ "View", "Show Sidebar" },
+                                { "View", "Hide Sidebar" }),
+      fn = receiveMenuItem
+    },
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
       windowFilter = { allowURLs = "^file://" },
