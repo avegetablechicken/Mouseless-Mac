@@ -1838,7 +1838,7 @@ end
 
 -- select the menu item returned by the condition
 -- work as hotkey callback
-local function receiveMenuItem(menuItemTitle, app)
+local function select(menuItemTitle, app)
   if app.application then app = app:application() end
   if #menuItemTitle == 0 then
     app:selectMenuItem(menuItemTitle)
@@ -1896,14 +1896,14 @@ local specialCommonHotkeyConfigs = {
     message = menuItemMessage('⇧⌃', "⇥", 2),
     condition = checkMenuItemByKeybinding('⇧⌃', "⇥"),
     repeatable = true,
-    fn = receiveMenuItem
+    fn = select
   },
   ["showNextTab"] = {
     mods = "⇧⌘", key = "]",
     message = menuItemMessage('⌃', "⇥", 2),
     condition = checkMenuItemByKeybinding('⌃', "⇥"),
     repeatable = true,
-    fn = receiveMenuItem
+    fn = select
   },
 }
 
@@ -1913,7 +1913,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Recent Folders"),
       condition = checkMenuItem({ "Go", "Recent Folders" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["open1stSidebarItem"] = {
       mods = get(KeybindingConfigs.hotkeys.shared,
@@ -2056,7 +2056,7 @@ appHotKeyCallbacks = {
           "Delete Conversation…"
         })(app)
       end,
-      fn = receiveMenuItem
+      fn = select
     },
     ["deleteAllConversations"] = {
       message = localizedMessage("Delete All"),
@@ -2184,7 +2184,7 @@ appHotKeyCallbacks = {
       bindCondition = function() return OS_VERSION < OS.Tahoe end,
       condition = checkMenuItem({ "View", "Show Folders" },
                                 { "View", "Hide Folders" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -2194,7 +2194,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Show Calendar List"),
       condition = checkMenuItem({ "View", "Show Calendar List" },
                                 { "View", "Hide Calendar List" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -2410,7 +2410,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Show Sidebar"),
       condition = checkMenuItem({ "View", "Show Sidebar" },
                                 { "View", "Hide Sidebar" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
@@ -2425,7 +2425,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Recently Closed"),
       condition = checkMenuItem({ "History", "Recently Closed" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -2452,7 +2452,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Search Tabs…"),
       condition = checkMenuItem({ "Tab", "Search Tabs…" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
@@ -2515,7 +2515,7 @@ appHotKeyCallbacks = {
       message = "Open Recent",
       condition = checkMenuItem({ "File", "Open Recent", "More…" },
                                 { "File", "Open Recent" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -2541,27 +2541,27 @@ appHotKeyCallbacks = {
     ["showMainWindow"] = {
       message = localizedMessage("Show Main Window"),
       condition = checkMenuItem({ "Window", "Show Main Window" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["moveFocusToSidebar"] = {
       message = localizedMessage("Move Focus to Sidebar"),
       condition = checkMenuItem({ "View", "Move Focus to Sidebar" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["moveFocusToSnippetsList"] = {
       message = localizedMessage("Move Focus to Snippets List"),
       condition = checkMenuItem({ "View", "Move Focus to Snippets List" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["moveFocusToEditor"] = {
       message = localizedMessage("Move Focus to Editor"),
       condition = checkMenuItem({ "View", "Move Focus to Editor" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["moveFocusToPreview"] = {
       message = localizedMessage("Move Focus to Preview"),
       condition = checkMenuItem({ "View", "Move Focus to Preview" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -2570,13 +2570,13 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = localizedMessage("Show in Finder"),
       condition = checkMenuItem({ "File", "Show in Finder" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["remapPreviousTab"] = {
       message = localizedMessage("Go to Previous Tab"),
       condition = checkMenuItem({ "Window", "Go to Previous Tab" }),
       repeatable = true,
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -2585,12 +2585,12 @@ appHotKeyCallbacks = {
     ["toggleOutline"] = {
       message = localizedMessage("Toggle Outline"),
       condition = checkMenuItem({ "Workspace", "Toggle Outline" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["openRecent"] = {
       message = localizedMessage("Recent Documents"),
       condition = checkMenuItem({ "File", "Recent Documents" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -2599,13 +2599,13 @@ appHotKeyCallbacks = {
     ["openFileLocation"] = {
       message = localizedMessage("Open File Location"),
       condition = checkMenuItem({ "File", "Open File Location" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["openRecent"] = {
       message = localizedMessage("Open Recent"),
       condition = checkMenuItem({ "File", "Open Quickly…" },
                                 { "File", "Open Recent" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -2653,12 +2653,12 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = localizedMessage("Show in Finder"),
       condition = checkMenuItem({ "File", "Show in Finder" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["openRecent"] = {
       message = localizedMessage("Open Quickly…"),
       condition = checkMenuItem({ "File", "Open Quickly…" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["confirmDelete"] = {
       message = localizedMessage("Don't Save"),
@@ -2707,37 +2707,37 @@ appHotKeyCallbacks = {
     ["properties"] = {
       message = localizedMessage("Properties..."),
       condition = checkMenuItem({ "File", "Properties..." }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["exportToPDF"] = {
       message = localizedMessage("Export to PDF..."),
       condition = checkMenuItem({ "File", "Export to PDF..." }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["insertTextBox"] = {
       message = localizedMessage({ "Insert", "Text Box" }),
       condition = checkMenuItem({ "Insert", "Text Box", "Horizontal Text Box" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["insertEquation"] = {
       message = localizedMessage({ "Insert", "LaTeXEquation..." }),
       condition = checkMenuItem({ "Insert", "LaTeXEquation..." }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["pdfHightlight"] = {
       message = localizedMessage("Highlight"),
       condition = checkMenuItem({ "Comment", "Highlight" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["pdfUnderline"] = {
       message = localizedMessage("Underline"),
       condition = checkMenuItem({ "Comment", "Underline" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["pdfStrikethrough"] = {
       message = localizedMessage("Strikethrough"),
       condition = checkMenuItem({ "Comment", "Strikethrough" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["goToHome"] = {
       message = localizedMessage("Home"),
@@ -3017,24 +3017,24 @@ appHotKeyCallbacks = {
     ["exportToPDF"] = {  -- File > Export To > PDF…
       message = localizedMessage({ "Export To", "PDF…" }),
       condition = checkMenuItem({ "File", "Export To", "PDF…" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["exportToPPT"] = {  -- File > Export To > PowerPoint…
       message = localizedMessage({ "Export To", "PowerPoint…" }),
       condition = checkMenuItem({ "File", "Export To", "PowerPoint…" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["pasteAndMatchStyle"] = {  -- Edit > Paste and Match Style
       message = localizedMessage("Paste and Match Style"),
       condition = checkMenuItem({ "Edit", "Paste and Match Style" }),
       repeatable = true,
-      fn = receiveMenuItem
+      fn = select
     },
     ["paste"] = {  -- Edit > Paste
       message = localizedMessage("Paste"),
       condition = checkMenuItem({ "Edit", "Paste" }),
       repeatable = true,
-      fn = receiveMenuItem
+      fn = select
     },
     ["showBuildOrder"] = {  -- View > Show Build Order
       message = localizedMessage("Show Build Order"),
@@ -3053,27 +3053,27 @@ appHotKeyCallbacks = {
     ["toggleFormatInspector"] = {  -- View > Inspector > Format
       message = localizedMessage({ "Inspector", "Format" }),
       condition = checkMenuItem({ "View", "Inspector", "Format" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["play"] = {  -- Play > Play Slideshow
       message = localizedMessage("Play Slideshow"),
       condition = checkMenuItem({ "Play", "Play Slideshow" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["insertTextBox"] = {  -- Insert > Text Box
       message = localizedMessage({ "Insert", "Text Box" }),
       condition = checkMenuItem({ "Insert", "Text Box" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["insertShape"] = {  -- Insert > Shape
       message = localizedMessage({ "Insert", "Shape" }),
       condition = checkMenuItem({ "Insert", "Shape" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["insertLine"] = {  -- Insert > Line
       message = localizedMessage({ "Insert", "Line" }),
       condition = checkMenuItem({ "Insert", "Line" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
@@ -3096,29 +3096,29 @@ appHotKeyCallbacks = {
     ["exportToPDF"] = {  -- File > Export To > PDF…
       message = localizedMessage({ "Export To", "PDF…" }),
       condition = checkMenuItem({ "File", "Export To", "PDF…" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["exportToWord"] = {  -- File > Export To > Word…
       message = localizedMessage({ "Export To", "Word…" }),
       condition = checkMenuItem({ "File", "Export To", "Word…" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["pasteAndMatchStyle"] = {  -- Edit > Paste and Match Style
       message = localizedMessage("Paste and Match Style"),
       condition = checkMenuItem({ "Edit", "Paste and Match Style" }),
       repeatable = true,
-      fn = receiveMenuItem
+      fn = select
     },
     ["paste"] = {  -- Edit > Paste
       message = localizedMessage("Paste"),
       condition = checkMenuItem({ "Edit", "Paste" }),
       repeatable = true,
-      fn = receiveMenuItem
+      fn = select
     },
     ["toggleFormatInspector"] = {  -- View > Inspector > Format
       message = localizedMessage({ "Inspector", "Format" }),
       condition = checkMenuItem({ "View", "Inspector", "Format" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
@@ -3141,29 +3141,29 @@ appHotKeyCallbacks = {
     ["exportToPDF"] = {  -- File > Export To > PDF…
       message = localizedMessage({ "Export To", "PDF…" }),
       condition = checkMenuItem({ "File", "Export To", "PDF…" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["exportToExcel"] = {  -- File > Export To > Excel…
       message = localizedMessage({ "Export To", "Excel…" }),
       condition = checkMenuItem({ "File", "Export To", "Excel…" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["pasteAndMatchStyle"] = {  -- Edit > Paste and Match Style
       message = localizedMessage("Paste and Match Style"),
       condition = checkMenuItem({ "Edit", "Paste and Match Style" }),
       repeatable = true,
-      fn = receiveMenuItem
+      fn = select
     },
     ["paste"] = {  -- Edit > Paste
       message = localizedMessage("Paste"),
       condition = checkMenuItem({ "Edit", "Paste" }),
       repeatable = true,
-      fn = receiveMenuItem
+      fn = select
     },
     ["toggleFormatInspector"] = {  -- View > Inspector > Format
       message = localizedMessage({ "Inspector", "Format" }),
       condition = checkMenuItem({ "View", "Inspector", "Format" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["showInFinder"] = {
       message = commonLocalizedMessage("Show in Finder"),
@@ -3186,12 +3186,12 @@ appHotKeyCallbacks = {
     ["exportToPDF"] = {
       message = localizedMessage({ "Export", "PDF" }),
       condition = checkMenuItem({ "File", "Export", "PDF" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["insertEquation"] = {
       message = localizedMessage({ "Insert", "Equation" }),
       condition = checkMenuItem({ 'Insert', "Equation" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -3204,7 +3204,7 @@ appHotKeyCallbacks = {
       end,
       windowFilter = EuDicMainWindowFilter,
       condition = checkMenuItem({ "功能", "返回首页" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["function2"] = {
       message = function(win)
@@ -3269,7 +3269,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Toggle Sidebar"),
       bindCondition = versionLessEqual("1.2024.332"),
       condition = checkMenuItem({ "View", "Toggle Sidebar" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["back"] = {
       message = localizedMessage("Back"),
@@ -3472,7 +3472,7 @@ appHotKeyCallbacks = {
       message = localizedMessage("Maximize"),
       windowFilter = YuanbaoMainWindowFilter,
       condition = checkMenuItem({ "Window", "Maximize" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["back"] = {
       message = commonLocalizedMessage("Back"),
@@ -3570,17 +3570,17 @@ appHotKeyCallbacks = {
     ["preferences"] = {
       message = localizedMessage("Preferences"),
       condition = checkMenuItem({ "File", "Preferences" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["newLibrary"] = {
       message = localizedMessage("New library"),
       condition = checkMenuItem({ "File", "New library" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["openRecent"] = {
       message = localizedMessage("Recent libraries"),
       condition = checkMenuItem({ "File", "Recent libraries" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["revealLibrayInFinder"] = {
       message = localizedMessage("Reveal in file explorer"),
@@ -3700,7 +3700,7 @@ appHotKeyCallbacks = {
     ["newCollection"] = {
       message = localizedMessage("New Collection…"),
       condition = checkMenuItem({ "File", "New Collection…" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -3778,12 +3778,12 @@ appHotKeyCallbacks = {
     ["export"] = {
       message = localizedMessage({ "Share", "File…" }),
       condition = checkMenuItem({ "File", "Share", "File…" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["openRecent"] = {
       message = localizedMessage("Open Library"),
       condition = checkMenuItem({ "File", "Open Library" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -4089,7 +4089,7 @@ appHotKeyCallbacks = {
         end
       end,
       repeatable = true,
-      fn = receiveMenuItem
+      fn = select
     },
     ["closeWindow"] = {
       mods = specialCommonHotkeyConfigs["closeWindow"].mods,
@@ -4130,7 +4130,7 @@ appHotKeyCallbacks = {
         local menuItem = win:application():findMenuItem(menuItemPath)
         return menuItem ~= nil and menuItem.enabled, menuItemPath
       end,
-      fn = receiveMenuItem
+      fn = select
     },
     ["confirm"] = {
       message = function(win)
@@ -4610,7 +4610,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Show History"),
       condition = checkMenuItem({ "Window", "Show History" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -6005,7 +6005,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Open Recent"),
       condition = checkMenuItem({ "Game", "Open Recent" }),
-      fn = receiveMenuItem
+      fn = select
     },
   },
 
@@ -6013,7 +6013,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Start Recent Timer"),
       condition = checkMenuItem({ "File", "Start Recent Timer" }),
-      fn = receiveMenuItem
+      fn = select
     },
   },
 
@@ -6022,7 +6022,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Open Recent"),
       condition = checkMenuItem({ "Connect", "Open Recent" }),
-      fn = receiveMenuItem
+      fn = select
     },
   },
 
@@ -6059,12 +6059,12 @@ appHotKeyCallbacks = {
     ["toggleSidebar"] = {
       message = "Toggle sidebar",
       condition = checkMenuItem({ "View", "Show sidebar" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["toggleStatusBar"] = {
       message = "Toggle status bar",
       condition = checkMenuItem({ "View", "Show status bar" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -6074,37 +6074,37 @@ appHotKeyCallbacks = {
       mods = "⌘", key = "N",
       message = localizedMessage("New..."),
       condition = checkMenuItem({ "File", "New..." }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["open..."] = {
       mods = "⌘", key = "O",
       message = localizedMessage("Open..."),
       condition = checkMenuItem({ "File", "Open..." }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["showControlCenter"] = {
       message = localizedMessage("Control Center"),
       condition = checkMenuItem({ "Window", "Control Center" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["expandedView"] = {
       message = localizedMessage("Expanded View"),
       windowFilter = ParallelsControlCenterWindowFilter,
       condition = checkMenuItem({ "View", "Expanded View" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["compactView"] = {
       message = localizedMessage("Compact View"),
       windowFilter = ParallelsControlCenterWindowFilter,
       condition = checkMenuItem({ "View", "Compact View" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["minimize"] = {
       mods = specialCommonHotkeyConfigs["minimize"].mods,
       key = specialCommonHotkeyConfigs["minimize"].key,
       message = localizedMessage("Minimize"),
       condition = checkMenuItem({ "Window", "Minimize" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["closeWindow"] = {
       mods = specialCommonHotkeyConfigs["closeWindow"].mods,
@@ -6163,12 +6163,12 @@ appHotKeyCallbacks = {
     ["preferences"] = {
       message = localizedMessage("Preferences"),
       condition = checkMenuItem({ "Edit", "Preferences" }),
-      fn = receiveMenuItem
+      fn = select
     },
     ["quit"] = {
       message = localizedMessage("Quit"),
       condition = checkMenuItem({ "File", "Quit" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -6385,7 +6385,7 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = localizedMessage("Show In Finder"),
       condition = checkMenuItem({ "Actions", "Show In Finder" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -6394,7 +6394,7 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = "Show in Finder",
       condition = checkMenuItem({ "File", "Show in Finder" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -6420,7 +6420,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to CLion"
       },
-      fn = bind(receiveMenuItem, {"File", "Open..."})
+      fn = bind(select, {"File", "Open..."})
     }
   },
 
@@ -6446,7 +6446,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to CLion"
       },
-      fn = bind(receiveMenuItem, {"File", "Open..."})
+      fn = bind(select, {"File", "Open..."})
     }
   },
 
@@ -6472,7 +6472,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to IntelliJ IDEA"
       },
-      fn = bind(receiveMenuItem, {"File", "Open..."})
+      fn = bind(select, {"File", "Open..."})
     }
   },
 
@@ -6498,7 +6498,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to PyCharm"
       },
-      fn = bind(receiveMenuItem, {"File", "Open..."})
+      fn = bind(select, {"File", "Open..."})
     }
   },
 
@@ -6507,7 +6507,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("&Recent Forms"),
       condition = checkMenuItem({ "File", "&Recent Forms" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -6516,7 +6516,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = localizedMessage("Recently Opened &Files"),
       condition = checkMenuItem({ "File", "Recently Opened &Files" }),
-      fn = receiveMenuItem
+      fn = select
     }
   },
 
@@ -8241,7 +8241,7 @@ local function registerOpenRecent(app)
     end
   end
   if menuItem ~= nil then
-    local fn = function() receiveMenuItem(menuItemPath, app) end
+    local fn = function() select(menuItemPath, app) end
     local cond = function()
       local menuItemCond = app:findMenuItem(menuItemPath)
       return menuItemCond ~= nil and menuItemCond.enabled
