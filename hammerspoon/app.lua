@@ -2411,7 +2411,9 @@ appHotKeyCallbacks = {
       windowFilter = { allowURLs = "^file://" },
       fn = function(url)
         hs.execute('open -R "' .. url .. '"')
-        find("com.apple.finder"):activate()
+        if OS_VERSION >= OS.Tahoe then
+          find("com.apple.finder"):activate()
+        end
       end
     },
     ["openRecent"] = {
@@ -2432,7 +2434,9 @@ appHotKeyCallbacks = {
       end,
       fn = function(doc)
         hs.execute('open -R "' .. doc .. '"')
-        find("com.apple.finder"):activate()
+        if OS_VERSION >= OS.Tahoe then
+          find("com.apple.finder"):activate()
+        end
       end
     }
   },
@@ -2449,7 +2453,9 @@ appHotKeyCallbacks = {
       windowFilter = { allowURLs = "^file://" },
       fn = function(url)
         hs.execute('open -R "' .. url .. '"')
-        find("com.apple.finder"):activate()
+        if OS_VERSION >= OS.Tahoe then
+          find("com.apple.finder"):activate()
+        end
       end
     }
   },
@@ -3072,7 +3078,9 @@ appHotKeyCallbacks = {
       end,
       fn = function(doc)
         hs.execute('open -R "' .. doc .. '"')
-        find("com.apple.finder"):activate()
+        if OS_VERSION >= OS.Tahoe then
+          find("com.apple.finder"):activate()
+        end
       end
     },
   },
@@ -3115,7 +3123,9 @@ appHotKeyCallbacks = {
       end,
       fn = function(doc)
         hs.execute('open -R "' .. doc .. '"')
-        find("com.apple.finder"):activate()
+        if OS_VERSION >= OS.Tahoe then
+          find("com.apple.finder"):activate()
+        end
       end
     },
   },
@@ -3158,7 +3168,9 @@ appHotKeyCallbacks = {
       end,
       fn = function(doc)
         hs.execute('open -R "' .. doc .. '"')
-        find("com.apple.finder"):activate()
+        if OS_VERSION >= OS.Tahoe then
+          find("com.apple.finder"):activate()
+        end
       end
     },
   },
