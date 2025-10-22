@@ -1058,7 +1058,7 @@
         "mods": "command",
         "key": "["
       },
-      "toggleLauncher": {
+      "toggleChatBar": {
         "mods": ["option", "command"],
         "key": "space",
         "persist": true

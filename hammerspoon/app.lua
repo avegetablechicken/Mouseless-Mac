@@ -3284,8 +3284,12 @@ appHotKeyCallbacks = {
       end,
       fn = press
     },
-    ["toggleLauncher"] = {
-      message = "Toggle ChatGPT Launcher",
+    ["toggleChatBar"] = {
+      message = function()
+        local appid = "com.openai.chat"
+        local msg = localizedString("Open Chat Bar", appid)
+        return displayName(appid)..' > '..msg
+      end,
       background = true,
       fn = function(app)
         local output, status = hs.execute(strfmt([[
@@ -3311,7 +3315,7 @@ appHotKeyCallbacks = {
         app:focusedWindow():close()
         app:hide()
         hs.timer.usleep(1000000)
-        appHotKeyCallbacks[app:bundleID()]["toggleLauncher"].fn(app)
+        appHotKeyCallbacks[app:bundleID()]["toggleChatBar"].fn(app)
       end
     }
   },
@@ -3503,10 +3507,11 @@ appHotKeyCallbacks = {
       end,
       fn = press
     },
-    ["toggleLauncher"] = {
+    ["toggleMiniChat"] = {
       message = function()
-        local appname = displayName("com.tencent.yuanbao")
-        return "Toggle " .. appname .. " Launcher"
+        local appid = "com.tencent.yuanbao"
+        local msg = localizedString("Open Mini Chat", appid)
+        return displayName(appid)..' > '..msg
       end,
       background = true,
       fn = function(app)
@@ -3561,7 +3566,7 @@ appHotKeyCallbacks = {
         app:focusedWindow():close()
         app:hide()
         hs.timer.usleep(1000000)
-        appHotKeyCallbacks[app:bundleID()]["toggleLauncher"].fn(app)
+        appHotKeyCallbacks[app:bundleID()]["toggleMiniChat"].fn(app)
       end
     },
     ["showMainWindow"] = {
