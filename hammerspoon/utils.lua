@@ -2631,7 +2631,7 @@ function localizedString(str, appid, params, force)
   appid = appid or '__macos'
   local result, appLocale, locale =
       localizedStringImpl(str, appid, params, force)
-  if appLocale == nil then return result end
+  if appLocale == nil or (force and result == nil) then return result end
 
   if appLocaleDir[appid] == nil then
     appLocaleDir[appid] = {}
@@ -3779,7 +3779,7 @@ function delocalizedString(str, appid, params, force)
   end
   local result, appLocale, locale =
       delocalizedStringImpl(str, appid, params, force)
-  if appLocale == nil then return result end
+  if appLocale == nil or (force and result == nil) then return result end
 
   if appLocaleDir[appid] == nil then
     appLocaleDir[appid] = {}
