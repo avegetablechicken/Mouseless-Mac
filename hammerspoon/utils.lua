@@ -4619,7 +4619,11 @@ MENUBAR_MANAGER_SHOW = {
                   and title == "Passwords") then
             count = count + 1
             if count == indexInHidden then
-              leftClickAndRestore(getc(icons, AX.Group, i), elem:asHSWindow(), 0.1)
+              if click == "right-click" then
+                rightClickAndRestore(getc(icons, AX.Group, i), elem:asHSWindow(), 0.1)
+              else
+                leftClickAndRestore(getc(icons, AX.Group, i), elem:asHSWindow(), 0.1)
+              end
               break
             end
           end
@@ -4663,7 +4667,7 @@ MENUBAR_MANAGER_SHOW = {
     return true
   end,
 
-  ["com.jordanbaird.Ice"] = function(manager, appid, index)
+  ["com.jordanbaird.Ice"] = function(manager, appid, index, map, click)
     local icon = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 1)
     if icon == nil then return end
     local useIceBar = hs.execute(strfmt([[
@@ -4727,7 +4731,11 @@ MENUBAR_MANAGER_SHOW = {
                   and title == "Passwords") then
             count = count + 1
             if count == indexInHidden then
-              leftClickAndRestore(button, elem:asHSWindow(), 0.1)
+              if click == "right-click" then
+                rightClickAndRestore(button, elem:asHSWindow(), 0.1)
+              else
+                leftClickAndRestore(button, elem:asHSWindow(), 0.1)
+              end
               break
             end
           end
