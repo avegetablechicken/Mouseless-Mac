@@ -3504,8 +3504,8 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["toggleLauncher"] = {
-      message = function(app)
-        local appname = displayName(app)
+      message = function()
+        local appname = displayName("com.tencent.yuanbao")
         return "Toggle " .. appname .. " Launcher"
       end,
       background = true,
