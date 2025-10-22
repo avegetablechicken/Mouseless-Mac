@@ -3287,8 +3287,19 @@ appHotKeyCallbacks = {
     ["toggleLauncher"] = {
       message = "Toggle ChatGPT Launcher",
       background = true,
-      fn = function()
-        clickRightMenuBarItem("ChatGPTHelper", {}, "click")
+      fn = function(app)
+        local output, status = hs.execute(strfmt([[
+          defaults read '%s' KeyboardShortcuts_toggleLauncher | tr -d '\n'
+        ]], app:bundleID()))
+        if status and output ~= "0" then
+          local json = hs.json.decode(output)
+          local mods, key = parsePlistKeyBinding(
+              json["carbonModifiers"], json["carbonKeyCode"])
+          if mods == nil or key == nil then return end
+          safeGlobalKeyStroke(mods, key)
+        else
+          clickRightMenuBarItem("ChatGPTHelper", {}, "click")
+        end
       end,
       onLaunch = function(app)
         local retry = 0
@@ -3300,7 +3311,7 @@ appHotKeyCallbacks = {
         app:focusedWindow():close()
         app:hide()
         hs.timer.usleep(1000000)
-        clickRightMenuBarItem("ChatGPTHelper", {}, "click")
+        appHotKeyCallbacks[app:bundleID()]["toggleLauncher"].fn(app)
       end
     }
   },
