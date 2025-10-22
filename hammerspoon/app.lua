@@ -4643,13 +4643,17 @@ appHotKeyCallbacks = {
           if not invoked then return end
           menu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1)
         end
-        local start = getc(menu, AX.MenuItem, "Start")
+        local title = localizedString("&Start", app) or "&Start"
+        title = title:gsub("%(&%a%)", ""):gsub("&", "")
+        local start = getc(menu, AX.MenuItem, title)
         if start == nil then return end
         if start.AXEnabled then
           press(start)
           hs.alert("Barrier started")
         else
-          local stop = getc(menu, AX.MenuItem, "Stop")
+          title = localizedString("S&top", app)
+          title = title:gsub("%(&%a%)", ""):gsub("&", "")
+          local stop = getc(menu, AX.MenuItem, title)
           if stop == nil then return end
           press(stop)
           hs.alert("Barrier stopped")
@@ -4660,7 +4664,8 @@ appHotKeyCallbacks = {
           hs.alert("Error occurred")
         else
           local winUI = towinui(app:focusedWindow())
-          local start = getc(winUI, AX.Button, "Start")
+          local title = barrierLocalizedString("&Start", app)
+          local start = getc(winUI, AX.Button, title)
           if start == nil then return end
           press(start)
           hs.alert("Barrier started")
