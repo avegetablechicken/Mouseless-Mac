@@ -2432,8 +2432,7 @@ local function localizedStringImpl(str, appid, params, force)
     locale = get(appLocaleDir, appid, appLocale)
     if locale then
       result = get(appLocaleMap, appid, locale, str)
-      if result == false then return nil
-      elseif result ~= nil then return result end
+      if result ~= nil then return result end
     end
   end
 
@@ -3594,8 +3593,7 @@ local function delocalizedStringImpl(str, appid, params, force)
     local locale = get(appLocaleDir, appid, appLocale)
     if locale then
       local result = get(deLocaleMap, appid, locale, str)
-      if result == false then return nil
-      elseif result ~= nil then return result end
+      if result ~= nil then return result end
     end
   end
   if appid == "com.openai.chat" then
@@ -4191,7 +4189,7 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
         delocTitle = delocalizedString(title, appid, localeFile)
         titleMap[title] = delocTitle
       end
-      if delocTitle ~= nil then
+      if delocTitle then
         if not isValid(delocTitle) then
           if titleMap[delocTitle] ~= nil then
             delocTitle = titleMap[delocTitle]
@@ -4212,7 +4210,7 @@ end
 function localizedMenuBarItem(title, appid, params)
   if locMap[appid] ~= nil then
     local locTitle = locMap[appid][title]
-    if locTitle ~= nil then
+    if locTitle then
       -- "View" may be localized to different strings in the same app (e.g. WeChat)
       if title == 'View' and find(appid) then
         if find(appid):findMenuItem({ locTitle }) ~= nil then
@@ -4248,7 +4246,7 @@ function localizedMenuBarItem(title, appid, params)
 
   if appLocale == matchLocale(SYSTEM_LOCALE, { appLocale }) then
     local locTitle = locMap.common[title]
-    if locTitle ~= nil then
+    if locTitle then
       if (title == 'View' or title == 'Edit') and find(appid) then
         if find(appid):findMenuItem({ locTitle }) ~= nil then
           return locTitle
@@ -4271,7 +4269,7 @@ function localizedMenuBarItem(title, appid, params)
   if locTitle == nil then
     locTitle = localizedString(title, appid, params, true)
   end
-  if locTitle ~= nil then
+  if locTitle then
     if delocMap[appid] == nil then
       delocMap[appid] = {}
     end

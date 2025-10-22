@@ -1706,7 +1706,7 @@ local function TC(message, params)
       if params.locale ~= nil then
         local result = localizedString(message .. ' App Store',
                                        'com.apple.AppStore', params)
-        if result ~= nil then
+        if result then
           result = result:gsub('App Store', appname)
           return result
         end
@@ -1725,7 +1725,7 @@ local function TC(message, params)
         local targetAppId = message == "Zoom" and "com.apple.AppStore"
             or "com.apple.systempreferences"
         local result = localizedString(message, targetAppId, params)
-        if result ~= nil then
+        if result then
           return result
         end
       end
@@ -1744,7 +1744,7 @@ local function TC(message, params)
           params.localeFile = stem
           local retry = i > 1
           local result = localizedString(message, params, retry)
-          if result ~= nil then
+          if result then
             result = result:gsub('“%%@”', ''):gsub('%%@', '')
             return result
           end
@@ -4117,7 +4117,7 @@ appHotKeyCallbacks = {
             localizedMenuBarItem("Window", exBundleID, params),
             localizedString("Select Previous Tab", exBundleID, params)
           }
-          if #menuItemPath == 2 then
+          if menuItemPath[2] then
             local menuItem = app:findMenuItem(menuItemPath)
             return menuItem ~= nil
           end
@@ -4157,13 +4157,13 @@ appHotKeyCallbacks = {
             localizedMenuBarItem('File', exBundleID, { locale = appLocale }),
             localizedString('Close All Tabs', exBundleID, { locale = appLocale })
           }
-          if #menuItemPath == 2 then
+          if menuItemPath[2] then
             local menuItem = win:application():findMenuItem(menuItemPath)
             if menuItem == nil or not menuItem.enabled then return false end
           end
           menuItemPath[2] = localizedString('Close Tab', exBundleID,
                                             { locale = appLocale })
-          if #menuItemPath == 2 then
+          if menuItemPath[2] then
             local menuItem = win:application():findMenuItem(menuItemPath)
             return menuItem and not menuItem.enabled
           end
