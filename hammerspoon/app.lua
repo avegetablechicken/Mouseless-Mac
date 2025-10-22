@@ -4385,7 +4385,7 @@ appHotKeyCallbacks = {
       end
     },
     ["playBarCloseSingleSong"] = {
-      message = "关闭单曲",
+      message = TC("Close Window"),
       windowFilter = {
         allowRoles = AX.Unknown,
         fn = function(win)
