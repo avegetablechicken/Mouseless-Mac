@@ -3396,16 +3396,17 @@ appHotKeyCallbacks = {
         observer:addWatcher(toappui(app), uinotifications.windowCreated)
         observer:callback(function(obs, winUI)
           local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
-            AX.ScrollArea, 1, AX.WebArea, 1)
+              AX.ScrollArea, 1, AX.WebArea, 1)
           if webarea then
             local title = localizedString("Settings", app)
             for _, g in ipairs(getc(webarea, AX.Group)) do
               if g[1] and g[1].AXValue == title then
-                leftClickAndRestore(g[1], app) break
+                leftClickAndRestore(g[1], app)
+                obs:stop() obs = nil
+                return
               end
             end
-            obs:stop()
-            obs = nil
+            winUI:asHSWindow():close()
           end
         end)
         observer:start()
