@@ -366,12 +366,15 @@ if exists("config/localization.json") then
   locMap = tcopy(localizationMapLoaded['strings'])
 end
 function resetLocalizationMap(appid)
-  if localizationMapLoaded[appid] ~= nil then
-    delocMap[appid] = tcopy(localizationMapLoaded[appid]['menubar'])
-    locMap[appid] = tcopy(localizationMapLoaded[appid]['strings'])
+  if get(localizationMapLoaded, 'menubar', appid) ~= nil then
+    delocMap[appid] = tcopy(localizationMapLoaded['menubar'][appid])
+  else
+    delocMap[appid] = nil
+  end
+  if get(localizationMapLoaded, 'strings', appid) ~= nil then
+    locMap[appid] = tcopy(localizationMapLoaded['strings'][appid])
   else
     locMap[appid] = nil
-    delocMap[appid] = nil
   end
 end
 
