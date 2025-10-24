@@ -1059,10 +1059,10 @@ local function controlCenterLocalized(panel, key)
   end
   panel = panel:gsub(" ", ""):gsub("‑", "")
   local result = localizedString(key, "com.apple.controlcenter", panel)
-  if result == nil and panel == "Focus" then
+  if not result and panel == "Focus" then
     result = localizedString(key, "com.apple.controlcenter",
         { framework = "DoNotDisturb.framework" }, true)
-    if result == nil then
+    if not result then
       result = localizedString(key, "com.apple.controlcenter",
           { framework = "DoNotDisturbKit.framework" }, true)
     end
@@ -1372,7 +1372,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     if appLocale ~= nil then
       local result = localizedString(msg, 'com.apple.AppStore',
                                      { locale = appLocale })
-      if result ~= nil then
+      if result then
         msg = result
       end
     end

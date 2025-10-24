@@ -354,7 +354,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
             if lowerTitle:find("full screen")
                 or lowerTitle:find("fullscreen") then
               idx = "🌐︎F"
-            elseif enTitle ~= nil then
+            elseif enTitle then
               enTitle = enTitle:lower()
               if enTitle:find("full screen")
                   or enTitle:find("fullscreen") then

@@ -4142,7 +4142,7 @@ function delocalizedMenuItem(title, appid, params, system)
   if newTitle == nil then
     newTitle = delocalizedString(title, appid, params, true)
   end
-  if newTitle ~= nil then
+  if newTitle then
     if titleMap == nil then
       delocMap[appid] = {}
       titleMap = delocMap[appid]
@@ -4977,7 +4977,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
     menu = getc(parent, AX.Menu, 1, AX.MenuItem, item)
     if menu == nil and type(item) == 'string' then
       local locItem = localizedString(item, appid)
-      if locItem ~= nil then
+      if locItem then
         menu = getc(parent, AX.Menu, 1, AX.MenuItem, locItem)
       end
     end

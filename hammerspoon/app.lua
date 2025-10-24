@@ -8286,9 +8286,10 @@ local function registerOpenRecent(app)
       end
     else
       local localizedTitle = localizedString('Open Recent', appid)
-      if localizedTitle == nil then return end
-      menuItemPath = { localizedFile, localizedTitle }
-      menuItem = app:findMenuItem(menuItemPath)
+      if localizedTitle then
+        menuItemPath = { localizedFile, localizedTitle }
+        menuItem = app:findMenuItem(menuItemPath)
+      end
     end
   end
   if menuItem ~= nil then
@@ -8709,7 +8710,7 @@ local specialConfirmFuncs = {
   ["com.kingsoft.wpsoffice.mac"] = function(winUI)
     if winUI.AXSubrole == AX.Dialog then
       local btnName = localizedString("Don't Save", "com.kingsoft.wpsoffice.mac")
-      if btnName == nil then return end
+      if not btnName then return end
       local buttons = getc(winUI, AX.Button)
       for _, button in ipairs(buttons) do
         if button.AXTitle == btnName then
