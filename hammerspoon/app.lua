@@ -558,7 +558,8 @@ local function messageDeletable(app)
   end
   local desc = localizedString('New Message', app)
   if messageItems[1].AXDescription == nil
-      or messageItems[1].AXDescription:sub(4) == desc then
+      or messageItems[1].AXDescription:sub(4) == desc
+      or messageItems[1].AXValue ~= nil then
     tremove(messageItems, 1)
   end
   return #messageItems > 0, messageItems
@@ -2079,7 +2080,8 @@ appHotKeyCallbacks = {
         local desc = localizedString('New Message', app)
         if messageItems == nil or #messageItems == 0
             or (#messageItems == 1 and (messageItems[1].AXDescription == nil
-              or messageItems[1].AXDescription:sub(4) == desc)) then
+              or messageItems[1].AXDescription:sub(4) == desc)
+              or messageItems[1].AXValue ~= nil) then
           return false
         end
         if #messageItems == 1 and messageItems[1].AXSelected then
@@ -2112,7 +2114,8 @@ appHotKeyCallbacks = {
         local desc = localizedString('New Message', app)
         if messageItems == nil or #messageItems == 0
             or (#messageItems == 1 and (messageItems[1].AXDescription == nil
-              or messageItems[1].AXDescription:sub(4) == desc)) then
+              or messageItems[1].AXDescription:sub(4) == desc)
+              or messageItems[1].AXValue ~= nil) then
           return false
         end
         if #messageItems == 1 and messageItems[1].AXSelected then
