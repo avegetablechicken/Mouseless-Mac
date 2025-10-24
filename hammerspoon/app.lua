@@ -2660,6 +2660,16 @@ appHotKeyCallbacks = {
       condition = checkMenuItem({ "File", "Open Quickly…" }),
       fn = select
     },
+    ["openRecentInMenuBarMenu"] = {
+      message = T("Open Recent"),
+      menubarFilter = { allowIndices = 1 },
+      fn = function(menu)
+        local app = getAppFromDescendantElement(menu)
+        local title = localizedString("Open Recent", app)
+        local menuItem = getc(menu, AX.MenuItem, title)
+        if menuItem then press(menuItem) end
+      end
+    },
     ["confirmDelete"] = {
       message = T("Don't Save"),
       condition = function(app)

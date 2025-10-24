@@ -815,6 +815,10 @@
       "showInFinder": {
         "mods": ["shift", "command"],
         "key": "O"
+      },
+      "openRecentInMenuBarMenu": {
+        "mods": "control",
+        "key": "R"
       }
     },
     "com.kingsoft.wpsoffice.mac": {
