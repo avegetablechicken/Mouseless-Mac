@@ -4305,6 +4305,22 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["com.tencent.qq"] = {
+    ["switchUIMode"] = {
+      message = "切换界面模式",
+      bindCondition = versionGreaterEqual("6.9.82"),
+      windowFilter = { allowTitles = "^QQ$" },
+      condition = function(win)
+        local webarea = getc(towinui(win), AX.Group, 1,
+            AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.WebArea, 1)
+        local image = getc(webarea, AX.Group, 1,
+            AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Image, 1)
+        return image ~= nil, image
+      end,
+      fn = press
+    }
+  },
+
   ["com.tencent.QQMusicMac"] =
   {
     ["back"] = {
