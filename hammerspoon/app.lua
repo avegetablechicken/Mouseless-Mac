@@ -1239,7 +1239,7 @@ local function clickBartenderSidebarItem(index)
     local winUI = towinui(win)
     if versionLessThan("6")(win:application()) then
       local row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
-          AX.Outline, 1, AX.Row, index, AX.Cell, 1, AX.StaticText, 1)
+          AX.Outline, 1, AX.Row, index)
       if row then row.AXSelected = true end
     else
       local row = getc(winUI, AX.Group, 1, AX.SplitGroup, 1,
