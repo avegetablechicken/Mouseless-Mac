@@ -355,7 +355,7 @@ local function click(position)
 end
 
 local function clickable(element, offset)
-  if element == nil then return false end
+  if element == nil or not element:isValid() then return false end
   if offset == nil then
     offset = { element.AXSize.w / 2, element.AXSize.h / 2 }
   end
