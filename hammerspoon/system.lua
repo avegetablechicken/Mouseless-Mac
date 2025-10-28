@@ -1016,6 +1016,27 @@ end
 
 -- assume `Control Center` window is always frontmost
 -- so not necessary to call "inAppHotKeysWrapper"
+local CC = {
+  AXShortcuts       = "Accessibility Shortcuts",
+  AirDrop           = "AirDrop",
+  Battery           = "Battery",
+  Bluetooth         = "Bluetooth",
+  Display           = "Display",
+  Focus             = "Focus",
+  Hearing           = "Hearing",
+  KbBrightness      = "Keyboard Brightness",
+  MusicRecognition  = "Music Recognition",
+  NowPlaying        = "Now Playing",
+  ScreenMirror      = "Screen Mirroring",
+  Sound             = "Sound",
+  StageManager      = "Stage Manager",
+  Users             = "Users",
+  WiFi              = "Wi‑Fi",
+}
+if OS_VERSION >= OS.Tahoe then
+  CC.MusicRecognition = "Recognize Music"
+end
+
 local function newControlCenter(...)
   local hotkey = newHotkey(...)
   if hotkey == nil then return nil end
@@ -1034,10 +1055,8 @@ end
 
 local controlCenterPanelFuncs = {}
 hs.urlevent.bind("controlcenter", function(eventName, params)
-  if params["panel"] == "Music Recognition" and OS_VERSION >= OS.Tahoe then
-    params["panel"] = "Recognize Music"
-  elseif params["panel"] == "Recognize Music" and OS_VERSION < OS.Tahoe then
-    params["panel"] = "Music Recognition"
+  if params["panel"] == "Music Recognition" or params["panel"] == "Recognize Music" then
+    params["panel"] = CC.MusicRecognition
   end
   local fn = controlCenterPanelFuncs[params["panel"]]
   if fn then fn() end
@@ -1051,15 +1070,15 @@ local function controlCenterLocalized(panel, key)
   if key == nil then
     key = panel
   end
-  if panel == "Users" and key == "Users" then
+  if panel == CC.Users and key == CC.Users then
     key = "User"
   end
-  if panel == "Recognize Music" then
+  if panel == CC.MusicRecognition then
     panel = "Music Recognition"
   end
   panel = panel:gsub(" ", ""):gsub("‑", "")
   local result = localizedString(key, "com.apple.controlcenter", panel)
-  if not result and panel == "Focus" then
+  if not result and panel == CC.Focus then
     result = localizedString(key, "com.apple.controlcenter",
         { framework = "DoNotDisturb.framework" }, true)
     if not result then
@@ -1071,17 +1090,17 @@ local function controlCenterLocalized(panel, key)
 end
 
 local function testAlready(panel, pane, role)
-  if panel == "Stage Manager" then return false end
+  if panel == CC.StageManager then return false end
   local locPanel = controlCenterLocalized(panel)
 
   if role == nil then
-    if tcontain({ "Wi‑Fi", "Focus", "Bluetooth", "AirDrop",
-                  "Keyboard Brightness", "Screen Mirroring",
-                  "Accessibility Shortcuts", "Battery",
-                  "Sound", "Hearing" }, panel) then
+    if tcontain({ CC.WiFi, CC.Focus, CC.Bluetooth, CC.AirDrop,
+                  CC.KbBrightness, CC.ScreenMirror,
+                  CC.AXShortcuts, CC.Battery,
+                  CC.Sound, CC.Hearing }, panel) then
       local elem = getc(pane, AX.StaticText, 1)
       return elem and elem.AXValue == locPanel
-    elseif panel == "Display" then
+    elseif panel == CC.Display then
       local sa = getc(pane, OS_VERSION < OS.Ventura and AX.ScrollArea or AX.Group, 1)
       local title
       if OS_VERSION >= OS.Tahoe then
@@ -1092,7 +1111,7 @@ local function testAlready(panel, pane, role)
         title = elem and elem.AXValue
       end
       return title == locPanel
-    elseif panel == "Recognize Music" or panel == "Music Recognition" then
+    elseif panel == CC.MusicRecognition then
       local elem = getc(pane, AX.Group, 1, AX.Group, 1, AX.CheckBox, 1)
       local title
       if elem and elem.AXTitle then
@@ -1101,7 +1120,7 @@ local function testAlready(panel, pane, role)
         title = elem.AXAttributedDescription:getString()
       end
       return elem and title:match('^'..locPanel)
-    elseif panel == "Now Playing" then
+    elseif panel == CC.NowPlaying then
       if OS_VERSION < OS.Ventura then
         local mayLocalize = bind(controlCenterLocalized, panel)
         return getc(pane, AX.Button, mayLocalize("rewind")) ~= nil
@@ -1113,7 +1132,7 @@ local function testAlready(panel, pane, role)
         return pane and #getc(pane, AX.Button) > 1
             and (#getc(pane, AX.Image) > 0 or pane[1].AXRole == AX.Unknown)
       end
-    elseif panel == "Users" then
+    elseif panel == CC.Users then
       local elem = pane[#pane]
       local title
       if elem and elem.AXTitle then
@@ -1138,38 +1157,36 @@ local function popupControlCenterSubPanel(panel, allowReentry)
 
   local function enterPanel()  -- assume in BentoBox-0 since macOS Tahoe
     local role, index
-    if tcontain({ "Wi‑Fi", "Focus",
-                  "Bluetooth", "AirDrop",
-                  "Recognize Music", "Music Recognition" }, panel) then
+    if tcontain({ CC.WiFi, CC.Focus, CC.Bluetooth, CC.AirDrop,
+                  CC.MusicRecognition }, panel) then
       role = AX.CheckBox index = 2
-    elseif panel == "Screen Mirroring" then
+    elseif panel == CC.ScreenMirror then
       if OS_VERSION >= OS.Ventura and OS_VERSION <= OS.Sequoia then
         role = AX.Button index = 1
       else
         role = AX.CheckBox index = 2
       end
-    elseif panel == "Stage Manager" then
+    elseif panel == CC.StageManager then
       role = AX.CheckBox index = 1
-    elseif panel == "Display" then
+    elseif panel == CC.Display then
       if OS_VERSION >= OS.Ventura and OS_VERSION <= OS.Sequoia then
         role = AX.Group
       else
         role = AX.StaticText
       end
       index = 1
-    elseif panel == "Keyboard Brightness" then
+    elseif panel == CC.KbBrightness then
       if OS_VERSION <= OS.Sequoia then
         role = AX.Button
       else
         role = AX.StaticText
       end
       index = 1
-    elseif panel == "Sound" then
+    elseif panel == CC.Sound then
       role = AX.StaticText index = 1
-    elseif tcontain({ "Accessibility Shortcuts",
-                      "Battery", "Hearing", "Users" }, panel) then
+    elseif tcontain({ CC.AXShortcuts, CC.Battery, CC.Hearing, CC.Users }, panel) then
       role = AX.Button index = 1
-    elseif panel == "Now Playing" then
+    elseif panel == CC.NowPlaying then
       local ele
       if OS_VERSION >= OS.Tahoe then
         ele = tfind(getc(pane, AX.Group), function(g)
@@ -1221,7 +1238,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       if OS_VERSION >= OS.Tahoe then index = index + 1 end
       local act = ele:actionNames()[index]
       local ret = ele:performAction(act)
-      if ret and panel == "Stage Manager" then
+      if ret and panel == CC.StageManager then
         local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
         local menuBarItem = tfind(menuBarItems,
           function(item)
@@ -1237,13 +1254,13 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     if OS_VERSION >= OS.Ventura then
       pane = getc(pane, AX.Group, 1)
     end
-    if panel == "Hearing" then
+    if panel == CC.Hearing then
       if #pane == 1 and pane[1].AXRole == AX.ScrollArea then
         pane = pane[1]
       end
     end
-    if testAlready("Wi‑Fi", pane, AX.CheckBox)
-        and testAlready("Bluetooth", pane, AX.CheckBox) then
+    if testAlready(CC.WiFi, pane, AX.CheckBox)
+        and testAlready(CC.Bluetooth, pane, AX.CheckBox) then
       enterPanel()
       registerControlCenterHotKeys(panel)
       return
@@ -1294,18 +1311,13 @@ local function popupControlCenterSubPanel(panel, allowReentry)
 end
 
 local controlCenterPanels = {
-  "Accessibility Shortcuts", "AirDrop", "Battery", "Bluetooth",
-  "Display", "Focus", "Hearing", "Keyboard Brightness",
-  "Now Playing", "Screen Mirroring", "Sound",
-  "Users", "Wi‑Fi"
+  CC.AXShortcuts, CC.AirDrop, CC.Battery, CC.Bluetooth,
+  CC.Display, CC.Focus, CC.Hearing, CC.KbBrightness,
+  CC.NowPlaying, CC.ScreenMirror, CC.Sound,
+  CC.Users, CC.WiFi, CC.MusicRecognition
 }
 if OS_VERSION >= OS.Ventura then
-  tinsert(controlCenterPanels, "Stage Manager")
-end
-if OS_VERSION >= OS.Tahoe then
-  tinsert(controlCenterPanels, "Recognize Music")
-else
-  tinsert(controlCenterPanels, "Music Recognition")
+  tinsert(controlCenterPanels, CC.StageManager)
 end
 for _, panel in ipairs(controlCenterPanels) do
   bindControlCenterURL(panel, bind(popupControlCenterSubPanel, panel))
@@ -1344,7 +1356,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
   end
   if OS_VERSION >= OS.Ventura then
     pane = getc(pane, AX.Group, 1)
-    if panel == "Hearing" then
+    if panel == CC.Hearing then
       while #pane == 0 do
         hs.timer.usleep(0.05 * 1000000)
       end
@@ -1424,10 +1436,10 @@ function registerControlCenterHotKeys(panel, inMenuBar)
   end
 
   -- jump to related panel in `System Preferences`
-  if tcontain({ "Wi‑Fi", "Bluetooth", "Focus", "Keyboard Brightness",
-                "Screen Mirroring", "Display", "Sound",
-                "Accessibility Shortcuts", "Battery",
-                "Hearing", "Users", }, panel) then
+  if tcontain({ CC.WiFi, CC.Bluetooth, CC.Focus, CC.KbBrightness,
+                CC.ScreenMirror, CC.Display, CC.Sound,
+                CC.AXShortcuts, CC.Battery,
+                CC.Hearing, CC.Users, }, panel) then
     local button, title
     repeat
       hs.timer.usleep(0.05 * 1000000)
@@ -1451,7 +1463,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
   end
 
   -- pandel with a switch-off button
-  if tcontain({"Wi‑Fi", "Bluetooth", "AirDrop"}, panel) then
+  if tcontain({CC.WiFi, CC.Bluetooth, CC.AirDrop}, panel) then
     local checkbox
     local totalDelay = 0
     repeat
@@ -1480,8 +1492,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
   end
 
   -- panel with a slider
-  if tcontain({"Display", "Sound", "Keyboard Brightness"}, panel) then
-    local name = panel == "Sound" and "Volume" or "Brightness"
+  if tcontain({CC.Display, CC.Sound, CC.KbBrightness}, panel) then
+    local name = panel == CC.Sound and "Volume" or "Brightness"
     local actions = {{ '=', 'Up'}, {'-', 'Down'}}
     if OS_VERSION < OS.Tahoe then
       tconcat(actions, {{'[', 'Min'}, {']', 'Max'}})
@@ -1489,7 +1501,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     local enabledSliders
     repeat
       hs.timer.usleep(0.05 * 1000000)
-      if panel == "Display" then
+      if panel == CC.Display then
         local role = OS_VERSION < OS.Ventura and AX.ScrollArea or AX.Group
         enabledSliders = getc(pane, role, 1, AX.Slider)
       else
@@ -1521,7 +1533,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
   end
 
   -- panel with a list of devices
-  if tcontain({"Bluetooth", "Sound", "Screen Mirroring"}, panel) then
+  if tcontain({CC.Bluetooth, CC.Sound, CC.ScreenMirror}, panel) then
     local cbs
     local totalDelay = 0
     repeat
@@ -1529,7 +1541,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       totalDelay = totalDelay + 0.05
       cbs = tifilter(getc(pane, AX.ScrollArea, 1, AX.CheckBox) or {},
           function(cb) return cb.AXEnabled end)
-      if #cbs == 0 and panel == "Screen Mirroring" then
+      if #cbs == 0 and panel == CC.ScreenMirror then
         cbs = tifilter(getc(pane, AX.ScrollArea, 1,
             AX.Group, 1, AX.CheckBox) or {},
           function(cb) return cb.AXEnabled end)
@@ -1541,7 +1553,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         local name
         if OS_VERSION < OS.Ventura then
           name = cbs[i].AXTitle
-        elseif panel == "Bluetooth" and OS_VERSION >= OS.Tahoe then
+        elseif panel == CC.Bluetooth and OS_VERSION >= OS.Tahoe then
           name = cbs[i].AXAttributedDescription:getString()
         else
           name = cbs[i].AXIdentifier
@@ -1601,7 +1613,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     end
   end
 
-  if panel == "Wi‑Fi" then
+  if panel == CC.WiFi then
     local triangle
     local totalDelay = 0
     repeat
@@ -1712,7 +1724,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         end
       end
     end
-  elseif panel == "Focus" then
+  elseif panel == CC.Focus then
     local cb1
     repeat
       hs.timer.usleep(0.05 * 1000000)
@@ -1785,7 +1797,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       end
       focusOptionHotkeys = nil
     end
-  elseif panel == "Display" then
+  elseif panel == CC.Display then
     local role = OS_VERSION < OS.Ventura and AX.ScrollArea or AX.Group
     local sa1
     local totalDelay = 0
@@ -2014,7 +2026,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         return
       end
     end
-  elseif panel == "Recognize Music" or panel == "Music Recognition" then
+  elseif panel == CC.MusicRecognition then
     local msg = "Start Listening"
     msg = controlCenterLocalized(panel, msg) or msg
     local hotkey = newControlCenter("", "Space", msg,
@@ -2030,7 +2042,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     if not checkAndRegisterControlCenterHotKeys(hotkey) then
       return
     end
-  elseif panel == "Hearing" then
+  elseif panel == CC.Hearing then
     local hearingFunc
     hearingFunc = function()
       if hotkeyShow ~= nil then
@@ -2153,7 +2165,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     end
 
     hearingFunc()
-  elseif panel == "Now Playing" then
+  elseif panel == CC.NowPlaying then
     local result
     local button2
     repeat
