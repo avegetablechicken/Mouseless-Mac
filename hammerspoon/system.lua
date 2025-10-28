@@ -1311,13 +1311,21 @@ local function popupControlCenterSubPanel(panel, allowReentry)
 end
 
 local controlCenterPanels = {
-  CC.AXShortcuts, CC.AirDrop, CC.Battery, CC.Bluetooth,
-  CC.Display, CC.Focus, CC.Hearing, CC.KbBrightness,
-  CC.NowPlaying, CC.ScreenMirror, CC.Sound,
-  CC.Users, CC.WiFi, CC.MusicRecognition
+  CC.AirDrop, CC.Bluetooth, CC.Display, CC.Focus, CC.KbBrightness,
+  CC.NowPlaying, CC.ScreenMirror, CC.Sound, CC.WiFi
 }
+local osMinor = hs.host.operatingSystemVersion().minor
 if OS_VERSION >= OS.Ventura then
   tinsert(controlCenterPanels, CC.StageManager)
+end
+if OS_VERSION >= OS.Sonoma then
+  tconcat(controlCenterPanels, { CC.AXShortcuts, CC.Battery, CC.Users })
+  if OS_VERSION > OS.Sonoma or osMinor >= 2 then
+    tinsert(controlCenterPanels, CC.MusicRecognition)
+  end
+  if OS_VERSION > OS.Sonoma or osMinor >= 6 then
+    tinsert(controlCenterPanels, CC.Hearing)
+  end
 end
 for _, panel in ipairs(controlCenterPanels) do
   bindControlCenterURL(panel, bind(popupControlCenterSubPanel, panel))
