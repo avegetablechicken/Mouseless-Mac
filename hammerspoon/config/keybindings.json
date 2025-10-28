@@ -1062,6 +1062,10 @@
         "mods": "command",
         "key": "["
       },
+      "openLink": {
+        "mods": "",
+        "key": "Return"
+      },
       "toggleChatBar": {
         "mods": ["option", "command"],
         "key": "space",

@@ -3296,6 +3296,30 @@ appHotKeyCallbacks = {
       end,
       fn = press
     },
+    ["openLink"] = {
+      message = T("Open link"),
+      windowFilter = {
+        allowSheet = true,
+        fn = function(win)
+          local title = localizedString("Open link", win)
+          local button = tfind(getc(towinui(win), AX.Group, 1,
+              AX.Group, 1, AX.Button) or {}, function(bt)
+            return bt.AXAttributedDescription:getString()
+                and bt.AXAttributedDescription:getString() == title
+          end)
+          return button ~= nil
+        end
+      },
+      fn = function(win)
+        local title = localizedString("Open link", win)
+        local button = tfind(getc(towinui(win), AX.Group, 1,
+            AX.Group, 1, AX.Button) or {}, function(bt)
+          return bt.AXAttributedDescription:getString()
+              and bt.AXAttributedDescription:getString() == title
+        end)
+        if button ~= nil then press(button) end
+      end
+    },
     ["toggleChatBar"] = {
       message = function()
         local appid = "com.openai.chat"
