@@ -1030,7 +1030,7 @@ local CC = {
   ScreenMirror      = "Screen Mirroring",
   Sound             = "Sound",
   StageManager      = "Stage Manager",
-  Users             = "Users",
+  User              = "User",
   WiFi              = "Wi‑Fi",
 }
 if OS_VERSION >= OS.Tahoe then
@@ -1070,10 +1070,9 @@ local function controlCenterLocalized(panel, key)
   if key == nil then
     key = panel
   end
-  if panel == CC.Users and key == CC.Users then
-    key = "User"
-  end
-  if panel == CC.MusicRecognition then
+  if panel == CC.User then
+    panel = "Users"
+  elseif panel == CC.MusicRecognition then
     panel = "Music Recognition"
   end
   panel = panel:gsub(" ", ""):gsub("‑", "")
@@ -1132,7 +1131,7 @@ local function testAlready(panel, pane, role)
         return pane and #getc(pane, AX.Button) > 1
             and (#getc(pane, AX.Image) > 0 or pane[1].AXRole == AX.Unknown)
       end
-    elseif panel == CC.Users then
+    elseif panel == CC.User then
       local elem = pane[#pane]
       local title
       if elem and elem.AXTitle then
@@ -1184,7 +1183,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       index = 1
     elseif panel == CC.Sound then
       role = AX.StaticText index = 1
-    elseif tcontain({ CC.AXShortcuts, CC.Battery, CC.Hearing, CC.Users }, panel) then
+    elseif tcontain({ CC.AXShortcuts, CC.Battery, CC.Hearing, CC.User }, panel) then
       role = AX.Button index = 1
     elseif panel == CC.NowPlaying then
       local ele
@@ -1319,7 +1318,7 @@ if OS_VERSION >= OS.Ventura then
   tinsert(controlCenterPanels, CC.StageManager)
 end
 if OS_VERSION >= OS.Sonoma then
-  tconcat(controlCenterPanels, { CC.AXShortcuts, CC.Battery, CC.Users })
+  tconcat(controlCenterPanels, { CC.AXShortcuts, CC.Battery, CC.User })
   if OS_VERSION > OS.Sonoma or osMinor >= 2 then
     tinsert(controlCenterPanels, CC.MusicRecognition)
   end
@@ -1447,7 +1446,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
   if tcontain({ CC.WiFi, CC.Bluetooth, CC.Focus, CC.KbBrightness,
                 CC.ScreenMirror, CC.Display, CC.Sound,
                 CC.AXShortcuts, CC.Battery,
-                CC.Hearing, CC.Users, }, panel) then
+                CC.Hearing, CC.User, }, panel) then
     local button, title
     repeat
       hs.timer.usleep(0.05 * 1000000)

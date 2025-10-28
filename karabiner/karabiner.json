@@ -1272,7 +1272,7 @@
                                     "key_code": "u",
                                     "modifiers": { "mandatory": "fn" }
                                 },
-                                "to": [{ "shell_command": "open -g 'hammerspoon://controlcenter?panel=Users'" }],
+                                "to": [{ "shell_command": "open -g 'hammerspoon://controlcenter?panel=User'" }],
                                 "type": "basic"
                             },
                             {
