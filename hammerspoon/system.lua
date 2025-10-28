@@ -1067,6 +1067,11 @@ local function bindControlCenterURL(panel, func)
 end
 
 local function controlCenterLocalized(panel, key)
+  local params
+  if panel == CC.StageManager then
+    params = { locale = applicationLocale('com.apple.WindowManager') }
+  end
+
   if key == nil then
     key = panel
   end
@@ -1076,7 +1081,13 @@ local function controlCenterLocalized(panel, key)
     panel = "Music Recognition"
   end
   panel = panel:gsub(" ", ""):gsub("‑", "")
-  local result = localizedString(key, "com.apple.controlcenter", panel)
+
+  if params then
+    params.localeFile = panel
+  else
+    params = panel
+  end
+  local result = localizedString(key, "com.apple.controlcenter", params)
   if not result and panel == CC.Focus then
     result = localizedString(key, "com.apple.controlcenter",
         { framework = "DoNotDisturb.framework" }, true)
