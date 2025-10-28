@@ -87,6 +87,13 @@
         "subkind": "CONTROL_CENTER"
     },
     {
+        "mods": ["fn", "shift"],
+        "key": "S",
+        "message": "Control Center > Stage Manager",
+        "kind": "MENUBAR",
+        "subkind": "CONTROL_CENTER"
+    },
+    {
         "mods": "fn",
         "key": "U",
         "message": "Control Center > Users",

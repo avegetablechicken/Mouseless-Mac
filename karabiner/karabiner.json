@@ -1252,6 +1252,23 @@
                                     }
                                 ],
                                 "from": {
+                                    "key_code": "s",
+                                    "modifiers": { "mandatory": ["fn", "shift"] }
+                                },
+                                "to": [{ "shell_command": "open -g 'hammerspoon://controlcenter?panel=Stage%20Manager'" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "com.parallels.desktop.console",
+                                            "com.parallels.macvm"
+                                        ],
+                                        "type": "frontmost_application_unless"
+                                    }
+                                ],
+                                "from": {
                                     "key_code": "u",
                                     "modifiers": { "mandatory": "fn" }
                                 },

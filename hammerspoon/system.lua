@@ -1071,6 +1071,7 @@ local function controlCenterLocalized(panel, key)
 end
 
 local function testAlready(panel, pane, role)
+  if panel == "Stage Manager" then return false end
   local locPanel = controlCenterLocalized(panel)
 
   if role == nil then
@@ -1147,6 +1148,8 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       else
         role = AX.CheckBox index = 2
       end
+    elseif panel == "Stage Manager" then
+      role = AX.CheckBox index = 1
     elseif panel == "Display" then
       if OS_VERSION >= OS.Ventura and OS_VERSION <= OS.Sequoia then
         role = AX.Group
@@ -1217,7 +1220,15 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     if ele then
       if OS_VERSION >= OS.Tahoe then index = index + 1 end
       local act = ele:actionNames()[index]
-      ele:performAction(act)
+      local ret = ele:performAction(act)
+      if ret and panel == "Stage Manager" then
+        local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+        local menuBarItem = tfind(menuBarItems,
+          function(item)
+            return item.AXIdentifier == "com.apple.menuextra.controlcenter"
+          end)
+        menuBarItem:performAction(AX.Press)
+      end
     end
   end
 
@@ -1288,6 +1299,9 @@ local controlCenterPanels = {
   "Now Playing", "Screen Mirroring", "Sound",
   "Users", "Wi‑Fi"
 }
+if OS_VERSION >= OS.Ventura then
+  tinsert(controlCenterPanels, "Stage Manager")
+end
 if OS_VERSION >= OS.Tahoe then
   tinsert(controlCenterPanels, "Recognize Music")
 else
