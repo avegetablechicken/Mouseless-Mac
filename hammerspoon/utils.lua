@@ -142,6 +142,9 @@ end
 
 local function findMenuItemByKeyBindingImpl(mods, key, menuItem)
   if menuItem.AXChildren == nil or #menuItem.AXChildren == 0 then return end
+  -- werid bug in apps like `UPDF`! have to query this value once to make sure
+  -- that next query will get a correct result
+  local _ = #menuItem.AXChildren[1]
   for _, subItem in ipairs(menuItem.AXChildren[1]) do
     local cmdChar = subItem.AXMenuItemCmdChar
     if cmdChar and cmdChar ~= ""
