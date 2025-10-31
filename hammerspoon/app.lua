@@ -2678,14 +2678,10 @@ appHotKeyCallbacks = {
         local win = app:focusedWindow()
         if win == nil then return false end
         local winUI = towinui(win)
-        local buttons = getc(winUI, AX.Button)
         local title = localizedString("Don't Save", app)
-        for _, button in ipairs(buttons) do
-          if button.AXTitle == title then
-            return true, button
-          end
-        end
-        return false
+        local button = getc(winUI, AX.Buttonm, title)
+            or getc(winUI, AX.Window, 1, AX.Button, title)
+        return button ~= nil, button
       end,
       fn = press
     }
