@@ -4586,7 +4586,7 @@ MENUBAR_MANAGER_SHOW = {
         return item.AXIdentifier ~= nil
       end)
     end
-    menuBarItem = menuBarItems[index]
+    local menuBarItem = menuBarItems[index]
     local indicesForHidden = {}
     local iconAllwaysHiddenPosition = -7000
     for i=1,#menuBarItems do
@@ -4696,7 +4696,7 @@ MENUBAR_MANAGER_SHOW = {
         return item.AXIdentifier ~= nil
       end)
     end
-    menuBarItem = menuBarItems[index]
+    local menuBarItem = menuBarItems[index]
     local iconAllwaysHidden = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 3)
     local indicesForHidden = {}
     for i=1,#menuBarItems do
@@ -4800,7 +4800,7 @@ MENUBAR_MANAGER_SHOW = {
               return item.AXIdentifier ~= nil
             end)
           end
-          menuBarItem = menuBarItems[index or 1]
+          local menuBarItem = menuBarItems[index or 1]
           if menuBarItem then
             hs.timer.doAfter(0, bind(activateMenuBarItem, menuBarItem, click))
           end
@@ -4905,7 +4905,7 @@ function hiddenByMenuBarManager(app, index, map)
       return item.AXIdentifier ~= nil
     end)
   end
-  menuBarItem = menuBarItems[index or 1]
+  local menuBarItem = menuBarItems[index or 1]
   local leftmostHorizontal = 0
   foreach(hs.screen.allScreens(), function(screen)
     leftmostHorizontal = math.min(screen:fullFrame().x, leftmostHorizontal)
@@ -4945,7 +4945,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
       return item.AXIdentifier ~= nil
     end)
   end
-  menuBarItem = menuBarItems[menuBarIdx or 1]
+  local menuBarItem = menuBarItems[menuBarIdx or 1]
   if menuBarItem == nil then return false end
 
   if show then
