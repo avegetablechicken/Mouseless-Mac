@@ -12,105 +12,105 @@
     {
         "mods": "fn",
         "key": "A",
-        "message": "Control Center > AirDrop",
+        "message": ["controlcenter", "AirDrop"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "B",
-        "message": "Control Center > Bluetooth",
+        "message": ["controlcenter", "Bluetooth"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": ["fn", "shift"],
         "key": "B",
-        "message": "Control Center > Battery",
+        "message": ["controlcenter", "Battery"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "D",
-        "message": "Control Center > Display",
+        "message": ["controlcenter", "Display"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": ["fn", "shift"],
         "key": "F",
-        "message": "Control Center > Focus",
+        "message": ["controlcenter", "Focus"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "H",
-        "message": "Control Center > Hearing",
+        "message": ["controlcenter", "Hearing"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "K",
-        "message": "Control Center > Keyboard Brightness",
+        "message": ["controlcenter", "Keyboard Brightness"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "M",
-        "message": "Control Center > Screen Mirroring",
+        "message": ["controlcenter", "Screen Mirroring"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "P",
-        "message": "Control Center > Now Playing",
+        "message": ["controlcenter", "Now Playing"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "R",
-        "message": "Control Center > Recognize Music",
+        "message": ["controlcenter", "Recognize Music"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "S",
-        "message": "Control Center > Sound",
+        "message": ["controlcenter", "Sound"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": ["fn", "shift"],
         "key": "S",
-        "message": "Control Center > Stage Manager",
+        "message": ["controlcenter", "Stage Manager"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "U",
-        "message": "Control Center > User",
+        "message": ["controlcenter", "User"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "W",
-        "message": "Control Center > Wi‑Fi",
+        "message": ["controlcenter", "Wi‑Fi"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "X",
-        "message": "Control Center > Accessibility Shortcuts",
+        "message": ["controlcenter", "Accessibility Shortcuts"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },

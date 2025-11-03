@@ -1062,11 +1062,17 @@ hs.urlevent.bind("controlcenter", function(eventName, params)
   if fn then fn() end
 end)
 
+local controlCenterLocalized
 local function bindControlCenterURL(panel, func)
   controlCenterPanelFuncs[panel] = func
+
+  local locAppName = controlCenterLocalized("Control Center")
+  local locaPanel = controlCenterLocalized(panel)
+  registerURLHotkeyMessage('controlcenter', panel,
+                           locAppName..' > '..locaPanel)
 end
 
-local function controlCenterLocalized(panel, key)
+controlCenterLocalized = function(panel, key)
   if key == nil then
     key = panel
   end
