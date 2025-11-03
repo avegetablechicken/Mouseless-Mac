@@ -432,61 +432,61 @@
     {
         "mods": "fn",
         "key": "1",
-        "message": "Stage Manager Window 1",
+        "message": ["stagemanager", "1"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "2",
-        "message": "Stage Manager Window 2",
+        "message": ["stagemanager", "2"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "3",
-        "message": "Stage Manager Window 3",
+        "message": ["stagemanager", "3"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "4",
-        "message": "Stage Manager Window 4",
+        "message": ["stagemanager", "4"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "5",
-        "message": "Stage Manager Window 5",
+        "message": ["stagemanager", "5"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "6",
-        "message": "Stage Manager Window 6",
+        "message": ["stagemanager", "6"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "7",
-        "message": "Stage Manager Window 7",
+        "message": ["stagemanager", "7"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "8",
-        "message": "Stage Manager Window 8",
+        "message": ["stagemanager", "8"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "9",
-        "message": "Stage Manager Window 9",
+        "message": ["stagemanager", "9"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "0",
-        "message": "Stage Manager Window 10",
+        "message": ["stagemanager", "10"],
         "kind": "WIN_OP"
     },
     {

@@ -1488,6 +1488,12 @@ local function bindStageManagerWindow(index)
     end
   end
   stageManagerWindowSwitchFuncs[index] = fn
+  local locApp = localizedString("Stage Manager", "com.apple.controlcenter",
+                                 { localeFile = "StageManager",
+                                   locale = applicationLocale("com.apple.WindowManager") })
+  local locWindow = localizedString("Window", "com.apple.WindowManager")
+  registerURLHotkeyMessage("stagemanager", tostring(index),
+                           locApp..' > '..locWindow..' '..index)
 end
 
 for i=1,10 do
