@@ -1201,23 +1201,23 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       role = AX.Button index = 1
     elseif panel == CC.NowPlaying then
       local ele
-      if OS_VERSION >= OS.Tahoe then
-        ele = tfind(getc(pane, AX.Group), function(g)
-          local bts = getc(g, AX.Button)
-          return #bts == 3 and bts[1].AXIdentifier:find("backward")
-            and bts[3].AXIdentifier:find("forward")
-            and (bts[2].AXIdentifier:find("play") or bts[2].AXIdentifier:find("pause"))
-        end)
-      else
-        ele = getc(pane, AX.Image, -1)
-        local totalDelay = 0
-        while ele == nil do
-          hs.timer.usleep(0.05 * 1000000)
-          totalDelay = totalDelay + 0.05
-          if totalDelay > 3 then return end
+      local totalDelay = 0
+      repeat
+        if OS_VERSION >= OS.Tahoe then
+          ele = tfind(getc(pane, AX.Group), function(g)
+            local bts = getc(g, AX.Button)
+            return #bts == 3 and bts[1].AXIdentifier:find("backward")
+              and bts[3].AXIdentifier:find("forward")
+              and (bts[2].AXIdentifier:find("play") or bts[2].AXIdentifier:find("pause"))
+          end)
+        else
           ele = getc(pane, AX.Image, -1)
         end
-      end
+        if ele == nil then
+          hs.timer.usleep(0.05 * 1000000)
+          totalDelay = totalDelay + 0.05
+        end
+      until ele or totalDelay > 3 or not pane:isValid()
       if ele then
         local index = 1
         if OS_VERSION >= OS.Tahoe then index = index + 1 end
