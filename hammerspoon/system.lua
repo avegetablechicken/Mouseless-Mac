@@ -1163,6 +1163,41 @@ local function testAlready(panel, pane, role)
   end) ~= nil
 end
 
+local function getBluetoothConnectedDevices()
+  local output, status = hs.execute("system_profiler SPBluetoothDataType")
+  if not status then
+      hs.alert.show("Failed to run system_profiler for Bluetooth")
+      return {}
+  end
+
+  local devices = {}
+  local inConnected = false
+  local currentName = nil
+
+  for line in output:gmatch("[^\r\n]+") do
+    if line:match("^%s*Connected:") then
+      inConnected = true
+    elseif line:match("^%s*Not Connected:") then
+      inConnected = false
+    end
+
+    if inConnected then
+      local nameMatch = line:match("^%s+(.+):%s*$")
+      if nameMatch and not line:match("^%s+Address:") then
+        currentName = nameMatch
+      end
+
+      local addrMatch = line:match("^%s+Address:%s*([0-9A-F:]+)%s*$")
+      if addrMatch and currentName then
+        devices[addrMatch] = currentName
+        currentName = nil
+      end
+    end
+  end
+
+  return devices
+end
+
 local function popupControlCenterSubPanel(panel, allowReentry)
   local app = find("com.apple.controlcenter")
   local appUI = toappui(app)
@@ -1569,13 +1604,22 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       end
     until #cbs > 0 or totalDelay > 1 or not pane:isValid()
     if #cbs > 0 then
+      local deviceIDs
       for i=1, math.min(#cbs, 10) do
         local enabled = cbs[i].AXValue
         local name
         if OS_VERSION < OS.Ventura then
           name = cbs[i].AXTitle
         elseif panel == CC.Bluetooth and OS_VERSION >= OS.Tahoe then
-          name = cbs[i].AXAttributedDescription:getString()
+          if enabled == 1 then
+            local ident = cbs[i].AXIdentifier
+            local _, identIdx = ident:find("device-", 1, true)
+            ident = ident:sub(identIdx + 1, -1)
+            deviceIDs = deviceIDs or getBluetoothConnectedDevices()
+            name = deviceIDs[ident] or ident
+          else
+            name = cbs[i].AXAttributedDescription:getString()
+          end
         else
           name = cbs[i].AXIdentifier
           local _, nameIdx = name:find("device-", 1, true)
