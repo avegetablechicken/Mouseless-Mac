@@ -2254,21 +2254,25 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         if not checkAndRegisterControlCenterHotKeys(hotkey) then
           return
         end
-        hotkey = newControlCenter("", "Left", result[1],
-          function()
-            local button = getc(pane, AX.Button, 1)
-            if button then button:performAction(AX.Press) end
-          end)
-        if not checkAndRegisterControlCenterHotKeys(hotkey) then
-          return
+        local buttonLeft = getc(pane, AX.Button, 1)
+        if buttonLeft and buttonLeft.AXEnabled then
+          hotkey = newControlCenter("", "Left", result[1],
+            function()
+              if buttonLeft then buttonLeft:performAction(AX.Press) end
+            end)
+          if not checkAndRegisterControlCenterHotKeys(hotkey) then
+            return
+          end
         end
-        hotkey = newControlCenter("", "Right", result[3],
-          function()
-            local button = getc(pane, AX.Button, 3)
-            if button then button:performAction(AX.Press) end
-          end)
-        if not checkAndRegisterControlCenterHotKeys(hotkey) then
-          return
+        local buttonRight = getc(pane, AX.Button, 3)
+        if buttonRight and buttonRight.AXEnabled then
+          hotkey = newControlCenter("", "Right", result[3],
+            function()
+              if buttonRight then buttonRight:performAction(AX.Press) end
+            end)
+          if not checkAndRegisterControlCenterHotKeys(hotkey) then
+            return
+          end
         end
       elseif (type(result) == "number" and result > 3)
           or (type(result) == "table" and #result > 3) then
