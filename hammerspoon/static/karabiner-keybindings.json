@@ -12,105 +12,105 @@
     {
         "mods": "fn",
         "key": "A",
-        "message": ["controlcenter", "AirDrop"],
+        "event": ["controlcenter", "panel", "AirDrop"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "B",
-        "message": ["controlcenter", "Bluetooth"],
+        "event": ["controlcenter", "panel", "Bluetooth"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": ["fn", "shift"],
         "key": "B",
-        "message": ["controlcenter", "Battery"],
+        "event": ["controlcenter", "panel", "Battery"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "D",
-        "message": ["controlcenter", "Display"],
+        "event": ["controlcenter", "panel", "Display"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": ["fn", "shift"],
         "key": "F",
-        "message": ["controlcenter", "Focus"],
+        "event": ["controlcenter", "panel", "Focus"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "H",
-        "message": ["controlcenter", "Hearing"],
+        "event": ["controlcenter", "panel", "Hearing"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "K",
-        "message": ["controlcenter", "Keyboard Brightness"],
+        "event": ["controlcenter", "panel", "Keyboard Brightness"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "M",
-        "message": ["controlcenter", "Screen Mirroring"],
+        "event": ["controlcenter", "panel", "Screen Mirroring"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "P",
-        "message": ["controlcenter", "Now Playing"],
+        "event": ["controlcenter", "panel", "Now Playing"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "R",
-        "message": ["controlcenter", "Recognize Music"],
+        "event": ["controlcenter", "panel", "Recognize Music"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "S",
-        "message": ["controlcenter", "Sound"],
+        "event": ["controlcenter", "panel", "Sound"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": ["fn", "shift"],
         "key": "S",
-        "message": ["controlcenter", "Stage Manager"],
+        "event": ["controlcenter", "panel", "Stage Manager"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "U",
-        "message": ["controlcenter", "User"],
+        "event": ["controlcenter", "panel", "User"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "W",
-        "message": ["controlcenter", "Wi‑Fi"],
+        "event": ["controlcenter", "panel", "Wi‑Fi"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
     {
         "mods": "fn",
         "key": "X",
-        "message": ["controlcenter", "Accessibility Shortcuts"],
+        "event": ["controlcenter", "panel", "Accessibility Shortcuts"],
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
@@ -432,61 +432,61 @@
     {
         "mods": "fn",
         "key": "1",
-        "message": ["stagemanager", "1"],
+        "event": ["stagemanager", "index", "1"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "2",
-        "message": ["stagemanager", "2"],
+        "event": ["stagemanager", "index", "2"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "3",
-        "message": ["stagemanager", "3"],
+        "event": ["stagemanager", "index", "3"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "4",
-        "message": ["stagemanager", "4"],
+        "event": ["stagemanager", "index", "4"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "5",
-        "message": ["stagemanager", "5"],
+        "event": ["stagemanager", "index", "5"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "6",
-        "message": ["stagemanager", "6"],
+        "event": ["stagemanager", "index", "6"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "7",
-        "message": ["stagemanager", "7"],
+        "event": ["stagemanager", "index", "7"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "8",
-        "message": ["stagemanager", "8"],
+        "event": ["stagemanager", "index", "8"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "9",
-        "message": ["stagemanager", "9"],
+        "event": ["stagemanager", "index", "9"],
         "kind": "WIN_OP"
     },
     {
         "mods": "fn",
         "key": "0",
-        "message": ["stagemanager", "10"],
+        "event": ["stagemanager", "index", "10"],
         "kind": "WIN_OP"
     },
     {

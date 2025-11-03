@@ -1068,7 +1068,7 @@ local function bindControlCenterURL(panel, func)
 
   local locAppName = controlCenterLocalized("Control Center")
   local locaPanel = controlCenterLocalized(panel)
-  registerURLHotkeyMessage('controlcenter', panel,
+  registerURLHotkeyMessage('controlcenter', 'panel', panel,
                            locAppName..' > '..locaPanel)
 end
 

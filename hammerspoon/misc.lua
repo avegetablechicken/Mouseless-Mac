@@ -252,8 +252,9 @@ local function loadKarabinerKeyBindings(filePath)
     local idx = modsRepr .. key
     local msg
     if item.event ~= nil then
-      local ev, k = item.event[1], item.event[2]
-      msg = URLHotkeyMessages[ev][k]
+      local ev, k, v = item.event[1], item.event[2], item.event[3]
+      print(ev, k, v)
+      msg = get(URLHotkeyMessages, ev, k, v)
     else
       msg = item.message
     end

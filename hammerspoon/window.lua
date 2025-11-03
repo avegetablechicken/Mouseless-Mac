@@ -1492,7 +1492,7 @@ local function bindStageManagerWindow(index)
                                  { localeFile = "StageManager",
                                    locale = applicationLocale("com.apple.WindowManager") })
   local locWindow = localizedString("Window", "com.apple.WindowManager")
-  registerURLHotkeyMessage("stagemanager", tostring(index),
+  registerURLHotkeyMessage("stagemanager", "index", tostring(index),
                            locApp..' > '..locWindow..' '..index)
 end
 
