@@ -2198,11 +2198,12 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       end
     until button2 or not pane:isValid()
     if button2 then
+      if OS_VERSION >= OS.Tahoe then
+        pane = getc(pane, AX.Group, 1)
+      end
       if OS_VERSION < OS.Ventura then
         result = tmap(getc(pane, AX.Button),
             function(bt) return bt.AXTitle end)
-      elseif OS_VERSION >= OS.Tahoe then
-        result = #getc(pane, AX.Group, 1, AX.Button)
       else
         result = #getc(pane, AX.Button)
       end
@@ -2221,9 +2222,19 @@ function registerControlCenterHotKeys(panel, inMenuBar)
             local defaultMusicAppForControlCenter =
                 ApplicationConfigs["defaultMusicAppForControlCenter"]
             if defaultMusicAppForControlCenter ~= nil then
-              local appname = displayName('com.apple.Music')
+              local launchCustomizedApp = false
               local appTitle = getc(pane, AX.StaticText, 1)
-              if appTitle and appTitle.AXValue == appname .. '.app' then
+              if OS_VERSION < OS.Tahoe then
+                local appname = displayName('com.apple.Music')
+                if appTitle and appTitle.AXValue == appname .. '.app' then
+                  launchCustomizedApp = true
+                end
+              else
+                if appTitle and appTitle.AXValue == mayLocalize("Not Playing") then
+                  launchCustomizedApp = true
+                end
+              end
+              if launchCustomizedApp then
                 if type(defaultMusicAppForControlCenter) == 'string' then
                   defaultMusicAppForControlCenter =
                       { defaultMusicAppForControlCenter }
