@@ -96,7 +96,7 @@
     {
         "mods": "fn",
         "key": "U",
-        "message": "Control Center > Users",
+        "message": "Control Center > User",
         "kind": "MENUBAR",
         "subkind": "CONTROL_CENTER"
     },
