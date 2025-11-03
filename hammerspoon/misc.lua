@@ -250,7 +250,14 @@ local function loadKarabinerKeyBindings(filePath)
     local key = item.key:upper() == HYPER and 'hyper' or item.key
     key = modifierSymbolMap[key] or key:upper()
     local idx = modsRepr .. key
-    local msg = idx .. ": " .. item.message
+    local msg
+    if item.event ~= nil then
+      local ev, k = item.event[1], item.event[2]
+      msg = URLHotkeyMessages[ev][k]
+    else
+      msg = item.message
+    end
+    msg = idx .. ": " .. msg
     local kind = HK[item.kind]
     local subkind
     if item.kind ~= nil and item.subkind ~= nil then

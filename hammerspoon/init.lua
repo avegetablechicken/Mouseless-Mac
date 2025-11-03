@@ -316,6 +316,14 @@ function bindHotkeySpec(spec, ...)
   return bindHotkey(spec.mods, spec.key, ...)
 end
 
+URLHotkeyMessages = {}
+function registerURLHotkeyMessage(event, key, message)
+  if URLHotkeyMessages[event] == nil then
+    URLHotkeyMessages[event] = {}
+  end
+  URLHotkeyMessages[event][key] = message
+end
+
 local misc = KeybindingConfigs.hotkeys.global
 
 -- toggle hotkeys
