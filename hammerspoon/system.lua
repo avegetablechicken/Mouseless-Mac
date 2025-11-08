@@ -1066,7 +1066,7 @@ local controlCenterLocalized
 local function bindControlCenterURL(panel, func)
   controlCenterPanelFuncs[panel] = func
 
-  local locAppName = controlCenterLocalized("Control Center")
+  local locAppName = displayName("com.apple.controlcenter")
   local locaPanel = controlCenterLocalized(panel)
   registerURLHotkeyMessage('controlcenter', 'panel', panel,
                            locAppName..' > '..locaPanel)
@@ -2388,8 +2388,7 @@ local function controlCenterObserverCallback()
   controlCenterDestroyObserver:callback(function()
     if OS_VERSION >= OS.Tahoe then
       local win = controlCenter:focusedWindow()
-      if win and win:title() == localizedString("Control Center",
-          controlCenter:bundleID()) then
+      if win and win:title() == displayName(controlCenter:bundleID()) then
         return
       end
     end
