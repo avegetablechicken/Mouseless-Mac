@@ -1225,7 +1225,12 @@ local function popupControlCenterSubPanel(panel, allowReentry)
         role = AX.CheckBox index = 2
       end
     elseif panel == CC.StageManager then
-      role = AX.CheckBox index = 1
+      if OS_VERSION >= OS.Tahoe then
+        role = AX.CheckBox
+      else
+        role = AX.Button
+      end
+      index = 1
     elseif panel == CC.Display then
       if OS_VERSION >= OS.Ventura and OS_VERSION <= OS.Sequoia then
         role = AX.Group
