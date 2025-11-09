@@ -321,7 +321,6 @@ function registerURLHotkeyMessage(event, key, value, message)
   if URLHotkeyMessages[event] == nil then
     URLHotkeyMessages[event] = {}
   end
-  URLHotkeyMessages[event][key] = message
   if URLHotkeyMessages[event][key] == nil then
     URLHotkeyMessages[event][key] = {}
   end
