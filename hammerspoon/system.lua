@@ -1067,12 +1067,12 @@ local function bindControlCenterURL(panel, func)
   controlCenterPanelFuncs[panel] = func
 
   local locAppName = displayName("com.apple.controlcenter")
-  local locaPanel = controlCenterLocalized(panel)
+  local locPanel = controlCenterLocalized(panel)
   registerURLHotkeyMessage('controlcenter', 'panel', panel,
-                           locAppName..' > '..locaPanel)
+                           locAppName..' > '..locPanel)
   if OS_VERSION < OS.Tahoe and panel == CC.MusicRecognition then
     registerURLHotkeyMessage('controlcenter', 'panel', "Recognize Music",
-                            locAppName..' > '..locaPanel)
+                            locAppName..' > '..locPanel)
   end
 end
 
