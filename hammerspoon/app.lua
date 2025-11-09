@@ -4959,7 +4959,7 @@ appHotKeyCallbacks = {
   ["com.surteesstudios.Bartender"] =
   {
     ["toggleMenuBar"] = {
-      message = "Toggle Menu Bar",
+      message = T("Show menu bar item"),
       bindCondition = versionLessThan("6"),
       kind = HK.MENUBAR,
       background = true,
@@ -5513,7 +5513,10 @@ appHotKeyCallbacks = {
   ["com.app.menubarx"] =
   {
     ["toggleMenuBarX"] = {
-      message = "Toggle MenuBarX",
+      message = function(app)
+        return localizedString("Toggle MenubarX:", app:bundleID())
+            :gsub(":", ""):gsub("：", "")
+      end,
       kind = HK.MENUBAR,
       background = true,
       fn = function(app)
