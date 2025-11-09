@@ -1288,8 +1288,8 @@ local function popupControlCenterSubPanel(panel, allowReentry)
         elseif role == AX.StaticText then
           return e.AXValue == locPanel
         else
-          return e.AXTitle == locPanel
-              or e.AXAttributedDescription:getString():match('^'..locPanel)
+          return e.AXTitle == locPanel or (e.AXAttributedDescription
+              and e.AXAttributedDescription:getString():match('^'..locPanel))
         end
       end)
       if ele == nil then
