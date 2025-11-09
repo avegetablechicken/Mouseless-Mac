@@ -1282,6 +1282,9 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     local locPanel = controlCenterLocalized(panel)
     repeat
       ele = tfind(getc(pane, role), function(e)
+        if panel == CC.Focus then
+          return e.AXIdentifier == "controlcenter-focus-modes"
+        end
         if role == AX.Group then
           local elem = getc(e, AX.StaticText, 1)
           return elem and elem.AXValue == locPanel
