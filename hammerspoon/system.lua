@@ -1526,8 +1526,10 @@ function registerControlCenterHotKeys(panel, inMenuBar)
                 CC.AXShortcuts, CC.Battery,
                 CC.Hearing, CC.User, }, panel) then
     local button, title
+    local totalDelay = 0
     repeat
       hs.timer.usleep(0.05 * 1000000)
+      totalDelay = totalDelay + 0.05
       local buttons = getc(pane, AX.Button)
       for i = #buttons, 1, -1 do
         title = OS_VERSION < OS.Ventura and buttons[i].AXTitle
@@ -1537,7 +1539,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
           break
         end
       end
-    until button or not pane:isValid()
+    until button or totalDelay > 0.9 or not pane:isValid()
     if button then
       local hotkey = newControlCenter("⌘", ",", title,
           function() button:performAction(AX.Press) end)
