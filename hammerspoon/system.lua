@@ -1586,16 +1586,21 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       tconcat(actions, {{'[', 'Min'}, {']', 'Max'}})
     end
     local enabledSliders
+    local totalDelay = 0
     repeat
       hs.timer.usleep(0.05 * 1000000)
+      totalDelay = totalDelay + 0.05
       if panel == CC.Display then
         local role = OS_VERSION < OS.Ventura and AX.ScrollArea or AX.Group
-        enabledSliders = getc(pane, role, 1, AX.Slider)
+        enabledSliders = tfind(getc(pane, role, 1, AX.Slider) or {},
+            function(ele) return ele.AXEnabled end)
       else
-        enabledSliders = getc(pane, AX.Slider)
+        enabledSliders = tfind(getc(pane, AX.Slider) or {},
+            function(ele) return ele.AXEnabled end)
       end
-    until enabledSliders and #enabledSliders > 0 or not pane:isValid()
-    if #enabledSliders == 1 then
+    until enabledSliders and #enabledSliders > 0
+        or totalDelay > 0.9 or not pane:isValid()
+    if enabledSliders and #enabledSliders == 1 then
       for _, spec in ipairs(actions) do
         local key = spec[1]
         local msg = name .. ' ' .. spec[2]
