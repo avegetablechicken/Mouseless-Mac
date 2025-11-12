@@ -1196,15 +1196,15 @@ local function popupControlCenterSubPanel(panel, allowReentry)
   local pane
 
   local function enterPanel()  -- assume in BentoBox-0 since macOS Tahoe
-    local role, index, locPanel
+    local role, locPanel
     if tcontain({ CC.WiFi, CC.Focus, CC.Bluetooth, CC.AirDrop,
                   CC.MusicRecognition }, panel) then
-      role = AX.CheckBox index = 2
+      role = AX.CheckBox
     elseif panel == CC.ScreenMirror then
       if OS_VERSION >= OS.Ventura and OS_VERSION <= OS.Sequoia then
-        role = AX.Button index = 1
+        role = AX.Button
       else
-        role = AX.CheckBox index = 2
+        role = AX.CheckBox
       end
     elseif panel == CC.StageManager then
       if OS_VERSION >= OS.Tahoe then
@@ -1212,7 +1212,6 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       else
         role = AX.Button
       end
-      index = 1
     elseif panel == CC.Display then
       if OS_VERSION >= OS.Ventura and OS_VERSION <= OS.Sequoia then
         role = AX.Group
@@ -1222,7 +1221,6 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       else
         role = AX.StaticText
       end
-      index = 1
     elseif panel == CC.KbBrightness then
       if OS_VERSION <= OS.Sequoia then
         role = AX.Button
@@ -1233,7 +1231,6 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       else
         role = AX.StaticText
       end
-      index = 1
     elseif panel == CC.Sound then
       if OS_VERSION > OS.Tahoe or
         (OS_VERSION == OS.Tahoe and hs.host.operatingSystemVersion().minor >= 1) then
@@ -1241,9 +1238,8 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       else
         role = AX.StaticText
       end
-      index = 1
     elseif tcontain({ CC.Battery, CC.Hearing }, panel) then
-      role = AX.Button index = 1
+      role = AX.Button
     elseif tcontain({ CC.AXShortcuts, CC.User }, panel) then
       if OS_VERSION > OS.Tahoe or
           (OS_VERSION == OS.Tahoe and hs.host.operatingSystemVersion().minor >= 1) then
@@ -1254,7 +1250,6 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       else
         role = AX.Button
       end
-      index = 1
     elseif panel == CC.NowPlaying then
       local ele
       local totalDelay = 0
@@ -1275,10 +1270,8 @@ local function popupControlCenterSubPanel(panel, allowReentry)
         end
       until ele or totalDelay > 3 or not pane:isValid()
       if ele then
-        local index = 1
-        if OS_VERSION >= OS.Tahoe then index = index + 1 end
-        local act = ele:actionNames()[index]
-        ele:performAction(act)
+        local actions = ele:actionNames()
+        ele:performAction(actions[#actions])
         return true
       end
       return false
@@ -1308,9 +1301,8 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       end
     until ele or totalDelay > 0.9 or not pane:isValid()
     if ele then
-      if OS_VERSION >= OS.Tahoe then index = index + 1 end
-      local act = ele:actionNames()[index]
-      local ret = ele:performAction(act)
+      local actions = ele:actionNames()
+      local ret = ele:performAction(actions[#actions])
       if ret and panel == CC.StageManager then
         local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
         local menuBarItem = tfind(menuBarItems,
