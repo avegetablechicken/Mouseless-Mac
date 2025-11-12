@@ -115,6 +115,10 @@ local function registerAppKeys()
       if config.vm == "com.parallels.desktop.console" then
         appPath = getParallelsVMPath(config.name)
         appid = hs.application.infoForBundlePath(appPath).CFBundleIdentifier
+        if hs.application.pathForBundleID(appid) == nil
+            or hs.application.pathForBundleID(appid) == "" then
+          appid = nil
+        end
       else
         hs.alert("Unsupported Virtual Machine : " .. config.vm)
       end
