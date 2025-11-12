@@ -1106,16 +1106,16 @@ local function testAlready(panel, pane, role)
       local elem = getc(pane, AX.StaticText, 1)
       return elem and elem.AXValue == locPanel
     elseif panel == CC.Display then
-      local sa = getc(pane, OS_VERSION < OS.Ventura and AX.ScrollArea or AX.Group, 1)
-      local title
-      if OS_VERSION >= OS.Tahoe then
-        local elem = getc(sa, AX.DisclosureTriangle, 1)
-        title = elem and elem.AXAttributedDescription:getString()
-      else
-        local elem = getc(sa, AX.StaticText, 1)
-        title = elem and elem.AXValue
+      local str = controlCenterLocalized(panel, "Display Settings…")
+      local buttons = getc(pane, AX.Button)
+      for i = #buttons, 1, -1 do
+        local title = OS_VERSION < OS.Ventura and buttons[i].AXTitle
+            or buttons[i].AXAttributedDescription:getString()
+        if title == str then
+          return true
+        end
       end
-      return title == locPanel
+      return false
     elseif panel == CC.MusicRecognition then
       local elem = getc(pane, AX.Group, 1, AX.Group, 1, AX.CheckBox, 1)
       local title
