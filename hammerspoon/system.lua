@@ -1279,8 +1279,9 @@ local function popupControlCenterSubPanel(panel, allowReentry)
         if OS_VERSION >= OS.Tahoe then index = index + 1 end
         local act = ele:actionNames()[index]
         ele:performAction(act)
+        return true
       end
-      return
+      return false
     end
 
     local ele
@@ -1318,7 +1319,9 @@ local function popupControlCenterSubPanel(panel, allowReentry)
           end)
         menuBarItem:performAction(AX.Press)
       end
+      return true
     end
+    return false
   end
 
   if app:mainWindow() then
@@ -1333,8 +1336,9 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     end
     if testAlready(CC.WiFi, pane, AX.CheckBox)
         and testAlready(CC.Bluetooth, pane, AX.CheckBox) then
-      enterPanel()
-      registerControlCenterHotKeys(panel)
+      if enterPanel() then
+        registerControlCenterHotKeys(panel)
+      end
       return
     elseif testAlready(panel, pane) and not allowReentry then
       return
@@ -1377,8 +1381,9 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     if OS_VERSION >= OS.Ventura then
       pane = getc(pane, AX.Group, 1)
     end
-    enterPanel()
-    registerControlCenterHotKeys(panel)
+    if enterPanel() then
+      registerControlCenterHotKeys(panel)
+    end
   end
 end
 
