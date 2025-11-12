@@ -1723,14 +1723,16 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       until sa or totalDelay > 0.5 or not pane:isValid()
       if sa then
         local availableNetworks = {}
-        for idx, cb in ipairs(getc(sa, AX.CheckBox)) do
-          local ft = OS_VERSION < OS.Ventura and cb.AXTitle or cb.AXIdentifier
-          if idx > 10 then break end
+        local cbs = tifilter(sa.AXChildren, function(ele)
+          return ele.AXRole == AX.CheckBox or ele.AXRole == AX.Button
+        end)
+        for idx=1,math.min(#cbs, 10) do
+          local cb = cbs[idx]
           local title
           if OS_VERSION < OS.Ventura then
-            title = ft:match("([^,]+)")
+            title = cb.AXTitle:match("([^,]+)")
           else
-            title = ft:sub(string.len("wifi-network-") + 1, -1)
+            title = cb.AXIdentifier:sub(string.len("wifi-network-") + 1, -1)
           end
           tinsert(availableNetworks, title)
         end
@@ -1741,15 +1743,22 @@ function registerControlCenterHotKeys(panel, inMenuBar)
             hotkey:delete()
           end
           selectNetworkHotkeys = {}
+          local ssid
           for idx, title in ipairs(availableNetworks) do
-            local selected = getc(sa, AX.CheckBox, idx).AXValue
-            local msg = "Connect to " .. title
-            if selected == nil or selected == 1 then
-              msg = "Disconnect to " .. title
+            local selected = cbs[idx].AXValue
+            local connected = false
+            if cbs[idx].AXRole == AX.CheckBox and selected == 1 then
+              connected = true
+            elseif cbs[idx].AXRole == AX.Button then
+              ssid = ssid or getSSID()
+              if title == ssid then
+                connected = true
+              end
             end
+            local msg = (connected and "Disconnect to " or "Connect to ") .. title
             local hotkey = newControlCenter("", tostring(idx % 10), msg,
               function()
-                local cb = getc(sa, AX.CheckBox, idx)
+                local cb = cbs[idx]
                 local actions = cb:actionNames()
                 cb:performAction(actions[#actions])
               end)
