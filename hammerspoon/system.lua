@@ -351,25 +351,7 @@ local function executeProxyCondition(condition, returnCode)
   local interfaceName = getNetworkService(true)
   if condition.ssid then
     if interfaceName == 'Wi-Fi' then
-      local ssid = hs.wifi.currentNetwork()
-      if ssid == nil then
-        if hs.location.servicesEnabled() then
-          hs.location.start()
-          -- you may be prompted to authorise Hammerspoon to use Location Services
-          if hs.location.get() then
-            ssid = hs.wifi.currentNetwork()
-          end
-          hs.location.stop()
-        end
-      end
-      if ssid == nil then
-        local osv = hs.host.operatingSystemVersion()
-        if osv.major < 15 or (osv.major == 15 and osv.minor < 6) then
-          ssid = hs.execute(strfmt([[
-            ipconfig getsummary %s | awk -F ' SSID : '  '/ SSID : / {print $2}' | tr -d '\n'
-          ]], interface))
-        end
-      end
+      local ssid = getSSID(interface)
       if ssid and ssid ~= "" then
         local ssidPatterns = type(condition.ssid) == 'string'
             and { condition.ssid } or condition.ssid

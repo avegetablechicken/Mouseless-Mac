@@ -326,6 +326,30 @@ function applicationVersion(appid)
   return major, minor, patch
 end
 
+function getSSID(interface)
+  local ssid = hs.wifi.currentNetwork()
+  if ssid == nil then
+    if hs.location.servicesEnabled() then
+      hs.location.start()
+      -- you may be prompted to authorise Hammerspoon to use Location Services
+      if hs.location.get() then
+        ssid = hs.wifi.currentNetwork()
+      end
+      hs.location.stop()
+    end
+  end
+  if ssid == nil then
+    local osv = hs.host.operatingSystemVersion()
+    if osv.major < 15 or (osv.major == 15 and osv.minor < 6) then
+      interface = interface or hs.network.primaryInterfaces()
+      ssid = hs.execute(strfmt([[
+        ipconfig getsummary %s | awk -F ' SSID : '  '/ SSID : / {print $2}' | tr -d '\n'
+      ]], interface))
+    end
+  end
+  return ssid
+end
+
 local localeTmpDir = hs.fs.temporaryDirectory()
     .. hs.settings.bundleID .. '/locale/'
 
