@@ -1196,7 +1196,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
   local pane
 
   local function enterPanel()  -- assume in BentoBox-0 since macOS Tahoe
-    local role, index
+    local role, index, locPanel
     if tcontain({ CC.WiFi, CC.Focus, CC.Bluetooth, CC.AirDrop,
                   CC.MusicRecognition }, panel) then
       role = AX.CheckBox index = 2
@@ -1216,6 +1216,9 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     elseif panel == CC.Display then
       if OS_VERSION >= OS.Ventura and OS_VERSION <= OS.Sequoia then
         role = AX.Group
+      elseif OS_VERSION > OS.Tahoe or
+          (OS_VERSION == OS.Tahoe and hs.host.operatingSystemVersion().minor >= 1) then
+        role = AX.Button
       else
         role = AX.StaticText
       end
@@ -1223,14 +1226,35 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     elseif panel == CC.KbBrightness then
       if OS_VERSION <= OS.Sequoia then
         role = AX.Button
+      elseif OS_VERSION > OS.Tahoe or
+          (OS_VERSION == OS.Tahoe and hs.host.operatingSystemVersion().minor >= 1) then
+        role = AX.Button
+        locPanel = controlCenterLocalized(panel, "Keyboard")
       else
         role = AX.StaticText
       end
       index = 1
     elseif panel == CC.Sound then
-      role = AX.StaticText index = 1
-    elseif tcontain({ CC.AXShortcuts, CC.Battery, CC.Hearing, CC.User }, panel) then
+      if OS_VERSION > OS.Tahoe or
+        (OS_VERSION == OS.Tahoe and hs.host.operatingSystemVersion().minor >= 1) then
+        role = AX.Button
+      else
+        role = AX.StaticText
+      end
+      index = 1
+    elseif tcontain({ CC.Battery, CC.Hearing }, panel) then
       role = AX.Button index = 1
+    elseif tcontain({ CC.AXShortcuts, CC.User }, panel) then
+      if OS_VERSION > OS.Tahoe or
+          (OS_VERSION == OS.Tahoe and hs.host.operatingSystemVersion().minor >= 1) then
+        role = AX.CheckBox
+        if panel == CC.AXShortcuts then
+          locPanel = controlCenterLocalized(panel, "Accessibility")
+        end
+      else
+        role = AX.Button
+      end
+      index = 1
     elseif panel == CC.NowPlaying then
       local ele
       local totalDelay = 0
@@ -1261,7 +1285,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
 
     local ele
     local totalDelay = 0
-    local locPanel = controlCenterLocalized(panel)
+    locPanel = locPanel or controlCenterLocalized(panel)
     repeat
       ele = tfind(getc(pane, role), function(e)
         if panel == CC.Focus then
