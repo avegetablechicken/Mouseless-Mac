@@ -127,7 +127,10 @@
       {
         "mods": "${hyper.app}",
         "key": "tab",
-        "bundleID": "com.apple.launchpad.launcher"
+        "bundleID": [
+          "app.remixdesign.LaunchOS",
+          "com.apple.launchpad.launcher"
+        ]
       },
       {
         "mods": "${hyper.app}",
