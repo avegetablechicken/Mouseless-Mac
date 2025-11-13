@@ -2290,6 +2290,17 @@ appHotKeyCallbacks = {
   },
 
   ["com.apple.Music"] = {
+    ["playCurrent"] = {
+      message = T("Play"),
+      windowFilter = MusicMainWindowFilter,
+      condition = function(win)
+        local button = getc(towinui(win), AX.SplitGroup, 1,
+            AX.ScrollArea, 2, AX.List, 1, AX.List, 1,
+            AX.Unknown, 1, AX.Button, T("Play", win))
+        return button ~= nil, button
+      end,
+      fn = press
+    },
     ["view1"] = {
       message = getMusicViewTitle(1),
       windowFilter = MusicMainWindowFilter,

@@ -676,6 +676,10 @@
       }
     },
     "com.apple.Music": {
+      "playCurrent": {
+        "mods": "command",
+        "key": "return"
+      },
       "view1": {
         "mods": "command",
         "key": "1"
