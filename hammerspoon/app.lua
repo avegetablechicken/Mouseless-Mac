@@ -2412,6 +2412,11 @@ appHotKeyCallbacks = {
   ["com.apple.weather"] = {
     ["toggleSidebar"] = {
       message = TC("Show Sidebar"),
+      bindCondition = function()
+        return OS_VERSION < OS.Tahoe
+            or (OS_VERSION == OS.Tahoe and
+            hs.host.operatingSystemVersion().minor == 0)
+      end,
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
