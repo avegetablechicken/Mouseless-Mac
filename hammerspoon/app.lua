@@ -5727,7 +5727,9 @@ appHotKeyCallbacks = {
   ["com.apple.Passwords.MenuBarExtra"] =
   {
     ["showPasswordsDialog"] = {
-      message = "Show Passwords Dialog",
+      message = function(app)
+        return displayName(app) .. ' > ' .. TC("Show")(app)
+      end,
       background = true,
       fn = clickRightMenuBarItem
     },
