@@ -8506,9 +8506,10 @@ local function registerZoomHotkeys(app)
     local menuItem = app:findMenuItem(menuItemPath)
     if menuItem == nil then
       local localizedWindow = localizedMenuBarItem('Window', appid)
-      local appLocale = applicationLocale(appid)
-      local localizedTitle = TC(
-          'Zoom', { locale = appLocale })(app)
+      local localizedTitle = TC(title)(app)
+      if localizedTitle == title and SYSTEM_LOCALE:sub(1, 2) ~= 'en' then
+        localizedTitle = TC(title, { locale = SYSTEM_LOCALE })(app)
+      end
       if localizedTitle ~= nil then
         menuItemPath = { localizedWindow, localizedTitle }
         menuItem = app:findMenuItem(menuItemPath)
