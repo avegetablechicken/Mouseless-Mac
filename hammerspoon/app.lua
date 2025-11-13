@@ -8280,7 +8280,6 @@ end
 
 -- register hotkey to open recent when it is available
 local openRecentHotkey
-local localizedOpenRecent
 local function registerOpenRecent(app)
   if openRecentHotkey then
     openRecentHotkey:delete()
@@ -8310,9 +8309,7 @@ local function registerOpenRecent(app)
   local menuItem = app:findMenuItem(menuItemPath)
   if menuItem == nil then
     if appid:sub(1, 10) == "com.apple." then
-      if localizedOpenRecent == nil then
-        localizedOpenRecent = TC('Open Recent')(app)
-      end
+      local localizedOpenRecent = TC('Open Recent')(app)
       menuItemPath = { localizedFile, localizedOpenRecent }
       menuItem = app:findMenuItem(menuItemPath)
       if menuItem == nil then
