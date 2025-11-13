@@ -5,6 +5,7 @@
   },
 
   "hideWithoutWindow": [
+    "com.apple.Music",
     "org.hammerspoon.Hammerspoon",
     "com.renfei.SnippetsLab",
     "com.surteesstudios.Bartender",
