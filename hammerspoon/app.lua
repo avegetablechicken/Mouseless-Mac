@@ -785,6 +785,78 @@ local function deleteAllCalls(win)
   )
 end
 
+-- ### Music
+local MusicMainWindowFilter = {
+  fn = function(win)
+    local rows = getc(towinui(win), AX.SplitGroup, 1,
+        AX.ScrollArea, 1, AX.Outline, 1, AX.Row)
+    return rows and #rows > 0
+  end
+}
+
+local function getMusicViewTitle(index)
+  return function(win)
+    local outline = getc(towinui(win), AX.SplitGroup, 1,
+        AX.ScrollArea, 1, AX.Outline, 1)
+    if outline == nil then return end
+    local rows, sum = getc(outline, AX.Row), 0
+    for _, r in ipairs(rows) do sum = sum + r.AXSize.h end
+    local mean = sum / #rows
+    rows = tifilter(rows, function(r) return r.AXSize.h > mean end)
+    local row = rows[index]
+    if row then
+      if appBuf.musicSidebarItemObserver == nil then
+        local app = win:application()
+        local appid = app:bundleID()
+        local observer = uiobserver.new(app:pid())
+        observer:addWatcher(outline, uinotifications.rowCountChanged)
+        observer:callback(function()
+          if appBuf.lastRowCountChangedTimer then
+            appBuf.lastRowCountChangedTimer:setNextTrigger(0.1)
+            return
+          end
+          appBuf.lastRowCountChangedTimer = hs.timer.doAfter(0.1, function()
+            appBuf.lastRowCountChangedTimer = nil
+            for _, hotkeys in pairs(inWinHotKeys[appid]) do
+              for hkID, hotkey in pairs(hotkeys) do
+                if hkID:match('^view(%d-)$') then
+                  hotkey:delete()
+                  hotkeys[hkID] = nil
+                end
+              end
+            end
+            for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
+              if hkID:match('^view(%d-)$') then
+                registerInWinHotKeys(app:focusedWindow(), cfg.windowFilter)
+                break
+              end
+            end
+          end)
+        end)
+        observer:start()
+        appBuf.musicSidebarItemObserver = observer
+        stopOnDeactivated(appid, appBuf.musicSidebarItemObserver)
+      end
+      return getc(row, AX.Cell, 1, AX.StaticText, 1).AXValue
+    end
+  end
+end
+
+local function selectMusicView(index)
+  return function(win)
+    local rows = getc(towinui(win), AX.SplitGroup, 1,
+        AX.ScrollArea, 1, AX.Outline, 1, AX.Row)
+    local sum = 0
+    for _, r in ipairs(rows) do sum = sum + r.AXSize.h end
+    local mean = sum / #rows
+    rows = tifilter(rows, function(r) return r.AXSize.h > mean end)
+    local row = rows[index]
+    if row then
+      row.AXSelected = true
+    end
+  end
+end
+
 -- ### Games
 local GamesMainWindowFilter = {
   fn = function(win)
@@ -2201,6 +2273,59 @@ appHotKeyCallbacks = {
       condition = checkMenuItem({ "View", "Show Calendar List" },
                                 { "View", "Hide Calendar List" }),
       fn = select
+    }
+  },
+
+  ["com.apple.Music"] = {
+    ["view1"] = {
+      message = getMusicViewTitle(1),
+      windowFilter = MusicMainWindowFilter,
+      fn = selectMusicView(1)
+    },
+    ["view2"] = {
+      message = getMusicViewTitle(2),
+      windowFilter = MusicMainWindowFilter,
+      fn = selectMusicView(2)
+    },
+    ["view3"] = {
+      message = getMusicViewTitle(3),
+      windowFilter = MusicMainWindowFilter,
+      fn = selectMusicView(3)
+    },
+    ["view4"] = {
+      message = getMusicViewTitle(4),
+      windowFilter = MusicMainWindowFilter,
+      fn = selectMusicView(4)
+    },
+    ["view5"] = {
+      message = getMusicViewTitle(5),
+      windowFilter = MusicMainWindowFilter,
+      fn = selectMusicView(5)
+    },
+    ["view6"] = {
+      message = getMusicViewTitle(6),
+      windowFilter = MusicMainWindowFilter,
+      fn = selectMusicView(6)
+    },
+    ["view7"] = {
+      message = getMusicViewTitle(7),
+      windowFilter = MusicMainWindowFilter,
+      fn = selectMusicView(7)
+    },
+    ["view8"] = {
+      message = getMusicViewTitle(8),
+      windowFilter = MusicMainWindowFilter,
+      fn = selectMusicView(8)
+    },
+    ["view9"] = {
+      message = getMusicViewTitle(9),
+      windowFilter = MusicMainWindowFilter,
+      fn = selectMusicView(9)
+    },
+    ["view10"] = {
+      message = getMusicViewTitle(10),
+      windowFilter = MusicMainWindowFilter,
+      fn = selectMusicView(10)
     }
   },
 
