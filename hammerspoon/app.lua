@@ -907,7 +907,9 @@ local function getMusicViewTitle(index)
     local rows, sum = getc(outline, AX.Row), 0
     for _, r in ipairs(rows) do sum = sum + r.AXSize.h end
     local mean = sum / #rows
-    rows = tifilter(rows, function(r) return r.AXSize.h > mean end)
+    rows = tifilter(rows, function(r)
+      return r.AXSize.h > mean and getc(r, AX.Cell, 1, AX.StaticText, 1) ~= nil
+    end)
     local row = rows[index]
     if row then
       if appBuf.musicSidebarItemObserver == nil then
@@ -954,7 +956,9 @@ local function selectMusicView(index)
     local sum = 0
     for _, r in ipairs(rows) do sum = sum + r.AXSize.h end
     local mean = sum / #rows
-    rows = tifilter(rows, function(r) return r.AXSize.h > mean end)
+    rows = tifilter(rows, function(r)
+      return r.AXSize.h > mean and getc(r, AX.Cell, 1, AX.StaticText, 1) ~= nil
+    end)
     local row = rows[index]
     if row then
       row.AXSelected = true
