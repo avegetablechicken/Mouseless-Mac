@@ -656,6 +656,18 @@
       "newCall": {
         "mods": "command",
         "key": "N"
+      },
+      "view1": {
+        "mods": "command",
+        "key": "1"
+      },
+      "view2": {
+        "mods": "command",
+        "key": "2"
+      },
+      "view3": {
+        "mods": "command",
+        "key": "3"
       }
     },
     "com.apple.FaceTime": {

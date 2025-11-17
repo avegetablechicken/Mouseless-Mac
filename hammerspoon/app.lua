@@ -730,6 +730,29 @@ onRunning("com.apple.mobilephone", function(app)
   WF.Phone.Main.allowTitles = '^' .. app:name() .. '$'
 end)
 
+local function ShowPhoneViewMenu(winUI)
+  local button = getc(winUI, AX.Toolbar, 1,
+      AX.Group, 2, AX.Group, 1, AX.MenuButton, 1)
+  if button then
+    press(button) return true
+  end
+  return false
+end
+
+local function selectPhoneView(index)
+  return function(win)
+    local winUI  = towinui(win)
+    if not ShowPhoneViewMenu(winUI) then return end
+    local menu
+    repeat
+      hs.timer.usleep(0.01 * 1000000)
+      menu = getc(winUI, AX.Toolbar, 1, AX.Group, 2, AX.Menu, 1)
+    until menu or not winUI:isValid()
+    local menuItem = getc(menu, AX.MenuItem, index)
+    if menuItem then press(menuItem) end
+  end
+end
+
 -- ### FaceTime
 WF.FaceTime = {}
 WF.FaceTime.Main = {}
@@ -2229,6 +2252,21 @@ appHotKeyCallbacks = {
             AX.Group, 3, AX.Group, 1, AX.Button, 1)
         if button then press(button) end
       end
+    },
+    ["view1"] = {
+      message = T("Calls"),
+      windowFilter = WF.Phone.Main,
+      fn = selectPhoneView(1)
+    },
+    ["view2"] = {
+      message = T("Missed"),
+      windowFilter = WF.Phone.Main,
+      fn = selectPhoneView(2)
+    },
+    ["view3"] = {
+      message = T("Voicemail"),
+      windowFilter = WF.Phone.Main,
+      fn = selectPhoneView(3)
     }
   },
 
