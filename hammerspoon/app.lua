@@ -1602,13 +1602,10 @@ end
 local function iCopySelectHotkeyMod(app)
   return versionLessThan("1.1.1")(app) and "" or "⌃"
 end
-local iCopyMod
 
 local function iCopySelectHotkeyRemap(idx)
   return function(win)
-    if iCopyMod == nil then
-      iCopyMod = iCopySelectHotkeyMod(win:application())
-    end
+    local iCopyMod = iCopySelectHotkeyMod(win:application())
     hs.eventtap.keyStroke(iCopyMod, tostring(idx), nil, win:application())
   end
 end
