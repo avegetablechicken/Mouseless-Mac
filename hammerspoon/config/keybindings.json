@@ -652,6 +652,10 @@
       "removeFromRecents": {
         "mods": "command",
         "key": "delete"
+      },
+      "newCall": {
+        "mods": "command",
+        "key": "N"
       }
     },
     "com.apple.FaceTime": {

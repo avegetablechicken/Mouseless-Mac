@@ -2205,6 +2205,15 @@ appHotKeyCallbacks = {
       message = T("Remove from Recents"),
       windowFilter = PhoneMainWindowFilter,
       fn = deleteMousePositionCall
+    },
+    ["newCall"] = {
+      message = T("New Call"),
+      windowFilter = PhoneMainWindowFilter,
+      fn = function(win)
+        local button = getc(towinui(win), AX.Toolbar, 1,
+            AX.Group, 3, AX.Group, 1, AX.Button, 1)
+        if button then press(button) end
+      end
     }
   },
 
