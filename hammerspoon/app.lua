@@ -773,38 +773,6 @@ local function deleteMousePositionCall(win)
       press(menuItem)
     end
   end
-  return
-  winUI:elementSearch(
-    function(msg, results, count)
-      if count == 0 then return end
-
-      local section = getc(results[1][1], AX.Group, 1)
-      if section == nil then return end
-
-      if not rightClick(hs.mouse.absolutePosition(), app) then
-        return
-      end
-      local popups = getc(section, AX.Menu)
-      local maxTime, time = 0.5, 0
-      while #popups == 0 and time < maxTime do
-        hs.timer.usleep(0.01 * 1000000)
-        time = time + 0.01
-        popups = get(section, AX.Menu)
-      end
-      for _, popup in ipairs(popups) do
-        local menuItem = getc(popup, AX.MenuItem, "menuRemovePersonFromRecents:")
-        if menuItem then
-          press(menuItem)
-        end
-      end
-    end,
-    function(element)
-      return element.AXSubrole == AX.CollectionList
-          and #element > 0
-          and element[1].AXSubrole == AX.SectionList
-    end,
-    { count = 1 }
-  )
 end
 
 local function deleteAllCalls(win)
