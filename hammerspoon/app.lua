@@ -507,6 +507,8 @@ function winBuf:register(winUI, key, value)
   return winBuf[key]
 end
 
+local WF = {}
+
 -- ### Finder
 local function getFinderSidebarItemTitle(idx)
   return function(win)
@@ -722,15 +724,17 @@ local function deleteAllMessages(messageItems, app)
 end
 
 -- ### Phone
-local PhoneMainWindowFilter = {}
+WF.Phone = {}
+WF.Phone.Main = {}
 onRunning("com.apple.mobilephone", function(app)
-  PhoneMainWindowFilter.allowTitles = '^' .. app:name() .. '$'
+  WF.Phone.Main.allowTitles = '^' .. app:name() .. '$'
 end)
 
 -- ### FaceTime
-local FaceTimeMainWindowFilter = {}
+WF.FaceTime = {}
+WF.FaceTime.Main = {}
 onRunning("com.apple.FaceTime", function(app)
-  FaceTimeMainWindowFilter.allowTitles = '^' .. app:name() .. '$'
+  WF.FaceTime.Main.allowTitles = '^' .. app:name() .. '$'
 end)
 
 local function deleteMousePositionCall(win)
@@ -867,7 +871,8 @@ local function deleteAllCalls(win)
 end
 
 -- ### Music
-local MusicMainWindowFilter = {
+WF.Music = {}
+WF.Music.Main = {
   fn = function(win)
     local rows = getc(towinui(win), AX.SplitGroup, 1,
         AX.ScrollArea, 1, AX.Outline, 1, AX.Row)
@@ -943,7 +948,8 @@ local function selectMusicView(index)
 end
 
 -- ### Games
-local GamesMainWindowFilter = {
+WF.Games = {}
+WF.Games.Main = {
   fn = function(win)
     local buttons = getc(towinui(win), AX.Toolbar, 1,
         AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
@@ -1082,7 +1088,8 @@ local function confirmButtonValidForAppCleanerUninstaller(title)
 end
 
 --- ### QQLive
-local QQLiveMainWindowFilter = {
+WF.QQLive = {}
+WF.QQLive.Main = {
   fn = function(win)
     local winUI = towinui(win)
     return getc(winUI, AX.Group, 2, nil, "频道") ~= nil
@@ -1145,27 +1152,30 @@ local function getQQLiveChannel(index)
 end
 
 --- ### Yuanbao
-local YuanbaoMainWindowFilter = {}
+WF.Yuanbao = {}
+WF.Yuanbao.Main = {}
 onRunning("com.tencent.yuanbao", function(app)
   local title = T("Tencent Yuanbao", app)
-  YuanbaoMainWindowFilter.allowTitles = '^' .. title .. '$'
+  WF.Yuanbao.Main.allowTitles = '^' .. title .. '$'
 end)
 
 --- ### EuDic
-local EuDicMainWindowFilter = { allowRoles = AX.StandardWindow }
+WF.EuDic = {}
+WF.EuDic.Main = { allowRoles = AX.StandardWindow }
 onRunning("com.eusoft.freeeudic", function(app)
   local functionName = T("词 典", app)
-  EuDicMainWindowFilter.fn = function(win)
+  WF.EuDic.Main.fn = function(win)
     local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 1)
     return button and button.AXTitle == functionName
   end
 end)
 
 --- ### Parallels Desktop
-local ParallelsControlCenterWindowFilter = {}
+WF.Parallels = {}
+WF.Parallels.ControlCenter = {}
 onRunning("com.parallels.desktop.console", function(app)
   local title = T("Control Center", app)
-  ParallelsControlCenterWindowFilter.allowTitles = '^' .. title .. '$'
+  WF.Parallels.ControlCenter.allowTitles = '^' .. title .. '$'
 end)
 
 --- ### Barrier
@@ -1197,7 +1207,8 @@ local function barrierLocalizedString(message, app, params)
 end
 
 -- ### Bartender
-local bartenderBarWindowFilter = { allowTitles = "^Bartender Bar$" }
+WF.Bartender = {}
+WF.Bartender.Bar = { allowTitles = "^Bartender Bar$" }
 local function getBartenderBarItemTitle(index, rightClick)
   return function(win)
     if winBuf.bartenderBarItemNames == nil then
@@ -1362,12 +1373,12 @@ local function clickBartenderBarItem(index, rightClick)
   end
 end
 
-local BartenderMainWindowFilter = {}
+WF.Bartender.Main = {}
 onRunning("com.surteesstudios.Bartender", function(app)
   if versionLessThan("6")(app) then
-    BartenderMainWindowFilter.allowTitles = app:name()
+    WF.Bartender.Main.allowTitles = app:name()
   else
-    BartenderMainWindowFilter.fn = function(win)
+    WF.Bartender.Main.fn = function(win)
       return getc(towinui(win), AX.Group, 1, AX.SplitGroup, 1,
           AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1) ~= nil
     end
@@ -1410,7 +1421,8 @@ local function clickBartenderSidebarItem(index)
 end
 
 -- ### Barbee
-local barbeeBarWindowFilter = {
+WF.Barbee = {}
+WF.Barbee.Bar = {
   allowRoles = AX.SystemDialog,
   allowTitles = "^$",
   fn = function(win)
@@ -1446,7 +1458,8 @@ local function clickBarbeeBarItem(index)
 end
 
 -- ### Ice
-local iceBarWindowFilter = { allowTitles = "^Ice Bar$" }
+WF.Ice = {}
+WF.Ice.Bar = { allowTitles = "^Ice Bar$" }
 local function getIceBarItemTitle(index)
   return function(win)
     if winBuf.IceBarItemNames == nil then
@@ -1529,7 +1542,7 @@ local function clickIceBarItem(index)
   end
 end
 
-local iceSettingsWindowFilter = {
+WF.Ice.Settings = {
   fn = function(win)
     return towinui(win).AXIdentifier == "SettingsWindow"
   end
@@ -1555,7 +1568,8 @@ local function clickIceSidebarItem(index)
 end
 
 -- ### iBar
-local iBarWindowFilter = {
+WF.iBar = {}
+WF.iBar.Bar = {
   allowRoles = AX.SystemFloatingWindow,
   allowTitles = "^iBarmenu$"
 }
@@ -1618,7 +1632,8 @@ local function iCopySelectHotkeyRemap(idx)
   end
 end
 
-local iCopyWindowFilter = {
+WF.iCopy = {}
+WF.iCopy.Main = {
   allowRegions = {
     hs.geometry.rect(
         0, hs.screen.mainScreen():fullFrame().y
@@ -2203,12 +2218,12 @@ appHotKeyCallbacks = {
   ["com.apple.mobilephone"] = {
     ["removeFromRecents"] = {
       message = T("Remove from Recents"),
-      windowFilter = PhoneMainWindowFilter,
+      windowFilter = WF.Phone.Main,
       fn = deleteMousePositionCall
     },
     ["newCall"] = {
       message = T("New Call"),
-      windowFilter = PhoneMainWindowFilter,
+      windowFilter = WF.Phone.Main,
       fn = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1,
             AX.Group, 3, AX.Group, 1, AX.Button, 1)
@@ -2220,17 +2235,17 @@ appHotKeyCallbacks = {
   ["com.apple.FaceTime"] = {
     ["removeFromRecents"] = {
       message = T("Remove from Recents"),
-      windowFilter = FaceTimeMainWindowFilter,
+      windowFilter = WF.FaceTime.Main,
       fn = deleteMousePositionCall
     },
     ["clearAllRecents"] = {
       message = T("Clear All Recents"),
-      windowFilter = FaceTimeMainWindowFilter,
+      windowFilter = WF.FaceTime.Main,
       fn = deleteAllCalls
     },
     ["newFaceTime"] = {
       message = T("New FaceTime"),
-      windowFilter = FaceTimeMainWindowFilter,
+      windowFilter = WF.FaceTime.Main,
       condition = function(win)
         local button
         if OS_VERSION < OS.Tahoe then
@@ -2286,7 +2301,7 @@ appHotKeyCallbacks = {
   ["com.apple.Music"] = {
     ["playCurrent"] = {
       message = T("Play"),
-      windowFilter = MusicMainWindowFilter,
+      windowFilter = WF.Music.Main,
       condition = function(win)
         local button = getc(towinui(win), AX.SplitGroup, 1,
             AX.ScrollArea, 2, AX.List, 1, AX.List, 1,
@@ -2297,52 +2312,52 @@ appHotKeyCallbacks = {
     },
     ["view1"] = {
       message = getMusicViewTitle(1),
-      windowFilter = MusicMainWindowFilter,
+      windowFilter = WF.Music.Main,
       fn = selectMusicView(1)
     },
     ["view2"] = {
       message = getMusicViewTitle(2),
-      windowFilter = MusicMainWindowFilter,
+      windowFilter = WF.Music.Main,
       fn = selectMusicView(2)
     },
     ["view3"] = {
       message = getMusicViewTitle(3),
-      windowFilter = MusicMainWindowFilter,
+      windowFilter = WF.Music.Main,
       fn = selectMusicView(3)
     },
     ["view4"] = {
       message = getMusicViewTitle(4),
-      windowFilter = MusicMainWindowFilter,
+      windowFilter = WF.Music.Main,
       fn = selectMusicView(4)
     },
     ["view5"] = {
       message = getMusicViewTitle(5),
-      windowFilter = MusicMainWindowFilter,
+      windowFilter = WF.Music.Main,
       fn = selectMusicView(5)
     },
     ["view6"] = {
       message = getMusicViewTitle(6),
-      windowFilter = MusicMainWindowFilter,
+      windowFilter = WF.Music.Main,
       fn = selectMusicView(6)
     },
     ["view7"] = {
       message = getMusicViewTitle(7),
-      windowFilter = MusicMainWindowFilter,
+      windowFilter = WF.Music.Main,
       fn = selectMusicView(7)
     },
     ["view8"] = {
       message = getMusicViewTitle(8),
-      windowFilter = MusicMainWindowFilter,
+      windowFilter = WF.Music.Main,
       fn = selectMusicView(8)
     },
     ["view9"] = {
       message = getMusicViewTitle(9),
-      windowFilter = MusicMainWindowFilter,
+      windowFilter = WF.Music.Main,
       fn = selectMusicView(9)
     },
     ["view10"] = {
       message = getMusicViewTitle(10),
-      windowFilter = MusicMainWindowFilter,
+      windowFilter = WF.Music.Main,
       fn = selectMusicView(10)
     }
   },
@@ -2350,7 +2365,7 @@ appHotKeyCallbacks = {
   ["com.apple.games"] = {
     ["back"] = {
       message = TC("Back"),
-      windowFilter = GamesMainWindowFilter,
+      windowFilter = WF.Games.Main,
       condition = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1, AX.Button)
         local title = TC("Back", win)
@@ -2369,7 +2384,7 @@ appHotKeyCallbacks = {
           return buttons[1].AXDescription
         end
       end,
-      windowFilter = GamesMainWindowFilter,
+      windowFilter = WF.Games.Main,
       fn = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1,
             AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
@@ -2386,7 +2401,7 @@ appHotKeyCallbacks = {
           return buttons[2].AXDescription
         end
       end,
-      windowFilter = GamesMainWindowFilter,
+      windowFilter = WF.Games.Main,
       fn = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1,
             AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
@@ -2403,7 +2418,7 @@ appHotKeyCallbacks = {
           return buttons[3].AXDescription
         end
       end,
-      windowFilter = GamesMainWindowFilter,
+      windowFilter = WF.Games.Main,
       fn = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1,
             AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
@@ -2414,7 +2429,7 @@ appHotKeyCallbacks = {
     },
     ["search"] = {
       message = TC("Search"),
-      windowFilter = GamesMainWindowFilter,
+      windowFilter = WF.Games.Main,
       fn = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1,
             AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
@@ -3366,7 +3381,7 @@ appHotKeyCallbacks = {
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 1)
         if button then return button.AXTitle end
       end,
-      windowFilter = EuDicMainWindowFilter,
+      windowFilter = WF.EuDic.Main,
       condition = checkMenuItem({ "功能", "返回首页" }),
       fn = select
     },
@@ -3375,7 +3390,7 @@ appHotKeyCallbacks = {
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 2)
         if button then return button.AXTitle end
       end,
-      windowFilter = EuDicMainWindowFilter,
+      windowFilter = WF.EuDic.Main,
       fn = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 2)
         press(button)
@@ -3386,7 +3401,7 @@ appHotKeyCallbacks = {
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 3)
         if button then return button.AXTitle end
       end,
-      windowFilter = EuDicMainWindowFilter,
+      windowFilter = WF.EuDic.Main,
       fn = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 3)
         press(button)
@@ -3397,7 +3412,7 @@ appHotKeyCallbacks = {
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 4)
         if button then return button.AXTitle end
       end,
-      windowFilter = EuDicMainWindowFilter,
+      windowFilter = WF.EuDic.Main,
       fn = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 4)
         press(button)
@@ -3408,7 +3423,7 @@ appHotKeyCallbacks = {
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 5)
         if button then return button.AXTitle end
       end,
-      windowFilter = EuDicMainWindowFilter,
+      windowFilter = WF.EuDic.Main,
       fn = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 5)
         press(button)
@@ -3419,7 +3434,7 @@ appHotKeyCallbacks = {
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 6)
         if button then return button.AXTitle end
       end,
-      windowFilter = EuDicMainWindowFilter,
+      windowFilter = WF.EuDic.Main,
       fn = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 6)
         press(button)
@@ -3632,7 +3647,7 @@ appHotKeyCallbacks = {
     },
     ["enterTemporaryChat"] = {
       message = T("Enter Temporary Chat"),
-      windowFilter = YuanbaoMainWindowFilter,
+      windowFilter = WF.Yuanbao.Main,
       condition = function(win)
         local webarea = getc(towinui(win), AX.Group, 1, AX.Group, 1,
             AX.ScrollArea, 1, AX.WebArea, 1)
@@ -3647,7 +3662,7 @@ appHotKeyCallbacks = {
     },
     ["toggleSidebar"] = {
       message = T("Show Sidebar"),
-      windowFilter = YuanbaoMainWindowFilter,
+      windowFilter = WF.Yuanbao.Main,
       condition = function(win)
         local webarea = getc(towinui(win), AX.Group, 1, AX.Group, 1,
             AX.ScrollArea, 1, AX.WebArea, 1)
@@ -3673,7 +3688,7 @@ appHotKeyCallbacks = {
       mods = get(KeybindingConfigs.hotkeys.shared, "zoom", "mods"),
       key = get(KeybindingConfigs.hotkeys.shared, "zoom", "key"),
       message = T("Maximize"),
-      windowFilter = YuanbaoMainWindowFilter,
+      windowFilter = WF.Yuanbao.Main,
       condition = checkMenuItem({ "Window", "Maximize" }),
       fn = select
     },
@@ -4636,61 +4651,61 @@ appHotKeyCallbacks = {
     },
     ["channel1"] = {
       message = getQQLiveChannelName(1),
-      windowFilter = QQLiveMainWindowFilter,
+      windowFilter = WF.QQLive.Main,
       condition = getQQLiveChannel(1),
       fn = click
     },
     ["channel2"] = {
       message = getQQLiveChannelName(2),
-      windowFilter = QQLiveMainWindowFilter,
+      windowFilter = WF.QQLive.Main,
       condition = getQQLiveChannel(2),
       fn = click
     },
     ["channel3"] = {
       message = getQQLiveChannelName(3),
-      windowFilter = QQLiveMainWindowFilter,
+      windowFilter = WF.QQLive.Main,
       condition = getQQLiveChannel(3),
       fn = click
     },
     ["channel4"] = {
       message = getQQLiveChannelName(4),
-      windowFilter = QQLiveMainWindowFilter,
+      windowFilter = WF.QQLive.Main,
       condition = getQQLiveChannel(4),
       fn = click
     },
     ["channel5"] = {
       message = getQQLiveChannelName(5),
-      windowFilter = QQLiveMainWindowFilter,
+      windowFilter = WF.QQLive.Main,
       condition = getQQLiveChannel(5),
       fn = click
     },
     ["channel6"] = {
       message = getQQLiveChannelName(6),
-      windowFilter = QQLiveMainWindowFilter,
+      windowFilter = WF.QQLive.Main,
       condition = getQQLiveChannel(6),
       fn = click
     },
     ["channel7"] = {
       message = getQQLiveChannelName(7),
-      windowFilter = QQLiveMainWindowFilter,
+      windowFilter = WF.QQLive.Main,
       condition = getQQLiveChannel(7),
       fn = click
     },
     ["channel8"] = {
       message = getQQLiveChannelName(8),
-      windowFilter = QQLiveMainWindowFilter,
+      windowFilter = WF.QQLive.Main,
       condition = getQQLiveChannel(8),
       fn = click
     },
     ["channel9"] = {
       message = getQQLiveChannelName(9),
-      windowFilter = QQLiveMainWindowFilter,
+      windowFilter = WF.QQLive.Main,
       condition = getQQLiveChannel(9),
       fn = click
     },
     ["channel10"] = {
       message = getQQLiveChannelName(10),
-      windowFilter = QQLiveMainWindowFilter,
+      windowFilter = WF.QQLive.Main,
       condition = getQQLiveChannel(10),
       fn = click
     }
@@ -5135,121 +5150,121 @@ appHotKeyCallbacks = {
     },
     ["click1stBartenderBarItem"] = {
       message = getBartenderBarItemTitle(1),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(1)
     },
     ["rightClick1stBartenderBarItem"] = {
       message = getBartenderBarItemTitle(1, true),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(1, true)
     },
     ["click2ndBartenderBarItem"] = {
       message = getBartenderBarItemTitle(2),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(2)
     },
     ["rightClick2ndBartenderBarItem"] = {
       message = getBartenderBarItemTitle(2, true),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(2, true)
     },
     ["click3rdBartenderBarItem"] = {
       message = getBartenderBarItemTitle(3),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(3)
     },
     ["rightClick3rdBartenderBarItem"] = {
       message = getBartenderBarItemTitle(3, true),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(3, true)
     },
     ["click4thBartenderBarItem"] = {
       message = getBartenderBarItemTitle(4),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(4)
     },
     ["rightClick4thBartenderBarItem"] = {
       message = getBartenderBarItemTitle(4, true),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(4, true)
     },
     ["click5thBartenderBarItem"] = {
       message = getBartenderBarItemTitle(5),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(5)
     },
     ["rightClick5thBartenderBarItem"] = {
       message = getBartenderBarItemTitle(5, true),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(5, true)
     },
     ["click6thBartenderBarItem"] = {
       message = getBartenderBarItemTitle(6),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(6)
     },
     ["rightClick6thBartenderBarItem"] = {
       message = getBartenderBarItemTitle(6, true),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(6, true)
     },
     ["click7thBartenderBarItem"] = {
       message = getBartenderBarItemTitle(7),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(7)
     },
     ["rightClick7thBartenderBarItem"] = {
       message = getBartenderBarItemTitle(7, true),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(7, true)
     },
     ["click8thBartenderBarItem"] = {
       message = getBartenderBarItemTitle(8),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(8)
     },
     ["rightClick8thBartenderBarItem"] = {
       message = getBartenderBarItemTitle(8, true),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(8, true)
     },
     ["click9thBartenderBarItem"] = {
       message = getBartenderBarItemTitle(9),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(9)
     },
     ["rightClick9thBartenderBarItem"] = {
       message = getBartenderBarItemTitle(9, true),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(9, true)
     },
     ["click10thBartenderBarItem"] = {
       message = getBartenderBarItemTitle(10),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(10)
     },
     ["rightClick10thBartenderBarItem"] = {
       message = getBartenderBarItemTitle(10, true),
-      windowFilter = bartenderBarWindowFilter,
+      windowFilter = WF.Bartender.Bar,
       background = true,
       fn = clickBartenderBarItem(10, true)
     },
@@ -5300,55 +5315,55 @@ appHotKeyCallbacks = {
     ["view1"] =
     {
       message = getBartenderSidebarItemTitle(1),
-      windowFilter = BartenderMainWindowFilter,
+      windowFilter = WF.Bartender.Main,
       fn = clickBartenderSidebarItem(1)
     },
     ["view2"] =
     {
       message = getBartenderSidebarItemTitle(2),
-      windowFilter = BartenderMainWindowFilter,
+      windowFilter = WF.Bartender.Main,
       fn = clickBartenderSidebarItem(2)
     },
     ["view3"] =
     {
       message = getBartenderSidebarItemTitle(3),
-      windowFilter = BartenderMainWindowFilter,
+      windowFilter = WF.Bartender.Main,
       fn = clickBartenderSidebarItem(3)
     },
     ["view4"] =
     {
       message = getBartenderSidebarItemTitle(4),
-      windowFilter = BartenderMainWindowFilter,
+      windowFilter = WF.Bartender.Main,
       fn = clickBartenderSidebarItem(4)
     },
     ["view5"] =
     {
       message = getBartenderSidebarItemTitle(5),
-      windowFilter = BartenderMainWindowFilter,
+      windowFilter = WF.Bartender.Main,
       fn = clickBartenderSidebarItem(5)
     },
     ["view6"] =
     {
       message = getBartenderSidebarItemTitle(6),
-      windowFilter = BartenderMainWindowFilter,
+      windowFilter = WF.Bartender.Main,
       fn = clickBartenderSidebarItem(6)
     },
     ["view7"] =
     {
       message = getBartenderSidebarItemTitle(7),
-      windowFilter = BartenderMainWindowFilter,
+      windowFilter = WF.Bartender.Main,
       fn = clickBartenderSidebarItem(7)
     },
     ["view8"] =
     {
       message = getBartenderSidebarItemTitle(8),
-      windowFilter = BartenderMainWindowFilter,
+      windowFilter = WF.Bartender.Main,
       fn = clickBartenderSidebarItem(8)
     },
     ["view9"] =
     {
       message = getBartenderSidebarItemTitle(9),
-      windowFilter = BartenderMainWindowFilter,
+      windowFilter = WF.Bartender.Main,
       fn = clickBartenderSidebarItem(9)
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
@@ -5406,70 +5421,70 @@ appHotKeyCallbacks = {
     },
     ["click1stBarbeeBarItem"] = {
       message = getBarbeeBarItemTitle(1),
-      windowFilter = barbeeBarWindowFilter,
+      windowFilter = WF.Barbee.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickBarbeeBarItem(1)
     },
     ["click2ndBarbeeBarItem"] = {
       message = getBarbeeBarItemTitle(2),
-      windowFilter = barbeeBarWindowFilter,
+      windowFilter = WF.Barbee.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickBarbeeBarItem(2)
     },
     ["click3rdBarbeeBarItem"] = {
       message = getBarbeeBarItemTitle(3),
-      windowFilter = barbeeBarWindowFilter,
+      windowFilter = WF.Barbee.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickBarbeeBarItem(3)
     },
     ["click4thBarbeeBarItem"] = {
       message = getBarbeeBarItemTitle(4),
-      windowFilter = barbeeBarWindowFilter,
+      windowFilter = WF.Barbee.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickBarbeeBarItem(4)
     },
     ["click5thBarbeeBarItem"] = {
       message = getBarbeeBarItemTitle(5),
-      windowFilter = barbeeBarWindowFilter,
+      windowFilter = WF.Barbee.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickBarbeeBarItem(5)
     },
     ["click6thBarbeeBarItem"] = {
       message = getBarbeeBarItemTitle(6),
-      windowFilter = barbeeBarWindowFilter,
+      windowFilter = WF.Barbee.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickBarbeeBarItem(6)
     },
     ["click7thBarbeeBarItem"] = {
       message = getBarbeeBarItemTitle(7),
-      windowFilter = barbeeBarWindowFilter,
+      windowFilter = WF.Barbee.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickBarbeeBarItem(7)
     },
     ["click8thBarbeeBarItem"] = {
       message = getBarbeeBarItemTitle(8),
-      windowFilter = barbeeBarWindowFilter,
+      windowFilter = WF.Barbee.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickBarbeeBarItem(8)
     },
     ["click9thBarbeeBarItem"] = {
       message = getBarbeeBarItemTitle(9),
-      windowFilter = barbeeBarWindowFilter,
+      windowFilter = WF.Barbee.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickBarbeeBarItem(9)
     },
     ["click10thBarbeeBarItem"] = {
       message = getBarbeeBarItemTitle(10),
-      windowFilter = barbeeBarWindowFilter,
+      windowFilter = WF.Barbee.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickBarbeeBarItem(10)
@@ -5484,102 +5499,102 @@ appHotKeyCallbacks = {
   {
     ["click1stIceBarItem"] = {
       message = getIceBarItemTitle(1),
-      windowFilter = iceBarWindowFilter,
+      windowFilter = WF.Ice.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickIceBarItem(1)
     },
     ["click2ndIceBarItem"] = {
       message = getIceBarItemTitle(2),
-      windowFilter = iceBarWindowFilter,
+      windowFilter = WF.Ice.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickIceBarItem(2)
     },
     ["click3rdIceBarItem"] = {
       message = getIceBarItemTitle(3),
-      windowFilter = iceBarWindowFilter,
+      windowFilter = WF.Ice.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickIceBarItem(3)
     },
     ["click4thIceBarItem"] = {
       message = getIceBarItemTitle(4),
-      windowFilter = iceBarWindowFilter,
+      windowFilter = WF.Ice.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickIceBarItem(4)
     },
     ["click5thIceBarItem"] = {
       message = getIceBarItemTitle(5),
-      windowFilter = iceBarWindowFilter,
+      windowFilter = WF.Ice.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickIceBarItem(5)
     },
     ["click6thIceBarItem"] = {
       message = getIceBarItemTitle(6),
-      windowFilter = iceBarWindowFilter,
+      windowFilter = WF.Ice.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickIceBarItem(6)
     },
     ["click7thIceBarItem"] = {
       message = getIceBarItemTitle(7),
-      windowFilter = iceBarWindowFilter,
+      windowFilter = WF.Ice.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickIceBarItem(7)
     },
     ["click8thIceBarItem"] = {
       message = getIceBarItemTitle(8),
-      windowFilter = iceBarWindowFilter,
+      windowFilter = WF.Ice.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickIceBarItem(8)
     },
     ["click9thIceBarItem"] = {
       message = getIceBarItemTitle(9),
-      windowFilter = iceBarWindowFilter,
+      windowFilter = WF.Ice.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickIceBarItem(9)
     },
     ["click10thIceBarItem"] = {
       message = getIceBarItemTitle(10),
-      windowFilter = iceBarWindowFilter,
+      windowFilter = WF.Ice.Bar,
       background = true,
       nonFrontmost = true,
       fn = clickIceBarItem(10)
     },
     ["view1"] = {
       message = getIceSidebarItemTitle(1),
-      windowFilter = iceSettingsWindowFilter,
+      windowFilter = WF.Ice.Settings,
       fn = clickIceSidebarItem(1)
     },
     ["view2"] = {
       message = getIceSidebarItemTitle(2),
-      windowFilter = iceSettingsWindowFilter,
+      windowFilter = WF.Ice.Settings,
       fn = clickIceSidebarItem(2)
     },
     ["view3"] = {
       message = getIceSidebarItemTitle(3),
-      windowFilter = iceSettingsWindowFilter,
+      windowFilter = WF.Ice.Settings,
       fn = clickIceSidebarItem(3)
     },
     ["view4"] = {
       message = getIceSidebarItemTitle(4),
-      windowFilter = iceSettingsWindowFilter,
+      windowFilter = WF.Ice.Settings,
       fn = clickIceSidebarItem(4)
     },
     ["view5"] = {
       message = getIceSidebarItemTitle(5),
-      windowFilter = iceSettingsWindowFilter,
+      windowFilter = WF.Ice.Settings,
       fn = clickIceSidebarItem(5)
     },
     ["view6"] = {
       message = getIceSidebarItemTitle(6),
-      windowFilter = iceSettingsWindowFilter,
+      windowFilter = WF.Ice.Settings,
       fn = clickIceSidebarItem(6)
     }
   },
@@ -5614,61 +5629,61 @@ appHotKeyCallbacks = {
     },
     ["click1stiBarItem"] = {
       message = getiBarItemTitle(1),
-      windowFilter = iBarWindowFilter,
+      windowFilter = WF.iBar.Bar,
       background = true,
       fn = clickiBarItem(1)
     },
     ["click2ndiBarItem"] = {
       message = getiBarItemTitle(2),
-      windowFilter = iBarWindowFilter,
+      windowFilter = WF.iBar.Bar,
       background = true,
       fn = clickiBarItem(2)
     },
     ["click3rdiBarItem"] = {
       message = getiBarItemTitle(3),
-      windowFilter = iBarWindowFilter,
+      windowFilter = WF.iBar.Bar,
       background = true,
       fn = clickiBarItem(3)
     },
     ["click4thiBarItem"] = {
       message = getiBarItemTitle(4),
-      windowFilter = iBarWindowFilter,
+      windowFilter = WF.iBar.Bar,
       background = true,
       fn = clickiBarItem(4)
     },
     ["click5thiBarItem"] = {
       message = getiBarItemTitle(5),
-      windowFilter = iBarWindowFilter,
+      windowFilter = WF.iBar.Bar,
       background = true,
       fn = clickiBarItem(5)
     },
     ["click6thiBarItem"] = {
       message = getiBarItemTitle(6),
-      windowFilter = iBarWindowFilter,
+      windowFilter = WF.iBar.Bar,
       background = true,
       fn = clickiBarItem(6)
     },
     ["click7thiBarItem"] = {
       message = getiBarItemTitle(7),
-      windowFilter = iBarWindowFilter,
+      windowFilter = WF.iBar.Bar,
       background = true,
       fn = clickiBarItem(7)
     },
     ["click8thiBarItem"] = {
       message = getiBarItemTitle(8),
-      windowFilter = iBarWindowFilter,
+      windowFilter = WF.iBar.Bar,
       background = true,
       fn = clickiBarItem(8)
     },
     ["click9thiBarItem"] = {
       message = getiBarItemTitle(9),
-      windowFilter = iBarWindowFilter,
+      windowFilter = WF.iBar.Bar,
       background = true,
       fn = clickiBarItem(9)
     },
     ["click10thiBarItem"] = {
       message = getiBarItemTitle(10),
-      windowFilter = iBarWindowFilter,
+      windowFilter = WF.iBar.Bar,
       background = true,
       fn = clickiBarItem(10)
     }
@@ -6326,13 +6341,13 @@ appHotKeyCallbacks = {
     },
     ["expandedView"] = {
       message = T("Expanded View"),
-      windowFilter = ParallelsControlCenterWindowFilter,
+      windowFilter = WF.Parallels.ControlCenter,
       condition = checkMenuItem({ "View", "Expanded View" }),
       fn = select
     },
     ["compactView"] = {
       message = T("Compact View"),
-      windowFilter = ParallelsControlCenterWindowFilter,
+      windowFilter = WF.Parallels.ControlCenter,
       condition = checkMenuItem({ "View", "Compact View" }),
       fn = select
     },
@@ -6878,7 +6893,7 @@ appHotKeyCallbacks = {
   {
     ["setting"] = {
       message = T("Setting"),
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       fn = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 1)
@@ -6889,76 +6904,76 @@ appHotKeyCallbacks = {
       mods = "⌘", key = "1",
       message = "Select 1st Item",
       bindCondition = versionLessThan("1.1.3"),
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       fn = iCopySelectHotkeyRemap(1)
     },
     ["select2ndItem"] = {
       mods = "⌘", key = "2",
       message = "Select 2nd Item",
       bindCondition = versionLessThan("1.1.3"),
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       fn = iCopySelectHotkeyRemap(2)
     },
     ["select3rdItem"] = {
       mods = "⌘", key = "3",
       message = "Select 3rd Item",
       bindCondition = versionLessThan("1.1.3"),
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       fn = iCopySelectHotkeyRemap(3)
     },
     ["select4thItem"] = {
       mods = "⌘", key = "4",
       message = "Select 4th Item",
       bindCondition = versionLessThan("1.1.3"),
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       fn = iCopySelectHotkeyRemap(4)
     },
     ["select5thItem"] = {
       mods = "⌘", key = "5",
       message = "Select 5th Item",
       bindCondition = versionLessThan("1.1.3"),
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       fn = iCopySelectHotkeyRemap(5)
     },
     ["select6thItem"] = {
       mods = "⌘", key = "6",
       message = "Select 6th Item",
       bindCondition = versionLessThan("1.1.3"),
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       fn = iCopySelectHotkeyRemap(6)
     },
     ["select7thItem"] = {
       mods = "⌘", key = "7",
       message = "Select 7th Item",
       bindCondition = versionLessThan("1.1.3"),
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       fn = iCopySelectHotkeyRemap(7)
     },
     ["select8thItem"] = {
       mods = "⌘", key = "8",
       message = "Select 8th Item",
       bindCondition = versionLessThan("1.1.3"),
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       fn = iCopySelectHotkeyRemap(8)
     },
     ["select9thItem"] = {
       mods = "⌘", key = "9",
       message = "Select 9th Item",
       bindCondition = versionLessThan("1.1.3"),
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       fn = iCopySelectHotkeyRemap(9)
     },
     ["select10thItem"] = {
       mods = "⌘", key = "0",
       message = "Select 10th Item",
       bindCondition = versionLessThan("1.1.3"),
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       fn = iCopySelectHotkeyRemap(10)
     },
     ["previousItem"] = {
       mods = "", key = "Left",
       message = "Previous Item",
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       repeatable = true,
       fn = function(win)
         hs.eventtap.keyStroke("", "Up", nil, win:application())
@@ -6967,7 +6982,7 @@ appHotKeyCallbacks = {
     ["nextItem"] = {
       mods = "", key = "Right",
       message = "Next Item",
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       repeatable = true,
       fn = function(win)
         hs.eventtap.keyStroke("", "Down", nil, win:application())
@@ -6976,19 +6991,19 @@ appHotKeyCallbacks = {
     ["cancelUp"] = {
       mods = "", key = "Up",
       message = "Cancel Up",
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       fn = function() end
     },
     ["cancelDown"] = {
       mods = "", key = "Down",
       message = "Cancel Down",
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       fn = function() end
     },
     ["cancelTap"] = {
       mods = "", key = "Tab",
       message = "Cancel Tab",
-      windowFilter = iCopyWindowFilter,
+      windowFilter = WF.iCopy.Main,
       fn = function() end
     }
   }
@@ -10136,18 +10151,19 @@ for _, rules in pairs(remoteDesktopsMappingModifiers) do
   end
 end
 
-local MicrosoftRemoteDesktopWindowFilter
+WF.MRD = {}
+WF.MRD.Remote = {}
 if hs.application.nameForBundleID("com.microsoft.rdc.macos") == "Windows App" then
   onRunning("com.microsoft.rdc.macos", function(app)
-    MicrosoftRemoteDesktopWindowFilter = { rejectTitles = {} }
+    WF.MRD.Remote = { rejectTitles = {} }
     for _, title in ipairs {"Favorites", "Devices", "Apps",
       "Settings", "About", "Device View Options", "App View Options" } do
       local locTitle = "^" .. T(title, app) .. "$"
-      tinsert(MicrosoftRemoteDesktopWindowFilter.rejectTitles, locTitle)
+      tinsert(WF.MRD.Remote.rejectTitles, locTitle)
     end
   end)
 else
-  MicrosoftRemoteDesktopWindowFilter = {
+  WF.MRD.Remote = {
     rejectTitles = {
       "^Microsoft Remote Desktop$",
       "^Preferences$",
@@ -10163,7 +10179,7 @@ local function isDefaultRemoteDesktopWindow(window)
       function(child) return child.AXHelp == "Session information" end) ~= nil
   elseif appid == "com.microsoft.rdc.macos" then
     local wFilter = hs.window.filter.new(false):setAppFilter(
-        window:application():name(), MicrosoftRemoteDesktopWindowFilter)
+        window:application():name(), WF.MRD.Remote)
     local result = wFilter:isWindowAllowed(window)
     if result then
       local winUI = towinui(window)
