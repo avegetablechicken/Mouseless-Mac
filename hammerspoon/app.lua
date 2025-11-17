@@ -721,6 +721,12 @@ local function deleteAllMessages(messageItems, app)
   end)
 end
 
+-- ### Phone
+local PhoneMainWindowFilter = {}
+onRunning("com.apple.mobilephone", function(app)
+  PhoneMainWindowFilter.allowTitles = '^' .. app:name() .. '$'
+end)
+
 -- ### FaceTime
 local FaceTimeMainWindowFilter = {}
 onRunning("com.apple.FaceTime", function(app)
@@ -767,7 +773,9 @@ local function deleteMousePositionCall(win)
       end
       if popup == nil then return end
     end
-    local locTitle = T("Remove from Recents", app)
+    local title = app:bundleID() == "com.apple.mobilephone"
+        and "Delete" or "Remove from Recents"
+    local locTitle = T(title, app)
     local menuItem = getc(popup, AX.MenuItem, locTitle)
     if menuItem ~= nil then
       press(menuItem)
@@ -2189,6 +2197,14 @@ appHotKeyCallbacks = {
       end,
       repeatable = true,
       fn = press
+    }
+  },
+
+  ["com.apple.mobilephone"] = {
+    ["removeFromRecents"] = {
+      message = T("Remove from Recents"),
+      windowFilter = PhoneMainWindowFilter,
+      fn = deleteMousePositionCall
     }
   },
 

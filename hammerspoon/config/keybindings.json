@@ -648,6 +648,12 @@
         "key": "down"
       }
     },
+    "com.apple.mobilephone": {
+      "removeFromRecents": {
+        "mods": "command",
+        "key": "delete"
+      }
+    },
     "com.apple.FaceTime": {
       "removeFromRecents": {
         "mods": "command",
