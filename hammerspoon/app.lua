@@ -729,9 +729,11 @@ end
 local Phone = {}
 Phone.WF = {}
 Phone.WF.Main = {}
-onRunning("com.apple.mobilephone", function(app)
-  Phone.WF.Main.allowTitles = '^' .. app:name() .. '$'
-end)
+if OS_VERSION >= OS.Tahoe then
+  onRunning("com.apple.mobilephone", function(app)
+    Phone.WF.Main.allowTitles = '^' .. app:name() .. '$'
+  end)
+end
 
 Phone.showViewMenu = function(winUI)
   local button = getc(winUI, AX.Toolbar, 1,
