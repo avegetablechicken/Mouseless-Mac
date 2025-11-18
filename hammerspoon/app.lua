@@ -9148,11 +9148,7 @@ local function registerForOpenSavePanel(app)
     end
 
     local outlineRows
-    local specialSidebarRowsFunc = specialSidebarRowsFuncs[appid]
-    if specialSidebarRowsFunc
-        and windowIdent ~= "open-panel" and windowIdent ~= "save-panel" then
-      outlineRows = specialSidebarRowsFunc(winUI)
-    else
+    if windowIdent == "open-panel" or windowIdent == "save-panel" then
       local outline = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1, AX.Outline, 1)
       if outline ~= nil then
         outlineRows = {}
@@ -9161,6 +9157,9 @@ local function registerForOpenSavePanel(app)
           tinsert(outlineRows, row)
         end
       end
+    elseif specialSidebarRowsFuncs[appid] then
+      local specialSidebarRowsFunc = specialSidebarRowsFuncs[appid]
+      outlineRows = specialSidebarRowsFunc(winUI)
     end
     return dontSaveButton, outlineRows
   end
@@ -9177,11 +9176,7 @@ local function registerForOpenSavePanel(app)
     local dontSaveButton, outlineRows = getUIElements(winUI)
     local header
     local i = 1
-    local specialSidebarRowsSelectFunc = specialSidebarRowsSelectFuncs[appid]
-    if specialSidebarRowsSelectFunc
-        and windowIdent ~= "open-panel" and windowIdent ~= "save-panel" then
-      specialSidebarRowsSelectFunc(outlineRows)
-    else
+    if windowIdent == "open-panel" or windowIdent == "save-panel" then
       for _, row in ipairs(outlineRows or {}) do
         if i > 10 then break end
         local titleElem = getc(row, AX.Cell, 1, AX.StaticText, 1)
@@ -9241,6 +9236,9 @@ local function registerForOpenSavePanel(app)
         end,
         hs.application.watcher.deactivated, true)
       end
+    elseif specialSidebarRowsSelectFuncs[appid] then
+      local specialSidebarRowsSelectFunc = specialSidebarRowsSelectFuncs[appid]
+      specialSidebarRowsSelectFunc(outlineRows)
     end
 
     if dontSaveButton ~= nil then
