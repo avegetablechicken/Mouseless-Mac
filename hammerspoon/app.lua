@@ -1670,6 +1670,22 @@ end
 PasswordsMenuBarExtra.recordField = function(fieldTitle)
   return function(win)
     local winUI = towinui(win)
+
+    if OS_VERSION > OS.Tahoe or
+        (OS_VERSION == OS.Tahoe and hs.host.operatingSystemVersion().minor >= 1) then
+      local fieldValues = getc(winUI, AX.Group, 1,
+          AX.ScrollArea, 1, AX.Group, 1, AX.StaticText)
+      if fieldValues == nil then return false end
+      local title = T(fieldTitle, win)
+      for i=1,#fieldValues,2 do
+        local titleElem = fieldValues[i]
+        if titleElem.AXValue == title then
+          return clickable(fieldValues[i + 1])
+        end
+      end
+      return false
+    end
+
     local outline
     if OS_VERSION >= OS.Tahoe then
       outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
