@@ -1582,7 +1582,7 @@ Ice.clickBarItem = function(index)
   end
 end
 
-Ice.WF.Settings = {
+Ice.WF.Main = {
   fn = function(win)
     return towinui(win).AXIdentifier == "SettingsWindow"
   end
@@ -5741,32 +5741,32 @@ appHotKeyCallbacks = {
     },
     ["view1"] = {
       message = Ice.sidebarItemTitle(1),
-      windowFilter = Ice.WF.Settings,
+      windowFilter = Ice.WF.Main,
       fn = Ice.clickSidebarItem(1)
     },
     ["view2"] = {
       message = Ice.sidebarItemTitle(2),
-      windowFilter = Ice.WF.Settings,
+      windowFilter = Ice.WF.Main,
       fn = Ice.clickSidebarItem(2)
     },
     ["view3"] = {
       message = Ice.sidebarItemTitle(3),
-      windowFilter = Ice.WF.Settings,
+      windowFilter = Ice.WF.Main,
       fn = Ice.clickSidebarItem(3)
     },
     ["view4"] = {
       message = Ice.sidebarItemTitle(4),
-      windowFilter = Ice.WF.Settings,
+      windowFilter = Ice.WF.Main,
       fn = Ice.clickSidebarItem(4)
     },
     ["view5"] = {
       message = Ice.sidebarItemTitle(5),
-      windowFilter = Ice.WF.Settings,
+      windowFilter = Ice.WF.Main,
       fn = Ice.clickSidebarItem(5)
     },
     ["view6"] = {
       message = Ice.sidebarItemTitle(6),
-      windowFilter = Ice.WF.Settings,
+      windowFilter = Ice.WF.Main,
       fn = Ice.clickSidebarItem(6)
     }
   },
