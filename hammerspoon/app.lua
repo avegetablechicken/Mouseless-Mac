@@ -2321,6 +2321,54 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["com.apple.Photos"] = {
+    ["view1"] = {
+      message = menuItemMessage('⌃', '1'),
+      condition = checkMenuItemByKeybinding('⌃', '1'),
+      fn = select
+    },
+    ["view2"] = {
+      message = menuItemMessage('⌃', '2'),
+      condition = checkMenuItemByKeybinding('⌃', '2'),
+      fn = select
+    },
+    ["view3"] = {
+      message = menuItemMessage('⌃', '3'),
+      condition = checkMenuItemByKeybinding('⌃', '3'),
+      fn = select
+    },
+    ["view4"] = {
+      message = menuItemMessage('⌃', '4'),
+      condition = checkMenuItemByKeybinding('⌃', '4'),
+      fn = select
+    },
+    ["view5"] = {
+      message = menuItemMessage('⌃', '5'),
+      condition = checkMenuItemByKeybinding('⌃', '5'),
+      fn = select
+    },
+    ["view6"] = {
+      message = menuItemMessage('⌃', '6'),
+      condition = checkMenuItemByKeybinding('⌃', '6'),
+      fn = select
+    },
+    ["view7"] = {
+      message = menuItemMessage('⌃', '7'),
+      condition = checkMenuItemByKeybinding('⌃', '7'),
+      fn = select
+    },
+    ["view8"] = {
+      message = menuItemMessage('⌃', '8'),
+      condition = checkMenuItemByKeybinding('⌃', '8'),
+      fn = select
+    },
+    ["view9"] = {
+      message = menuItemMessage('⌃', '9'),
+      condition = checkMenuItemByKeybinding('⌃', '9'),
+      fn = select
+    }
+  },
+
   ["com.apple.Notes"] = {
     ["toggleFolders"] = {
       message = T("Show Folders"),
