@@ -8988,13 +8988,7 @@ local specialSidebarRowsFuncs = {
     if winUI.AXSubrole == AX.Dialog then
       local outline = getc(winUI, AX.SplitGroup, 1, AX.List, 1)
       if outline ~= nil then
-        local outlineRows = {}
-        for _, row in ipairs(getc(outline, AX.StaticText)) do
-          if row.AXSize.h > 24 then
-            tinsert(outlineRows, row)
-          end
-        end
-        return outlineRows
+        return getc(outline, AX.StaticText)
       end
     end
   end
@@ -9005,6 +8999,13 @@ local specialSidebarRowsSelectFuncs = {
     if outlineRows == nil or #outlineRows == 0 then return end
     local app = getAppFromDescendantElement(outlineRows[1])
     local win = app:focusedWindow()
+
+    local sum = 0
+    for _, r in ipairs(outlineRows) do sum = sum + r.AXSize.h end
+    local mean = sum / #outlineRows
+    outlineRows = tifilter(outlineRows, function(r)
+      return r.AXSize.h > mean
+    end)
 
     local i = 1
     for _=1,#outlineRows do
@@ -9022,10 +9023,14 @@ local specialSidebarRowsSelectFuncs = {
           spec = spec, message = 'Location ' .. i,
           condition = function()
             local outline = getc(towinui(win), AX.SplitGroup, 1, AX.List, 1)
-            local cnt = 0
             if outline ~= nil then
-              for _, row in ipairs(getc(outline, AX.StaticText)) do
-                if row.AXSize.h > 24 then
+              local rows = getc(outline, AX.StaticText)
+              rows = tifilter(rows or {}, function(r)
+                return r.AXSize.h > mean
+              end)
+              local cnt = 0
+              for _, row in ipairs(rows) do
+                if row.AXSize.h > mean then
                   cnt = cnt + 1
                   if cnt == idx then
                     return clickable(row)
