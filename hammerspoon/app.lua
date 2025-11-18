@@ -1879,23 +1879,30 @@ local function dumpPlistKeyBinding(mode, mods, key)
 end
 
 -- fetch title of menu item as hotkey message by key binding
-local function menuItemMessage(mods, key, titleIndex, sep)
+local function menuItemMessage(mods, key, titleIndex, menuBarItemTitle)
   return function(app)
-    local menuItem = findMenuItemByKeyBinding(app, mods, key, true)
+    if type(titleIndex) == 'string' then
+      menuBarItemTitle = titleIndex
+      titleIndex = nil
+    end
+    local menuItems
+    if menuBarItemTitle then
+      local title = localizedMenuBarItem(menuBarItemTitle, app:bundleID())
+      menuItems = { getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem, title) }
+    end
+    local menuItem = findMenuItemByKeyBinding(app, mods, key, true, menuItems)
     if menuItem == nil then return end
     if type(titleIndex) == 'number' then
       return menuItem[titleIndex]
     elseif type(titleIndex) == 'table' then
-      if sep == nil then sep = ' > ' end
       local str = menuItem[titleIndex[1]]
       for i=2,#titleIndex do
-        str = str .. sep .. menuItem[titleIndex[i]]
+        str = str .. ' > ' .. menuItem[titleIndex[i]]
       end
     else
       local str = menuItem[2]
-      if sep == nil then sep = ' > ' end
       for i=3,#menuItem do
-        str = str .. sep .. menuItem[i]
+        str = str .. ' > ' .. menuItem[i]
       end
       return str
     end
@@ -1935,9 +1942,14 @@ CF = {
 
 -- check if the menu item whose key binding is specified is enabled
 -- if so, return the path of the menu item
-local function checkMenuItemByKeybinding(mods, key)
+local function checkMenuItemByKeybinding(mods, key, menuBarItemTitle)
   return function(app)
-    local menuItem, enabled = findMenuItemByKeyBinding(app, mods, key, true)
+    local menuItems
+    if menuBarItemTitle then
+      local title = localizedMenuBarItem(menuBarItemTitle, app:bundleID())
+      menuItems = { getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem, title) }
+    end
+    local menuItem, enabled = findMenuItemByKeyBinding(app, mods, key, true, menuItems)
     if menuItem ~= nil and enabled then
       return true, menuItem
     else
@@ -2174,7 +2186,7 @@ appHotKeyCallbacks = {
       fn = deleteAllMessages
     },
     ["goToPreviousConversation"] = {
-      message = menuItemMessage('⇧⌃', "⇥"),
+      message = menuItemMessage('⇧⌃', "⇥", "Window"),
       condition = function(app)
         local appUI = toappui(app)
         local messageItems
@@ -2208,7 +2220,7 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["goToNextConversation"] = {
-      message = menuItemMessage('⌃', "⇥"),
+      message = menuItemMessage('⌃', "⇥", "Window"),
       condition = function(app)
         local appUI = toappui(app)
         local messageItems
@@ -2323,48 +2335,48 @@ appHotKeyCallbacks = {
 
   ["com.apple.Photos"] = {
     ["view1"] = {
-      message = menuItemMessage('⌃', '1'),
-      condition = checkMenuItemByKeybinding('⌃', '1'),
+      message = menuItemMessage('⌃', '1', 'View'),
+      condition = checkMenuItemByKeybinding('⌃', '1', 'View'),
       fn = select
     },
     ["view2"] = {
-      message = menuItemMessage('⌃', '2'),
-      condition = checkMenuItemByKeybinding('⌃', '2'),
+      message = menuItemMessage('⌃', '2', 'View'),
+      condition = checkMenuItemByKeybinding('⌃', '2', 'View'),
       fn = select
     },
     ["view3"] = {
-      message = menuItemMessage('⌃', '3'),
-      condition = checkMenuItemByKeybinding('⌃', '3'),
+      message = menuItemMessage('⌃', '3', 'View'),
+      condition = checkMenuItemByKeybinding('⌃', '3', 'View'),
       fn = select
     },
     ["view4"] = {
-      message = menuItemMessage('⌃', '4'),
-      condition = checkMenuItemByKeybinding('⌃', '4'),
+      message = menuItemMessage('⌃', '4', 'View'),
+      condition = checkMenuItemByKeybinding('⌃', '4', 'View'),
       fn = select
     },
     ["view5"] = {
-      message = menuItemMessage('⌃', '5'),
-      condition = checkMenuItemByKeybinding('⌃', '5'),
+      message = menuItemMessage('⌃', '5', 'View'),
+      condition = checkMenuItemByKeybinding('⌃', '5', 'View'),
       fn = select
     },
     ["view6"] = {
-      message = menuItemMessage('⌃', '6'),
-      condition = checkMenuItemByKeybinding('⌃', '6'),
+      message = menuItemMessage('⌃', '6', 'View'),
+      condition = checkMenuItemByKeybinding('⌃', '6', 'View'),
       fn = select
     },
     ["view7"] = {
-      message = menuItemMessage('⌃', '7'),
-      condition = checkMenuItemByKeybinding('⌃', '7'),
+      message = menuItemMessage('⌃', '7', 'View'),
+      condition = checkMenuItemByKeybinding('⌃', '7', 'View'),
       fn = select
     },
     ["view8"] = {
-      message = menuItemMessage('⌃', '8'),
-      condition = checkMenuItemByKeybinding('⌃', '8'),
+      message = menuItemMessage('⌃', '8', 'View'),
+      condition = checkMenuItemByKeybinding('⌃', '8', 'View'),
       fn = select
     },
     ["view9"] = {
-      message = menuItemMessage('⌃', '9'),
-      condition = checkMenuItemByKeybinding('⌃', '9'),
+      message = menuItemMessage('⌃', '9', 'View'),
+      condition = checkMenuItemByKeybinding('⌃', '9', 'View'),
       fn = select
     }
   },
