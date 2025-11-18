@@ -1881,16 +1881,21 @@ end
 -- fetch title of menu item as hotkey message by key binding
 local function menuItemMessage(mods, key, titleIndex, sep)
   return function(app)
+    local menuItem = findMenuItemByKeyBinding(app, mods, key, true)
+    if menuItem == nil then return end
     if type(titleIndex) == 'number' then
-      local menuItem = findMenuItemByKeyBinding(app, mods, key, true)
-      if menuItem ~= nil then return menuItem[titleIndex] end
-    else
+      return menuItem[titleIndex]
+    elseif type(titleIndex) == 'table' then
       if sep == nil then sep = ' > ' end
-      local menuItem = findMenuItemByKeyBinding(app, mods, key, true)
-      if menuItem == nil then return end
       local str = menuItem[titleIndex[1]]
       for i=2,#titleIndex do
         str = str .. sep .. menuItem[titleIndex[i]]
+      end
+    else
+      local str = menuItem[2]
+      if sep == nil then sep = ' > ' end
+      for i=3,#menuItem do
+        str = str .. sep .. menuItem[i]
       end
       return str
     end
@@ -1998,14 +2003,14 @@ local specialCommonHotkeyConfigs = {
   },
   ["showPrevTab"] = {
     mods = "⇧⌘", key = "[",
-    message = menuItemMessage('⇧⌃', "⇥", 2),
+    message = menuItemMessage('⇧⌃', "⇥"),
     condition = checkMenuItemByKeybinding('⇧⌃', "⇥"),
     repeatable = true,
     fn = select
   },
   ["showNextTab"] = {
     mods = "⇧⌘", key = "]",
-    message = menuItemMessage('⌃', "⇥", 2),
+    message = menuItemMessage('⌃', "⇥"),
     condition = checkMenuItemByKeybinding('⌃', "⇥"),
     repeatable = true,
     fn = select
@@ -2169,7 +2174,7 @@ appHotKeyCallbacks = {
       fn = deleteAllMessages
     },
     ["goToPreviousConversation"] = {
-      message = menuItemMessage('⇧⌃', "⇥", 2),
+      message = menuItemMessage('⇧⌃', "⇥"),
       condition = function(app)
         local appUI = toappui(app)
         local messageItems
@@ -2203,7 +2208,7 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["goToNextConversation"] = {
-      message = menuItemMessage('⌃', "⇥", 2),
+      message = menuItemMessage('⌃', "⇥"),
       condition = function(app)
         local appUI = toappui(app)
         local messageItems
