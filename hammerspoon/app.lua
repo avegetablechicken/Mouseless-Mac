@@ -1667,6 +1667,30 @@ PasswordsMenuBarExtra.recordPosition = function(index)
   end
 end
 
+PasswordsMenuBarExtra.recordField = function(fieldTitle)
+  return function(win)
+    local winUI = towinui(win)
+    local outline
+    if OS_VERSION >= OS.Tahoe then
+      outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+          AX.ScrollArea, 1, AX.Outline, 1)
+    else
+      outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+          AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1)
+    end
+    if outline == nil then return false end
+    local title = T(fieldTitle, win)
+    for _, row in ipairs(getc(outline, AX.Row)) do
+      local cell = getc(row, AX.Cell, 1)
+      local titleElem = getc(cell, AX.StaticText, 1)
+      if titleElem and titleElem.AXValue == title then
+        return clickable(getc(cell, AX.StaticText, 2))
+      end
+    end
+    return false
+  end
+end
+
 -- ### iCopy
 local iCopy = {}
 iCopy.selectHotkeyMod = function(app)
@@ -6064,59 +6088,21 @@ appHotKeyCallbacks = {
     ["copyUserName"] = {
       message = T("Copy User Name"),
       windowFilter = PasswordsMenuBarExtra.WF,
-      condition = function(win)
-        local winUI = towinui(win)
-        local elem = getc(winUI, AX.Group, 1)[1]
-        return elem.AXRole == AX.Button
-      end,
       background = true,
-      fn = function(win)
-        local winUI = towinui(win)
-        local outline
-        if OS_VERSION >= OS.Tahoe then
-          outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-              AX.ScrollArea, 1, AX.Outline, 1)
-        else
-          outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-              AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1)
-        end
-        local field = getc(outline, AX.Row, 2, AX.Cell, 1, AX.StaticText, 2)
-        if field then
-          leftClickAndRestore(field, win)
-          clickRightMenuBarItem(win:application())
-        end
+      condition = PasswordsMenuBarExtra.recordField("User Name"),
+      fn = function(field, win)
+        click(field)
+        clickRightMenuBarItem(win:application())
       end
     },
     ["copyPassword"] = {
       message = T("Copy Password"),
       windowFilter = PasswordsMenuBarExtra.WF,
-      condition = function(win)
-        local winUI = towinui(win)
-        local elem = getc(winUI, AX.Group, 1)[1]
-        return elem.AXRole == AX.Button
-      end,
       background = true,
-      fn = function(win)
-        local winUI = towinui(win)
-        local outline
-        if OS_VERSION >= OS.Tahoe then
-          outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-              AX.ScrollArea, 1, AX.Outline, 1)
-        else
-          outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-              AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1)
-        end
-        local field
-        if getc(outline, AX.Row, 3, AX.Cell, 1, AX.StaticText, 1).AXValue
-            == T("Password", win) then
-          field = getc(outline, AX.Row, 3, AX.Cell, 1, AX.StaticText, 2)
-        else
-          field = getc(outline, AX.Row, 4, AX.Cell, 1, AX.StaticText, 2)
-        end
-        if field then
-          leftClickAndRestore(field, win)
-          clickRightMenuBarItem(win:application())
-        end
+      condition = PasswordsMenuBarExtra.recordField("Password"),
+      fn = function(field, win)
+        click(field)
+        clickRightMenuBarItem(win:application())
       end
     },
     ["copyVerificationCode"] = {
@@ -6126,29 +6112,11 @@ appHotKeyCallbacks = {
         return T(title, win)
       end,
       windowFilter = PasswordsMenuBarExtra.WF,
-      condition = function(win)
-        local winUI = towinui(win)
-        local elem = getc(winUI, AX.Group, 1)[1]
-        if elem.AXRole ~= AX.Button then return false end
-        local outline
-        if OS_VERSION >= OS.Tahoe then
-          outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-              AX.ScrollArea, 1, AX.Outline, 1)
-        else
-          outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-              AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1)
-        end
-        local cell = getc(outline, AX.Row, 5, AX.Cell, 1)
-        local title = getc(cell, AX.StaticText, 1)
-        local target = OS_VERSION >= OS.Tahoe and "Code" or "Verification Code"
-        if title and title.AXValue == T(target, win) then
-          return true, getc(cell, AX.StaticText, 2)
-        end
-        return false
-      end,
+      condition = PasswordsMenuBarExtra.recordField(
+          OS_VERSION >= OS.Tahoe and "Code" or "Verification Code"),
       background = true,
       fn = function(field, win)
-        leftClickAndRestore(field, win)
+        click(field)
         clickRightMenuBarItem(win:application())
       end
     },
