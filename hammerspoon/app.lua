@@ -9155,10 +9155,10 @@ local function registerForOpenSavePanel(app)
         observer:addWatcher(outlineRows[1].AXParent, uinotifications.rowCountChanged)
         observer:callback(function()
           if appBuf.lastRowCountChangedTimer then
-            appBuf.lastRowCountChangedTimer:setNextTrigger(0.1)
+            appBuf.lastRowCountChangedTimer:setNextTrigger(0.3)
             return
           end
-          appBuf.lastRowCountChangedTimer = hs.timer.doAfter(0.1, function()
+          appBuf.lastRowCountChangedTimer = hs.timer.doAfter(0.3, function()
             appBuf.lastRowCountChangedTimer = nil
             for _, hotkey in ipairs(openSavePanelHotkeys) do
               disableConditionInChain(appid, hotkey, true)
