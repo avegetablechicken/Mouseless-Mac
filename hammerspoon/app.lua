@@ -8982,6 +8982,67 @@ local specialConfirmFuncs = {
   end
 }
 
+-- special outline rows for sidebar in some apps
+local specialSidebarRowsFuncs = {
+  ["com.kingsoft.wpsoffice.mac"] = function(winUI)
+    if winUI.AXSubrole == AX.Dialog then
+      local outline = getc(winUI, AX.SplitGroup, 1, AX.List, 1)
+      if outline ~= nil then
+        local outlineRows = {}
+        for _, row in ipairs(getc(outline, AX.StaticText)) do
+          if row.AXSize.h > 24 then
+            tinsert(outlineRows, row)
+          end
+        end
+        return outlineRows
+      end
+    end
+  end
+}
+
+local specialSidebarRowsSelectFuncs = {
+  ["com.kingsoft.wpsoffice.mac"] = function(outlineRows)
+    if outlineRows == nil or #outlineRows == 0 then return end
+    local app = getAppFromDescendantElement(outlineRows[1])
+    local win = app:focusedWindow()
+
+    local i = 1
+    for _=1,#outlineRows do
+      if i > 10 then break end
+      local suffix
+      if i == 1 then suffix = "st"
+      elseif i == 2 then suffix = "nd"
+      elseif i == 3 then suffix = "rd"
+      else suffix = "th" end
+      local hkID = strfmt("open%d%sSidebarItemOnOpenSavePanel", i, suffix)
+      local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
+      if spec ~= nil then
+        local idx = i
+        local hotkey = AppWinBind(win, {
+          spec = spec, message = 'Location ' .. i,
+          condition = function()
+            local outline = getc(towinui(win), AX.SplitGroup, 1, AX.List, 1)
+            local cnt = 0
+            if outline ~= nil then
+              for _, row in ipairs(getc(outline, AX.StaticText)) do
+                if row.AXSize.h > 24 then
+                  cnt = cnt + 1
+                  if cnt == idx then
+                    return clickable(row)
+                  end
+                end
+              end
+            end
+          end,
+          fn = click
+        })
+        tinsert(openSavePanelHotkeys, hotkey)
+        i = i + 1
+      end
+    end
+  end
+}
+
 local function registerForOpenSavePanel(app)
   for _, hotkey in ipairs(openSavePanelHotkeys) do
     hotkey:delete()
@@ -8998,7 +9059,8 @@ local function registerForOpenSavePanel(app)
 
   local getUIElements = function(winUI)
     local windowIdent = winUI.AXIdentifier
-    local dontSaveButton, outlineRows
+
+    local dontSaveButton
     if get(KeybindingConfigs.hotkeys, appid, "confirmDelete") == nil then
       local specialConfirmFunc = specialConfirmFuncs[appid]
       if specialConfirmFunc ~= nil then
@@ -9014,25 +9076,19 @@ local function registerForOpenSavePanel(app)
         end
       end
     end
-    if windowIdent == "open-panel" or windowIdent == "save-panel" then
+
+    local outlineRows
+    local specialSidebarRowsFunc = specialSidebarRowsFuncs[appid]
+    if specialSidebarRowsFunc
+        and windowIdent ~= "open-panel" and windowIdent ~= "save-panel" then
+      outlineRows = specialSidebarRowsFunc(winUI)
+    else
       local outline = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1, AX.Outline, 1)
       if outline ~= nil then
         outlineRows = {}
         for _, row in ipairs(getc(outline, AX.Row)) do
           if #row == 0 then hs.timer.usleep(0.3 * 1000000) end
           tinsert(outlineRows, row)
-        end
-      end
-    elseif appid == "com.kingsoft.wpsoffice.mac" then
-      if winUI.AXSubrole == AX.Dialog then
-        local outline = getc(winUI, AX.SplitGroup, 1, AX.List, 1)
-        if outline ~= nil then
-          outlineRows = {}
-          for _, row in ipairs(getc(outline, AX.StaticText)) do
-            if row.AXSize.h > 24 then
-              tinsert(outlineRows, row)
-            end
-          end
         end
       end
     end
@@ -9047,99 +9103,74 @@ local function registerForOpenSavePanel(app)
     end
     openSavePanelHotkeys = {}
 
+    local windowIdent = winUI.AXIdentifier
     local dontSaveButton, outlineRows = getUIElements(winUI)
     local header
     local i = 1
-    for _, row in ipairs(outlineRows or {}) do
-      if i > 10 then break end
-      local titleElem = getc(row, AX.Cell, 1, AX.StaticText, 1)
-      if titleElem == nil and appid == "com.kingsoft.wpsoffice.mac" then
-        local suffix
-        if i == 1 then suffix = "st"
-        elseif i == 2 then suffix = "nd"
-        elseif i == 3 then suffix = "rd"
-        else suffix = "th" end
-        local hkID = strfmt("open%d%sSidebarItemOnOpenSavePanel", i, suffix)
-        local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
-        if spec ~= nil then
-          local idx = i
-          local hotkey = AppWinBind(app:focusedWindow(), {
-            spec = spec, message = 'Location ' .. i,
-            condition = function()
-              local outline = getc(winUI, AX.SplitGroup, 1, AX.List, 1)
-              local cnt = 0
-              if outline ~= nil then
-                for _, row in ipairs(getc(outline, AX.StaticText)) do
-                  if row.AXSize.h > 24 then
-                    cnt = cnt + 1
-                    if cnt == idx then
-                      return clickable(row)
-                    end
-                  end
-                end
-              end
-            end,
-            fn = click
-          })
-          tinsert(openSavePanelHotkeys, hotkey)
-          i = i + 1
-        end
-      elseif titleElem and titleElem.AXIdentifier ~= nil then
-        header = titleElem.AXValue
-      elseif titleElem then
-        local suffix
-        if i == 1 then suffix = "st"
-        elseif i == 2 then suffix = "nd"
-        elseif i == 3 then suffix = "rd"
-        else suffix = "th" end
-        local hkID = strfmt("open%d%sSidebarItemOnOpenSavePanel", i, suffix)
-        local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
-        if spec ~= nil then
-          if not titleElem:isValid() then
-            actionFunc(winUI)
+    local specialSidebarRowsSelectFunc = specialSidebarRowsSelectFuncs[appid]
+    if specialSidebarRowsSelectFunc
+        and windowIdent ~= "open-panel" and windowIdent ~= "save-panel" then
+      specialSidebarRowsSelectFunc(outlineRows)
+    else
+      for _, row in ipairs(outlineRows or {}) do
+        if i > 10 then break end
+        local titleElem = getc(row, AX.Cell, 1, AX.StaticText, 1)
+        if titleElem and titleElem.AXIdentifier ~= nil then
+          header = titleElem.AXValue
+        elseif titleElem then
+          local suffix
+          if i == 1 then suffix = "st"
+          elseif i == 2 then suffix = "nd"
+          elseif i == 3 then suffix = "rd"
+          else suffix = "th" end
+          local hkID = strfmt("open%d%sSidebarItemOnOpenSavePanel", i, suffix)
+          local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
+          if spec ~= nil then
+            if not titleElem:isValid() then
+              actionFunc(winUI)
+            end
+            local folder = titleElem.AXValue
+            local msg = folder
+            if header then msg = header .. ' > ' .. msg end
+            local hotkey = AppWinBind(app:focusedWindow(), {
+              spec = spec, message = msg,
+              fn = function() row.AXSelected = true end,
+            })
+            tinsert(openSavePanelHotkeys, hotkey)
+            i = i + 1
           end
-          local folder = titleElem.AXValue
-          local msg = folder
-          if header then msg = header .. ' > ' .. msg end
-          local hotkey = AppWinBind(app:focusedWindow(), {
-            spec = spec, message = msg,
-            fn = function() row.AXSelected = true end,
-          })
-          tinsert(openSavePanelHotkeys, hotkey)
-          i = i + 1
         end
       end
-    end
-    if appid ~= "com.kingsoft.wpsoffice.mac" and outlineRows
-        and callByObserver ~= true then
-      if outlineRows[1] and not outlineRows[1]:isValid() then
-        actionFunc(winUI)
-        return
-      end
-      local observer = uiobserver.new(app:pid())
-      observer:addWatcher(outlineRows[1].AXParent, uinotifications.rowCountChanged)
-      observer:callback(function()
-        if appBuf.lastRowCountChangedTimer then
-          appBuf.lastRowCountChangedTimer:setNextTrigger(0.1)
+      if outlineRows and callByObserver ~= true then
+        if outlineRows[1] and not outlineRows[1]:isValid() then
+          actionFunc(winUI)
           return
         end
-        appBuf.lastRowCountChangedTimer = hs.timer.doAfter(0.1, function()
-          appBuf.lastRowCountChangedTimer = nil
-          for _, hotkey in ipairs(openSavePanelHotkeys) do
-            disableConditionInChain(appid, hotkey, true)
-            hotkey:delete()
+        local observer = uiobserver.new(app:pid())
+        observer:addWatcher(outlineRows[1].AXParent, uinotifications.rowCountChanged)
+        observer:callback(function()
+          if appBuf.lastRowCountChangedTimer then
+            appBuf.lastRowCountChangedTimer:setNextTrigger(0.1)
+            return
           end
-          openSavePanelHotkeys = {}
-          actionFunc(winUI, true)
+          appBuf.lastRowCountChangedTimer = hs.timer.doAfter(0.1, function()
+            appBuf.lastRowCountChangedTimer = nil
+            for _, hotkey in ipairs(openSavePanelHotkeys) do
+              disableConditionInChain(appid, hotkey, true)
+              hotkey:delete()
+            end
+            openSavePanelHotkeys = {}
+            actionFunc(winUI, true)
+          end)
         end)
-      end)
-      observer:start()
-      onDestroy(winUI, function()
-        if observer then
-          observer:stop() observer = nil
-        end
-      end,
-      hs.application.watcher.deactivated, true)
+        observer:start()
+        onDestroy(winUI, function()
+          if observer then
+            observer:stop() observer = nil
+          end
+        end,
+        hs.application.watcher.deactivated, true)
+      end
     end
 
     if dontSaveButton ~= nil then
