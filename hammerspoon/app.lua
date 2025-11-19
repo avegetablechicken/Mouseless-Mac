@@ -1073,6 +1073,55 @@ VSCode.toggleSideBarSection = function(winUI, sidebar, section)
   end
 end
 
+-- ### WPS Office
+local WPS = {}
+WPS.WF = {}
+
+WPS.WF.Home = {}
+WPS.WF.NonHome = {}
+onRunning("com.kingsoft.wpsoffice.mac", function(app)
+  WPS.WF.Home.allowTitles = T("Home", app)
+  WPS.WF.NonHome.rejectTitles = WPS.WF.Home.allowTitles
+end)
+
+WPS.WF.WPS_WPP = {
+  allowTitles = "",
+  fn = function(win)
+    local appid = win:application():bundleID()
+    local menuBarItems = getc(toappui(win:application()),
+        AX.MenuBar, 1, AX.MenuBarItem)
+    return tfind(menuBarItems, function(item)
+      return item.AXTitle == localizedMenuBarItem("Tables", appid)
+          or item.AXTitle == localizedMenuBarItem("Slide Show", appid)
+    end) ~= nil
+  end
+}
+
+WPS.WF.WPS_WPP_ET = {
+  allowTitles = "",
+  fn = function(win)
+    local appid = win:application():bundleID()
+    local menuBarItems = getc(toappui(win:application()),
+        AX.MenuBar, 1, AX.MenuBarItem)
+    return tfind(menuBarItems, function(item)
+      return item.AXTitle == localizedMenuBarItem("Tables", appid)
+          or item.AXTitle == localizedMenuBarItem("Slide Show", appid)
+          or item.AXTitle == localizedMenuBarItem("Data", appid)
+    end) ~= nil
+  end
+}
+
+WPS.WF.PDF = {
+  allowTitles = "",
+  fn = function(win)
+    local appid = win:application():bundleID()
+    local locTitle = localizedMenuBarItem("Comment", appid)
+    local menuBarItem = getc(toappui(win:application()),
+        AX.MenuBar, 1, AX.MenuBarItem, locTitle)
+    return menuBarItem ~= nil
+  end
+}
+
 -- ### JabRef
 local JabRef = {}
 JabRef.showLibraryByIndex = function(idx, testClickable)
@@ -3039,66 +3088,73 @@ appHotKeyCallbacks = {
     ["goToFileTop"] = {
       mods = "", key = "Home",
       message = "Cursor to Top",
+      windowFilter = WPS.WF.NonHome,
       repeatable = true,
       fn = function(app) hs.eventtap.keyStroke("⌘", "Home", nil, app) end
     },
     ["goToFileBottom"] = {
       mods = "", key = "End",
       message = "Cursor to Bottom",
+      windowFilter = WPS.WF.NonHome,
       fn = function(app) hs.eventtap.keyStroke("⌘", "End", nil, app) end
     },
     ["selectToFileTop"] = {
       mods = "⇧", key = "Home",
       message = "Select to Top",
+      windowFilter = WPS.WF.NonHome,
       fn = function(app) hs.eventtap.keyStroke("⇧⌘", "Home", nil, app) end
     },
     ["selectToFileBottom"] = {
       mods = "⇧", key = "End",
       message = "Select to Bottom",
+      windowFilter = WPS.WF.NonHome,
       fn = function(app) hs.eventtap.keyStroke("⇧⌘", "End", nil, app) end
     },
     ["properties"] = {
       message = T("Properties..."),
+      windowFilter = WPS.WF.NonHome,
       condition = checkMenuItem({ "File", "Properties..." }),
       fn = select
     },
     ["exportToPDF"] = {
       message = T("Export to PDF..."),
+      windowFilter = WPS.WF.WPS_WPP_ET,
       condition = checkMenuItem({ "File", "Export to PDF..." }),
       fn = select
     },
     ["insertTextBox"] = {
       message = T{"Insert", "Text Box"},
+      windowFilter = WPS.WF.WPS_WPP,
       condition = checkMenuItem({ "Insert", "Text Box", "Horizontal Text Box" }),
       fn = select
     },
     ["insertEquation"] = {
       message = T{"Insert", "LaTeXEquation..."},
+      windowFilter = WPS.WF.WPS_WPP_ET,
       condition = checkMenuItem({ "Insert", "LaTeXEquation..." }),
       fn = select
     },
     ["pdfHightlight"] = {
       message = T("Highlight"),
+      windowFilter = WPS.WF.PDF,
       condition = checkMenuItem({ "Comment", "Highlight" }),
       fn = select
     },
     ["pdfUnderline"] = {
       message = T("Underline"),
+      windowFilter = WPS.WF.PDF,
       condition = checkMenuItem({ "Comment", "Underline" }),
       fn = select
     },
     ["pdfStrikethrough"] = {
       message = T("Strikethrough"),
+      windowFilter = WPS.WF.PDF,
       condition = checkMenuItem({ "Comment", "Strikethrough" }),
       fn = select
     },
     ["goToHome"] = {
       message = T("Home"),
-      condition = function(app)
-        local win = app:focusedWindow()
-        local home = T("Home", app)
-        return win ~= nil and win:title() ~= home, win
-      end,
+      windowFilter = WPS.WF.NonHome,
       fn = function(win)
         local winUI = towinui(win)
         local buttons = getc(winUI, AX.Button)
@@ -3145,10 +3201,8 @@ appHotKeyCallbacks = {
     },
     ["goToShare"] = {
       message = T("Share"),
-      condition = function(app)
-        local win = app:focusedWindow()
-        local home = T("Home", app)
-        if win == nil or win:title() ~= home then return false end
+      windowFilter = WPS.WF.Home,
+      condition = function(win)
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -3166,10 +3220,8 @@ appHotKeyCallbacks = {
     },
     ["goToMyCloudDocuments"] = {
       message = T("My Cloud Documents"),
-      condition = function(app)
-        local win = app:focusedWindow()
-        local home = T("Home", app)
-        if win == nil or win:title() ~= home then return false end
+      windowFilter = WPS.WF.Home,
+      condition = function(win)
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -3193,10 +3245,8 @@ appHotKeyCallbacks = {
     },
     ["goToMyDesktop"] = {
       message = T("My Desktop"),
-      condition = function(app)
-        local win = app:focusedWindow()
-        local home = T("Home", app)
-        if win == nil or win:title() ~= home then return false end
+      windowFilter = WPS.WF.Home,
+      condition = function(win)
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -3222,10 +3272,8 @@ appHotKeyCallbacks = {
     },
     ["goToDocuments"] = {
       message = T("Documents"),
-      condition = function(app)
-        local win = app:focusedWindow()
-        local home = T("Home", app)
-        if win == nil or win:title() ~= home then return false end
+      windowFilter = WPS.WF.Home,
+      condition = function(win)
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -3251,10 +3299,8 @@ appHotKeyCallbacks = {
     },
     ["goToDownloads"] = {
       message = T("Downloads"),
-      condition = function(app)
-        local win = app:focusedWindow()
-        local home = T("Home", app)
-        if win == nil or win:title() ~= home then return false end
+      windowFilter = WPS.WF.Home,
+      condition = function(win)
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -3280,10 +3326,8 @@ appHotKeyCallbacks = {
     },
     ["openFileLocation"] = {
       message = T("Open File Location"),
-      condition = function(app)
-        local win = app:focusedWindow()
-        local home = T("Home", app)
-        if win == nil or win:title() == home then return false end
+      windowFilter = WPS.WF.NonHome,
+      condition = function(win)
         local winUI = towinui(win)
         for i=1,#winUI - 1 do
           if winUI[i].AXRole == AX.Button
@@ -3293,7 +3337,8 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = function(position, app)
+      fn = function(position, win)
+        local app = win:application()
         local title = T("Open File Location", app)
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.created)
@@ -3627,15 +3672,20 @@ appHotKeyCallbacks = {
     ["back"] = {
       message = T("Back"),
       windowFilter = {
+        allowTitles = "",
         fn = function(win)
-          return towinui(win).AXIdentifier == "ChatGPTSettingsAppWindow"
+          if towinui(win).AXIdentifier == "ChatGPTSettingsAppWindow" then
+            local button = getc(towinui(win), AX.Toolbar, 1,
+                AX.Button, 1, AX.Button, 1)
+            return button ~= nil
+          end
         end
       },
-      condition = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 1, AX.Button, 1)
-        return button ~= nil and button.AXEnabled, button
-      end,
-      fn = press
+      fn = function(win)
+        local button = getc(towinui(win), AX.Toolbar, 1,
+            AX.Button, 1, AX.Button, 1)
+        if button and button.AXEnabled then press(button) end
+      end
     },
     ["openLink"] = {
       message = T("Open link"),
