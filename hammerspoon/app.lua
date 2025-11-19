@@ -1084,6 +1084,15 @@ onRunning("com.kingsoft.wpsoffice.mac", function(app)
   WPS.WF.NonHome.rejectTitles = WPS.WF.Home.allowTitles
 end)
 
+WPS.WF.Settings = {
+  allowRoles = AX.Dialog,
+  fn = function(win)
+    local winUI = towinui(win)
+    return getc(winUI, AX.Button, "Prev") ~= nil
+        and getc(winUI, AX.Button, "Next") ~= nil
+  end
+}
+
 WPS.WF.WPS_WPP = {
   allowTitles = "",
   fn = function(win)
@@ -3372,14 +3381,7 @@ appHotKeyCallbacks = {
     },
     ["prevInSettings"] = {
       message = TC("Back"),
-      windowFilter = {
-        allowRoles = AX.Dialog,
-        fn = function(win)
-          local winUI = towinui(win)
-          return getc(winUI, AX.Button, "Prev") ~= nil
-              and getc(winUI, AX.Button, "Next") ~= nil
-        end
-      },
+      windowFilter = WPS.WF.Settings,
       condition = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, "Prev")
@@ -3389,14 +3391,7 @@ appHotKeyCallbacks = {
     },
     ["nextInSettings"] = {
       message = TC("Forward"),
-      windowFilter = {
-        allowRoles = AX.Dialog,
-        fn = function(win)
-          local winUI = towinui(win)
-          return getc(winUI, AX.Button, "Prev") ~= nil
-              and getc(winUI, AX.Button, "Next") ~= nil
-        end
-      },
+      windowFilter = WPS.WF.Settings,
       condition = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, "Next")
