@@ -133,6 +133,7 @@ function findMenuItem(app, menuItemTitle, params)
         if app:findMenuItem(targetMenuItem) then break
         else targetMenuItem[#targetMenuItem] = nil end
       end
+      if #targetMenuItem ~= i then return end
     else
       tinsert(targetMenuItem, locStr or menuItemTitle[i])
     end
