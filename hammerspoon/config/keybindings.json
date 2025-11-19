@@ -686,6 +686,26 @@
       "addPeopleWhenNewFaceTime": {
         "mods": "command",
         "key": "F"
+      },
+      "view1": {
+        "mods": "command",
+        "key": "1"
+      },
+      "view2": {
+        "mods": "command",
+        "key": "2"
+      },
+      "view3": {
+        "mods": "command",
+        "key": "3"
+      },
+      "view4": {
+        "mods": "command",
+        "key": "4"
+      },
+      "view5": {
+        "mods": "command",
+        "key": "5"
       }
     },
     "com.apple.Photos": {

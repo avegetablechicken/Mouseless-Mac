@@ -865,6 +865,36 @@ FaceTime.deleteAll = function(win)
   end
 end
 
+FaceTime.showViewMenu = function(winUI)
+  local button
+  if OS_VERSION < OS.Tahoe then
+    button = getc(winUI, AX.Group, 1, AX.Group, 1,
+        AX.Group, 1, AX.Group, 1, AX.Button, 1)
+  else
+    button = getc(winUI, AX.Group, 1, AX.Group, 1,
+        AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+        AX.Button, 1)
+  end
+  if button then
+    press(button) return true
+  end
+  return false
+end
+
+FaceTime.selectView = function(index)
+  return function(win)
+    local winUI  = towinui(win)
+    if not FaceTime.showViewMenu(winUI) then return end
+    local menu
+    repeat
+      hs.timer.usleep(0.01 * 1000000)
+      menu = getc(winUI, AX.Group, 1, AX.Menu, 1)
+    until menu or not winUI:isValid()
+    local menuItem = getc(menu, AX.MenuItem, index)
+    if menuItem then press(menuItem) end
+  end
+end
+
 -- ### Music
 local Music = {}
 Music.WF = {}
@@ -2439,6 +2469,31 @@ appHotKeyCallbacks = {
             AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 1)
         if button then press(button) end
       end
+    },
+    ["view1"] = {
+      message = T("Calls"),
+      windowFilter = FaceTime.WF.Main,
+      fn = FaceTime.selectView(1)
+    },
+    ["view2"] = {
+      message = T("Missed"),
+      windowFilter = FaceTime.WF.Main,
+      fn = FaceTime.selectView(2)
+    },
+    ["view3"] = {
+      message = T("Video"),
+      windowFilter = FaceTime.WF.Main,
+      fn = FaceTime.selectView(3)
+    },
+    ["view4"] = {
+      message = T("Voicemail"),
+      windowFilter = FaceTime.WF.Main,
+      fn = FaceTime.selectView(4)
+    },
+    ["view5"] = {
+      message = T("Spam"),
+      windowFilter = FaceTime.WF.Main,
+      fn = FaceTime.selectView(5)
     }
   },
 
