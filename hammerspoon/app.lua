@@ -2298,16 +2298,30 @@ appHotKeyCallbacks = {
               AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
         end
         local desc = T('New Message', app)
-        local selected = tfind(messageItems or {}, function(msg)
+        return tfind(messageItems or {}, function(msg)
           return msg.AXSelected == true and msg.AXDescription:sub(4) ~= desc
-        end)
-        if selected == nil then return false end
-        return checkMenuItem({
-          OS_VERSION < OS.Ventura and "File" or "Conversation",
-          "Delete Conversation…"
-        })(app)
+        end) ~= nil
       end,
-      fn = select
+      fn = function(app)
+        local appUI = toappui(app)
+        local button
+        if OS_VERSION >= OS.Tahoe then
+          button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+              AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 2)
+        else
+          button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+              AX.Group, 2, AX.Group, 1, AX.Button, 2)
+        end
+        if button then
+          press(button)
+        else
+          local _, menuItem = findMenuItem(app, {
+            OS_VERSION < OS.Ventura and "File" or "Conversation",
+            "Delete Conversation…"
+          })
+          app:selectMenuItem(menuItem)
+        end
+      end
     },
     ["deleteAllConversations"] = {
       message = T("Delete All"),
