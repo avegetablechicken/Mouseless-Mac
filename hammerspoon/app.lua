@@ -747,7 +747,7 @@ if OS_VERSION >= OS.Tahoe then
   end)
 end
 
-Phone.showViewMenu = function(winUI)
+local function PhoneShowViewMenu(winUI)
   local button = getc(winUI, AX.Toolbar, 1,
       AX.Group, 2, AX.Group, 1, AX.MenuButton, 1)
   if button then
@@ -759,7 +759,7 @@ end
 Phone.selectView = function(index)
   return function(win)
     local winUI  = towinui(win)
-    if not Phone.showViewMenu(winUI) then return end
+    if not PhoneShowViewMenu(winUI) then return end
     local menu
     repeat
       hs.timer.usleep(0.01 * 1000000)
@@ -877,7 +877,7 @@ FaceTime.deleteAll = function(win)
   end
 end
 
-FaceTime.showViewMenu = function(winUI)
+local function FaceTimeShowViewMenu(winUI)
   local button
   if OS_VERSION < OS.Tahoe then
     button = getc(winUI, AX.Group, 1, AX.Group, 1,
@@ -896,7 +896,7 @@ end
 FaceTime.selectView = function(index)
   return function(win)
     local winUI  = towinui(win)
-    if not FaceTime.showViewMenu(winUI) then return end
+    if not FaceTimeShowViewMenu(winUI) then return end
     local menu
     repeat
       hs.timer.usleep(0.01 * 1000000)
@@ -1777,13 +1777,10 @@ end
 
 -- ### iCopy
 local iCopy = {}
-iCopy.selectHotkeyMod = function(app)
-  return Version.LessThan(app, "1.1.1") and "" or "⌃"
-end
 
 iCopy.selectHotkeyRemap = function(idx)
   return function(win)
-    local iCopyMod = iCopy.selectHotkeyMod(win:application())
+    local iCopyMod = Version.LessThan(win, "1.1.1") and "" or "⌃"
     hs.eventtap.keyStroke(iCopyMod, tostring(idx), nil, win:application())
   end
 end
