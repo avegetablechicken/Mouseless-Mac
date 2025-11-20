@@ -171,21 +171,23 @@ local function isLSUIElement(appid)
   return info and info.LSUIElement == true
 end
 
-local processesOnLaunched = {}
-local function onLaunched(appid, action)
+local Evt = {}
+
+Evt.ProcOnLaunched = {}
+Evt.OnLaunched = function(appid, action)
   if isLSUIElement(appid) then
     ExecOnSilentLaunch(appid, action)
     return
   end
 
-  if processesOnLaunched[appid] == nil then
-    processesOnLaunched[appid] = {}
+  if Evt.ProcOnLaunched[appid] == nil then
+    Evt.ProcOnLaunched[appid] = {}
   end
-  tinsert(processesOnLaunched[appid], action)
+  tinsert(Evt.ProcOnLaunched[appid], action)
 end
 
-local function onRunning(appid, action)
-  onLaunched(appid, action)
+Evt.OnRunning = function(appid, action)
+  Evt.OnLaunched(appid, action)
   local app
   if FLAGS["LOADING"] then
     app = runningAppsOnLoading[appid]
@@ -195,45 +197,45 @@ local function onRunning(appid, action)
   if app then action(app) end
 end
 
-local processesOnActivated = {}
-local function onActivated(appid, action)
-  if processesOnActivated[appid] == nil then
-    processesOnActivated[appid] = {}
+Evt.ProcOnActivated = {}
+Evt.OnActivated = function(appid, action)
+  if Evt.ProcOnActivated[appid] == nil then
+    Evt.ProcOnActivated[appid] = {}
   end
-  tinsert(processesOnActivated[appid], action)
+  tinsert(Evt.ProcOnActivated[appid], action)
 end
 
-local processesOnDeactivated = {}
-local function onDeactivated(appid, action)
-  if processesOnDeactivated[appid] == nil then
-    processesOnDeactivated[appid] = {}
+Evt.ProcOnDeactivated = {}
+Evt.OnDeactivated = function(appid, action)
+  if Evt.ProcOnDeactivated[appid] == nil then
+    Evt.ProcOnDeactivated[appid] = {}
   end
-  tinsert(processesOnDeactivated[appid], action)
+  tinsert(Evt.ProcOnDeactivated[appid], action)
 end
 
-local processesOnTerminated = {}
-local function onTerminated(appid, action)
+Evt.ProcOnTerminated = {}
+Evt.OnTerminated = function(appid, action)
   if isLSUIElement(appid) then
     ExecOnSilentQuit(appid, action)
     return
   end
 
-  if processesOnTerminated[appid] == nil then
-    processesOnTerminated[appid] = {}
+  if Evt.ProcOnTerminated[appid] == nil then
+    Evt.ProcOnTerminated[appid] = {}
   end
-  tinsert(processesOnTerminated[appid], action)
+  tinsert(Evt.ProcOnTerminated[appid], action)
 end
 
-local function stopOnDeactivated(appid, observer, action)
-  onDeactivated(appid, function()
+Evt.StopOnDeactivated = function(appid, observer, action)
+  Evt.OnDeactivated(appid, function()
     observer:stop()
     if action then action(observer, appid) end
     observer = nil
   end)
 end
 
-local function stopOnTerminated(appid, observer, action)
-  onTerminated(appid, function()
+Evt.StopOnTerminated = function(appid, observer, action)
+  Evt.OnTerminated(appid, function()
     observer:stop()
     if action then action(observer, appid) end
     observer = nil
@@ -249,7 +251,7 @@ local function getAppFromDescendantElement(elem)
   return appUI:asHSApplication()
 end
 
-local function onDestroy(element, callback, stopWhen, callbackOnStop)
+Evt.onDestroy = function(element, callback, stopWhen, callbackOnStop)
   if not element:isValid() then return end
   local app = getAppFromDescendantElement(element)
   local closeObserver = uiobserver.new(app:pid())
@@ -265,9 +267,9 @@ local function onDestroy(element, callback, stopWhen, callbackOnStop)
   for _, ev in ipairs(stopWhen or {}) do
     local appid = app:bundleID() or app:name()
     if ev == hs.application.watcher.deactivated then
-      stopOnDeactivated(appid, closeObserver, callbackOnStop and callback)
+      Evt.StopOnDeactivated(appid, closeObserver, callbackOnStop and callback)
     elseif ev == hs.application.watcher.terminated then
-      stopOnTerminated(appid, closeObserver, callbackOnStop and callback)
+      Evt.StopOnTerminated(appid, closeObserver, callbackOnStop and callback)
     end
   end
 
@@ -381,6 +383,7 @@ local function T(message, params, sep)
   end
 end
 
+local Version = {}
 local function versionCompare(versionStr, comp)
   return function(app)
     local appMajor, appMinor, appPatch = applicationVersion(app:bundleID())
@@ -409,25 +412,25 @@ local function versionCompare(versionStr, comp)
   end
 end
 
-local function versionLessThan(version)
+Version.LessThan = function(version)
   return versionCompare(version, "<")
 end
 
-local function versionGreaterThan(version)
+Version.GreaterThan = function(version)
   return versionCompare(version, ">")
 end
 
-local function versionGreaterEqual(version)
+Version.GreaterEqual = function(version)
   return versionCompare(version, ">=")
 end
 
-local function versionLessEqual(version)
+Version.LessEqual = function(version)
   return versionCompare(version, "<=")
 end
 
-local function versionRange(version1, version2)
+Version.Between = function(version1, version2)
   return function(app)
-    return versionGreaterEqual(version1)(app) and versionLessThan(version2)(app)
+    return Version.GreaterEqual(version1)(app) and Version.LessThan(version2)(app)
   end
 end
 
@@ -502,7 +505,7 @@ local registerInMenuHotkeys
 -- ## function utilities for hotkey configs of specific application
 local appBuf, winBuf = {}, {}
 function winBuf:register(winUI, key, value)
-  onDestroy(winUI, function() winBuf[key] = nil end)
+  Evt.onDestroy(winUI, function() winBuf[key] = nil end)
   winBuf[key] = value
   return winBuf[key]
 end
@@ -557,7 +560,7 @@ Finder.sidebarItemTitle = function(idx)
             end)
             observer:start()
             appBuf.finderSidebarItemObserver = observer
-            stopOnDeactivated(appid, appBuf.finderSidebarItemObserver)
+            Evt.StopOnDeactivated(appid, appBuf.finderSidebarItemObserver)
           end
           return header .. ' > ' .. itemTitle
         end
@@ -730,7 +733,7 @@ local Phone = {}
 Phone.WF = {}
 Phone.WF.Main = {}
 if OS_VERSION >= OS.Tahoe then
-  onRunning("com.apple.mobilephone", function(app)
+  Evt.OnRunning("com.apple.mobilephone", function(app)
     Phone.WF.Main.allowTitles = '^' .. app:name() .. '$'
   end)
 end
@@ -762,7 +765,7 @@ end
 local FaceTime = {}
 FaceTime.WF = {}
 FaceTime.WF.Main = {}
-onRunning("com.apple.FaceTime", function(app)
+Evt.OnRunning("com.apple.FaceTime", function(app)
   FaceTime.WF.Main.allowTitles = '^' .. app:name() .. '$'
 end)
 
@@ -949,7 +952,7 @@ Music.viewTitle = function(index)
         end)
         observer:start()
         appBuf.musicSidebarItemObserver = observer
-        stopOnDeactivated(appid, appBuf.musicSidebarItemObserver)
+        Evt.StopOnDeactivated(appid, appBuf.musicSidebarItemObserver)
       end
       return getc(row, AX.Cell, 1, AX.StaticText, 1).AXValue
     end
@@ -1075,7 +1078,7 @@ WPS.WF = {}
 
 WPS.WF.Home = {}
 WPS.WF.NonHome = {}
-onRunning("com.kingsoft.wpsoffice.mac", function(app)
+Evt.OnRunning("com.kingsoft.wpsoffice.mac", function(app)
   WPS.WF.Home.allowTitles = T("Home", app)
   WPS.WF.NonHome.rejectTitles = WPS.WF.Home.allowTitles
 end)
@@ -1244,7 +1247,7 @@ end
 local Yuanbao = {}
 Yuanbao.WF = {}
 Yuanbao.WF.Main = {}
-onRunning("com.tencent.yuanbao", function(app)
+Evt.OnRunning("com.tencent.yuanbao", function(app)
   local title = T("Tencent Yuanbao", app)
   Yuanbao.WF.Main.allowTitles = '^' .. title .. '$'
 end)
@@ -1253,7 +1256,7 @@ end)
 local EuDic = {}
 EuDic.WF = {}
 EuDic.WF.Main = { allowRoles = AX.StandardWindow }
-onRunning("com.eusoft.freeeudic", function(app)
+Evt.OnRunning("com.eusoft.freeeudic", function(app)
   local functionName = T("词 典", app)
   EuDic.WF.Main.fn = function(win)
     local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 1)
@@ -1265,7 +1268,7 @@ end)
 local Parallels = {}
 Parallels.WF = {}
 Parallels.WF.ControlCenter = {}
-onRunning("com.parallels.desktop.console", function(app)
+Evt.OnRunning("com.parallels.desktop.console", function(app)
   local title = T("Control Center", app)
   Parallels.WF.ControlCenter.allowTitles = '^' .. title .. '$'
 end)
@@ -1312,7 +1315,7 @@ Bartender.barItemTitle = function(index, rightClick)
         return getc(g, AX.Image, 1).AXDescription
       end)
       if #appnames == 0 then return end
-      if versionLessThan("6")(win:application()) then
+      if Version.LessThan("6")(win:application()) then
         local app = win:application()
         local appid = app:bundleID()
         local _, items = hs.osascript.applescript(strfmt([[
@@ -1468,8 +1471,8 @@ Bartender.clickBarItem = function(index, rightClick)
 end
 
 Bartender.WF.Main = {}
-onRunning("com.surteesstudios.Bartender", function(app)
-  if versionLessThan("6")(app) then
+Evt.OnRunning("com.surteesstudios.Bartender", function(app)
+  if Version.LessThan("6")(app) then
     Bartender.WF.Main.allowTitles = app:name()
   else
     Bartender.WF.Main.fn = function(win)
@@ -1482,7 +1485,7 @@ end)
 Bartender.sidebarItemTitle = function(index)
   return function(win)
     local winUI = towinui(win)
-    if versionLessThan("6")(win:application()) then
+    if Version.LessThan("6")(win:application()) then
       local row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
           AX.Outline, 1, AX.Row, index, AX.Cell, 1, AX.StaticText, 1)
       if row ~= nil then
@@ -1503,7 +1506,7 @@ Bartender.clickSidebarItem = function(index)
   return function(win)
     local winUI = towinui(win)
     local row
-    if versionLessThan("6")(win:application()) then
+    if Version.LessThan("6")(win:application()) then
       row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
           AX.Outline, 1, AX.Row, index)
     else
@@ -1766,7 +1769,7 @@ end
 -- ### iCopy
 local iCopy = {}
 iCopy.selectHotkeyMod = function(app)
-  return versionLessThan("1.1.1")(app) and "" or "⌃"
+  return Version.LessThan("1.1.1")(app) and "" or "⌃"
 end
 
 iCopy.selectHotkeyRemap = function(idx)
@@ -2805,7 +2808,7 @@ appHotKeyCallbacks = {
           end
         end)
         observer:start()
-        stopOnDeactivated(app:bundleID(), observer)
+        Evt.StopOnDeactivated(app:bundleID(), observer)
       end
     }
   },
@@ -3695,7 +3698,7 @@ appHotKeyCallbacks = {
   {
     ["toggleSidebar"] = {
       message = T("Toggle Sidebar"),
-      bindCondition = versionLessEqual("1.2024.332"),
+      bindCondition = Version.LessEqual("1.2024.332"),
       condition = checkMenuItem({ "View", "Toggle Sidebar" }),
       fn = select
     },
@@ -3783,7 +3786,7 @@ appHotKeyCallbacks = {
       message = T("Settings"),
       condition = function(app)
         if app:focusedWindow() == nil then
-          return versionGreaterEqual("2")(app)
+          return Version.GreaterEqual("2")(app)
         end
         if app:focusedWindow():title() == T("Tencent Yuanbao Setting", app) then
           return false
@@ -3817,7 +3820,7 @@ appHotKeyCallbacks = {
           end
         end
 
-        return versionGreaterEqual("2")(app)
+        return Version.GreaterEqual("2")(app)
       end,
       fn = function(button, app)
         if app ~= nil then
@@ -3842,7 +3845,7 @@ appHotKeyCallbacks = {
               end
             end,
             function() leftClickAndRestore(menuItem, app) end)
-            stopOnDeactivated(app:bundleID(), timer)
+            Evt.StopOnDeactivated(app:bundleID(), timer)
           end
           return
         end
@@ -3882,7 +3885,7 @@ appHotKeyCallbacks = {
     },
     ["newChat"] = {
       message = T("New Chat"),
-      bindCondition = versionLessThan("1.6.0"),
+      bindCondition = Version.LessThan("1.6.0"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
@@ -3921,7 +3924,7 @@ appHotKeyCallbacks = {
         local webarea = getc(towinui(win), AX.Group, 1, AX.Group, 1,
             AX.ScrollArea, 1, AX.WebArea, 1)
         if webarea == nil then return false end
-        if versionLessThan("1.15.0")(win:application()) then
+        if Version.LessThan("1.15.0")(win:application()) then
           local button = tfind(getc(webarea, AX.Group), function(b)
             return tfind(b.AXDOMClassList or {}, function(c)
               return c:find("folder_foldIcon") ~= nil
@@ -3948,7 +3951,7 @@ appHotKeyCallbacks = {
     },
     ["back"] = {
       message = TC("Back"),
-      bindCondition = versionLessThan("2"),
+      bindCondition = Version.LessThan("2"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
@@ -3972,7 +3975,7 @@ appHotKeyCallbacks = {
       end,
       background = true,
       fn = function(app)
-        if versionLessThan("2")(app) then
+        if Version.LessThan("2")(app) then
           -- false invoke when menubar manager try to show or hide menubar icon
           -- always show the icon to workaround it
           clickRightMenuBarItem(app, {}, "click")
@@ -4272,7 +4275,7 @@ appHotKeyCallbacks = {
   {
     ["backFromMinizedGroups"] = {
       message = TC("Back"),
-      bindCondition = versionRange("4", "4.0.6"),
+      bindCondition = Version.Between("4", "4.0.6"),
       windowFilter = {
         fn = function(win)
           local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
@@ -4289,7 +4292,7 @@ appHotKeyCallbacks = {
     },
     ["backInOfficialAccounts"] = {
       message = TC("Back"),
-      bindCondition = versionLessThan("4"),
+      bindCondition = Version.LessThan("4"),
       windowFilter = {
         fn = function(win)
           local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
@@ -4311,13 +4314,13 @@ appHotKeyCallbacks = {
     },
     ["backInMoments"] = {
       message = TC("Back"),
-      bindCondition = versionLessThan("4.0.6"),
+      bindCondition = Version.LessThan("4.0.6"),
       windowFilter = {
         fn = function(win)
           local app = win:application()
           local title = win:title()
           if title:find(app:name()) == nil then
-            if versionGreaterEqual("4")(app) then
+            if Version.GreaterEqual("4")(app) then
               local moments = findMenuItemByKeyBinding(app, "⌘", "4", true)
               return moments and title == moments[2]
             else
@@ -4338,7 +4341,7 @@ appHotKeyCallbacks = {
     },
     ["hideChat"] = {
       message = function(win)
-        if versionLessThan("4")(win:application()) then
+        if Version.LessThan("4")(win:application()) then
           return T("Chats.Menu.Hide", win)
         else
           local title = localizedString("Hide", win)
@@ -4346,7 +4349,7 @@ appHotKeyCallbacks = {
           return title
         end
       end,
-      bindCondition = versionLessThan("4.0.6"),
+      bindCondition = Version.LessThan("4.0.6"),
       windowFilter = {
         fn = function(win)
           local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
@@ -4356,7 +4359,7 @@ appHotKeyCallbacks = {
       condition = function(win)
         local app = win:application()
         local winUI = towinui(win)
-        if versionLessThan("4")(app) then
+        if Version.LessThan("4")(app) then
           local chats = getc(winUI, AX.SplitGroup, 1,
               AX.ScrollArea, 1, AX.Table, 1, AX.Row)
           if chats == nil then return end
@@ -4424,7 +4427,7 @@ appHotKeyCallbacks = {
     },
     ["showChatProfile"] = {
       message = T("Chats.Menu.Profile"),
-      bindCondition = versionLessThan("4"),
+      bindCondition = Version.LessThan("4"),
       windowFilter = {
         fn = function(win)
           local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
@@ -4464,7 +4467,7 @@ appHotKeyCallbacks = {
     ["openInDefaultBrowser"] = {
       message = function(win)
         local app = win:application()
-        if versionLessThan("4")(app) then
+        if Version.LessThan("4")(app) then
           return T("Open in Default Browser", app)
         else
           local exBundleID = "com.tencent.flue.WeChatAppEx"
@@ -4475,7 +4478,7 @@ appHotKeyCallbacks = {
       end,
       windowFilter = {
         fn = function(win)
-          if versionLessThan("4")(win:application()) then
+          if Version.LessThan("4")(win:application()) then
             local g = getc(towinui(win), AX.Group, 1)
             return g ~= nil and g.AXDOMClassList ~= nil
           else
@@ -4488,7 +4491,7 @@ appHotKeyCallbacks = {
       },
       fn = function(win)
         local app = win:application()
-        if versionLessThan("4")(app) then
+        if Version.LessThan("4")(app) then
           local frame = win:frame()
           local position = uioffset(frame, { frame.w - 60, 23 })
           leftClickAndRestore(position, win)
@@ -4571,7 +4574,7 @@ appHotKeyCallbacks = {
         local appLocale = applicationLocale(win:application():bundleID())
         return localizedString('Close All Tabs', exBundleID, { locale = appLocale })
       end,
-      bindCondition = versionGreaterEqual("4"),
+      bindCondition = Version.GreaterEqual("4"),
       windowFilter = {
         fn = function(win)
           local exBundleID = "com.tencent.flue.WeChatAppEx"
@@ -4624,7 +4627,7 @@ appHotKeyCallbacks = {
           end
         end
       end,
-      bindCondition = versionRange("4", "4.0.6"),
+      bindCondition = Version.Between("4", "4.0.6"),
       deleteOnDisable = true,
       windowFilter = {
         allowSheet = true,
@@ -4682,7 +4685,7 @@ appHotKeyCallbacks = {
     },
     ["send"] = {
       message = T("Send"),
-      bindCondition = versionRange("4", "4.0.6"),
+      bindCondition = Version.Between("4", "4.0.6"),
       windowFilter = {
         allowSheet = true,
         fn = function(win)
@@ -4740,7 +4743,7 @@ appHotKeyCallbacks = {
     },
     ["confirmAll"] = {
       message = TC("Confirm"),
-      bindCondition = versionGreaterEqual("4.0.6"),
+      bindCondition = Version.GreaterEqual("4.0.6"),
       windowFilter = { allowSheet = true },
       condition = function(win)
         local frame = win:frame()
@@ -4753,14 +4756,14 @@ appHotKeyCallbacks = {
   ["com.tencent.qq"] = {
     ["switchUIMode"] = {
       message = "切换界面模式",
-      bindCondition = versionGreaterEqual("6.9.82"),
+      bindCondition = Version.GreaterEqual("6.9.82"),
       windowFilter = { allowTitles = "^QQ$" },
       condition = function(win)
         local webarea = getc(towinui(win), AX.Group, 1,
             AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.WebArea, 1)
         local image = getc(webarea, AX.Group, 1,
             AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Image, 1)
-        if versionGreaterEqual("6.9.83") then
+        if Version.GreaterEqual("6.9.83") then
           return clickable(image)
         else
           return image ~= nil, image
@@ -4786,7 +4789,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local titleBar
-        if versionLessThan("10.3.0")(win:application()) then
+        if Version.LessThan("10.3.0")(win:application()) then
           local appUI = toappui(win:application())
           local frame = win:frame()
           titleBar = appUI:elementAtPosition(uioffset(frame, { 100, 10 }))
@@ -4814,7 +4817,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local titleBar
-        if versionLessThan("10.3.0")(win:application()) then
+        if Version.LessThan("10.3.0")(win:application()) then
           local appUI = toappui(win:application())
           local frame = win:frame()
           titleBar = appUI:elementAtPosition(uioffset(frame, { 100, 10 }))
@@ -4842,7 +4845,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local titleBar
-        if versionLessThan("10.3.0")(win:application()) then
+        if Version.LessThan("10.3.0")(win:application()) then
           local appUI = toappui(win:application())
           local frame = win:frame()
           titleBar = appUI:elementAtPosition(uioffset(frame, { 100, 10 }))
@@ -5037,7 +5040,7 @@ appHotKeyCallbacks = {
     },
     ["launchApp"] = {
       message = T('Launch App'),
-      bindCondition = versionGreaterEqual("8.6"),
+      bindCondition = Version.GreaterEqual("8.6"),
       condition = AppCleanerUninstaller.buttonValid('Launch App'),
       fn = press
     },
@@ -5082,7 +5085,7 @@ appHotKeyCallbacks = {
     },
     ["launchApp"] = {
       message = T('LaunchAppButtonTitle'),
-      bindCondition = versionGreaterEqual("8.6"),
+      bindCondition = Version.GreaterEqual("8.6"),
       condition = AppCleanerUninstaller.buttonValid('LaunchAppButtonTitle'),
       fn = press
     },
@@ -5342,7 +5345,7 @@ appHotKeyCallbacks = {
   {
     ["allowConnection"] = {
       message = "Allow Connection",
-      bindCondition = versionLessThan("2.9.1"),
+      bindCondition = Version.LessThan("2.9.1"),
       windowFilter = {
         allowTitles = "^LuLu Alert$"
       },
@@ -5355,7 +5358,7 @@ appHotKeyCallbacks = {
     },
     ["blockConnection"] = {
       message = "Block Connection",
-      bindCondition = versionLessThan("2.9.1"),
+      bindCondition = Version.LessThan("2.9.1"),
       windowFilter = {
         allowTitles = "^LuLu Alert$"
       },
@@ -5393,7 +5396,7 @@ appHotKeyCallbacks = {
   {
     ["toggleMenuBar"] = {
       message = T("Show menu bar item"),
-      bindCondition = versionLessThan("6"),
+      bindCondition = Version.LessThan("6"),
       kind = HK.MENUBAR,
       background = true,
       fn = function(app)
@@ -5524,7 +5527,7 @@ appHotKeyCallbacks = {
     },
     ["searchMenuBar"] = {
       message = "Search Menu Bar",
-      bindCondition = versionLessThan("6"),
+      bindCondition = Version.LessThan("6"),
       kind = HK.MENUBAR,
       background = true,
       fn = function(app)
@@ -5538,7 +5541,7 @@ appHotKeyCallbacks = {
       kind = HK.MENUBAR,
       background = true,
       bindCondition = function(app)
-        if versionGreaterEqual("6") then return false end
+        if Version.GreaterEqual("6") then return false end
         -- the property update in command line is not working
         local _, ok = hs.execute(strfmt(
             "defaults read '%s' hotkeyKeyboardNav", app:bundleID()))
@@ -5556,7 +5559,7 @@ appHotKeyCallbacks = {
     },
     ["toggleSidebar"] = {
       message = TC("Show Sidebar"),
-      bindCondition = versionGreaterEqual("6"),
+      bindCondition = Version.GreaterEqual("6"),
       condition = function(app)
         return app:focusedWindow() ~= nil, app:focusedWindow()
       end,
@@ -5625,7 +5628,7 @@ appHotKeyCallbacks = {
       mods = specialCommonHotkeyConfigs["minimize"].mods,
       key = specialCommonHotkeyConfigs["minimize"].key,
       message = TC("Minimize"),
-      bindCondition = versionLessThan("6"),
+      bindCondition = Version.LessThan("6"),
       condition = function(app)
         local win = app:focusedWindow()
         return win ~= nil and win:role() == AX.Window, win
@@ -7059,70 +7062,70 @@ appHotKeyCallbacks = {
     ["select1stItem"] = {
       mods = "⌘", key = "1",
       message = "Select 1st Item",
-      bindCondition = versionLessThan("1.1.3"),
+      bindCondition = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(1)
     },
     ["select2ndItem"] = {
       mods = "⌘", key = "2",
       message = "Select 2nd Item",
-      bindCondition = versionLessThan("1.1.3"),
+      bindCondition = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(2)
     },
     ["select3rdItem"] = {
       mods = "⌘", key = "3",
       message = "Select 3rd Item",
-      bindCondition = versionLessThan("1.1.3"),
+      bindCondition = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(3)
     },
     ["select4thItem"] = {
       mods = "⌘", key = "4",
       message = "Select 4th Item",
-      bindCondition = versionLessThan("1.1.3"),
+      bindCondition = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(4)
     },
     ["select5thItem"] = {
       mods = "⌘", key = "5",
       message = "Select 5th Item",
-      bindCondition = versionLessThan("1.1.3"),
+      bindCondition = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(5)
     },
     ["select6thItem"] = {
       mods = "⌘", key = "6",
       message = "Select 6th Item",
-      bindCondition = versionLessThan("1.1.3"),
+      bindCondition = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(6)
     },
     ["select7thItem"] = {
       mods = "⌘", key = "7",
       message = "Select 7th Item",
-      bindCondition = versionLessThan("1.1.3"),
+      bindCondition = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(7)
     },
     ["select8thItem"] = {
       mods = "⌘", key = "8",
       message = "Select 8th Item",
-      bindCondition = versionLessThan("1.1.3"),
+      bindCondition = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(8)
     },
     ["select9thItem"] = {
       mods = "⌘", key = "9",
       message = "Select 9th Item",
-      bindCondition = versionLessThan("1.1.3"),
+      bindCondition = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(9)
     },
     ["select10thItem"] = {
       mods = "⌘", key = "0",
       message = "Select 10th Item",
-      bindCondition = versionLessThan("1.1.3"),
+      bindCondition = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(10)
     },
@@ -7489,7 +7492,7 @@ local function registerMenuBarObserverForHotkeyValidity(app)
       end)
       observer:start()
       MenuBarMenuSelectedObservers[appid] = observer
-      stopOnTerminated(appid, observer, function()
+      Evt.StopOnTerminated(appid, observer, function()
         MenuBarMenuSelectedObservers[appid] = nil
       end)
       return menuBarItems
@@ -7851,10 +7854,10 @@ registerInAppHotKeys = function(app)
     end
   end
 
-  onDeactivated(appid, function()
+  Evt.OnDeactivated(appid, function()
     unregisterInAppHotKeys(appid)
   end)
-  onTerminated(appid, function()
+  Evt.OnTerminated(appid, function()
     unregisterInAppHotKeys(appid, true)
     ActivatedAppConditionChain[appid] = nil
   end)
@@ -7998,7 +8001,7 @@ registerInWinHotKeys = function(win, filter)
   end
 
   if needCloseWatcher then
-    onDestroy(towinui(win),
+    Evt.onDestroy(towinui(win),
       function() unregisterInWinHotKeys(appid, true, filter) end,
       hs.application.watcher.deactivated, true
     )
@@ -8189,7 +8192,7 @@ local function registerSingleWinFilterForApp(app, filter, retry)
     FocusedWindowObservers[appid] = {}
   end
   FocusedWindowObservers[appid][filter] = observer
-  stopOnDeactivated(appid, observer, function()
+  Evt.StopOnDeactivated(appid, observer, function()
     FocusedWindowObservers[appid][filter] = nil
   end)
 end
@@ -8288,7 +8291,7 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
           end
         end
 
-        closeObserver = closeObserver or onDestroy(winUI,
+        closeObserver = closeObserver or Evt.onDestroy(winUI,
           function()
             if daemonAppFocusedWindowHotkeys[wid] ~= nil then
               for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[wid]) do
@@ -8364,7 +8367,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter, retry)
     DaemonAppFocusedWindowObservers[appid] = {}
   end
   DaemonAppFocusedWindowObservers[appid][filter] = observer
-  stopOnTerminated(appid, observer, function()
+  Evt.StopOnTerminated(appid, observer, function()
     DaemonAppFocusedWindowObservers[appid][filter] = nil
   end)
 end
@@ -8494,7 +8497,7 @@ registerInMenuHotkeys = function(app)
           end
           closeObserver:callback(callback)
           closeObserver:start()
-          stopOnTerminated(appid, closeObserver, function()
+          Evt.StopOnTerminated(appid, closeObserver, function()
             callback(closeObserver)
           end)
         end
@@ -8525,7 +8528,7 @@ local function registerObserversForMenuBarMenu(app, appConfig)
         observer:callback(bind(registerInMenuHotkeys, app))
         observer:start()
         MenuBarMenuObservers[appid] = observer
-        stopOnTerminated(appid, observer, function()
+        Evt.StopOnTerminated(appid, observer, function()
           MenuBarMenuObservers[appid] = nil
         end)
       end
@@ -8584,7 +8587,7 @@ local function remapPreviousTab(app, menuItems)
       _chainedCond = remapPreviousTabHotkey._chainedCond,
       idx = remapPreviousTabHotkey.idx
     }
-    onDeactivated(appid, function()
+    Evt.OnDeactivated(appid, function()
       disableConditionInChain(appid, info, true)
       info = nil
     end)
@@ -8661,7 +8664,7 @@ local function registerOpenRecent(app)
       _chainedCond = openRecentHotkey._chainedCond,
       idx = openRecentHotkey.idx
     }
-    onDeactivated(appid, function()
+    Evt.OnDeactivated(appid, function()
       disableConditionInChain(appid, info, true)
       info = nil
     end)
@@ -8721,7 +8724,7 @@ local function registerZoomHotkeys(app)
         _chainedCond = zoomHotkeys[hkID]._chainedCond,
         idx = zoomHotkeys[hkID].idx
       }
-      onDeactivated(appid, function()
+      Evt.OnDeactivated(appid, function()
         disableConditionInChain(appid, info, true)
         info = nil
       end)
@@ -8950,8 +8953,8 @@ local function registerNavigationForSettingsToolbar(app)
     end
   end)
   closeObserver:start()
-  stopOnDeactivated(appid, closeObserver, deleteFunc)
-  stopOnTerminated(appid, closeObserver, deleteFunc)
+  Evt.StopOnDeactivated(appid, closeObserver, deleteFunc)
+  Evt.StopOnTerminated(appid, closeObserver, deleteFunc)
 end
 
 local function registerObserverForSettingsMenuItem(app)
@@ -9012,7 +9015,7 @@ local function registerObserverForSettingsMenuItem(app)
     end
   end)
   observer:start()
-  stopOnDeactivated(app:bundleID() or app:name(), observer)
+  Evt.StopOnDeactivated(app:bundleID() or app:name(), observer)
 end
 
 -- fixme: menuItemSelected event seems to escape for menu item in right
@@ -9282,7 +9285,7 @@ local function registerForOpenSavePanel(app)
           end)
         end)
         observer:start()
-        onDestroy(winUI, function()
+        Evt.onDestroy(winUI, function()
           if observer then
             observer:stop() observer = nil
           end
@@ -9307,7 +9310,7 @@ local function registerForOpenSavePanel(app)
     end
 
     if dontSaveButton == nil and outlineRows == nil then return end
-    onDestroy(winUI,
+    Evt.onDestroy(winUI,
       function()
         for _, hotkey in ipairs(openSavePanelHotkeys) do
           disableConditionInChain(appid, hotkey, true)
@@ -9327,7 +9330,7 @@ local function registerForOpenSavePanel(app)
     hs.timer.doAfter(0.2, bind(actionFunc, element))
   end)
   observer:start()
-  stopOnDeactivated(appid, observer)
+  Evt.StopOnDeactivated(appid, observer)
 end
 
 -- bind `alt+?` hotkeys to select left menu bar items
@@ -9596,7 +9599,7 @@ local function altMenuBarItem(app, reinvokeKey)
     end
     if #itemTitles ~= #itemLocTitles then
       if appid == "com.tencent.xinWeChat" then
-        local exBundleID = versionLessThan("4")(app)
+        local exBundleID = Version.LessThan("4")(app)
             and "com.tencent.xinWeChat.WeChatAppEx" or "com.tencent.flue.WeChatAppEx"
         local newItemLocTitles = delocalizeMenuBarItems(itemTitles, exBundleID)
         if #itemTitles == #newItemLocTitles then
@@ -9749,7 +9752,7 @@ local function watchMenuBarItems(app)
       altMenuBarItem(app)
     end
   end)
-  onDeactivated(appid, function()
+  Evt.OnDeactivated(appid, function()
     StopExecContinuously(watcher)
     menuBarItemTitlesString.app[appid] = nil
   end)
@@ -9816,7 +9819,7 @@ local function registerObserverForMenuBarChange(app)
   observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
   observer:callback(bind(appMenuBarChangeCallback, app))
   observer:start()
-  stopOnDeactivated(appid, observer)
+  Evt.StopOnDeactivated(appid, observer)
 end
 
 
@@ -9841,8 +9844,8 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     return hasKey and not isForWindow and isBackground and not isPersistent
   end)
   if hasNotPersistentBackgroundHotkey then
-    onLaunched(appid, bind(registerRunningAppHotKeys, appid))
-    onTerminated(appid, bind(unregisterRunningAppHotKeys, appid))
+    Evt.OnLaunched(appid, bind(registerRunningAppHotKeys, appid))
+    Evt.OnTerminated(appid, bind(unregisterRunningAppHotKeys, appid))
   end
 end
 
@@ -9906,7 +9909,7 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     return hasKey and isForWindow and isBackground
   end)
   if hasDaemonAppWindowHotkey then
-    onRunning(appid, function(app)
+    Evt.OnRunning(appid, function(app)
       registerWinFiltersForDaemonApp(app, appConfig)
     end)
   end
@@ -9986,7 +9989,7 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
     return hasKey and isMenuBarMenu
   end)
   if hasMenuBarMenuHotkey then
-    onRunning(appid, function(app)
+    Evt.OnRunning(appid, function(app)
       registerObserversForMenuBarMenu(app, appConfig)
     end)
   end
@@ -10130,7 +10133,7 @@ end
 
 local specialNoPseudoWindowRules = {
   ["com.app.menubarx"] = function(app, defaultRule)
-    return versionLessThan("1.6.9")(app) and defaultRule()
+    return Version.LessThan("1.6.9")(app) and defaultRule()
   end
 }
 PseudoWindowDestroyObservers = {}
@@ -10193,7 +10196,7 @@ local function registerPseudoWindowDestroyObserver(app, roles)
             hs.timer.doAfter(appsWithoutWindowDelay[appid], oldCallback)
           end
         end
-        pseudoWindowObserver = onDestroy(
+        pseudoWindowObserver = Evt.onDestroy(
           results[1],
           pseudoWindowObserverCallback,
           hs.application.watcher.deactivated
@@ -10205,14 +10208,14 @@ local function registerPseudoWindowDestroyObserver(app, roles)
   observer:callback(observerCallback)
   observer:start()
   PseudoWindowDestroyObservers[appid] = observer
-  stopOnTerminated(appid, observer,
+  Evt.StopOnTerminated(appid, observer,
       function() PseudoWindowDestroyObservers[appid] = nil end)
 end
 
 AutoHideQuitWindowFilter = hs.window.filter.new(false)
 for _, configs in ipairs{appsWithoutWindow.hide, appsWithoutWindow.quit} do
   for appid, cfg in pairs(configs) do
-    onRunning(appid, function(app)
+    Evt.OnRunning(appid, function(app)
       AutoHideQuitWindowFilter:setAppFilter(app:name(), cfg)
     end)
   end
@@ -10230,7 +10233,7 @@ for _, configs in ipairs {
   appsWithNoPseudoWindow.quit,
 } do
   for appid, roles in pairs(configs) do
-    onRunning(appid, function(app)
+    Evt.OnRunning(appid, function(app)
       registerPseudoWindowDestroyObserver(app, roles)
     end)
   end
@@ -10295,7 +10298,7 @@ do
         end
       end
     end
-    onRunning("io.mountainduck", function(app)
+    Evt.OnRunning("io.mountainduck", function(app)
       for _, connection in ipairs(mountainDuckConfig.connections) do
         connectMountainDuckEntries(app, connection)
       end
@@ -10310,12 +10313,12 @@ end
 --       we use uielement observer instead
 if hs.application.pathForBundleID("barrier") ~= nil
     and hs.application.pathForBundleID("barrier") ~= "" then
-  onRunning("barrier", function(app)
+  Evt.OnRunning("barrier", function(app)
     local observer = uiobserver.new(app:pid())
     observer:addWatcher(toappui(app), uinotifications.windowCreated)
     observer:callback(function(_, winUI) winUI:asHSWindow():focus() end)
     observer:start()
-    stopOnTerminated(app:bundleID(), observer)
+    Evt.StopOnTerminated(app:bundleID(), observer)
   end)
 end
 
@@ -10344,7 +10347,7 @@ end
 WF.MRD = {}
 WF.MRD.Remote = {}
 if hs.application.nameForBundleID("com.microsoft.rdc.macos") == "Windows App" then
-  onRunning("com.microsoft.rdc.macos", function(app)
+  Evt.OnRunning("com.microsoft.rdc.macos", function(app)
     WF.MRD.Remote = { rejectTitles = {} }
     for _, title in ipairs {"Favorites", "Devices", "Apps",
       "Settings", "About", "Device View Options", "App View Options" } do
@@ -10452,7 +10455,7 @@ if frontApp then
   end
 end
 for appid, _ in pairs(remoteDesktopsMappingModifiers) do
-  onActivated(appid, function()
+  Evt.OnActivated(appid, function()
     if not RemoteDesktopModifierTapper:isEnabled() then
       RemoteDesktopModifierTapper:start()
     end
@@ -10482,8 +10485,8 @@ local function watchForRemoteDesktopWindow(app)
   observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
   observer:callback(bind(suspendHotkeysInRemoteDesktop, app))
   observer:start()
-  stopOnDeactivated(app:bundleID(), observer)
-  stopOnTerminated(app:bundleID(), observer)
+  Evt.StopOnDeactivated(app:bundleID(), observer)
+  Evt.StopOnTerminated(app:bundleID(), observer)
 end
 
 for _, appid in ipairs(ApplicationConfigs["suspendHotkeysInRemoteDesktop"] or {}) do
@@ -10492,8 +10495,8 @@ for _, appid in ipairs(ApplicationConfigs["suspendHotkeysInRemoteDesktop"] or {}
     watchForRemoteDesktopWindow(frontApp)
     suspendHotkeysInRemoteDesktop(frontApp)
   end
-  onActivated(appid, suspendHotkeysInRemoteDesktop)
-  onActivated(appid, watchForRemoteDesktopWindow)
+  Evt.OnActivated(appid, suspendHotkeysInRemoteDesktop)
+  Evt.OnActivated(appid, watchForRemoteDesktopWindow)
 end
 
 -- ## hold cmd+w to close window for iOS apps because it will quit them
@@ -10606,7 +10609,7 @@ function App_applicationCallback(appname, eventType, app)
     end
     local action = function()
       launchTimer = nil
-      for _, proc in ipairs(processesOnLaunched[appid] or {}) do
+      for _, proc in ipairs(Evt.ProcOnLaunched[appid] or {}) do
         proc(app)
       end
       FLAGS["NO_RESHOW_KEYBINDING"] = true
@@ -10638,7 +10641,7 @@ function App_applicationCallback(appname, eventType, app)
       FLAGS["SUSPEND"] = not FLAGS["SUSPEND_IN_REMOTE_DESKTOP"]
       FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] = nil
     end
-    for _, proc in ipairs(processesOnActivated[appid] or {}) do
+    for _, proc in ipairs(Evt.ProcOnActivated[appid] or {}) do
       proc(app)
     end
     mayRequireHoldToCloseWindow(app)
@@ -10652,34 +10655,34 @@ function App_applicationCallback(appname, eventType, app)
       FLAGS["MENUBAR_ITEMS_PREPARED"] = false
     end
   elseif eventType == hs.application.watcher.deactivated and appname ~= nil then
-    for _, proc in ipairs(processesOnDeactivated[appid] or {}) do
+    for _, proc in ipairs(Evt.ProcOnDeactivated[appid] or {}) do
       proc(app)
     end
-    processesOnDeactivated[appid] = nil
+    Evt.ProcOnDeactivated[appid] = nil
   elseif eventType == hs.application.watcher.terminated then
-    for _, proc in ipairs(processesOnDeactivated[appid] or {}) do
+    for _, proc in ipairs(Evt.ProcOnDeactivated[appid] or {}) do
       proc()
     end
-    processesOnDeactivated[appid] = nil
-    for _, proc in ipairs(processesOnTerminated[appid] or {}) do
+    Evt.ProcOnDeactivated[appid] = nil
+    for _, proc in ipairs(Evt.ProcOnTerminated[appid] or {}) do
       proc()
     end
-    processesOnTerminated[appid] = nil
+    Evt.ProcOnTerminated[appid] = nil
   elseif eventType == hs.application.watcher.deactivated and appname == nil then
-    for id, processes in pairs(processesOnDeactivated) do
+    for id, processes in pairs(Evt.ProcOnDeactivated) do
       if find(id) == nil then
         for _, proc in ipairs(processes) do
           proc()
         end
-        processesOnDeactivated[id] = nil
+        Evt.ProcOnDeactivated[id] = nil
       end
     end
-    for id, processes in pairs(processesOnTerminated) do
+    for id, processes in pairs(Evt.ProcOnTerminated) do
       if find(id) == nil then
         for _, proc in ipairs(processes) do
           proc()
         end
-        processesOnTerminated[id] = nil
+        Evt.ProcOnTerminated[id] = nil
       end
     end
   end
@@ -10707,7 +10710,7 @@ end
 -- some apps may terminate silently, which is unexpected
 AppsTerminateSilently = {}
 for _, appid in ipairs(ApplicationConfigs["terminateSilently"] or {}) do
-  onRunning(appid, function()
+  Evt.OnRunning(appid, function()
     ExecOnSilentQuit(appid, function() end)
   end)
 end
