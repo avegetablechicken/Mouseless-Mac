@@ -4763,7 +4763,7 @@ appHotKeyCallbacks = {
             AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.WebArea, 1)
         local image = getc(webarea, AX.Group, 1,
             AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Image, 1)
-        if Version.GreaterEqual("6.9.83") then
+        if Version.GreaterEqual("6.9.83")(win:application()) then
           return clickable(image)
         else
           return image ~= nil, image
