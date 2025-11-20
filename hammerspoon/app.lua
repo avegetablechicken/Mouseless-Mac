@@ -5541,7 +5541,7 @@ appHotKeyCallbacks = {
       kind = HK.MENUBAR,
       background = true,
       bindCondition = function(app)
-        if Version.GreaterEqual("6") then return false end
+        if Version.GreaterEqual("6")(app) then return false end
         -- the property update in command line is not working
         local _, ok = hs.execute(strfmt(
             "defaults read '%s' hotkeyKeyboardNav", app:bundleID()))
