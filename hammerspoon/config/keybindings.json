@@ -653,6 +653,10 @@
         "mods": "command",
         "key": "delete"
       },
+      "clearAllRecents": {
+        "mods": ["option", "command"],
+        "key": "delete"
+      },
       "newCall": {
         "mods": "command",
         "key": "N"
