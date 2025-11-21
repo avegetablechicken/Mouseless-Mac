@@ -2481,26 +2481,31 @@ appHotKeyCallbacks = {
     },
     ["view1"] = {
       message = T("Calls"),
+      bindCondition = function() return OS_VERSION >= OS.Tahoe end,
       windowFilter = FaceTime.WF.Main,
       fn = FaceTime.selectView(1)
     },
     ["view2"] = {
       message = T("Missed"),
+      bindCondition = function() return OS_VERSION >= OS.Tahoe end,
       windowFilter = FaceTime.WF.Main,
       fn = FaceTime.selectView(2)
     },
     ["view3"] = {
       message = T("Video"),
+      bindCondition = function() return OS_VERSION >= OS.Tahoe end,
       windowFilter = FaceTime.WF.Main,
       fn = FaceTime.selectView(3)
     },
     ["view4"] = {
       message = T("Voicemail"),
+      bindCondition = function() return OS_VERSION >= OS.Tahoe end,
       windowFilter = FaceTime.WF.Main,
       fn = FaceTime.selectView(4)
     },
     ["view5"] = {
       message = T("Spam"),
+      bindCondition = function() return OS_VERSION >= OS.Tahoe end,
       windowFilter = FaceTime.WF.Main,
       fn = FaceTime.selectView(5)
     }
