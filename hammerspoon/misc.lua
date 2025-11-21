@@ -247,8 +247,8 @@ local function loadKarabinerKeyBindings(filePath)
         modsRepr = modsRepr .. modifierSymbolMap[mod]
       end
     end
-    local key = item.key:upper() == HYPER and 'hyper' or item.key
-    key = modifierSymbolMap[key] or key:upper()
+    local key = item.key:upper() == HYPER
+        and modifierSymbolMap['hyper'] or item.key:upper()
     local idx = modsRepr .. key
     local msg
     if item.event ~= nil then
