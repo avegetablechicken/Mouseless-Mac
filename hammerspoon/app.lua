@@ -166,6 +166,16 @@ registerAppKeys()
 
 
 -- ## function utilities for process management on app switching
+local function getAppId(app)
+  if type(app) == 'string' then
+    return app
+  elseif app.application ~= nil then
+    return app:application():bundleID() or app:application():name()
+  else
+    return app:bundleID() or app:name()
+  end
+end
+
 local function isLSUIElement(appid)
   local info = hs.application.infoForBundleID(appid)
   return info and info.LSUIElement == true
@@ -206,7 +216,8 @@ Evt.OnActivated = function(appid, action)
 end
 
 Evt.ProcOnDeactivated = {}
-Evt.OnDeactivated = function(appid, action)
+Evt.OnDeactivated = function(app, action)
+  local appid = getAppId(app)
   if Evt.ProcOnDeactivated[appid] == nil then
     Evt.ProcOnDeactivated[appid] = {}
   end
@@ -214,7 +225,8 @@ Evt.OnDeactivated = function(appid, action)
 end
 
 Evt.ProcOnTerminated = {}
-Evt.OnTerminated = function(appid, action)
+Evt.OnTerminated = function(app, action)
+  local appid = getAppId(app)
   if isLSUIElement(appid) then
     ExecOnSilentQuit(appid, action)
     return
@@ -226,7 +238,8 @@ Evt.OnTerminated = function(appid, action)
   tinsert(Evt.ProcOnTerminated[appid], action)
 end
 
-Evt.StopOnDeactivated = function(appid, observer, action)
+Evt.StopOnDeactivated = function(app, observer, action)
+  local appid = getAppId(app)
   Evt.OnDeactivated(appid, function()
     observer:stop()
     if action then action(observer, appid) end
@@ -234,7 +247,8 @@ Evt.StopOnDeactivated = function(appid, observer, action)
   end)
 end
 
-Evt.StopOnTerminated = function(appid, observer, action)
+Evt.StopOnTerminated = function(app, observer, action)
+  local appid = getAppId(app)
   Evt.OnTerminated(appid, function()
     observer:stop()
     if action then action(observer, appid) end
@@ -265,11 +279,10 @@ Evt.onDestroy = function(element, callback, stopWhen, callbackOnStop)
     stopWhen = { stopWhen }
   end
   for _, ev in ipairs(stopWhen or {}) do
-    local appid = app:bundleID() or app:name()
     if ev == hs.application.watcher.deactivated then
-      Evt.StopOnDeactivated(appid, closeObserver, callbackOnStop and callback)
+      Evt.StopOnDeactivated(app, closeObserver, callbackOnStop and callback)
     elseif ev == hs.application.watcher.terminated then
-      Evt.StopOnTerminated(appid, closeObserver, callbackOnStop and callback)
+      Evt.StopOnTerminated(app, closeObserver, callbackOnStop and callback)
     end
   end
 
@@ -277,16 +290,6 @@ Evt.onDestroy = function(element, callback, stopWhen, callbackOnStop)
 end
 
 -- fetch localized string as hotkey message after activating the app
-local function getAppId(app)
-  if type(app) == 'string' then
-    return app
-  elseif app.application ~= nil then
-    return app:application():bundleID() or app:application():name()
-  else
-    return app:bundleID() or app:name()
-  end
-end
-
 local function TC(message, params, params2)
   local fn
   if message == "Hide" or message == "Quit" then
@@ -569,7 +572,7 @@ Finder.sidebarItemTitle = function(idx)
             end)
             observer:start()
             appBuf.finderSidebarItemObserver = observer
-            Evt.StopOnDeactivated(appid, appBuf.finderSidebarItemObserver)
+            Evt.StopOnDeactivated(app, appBuf.finderSidebarItemObserver)
           end
           return header .. ' > ' .. itemTitle
         end
@@ -961,7 +964,7 @@ Music.viewTitle = function(index)
         end)
         observer:start()
         appBuf.musicSidebarItemObserver = observer
-        Evt.StopOnDeactivated(appid, appBuf.musicSidebarItemObserver)
+        Evt.StopOnDeactivated(app, appBuf.musicSidebarItemObserver)
       end
       return getc(row, AX.Cell, 1, AX.StaticText, 1).AXValue
     end
@@ -2822,7 +2825,7 @@ appHotKeyCallbacks = {
           end
         end)
         observer:start()
-        Evt.StopOnDeactivated(app:bundleID(), observer)
+        Evt.StopOnDeactivated(app, observer)
       end
     }
   },
@@ -3859,7 +3862,7 @@ appHotKeyCallbacks = {
               end
             end,
             function() leftClickAndRestore(menuItem, app) end)
-            Evt.StopOnDeactivated(app:bundleID(), timer)
+            Evt.StopOnDeactivated(app, timer)
           end
           return
         end
@@ -7505,7 +7508,7 @@ local function registerMenuBarObserverForHotkeyValidity(app)
       end)
       observer:start()
       MenuBarMenuSelectedObservers[appid] = observer
-      Evt.StopOnTerminated(appid, observer, function()
+      Evt.StopOnTerminated(app, observer, function()
         MenuBarMenuSelectedObservers[appid] = nil
       end)
       return menuBarItems
@@ -7867,10 +7870,10 @@ registerInAppHotKeys = function(app)
     end
   end
 
-  Evt.OnDeactivated(appid, function()
+  Evt.OnDeactivated(app, function()
     unregisterInAppHotKeys(appid)
   end)
-  Evt.OnTerminated(appid, function()
+  Evt.OnTerminated(app, function()
     unregisterInAppHotKeys(appid, true)
     ActivatedAppConditionChain[appid] = nil
   end)
@@ -8205,7 +8208,7 @@ local function registerSingleWinFilterForApp(app, filter, retry)
     FocusedWindowObservers[appid] = {}
   end
   FocusedWindowObservers[appid][filter] = observer
-  Evt.StopOnDeactivated(appid, observer, function()
+  Evt.StopOnDeactivated(app, observer, function()
     FocusedWindowObservers[appid][filter] = nil
   end)
 end
@@ -8380,7 +8383,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter, retry)
     DaemonAppFocusedWindowObservers[appid] = {}
   end
   DaemonAppFocusedWindowObservers[appid][filter] = observer
-  Evt.StopOnTerminated(appid, observer, function()
+  Evt.StopOnTerminated(app, observer, function()
     DaemonAppFocusedWindowObservers[appid][filter] = nil
   end)
 end
@@ -8510,7 +8513,7 @@ registerInMenuHotkeys = function(app)
           end
           closeObserver:callback(callback)
           closeObserver:start()
-          Evt.StopOnTerminated(appid, closeObserver, function()
+          Evt.StopOnTerminated(app, closeObserver, function()
             callback(closeObserver)
           end)
         end
@@ -8541,7 +8544,7 @@ local function registerObserversForMenuBarMenu(app, appConfig)
         observer:callback(bind(registerInMenuHotkeys, app))
         observer:start()
         MenuBarMenuObservers[appid] = observer
-        Evt.StopOnTerminated(appid, observer, function()
+        Evt.StopOnTerminated(app, observer, function()
           MenuBarMenuObservers[appid] = nil
         end)
       end
@@ -8600,7 +8603,7 @@ local function remapPreviousTab(app, menuItems)
       _chainedCond = remapPreviousTabHotkey._chainedCond,
       idx = remapPreviousTabHotkey.idx
     }
-    Evt.OnDeactivated(appid, function()
+    Evt.OnDeactivated(app, function()
       disableConditionInChain(appid, info, true)
       info = nil
     end)
@@ -8677,7 +8680,7 @@ local function registerOpenRecent(app)
       _chainedCond = openRecentHotkey._chainedCond,
       idx = openRecentHotkey.idx
     }
-    Evt.OnDeactivated(appid, function()
+    Evt.OnDeactivated(app, function()
       disableConditionInChain(appid, info, true)
       info = nil
     end)
@@ -8737,7 +8740,7 @@ local function registerZoomHotkeys(app)
         _chainedCond = zoomHotkeys[hkID]._chainedCond,
         idx = zoomHotkeys[hkID].idx
       }
-      Evt.OnDeactivated(appid, function()
+      Evt.OnDeactivated(app, function()
         disableConditionInChain(appid, info, true)
         info = nil
       end)
@@ -8966,8 +8969,8 @@ local function registerNavigationForSettingsToolbar(app)
     end
   end)
   closeObserver:start()
-  Evt.StopOnDeactivated(appid, closeObserver, deleteFunc)
-  Evt.StopOnTerminated(appid, closeObserver, deleteFunc)
+  Evt.StopOnDeactivated(app, closeObserver, deleteFunc)
+  Evt.StopOnTerminated(app, closeObserver, deleteFunc)
 end
 
 local function registerObserverForSettingsMenuItem(app)
@@ -9028,7 +9031,7 @@ local function registerObserverForSettingsMenuItem(app)
     end
   end)
   observer:start()
-  Evt.StopOnDeactivated(app:bundleID() or app:name(), observer)
+  Evt.StopOnDeactivated(app, observer)
 end
 
 -- fixme: menuItemSelected event seems to escape for menu item in right
@@ -9343,7 +9346,7 @@ local function registerForOpenSavePanel(app)
     hs.timer.doAfter(0.2, bind(actionFunc, element))
   end)
   observer:start()
-  Evt.StopOnDeactivated(appid, observer)
+  Evt.StopOnDeactivated(app, observer)
 end
 
 -- bind `alt+?` hotkeys to select left menu bar items
@@ -9765,7 +9768,7 @@ local function watchMenuBarItems(app)
       altMenuBarItem(app)
     end
   end)
-  Evt.OnDeactivated(appid, function()
+  Evt.OnDeactivated(app, function()
     StopExecContinuously(watcher)
     menuBarItemTitlesString.app[appid] = nil
   end)
@@ -9832,7 +9835,7 @@ local function registerObserverForMenuBarChange(app)
   observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
   observer:callback(bind(appMenuBarChangeCallback, app))
   observer:start()
-  Evt.StopOnDeactivated(appid, observer)
+  Evt.StopOnDeactivated(app, observer)
 end
 
 
@@ -10221,7 +10224,7 @@ local function registerPseudoWindowDestroyObserver(app, roles)
   observer:callback(observerCallback)
   observer:start()
   PseudoWindowDestroyObservers[appid] = observer
-  Evt.StopOnTerminated(appid, observer,
+  Evt.StopOnTerminated(app, observer,
       function() PseudoWindowDestroyObservers[appid] = nil end)
 end
 
@@ -10331,7 +10334,7 @@ if hs.application.pathForBundleID("barrier") ~= nil
     observer:addWatcher(toappui(app), uinotifications.windowCreated)
     observer:callback(function(_, winUI) winUI:asHSWindow():focus() end)
     observer:start()
-    Evt.StopOnTerminated(app:bundleID(), observer)
+    Evt.StopOnTerminated(app, observer)
   end)
 end
 
@@ -10498,8 +10501,8 @@ local function watchForRemoteDesktopWindow(app)
   observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
   observer:callback(bind(suspendHotkeysInRemoteDesktop, app))
   observer:start()
-  Evt.StopOnDeactivated(app:bundleID(), observer)
-  Evt.StopOnTerminated(app:bundleID(), observer)
+  Evt.StopOnDeactivated(app, observer)
+  Evt.StopOnTerminated(app, observer)
 end
 
 for _, appid in ipairs(ApplicationConfigs["suspendHotkeysInRemoteDesktop"] or {}) do
