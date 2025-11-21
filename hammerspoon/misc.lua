@@ -280,9 +280,10 @@ local function loadKarabinerKeyBindings(filePath)
   return keyBindings
 end
 
+local modsInHSOrder = tmap(ModsInHSOrder, toshort)
 local function menuItemHotkeyIdx(mods, key)
   local idx = ""
-  for _, mod in ipairs{Mod.Cmd.Short, Mod.Alt.Short, Mod.Ctrl.Short, Mod.Shift.Short} do
+  for _, mod in ipairs(modsInHSOrder) do
     if tcontain(mods, mod) then
       idx = idx .. tosymbol(mod)
     end
