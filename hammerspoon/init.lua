@@ -96,7 +96,7 @@ local function loadKeybindings(filePath)
   KeybindingConfigs = hs.json.read(filePath)
   for k, hp in pairs(KeybindingConfigs.hyper or {}) do
     if type(hp) == "string" then
-      if tcontain({"fn", "shift", "option", "control", "command"}, hp) then
+      if tcontain({"shift", "option", "control", "command"}, hp) then
         hp = {hp}
       end
     end
@@ -106,7 +106,6 @@ local function loadKeybindings(filePath)
       if tcontain(hp, "control") then modsRepr = modsRepr .. "⌃" end
       if tcontain(hp, "option") then modsRepr = modsRepr .. "⌥" end
       if tcontain(hp, "shift") then modsRepr = modsRepr .. "⇧" end
-      if tcontain(hp, "fn") then modsRepr = "fn" .. modsRepr end
       KeybindingConfigs.hyper[k] = modsRepr
     end
   end
