@@ -50,7 +50,7 @@ PrependPasteboardTapper = hs.eventtap.new(
 { hs.eventtap.event.types.keyDown, hs.eventtap.event.types.keyUp },
 function(ev)
   if ev:getKeyCode() ~= hs.keycodes.map["c"]
-      or not ev:getFlags():containExactly({"cmd"}) then
+      or not ev:getFlags():containExactly({Mod.Cmd.Short}) then
     return false
   end
   local nowKeyDown = ev:getType() == hs.eventtap.event.types.keyDown
@@ -188,36 +188,38 @@ function HSKeybindings:reset()
   self.appHotkeysLoaded = false
 end
 
-local modifiersShowReverseOrder =
-{
-  "fn",
-  "command", "cmd",
-  "shift",
-  "option", "alt",
-  "control", "ctrl",
-  "trackpad:bottom-right",
-  "trackpad:bottom-left",
-  "trackpad:top-right",
-  "trackpad:top-left",
-}
-
-local modifierSymbols = {"🌐︎", "⌘", "⇧", "⌥", "⌃", "✧", "⌟", "⌞", "⌝", "⌜" }
-
 local modifierSymbolMap = {
-  command = "⌘",
-  control = "⌃",
-  option = "⌥",
-  shift = "⇧",
-  cmd = "⌘",
-  ctrl = "⌃",
-  alt = "⌥",
-  fn = "🌐︎",
   hyper = "✧",
   ["trackpad:top-left"] = "⌜",
   ["trackpad:top-right"] = "⌝",
   ["trackpad:bottom-left"] = "⌞",
   ["trackpad:bottom-right"] = "⌟",
 }
+
+local function tosymbol2(mod)
+  return modifierSymbolMap[mod] or tosymbol(mod)
+end
+
+local modifiersShowReverseOrder =
+{
+  Mod.Fn.Long,
+  Mod.Cmd.Long, Mod.Cmd.Short,
+  Mod.Shift.Long,
+  Mod.Alt.Long, Mod.Alt.Short,
+  Mod.Ctrl.Long, Mod.Ctrl.Short,
+  "trackpad:bottom-right",
+  "trackpad:bottom-left",
+  "trackpad:top-right",
+  "trackpad:top-left",
+}
+
+local modifierSymbols = { "✧" }
+foreach(modifiersShowReverseOrder, function(mod)
+  local symbol = tosymbol2(mod)
+  if tindex(modifierSymbols, symbol) == nil then
+    tinsert(modifierSymbols, symbol)
+  end
+end)
 
 local keySymbolMap = {
   ESCAPE = "⎋",
@@ -244,7 +246,7 @@ local function loadKarabinerKeyBindings(filePath)
     local modsRepr = ""
     for _, mod in ipairs(modifiersShowReverseOrder) do
       if tcontain(mods, mod) then
-        modsRepr = modsRepr .. modifierSymbolMap[mod]
+        modsRepr = modsRepr .. tosymbol2(mod)
       end
     end
     local key = item.key:upper() == HYPER
@@ -280,9 +282,9 @@ end
 
 local function menuItemHotkeyIdx(mods, key)
   local idx = ""
-  for _, mod in ipairs{"cmd", "alt", "ctrl", "shift"} do
+  for _, mod in ipairs{Mod.Cmd.Short, Mod.Alt.Short, Mod.Ctrl.Short, Mod.Shift.Short} do
     if tcontain(mods, mod) then
-      idx = idx .. modifierSymbolMap[mod]
+      idx = idx .. tosymbol(mod)
     end
   end
   if key:byte(1) <= 32 or key:byte(1) > 127 then
@@ -404,7 +406,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
     elseif OS_VERSION >= OS.Sequoia
         and (menuItem.AXTitle == 'Move & Resize'
         or delocalizedMenuItem(menuItem.AXTitle, appid, true) == 'Move & Resize')
-        and subItem.AXMenuItemCmdModifiers[1] ~= 'cmd' then
+        and subItem.AXMenuItemCmdModifiers[1] ~= Mod.Cmd.Short then
       idx = tindex(windowMenuItemsSinceSequoia2, subItem.AXTitle)
       if idx == nil then
         local delocTitle = delocalizedMenuItem(subItem.AXTitle, appid)
@@ -709,7 +711,7 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
     else
       for _, mod in ipairs(modifiersShowReverseOrder) do
         if evFlags[mod] then
-          evFlagsRepr = modifierSymbolMap[mod] .. evFlagsRepr
+          evFlagsRepr = tosymbol2(mod) .. evFlagsRepr
         end
       end
     end
@@ -1516,10 +1518,10 @@ function()
     local key = keySymbolInvMap[choice.key] or choice.key
     if choice.modal == HK_MODAL.REGULAR then
       if choice.source == HK_SOURCE.APP then
-        hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', 'fn'), key,
+        hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', Mod.Fn.Long), key,
                               nil, hs.application.frontmostApplication())
       else
-        hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', 'fn'), key)
+        hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', Mod.Fn.Long), key)
       end
     elseif choice.modal == HK_MODAL.HYPER then
       local modal = tfind(HyperModalList, function(modal)
@@ -1552,16 +1554,7 @@ function()
       end
       key = key:sub(1, key:len() / 2)
       if tcontain({ "⌘", "⌥", "⌃", "⇧" }, key) then
-        local flag
-        if key == "⌘" then
-          flag = 'cmd'
-        elseif key == "⌥" then
-          flag = 'alt'
-        elseif key == "⌃" then
-          flag = 'ctrl'
-        elseif key == "⇧" then
-          flag = 'shift'
-        end
+        local flag = toshort(key)
         local event = hs.eventtap.event.newEvent()
         event:setType(hs.eventtap.event.types.flagsChanged)
         event:setFlags({ [flag] = true }):post()
@@ -1571,7 +1564,7 @@ function()
       elseif mods == "" then
         key = keySymbolInvMap[key] or key
         local keycode = hs.keycodes.map[key]
-        mods = key:lower():match('^f%d+$') and 'fn' or ''
+        mods = key:lower():match('^f%d+$') and Mod.Fn.Long or ''
         hs.eventtap.event.newKeyEvent(mods, keycode, true):post()
         hs.eventtap.event.newKeyEvent(mods, keycode, false):post()
         hs.eventtap.event.newKeyEvent(mods, keycode, true):post()
@@ -1580,12 +1573,11 @@ function()
         key = keySymbolInvMap[key] or key
         local keycode = hs.keycodes.map[key]
         local modsList = {}
-        if mods:find("⌘") then tinsert(modsList, 'cmd') end
-        if mods:find("⌥") then tinsert(modsList, 'alt') end
-        if mods:find("⌃") then tinsert(modsList, 'ctrl') end
-        if mods:find("⇧") then tinsert(modsList, 'shift') end
+        for _, mod in ipairs({ "⌘", "⌥", "⌃", "⇧" }) do
+          if mods:find(mod) then tinsert(modsList, toshort(mod)) end
+        end
         if key:lower():match('^f%d+$') then
-          tinsert(modsList, 'fn')
+          tinsert(modsList, Mod.Fn.Long)
         end
         hs.eventtap.event.newKeyEvent(modsList, keycode, true):post()
         hs.eventtap.event.newKeyEvent(modsList, keycode, false):post()

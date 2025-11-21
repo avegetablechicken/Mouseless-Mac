@@ -90,22 +90,79 @@ uinotifications = hs.axuielement.observer.notifications
 
 hs.window.filter.ignoreAlways["com.apple.WebKit.WebContent"] = true
 
+Mod = {
+  Cmd = {
+    Long = 'command',
+    Short = 'cmd',
+    Symbol = '⌘'
+  },
+  Ctrl = {
+    Long = 'control',
+    Short = 'ctrl',
+    Symbol = '⌃'
+  },
+  Alt = {
+    Long = 'option',
+    Short = 'alt',
+    Symbol = '⌥'
+  },
+  Shift = {
+    Long = 'shift',
+    Short = 'shift',
+    Symbol = '⇧'
+  },
+  Fn = {
+    Long = 'fn',
+    Short = 'fn',
+    Symbol = '🌐︎'
+  }
+}
+
+function tolong(mod)
+  for _, tbl in pairs(Mod) do
+    if mod == tbl.Short or mod == tbl.Symbol then
+      return tbl.Long
+    end
+  end
+  return mod
+end
+
+function toshort(mod)
+  for _, tbl in pairs(Mod) do
+    if mod == tbl.Long or mod == tbl.Symbol then
+      return tbl.Short
+    end
+  end
+  return mod
+end
+
+function tosymbol(mod)
+  for _, tbl in pairs(Mod) do
+    if mod == tbl.Long or mod == tbl.Short then
+      return tbl.Symbol
+    end
+  end
+  return mod
+end
+
 HYPER = nil
 KeybindingConfigs = nil
+ModsInHSOrder = { Mod.Cmd.Long, Mod.Ctrl.Long, Mod.Alt.Long, Mod.Shift.Long }
 local function loadKeybindings(filePath)
   KeybindingConfigs = hs.json.read(filePath)
   for k, hp in pairs(KeybindingConfigs.hyper or {}) do
     if type(hp) == "string" then
-      if tcontain({"shift", "option", "control", "command"}, hp) then
+      if tcontain(ModsInHSOrder, hp) then
         hp = {hp}
       end
     end
     if type(hp) ~= "string" then
       local modsRepr = ""
-      if tcontain(hp, "command") then modsRepr = "⌘" end
-      if tcontain(hp, "control") then modsRepr = modsRepr .. "⌃" end
-      if tcontain(hp, "option") then modsRepr = modsRepr .. "⌥" end
-      if tcontain(hp, "shift") then modsRepr = modsRepr .. "⇧" end
+      for _, mod in ipairs(ModsInHSOrder) do
+        if tcontain(hp, mod) then
+          modsRepr = modsRepr .. tosymbol(mod)
+        end
+      end
       KeybindingConfigs.hyper[k] = modsRepr
     end
   end
@@ -156,31 +213,26 @@ tinsert(HyperModalList, HyperModal)
 
 -- get hotkey idx like how Hammerspoon does that
 function hotkeyIdx(mods, key)
-  local idx = key:upper()
+  key = key:upper()
+  local idx = ""
   if type(mods) == 'string' then
-    if mods == "shift" then idx = "⇧" .. idx
-    elseif mods == "option" or mods == "alt" then idx = "⌥" .. idx
-    elseif mods == "control" or mods == "ctrl" then idx = "⌃" .. idx
-    elseif mods == "command" or mods == "cmd" then idx = "⌘" .. idx
-    else
-      if mods:find("⇧") then idx = "⇧" .. idx end
-      if mods:find("⌥") then idx = "⌥" .. idx end
-      if mods:find("⌃") then idx = "⌃" .. idx end
-      if mods:find("⌘") then idx = "⌘" .. idx end
+    for _, mod in ipairs(ModsInHSOrder) do
+      if mods == mod or mods == toshort(mod) then
+        return tosymbol(mod) .. key
+      end
+    end
+    for _, mod in ipairs(ModsInHSOrder) do
+      mod = tosymbol(mod)
+      if mods:find(mod) then idx = idx .. mod end
     end
   else
-    if tcontain(mods, "shift") then idx = "⇧" .. idx end
-    if tcontain(mods, "option") or tcontain(mods, "alt") then
-      idx = "⌥" .. idx
-    end
-    if tcontain(mods, "control") or tcontain(mods, "ctrl") then
-      idx = "⌃" .. idx
-    end
-    if tcontain(mods, "command") or tcontain(mods, "cmd") then
-      idx = "⌘" .. idx
+    for _, mod in ipairs(ModsInHSOrder) do
+      if tcontain(mods, mod) or tcontain(mods, toshort(mod)) then
+        idx = idx .. tosymbol(mod)
+      end
     end
   end
-  return idx
+  return idx .. key
 end
 
 -- send key strokes to the system. but if the key binding is registered, disable it temporally

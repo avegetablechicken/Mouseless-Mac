@@ -182,28 +182,11 @@ local function findMenuItemByKeyBindingImpl(mods, key, menuItem)
   end
 end
 
-local modifierSymbolMap1 = {
-  command = 1 << 3,
-  control = 1 << 2,
-  option = 1 << 1,
-  shift = 1 << 0,
-  cmd = 1 << 3,
-  ctrl = 1 << 2,
-  alt = 1 << 1,
+local modifierBinary = {
   ["⌘"] = 1 << 3,
   ["⌃"] = 1 << 2,
   ["⌥"] = 1 << 1,
   ["⇧"] = 1 << 0
-}
-
-local modifierSymbolMap2 = {
-  command = 'cmd',
-  control = 'ctrl',
-  option = 'alt',
-  ["⌘"] = 'cmd',
-  ["⌃"] = 'ctrl',
-  ["⌥"] = 'alt',
-  ["⇧"] = 'shift'
 }
 
 local function getModsRepr(mods, likelyToFind)
@@ -216,8 +199,8 @@ local function getModsRepr(mods, likelyToFind)
     if type(mods) == 'string' then
       for i=1,utf8.len(mods) do
         local mod = mods:sub(i*3-2, i*3)
-        local v = modifierSymbolMap1[mod]
-        if mod == "⌘" then
+        local v = modifierBinary[tosymbol(mod)]
+        if mod == '⌘' then
           modsRepr = modsRepr &~ v
         else
           modsRepr = modsRepr | v
@@ -225,8 +208,8 @@ local function getModsRepr(mods, likelyToFind)
       end
     else
       for _, mod in ipairs(mods) do
-        local v = modifierSymbolMap1[mod]
-        if mod == "command" or mod == 'cmd' then
+        local v = modifierBinary[tosymbol(mod)]
+        if mod == Mod.Cmd.Long or mod == Mod.Cmd.Short then
           modsRepr = modsRepr &~ v
         else
           modsRepr = modsRepr | v
@@ -239,11 +222,11 @@ local function getModsRepr(mods, likelyToFind)
     if type(mods) == 'string' then
       for i = 1, utf8.len(mods) do
         local mod = mods:sub(i * 3 - 2, i * 3)
-        tinsert(newMods, modifierSymbolMap2[mod] or mod)
+        tinsert(newMods, toshort(mod))
       end
     else
       for _, mod in ipairs(mods) do
-        tinsert(newMods, modifierSymbolMap2[mod] or mod)
+        tinsert(newMods, toshort(mod))
       end
     end
     return newMods
@@ -4677,10 +4660,10 @@ MENUBAR_MANAGER_SHOW = {
       hs.mouse.absolutePosition(point)
 
       hs.eventtap.event.newMouseEvent(
-          hs.eventtap.event.types.leftMouseDown, point, {"alt"}):post()
+          hs.eventtap.event.types.leftMouseDown, point, {Mod.Alt.Short}):post()
       hs.timer.usleep(0.05 * 1000000)
       hs.eventtap.event.newMouseEvent(
-          hs.eventtap.event.types.leftMouseUp, point, {"alt"}):post()
+          hs.eventtap.event.types.leftMouseUp, point, {Mod.Alt.Short}):post()
 
       hs.mouse.absolutePosition(oldPos)
     end
@@ -4790,10 +4773,10 @@ MENUBAR_MANAGER_SHOW = {
       hs.mouse.absolutePosition(point)
 
       hs.eventtap.event.newMouseEvent(
-          hs.eventtap.event.types.leftMouseDown, point, {"alt"}):post()
+          hs.eventtap.event.types.leftMouseDown, point, {Mod.Alt.Short}):post()
       hs.timer.usleep(0.05 * 1000000)
       hs.eventtap.event.newMouseEvent(
-          hs.eventtap.event.types.leftMouseUp, point, {"alt"}):post()
+          hs.eventtap.event.types.leftMouseUp, point, {Mod.Alt.Short}):post()
 
       hs.mouse.absolutePosition(oldPos)
     end

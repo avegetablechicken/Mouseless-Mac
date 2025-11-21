@@ -8,6 +8,8 @@ local log = hs.logger.new('hotkey', 'info')
 
 local module   = {}
 
+local modsShort = { Mod.Cmd.Short, Mod.Ctrl.Short, Mod.Alt.Short, Mod.Shift.Short }
+
 local function getIndex(keycode) -- key for hotkeys table
   if HYPER and keycode == hs.keycodes.map[HYPER] then return "✧" end
   local key = hs.keycodes.map[keycode]
@@ -15,65 +17,36 @@ local function getIndex(keycode) -- key for hotkeys table
   return key
 end
 
-local modifiers = {
-  command = "⌘",
-  control = "⌃",
-  option = "⌥",
-  shift = "⇧",
-  cmd = "⌘",
-  ctrl = "⌃",
-  alt = "⌥",
-  fn = "🌐︎",
-  hyper = "✧"
-}
-
 function module:_install(mods, key)
   if key == nil or key == "" then
     key = mods
     mods = nil
   end
   if mods == nil or mods == "" then
-    if key == 'cmd' or key == 'command' or key == '⌘' then
-      self.key = 'cmd'
-      self.idx = '⌘⌘'
-    elseif key == 'ctrl' or key == 'control' or key == '⌃' then
-      self.key = 'ctrl'
-      self.idx = '⌃⌃'
-    elseif key == 'alt' or key == 'option' or key == '⌥' then
-      self.key = 'alt'
-      self.idx = '⌥⌥'
-    elseif key == 'shift' or key == '⇧' then
-      self.key = 'shift'
-      self.idx = '⇧⇧'
-    else
-      self.key = hs.keycodes.map[key]
-      local keyRepr = getIndex(self.key)
-      self.idx = keyRepr .. keyRepr
-      if key:lower():match('^f%d+$') then
-        self.mods = { 'fn' }
+    for _, mod in ipairs(modsShort) do
+      if key == mod or key == tolong(mod) or key == tosymbol(mod) then
+        self.key = mod
+        self.idx = tosymbol(mod) .. tosymbol(mod)
+        return
       end
+    end
+    self.key = hs.keycodes.map[key]
+    local keyRepr = getIndex(self.key)
+    self.idx = keyRepr .. keyRepr
+    if key:lower():match('^f%d+$') then
+      self.mods = { Mod.Fn.Long }
     end
   else
     if type(mods) == 'string' then mods = { mods } end
     local idx, modsRepr = "", {}
-    if tcontain(mods, "command") then
-      idx = modifiers.command
-      tinsert(modsRepr, 'cmd')
-    end
-    if tcontain(mods, "control") then
-      idx = idx .. modifiers.control
-      tinsert(modsRepr, 'ctrl')
-    end
-    if tcontain(mods, "option") then
-      idx = idx .. modifiers.option
-      tinsert(modsRepr, 'alt')
-    end
-    if tcontain(mods, "shift") then
-      idx = idx .. modifiers.shift
-      tinsert(modsRepr, 'shift')
+    for _, mod in ipairs(modsShort) do
+      if tcontain(mods, tolong(mod)) then
+        idx = idx .. mod
+        tinsert(modsRepr, toshort(mod))
+      end
     end
     if key:lower():match('^f%d+$') then
-      tinsert(modsRepr, 'fn')
+      tinsert(modsRepr, Mod.Fn.Long)
     end
     self.key = hs.keycodes.map[key]
     self.mods = modsRepr
@@ -98,7 +71,7 @@ end
 
 -- verify that *only* the **KEY** key flag is being pressed
 function module:_onlyTargetKey(ev)
-  if tcontain({'cmd', 'ctrl', 'alt', 'shift'}, self.key) then
+  if tcontain(modsShort, self.key) then
     return ev:getFlags():containExactly({self.key})
   else
     return ev:getFlags():containExactly(self.mods) and ev:getKeyCode() == self.key
@@ -121,7 +94,7 @@ function module:_new(mods, key, msg, func)
       self.timeFirstKeyDown, self.firstDown, self.secondDown = 0, false, false
     end
 
-    if tcontain({ 'cmd', 'ctrl', 'alt', 'shift' }, self.key) then
+    if tcontain(modsShort, self.key) then
       if ev:getType() == events.flagsChanged then
         if noFlags(ev) and self.firstDown and self.secondDown then -- **KEY** up and we've seen two, so do action
           if self.action then self.action() end

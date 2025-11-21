@@ -448,18 +448,18 @@ end
 
 local function press(pressable)
   local flags = hs.eventtap.checkKeyboardModifiers()
-  if not flags['ctrl'] then
+  if not flags[Mod.Ctrl.Short] then
     pressable:performAction(AX.Press)
   else
-    flags['ctrl'] = nil
+    flags[Mod.Ctrl.Short] = nil
     local tapper
     tapper = hs.eventtap.new({ hs.eventtap.event.types.flagsChanged },
       function(event)
         tapper:stop()
         hs.timer.doAfter(0.01, function()
           local newFlags = hs.eventtap.checkKeyboardModifiers()
-          if newFlags['ctrl'] then
-            newFlags['ctrl'] = nil
+          if newFlags[Mod.Ctrl.Short] then
+            newFlags[Mod.Ctrl.Short] = nil
             event:setFlags(newFlags):post()
             hs.timer.doAfter(0.01, function()
               pressable:performAction(AX.Press)
@@ -608,7 +608,7 @@ Finder.openSidebarItem = function(cell, win)
     app:selectMenuItem({ go, itemTitle })
   else
     local flags = hs.eventtap.checkKeyboardModifiers()
-    if not (flags['cmd'] or flags['alt'] or flags['ctrl']) then
+    if not (flags[Mod.Cmd.Short] or flags[Mod.Alt.Short] or flags[Mod.Ctrl.Short]) then
       cell:performAction(AX.Open)
     else
       local tapper
@@ -617,7 +617,7 @@ Finder.openSidebarItem = function(cell, win)
         tapper:stop()
         hs.timer.doAfter(0.01, function()
           local newFlags = hs.eventtap.checkKeyboardModifiers()
-          if newFlags['cmd'] or newFlags['alt'] or newFlags['ctrl'] then
+          if newFlags[Mod.Cmd.Short] or newFlags[Mod.Alt.Short] or newFlags[Mod.Ctrl.Short] then
             event:setFlags({}):post()
             hs.timer.doAfter(0.01, function()
               cell:performAction(AX.Open)
@@ -1982,16 +1982,16 @@ local function parsePlistKeyBinding(mods, key)
   key = hs.keycodes.map[key]
   local modList = {}
   if mods >= (1 << 17) then
-    if mods >= (1 << 23) then tinsert(modList, "fn") end
-    if (mods % (1 << 23)) >= (1 << 20) then tinsert(modList, "command") end
-    if (mods % (1 << 20)) >= (1 << 19) then tinsert(modList, "option") end
-    if (mods % (1 << 19)) >= (1 << 18) then tinsert(modList, "control") end
-    if (mods % (1 << 18)) >= (1 << 17) then tinsert(modList, "shift") end
+    if mods >= (1 << 23) then tinsert(modList, Mod.Fn) end
+    if (mods % (1 << 23)) >= (1 << 20) then tinsert(modList, Mod.Cmd.Long) end
+    if (mods % (1 << 20)) >= (1 << 19) then tinsert(modList, Mod.Alt.Long) end
+    if (mods % (1 << 19)) >= (1 << 18) then tinsert(modList, Mod.Ctrl.Long) end
+    if (mods % (1 << 18)) >= (1 << 17) then tinsert(modList, Mod.Shift.Long) end
   else
-    if mods >= (1 << 12) then tinsert(modList, "control") end
-    if (mods % (1 << 12)) >= (1 << 11) then tinsert(modList, "option") end
-    if (mods % (1 << 11)) >= (1 << 9) then tinsert(modList, "shift") end
-    if (mods % (1 << 9)) >= (1 << 8) then tinsert(modList, "command") end
+    if mods >= (1 << 12) then tinsert(modList, Mod.Ctrl.Long) end
+    if (mods % (1 << 12)) >= (1 << 11) then tinsert(modList, Mod.Alt.Long) end
+    if (mods % (1 << 11)) >= (1 << 9) then tinsert(modList, Mod.Shift.Long) end
+    if (mods % (1 << 9)) >= (1 << 8) then tinsert(modList, Mod.Cmd.Long) end
   end
   return modList, key
 end
@@ -2000,16 +2000,16 @@ end
 local function dumpPlistKeyBinding(mode, mods, key)
   local modIdx = 0
   if mode == 1 then
-    if tcontain(mods, "command") then modIdx = (1 << 8) end
-    if tcontain(mods, "option") then modIdx = modIdx + (1 << 11) end
-    if tcontain(mods, "control") then modIdx = modIdx + (1 << 12) end
-    if tcontain(mods, "shift") then modIdx = modIdx + (1 << 9) end
+    if tcontain(mods, Mod.Cmd.Long) then modIdx = (1 << 8) end
+    if tcontain(mods, Mod.Alt.Long) then modIdx = modIdx + (1 << 11) end
+    if tcontain(mods, Mod.Ctrl.Long) then modIdx = modIdx + (1 << 12) end
+    if tcontain(mods, Mod.Shift.Long) then modIdx = modIdx + (1 << 9) end
   elseif mode == 2 then
     if key:lower():match("^f(%d+)$") then modIdx = 1 << 23 end
-    if tcontain(mods, "command") then modIdx = modIdx + (1 << 20) end
-    if tcontain(mods, "option") then modIdx = modIdx + (1 << 19) end
-    if tcontain(mods, "control") then modIdx = modIdx + (1 << 18) end
-    if tcontain(mods, "shift") then modIdx = modIdx + (1 << 17) end
+    if tcontain(mods, Mod.Cmd.Long) then modIdx = modIdx + (1 << 20) end
+    if tcontain(mods, Mod.Alt.Long) then modIdx = modIdx + (1 << 19) end
+    if tcontain(mods, Mod.Ctrl.Long) then modIdx = modIdx + (1 << 18) end
+    if tcontain(mods, Mod.Shift.Long) then modIdx = modIdx + (1 << 17) end
   end
   key = hs.keycodes.map[key]
   return modIdx, key
@@ -7697,8 +7697,8 @@ local function wrapCondition(obj, config, mode)
     -- if a menu is extended, hotkeys with no modifiers or only 'shift' are disabled
     -- currently allow hotkeys with 'option' or 'shift'+'option' as modifiers
     if mods == nil or #mods == 0
-        or (type(mods) == 'string' and mods:lower() == 'shift')
-        or (type(mods) == 'table' and #mods == 1 and mods[1]:lower() == 'shift') then
+        or (type(mods) == 'string' and mods:lower() == Mod.Shift.Long)
+        or (type(mods) == 'table' and #mods == 1 and mods[1]:lower() == Mod.Shift.Long) then
       cond = noFocusedNonEmptyTextFieldFunc(noSelectedLeftMenuBarItemFunc(cond))
     end
     -- send key strokes to system focused UI element instead of this obj
@@ -10342,19 +10342,12 @@ end
 -- remap modifier keys for specified windows of remote desktop apps
 local remoteDesktopsMappingModifiers =
     get(KeybindingConfigs, 'remoteDesktopModifiers') or {}
-local modifiersShort = {
-  control = "ctrl",
-  option = "alt",
-  command = "cmd",
-  shift = "shift",
-  fn = "fn"
-}
 for _, rules in pairs(remoteDesktopsMappingModifiers) do
   for _, r in ipairs(rules) do
     local newMap = {}
     for k, v in pairs(r.map) do
-      k = modifiersShort[k]
-      if k ~= nil then newMap[k] = modifiersShort[v] end
+      k = toshort(k)
+      if k ~= nil then newMap[k] = toshort(v) end
     end
     r.map = newMap
   end

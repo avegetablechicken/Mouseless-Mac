@@ -683,14 +683,14 @@ local function registerWindowSwitcher()
   end
   local lastWindowMods = {}
   for _, mod in ipairs(_lastWindowMods) do
-    if mod == 'command' then
-      tinsert(lastWindowMods, 'cmd')
-    elseif mod == 'option' then
-      tinsert(lastWindowMods, 'alt')
-    elseif mod == 'control' then
-      tinsert(lastWindowMods, 'ctrl')
-    elseif mod == 'shift' then
-      tinsert(lastWindowMods, 'shift')
+    if mod == Mod.Cmd.Long then
+      tinsert(lastWindowMods, Mod.Cmd.Short)
+    elseif mod == Mod.Alt.Long then
+      tinsert(lastWindowMods, Mod.Alt.Short)
+    elseif mod == Mod.Ctrl.Long then
+      tinsert(lastWindowMods, Mod.Ctrl.Short)
+    elseif mod == Mod.Shift.Long then
+      tinsert(lastWindowMods, Mod.Shift.Short)
     end
   end
 
@@ -874,14 +874,14 @@ if misc["switchBrowserWindow"] ~= nil then
   end
   local lastBrowserWindowMods = {}
   for _, mod in ipairs(_lastBrowserWindowMods) do
-    if mod == 'command' then
-      tinsert(lastBrowserWindowMods, 'cmd')
-    elseif mod == 'option' then
-      tinsert(lastBrowserWindowMods, 'alt')
-    elseif mod == 'control' then
-      tinsert(lastBrowserWindowMods, 'ctrl')
-    elseif mod == 'shift' then
-      tinsert(lastBrowserWindowMods, 'shift')
+    if mod == Mod.Cmd.Long then
+      tinsert(lastBrowserWindowMods, Mod.Cmd.Short)
+    elseif mod == Mod.Alt.Long then
+      tinsert(lastBrowserWindowMods, Mod.Alt.Short)
+    elseif mod == Mod.Ctrl.Long then
+      tinsert(lastBrowserWindowMods, Mod.Ctrl.Short)
+    elseif mod == Mod.Shift.Long then
+      tinsert(lastBrowserWindowMods, Mod.Shift.Short)
     end
   end
 
