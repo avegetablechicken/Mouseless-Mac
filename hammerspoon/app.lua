@@ -2438,8 +2438,8 @@ appHotKeyCallbacks = {
       condition = FaceTime.hoveringOverCall,
       fn = FaceTime.deleteMousePositionCall
     },
-    ["clearAllRecents"] = {
-      message = T("Clear All Recents"),
+    ["removeAllRecents"] = {
+      message = T("Remove All Recents"),
       windowFilter = Phone.WF.Main,
       condition = FaceTime.hasCall,
       fn = FaceTime.deleteAll
@@ -2477,8 +2477,8 @@ appHotKeyCallbacks = {
       condition = FaceTime.hoveringOverCall,
       fn = FaceTime.deleteMousePositionCall
     },
-    ["clearAllRecents"] = {
-      message = T("Clear All Recents"),
+    ["removeAllRecents"] = {
+      message = T("Remove All Recents"),
       windowFilter = FaceTime.WF.Main,
       condition = FaceTime.hasCall,
       fn = FaceTime.deleteAll

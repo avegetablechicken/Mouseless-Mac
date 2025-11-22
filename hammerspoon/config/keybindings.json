@@ -653,7 +653,7 @@
         "mods": "command",
         "key": "delete"
       },
-      "clearAllRecents": {
+      "removeAllRecents": {
         "mods": ["option", "command"],
         "key": "delete"
       },
@@ -679,7 +679,7 @@
         "mods": "command",
         "key": "delete"
       },
-      "clearAllRecents": {
+      "removeAllRecents": {
         "mods": ["option", "command"],
         "key": "delete"
       },
