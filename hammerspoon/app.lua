@@ -906,15 +906,9 @@ FaceTime.deleteAll = function(section, win)
 end
 
 local function FaceTimeShowViewMenu(winUI)
-  local button
-  if OS_VERSION < OS.Tahoe then
-    button = getc(winUI, AX.Group, 1, AX.Group, 1,
-        AX.Group, 1, AX.Group, 1, AX.Button, 1)
-  else
-    button = getc(winUI, AX.Group, 1, AX.Group, 1,
-        AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-        AX.Button, 1)
-  end
+  local button = getc(winUI, AX.Group, 1, AX.Group, 1,
+      AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+      AX.Button, 1)
   if button then
     press(button) return true
   end
