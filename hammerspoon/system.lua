@@ -1577,36 +1577,34 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     if OS_VERSION < OS.Tahoe then
       tconcat(actions, {{'[', 'Min'}, {']', 'Max'}})
     end
-    local enabledSliders
+    local slider
     local totalDelay = 0
     repeat
       hs.timer.usleep(0.05 * 1000000)
       totalDelay = totalDelay + 0.05
       if panel == CC.Display then
         local role = OS_VERSION < OS.Ventura and AX.ScrollArea or AX.Group
-        enabledSliders = tfind(getc(pane, role, 1, AX.Slider) or {},
+        slider = tfind(getc(pane, role, 1, AX.Slider) or {},
             function(ele) return ele.AXEnabled end)
       else
-        enabledSliders = tfind(getc(pane, AX.Slider) or {},
+        slider = tfind(getc(pane, AX.Slider) or {},
             function(ele) return ele.AXEnabled end)
       end
-    until enabledSliders and #enabledSliders > 0
-        or totalDelay > 0.9 or not pane:isValid()
-    if enabledSliders and #enabledSliders == 1 then
+    until slider or totalDelay > 0.9 or not pane:isValid()
+    if slider then
       for _, spec in ipairs(actions) do
         local key = spec[1]
         local msg = name .. ' ' .. spec[2]
-        local slid = enabledSliders[1]
         local hotkey = newControlCenter("", key, msg,
           function()
             if key == '=' then
-              slid:performAction(AX.Increment)
+              slider:performAction(AX.Increment)
             elseif key == '-' then
-              slid:performAction(AX.Decrement)
+              slider:performAction(AX.Decrement)
             elseif key == '[' then
-              slid.AXValue = 0
+              slider.AXValue = 0
             else
-              slid.AXValue = 100
+              slider.AXValue = 100
             end
           end)
         if not checkAndRegisterControlCenterHotKeys(hotkey) then
