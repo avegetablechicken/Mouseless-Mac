@@ -781,109 +781,120 @@ Evt.OnRunning("com.apple.FaceTime", function(app)
   FaceTime.WF.Main.allowTitles = '^' .. app:name() .. '$'
 end)
 
+FaceTime.hoveringOverCall = function(win)
+  local appUI = towinui(win).AXParent
+  local elemHoveredOver = appUI:elementAtPosition(hs.mouse.absolutePosition())
+  if elemHoveredOver.AXRole ~= AX.Button then return false end
+  local collection = elemHoveredOver.AXParent
+  if OS_VERSION >= OS.Tahoe then
+    collection = collection.AXParent
+  end
+  return collection.AXDescription == T("Recent Calls", win)
+end
+
 FaceTime.deleteMousePositionCall = function(win)
   local app = win:application()
   local winUI = towinui(win)
 
-  local section
-  if OS_VERSION >= OS.Tahoe then
-    local collection = getc(winUI, AX.Group, 1, AX.Group, 1,
-        AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-        AX.Group, 1)
-    if collection and collection.AXDescription == T("Recent Calls", app) then
-      section = getc(collection, AX.Group, 1, AX.Button, 1)
-    end
-  else
-    local collection = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
-    if collection and collection.AXDescription == T("Recent Calls", app) then
-      section = getc(collection, AX.Button, 1)
-    end
+  if not rightClick(hs.mouse.absolutePosition(), app) then
+    return
   end
-  if section ~= nil then
+  local popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+  local maxTime, time = 0.5, 0
+  while popup == nil and time < maxTime do
+    hs.timer.usleep(0.01 * 1000000)
+    time = time + 0.01
+    popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+  end
+  if popup == nil then
     if not rightClick(hs.mouse.absolutePosition(), app) then
       return
     end
-    local popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
-    local maxTime, time = 0.5, 0
+    popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+    time = 0
     while popup == nil and time < maxTime do
       hs.timer.usleep(0.01 * 1000000)
       time = time + 0.01
       popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
     end
-    if popup == nil then
-      if not rightClick(hs.mouse.absolutePosition(), app) then
-        return
-      end
-      popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
-      time = 0
-      while popup == nil and time < maxTime do
-        hs.timer.usleep(0.01 * 1000000)
-        time = time + 0.01
-        popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
-      end
-      if popup == nil then return end
-    end
-    local title = app:bundleID() == "com.apple.mobilephone"
-        and "Delete" or "Remove from Recents"
-    local locTitle = T(title, app)
-    local menuItem = getc(popup, AX.MenuItem, locTitle)
-    if menuItem ~= nil then
-      press(menuItem)
-    end
+    if popup == nil then return end
+  end
+  local title = app:bundleID() == "com.apple.mobilephone"
+      and "Delete" or "Remove from Recents"
+  local locTitle = T(title, app)
+  local menuItem = getc(popup, AX.MenuItem, locTitle)
+  if menuItem ~= nil then
+    press(menuItem)
   end
 end
 
-FaceTime.deleteAll = function(win)
-  local app = win:application()
-  local winUI = towinui(win)
+FaceTime.hasCall = function(win)
   local section
   if OS_VERSION >= OS.Tahoe then
-    local collection = getc(winUI, AX.Group, 1, AX.Group, 1,
+    local collection = getc(towinui(win), AX.Group, 1, AX.Group, 1,
         AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
         AX.Group, 1)
-    if collection and collection.AXDescription == T("Recent Calls", app) then
+    if collection and collection.AXDescription == T("Recent Calls", win) then
       section = getc(collection, AX.Group, 1, AX.Button, 1)
     end
   else
-    local collection = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
-    if collection and collection.AXDescription == T("Recent Calls", app) then
+    local collection = getc(towinui(win), AX.Group, 1, AX.Group, 1,
+        AX.Group, 1, AX.Group, 2)
+    if collection and collection.AXDescription == T("Recent Calls", win) then
       section = getc(collection, AX.Button, 1)
     end
   end
-  if section ~= nil then
+  return section ~= nil, section
+end
+
+FaceTime.deleteAll = function(section, win)
+  local app = win:application()
+  if not rightClick(section, app) then
+    return
+  end
+
+  local winUI = towinui(win)
+  local popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+  local maxTime, time = 0.5, 0
+  while popup == nil and time < maxTime do
+    hs.timer.usleep(0.01 * 1000000)
+    time = time + 0.01
+    popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+  end
+  if popup == nil then
     if not rightClick(section, app) then
       return
     end
-    local popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
-    local maxTime, time = 0.5, 0
+    popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+    time = 0
     while popup == nil and time < maxTime do
       hs.timer.usleep(0.01 * 1000000)
       time = time + 0.01
       popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
     end
-    if popup == nil then
-      if not rightClick(section, app) then
-        return
-      end
-      popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
-      time = 0
-      while popup == nil and time < maxTime do
-        hs.timer.usleep(0.01 * 1000000)
-        time = time + 0.01
-        popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
-      end
-      if popup == nil then return end
-    end
-    local title = app:bundleID() == "com.apple.mobilephone"
-        and "Delete" or "Remove from Recents"
-    local locTitle = T(title, app)
-    local menuItem = getc(popup, AX.MenuItem, locTitle)
-    if menuItem ~= nil then
-      press(menuItem)
-    end
-    hs.timer.usleep(0.1 * 1000000)
-    FaceTime.deleteAll(win)
+    if popup == nil then return end
   end
+  local title = app:bundleID() == "com.apple.mobilephone"
+      and "Delete" or "Remove from Recents"
+  local locTitle = T(title, app)
+  local menuItem = getc(popup, AX.MenuItem, locTitle)
+  if menuItem ~= nil then
+    press(menuItem)
+  end
+  hs.timer.usleep(0.1 * 1000000)
+  if app:bundleID() == "com.apple.FaceTime" and OS_VERSION >= OS.Tahoe then
+    local sheet = getc(winUI, AX.Sheet, 1)
+    time, maxTime = 0, 0.2
+    while sheet == nil and time < maxTime do
+      hs.timer.usleep(0.01 * 1000000)
+      time = time + 0.01
+      sheet = getc(winUI, AX.Sheet, 1)
+    end
+    if sheet then
+      press(getc(sheet, AX.Button, -1))
+    end
+  end
+  FaceTime.deleteAll(section, win)
 end
 
 local function FaceTimeShowViewMenu(winUI)
@@ -2416,11 +2427,13 @@ appHotKeyCallbacks = {
     ["removeFromRecents"] = {
       message = T("Remove from Recents"),
       windowFilter = Phone.WF.Main,
+      condition = FaceTime.hoveringOverCall,
       fn = FaceTime.deleteMousePositionCall
     },
     ["clearAllRecents"] = {
       message = T("Clear All Recents"),
       windowFilter = Phone.WF.Main,
+      condition = FaceTime.hasCall,
       fn = FaceTime.deleteAll
     },
     ["newCall"] = {
@@ -2453,11 +2466,13 @@ appHotKeyCallbacks = {
     ["removeFromRecents"] = {
       message = T("Remove from Recents"),
       windowFilter = FaceTime.WF.Main,
+      condition = FaceTime.hoveringOverCall,
       fn = FaceTime.deleteMousePositionCall
     },
     ["clearAllRecents"] = {
       message = T("Clear All Recents"),
       windowFilter = FaceTime.WF.Main,
+      condition = FaceTime.hasCall,
       fn = FaceTime.deleteAll
     },
     ["newFaceTime"] = {
