@@ -790,7 +790,9 @@ FaceTime.deleteMousePositionCall = function(win)
     local collection = getc(winUI, AX.Group, 1, AX.Group, 1,
         AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
         AX.Group, 1)
-    section = getc(collection, AX.Group, 1, AX.Button, 1)
+    if collection and collection.AXDescription == T("Recent Calls", app) then
+      section = getc(collection, AX.Group, 1, AX.Button, 1)
+    end
   else
     local collection = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
     if collection and collection.AXDescription == T("Recent Calls", app) then
@@ -839,10 +841,12 @@ FaceTime.deleteAll = function(win)
     local collection = getc(winUI, AX.Group, 1, AX.Group, 1,
         AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
         AX.Group, 1)
-    section = getc(collection, AX.Group, 1, AX.Button, 1)
+    if collection and collection.AXDescription == T("Recent Calls", app) then
+      section = getc(collection, AX.Group, 1, AX.Button, 1)
+    end
   else
     local collection = getc(winUI, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
-    if collection ~= nil and collection.AXDescription == T("Recent Calls", app) then
+    if collection and collection.AXDescription == T("Recent Calls", app) then
       section = getc(collection, AX.Button, 1)
     end
   end
