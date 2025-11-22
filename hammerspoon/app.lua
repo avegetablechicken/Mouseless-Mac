@@ -849,6 +849,14 @@ end
 
 FaceTime.deleteAll = function(section, win)
   local app = win:application()
+  if OS_VERSION < OS.Tahoe then
+    local menuItem, menuItemPath = findMenuItem(app, { "FaceTime", "Remove All Recents" })
+    if menuItem and menuItem.enabled then
+      app:selectMenuItem(menuItemPath)
+      return
+    end
+  end
+
   if not rightClick(section, app) then
     return
   end
