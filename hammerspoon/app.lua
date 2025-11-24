@@ -356,7 +356,7 @@ local function TC(message, params, params2)
     end
   end
 
-  if params and (params.application
+  if type(params) == 'userdata' and (params.application
       or params.focusedWindow or params.AXParent) then
     local app = params
     params = params2
@@ -383,7 +383,7 @@ local function T(message, params, sep)
     end
   end
 
-  if params and (params.application
+  if type(params) == 'userdata' and (params.application
       or params.focusedWindow or params.AXParent) then
     local app = params
     params = sep
