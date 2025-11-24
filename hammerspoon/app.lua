@@ -483,7 +483,7 @@ local function press(pressable)
   end
 end
 
-local function selectRow(row)
+local function select(row)
   row.AXSelected = true
 end
 
@@ -5642,63 +5642,63 @@ appHotKeyCallbacks = {
       message = Bartender.sidebarItemTitle(1),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(1),
-      fn = selectRow
+      fn = select
     },
     ["view2"] =
     {
       message = Bartender.sidebarItemTitle(2),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(2),
-      fn = selectRow
+      fn = select
     },
     ["view3"] =
     {
       message = Bartender.sidebarItemTitle(3),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(3),
-      fn = selectRow
+      fn = select
     },
     ["view4"] =
     {
       message = Bartender.sidebarItemTitle(4),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(4),
-      fn = selectRow
+      fn = select
     },
     ["view5"] =
     {
       message = Bartender.sidebarItemTitle(5),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(5),
-      fn = selectRow
+      fn = select
     },
     ["view6"] =
     {
       message = Bartender.sidebarItemTitle(6),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(6),
-      fn = selectRow
+      fn = select
     },
     ["view7"] =
     {
       message = Bartender.sidebarItemTitle(7),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(7),
-      fn = selectRow
+      fn = select
     },
     ["view8"] =
     {
       message = Bartender.sidebarItemTitle(8),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(8),
-      fn = selectRow
+      fn = select
     },
     ["view9"] =
     {
       message = Bartender.sidebarItemTitle(9),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(9),
-      fn = selectRow
+      fn = select
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
     ["minimize"] = {
