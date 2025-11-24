@@ -476,6 +476,10 @@ local function press(pressable)
   end
 end
 
+local function selectRow(row)
+  row.AXSelected = true
+end
+
 local function click(position)
   leftClickAndRestore(position)
 end
@@ -1536,7 +1540,7 @@ Bartender.sidebarItemTitle = function(index)
   end
 end
 
-Bartender.clickSidebarItem = function(index)
+Bartender.sidebarItemSelectable = function(index)
   return function(win)
     local winUI = towinui(win)
     local row
@@ -1547,7 +1551,7 @@ Bartender.clickSidebarItem = function(index)
       row = getc(winUI, AX.Group, 1, AX.SplitGroup, 1,
           AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index)
     end
-    if row then row.AXSelected = true end
+    return row ~= nil, row
   end
 end
 
@@ -4131,7 +4135,7 @@ appHotKeyCallbacks = {
       windowFilter = JabRef.WF.numberLibraries(1),
       condition = function(win)
         local row = tfind(getc(towinui(win), AX.TabGroup, 1, AX.Table, 1, AX.Row) or {},
-          function(r) return r.AXFocused
+          function(r) print(r.AXFocused) return r.AXFocused
         end)
         if row then
           local cell = tfind(getc(row, AX.Cell), function(c)
@@ -5629,55 +5633,64 @@ appHotKeyCallbacks = {
     {
       message = Bartender.sidebarItemTitle(1),
       windowFilter = Bartender.WF.Main,
-      fn = Bartender.clickSidebarItem(1)
+      condition = Bartender.sidebarItemSelectable(1),
+      fn = selectRow
     },
     ["view2"] =
     {
       message = Bartender.sidebarItemTitle(2),
       windowFilter = Bartender.WF.Main,
-      fn = Bartender.clickSidebarItem(2)
+      condition = Bartender.sidebarItemSelectable(2),
+      fn = selectRow
     },
     ["view3"] =
     {
       message = Bartender.sidebarItemTitle(3),
       windowFilter = Bartender.WF.Main,
-      fn = Bartender.clickSidebarItem(3)
+      condition = Bartender.sidebarItemSelectable(3),
+      fn = selectRow
     },
     ["view4"] =
     {
       message = Bartender.sidebarItemTitle(4),
       windowFilter = Bartender.WF.Main,
-      fn = Bartender.clickSidebarItem(4)
+      condition = Bartender.sidebarItemSelectable(4),
+      fn = selectRow
     },
     ["view5"] =
     {
       message = Bartender.sidebarItemTitle(5),
       windowFilter = Bartender.WF.Main,
-      fn = Bartender.clickSidebarItem(5)
+      condition = Bartender.sidebarItemSelectable(5),
+      fn = selectRow
     },
     ["view6"] =
     {
       message = Bartender.sidebarItemTitle(6),
       windowFilter = Bartender.WF.Main,
-      fn = Bartender.clickSidebarItem(6)
+      condition = Bartender.sidebarItemSelectable(6),
+      fn = selectRow
     },
     ["view7"] =
     {
       message = Bartender.sidebarItemTitle(7),
       windowFilter = Bartender.WF.Main,
-      fn = Bartender.clickSidebarItem(7)
+      condition = Bartender.sidebarItemSelectable(7),
+      fn = selectRow
     },
     ["view8"] =
     {
       message = Bartender.sidebarItemTitle(8),
       windowFilter = Bartender.WF.Main,
-      fn = Bartender.clickSidebarItem(8)
+      condition = Bartender.sidebarItemSelectable(8),
+      fn = selectRow
     },
     ["view9"] =
     {
       message = Bartender.sidebarItemTitle(9),
       windowFilter = Bartender.WF.Main,
-      fn = Bartender.clickSidebarItem(9)
+      condition = Bartender.sidebarItemSelectable(9),
+      fn = selectRow
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
     ["minimize"] = {
