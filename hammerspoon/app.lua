@@ -9213,7 +9213,7 @@ local specialSidebarRowsSelectFuncs = {
   end
 }
 
-local function registerForOpenSavePanel(app)
+local function registerForOpenSavePanel(app, retry)
   for _, hotkey in ipairs(openSavePanelHotkeys) do
     hotkey:delete()
   end
@@ -9222,8 +9222,11 @@ local function registerForOpenSavePanel(app)
   local appid = app:bundleID() or app:name()
   if appid == "com.apple.finder" or appid == "com.apple.dock" then return end
   local appUI = toappui(app)
-  if not appUI:isValid() then
-    hs.timer.doAfter(0.1, function() registerForOpenSavePanel(app) end)
+  if not tcontain(appUI:attributeNames() or {}, "AXFocusedWindow") then
+    retry = retry and retry + 1 or 1
+    if not FLAGS["Loading"] and retry <= 3 then
+      hs.timer.doAfter(0.1, bind(registerForOpenSavePanel, app, retry))
+    end
     return
   end
 
