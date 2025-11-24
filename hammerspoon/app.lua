@@ -453,7 +453,8 @@ Version.Between = function(version1, version2)
   end
 end
 
-local function press(pressable)
+local Callback = {}
+Callback.Press = function(pressable)
   local flags = hs.eventtap.checkKeyboardModifiers()
   if not flags[Mod.Ctrl.Short] then
     pressable:performAction(AX.Press)
@@ -483,11 +484,11 @@ local function press(pressable)
   end
 end
 
-local function select(row)
+Callback.UISelect = function(row)
   row.AXSelected = true
 end
 
-local function click(position)
+Callback.Click = function(position)
   leftClickAndRestore(position)
 end
 
@@ -660,13 +661,13 @@ Messages.deleteSelected = function(app)
         AX.Group, 2, AX.Group, 1, AX.Button, 2)
   end
   if button ~= nil then
-    press(button)
+    Callback.Press(button)
     hs.timer.doAfter(0.2, function()
       if not app:isRunning() then return end
       if app:focusedWindow():role() == AX.Sheet then
         local sheet = towinui(app:focusedWindow())
         local delete = getc(sheet, AX.Button, 2)
-        press(delete)
+        Callback.Press(delete)
       end
     end)
     return
@@ -717,7 +718,7 @@ Messages.deleteAll = function(messageItems, app)
 
   local firstSelected = firstMsg.AXSelected
   if not firstSelected then
-    hs.timer.doAfter(0.1, bind(press, firstMsg))
+    hs.timer.doAfter(0.1, bind(Callback.Press, firstMsg))
   end
   if #messageItems == 1
       or (#messageItems == 2 and lastMsg.AXSelected) then
@@ -735,7 +736,7 @@ Messages.deleteAll = function(messageItems, app)
     end
     hs.eventtap.event.newKeyEvent(hs.keycodes.map.shift, true):post()
     hs.timer.doAfter(1, function()
-      press(lastMsg)
+      Callback.Press(lastMsg)
       hs.eventtap.event.newKeyEvent(hs.keycodes.map.shift, false):post()
       Messages.deleteSelected(app)
 
@@ -765,7 +766,7 @@ local function PhoneShowViewMenu(winUI)
   local button = getc(winUI, AX.Toolbar, 1,
       AX.Group, 2, AX.Group, 1, AX.MenuButton, 1)
   if button then
-    press(button) return true
+    Callback.Press(button) return true
   end
   return false
 end
@@ -780,7 +781,7 @@ Phone.selectView = function(index)
       menu = getc(winUI, AX.Toolbar, 1, AX.Group, 2, AX.Menu, 1)
     until menu or not winUI:isValid()
     local menuItem = getc(menu, AX.MenuItem, index)
-    if menuItem then press(menuItem) end
+    if menuItem then Callback.Press(menuItem) end
   end
 end
 
@@ -835,7 +836,7 @@ FaceTime.deleteMousePositionCall = function(win)
   local locTitle = T(title, app)
   local menuItem = getc(popup, AX.MenuItem, locTitle)
   if menuItem ~= nil then
-    press(menuItem)
+    Callback.Press(menuItem)
   end
 end
 
@@ -898,7 +899,7 @@ FaceTime.deleteAll = function(section, win)
   local locTitle = T(title, app)
   local menuItem = getc(popup, AX.MenuItem, locTitle)
   if menuItem ~= nil then
-    press(menuItem)
+    Callback.Press(menuItem)
   end
   hs.timer.usleep(0.1 * 1000000)
   if app:bundleID() == "com.apple.FaceTime" and OS_VERSION >= OS.Tahoe then
@@ -910,7 +911,7 @@ FaceTime.deleteAll = function(section, win)
       sheet = getc(winUI, AX.Sheet, 1)
     end
     if sheet then
-      press(getc(sheet, AX.Button, -1))
+      Callback.Press(getc(sheet, AX.Button, -1))
     end
   end
   FaceTime.deleteAll(section, win)
@@ -921,7 +922,7 @@ local function FaceTimeShowViewMenu(winUI)
       AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
       AX.Button, 1)
   if button then
-    press(button) return true
+    Callback.Press(button) return true
   end
   return false
 end
@@ -936,7 +937,7 @@ FaceTime.selectView = function(index)
       menu = getc(winUI, AX.Group, 1, AX.Menu, 1)
     until menu or not winUI:isValid()
     local menuItem = getc(menu, AX.MenuItem, index)
-    if menuItem then press(menuItem) end
+    if menuItem then Callback.Press(menuItem) end
   end
 end
 
@@ -1056,7 +1057,7 @@ VSCode.toggleSideBarSection = function(winUI, sidebar, section)
       local button = getc(sec, AX.Button, 1)
           or getc(sec, AX.Group, 1, AX.Button, 1)
       if button[2].AXTitle == section then
-        press(button)
+        Callback.Press(button)
         break
       end
     end
@@ -1067,7 +1068,7 @@ VSCode.toggleSideBarSection = function(winUI, sidebar, section)
       return t.AXTitle:upper():sub(1, #sidebar) == sidebar
           or t.AXDescription:upper():sub(1, #sidebar) == sidebar
     end)
-    press(tab)
+    Callback.Press(tab)
 
     local sections
     local totalDelay = 0
@@ -1105,7 +1106,7 @@ VSCode.toggleSideBarSection = function(winUI, sidebar, section)
           if hasToClick then
             leftClickAndRestore(button)
           else
-            press(button)
+            Callback.Press(button)
           end
           break
         end
@@ -1596,7 +1597,7 @@ end
 Barbee.clickBarItem = function(index)
   return function(win)
     local button = getc(towinui(win), AX.Group, 1, AX.Button, -index)
-    if button then press(button) end
+    if button then Callback.Press(button) end
   end
 end
 
@@ -1740,7 +1741,7 @@ iBar.clickBarItem = function(index)
   return function(win)
     local button = getc(towinui(win), AX.Button, index)
     if button then
-      press(button)
+      Callback.Press(button)
     end
   end
 end
@@ -2131,7 +2132,7 @@ end
 
 -- select the menu item returned by the condition
 -- work as hotkey callback
-MenuItem.select = function(menuItemTitle, app)
+Callback.Select = function(menuItemTitle, app)
   if app.application then app = app:application() end
   if #menuItemTitle == 0 then
     app:selectMenuItem(menuItemTitle)
@@ -2189,14 +2190,14 @@ local specialCommonHotkeyConfigs = {
     message = MenuItem.message('⇧⌃', "⇥"),
     condition = MenuItem.keybindingEnabled('⇧⌃', "⇥"),
     repeatable = true,
-    fn = MenuItem.select
+    fn = Callback.Select
   },
   ["showNextTab"] = {
     mods = "⇧⌘", key = "]",
     message = MenuItem.message('⌃', "⇥"),
     condition = MenuItem.keybindingEnabled('⌃', "⇥"),
     repeatable = true,
-    fn = MenuItem.select
+    fn = Callback.Select
   },
 }
 
@@ -2206,7 +2207,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = T("Recent Folders"),
       condition = MenuItem.isEnabled({ "Go", "Recent Folders" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["open1stSidebarItem"] = {
       mods = get(KeybindingConfigs.hotkeys.shared,
@@ -2320,7 +2321,7 @@ appHotKeyCallbacks = {
         local searchField = getc(winUI, AX.Toolbar, 1, AX.Group, 2, AX.TextField, 1)
         return clickable(searchField, { 10, 2 })
       end,
-      fn = click
+      fn = Callback.Click
     }
   },
 
@@ -2355,7 +2356,7 @@ appHotKeyCallbacks = {
               AX.Group, 2, AX.Group, 1, AX.Button, 2)
         end
         if button then
-          press(button)
+          Callback.Press(button)
         else
           local _, menuItem = findMenuItem(app, {
             OS_VERSION < OS.Ventura and "File" or "Conversation",
@@ -2402,7 +2403,7 @@ appHotKeyCallbacks = {
         return true, messageItems[#messageItems]
       end,
       repeatable = true,
-      fn = press
+      fn = Callback.Press
     },
     ["goToNextConversation"] = {
       message = MenuItem.message('⌃', "⇥", "Window"),
@@ -2436,7 +2437,7 @@ appHotKeyCallbacks = {
         return true, messageItems[1]
       end,
       repeatable = true,
-      fn = press
+      fn = Callback.Press
     }
   },
 
@@ -2459,7 +2460,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1,
             AX.Group, 3, AX.Group, 1, AX.Button, 1)
-        if button then press(button) end
+        if button then Callback.Press(button) end
       end
     },
     ["view1"] = {
@@ -2507,7 +2508,7 @@ appHotKeyCallbacks = {
         end
         return button ~= nil, button
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["addPeopleWhenNewFaceTime"] = {
       message = T("Add People"),
@@ -2522,7 +2523,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         local button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
             AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 1)
-        if button then press(button) end
+        if button then Callback.Press(button) end
       end
     },
     ["view1"] = {
@@ -2561,47 +2562,47 @@ appHotKeyCallbacks = {
     ["view1"] = {
       message = MenuItem.message('⌃', '1', 'View'),
       condition = MenuItem.keybindingEnabled('⌃', '1', 'View'),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["view2"] = {
       message = MenuItem.message('⌃', '2', 'View'),
       condition = MenuItem.keybindingEnabled('⌃', '2', 'View'),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["view3"] = {
       message = MenuItem.message('⌃', '3', 'View'),
       condition = MenuItem.keybindingEnabled('⌃', '3', 'View'),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["view4"] = {
       message = MenuItem.message('⌃', '4', 'View'),
       condition = MenuItem.keybindingEnabled('⌃', '4', 'View'),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["view5"] = {
       message = MenuItem.message('⌃', '5', 'View'),
       condition = MenuItem.keybindingEnabled('⌃', '5', 'View'),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["view6"] = {
       message = MenuItem.message('⌃', '6', 'View'),
       condition = MenuItem.keybindingEnabled('⌃', '6', 'View'),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["view7"] = {
       message = MenuItem.message('⌃', '7', 'View'),
       condition = MenuItem.keybindingEnabled('⌃', '7', 'View'),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["view8"] = {
       message = MenuItem.message('⌃', '8', 'View'),
       condition = MenuItem.keybindingEnabled('⌃', '8', 'View'),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["view9"] = {
       message = MenuItem.message('⌃', '9', 'View'),
       condition = MenuItem.keybindingEnabled('⌃', '9', 'View'),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -2611,7 +2612,7 @@ appHotKeyCallbacks = {
       bindCondition = function() return OS_VERSION < OS.Tahoe end,
       condition = MenuItem.isEnabled({ "View", "Show Folders" },
                                      { "View", "Hide Folders" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -2621,7 +2622,7 @@ appHotKeyCallbacks = {
       message = T("Show Calendar List"),
       condition = MenuItem.isEnabled({ "View", "Show Calendar List" },
                                      { "View", "Hide Calendar List" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -2635,7 +2636,7 @@ appHotKeyCallbacks = {
             AX.Unknown, 1, AX.Button, T("Play", win))
         return button ~= nil, button
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["view1"] = {
       message = Music.viewTitle(1),
@@ -2701,7 +2702,7 @@ appHotKeyCallbacks = {
         end)
         return button ~= nil, button
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["view1"] = {
       message = function(win)
@@ -2716,7 +2717,7 @@ appHotKeyCallbacks = {
         local buttons = getc(towinui(win), AX.Toolbar, 1,
             AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
         if buttons and #buttons >= 1 then
-          press(buttons[1])
+          Callback.Press(buttons[1])
         end
       end
     },
@@ -2733,7 +2734,7 @@ appHotKeyCallbacks = {
         local buttons = getc(towinui(win), AX.Toolbar, 1,
             AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
         if buttons and #buttons >= 2 then
-          press(buttons[2])
+          Callback.Press(buttons[2])
         end
       end
     },
@@ -2750,7 +2751,7 @@ appHotKeyCallbacks = {
         local buttons = getc(towinui(win), AX.Toolbar, 1,
             AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
         if buttons and #buttons >= 3 then
-          press(buttons[3])
+          Callback.Press(buttons[3])
         end
       end
     },
@@ -2764,7 +2765,7 @@ appHotKeyCallbacks = {
         local button = tfind(buttons or {}, function(bt)
           return bt.AXDescription == title
         end)
-        if button then press(button) end
+        if button then Callback.Press(button) end
       end
     }
   },
@@ -2792,7 +2793,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["previousLocation"] = {
       message = "Previous Location",
@@ -2814,7 +2815,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["nextLocation"] = {
       message = "Next Location",
@@ -2836,7 +2837,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["deleteLocation"] = {
       message = TC("Delete"),
@@ -2864,7 +2865,7 @@ appHotKeyCallbacks = {
           local title = T("Delete", app)
           local delete = getc(menu, AX.MenuItem, title)
           if delete then
-            press(delete) obs:stop() obs = nil
+            Callback.Press(delete) obs:stop() obs = nil
           end
         end)
         observer:start()
@@ -2901,7 +2902,7 @@ appHotKeyCallbacks = {
           app:selectMenuItem(result)
         else
           local button = result
-          press(button)
+          Callback.Press(button)
         end
       end
     }
@@ -2913,7 +2914,7 @@ appHotKeyCallbacks = {
       message = T("Show Sidebar"),
       condition = MenuItem.isEnabled({ "View", "Show Sidebar" },
                                      { "View", "Hide Sidebar" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["showInFinder"] = {
       message = TC("Show in Finder"),
@@ -2928,7 +2929,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = T("Recently Closed"),
       condition = MenuItem.isEnabled({ "History", "Recently Closed" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -2955,7 +2956,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = T("Search Tabs…"),
       condition = MenuItem.isEnabled({ "Tab", "Search Tabs…" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["showInFinder"] = {
       message = TC("Show in Finder"),
@@ -3018,7 +3019,7 @@ appHotKeyCallbacks = {
       message = "Open Recent",
       condition = MenuItem.isEnabled({ "File", "Open Recent", "More…" },
                                      { "File", "Open Recent" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -3044,27 +3045,27 @@ appHotKeyCallbacks = {
     ["showMainWindow"] = {
       message = T("Show Main Window"),
       condition = MenuItem.isEnabled({ "Window", "Show Main Window" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["moveFocusToSidebar"] = {
       message = T("Move Focus to Sidebar"),
       condition = MenuItem.isEnabled({ "View", "Move Focus to Sidebar" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["moveFocusToSnippetsList"] = {
       message = T("Move Focus to Snippets List"),
       condition = MenuItem.isEnabled({ "View", "Move Focus to Snippets List" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["moveFocusToEditor"] = {
       message = T("Move Focus to Editor"),
       condition = MenuItem.isEnabled({ "View", "Move Focus to Editor" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["moveFocusToPreview"] = {
       message = T("Move Focus to Preview"),
       condition = MenuItem.isEnabled({ "View", "Move Focus to Preview" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -3073,13 +3074,13 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = T("Show in Finder"),
       condition = MenuItem.isEnabled({ "File", "Show in Finder" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["remapPreviousTab"] = {
       message = T("Go to Previous Tab"),
       condition = MenuItem.isEnabled({ "Window", "Go to Previous Tab" }),
       repeatable = true,
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -3088,12 +3089,12 @@ appHotKeyCallbacks = {
     ["toggleOutline"] = {
       message = T("Toggle Outline"),
       condition = MenuItem.isEnabled({ "Workspace", "Toggle Outline" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["openRecent"] = {
       message = T("Recent Documents"),
       condition = MenuItem.isEnabled({ "File", "Recent Documents" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -3102,13 +3103,13 @@ appHotKeyCallbacks = {
     ["openFileLocation"] = {
       message = T("Open File Location"),
       condition = MenuItem.isEnabled({ "File", "Open File Location" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["openRecent"] = {
       message = T("Open Recent"),
       condition = MenuItem.isEnabled({ "File", "Open Quickly…" },
                                      { "File", "Open Recent" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -3149,19 +3150,19 @@ appHotKeyCallbacks = {
         end
         return firstSidebarMenuItem ~= nil, firstSidebarMenuItem
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["showPrevTab"] = specialCommonHotkeyConfigs["showPrevTab"],
     ["showNextTab"] = specialCommonHotkeyConfigs["showNextTab"],
     ["showInFinder"] = {
       message = T("Show in Finder"),
       condition = MenuItem.isEnabled({ "File", "Show in Finder" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["openRecent"] = {
       message = T("Open Quickly…"),
       condition = MenuItem.isEnabled({ "File", "Open Quickly…" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["openRecentInMenuBarMenu"] = {
       message = T("Open Recent"),
@@ -3170,7 +3171,7 @@ appHotKeyCallbacks = {
         local app = getAppFromDescendantElement(menu)
         local title = T("Open Recent", app)
         local menuItem = getc(menu, AX.MenuItem, title)
-        if menuItem then press(menuItem) end
+        if menuItem then Callback.Press(menuItem) end
       end
     },
     ["confirmDelete"] = {
@@ -3184,7 +3185,7 @@ appHotKeyCallbacks = {
             or getc(winUI, AX.Window, 1, AX.Button, title)
         return button ~= nil, button
       end,
-      fn = press
+      fn = Callback.Press
     }
   },
 
@@ -3221,43 +3222,43 @@ appHotKeyCallbacks = {
       message = T("Properties..."),
       windowFilter = WPS.WF.NonHome,
       condition = MenuItem.isEnabled({ "File", "Properties..." }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["exportToPDF"] = {
       message = T("Export to PDF..."),
       windowFilter = WPS.WF.WPS_WPP_ET,
       condition = MenuItem.isEnabled({ "File", "Export to PDF..." }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["insertTextBox"] = {
       message = T{"Insert", "Text Box"},
       windowFilter = WPS.WF.WPS_WPP,
       condition = MenuItem.isEnabled({ "Insert", "Text Box", "Horizontal Text Box" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["insertEquation"] = {
       message = T{"Insert", "LaTeXEquation..."},
       windowFilter = WPS.WF.WPS_WPP_ET,
       condition = MenuItem.isEnabled({ "Insert", "LaTeXEquation..." }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["pdfHightlight"] = {
       message = T("Highlight"),
       windowFilter = WPS.WF.PDF,
       condition = MenuItem.isEnabled({ "Comment", "Highlight" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["pdfUnderline"] = {
       message = T("Underline"),
       windowFilter = WPS.WF.PDF,
       condition = MenuItem.isEnabled({ "Comment", "Underline" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["pdfStrikethrough"] = {
       message = T("Strikethrough"),
       windowFilter = WPS.WF.PDF,
       condition = MenuItem.isEnabled({ "Comment", "Strikethrough" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["goToHome"] = {
       message = T("Home"),
@@ -3323,7 +3324,7 @@ appHotKeyCallbacks = {
         if firstSplitLine == 4 then return clickable(groups[3]) end
         return false
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["goToMyCloudDocuments"] = {
       message = T("My Cloud Documents"),
@@ -3348,7 +3349,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["goToMyDesktop"] = {
       message = T("My Desktop"),
@@ -3375,7 +3376,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["goToDocuments"] = {
       message = T("Documents"),
@@ -3402,7 +3403,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["goToDownloads"] = {
       message = T("Downloads"),
@@ -3429,7 +3430,7 @@ appHotKeyCallbacks = {
         end
         return false
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["openFileLocation"] = {
       message = T("Open File Location"),
@@ -3453,7 +3454,7 @@ appHotKeyCallbacks = {
           for _, elem in ipairs(toappui(app)) do
             local menuItem = getc(elem, AX.Menu, 1, AX.MenuItem, title)
             if menuItem then
-              press(menuItem)
+              Callback.Press(menuItem)
               if hs.application.frontmostApplication():bundleID() == app:bundleID() then
                 hs.eventtap.keyStroke("", "Escape", nil, app)
               end
@@ -3485,7 +3486,7 @@ appHotKeyCallbacks = {
         local button = getc(winUI, AX.Button, "Prev")
         return button ~= nil, button
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["nextInSettings"] = {
       message = TC("Forward"),
@@ -3495,7 +3496,7 @@ appHotKeyCallbacks = {
         local button = getc(winUI, AX.Button, "Next")
         return button ~= nil, button
       end,
-      fn = press
+      fn = Callback.Press
     },
   },
 
@@ -3508,24 +3509,24 @@ appHotKeyCallbacks = {
     ["exportToPDF"] = {  -- File > Export To > PDF…
       message = T{"Export To", "PDF…"},
       condition = MenuItem.isEnabled({ "File", "Export To", "PDF…" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["exportToPPT"] = {  -- File > Export To > PowerPoint…
       message = T{"Export To", "PowerPoint…"},
       condition = MenuItem.isEnabled({ "File", "Export To", "PowerPoint…" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["pasteAndMatchStyle"] = {  -- Edit > Paste and Match Style
       message = T("Paste and Match Style"),
       condition = MenuItem.isEnabled({ "Edit", "Paste and Match Style" }),
       repeatable = true,
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["paste"] = {  -- Edit > Paste
       message = T("Paste"),
       condition = MenuItem.isEnabled({ "Edit", "Paste" }),
       repeatable = true,
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["showBuildOrder"] = {  -- View > Show Build Order
       message = T("Show Build Order"),
@@ -3544,27 +3545,27 @@ appHotKeyCallbacks = {
     ["toggleFormatInspector"] = {  -- View > Inspector > Format
       message = T{"Inspector", "Format"},
       condition = MenuItem.isEnabled({ "View", "Inspector", "Format" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["play"] = {  -- Play > Play Slideshow
       message = T("Play Slideshow"),
       condition = MenuItem.isEnabled({ "Play", "Play Slideshow" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["insertTextBox"] = {  -- Insert > Text Box
       message = T{"Insert", "Text Box"},
       condition = MenuItem.isEnabled({ "Insert", "Text Box" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["insertShape"] = {  -- Insert > Shape
       message = T{"Insert", "Shape"},
       condition = MenuItem.isEnabled({ "Insert", "Shape" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["insertLine"] = {  -- Insert > Line
       message = T{"Insert", "Line"},
       condition = MenuItem.isEnabled({ "Insert", "Line" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["showInFinder"] = {
       message = TC("Show in Finder"),
@@ -3587,29 +3588,29 @@ appHotKeyCallbacks = {
     ["exportToPDF"] = {  -- File > Export To > PDF…
       message = T{"Export To", "PDF…"},
       condition = MenuItem.isEnabled({ "File", "Export To", "PDF…" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["exportToWord"] = {  -- File > Export To > Word…
       message = T{"Export To", "Word…"},
       condition = MenuItem.isEnabled({ "File", "Export To", "Word…" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["pasteAndMatchStyle"] = {  -- Edit > Paste and Match Style
       message = T("Paste and Match Style"),
       condition = MenuItem.isEnabled({ "Edit", "Paste and Match Style" }),
       repeatable = true,
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["paste"] = {  -- Edit > Paste
       message = T("Paste"),
       condition = MenuItem.isEnabled({ "Edit", "Paste" }),
       repeatable = true,
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["toggleFormatInspector"] = {  -- View > Inspector > Format
       message = T{"Inspector", "Format"},
       condition = MenuItem.isEnabled({ "View", "Inspector", "Format" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["showInFinder"] = {
       message = TC("Show in Finder"),
@@ -3632,29 +3633,29 @@ appHotKeyCallbacks = {
     ["exportToPDF"] = {  -- File > Export To > PDF…
       message = T{"Export To", "PDF…"},
       condition = MenuItem.isEnabled({ "File", "Export To", "PDF…" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["exportToExcel"] = {  -- File > Export To > Excel…
       message = T{"Export To", "Excel…"},
       condition = MenuItem.isEnabled({ "File", "Export To", "Excel…" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["pasteAndMatchStyle"] = {  -- Edit > Paste and Match Style
       message = T("Paste and Match Style"),
       condition = MenuItem.isEnabled({ "Edit", "Paste and Match Style" }),
       repeatable = true,
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["paste"] = {  -- Edit > Paste
       message = T("Paste"),
       condition = MenuItem.isEnabled({ "Edit", "Paste" }),
       repeatable = true,
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["toggleFormatInspector"] = {  -- View > Inspector > Format
       message = T{"Inspector", "Format"},
       condition = MenuItem.isEnabled({ "View", "Inspector", "Format" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["showInFinder"] = {
       message = TC("Show in Finder"),
@@ -3677,12 +3678,12 @@ appHotKeyCallbacks = {
     ["exportToPDF"] = {
       message = T{"Export", "PDF"},
       condition = MenuItem.isEnabled({ "File", "Export", "PDF" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["insertEquation"] = {
       message = T{"Insert", "Equation"},
       condition = MenuItem.isEnabled({ 'Insert', "Equation" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -3695,7 +3696,7 @@ appHotKeyCallbacks = {
       end,
       windowFilter = EuDic.WF.Main,
       condition = MenuItem.isEnabled({ "功能", "返回首页" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["function2"] = {
       message = function(win)
@@ -3705,7 +3706,7 @@ appHotKeyCallbacks = {
       windowFilter = EuDic.WF.Main,
       fn = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 2)
-        press(button)
+        Callback.Press(button)
       end
     },
     ["function3"] = {
@@ -3716,7 +3717,7 @@ appHotKeyCallbacks = {
       windowFilter = EuDic.WF.Main,
       fn = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 3)
-        press(button)
+        Callback.Press(button)
       end
     },
     ["function4"] = {
@@ -3727,7 +3728,7 @@ appHotKeyCallbacks = {
       windowFilter = EuDic.WF.Main,
       fn = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 4)
-        press(button)
+        Callback.Press(button)
       end
     },
     ["function5"] = {
@@ -3738,7 +3739,7 @@ appHotKeyCallbacks = {
       windowFilter = EuDic.WF.Main,
       fn = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 5)
-        press(button)
+        Callback.Press(button)
       end
     },
     ["function6"] = {
@@ -3749,7 +3750,7 @@ appHotKeyCallbacks = {
       windowFilter = EuDic.WF.Main,
       fn = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 6)
-        press(button)
+        Callback.Press(button)
       end
     }
   },
@@ -3760,7 +3761,7 @@ appHotKeyCallbacks = {
       message = T("Toggle Sidebar"),
       bindCondition = Version.LessEqual("1.2024.332"),
       condition = MenuItem.isEnabled({ "View", "Toggle Sidebar" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["back"] = {
       message = T("Back"),
@@ -3777,7 +3778,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1,
             AX.Button, 1, AX.Button, 1)
-        if button and button.AXEnabled then press(button) end
+        if button and button.AXEnabled then Callback.Press(button) end
       end
     },
     ["openLink"] = {
@@ -3801,7 +3802,7 @@ appHotKeyCallbacks = {
           return bt.AXAttributedDescription:getString()
               and bt.AXAttributedDescription:getString() == title
         end)
-        if button ~= nil then press(button) end
+        if button ~= nil then Callback.Press(button) end
       end
     },
     ["toggleChatBar"] = {
@@ -3885,9 +3886,9 @@ appHotKeyCallbacks = {
       fn = function(button, app)
         if app ~= nil then
           if #button == 0 then
-            click(button) return
+            Callback.Click(button) return
           end
-          click(button[1]) button = button[2]
+          Callback.Click(button[1]) button = button[2]
 
           if tfind(button.AXDOMClassList or {}, function(c)
             return c:find("nickName") ~= nil
@@ -3960,7 +3961,7 @@ appHotKeyCallbacks = {
         end)
         return button ~= nil, button
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["enterTemporaryChat"] = {
       message = T("Enter Temporary Chat"),
@@ -3975,7 +3976,7 @@ appHotKeyCallbacks = {
         end
         return clickable(button)
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["toggleSidebar"] = {
       message = T("Show Sidebar"),
@@ -3997,7 +3998,7 @@ appHotKeyCallbacks = {
         end
       end,
       fn = function(result)
-        local action = result.AXTitle ~= nil and press or click
+        local action = result.AXTitle ~= nil and Callback.Press or Callback.Click
         action(result)
       end
     },
@@ -4007,7 +4008,7 @@ appHotKeyCallbacks = {
       message = T("Maximize"),
       windowFilter = Yuanbao.WF.Main,
       condition = MenuItem.isEnabled({ "Window", "Maximize" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["back"] = {
       message = TC("Back"),
@@ -4025,7 +4026,7 @@ appHotKeyCallbacks = {
         end)
         return button ~= nil, button
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["toggleMiniChat"] = {
       message = function()
@@ -4106,17 +4107,17 @@ appHotKeyCallbacks = {
     ["preferences"] = {
       message = T("Preferences"),
       condition = MenuItem.isEnabled({ "File", "Preferences" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["newLibrary"] = {
       message = T("New library"),
       condition = MenuItem.isEnabled({ "File", "New library" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["openRecent"] = {
       message = T("Recent libraries"),
       condition = MenuItem.isEnabled({ "File", "Recent libraries" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["revealLibrayInFinder"] = {
       message = T("Reveal in file explorer"),
@@ -4134,7 +4135,7 @@ appHotKeyCallbacks = {
           local app = win:application()
           local title = T("Reveal in file explorer", app)
           local item = getc(toappui(app), AX.Menu, 1, AX.MenuItem, title)
-          if item then press(item) end
+          if item then Callback.Press(item) end
         end)
       end
     },
@@ -4153,7 +4154,7 @@ appHotKeyCallbacks = {
           return clickable(cell)
         end
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["remapPreviousTab"] = {
       message = T("Previous library"),
@@ -4181,61 +4182,61 @@ appHotKeyCallbacks = {
       message = "First Library",
       windowFilter = JabRef.WF.numberLibraries(1),
       condition = JabRef.showLibraryByIndex(1),
-      fn = click
+      fn = Callback.Click
     },
     ["2ndLibrary"] = {
       message = "Second Library",
       windowFilter = JabRef.WF.numberLibraries(2),
       condition = JabRef.showLibraryByIndex(2),
-      fn = click
+      fn = Callback.Click
     },
     ["3rdLibrary"] = {
       message = "Third Library",
       windowFilter = JabRef.WF.numberLibraries(3),
       condition = JabRef.showLibraryByIndex(3),
-      fn = click
+      fn = Callback.Click
     },
     ["4thLibrary"] = {
       message = "Forth Library",
       windowFilter = JabRef.WF.numberLibraries(4),
       condition = JabRef.showLibraryByIndex(4),
-      fn = click
+      fn = Callback.Click
     },
     ["5thLibrary"] = {
       message = "Fifth Library",
       windowFilter = JabRef.WF.numberLibraries(5),
       condition = JabRef.showLibraryByIndex(5),
-      fn = click
+      fn = Callback.Click
     },
     ["6thLibrary"] = {
       message = "Sixth Library",
       windowFilter = JabRef.WF.numberLibraries(6),
       condition = JabRef.showLibraryByIndex(6),
-      fn = click
+      fn = Callback.Click
     },
     ["7thLibrary"] = {
       message = "Seventh Library",
       windowFilter = JabRef.WF.numberLibraries(7),
       condition = JabRef.showLibraryByIndex(7),
-      fn = click
+      fn = Callback.Click
     },
     ["8thLibrary"] = {
       message = "Eighth Library",
       windowFilter = JabRef.WF.numberLibraries(8),
       condition = JabRef.showLibraryByIndex(8),
-      fn = click
+      fn = Callback.Click
     },
     ["9thLibrary"] = {
       message = "Nineth Library",
       windowFilter = JabRef.WF.numberLibraries(9),
       condition = JabRef.showLibraryByIndex(9),
-      fn = click
+      fn = Callback.Click
     },
     ["10thLibrary"] = {
       message = "Tenth Library",
       windowFilter = JabRef.WF.numberLibraries(10),
       condition = JabRef.showLibraryByIndex(10),
-      fn = click
+      fn = Callback.Click
     },
     ["minimize"] = specialCommonHotkeyConfigs["minimize"]
   },
@@ -4244,7 +4245,7 @@ appHotKeyCallbacks = {
     ["newCollection"] = {
       message = T("New Collection…"),
       condition = MenuItem.isEnabled({ "File", "New Collection…" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -4260,7 +4261,7 @@ appHotKeyCallbacks = {
         local ta = getc(g, AX.TextArea, 1)
         return ta ~= nil and ta.AXValue ~= "", getc(g, AX.Button, 2)
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["renderClipboardInKlatexformula"] = {
       message = "Render Clipboard in klatexformula",
@@ -4272,7 +4273,7 @@ appHotKeyCallbacks = {
         local winUI = towinui(app:mainWindow())
         local button = getc(winUI, AX.SplitGroup, 1, AX.Button, 2)
         if button ~= nil then
-          press(button)
+          Callback.Press(button)
         end
       end
     },
@@ -4286,7 +4287,7 @@ appHotKeyCallbacks = {
         local button = getc(winUI, AX.SplitGroup, 1, AX.Button, "COPY")
         return button ~= nil and button.AXEnabled, button
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["clear"] = {
       message = "Clear",
@@ -4297,7 +4298,7 @@ appHotKeyCallbacks = {
         local winUI = towinui(win)
         local button = getc(winUI, AX.SplitGroup, 1, AX.Button, 1)
         if button ~= nil then
-          press(button)
+          Callback.Press(button)
         end
       end
     },
@@ -4311,7 +4312,7 @@ appHotKeyCallbacks = {
         local button = getc(winUI, AX.SplitGroup, 1, AX.Button, "SAVE")
         return button ~= nil and button.AXEnabled, button
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
     ["minimize"] = specialCommonHotkeyConfigs["minimize"]
@@ -4322,12 +4323,12 @@ appHotKeyCallbacks = {
     ["export"] = {
       message = T{"Share", "File…"},
       condition = MenuItem.isEnabled({ "File", "Share", "File…" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["openRecent"] = {
       message = T("Open Library"),
       condition = MenuItem.isEnabled({ "File", "Open Library" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -4357,7 +4358,7 @@ appHotKeyCallbacks = {
             AX.SplitGroup, 1, AX.Button, back)
         return clickable(bt)
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["backInOfficialAccounts"] = {
       message = TC("Back"),
@@ -4379,7 +4380,7 @@ appHotKeyCallbacks = {
           end
         end
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["backInMoments"] = {
       message = TC("Back"),
@@ -4406,7 +4407,7 @@ appHotKeyCallbacks = {
         local title = TC("Back", win)
         return clickable(getc(towinui(win), AX.Button, title))
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["hideChat"] = {
       message = function(win)
@@ -4476,7 +4477,7 @@ appHotKeyCallbacks = {
           local menu = getc(chat, AX.Row, 1, AX.Menu, 1)
           if menu then
             local hide = getc(menu, AX.MenuItem, "contextMenuHide:")
-            if hide then press(hide) end
+            if hide then Callback.Press(hide) end
           end
         else
           hs.timer.doAfter(0.5, function()
@@ -4527,7 +4528,7 @@ appHotKeyCallbacks = {
               AX.Row, 1, AX.Menu, 1)
           if menu then
             local profile = getc(menu, AX.MenuItem, "contextMenuProfile:")
-            if profile then press(profile) end
+            if profile then Callback.Press(profile) end
           end
         end
       end
@@ -4568,7 +4569,7 @@ appHotKeyCallbacks = {
 
         local button = getc(towinui(win), AX.Group, 1,
             AX.Group, 1, AX.Group, 1, AX.Group, 1, nil, 1)
-        if button then press(button) end
+        if button then Callback.Press(button) end
         if button and button.AXRole == AX.PopUpButton then
           local menuWin, totalDelay = nil, 0
           repeat
@@ -4589,7 +4590,7 @@ appHotKeyCallbacks = {
             local menuItem = tfind(menuItems, function(item)
               return item.AXDescription == title
             end)
-            if menuItem then press(menuItem) end
+            if menuItem then Callback.Press(menuItem) end
           end
         end
       end
@@ -4632,7 +4633,7 @@ appHotKeyCallbacks = {
         end
       end,
       repeatable = true,
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["closeWindow"] = {
       mods = specialCommonHotkeyConfigs["closeWindow"].mods,
@@ -4673,7 +4674,7 @@ appHotKeyCallbacks = {
         local menuItem = win:application():findMenuItem(menuItemPath)
         return menuItem ~= nil and menuItem.enabled, menuItemPath
       end,
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["confirm"] = {
       message = function(win)
@@ -4749,7 +4750,7 @@ appHotKeyCallbacks = {
         end
         return clickable(bt)
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["send"] = {
       message = T("Send"),
@@ -4807,7 +4808,7 @@ appHotKeyCallbacks = {
           end
         end
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["confirmAll"] = {
       message = TC("Confirm"),
@@ -4817,7 +4818,7 @@ appHotKeyCallbacks = {
         local frame = win:frame()
         return clickable(towinui(win), { frame.w - 80, frame.h - 47 })
       end,
-      fn = click
+      fn = Callback.Click
     }
   },
 
@@ -4839,9 +4840,9 @@ appHotKeyCallbacks = {
       end,
       fn = function(image)
         if image.AXPosition then
-          press(image)
+          Callback.Press(image)
         else
-          click(image)
+          Callback.Click(image)
         end
       end
     }
@@ -4969,8 +4970,8 @@ appHotKeyCallbacks = {
         end)
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, '最近打开')
         if menuItem ~= nil then
-          press(menuBarItem)
-          press(menuItem)
+          Callback.Press(menuBarItem)
+          Callback.Press(menuItem)
         end
       end
     },
@@ -4978,61 +4979,61 @@ appHotKeyCallbacks = {
       message = QQLive.channelName(1),
       windowFilter = QQLive.WF.Main,
       condition = QQLive.getChannel(1),
-      fn = click
+      fn = Callback.Click
     },
     ["channel2"] = {
       message = QQLive.channelName(2),
       windowFilter = QQLive.WF.Main,
       condition = QQLive.getChannel(2),
-      fn = click
+      fn = Callback.Click
     },
     ["channel3"] = {
       message = QQLive.channelName(3),
       windowFilter = QQLive.WF.Main,
       condition = QQLive.getChannel(3),
-      fn = click
+      fn = Callback.Click
     },
     ["channel4"] = {
       message = QQLive.channelName(4),
       windowFilter = QQLive.WF.Main,
       condition = QQLive.getChannel(4),
-      fn = click
+      fn = Callback.Click
     },
     ["channel5"] = {
       message = QQLive.channelName(5),
       windowFilter = QQLive.WF.Main,
       condition = QQLive.getChannel(5),
-      fn = click
+      fn = Callback.Click
     },
     ["channel6"] = {
       message = QQLive.channelName(6),
       windowFilter = QQLive.WF.Main,
       condition = QQLive.getChannel(6),
-      fn = click
+      fn = Callback.Click
     },
     ["channel7"] = {
       message = QQLive.channelName(7),
       windowFilter = QQLive.WF.Main,
       condition = QQLive.getChannel(7),
-      fn = click
+      fn = Callback.Click
     },
     ["channel8"] = {
       message = QQLive.channelName(8),
       windowFilter = QQLive.WF.Main,
       condition = QQLive.getChannel(8),
-      fn = click
+      fn = Callback.Click
     },
     ["channel9"] = {
       message = QQLive.channelName(9),
       windowFilter = QQLive.WF.Main,
       condition = QQLive.getChannel(9),
-      fn = click
+      fn = Callback.Click
     },
     ["channel10"] = {
       message = QQLive.channelName(10),
       windowFilter = QQLive.WF.Main,
       condition = QQLive.getChannel(10),
-      fn = click
+      fn = Callback.Click
     }
   },
 
@@ -5084,33 +5085,33 @@ appHotKeyCallbacks = {
     ["uninstall"] = {
       message = T('Uninstall'),
       condition = AppCleanerUninstaller.buttonValid('Uninstall'),
-      fn = press
+      fn = Callback.Press
     },
     ["remove"] = {
       message = T('Remove'),
       condition = AppCleanerUninstaller.buttonValid('Remove'),
-      fn = press
+      fn = Callback.Press
     },
     ["enable"] = {
       message = T('Enable'),
       condition = AppCleanerUninstaller.buttonValid('Enable'),
-      fn = press
+      fn = Callback.Press
     },
     ["disable"] = {
       message = T('Disable'),
       condition = AppCleanerUninstaller.buttonValid('Disable'),
-      fn = press
+      fn = Callback.Press
     },
     ["update"] = {
       message = T('Update'),
       condition = AppCleanerUninstaller.buttonValid('Update'),
-      fn = press
+      fn = Callback.Press
     },
     ["launchApp"] = {
       message = T('Launch App'),
       bindCondition = Version.GreaterEqual("8.6"),
       condition = AppCleanerUninstaller.buttonValid('Launch App'),
-      fn = press
+      fn = Callback.Press
     },
     ["confirmRemove"] = {
       message = T('Remove'),
@@ -5134,28 +5135,28 @@ appHotKeyCallbacks = {
     ["remove"] = {
       message = T('Remove_Button_Title'),
       condition = AppCleanerUninstaller.buttonValid('Remove_Button_Title'),
-      fn = press
+      fn = Callback.Press
     },
     ["enable"] = {
       message = T('EnableMenuItemTitle'),
       condition = AppCleanerUninstaller.buttonValid('EnableMenuItemTitle'),
-      fn = press
+      fn = Callback.Press
     },
     ["disable"] = {
       message = T('DisableMenuItemTitle'),
       condition = AppCleanerUninstaller.buttonValid('DisableMenuItemTitle'),
-      fn = press
+      fn = Callback.Press
     },
     ["update"] = {
       message = T('UpdateButtonTitle'),
       condition = AppCleanerUninstaller.buttonValid('UpdateButtonTitle'),
-      fn = press
+      fn = Callback.Press
     },
     ["launchApp"] = {
       message = T('LaunchAppButtonTitle'),
       bindCondition = Version.GreaterEqual("8.6"),
       condition = AppCleanerUninstaller.buttonValid('LaunchAppButtonTitle'),
-      fn = press
+      fn = Callback.Press
     },
     ["confirmRemove"] = {
       message = T('PartialRemove_Remove'),
@@ -5179,7 +5180,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = T("Show History"),
       condition = MenuItem.isEnabled({ "Window", "Show History" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -5201,14 +5202,14 @@ appHotKeyCallbacks = {
         local start = getc(menu, AX.MenuItem, title)
         if start == nil then return end
         if start.AXEnabled then
-          press(start)
+          Callback.Press(start)
           hs.alert("Barrier started")
         else
           title = T("S&top", app)
           title = title:gsub("%(&%a%)", ""):gsub("&", "")
           local stop = getc(menu, AX.MenuItem, title)
           if stop == nil then return end
-          press(stop)
+          Callback.Press(stop)
           hs.alert("Barrier stopped")
         end
       end,
@@ -5220,12 +5221,12 @@ appHotKeyCallbacks = {
           local title = Barrier.localizedString("&Start", app)
           local start = getc(winUI, AX.Button, title)
           if start == nil then return end
-          press(start)
+          Callback.Press(start)
           hs.alert("Barrier started")
           hs.timer.doAfter(0.5, function()
             local close = getc(winUI, AX.Button, 4)
             if close == nil then return end
-            press(close)
+            Callback.Press(close)
           end)
         end
       end
@@ -5242,7 +5243,7 @@ appHotKeyCallbacks = {
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, title)
         return menuItem and menuItem.AXEnabled, menuItem
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["reload"] = {
       message = Barrier.localizedMessage("&Reload"),
@@ -5255,7 +5256,7 @@ appHotKeyCallbacks = {
         local reload = getc(winUI, AX.Button, title)
         return reload ~= nil and #reload:actionNames() > 0, reload
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["start"] = {
       message = Barrier.localizedMessage("&Start"),
@@ -5268,7 +5269,7 @@ appHotKeyCallbacks = {
         local start = getc(winUI, AX.Button, title)
         return start ~= nil and #start:actionNames() > 0, start
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["stop"] = {
       message = Barrier.localizedMessage("&Stop"),
@@ -5281,7 +5282,7 @@ appHotKeyCallbacks = {
         local stop = getc(winUI, AX.Button, title)
         return stop ~= nil and #stop:actionNames() > 0, stop
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["serverMode"] = {
       message = Barrier.localizedMessage("&Server (share this computer's mouse and keyboard)"),
@@ -5291,7 +5292,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         local winUI = towinui(win)
         local server = getc(winUI, AX.CheckBox, 1)
-        if server then press(server) end
+        if server then Callback.Press(server) end
       end
     },
     ["clientMode"] = {
@@ -5302,7 +5303,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         local winUI = towinui(win)
         local client = getc(winUI, AX.CheckBox, 2)
-        if client then press(client) end
+        if client then Callback.Press(client) end
       end
     },
     ["configureInteractively"] = {
@@ -5316,7 +5317,7 @@ appHotKeyCallbacks = {
         local configure = getc(winUI, AX.CheckBox, 1, AX.RadioButton, title)
         return configure ~= nil and #configure:actionNames() > 0, configure
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["useExistingConfiguration"] = {
       message = Barrier.localizedMessage("Use existing configuration:"),
@@ -5329,7 +5330,7 @@ appHotKeyCallbacks = {
         local configure = getc(winUI, AX.CheckBox, 1, AX.RadioButton, title)
         return configure ~= nil and #configure:actionNames() > 0, configure
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["configureServer"] = {
       message = Barrier.localizedMessage("&Configure Server..."),
@@ -5342,7 +5343,7 @@ appHotKeyCallbacks = {
         local configure = getc(winUI, AX.CheckBox, 1, AX.Button, title)
         return configure ~= nil and #configure:actionNames() > 0, configure
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["configurationFile"] = {
       message = Barrier.localizedMessage("&Configuration file:"),
@@ -5370,7 +5371,7 @@ appHotKeyCallbacks = {
         local browse = getc(winUI, AX.CheckBox, 1, AX.Button, title)
         return browse ~= nil and #browse:actionNames() > 0, browse
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["autoConfig"] = {
       message = Barrier.localizedMessage("Auto config"),
@@ -5385,7 +5386,7 @@ appHotKeyCallbacks = {
       end,
       fn = function(checkbox, win)
         local toSpecify = checkbox.AXValue == 1
-        press(checkbox)
+        Callback.Press(checkbox)
         if toSpecify then
           local title = Barrier.localizedString("&Server IP:", win)
           local textField = getc(towinui(win), AX.CheckBox, 2, AX.TextField, title)
@@ -5404,7 +5405,7 @@ appHotKeyCallbacks = {
         local menuItem = getc(menu, AX.MenuItem, title)
         return menuItem and menuItem.AXEnabled, menuItem
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
   },
@@ -5422,7 +5423,7 @@ appHotKeyCallbacks = {
         local button = getc(winUI, AX.Button, "Allow")
         return button ~= nil, button
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["blockConnection"] = {
       message = "Block Connection",
@@ -5435,7 +5436,7 @@ appHotKeyCallbacks = {
         local button = getc(winUI, AX.Button, "Block")
         return button ~= nil, button
       end,
-      fn = press
+      fn = Callback.Press
     }
   },
 
@@ -5456,7 +5457,7 @@ appHotKeyCallbacks = {
         local button = getc(winUI, AX.Button, "Save")
         return button and button.AXEnabled, button
       end,
-      fn = press
+      fn = Callback.Press
     }
   },
 
@@ -5634,7 +5635,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         local button = getc(towinui(win),
             AX.Toolbar, 1, AX.Button, 1, AX.Button, 1)
-        if button then press(button) end
+        if button then Callback.Press(button) end
       end
     },
     ["view1"] =
@@ -5642,63 +5643,63 @@ appHotKeyCallbacks = {
       message = Bartender.sidebarItemTitle(1),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(1),
-      fn = select
+      fn = Callback.UISelect
     },
     ["view2"] =
     {
       message = Bartender.sidebarItemTitle(2),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(2),
-      fn = select
+      fn = Callback.UISelect
     },
     ["view3"] =
     {
       message = Bartender.sidebarItemTitle(3),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(3),
-      fn = select
+      fn = Callback.UISelect
     },
     ["view4"] =
     {
       message = Bartender.sidebarItemTitle(4),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(4),
-      fn = select
+      fn = Callback.UISelect
     },
     ["view5"] =
     {
       message = Bartender.sidebarItemTitle(5),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(5),
-      fn = select
+      fn = Callback.UISelect
     },
     ["view6"] =
     {
       message = Bartender.sidebarItemTitle(6),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(6),
-      fn = select
+      fn = Callback.UISelect
     },
     ["view7"] =
     {
       message = Bartender.sidebarItemTitle(7),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(7),
-      fn = select
+      fn = Callback.UISelect
     },
     ["view8"] =
     {
       message = Bartender.sidebarItemTitle(8),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(8),
-      fn = select
+      fn = Callback.UISelect
     },
     ["view9"] =
     {
       message = Bartender.sidebarItemTitle(9),
       windowFilter = Bartender.WF.Main,
       condition = Bartender.sidebarItemSelectable(9),
-      fn = select
+      fn = Callback.UISelect
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
     ["minimize"] = {
@@ -5751,7 +5752,7 @@ appHotKeyCallbacks = {
             function(bt) return bt.AXDescription == "Sidebar" end)
         return button ~= nil, button
       end,
-      fn = press
+      fn = Callback.Press
     },
     ["click1stBarbeeBarItem"] = {
       message = Barbee.barItemTitle(1),
@@ -6103,7 +6104,7 @@ appHotKeyCallbacks = {
         local app = getAppFromDescendantElement(menu)
         local title = T("Preferences...", app)
         local menuItem = getc(menu, AX.MenuItem, title)
-        if menuItem then press(menuItem) end
+        if menuItem then Callback.Press(menuItem) end
       end
     }
   },
@@ -6126,7 +6127,7 @@ appHotKeyCallbacks = {
                 AX.Popover, 1, AX.Group, 3, AX.Button, 2)
           end
           local state = switch.AXValue
-          press(switch)
+          Callback.Press(switch)
           if state == 'off' then
             hs.eventtap.keyStroke("", "Escape", nil, app)
           else
@@ -6203,7 +6204,7 @@ appHotKeyCallbacks = {
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local menuItem = getc(menu, AX.MenuItem, -1)
-        press(menuItem)
+        Callback.Press(menuItem)
       end
     }
   },
@@ -6218,7 +6219,7 @@ appHotKeyCallbacks = {
             AX.Toolbar, 1, AX.Group, -1, AX.TextField, 1, AX.Button, 1)
         return clickable(searchButton)
       end,
-      fn = click
+      fn = Callback.Click
     }
   },
 
@@ -6240,7 +6241,7 @@ appHotKeyCallbacks = {
         return button ~= nil, button
       end,
       background = true,
-      fn = press
+      fn = Callback.Press
     },
     ["showAllPasswords"] = {
       message = T("Show all passwords"),
@@ -6251,7 +6252,7 @@ appHotKeyCallbacks = {
         return button ~= nil, button
       end,
       background = true,
-      fn = press
+      fn = Callback.Press
     },
     ["back"] = {
       message = T("Back"),
@@ -6262,7 +6263,7 @@ appHotKeyCallbacks = {
         return elem.AXRole == AX.Button, elem
       end,
       background = true,
-      fn = press
+      fn = Callback.Press
     },
     ["copyUserName"] = {
       message = T("Copy User Name"),
@@ -6270,7 +6271,7 @@ appHotKeyCallbacks = {
       background = true,
       condition = PasswordsMenuBarExtra.recordField("User Name"),
       fn = function(field, win)
-        click(field)
+        Callback.Click(field)
         clickRightMenuBarItem(win:application())
       end
     },
@@ -6280,7 +6281,7 @@ appHotKeyCallbacks = {
       background = true,
       condition = PasswordsMenuBarExtra.recordField("Password"),
       fn = function(field, win)
-        click(field)
+        Callback.Click(field)
         clickRightMenuBarItem(win:application())
       end
     },
@@ -6295,7 +6296,7 @@ appHotKeyCallbacks = {
           OS_VERSION >= OS.Tahoe and "Code" or "Verification Code"),
       background = true,
       fn = function(field, win)
-        click(field)
+        Callback.Click(field)
         clickRightMenuBarItem(win:application())
       end
     },
@@ -6304,56 +6305,56 @@ appHotKeyCallbacks = {
       windowFilter = PasswordsMenuBarExtra.WF,
       condition = PasswordsMenuBarExtra.recordPosition(1),
       background = true,
-      fn = click
+      fn = Callback.Click
     },
     ["record2"] = {
       message = "Record 2",
       windowFilter = PasswordsMenuBarExtra.WF,
       condition = PasswordsMenuBarExtra.recordPosition(2),
       background = true,
-      fn = click
+      fn = Callback.Click
     },
     ["record3"] = {
       message = "Record 3",
       windowFilter = PasswordsMenuBarExtra.WF,
       condition = PasswordsMenuBarExtra.recordPosition(3),
       background = true,
-      fn = click
+      fn = Callback.Click
     },
     ["record4"] = {
       message = "Record 4",
       windowFilter = PasswordsMenuBarExtra.WF,
       condition = PasswordsMenuBarExtra.recordPosition(4),
       background = true,
-      fn = click
+      fn = Callback.Click
     },
     ["record5"] = {
       message = "Record 5",
       windowFilter = PasswordsMenuBarExtra.WF,
       condition = PasswordsMenuBarExtra.recordPosition(5),
       background = true,
-      fn = click
+      fn = Callback.Click
     },
     ["record6"] = {
       message = "Record 6",
       windowFilter = PasswordsMenuBarExtra.WF,
       condition = PasswordsMenuBarExtra.recordPosition(6),
       background = true,
-      fn = click
+      fn = Callback.Click
     },
     ["record7"] = {
       message = "Record 7",
       windowFilter = PasswordsMenuBarExtra.WF,
       condition = PasswordsMenuBarExtra.recordPosition(7),
       background = true,
-      fn = click
+      fn = Callback.Click
     },
     ["record8"] = {
       message = "Record 8",
       windowFilter = PasswordsMenuBarExtra.WF,
       condition = PasswordsMenuBarExtra.recordPosition(8),
       background = true,
-      fn = click
+      fn = Callback.Click
     }
   },
 
@@ -6367,7 +6368,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         local button = getc(towinui(win), AX.Group, 1,
             AX.Group, 1, AX.Button, -1)
-        if button then press(button) end
+        if button then Callback.Press(button) end
       end
     },
     ["closeWindow"] = {
@@ -6382,7 +6383,7 @@ appHotKeyCallbacks = {
         local menuBarItem = getc(toappui(win:application()),
             AX.MenuBar, -1, AX.MenuBarItem, 1)
         if menuBarItem then
-          press(menuBarItem)
+          Callback.Press(menuBarItem)
         end
       end
     }
@@ -6408,7 +6409,7 @@ appHotKeyCallbacks = {
           return true, button
         end
       end,
-      fn = press
+      fn = Callback.Press
     }
   },
 
@@ -6419,7 +6420,7 @@ appHotKeyCallbacks = {
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local menuItem = getc(menu, AX.MenuItem, "Settings...")
-        if menuItem then press(menuItem) end
+        if menuItem then Callback.Press(menuItem) end
       end
     }
   },
@@ -6494,7 +6495,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = T("Open Recent"),
       condition = MenuItem.isEnabled({ "Game", "Open Recent" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
   },
 
@@ -6502,7 +6503,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = T("Start Recent Timer"),
       condition = MenuItem.isEnabled({ "File", "Start Recent Timer" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
   },
 
@@ -6511,7 +6512,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = T("Open Recent"),
       condition = MenuItem.isEnabled({ "Connect", "Open Recent" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
   },
 
@@ -6528,7 +6529,7 @@ appHotKeyCallbacks = {
         end)
         return button ~= nil, button
       end,
-      fn = press
+      fn = Callback.Press
     },
   },
 
@@ -6543,17 +6544,17 @@ appHotKeyCallbacks = {
         local searchField = getc(winUI, AX.TextField, 1)
         return clickable(searchField, { 5, 5 })
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["toggleSidebar"] = {
       message = "Toggle sidebar",
       condition = MenuItem.isEnabled({ "View", "Show sidebar" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["toggleStatusBar"] = {
       message = "Toggle status bar",
       condition = MenuItem.isEnabled({ "View", "Show status bar" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -6563,37 +6564,37 @@ appHotKeyCallbacks = {
       mods = "⌘", key = "N",
       message = T("New..."),
       condition = MenuItem.isEnabled({ "File", "New..." }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["open..."] = {
       mods = "⌘", key = "O",
       message = T("Open..."),
       condition = MenuItem.isEnabled({ "File", "Open..." }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["showControlCenter"] = {
       message = T("Control Center"),
       condition = MenuItem.isEnabled({ "Window", "Control Center" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["expandedView"] = {
       message = T("Expanded View"),
       windowFilter = Parallels.WF.ControlCenter,
       condition = MenuItem.isEnabled({ "View", "Expanded View" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["compactView"] = {
       message = T("Compact View"),
       windowFilter = Parallels.WF.ControlCenter,
       condition = MenuItem.isEnabled({ "View", "Compact View" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["minimize"] = {
       mods = specialCommonHotkeyConfigs["minimize"].mods,
       key = specialCommonHotkeyConfigs["minimize"].key,
       message = T("Minimize"),
       condition = MenuItem.isEnabled({ "Window", "Minimize" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["closeWindow"] = {
       mods = specialCommonHotkeyConfigs["closeWindow"].mods,
@@ -6652,12 +6653,12 @@ appHotKeyCallbacks = {
     ["preferences"] = {
       message = T("Preferences"),
       condition = MenuItem.isEnabled({ "Edit", "Preferences" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     },
     ["quit"] = {
       message = T("Quit"),
       condition = MenuItem.isEnabled({ "File", "Quit" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -6874,7 +6875,7 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = T("Show In Finder"),
       condition = MenuItem.isEnabled({ "Actions", "Show In Finder" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -6883,7 +6884,7 @@ appHotKeyCallbacks = {
     ["showInFinder"] = {
       message = "Show in Finder",
       condition = MenuItem.isEnabled({ "File", "Show in Finder" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -6902,14 +6903,14 @@ appHotKeyCallbacks = {
         end
         return clickable(button)
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["open..."] = {
       message = "Open...",
       windowFilter = {
         allowTitles = "Welcome to CLion"
       },
-      fn = bind(MenuItem.select, {"File", "Open..."})
+      fn = bind(Callback.Select, {"File", "Open..."})
     }
   },
 
@@ -6928,14 +6929,14 @@ appHotKeyCallbacks = {
         end
         return clickable(button)
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["open..."] = {
       message = "Open...",
       windowFilter = {
         allowTitles = "Welcome to CLion"
       },
-      fn = bind(MenuItem.select, {"File", "Open..."})
+      fn = bind(Callback.Select, {"File", "Open..."})
     }
   },
 
@@ -6954,14 +6955,14 @@ appHotKeyCallbacks = {
         end
         return clickable(button)
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["open..."] = {
       message = "Open...",
       windowFilter = {
         allowTitles = "Welcome to IntelliJ IDEA"
       },
-      fn = bind(MenuItem.select, {"File", "Open..."})
+      fn = bind(Callback.Select, {"File", "Open..."})
     }
   },
 
@@ -6980,14 +6981,14 @@ appHotKeyCallbacks = {
         end
         return clickable(button)
       end,
-      fn = click
+      fn = Callback.Click
     },
     ["open..."] = {
       message = "Open...",
       windowFilter = {
         allowTitles = "Welcome to PyCharm"
       },
-      fn = bind(MenuItem.select, {"File", "Open..."})
+      fn = bind(Callback.Select, {"File", "Open..."})
     }
   },
 
@@ -6996,7 +6997,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = T("&Recent Forms"),
       condition = MenuItem.isEnabled({ "File", "&Recent Forms" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -7005,7 +7006,7 @@ appHotKeyCallbacks = {
     ["openRecent"] = {
       message = T("Recently Opened &Files"),
       condition = MenuItem.isEnabled({ "File", "Recently Opened &Files" }),
-      fn = MenuItem.select
+      fn = Callback.Select
     }
   },
 
@@ -7018,7 +7019,7 @@ appHotKeyCallbacks = {
         local app = getAppFromDescendantElement(menu)
         local title = T("Preferences…", app)
         local menuItem = getc(menu, AX.MenuItem, title)
-        if menuItem then press(menuItem) end
+        if menuItem then Callback.Press(menuItem) end
       end
     },
     ["openConnectionInMenuBarMenu"] = {
@@ -7028,7 +7029,7 @@ appHotKeyCallbacks = {
         local app = getAppFromDescendantElement(menu)
         local title = T("Open Connection…", app)
         local menuItem = getc(menu, AX.MenuItem, title)
-        if menuItem then press(menuItem) end
+        if menuItem then Callback.Press(menuItem) end
       end
     },
     ["historyInMenuBarMenu"] = {
@@ -7039,7 +7040,7 @@ appHotKeyCallbacks = {
         local title = T("History", app)
         local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then
-          press(menu.AXParent)
+          Callback.Press(menu.AXParent)
           hs.eventtap.event.newMouseEvent(
             hs.eventtap.event.types.mouseMoved, uioffset(menuItem, { 20, 5 })):post()
           hs.timer.doAfter(0.1, function()
@@ -7060,7 +7061,7 @@ appHotKeyCallbacks = {
         local quit = T("Quit", app)
         local title = quit .. ' ' .. app:name()
         local menuItem = getc(menu, AX.MenuItem, title)
-        if menuItem then press(menuItem) end
+        if menuItem then Callback.Press(menuItem) end
       end
     }
   },
@@ -7077,7 +7078,7 @@ appHotKeyCallbacks = {
         local app = getAppFromDescendantElement(menu)
         local title = T("Preferences", app)
         local menuItem = getc(menu, AX.MenuItem, title)
-        if menuItem then press(menuItem) end
+        if menuItem then Callback.Press(menuItem) end
       end
     }
   },
@@ -7113,7 +7114,7 @@ appHotKeyCallbacks = {
         local app = getAppFromDescendantElement(menu)
         local title = T("Preferences", app)
         local menuItem = getc(menu, AX.MenuItem, title)
-        if menuItem then press(menuItem) end
+        if menuItem then Callback.Press(menuItem) end
       end
     }
   },
@@ -7134,7 +7135,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 1)
-        if button ~= nil then press(button) end
+        if button ~= nil then Callback.Press(button) end
       end
     },
     ["select1stItem"] = {
@@ -8728,7 +8729,7 @@ local function registerOpenRecent(app)
     end
   end
   if menuItem ~= nil then
-    local fn = function() MenuItem.select(menuItemPath, app) end
+    local fn = function() Callback.Select(menuItemPath, app) end
     local cond = function()
       local menuItemCond = app:findMenuItem(menuItemPath)
       return menuItemCond ~= nil and menuItemCond.enabled
@@ -8962,7 +8963,7 @@ local function registerNavigationForSettingsToolbar(app)
   local winUI = towinui(win)
   local func = specialToolbarButtons[appid] or getToolbarButtons
   local buttons, toClick = func(winUI)
-  local callback = toClick and click or press
+  local callback = toClick and Callback.Click or Callback.Press
   for i, button in ipairs(buttons) do
     local suffix
     if i == 1 then suffix = "st"
@@ -9238,7 +9239,7 @@ local specialSidebarRowsSelectFuncs = {
               end
             end
           end,
-          fn = click
+          fn = Callback.Click
         })
         tinsert(openSavePanelHotkeys, hotkey)
         i = i + 1
@@ -9384,7 +9385,7 @@ local function registerForOpenSavePanel(app, retry)
         local hotkey = AppWinBind(app:focusedWindow(), {
           spec = spec,
           message = dontSaveButton.AXTitle or dontSaveButton.AXDescription,
-          fn = function() press(dontSaveButton) end,
+          fn = function() Callback.Press(dontSaveButton) end,
         })
         tinsert(openSavePanelHotkeys, hotkey)
       end
@@ -9627,7 +9628,7 @@ local function altMenuBarItem(app, reinvokeKey)
       if actionNames ~= nil and tcontain(actionNames, AX.Pick) then
         menuBarItem:performAction(AX.Pick)
       elseif actionNames ~= nil and tcontain(actionNames, AX.Press) then
-        press(menuBarItem)
+        Callback.Press(menuBarItem)
       else
         leftClick(menuBarItem, app)
       end
@@ -9638,7 +9639,7 @@ local function altMenuBarItem(app, reinvokeKey)
       if index then
         local menubarItem = menuBarItems[index]
         if menubarItem then
-          press(menubarItem)
+          Callback.Press(menubarItem)
           return
         end
       else
@@ -10333,7 +10334,7 @@ local function connectMountainDuckEntries(app, connection)
     local menuItem = getc(menuBar, AX.MenuItem, connection,
         AX.Menu, 1, AX.MenuItem, 1)
     if menuItem ~= nil then
-      press(menuItem)
+      Callback.Press(menuItem)
     end
   else
     local fullfilled = connection.condition(app)
@@ -10344,7 +10345,7 @@ local function connectMountainDuckEntries(app, connection)
       local menuItem = getc(menuBar, AX.MenuItem, item,
           AX.Menu, 1, AX.MenuItem, 1)
       if menuItem ~= nil then
-        press(menuItem)
+        Callback.Press(menuItem)
       end
     end
     local disconnect = T('Disconnect', app)
@@ -10352,7 +10353,7 @@ local function connectMountainDuckEntries(app, connection)
       local menuItem = getc(menuBar, AX.MenuItem, item,
           AX.Menu, 1, AX.MenuItem, disconnect)
       if menuItem ~= nil then
-        press(menuItem)
+        Callback.Press(menuItem)
       end
     end
   end
