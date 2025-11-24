@@ -166,12 +166,26 @@ registerAppKeys()
 
 
 -- ## function utilities for process management on app switching
+
+-- get hs.application from AXUIElement
+local function getAppFromDescendantElement(elem)
+  local appUI = elem
+  repeat
+    appUI = appUI.AXParent
+  until appUI.AXParent == nil
+  return appUI:asHSApplication()
+end
+
+-- get app's bundle identifier
 local function getAppId(app)
   if type(app) == 'string' then
     return app
-  elseif app.application ~= nil then
-    return app:application():bundleID() or app:application():name()
   else
+    if app.AXParent ~= nil then
+      app = getAppFromDescendantElement(app)
+    elseif app.application ~= nil then
+      app = app:application()
+    end
     return app:bundleID() or app:name()
   end
 end
@@ -254,15 +268,6 @@ Evt.StopOnTerminated = function(app, observer, action)
     if action then action(observer, appid) end
     observer = nil
   end)
-end
-
--- get hs.application from AXUIElement
-local function getAppFromDescendantElement(elem)
-  local appUI = elem
-  repeat
-    appUI = appUI.AXParent
-  until appUI.AXParent == nil
-  return appUI:asHSApplication()
 end
 
 Evt.onDestroy = function(element, callback, stopWhen, callbackOnStop)
@@ -351,7 +356,8 @@ local function TC(message, params, params2)
     end
   end
 
-  if params and (params.application or params.focusedWindow) then
+  if params and (params.application
+      or params.focusedWindow or params.AXParent) then
     local app = params
     params = params2
     return fn(app)
@@ -377,7 +383,8 @@ local function T(message, params, sep)
     end
   end
 
-  if params and (params.application or params.focusedWindow) then
+  if params and (params.application
+      or params.focusedWindow or params.AXParent) then
     local app = params
     params = sep
     return fn(app)
@@ -6062,7 +6069,8 @@ appHotKeyCallbacks = {
       fn = clickRightMenuBarItem
     },
     ["preferencesInMenuBarMenu"] = {
-      message = function(app)
+      message = function(menu)
+        local app = getAppFromDescendantElement(menu)
         return app:name() .. ' > ' .. T('Preferences', app)
       end,
       menubarFilter = { allowTitles = 'eul' },
@@ -6185,7 +6193,7 @@ appHotKeyCallbacks = {
   ["com.apple.TextInputMenuAgent"] =
   {
     ["openKeyboardSettings"] = {
-      message = function(app, menu)
+      message = function(menu)
         local menuItem = getc(menu, AX.MenuItem, -1)
         if menuItem then
           return getc(menu, AX.MenuItem, -1).AXTitle
@@ -8533,7 +8541,7 @@ registerInMenuHotkeys = function(app)
       end
       if menu == nil then return end
       local msg = type(cfg.message) == 'string'
-          and cfg.message or cfg.message(app, menu)
+          and cfg.message or cfg.message(menu)
       if msg ~= nil then
         local config = tcopy(cfg)
         config.mods = keybinding.mods
