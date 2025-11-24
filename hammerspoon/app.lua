@@ -1163,20 +1163,23 @@ WPS.WF.PDF = {
 
 -- ### JabRef
 local JabRef = {}
-JabRef.showLibraryByIndex = function(idx, testClickable)
-  return function(app)
-    if app:focusedWindow() == nil then return false end
-    local winUI = towinui(app:focusedWindow())
-    local tab = getc(winUI, AX.TabGroup, 1, AX.RadioButton, idx)
-    if tab ~= nil then
-      if testClickable or testClickable == nil then
-        return clickable(tab, { 10, 10 })
-      else
-        return true
-      end
-    else
-      return false
+
+JabRef.WF = {}
+JabRef.WF.numberLibraries = function(idx)
+  return {
+    allowTitles = "",
+    fn = function(win)
+      local winUI = towinui(win)
+      local bts = getc(winUI, AX.TabGroup, 1, AX.RadioButton)
+      return bts and #bts >= idx
     end
+  }
+end
+
+JabRef.showLibraryByIndex = function(idx)
+  return function(win)
+    local tab = getc(towinui(win), AX.TabGroup, 1, AX.RadioButton, idx)
+    return clickable(tab, { 10, 10 })
   end
 end
 
@@ -4105,18 +4108,18 @@ appHotKeyCallbacks = {
     },
     ["revealLibrayInFinder"] = {
       message = T("Reveal in file explorer"),
-      condition = function(app)
-        if app:focusedWindow() == nil then return false end
-        local winUI = towinui(app:focusedWindow())
-        local tab = tfind(getc(winUI, AX.TabGroup, 1, AX.RadioButton) or {},
+      windowFilter = JabRef.WF.numberLibraries(1),
+      condition = function(win)
+        local tab = tfind(getc(towinui(win), AX.TabGroup, 1, AX.RadioButton) or {},
           function(rb) return rb.AXValue == true
-              and rb.AXTitle ~= T("untitled", app)
+              and rb.AXTitle ~= T("untitled", win)
         end)
         return tab ~= nil, tab
       end,
-      fn = function(tab, app)
+      fn = function(tab, win)
         tab:performAction(AX.ShowMenu)
         hs.timer.doAfter(0.1, function()
+          local app = win:application()
           local title = T("Reveal in file explorer", app)
           local item = getc(toappui(app), AX.Menu, 1, AX.MenuItem, title)
           if item then press(item) end
@@ -4125,10 +4128,9 @@ appHotKeyCallbacks = {
     },
     ["openRecordFile"] = {
       message = T("Open file"),
-      condition = function(app)
-        if app:focusedWindow() == nil then return false end
-        local winUI = towinui(app:focusedWindow())
-        local row = tfind(getc(winUI, AX.TabGroup, 1, AX.Table, 1, AX.Row) or {},
+      windowFilter = JabRef.WF.numberLibraries(1),
+      condition = function(win)
+        local row = tfind(getc(towinui(win), AX.TabGroup, 1, AX.Table, 1, AX.Row) or {},
           function(r) return r.AXFocused
         end)
         if row then
@@ -4143,7 +4145,7 @@ appHotKeyCallbacks = {
     },
     ["remapPreviousTab"] = {
       message = T("Previous library"),
-      condition = JabRef.showLibraryByIndex(2, false),
+      windowFilter = JabRef.WF.numberLibraries(2),
       repeatable = true,
       fn = function(app) hs.eventtap.keyStroke('⇧⌃', 'Tab', nil, app) end
     },
@@ -4151,7 +4153,7 @@ appHotKeyCallbacks = {
       mods = specialCommonHotkeyConfigs["showPrevTab"].mods,
       key = specialCommonHotkeyConfigs["showPrevTab"].key,
       message = T("Previous library"),
-      condition = JabRef.showLibraryByIndex(2, false),
+      windowFilter = JabRef.WF.numberLibraries(2),
       repeatable = true,
       fn = function(app) hs.eventtap.keyStroke('⇧⌃', 'Tab', nil, app) end
     },
@@ -4159,57 +4161,67 @@ appHotKeyCallbacks = {
       mods = specialCommonHotkeyConfigs["showNextTab"].mods,
       key = specialCommonHotkeyConfigs["showNextTab"].key,
       message = T("Next library"),
-      condition = JabRef.showLibraryByIndex(2, false),
+      windowFilter = JabRef.WF.numberLibraries(2),
       repeatable = true,
       fn = function(app) hs.eventtap.keyStroke('⌃', 'Tab', nil, app) end
     },
     ["1stLibrary"] = {
       message = "First Library",
+      windowFilter = JabRef.WF.numberLibraries(1),
       condition = JabRef.showLibraryByIndex(1),
       fn = click
     },
     ["2ndLibrary"] = {
       message = "Second Library",
+      windowFilter = JabRef.WF.numberLibraries(2),
       condition = JabRef.showLibraryByIndex(2),
       fn = click
     },
     ["3rdLibrary"] = {
       message = "Third Library",
+      windowFilter = JabRef.WF.numberLibraries(3),
       condition = JabRef.showLibraryByIndex(3),
       fn = click
     },
     ["4thLibrary"] = {
       message = "Forth Library",
+      windowFilter = JabRef.WF.numberLibraries(4),
       condition = JabRef.showLibraryByIndex(4),
       fn = click
     },
     ["5thLibrary"] = {
       message = "Fifth Library",
+      windowFilter = JabRef.WF.numberLibraries(5),
       condition = JabRef.showLibraryByIndex(5),
       fn = click
     },
     ["6thLibrary"] = {
       message = "Sixth Library",
+      windowFilter = JabRef.WF.numberLibraries(6),
       condition = JabRef.showLibraryByIndex(6),
       fn = click
     },
     ["7thLibrary"] = {
       message = "Seventh Library",
+      windowFilter = JabRef.WF.numberLibraries(7),
       condition = JabRef.showLibraryByIndex(7),
       fn = click
     },
     ["8thLibrary"] = {
       message = "Eighth Library",
+      windowFilter = JabRef.WF.numberLibraries(8),
       condition = JabRef.showLibraryByIndex(8),
       fn = click
     },
     ["9thLibrary"] = {
       message = "Nineth Library",
+      windowFilter = JabRef.WF.numberLibraries(9),
       condition = JabRef.showLibraryByIndex(9),
       fn = click
     },
     ["10thLibrary"] = {
       message = "Tenth Library",
+      windowFilter = JabRef.WF.numberLibraries(10),
       condition = JabRef.showLibraryByIndex(10),
       fn = click
     },
