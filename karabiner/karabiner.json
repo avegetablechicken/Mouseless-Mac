@@ -456,7 +456,6 @@
                     },
                     {
                         "description": "Fn + Control + arrow to zoom window to half screen",
-                        "enabled": false,
                         "manipulators": [
                             {
                                 "conditions": [
@@ -2157,14 +2156,24 @@
                     },
                     "simple_modifications": [
                         {
-                            "from": { "key_code": "left_control" },
-                            "to": [{ "apple_vendor_top_case_key_code": "keyboard_fn" }]
-                        },
-                        {
                             "from": { "apple_vendor_top_case_key_code": "keyboard_fn" },
                             "to": [{ "key_code": "left_control" }]
+                        },
+                        {
+                            "from": { "key_code": "left_control" },
+                            "to": [{ "apple_vendor_top_case_key_code": "keyboard_fn" }]
                         }
                     ]
+                },
+                {
+                    "identifiers": {
+                        "is_pointing_device": true,
+                        "product_id": 13330,
+                        "vendor_id": 14
+                    },
+                    "ignore": false,
+                    "mouse_flip_horizontal_wheel": true,
+                    "mouse_flip_vertical_wheel": true
                 }
             ],
             "name": "Default profile",

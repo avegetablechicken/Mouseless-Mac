@@ -2048,8 +2048,9 @@ local function dumpPlistKeyBinding(mode, mods, key)
   return modIdx, key
 end
 
+local MenuItem = {}
 -- fetch title of menu item as hotkey message by key binding
-local function menuItemMessage(mods, key, titleIndex, menuBarItemTitle)
+MenuItem.message = function(mods, key, titleIndex, menuBarItemTitle)
   return function(app)
     if type(titleIndex) == 'string' then
       menuBarItemTitle = titleIndex
@@ -2081,7 +2082,7 @@ end
 
 -- check if the menu item whose path is specified is enabled
 -- if so, return the path of the menu item
-local function checkMenuItem(menuItemTitle, params, ...)
+MenuItem.isEnabled = function(menuItemTitle, params, ...)
   local args = { menuItemTitle, params, ... }
   params = nil
   if #args > 0 and (type(args[#args]) == 'string' or #args[#args] == 0) then
@@ -2112,7 +2113,7 @@ CF = {
 
 -- check if the menu item whose key binding is specified is enabled
 -- if so, return the path of the menu item
-local function checkMenuItemByKeybinding(mods, key, menuBarItemTitle)
+MenuItem.keybindingEnabled = function(mods, key, menuBarItemTitle)
   return function(app)
     local menuItems
     if menuBarItemTitle then
@@ -2130,7 +2131,7 @@ end
 
 -- select the menu item returned by the condition
 -- work as hotkey callback
-local function select(menuItemTitle, app)
+MenuItem.select = function(menuItemTitle, app)
   if app.application then app = app:application() end
   if #menuItemTitle == 0 then
     app:selectMenuItem(menuItemTitle)
@@ -2185,17 +2186,17 @@ local specialCommonHotkeyConfigs = {
   },
   ["showPrevTab"] = {
     mods = "⇧⌘", key = "[",
-    message = menuItemMessage('⇧⌃', "⇥"),
-    condition = checkMenuItemByKeybinding('⇧⌃', "⇥"),
+    message = MenuItem.message('⇧⌃', "⇥"),
+    condition = MenuItem.keybindingEnabled('⇧⌃', "⇥"),
     repeatable = true,
-    fn = select
+    fn = MenuItem.select
   },
   ["showNextTab"] = {
     mods = "⇧⌘", key = "]",
-    message = menuItemMessage('⌃', "⇥"),
-    condition = checkMenuItemByKeybinding('⌃', "⇥"),
+    message = MenuItem.message('⌃', "⇥"),
+    condition = MenuItem.keybindingEnabled('⌃', "⇥"),
     repeatable = true,
-    fn = select
+    fn = MenuItem.select
   },
 }
 
@@ -2204,8 +2205,8 @@ appHotKeyCallbacks = {
   {
     ["openRecent"] = {
       message = T("Recent Folders"),
-      condition = checkMenuItem({ "Go", "Recent Folders" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Go", "Recent Folders" }),
+      fn = MenuItem.select
     },
     ["open1stSidebarItem"] = {
       mods = get(KeybindingConfigs.hotkeys.shared,
@@ -2370,7 +2371,7 @@ appHotKeyCallbacks = {
       fn = Messages.deleteAll
     },
     ["goToPreviousConversation"] = {
-      message = menuItemMessage('⇧⌃', "⇥", "Window"),
+      message = MenuItem.message('⇧⌃', "⇥", "Window"),
       condition = function(app)
         local appUI = toappui(app)
         local messageItems
@@ -2404,7 +2405,7 @@ appHotKeyCallbacks = {
       fn = press
     },
     ["goToNextConversation"] = {
-      message = menuItemMessage('⌃', "⇥", "Window"),
+      message = MenuItem.message('⌃', "⇥", "Window"),
       condition = function(app)
         local appUI = toappui(app)
         local messageItems
@@ -2558,49 +2559,49 @@ appHotKeyCallbacks = {
 
   ["com.apple.Photos"] = {
     ["view1"] = {
-      message = menuItemMessage('⌃', '1', 'View'),
-      condition = checkMenuItemByKeybinding('⌃', '1', 'View'),
-      fn = select
+      message = MenuItem.message('⌃', '1', 'View'),
+      condition = MenuItem.keybindingEnabled('⌃', '1', 'View'),
+      fn = MenuItem.select
     },
     ["view2"] = {
-      message = menuItemMessage('⌃', '2', 'View'),
-      condition = checkMenuItemByKeybinding('⌃', '2', 'View'),
-      fn = select
+      message = MenuItem.message('⌃', '2', 'View'),
+      condition = MenuItem.keybindingEnabled('⌃', '2', 'View'),
+      fn = MenuItem.select
     },
     ["view3"] = {
-      message = menuItemMessage('⌃', '3', 'View'),
-      condition = checkMenuItemByKeybinding('⌃', '3', 'View'),
-      fn = select
+      message = MenuItem.message('⌃', '3', 'View'),
+      condition = MenuItem.keybindingEnabled('⌃', '3', 'View'),
+      fn = MenuItem.select
     },
     ["view4"] = {
-      message = menuItemMessage('⌃', '4', 'View'),
-      condition = checkMenuItemByKeybinding('⌃', '4', 'View'),
-      fn = select
+      message = MenuItem.message('⌃', '4', 'View'),
+      condition = MenuItem.keybindingEnabled('⌃', '4', 'View'),
+      fn = MenuItem.select
     },
     ["view5"] = {
-      message = menuItemMessage('⌃', '5', 'View'),
-      condition = checkMenuItemByKeybinding('⌃', '5', 'View'),
-      fn = select
+      message = MenuItem.message('⌃', '5', 'View'),
+      condition = MenuItem.keybindingEnabled('⌃', '5', 'View'),
+      fn = MenuItem.select
     },
     ["view6"] = {
-      message = menuItemMessage('⌃', '6', 'View'),
-      condition = checkMenuItemByKeybinding('⌃', '6', 'View'),
-      fn = select
+      message = MenuItem.message('⌃', '6', 'View'),
+      condition = MenuItem.keybindingEnabled('⌃', '6', 'View'),
+      fn = MenuItem.select
     },
     ["view7"] = {
-      message = menuItemMessage('⌃', '7', 'View'),
-      condition = checkMenuItemByKeybinding('⌃', '7', 'View'),
-      fn = select
+      message = MenuItem.message('⌃', '7', 'View'),
+      condition = MenuItem.keybindingEnabled('⌃', '7', 'View'),
+      fn = MenuItem.select
     },
     ["view8"] = {
-      message = menuItemMessage('⌃', '8', 'View'),
-      condition = checkMenuItemByKeybinding('⌃', '8', 'View'),
-      fn = select
+      message = MenuItem.message('⌃', '8', 'View'),
+      condition = MenuItem.keybindingEnabled('⌃', '8', 'View'),
+      fn = MenuItem.select
     },
     ["view9"] = {
-      message = menuItemMessage('⌃', '9', 'View'),
-      condition = checkMenuItemByKeybinding('⌃', '9', 'View'),
-      fn = select
+      message = MenuItem.message('⌃', '9', 'View'),
+      condition = MenuItem.keybindingEnabled('⌃', '9', 'View'),
+      fn = MenuItem.select
     }
   },
 
@@ -2608,9 +2609,9 @@ appHotKeyCallbacks = {
     ["toggleFolders"] = {
       message = T("Show Folders"),
       bindCondition = function() return OS_VERSION < OS.Tahoe end,
-      condition = checkMenuItem({ "View", "Show Folders" },
-                                { "View", "Hide Folders" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "View", "Show Folders" },
+                                     { "View", "Hide Folders" }),
+      fn = MenuItem.select
     }
   },
 
@@ -2618,9 +2619,9 @@ appHotKeyCallbacks = {
   {
     ["toggleCalendarList"] = {
       message = T("Show Calendar List"),
-      condition = checkMenuItem({ "View", "Show Calendar List" },
-                                { "View", "Hide Calendar List" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "View", "Show Calendar List" },
+                                     { "View", "Hide Calendar List" }),
+      fn = MenuItem.select
     }
   },
 
@@ -2910,9 +2911,9 @@ appHotKeyCallbacks = {
   {
     ["toggleSidebar"] = {
       message = T("Show Sidebar"),
-      condition = checkMenuItem({ "View", "Show Sidebar" },
-                                { "View", "Hide Sidebar" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "View", "Show Sidebar" },
+                                     { "View", "Hide Sidebar" }),
+      fn = MenuItem.select
     },
     ["showInFinder"] = {
       message = TC("Show in Finder"),
@@ -2926,8 +2927,8 @@ appHotKeyCallbacks = {
     },
     ["openRecent"] = {
       message = T("Recently Closed"),
-      condition = checkMenuItem({ "History", "Recently Closed" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "History", "Recently Closed" }),
+      fn = MenuItem.select
     }
   },
 
@@ -2953,8 +2954,8 @@ appHotKeyCallbacks = {
   {
     ["openRecent"] = {
       message = T("Search Tabs…"),
-      condition = checkMenuItem({ "Tab", "Search Tabs…" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Tab", "Search Tabs…" }),
+      fn = MenuItem.select
     },
     ["showInFinder"] = {
       message = TC("Show in Finder"),
@@ -3015,9 +3016,9 @@ appHotKeyCallbacks = {
     },
     ["openRecent"] = {
       message = "Open Recent",
-      condition = checkMenuItem({ "File", "Open Recent", "More…" },
-                                { "File", "Open Recent" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Open Recent", "More…" },
+                                     { "File", "Open Recent" }),
+      fn = MenuItem.select
     }
   },
 
@@ -3042,28 +3043,28 @@ appHotKeyCallbacks = {
   {
     ["showMainWindow"] = {
       message = T("Show Main Window"),
-      condition = checkMenuItem({ "Window", "Show Main Window" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Window", "Show Main Window" }),
+      fn = MenuItem.select
     },
     ["moveFocusToSidebar"] = {
       message = T("Move Focus to Sidebar"),
-      condition = checkMenuItem({ "View", "Move Focus to Sidebar" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "View", "Move Focus to Sidebar" }),
+      fn = MenuItem.select
     },
     ["moveFocusToSnippetsList"] = {
       message = T("Move Focus to Snippets List"),
-      condition = checkMenuItem({ "View", "Move Focus to Snippets List" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "View", "Move Focus to Snippets List" }),
+      fn = MenuItem.select
     },
     ["moveFocusToEditor"] = {
       message = T("Move Focus to Editor"),
-      condition = checkMenuItem({ "View", "Move Focus to Editor" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "View", "Move Focus to Editor" }),
+      fn = MenuItem.select
     },
     ["moveFocusToPreview"] = {
       message = T("Move Focus to Preview"),
-      condition = checkMenuItem({ "View", "Move Focus to Preview" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "View", "Move Focus to Preview" }),
+      fn = MenuItem.select
     }
   },
 
@@ -3071,14 +3072,14 @@ appHotKeyCallbacks = {
   {
     ["showInFinder"] = {
       message = T("Show in Finder"),
-      condition = checkMenuItem({ "File", "Show in Finder" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Show in Finder" }),
+      fn = MenuItem.select
     },
     ["remapPreviousTab"] = {
       message = T("Go to Previous Tab"),
-      condition = checkMenuItem({ "Window", "Go to Previous Tab" }),
+      condition = MenuItem.isEnabled({ "Window", "Go to Previous Tab" }),
       repeatable = true,
-      fn = select
+      fn = MenuItem.select
     }
   },
 
@@ -3086,13 +3087,13 @@ appHotKeyCallbacks = {
   {
     ["toggleOutline"] = {
       message = T("Toggle Outline"),
-      condition = checkMenuItem({ "Workspace", "Toggle Outline" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Workspace", "Toggle Outline" }),
+      fn = MenuItem.select
     },
     ["openRecent"] = {
       message = T("Recent Documents"),
-      condition = checkMenuItem({ "File", "Recent Documents" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Recent Documents" }),
+      fn = MenuItem.select
     }
   },
 
@@ -3100,14 +3101,14 @@ appHotKeyCallbacks = {
   {
     ["openFileLocation"] = {
       message = T("Open File Location"),
-      condition = checkMenuItem({ "File", "Open File Location" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Open File Location" }),
+      fn = MenuItem.select
     },
     ["openRecent"] = {
       message = T("Open Recent"),
-      condition = checkMenuItem({ "File", "Open Quickly…" },
-                                { "File", "Open Recent" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Open Quickly…" },
+                                     { "File", "Open Recent" }),
+      fn = MenuItem.select
     }
   },
 
@@ -3154,13 +3155,13 @@ appHotKeyCallbacks = {
     ["showNextTab"] = specialCommonHotkeyConfigs["showNextTab"],
     ["showInFinder"] = {
       message = T("Show in Finder"),
-      condition = checkMenuItem({ "File", "Show in Finder" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Show in Finder" }),
+      fn = MenuItem.select
     },
     ["openRecent"] = {
       message = T("Open Quickly…"),
-      condition = checkMenuItem({ "File", "Open Quickly…" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Open Quickly…" }),
+      fn = MenuItem.select
     },
     ["openRecentInMenuBarMenu"] = {
       message = T("Open Recent"),
@@ -3219,44 +3220,44 @@ appHotKeyCallbacks = {
     ["properties"] = {
       message = T("Properties..."),
       windowFilter = WPS.WF.NonHome,
-      condition = checkMenuItem({ "File", "Properties..." }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Properties..." }),
+      fn = MenuItem.select
     },
     ["exportToPDF"] = {
       message = T("Export to PDF..."),
       windowFilter = WPS.WF.WPS_WPP_ET,
-      condition = checkMenuItem({ "File", "Export to PDF..." }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Export to PDF..." }),
+      fn = MenuItem.select
     },
     ["insertTextBox"] = {
       message = T{"Insert", "Text Box"},
       windowFilter = WPS.WF.WPS_WPP,
-      condition = checkMenuItem({ "Insert", "Text Box", "Horizontal Text Box" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Insert", "Text Box", "Horizontal Text Box" }),
+      fn = MenuItem.select
     },
     ["insertEquation"] = {
       message = T{"Insert", "LaTeXEquation..."},
       windowFilter = WPS.WF.WPS_WPP_ET,
-      condition = checkMenuItem({ "Insert", "LaTeXEquation..." }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Insert", "LaTeXEquation..." }),
+      fn = MenuItem.select
     },
     ["pdfHightlight"] = {
       message = T("Highlight"),
       windowFilter = WPS.WF.PDF,
-      condition = checkMenuItem({ "Comment", "Highlight" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Comment", "Highlight" }),
+      fn = MenuItem.select
     },
     ["pdfUnderline"] = {
       message = T("Underline"),
       windowFilter = WPS.WF.PDF,
-      condition = checkMenuItem({ "Comment", "Underline" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Comment", "Underline" }),
+      fn = MenuItem.select
     },
     ["pdfStrikethrough"] = {
       message = T("Strikethrough"),
       windowFilter = WPS.WF.PDF,
-      condition = checkMenuItem({ "Comment", "Strikethrough" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Comment", "Strikethrough" }),
+      fn = MenuItem.select
     },
     ["goToHome"] = {
       message = T("Home"),
@@ -3506,29 +3507,29 @@ appHotKeyCallbacks = {
   {
     ["exportToPDF"] = {  -- File > Export To > PDF…
       message = T{"Export To", "PDF…"},
-      condition = checkMenuItem({ "File", "Export To", "PDF…" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Export To", "PDF…" }),
+      fn = MenuItem.select
     },
     ["exportToPPT"] = {  -- File > Export To > PowerPoint…
       message = T{"Export To", "PowerPoint…"},
-      condition = checkMenuItem({ "File", "Export To", "PowerPoint…" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Export To", "PowerPoint…" }),
+      fn = MenuItem.select
     },
     ["pasteAndMatchStyle"] = {  -- Edit > Paste and Match Style
       message = T("Paste and Match Style"),
-      condition = checkMenuItem({ "Edit", "Paste and Match Style" }),
+      condition = MenuItem.isEnabled({ "Edit", "Paste and Match Style" }),
       repeatable = true,
-      fn = select
+      fn = MenuItem.select
     },
     ["paste"] = {  -- Edit > Paste
       message = T("Paste"),
-      condition = checkMenuItem({ "Edit", "Paste" }),
+      condition = MenuItem.isEnabled({ "Edit", "Paste" }),
       repeatable = true,
-      fn = select
+      fn = MenuItem.select
     },
     ["showBuildOrder"] = {  -- View > Show Build Order
       message = T("Show Build Order"),
-      condition = checkMenuItem({ "View", "Show Build Order" }),
+      condition = MenuItem.isEnabled({ "View", "Show Build Order" }),
       fn = function(menuItemTitle, app)
         app:selectMenuItem(menuItemTitle)
         hs.timer.doAfter(0.5, function()
@@ -3542,28 +3543,28 @@ appHotKeyCallbacks = {
     },
     ["toggleFormatInspector"] = {  -- View > Inspector > Format
       message = T{"Inspector", "Format"},
-      condition = checkMenuItem({ "View", "Inspector", "Format" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "View", "Inspector", "Format" }),
+      fn = MenuItem.select
     },
     ["play"] = {  -- Play > Play Slideshow
       message = T("Play Slideshow"),
-      condition = checkMenuItem({ "Play", "Play Slideshow" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Play", "Play Slideshow" }),
+      fn = MenuItem.select
     },
     ["insertTextBox"] = {  -- Insert > Text Box
       message = T{"Insert", "Text Box"},
-      condition = checkMenuItem({ "Insert", "Text Box" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Insert", "Text Box" }),
+      fn = MenuItem.select
     },
     ["insertShape"] = {  -- Insert > Shape
       message = T{"Insert", "Shape"},
-      condition = checkMenuItem({ "Insert", "Shape" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Insert", "Shape" }),
+      fn = MenuItem.select
     },
     ["insertLine"] = {  -- Insert > Line
       message = T{"Insert", "Line"},
-      condition = checkMenuItem({ "Insert", "Line" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Insert", "Line" }),
+      fn = MenuItem.select
     },
     ["showInFinder"] = {
       message = TC("Show in Finder"),
@@ -3585,30 +3586,30 @@ appHotKeyCallbacks = {
   {
     ["exportToPDF"] = {  -- File > Export To > PDF…
       message = T{"Export To", "PDF…"},
-      condition = checkMenuItem({ "File", "Export To", "PDF…" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Export To", "PDF…" }),
+      fn = MenuItem.select
     },
     ["exportToWord"] = {  -- File > Export To > Word…
       message = T{"Export To", "Word…"},
-      condition = checkMenuItem({ "File", "Export To", "Word…" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Export To", "Word…" }),
+      fn = MenuItem.select
     },
     ["pasteAndMatchStyle"] = {  -- Edit > Paste and Match Style
       message = T("Paste and Match Style"),
-      condition = checkMenuItem({ "Edit", "Paste and Match Style" }),
+      condition = MenuItem.isEnabled({ "Edit", "Paste and Match Style" }),
       repeatable = true,
-      fn = select
+      fn = MenuItem.select
     },
     ["paste"] = {  -- Edit > Paste
       message = T("Paste"),
-      condition = checkMenuItem({ "Edit", "Paste" }),
+      condition = MenuItem.isEnabled({ "Edit", "Paste" }),
       repeatable = true,
-      fn = select
+      fn = MenuItem.select
     },
     ["toggleFormatInspector"] = {  -- View > Inspector > Format
       message = T{"Inspector", "Format"},
-      condition = checkMenuItem({ "View", "Inspector", "Format" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "View", "Inspector", "Format" }),
+      fn = MenuItem.select
     },
     ["showInFinder"] = {
       message = TC("Show in Finder"),
@@ -3630,30 +3631,30 @@ appHotKeyCallbacks = {
   {
     ["exportToPDF"] = {  -- File > Export To > PDF…
       message = T{"Export To", "PDF…"},
-      condition = checkMenuItem({ "File", "Export To", "PDF…" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Export To", "PDF…" }),
+      fn = MenuItem.select
     },
     ["exportToExcel"] = {  -- File > Export To > Excel…
       message = T{"Export To", "Excel…"},
-      condition = checkMenuItem({ "File", "Export To", "Excel…" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Export To", "Excel…" }),
+      fn = MenuItem.select
     },
     ["pasteAndMatchStyle"] = {  -- Edit > Paste and Match Style
       message = T("Paste and Match Style"),
-      condition = checkMenuItem({ "Edit", "Paste and Match Style" }),
+      condition = MenuItem.isEnabled({ "Edit", "Paste and Match Style" }),
       repeatable = true,
-      fn = select
+      fn = MenuItem.select
     },
     ["paste"] = {  -- Edit > Paste
       message = T("Paste"),
-      condition = checkMenuItem({ "Edit", "Paste" }),
+      condition = MenuItem.isEnabled({ "Edit", "Paste" }),
       repeatable = true,
-      fn = select
+      fn = MenuItem.select
     },
     ["toggleFormatInspector"] = {  -- View > Inspector > Format
       message = T{"Inspector", "Format"},
-      condition = checkMenuItem({ "View", "Inspector", "Format" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "View", "Inspector", "Format" }),
+      fn = MenuItem.select
     },
     ["showInFinder"] = {
       message = TC("Show in Finder"),
@@ -3675,13 +3676,13 @@ appHotKeyCallbacks = {
   {
     ["exportToPDF"] = {
       message = T{"Export", "PDF"},
-      condition = checkMenuItem({ "File", "Export", "PDF" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Export", "PDF" }),
+      fn = MenuItem.select
     },
     ["insertEquation"] = {
       message = T{"Insert", "Equation"},
-      condition = checkMenuItem({ 'Insert', "Equation" }),
-      fn = select
+      condition = MenuItem.isEnabled({ 'Insert', "Equation" }),
+      fn = MenuItem.select
     }
   },
 
@@ -3693,8 +3694,8 @@ appHotKeyCallbacks = {
         if button then return button.AXTitle end
       end,
       windowFilter = EuDic.WF.Main,
-      condition = checkMenuItem({ "功能", "返回首页" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "功能", "返回首页" }),
+      fn = MenuItem.select
     },
     ["function2"] = {
       message = function(win)
@@ -3758,8 +3759,8 @@ appHotKeyCallbacks = {
     ["toggleSidebar"] = {
       message = T("Toggle Sidebar"),
       bindCondition = Version.LessEqual("1.2024.332"),
-      condition = checkMenuItem({ "View", "Toggle Sidebar" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "View", "Toggle Sidebar" }),
+      fn = MenuItem.select
     },
     ["back"] = {
       message = T("Back"),
@@ -4005,8 +4006,8 @@ appHotKeyCallbacks = {
       key = get(KeybindingConfigs.hotkeys.shared, "zoom", "key"),
       message = T("Maximize"),
       windowFilter = Yuanbao.WF.Main,
-      condition = checkMenuItem({ "Window", "Maximize" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Window", "Maximize" }),
+      fn = MenuItem.select
     },
     ["back"] = {
       message = TC("Back"),
@@ -4104,18 +4105,18 @@ appHotKeyCallbacks = {
   {
     ["preferences"] = {
       message = T("Preferences"),
-      condition = checkMenuItem({ "File", "Preferences" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Preferences" }),
+      fn = MenuItem.select
     },
     ["newLibrary"] = {
       message = T("New library"),
-      condition = checkMenuItem({ "File", "New library" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "New library" }),
+      fn = MenuItem.select
     },
     ["openRecent"] = {
       message = T("Recent libraries"),
-      condition = checkMenuItem({ "File", "Recent libraries" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Recent libraries" }),
+      fn = MenuItem.select
     },
     ["revealLibrayInFinder"] = {
       message = T("Reveal in file explorer"),
@@ -4242,8 +4243,8 @@ appHotKeyCallbacks = {
   ["org.zotero.zotero"] = {
     ["newCollection"] = {
       message = T("New Collection…"),
-      condition = checkMenuItem({ "File", "New Collection…" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "New Collection…" }),
+      fn = MenuItem.select
     }
   },
 
@@ -4320,13 +4321,13 @@ appHotKeyCallbacks = {
   {
     ["export"] = {
       message = T{"Share", "File…"},
-      condition = checkMenuItem({ "File", "Share", "File…" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Share", "File…" }),
+      fn = MenuItem.select
     },
     ["openRecent"] = {
       message = T("Open Library"),
-      condition = checkMenuItem({ "File", "Open Library" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Open Library" }),
+      fn = MenuItem.select
     }
   },
 
@@ -4631,7 +4632,7 @@ appHotKeyCallbacks = {
         end
       end,
       repeatable = true,
-      fn = select
+      fn = MenuItem.select
     },
     ["closeWindow"] = {
       mods = specialCommonHotkeyConfigs["closeWindow"].mods,
@@ -4672,7 +4673,7 @@ appHotKeyCallbacks = {
         local menuItem = win:application():findMenuItem(menuItemPath)
         return menuItem ~= nil and menuItem.enabled, menuItemPath
       end,
-      fn = select
+      fn = MenuItem.select
     },
     ["confirm"] = {
       message = function(win)
@@ -5177,8 +5178,8 @@ appHotKeyCallbacks = {
   {
     ["openRecent"] = {
       message = T("Show History"),
-      condition = checkMenuItem({ "Window", "Show History" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Window", "Show History" }),
+      fn = MenuItem.select
     }
   },
 
@@ -6492,16 +6493,16 @@ appHotKeyCallbacks = {
   {
     ["openRecent"] = {
       message = T("Open Recent"),
-      condition = checkMenuItem({ "Game", "Open Recent" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Game", "Open Recent" }),
+      fn = MenuItem.select
     },
   },
 
   ["com.apple.clock"] = {
     ["openRecent"] = {
       message = T("Start Recent Timer"),
-      condition = checkMenuItem({ "File", "Start Recent Timer" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Start Recent Timer" }),
+      fn = MenuItem.select
     },
   },
 
@@ -6509,8 +6510,8 @@ appHotKeyCallbacks = {
   {
     ["openRecent"] = {
       message = T("Open Recent"),
-      condition = checkMenuItem({ "Connect", "Open Recent" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Connect", "Open Recent" }),
+      fn = MenuItem.select
     },
   },
 
@@ -6546,13 +6547,13 @@ appHotKeyCallbacks = {
     },
     ["toggleSidebar"] = {
       message = "Toggle sidebar",
-      condition = checkMenuItem({ "View", "Show sidebar" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "View", "Show sidebar" }),
+      fn = MenuItem.select
     },
     ["toggleStatusBar"] = {
       message = "Toggle status bar",
-      condition = checkMenuItem({ "View", "Show status bar" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "View", "Show status bar" }),
+      fn = MenuItem.select
     }
   },
 
@@ -6561,38 +6562,38 @@ appHotKeyCallbacks = {
     ["new..."] = {
       mods = "⌘", key = "N",
       message = T("New..."),
-      condition = checkMenuItem({ "File", "New..." }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "New..." }),
+      fn = MenuItem.select
     },
     ["open..."] = {
       mods = "⌘", key = "O",
       message = T("Open..."),
-      condition = checkMenuItem({ "File", "Open..." }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Open..." }),
+      fn = MenuItem.select
     },
     ["showControlCenter"] = {
       message = T("Control Center"),
-      condition = checkMenuItem({ "Window", "Control Center" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Window", "Control Center" }),
+      fn = MenuItem.select
     },
     ["expandedView"] = {
       message = T("Expanded View"),
       windowFilter = Parallels.WF.ControlCenter,
-      condition = checkMenuItem({ "View", "Expanded View" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "View", "Expanded View" }),
+      fn = MenuItem.select
     },
     ["compactView"] = {
       message = T("Compact View"),
       windowFilter = Parallels.WF.ControlCenter,
-      condition = checkMenuItem({ "View", "Compact View" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "View", "Compact View" }),
+      fn = MenuItem.select
     },
     ["minimize"] = {
       mods = specialCommonHotkeyConfigs["minimize"].mods,
       key = specialCommonHotkeyConfigs["minimize"].key,
       message = T("Minimize"),
-      condition = checkMenuItem({ "Window", "Minimize" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Window", "Minimize" }),
+      fn = MenuItem.select
     },
     ["closeWindow"] = {
       mods = specialCommonHotkeyConfigs["closeWindow"].mods,
@@ -6650,13 +6651,13 @@ appHotKeyCallbacks = {
   {
     ["preferences"] = {
       message = T("Preferences"),
-      condition = checkMenuItem({ "Edit", "Preferences" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Edit", "Preferences" }),
+      fn = MenuItem.select
     },
     ["quit"] = {
       message = T("Quit"),
-      condition = checkMenuItem({ "File", "Quit" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Quit" }),
+      fn = MenuItem.select
     }
   },
 
@@ -6872,8 +6873,8 @@ appHotKeyCallbacks = {
   {
     ["showInFinder"] = {
       message = T("Show In Finder"),
-      condition = checkMenuItem({ "Actions", "Show In Finder" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "Actions", "Show In Finder" }),
+      fn = MenuItem.select
     }
   },
 
@@ -6881,8 +6882,8 @@ appHotKeyCallbacks = {
   {
     ["showInFinder"] = {
       message = "Show in Finder",
-      condition = checkMenuItem({ "File", "Show in Finder" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Show in Finder" }),
+      fn = MenuItem.select
     }
   },
 
@@ -6908,7 +6909,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to CLion"
       },
-      fn = bind(select, {"File", "Open..."})
+      fn = bind(MenuItem.select, {"File", "Open..."})
     }
   },
 
@@ -6934,7 +6935,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to CLion"
       },
-      fn = bind(select, {"File", "Open..."})
+      fn = bind(MenuItem.select, {"File", "Open..."})
     }
   },
 
@@ -6960,7 +6961,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to IntelliJ IDEA"
       },
-      fn = bind(select, {"File", "Open..."})
+      fn = bind(MenuItem.select, {"File", "Open..."})
     }
   },
 
@@ -6986,7 +6987,7 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to PyCharm"
       },
-      fn = bind(select, {"File", "Open..."})
+      fn = bind(MenuItem.select, {"File", "Open..."})
     }
   },
 
@@ -6994,8 +6995,8 @@ appHotKeyCallbacks = {
   {
     ["openRecent"] = {
       message = T("&Recent Forms"),
-      condition = checkMenuItem({ "File", "&Recent Forms" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "&Recent Forms" }),
+      fn = MenuItem.select
     }
   },
 
@@ -7003,8 +7004,8 @@ appHotKeyCallbacks = {
   {
     ["openRecent"] = {
       message = T("Recently Opened &Files"),
-      condition = checkMenuItem({ "File", "Recently Opened &Files" }),
-      fn = select
+      condition = MenuItem.isEnabled({ "File", "Recently Opened &Files" }),
+      fn = MenuItem.select
     }
   },
 
@@ -8727,7 +8728,7 @@ local function registerOpenRecent(app)
     end
   end
   if menuItem ~= nil then
-    local fn = function() select(menuItemPath, app) end
+    local fn = function() MenuItem.select(menuItemPath, app) end
     local cond = function()
       local menuItemCond = app:findMenuItem(menuItemPath)
       return menuItemCond ~= nil and menuItemCond.enabled
