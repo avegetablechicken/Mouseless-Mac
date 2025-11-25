@@ -138,7 +138,7 @@ end
 
 function tosymbol(mod)
   for _, tbl in pairs(Mod) do
-    if mod == tbl.Long or mod == tbl.Short then
+    if mod:upper() == tbl.Long:upper() or mod:upper() == tbl.Short:upper() then
       return tbl.Symbol
     end
   end

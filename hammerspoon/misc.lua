@@ -249,9 +249,7 @@ local function loadKarabinerKeyBindings(filePath)
         modsRepr = modsRepr .. tosymbol2(mod)
       end
     end
-    local key = item.key:upper() == HYPER
-        and modifierSymbolMap['hyper'] or item.key:upper()
-    local idx = modsRepr .. key
+    local idx = modsRepr .. item.key:upper()
     local msg
     if item.event ~= nil then
       local ev, k, v = item.event[1], item.event[2], item.event[3]
@@ -821,9 +819,11 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
         end
       end
       if modsByteLen == entry.idx:len() then
+        -- maybe the key is a modifier too (supported by karabiner)
         modsByteLen = utf8.offset(entry.idx, modsLen) - 1
       end
       local key = entry.idx:sub(modsByteLen + 1)
+      key = tosymbol2(key)  -- maybe the key is a modifier too
       local mods = entry.idx:sub(1, modsByteLen)
       local modsRepr = mods
       if utf8.len(modsRepr) == 0 then
