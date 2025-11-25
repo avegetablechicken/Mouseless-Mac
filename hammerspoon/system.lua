@@ -1574,7 +1574,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
   if tcontain({CC.Display, CC.Sound, CC.KbBrightness}, panel) then
     local name = panel == CC.Sound and "Volume" or "Brightness"
     local actions = {{ '=', 'Up'}, {'-', 'Down'}}
-    if OS_VERSION < OS.Tahoe then
+    if OS_VERSION < OS.Tahoe or panel == CC.Display or panel == CC.Sound then
       tconcat(actions, {{'[', 'Min'}, {']', 'Max'}})
     end
     local slider
@@ -1602,9 +1602,27 @@ function registerControlCenterHotKeys(panel, inMenuBar)
             elseif key == '-' then
               slider:performAction(AX.Decrement)
             elseif key == '[' then
-              slider.AXValue = 0
+              if OS_VERSION >= OS.Tahoe then
+                if panel == CC.Sound then
+                  local device = hs.audiodevice.defaultOutputDevice()
+                  device:setVolume(0)
+                elseif panel == CC.Display then
+                  hs.brightness.set(0)
+                end
+              else
+                slider.AXValue = 0
+              end
             else
-              slider.AXValue = 100
+              if OS_VERSION >= OS.Tahoe then
+                if panel == CC.Sound then
+                  local device = hs.audiodevice.defaultOutputDevice()
+                  device:setVolume(100)
+                elseif panel == CC.Display then
+                  hs.brightness.set(100)
+                end
+              else
+                slider.AXValue = 100
+              end
             end
           end)
         if not checkAndRegisterControlCenterHotKeys(hotkey) then
