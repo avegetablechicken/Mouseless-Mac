@@ -1095,7 +1095,8 @@ end
 
 local doubletap = require('modal.doubletap')
 local hkKeybinding
-hkKeybinding = doubletap.bind("", HYPER, "Show Keybindings",
+local thisHyperKey = HYPER
+hkKeybinding = doubletap.bind("", thisHyperKey, "Show Keybindings",
 function()
   local hkKeybindingsLastModifier, hkKeybindingsSpacePressed
   local hkKeybindingsWatcher, hkHideKeybindingsWatcher
@@ -1109,7 +1110,7 @@ function()
   end
 
   local enteredModal = tfind(HyperModalList,
-      function(modal) return modal.hyper == HYPER end)
+      function(modal) return modal.hyper == thisHyperKey end)
   if enteredModal then
     enteredModal.hyperMode:exit()
     enteredModal.hyperMode.Entered = false
