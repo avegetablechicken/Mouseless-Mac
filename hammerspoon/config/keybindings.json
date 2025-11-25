@@ -2099,6 +2099,12 @@
         "key": ","
       }
     },
+    "org.pqrs.Karabiner-EventViewer": {
+      "toggleSidebar": {
+        "mods": ["control", "command"],
+        "key": "S"
+      }
+    },
     "cn.better365.iCopy": {
       "setting": {
         "mods": "command",

@@ -6427,6 +6427,19 @@ appHotKeyCallbacks = {
 
   ["org.pqrs.Karabiner-EventViewer"] =
   {
+    ["toggleSidebar"] = {
+      message = "Toggle Sidebar",
+      condition = function(app)
+        if app:focusedWindow() == nil then return end
+        local button = getc(towinui(app:focusedWindow()), AX.Toolbar, 1, AX.Button, 1)
+        if button == nil then return end
+        local msg = button.AXDescription
+        if msg == "Show Sidebar" or msg == "Hide Sidebar" then
+          return true, button
+        end
+      end,
+      fn = Callback.Press
+    },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
     ["minimize"] = specialCommonHotkeyConfigs["minimize"],
     ["hide"] = specialCommonHotkeyConfigs["hide"]
