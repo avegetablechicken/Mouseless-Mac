@@ -90,8 +90,6 @@ local function registerAppKeys()
     hotkey:delete()
   end
   appkeys = {}
-  HyperModal.hyperMode.keys = tfilter(HyperModal.hyperMode.keys,
-      function(hotkey) return hotkey.idx ~= nil end)
 
   for _, config in ipairs(KeybindingConfigs.hotkeys.appkeys or {}) do
     local appPath, appid

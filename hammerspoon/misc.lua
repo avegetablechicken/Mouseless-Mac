@@ -189,7 +189,6 @@ function HSKeybindings:reset()
 end
 
 local modifierSymbolMap = {
-  hyper = "✧",
   ["trackpad:top-left"] = "⌜",
   ["trackpad:top-right"] = "⌝",
   ["trackpad:bottom-left"] = "⌞",
@@ -213,7 +212,7 @@ local modifiersShowReverseOrder =
   "trackpad:top-left",
 }
 
-local modifierSymbols = { "✧" }
+local modifierSymbols = { Mod.Hyper.Symbol }
 foreach(modifiersShowReverseOrder, function(mod)
   local symbol = tosymbol2(mod)
   if tindex(modifierSymbols, symbol) == nil then
@@ -706,7 +705,7 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
   if evFlags ~= nil then
     evFlagsRepr = ""
     if evFlags.hyper then
-      evFlagsRepr = "✧"
+      evFlagsRepr = Mod.Hyper.Symbol
     else
       for _, mod in ipairs(modifiersShowReverseOrder) do
         if evFlags[mod] then
@@ -1095,7 +1094,7 @@ end
 
 local doubletap = require('modal.doubletap')
 local hkKeybinding
-local thisHyperKey = HYPER
+local thisHyperKey = Mod.Hyper.Long
 hkKeybinding = doubletap.bind("", thisHyperKey, "Show Keybindings",
 function()
   local hkKeybindingsLastModifier, hkKeybindingsSpacePressed
@@ -1109,8 +1108,9 @@ function()
     hkKeybinding:enable()
   end
 
-  local enteredModal = tfind(HyperModalList,
-      function(modal) return modal.hyper == thisHyperKey end)
+  local enteredModal = tfind(HyperModalList, function(modal)
+    return tosymbol(modal.hyper) == tosymbol(thisHyperKey)
+  end)
   if enteredModal then
     enteredModal.hyperMode:exit()
     enteredModal.hyperMode.Entered = false
@@ -1145,9 +1145,9 @@ function()
         end
       end
     elseif ev:getType() == hs.eventtap.event.types.keyDown then
-      if HYPER and ev:getKeyCode() == hs.keycodes.map[HYPER] then
+      if Mod.Hyper and ev:getKeyCode() == hs.keycodes.map[Mod.Hyper.Long] then
         evFlags.hyper = true
-        if evFlags.fn and HYPER:lower():match('^f%d-$') then
+        if evFlags.fn and Mod.Hyper.Long:lower():match('^f%d-$') then
           evFlags.fn = nil
         end
       elseif ev:getKeyCode() == hs.keycodes.map["Space"] then
@@ -1172,9 +1172,9 @@ function()
         return true
       end
     elseif ev:getType() == hs.eventtap.event.types.keyUp then
-      if HYPER and ev:getKeyCode() == hs.keycodes.map[HYPER] then
+      if Mod.Hyper and ev:getKeyCode() == hs.keycodes.map[Mod.Hyper.Long] then
         evFlags.hyper = nil
-        if evFlags.fn and HYPER:lower():match('^f%d-$') then
+        if evFlags.fn and Mod.Hyper.Long:lower():match('^f%d-$') then
           evFlags.fn = nil
         end
       elseif ev:getKeyCode() == hs.keycodes.map["Space"] then
@@ -1461,8 +1461,8 @@ function()
     if entry.modal == HK_MODAL.DOUBLE_TAP then
       mods = ""
       key = entry.idx
-      if key == "✧✧" then
-        key = HYPER .. HYPER
+      if Mod.Hyper and key == Mod.Hyper.Symbol..Mod.Hyper.Symbol then
+        key = Mod.Hyper.Long .. Mod.Hyper.Long
       end
     else
       local modsLen, modsByteLen = 0, 0
@@ -1480,7 +1480,9 @@ function()
         modsByteLen = utf8.offset(entry.idx, modsLen) - 1
       end
       key = entry.idx:sub(modsByteLen + 1)
-      if key == "✧" then key = HYPER end
+      if Mod.Hyper and key == Mod.Hyper.Symbol then
+        key = Mod.Hyper.Long
+      end
       mods = entry.idx:sub(1, modsByteLen)
     end
 

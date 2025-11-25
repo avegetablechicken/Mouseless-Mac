@@ -145,7 +145,6 @@ function tosymbol(mod)
   return mod
 end
 
-HYPER = nil
 KeybindingConfigs = nil
 ModsInHSOrder = { Mod.Cmd.Long, Mod.Ctrl.Long, Mod.Alt.Long, Mod.Shift.Long }
 local function loadKeybindings(filePath)
@@ -167,7 +166,12 @@ local function loadKeybindings(filePath)
     end
   end
   if KeybindingConfigs.hyper ~= nil then
-    HYPER = KeybindingConfigs.hyper.hyper
+    local HYPER = KeybindingConfigs.hyper.hyper
+    Mod.Hyper = {
+      Long = HYPER:lower(),
+      Short = HYPER:lower(),
+      Symbol = '✧'
+    }
   end
 
   if KeybindingConfigs.hotkeys == nil then
@@ -208,8 +212,9 @@ HyperModalList = {}
 DoubleTapModalList = {}
 
 local hyper = require('modal.hyper')
-HyperModal = hyper.install(HYPER)
-tinsert(HyperModalList, HyperModal)
+if Mod.Hyper then
+  tinsert(HyperModalList, hyper.install(Mod.Hyper.Long))
+end
 
 -- get hotkey idx like how Hammerspoon does that
 function hotkeyIdx(mods, key)
@@ -302,7 +307,7 @@ function newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
   repeatfn = getFunc(repeatfn)
   local hotkey
   local validHyperModal = tfind(HyperModalList, function(modal)
-    return modal.hyper == mods
+    return type(mods) == 'string' and tosymbol(modal.hyper) == tosymbol(mods)
   end)
   if validHyperModal ~= nil then
     hotkey = validHyperModal:bind("", key, message, pressedfn, releasedfn, repeatfn)
@@ -340,7 +345,8 @@ function bindHotkeySpecImpl(spec, ...)
   local hotkey = newHotkeyImpl(spec.mods, spec.key, ...)
   if hotkey ~= nil then
     local validHyperModal = tfind(HyperModalList, function(modal)
-      return modal.hyper == spec.mods
+      return type(spec.mods) == 'string'
+          and tosymbol(modal.hyper) == tosymbol(spec.mods)
     end)
     if validHyperModal == nil then
       hotkey:enable()
@@ -353,7 +359,7 @@ function bindHotkey(mods, ...)
   local hotkey = newHotkey(mods, ...)
   if hotkey ~= nil then
     local validHyperModal = tfind(HyperModalList, function(modal)
-      return modal.hyper == mods
+      return type(mods) == 'string' and tosymbol(modal.hyper) == tosymbol(mods)
     end)
     if validHyperModal == nil then
       hotkey:enable()
