@@ -68,7 +68,7 @@ function module:_new(hyper)
   o.trigger = hs.hotkey.new("", o.hyper,
       function() o:enterHyperMode() end, function() o:exitHyperMode() end)
   if o.hyper == HYPER then
-    o.trigger.msg = "✧"
+    o.trigger.msg = "HYPER"
   end
   local logLevel = hs.hotkey.getLogLevel()
   hs.hotkey.setLogLevel('nothing')
