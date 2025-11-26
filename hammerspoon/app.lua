@@ -7626,8 +7626,12 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
       end
     elseif focusedApp then  -- supposed to be non-null
       local app = obj.application ~= nil and obj:application() or obj
-      if focusedApp:asHSApplication():bundleID() ~= app:bundleID() then
-        return false, CF.uIElementNotFocused
+      local fAppid, appid = focusedApp:asHSApplication():bundleID(), app:bundleID()
+      if fAppid ~= appid then
+        if not (appid == "com.apple.Safari" and
+            fAppid == "com.apple.Safari.SandboxBroker") then
+          return false, CF.uIElementNotFocused
+        end
       end
     end
     return cond(obj)
