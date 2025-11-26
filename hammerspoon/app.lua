@@ -9359,7 +9359,9 @@ local function registerForOpenSavePanel(app, retry)
           end
         end
       end
-      if outlineRows and callByObserver ~= true then
+      if outlineRows and callByObserver ~= true
+          and not (appid == "com.apple.Safari"
+                   and windowIdent == "save-panel") then
         if outlineRows[1] and not outlineRows[1]:isValid() then
           actionFunc(winUI)
           return
