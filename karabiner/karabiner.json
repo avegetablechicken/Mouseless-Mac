@@ -2129,6 +2129,33 @@
                                 "type": "basic"
                             }
                         ]
+                    },
+                    {
+                        "description": "Logi MX Keys: Left Control + F18(original CapsLock) to Fn",
+                        "manipulators": [
+                            {
+                                "conditions": [
+                                    {
+                                        "identifiers": [
+                                            {
+                                                "product_id": 45915,
+                                                "vendor_id": 1133
+                                            }
+                                        ],
+                                        "type": "device_if"
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "f18",
+                                    "modifiers": {
+                                        "mandatory": ["left_control"],
+                                        "optional": ["shift", "option", "command"]
+                                    }
+                                },
+                                "to": [{ "key_code": "fn" }],
+                                "type": "basic"
+                            }
+                        ]
                     }
                 ]
             },
