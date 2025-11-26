@@ -1704,6 +1704,15 @@
                                             }
                                         ],
                                         "type": "device_unless"
+                                    },
+                                    {
+                                        "identifiers": [
+                                            {
+                                                "product_id": 45929,
+                                                "vendor_id": 1133
+                                            }
+                                        ],
+                                        "type": "device_unless"
                                     }
                                 ],
                                 "from": {
@@ -1723,6 +1732,15 @@
                                             }
                                         ],
                                         "type": "device_unless"
+                                    },
+                                    {
+                                        "identifiers": [
+                                            {
+                                                "product_id": 45929,
+                                                "vendor_id": 1133
+                                            }
+                                        ],
+                                        "type": "device_unless"
                                     }
                                 ],
                                 "from": {
@@ -1738,6 +1756,15 @@
                                         "identifiers": [
                                             {
                                                 "product_id": 45915,
+                                                "vendor_id": 1133
+                                            }
+                                        ],
+                                        "type": "device_unless"
+                                    },
+                                    {
+                                        "identifiers": [
+                                            {
+                                                "product_id": 45929,
                                                 "vendor_id": 1133
                                             }
                                         ],
@@ -2154,6 +2181,28 @@
                                 },
                                 "to": [{ "key_code": "fn" }],
                                 "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "identifiers": [
+                                            {
+                                                "product_id": 45929,
+                                                "vendor_id": 1133
+                                            }
+                                        ],
+                                        "type": "device_if"
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "f18",
+                                    "modifiers": {
+                                        "mandatory": ["left_control"],
+                                        "optional": ["shift", "option", "command"]
+                                    }
+                                },
+                                "to": [{ "key_code": "fn" }],
+                                "type": "basic"
                             }
                         ]
                     }
@@ -2201,6 +2250,19 @@
                     "ignore": false,
                     "mouse_flip_horizontal_wheel": true,
                     "mouse_flip_vertical_wheel": true
+                },
+                {
+                    "identifiers": {
+                        "is_keyboard": true,
+                        "product_id": 45929,
+                        "vendor_id": 1133
+                    },
+                    "simple_modifications": [
+                        {
+                            "from": { "key_code": "right_option" },
+                            "to": [{ "apple_vendor_top_case_key_code": "keyboard_fn" }]
+                        }
+                    ]
                 }
             ],
             "name": "Default profile",
