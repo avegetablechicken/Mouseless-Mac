@@ -1041,6 +1041,10 @@
         "mods": ["shift", "option", "command"],
         "key": "V"
       },
+      "toggleSlideOnly": {
+        "mods": ["control", "command"],
+        "key": "S"
+      },
       "showBuildOrder": {
         "mods": ["option", "command"],
         "key": "B"

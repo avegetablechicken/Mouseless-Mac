@@ -3526,6 +3526,17 @@ appHotKeyCallbacks = {
       repeatable = true,
       fn = Callback.Select
     },
+    ["toggleSlideOnly"] = {
+      message = T("Slide Only"),
+      condition = function(app)
+        local menuItem, menuItemPath = findMenuItem(app, { "View", "Slide Only" })
+        if menuItem and menuItem.ticked then
+          menuItem, menuItemPath = findMenuItem(app, { "View", "Navigator"})
+        end
+        return menuItem and menuItem.enabled, menuItemPath
+      end,
+      fn = Callback.Select
+    },
     ["showBuildOrder"] = {  -- View > Show Build Order
       message = T("Show Build Order"),
       condition = MenuItem.isEnabled({ "View", "Show Build Order" }),
