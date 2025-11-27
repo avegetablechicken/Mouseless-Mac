@@ -2650,6 +2650,63 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["com.apple.helpviewer"] = {
+    ["back"] = {
+      message = TC("Back"),
+      condition = function(app)
+        if app:focusedWindow() == nil then return false end
+        local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
+        local button
+        if toolbar and toolbar[1].AXRole == AX.Button then
+          button = getc(toolbar, AX.Group, 1, AX.Group, 1, AX.Button, 1)
+        else
+          button = getc(toolbar, AX.Group, 2, AX.Group, 1, AX.Button, 1)
+        end
+        return button and button.AXEnabled, button
+      end,
+      fn = Callback.Press
+    },
+    ["forward"] = {
+      message = TC("Forward"),
+      condition = function(app)
+        if app:focusedWindow() == nil then return false end
+        local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
+        local button
+        if toolbar and toolbar[1].AXRole == AX.Button then
+          button = getc(toolbar, AX.Group, 1, AX.Group, 1, AX.Button, 2)
+        else
+          button = getc(toolbar, AX.Group, 2, AX.Group, 1, AX.Button, 2)
+        end
+        return button and button.AXEnabled, button
+      end,
+      fn = Callback.Press
+    },
+    ["home"] = {
+      message = TG("house"),
+      condition = function(app)
+        if app:focusedWindow() == nil then return false end
+        local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
+        local button
+        if OS_VERSION >= OS.Tahoe then
+          if toolbar and toolbar[1].AXRole == AX.Button then
+            button = getc(toolbar, AX.Group, 2, AX.Group, 1, AX.Button, 1)
+          else
+            button = getc(toolbar, AX.Group, 3, AX.Group, 1, AX.Button, 1)
+          end
+        else
+          button = getc(toolbar, AX.Button, 2)
+        end
+        return button and button.AXEnabled, button
+      end,
+      fn = Callback.Press
+    },
+    ["helpSearch"] = {
+      message = T("Help Search"),
+      condition = MenuItem.isEnabled({ "Edit", "Find", "Help Search" }),
+      fn = Callback.Select
+    }
+  },
+
   ["com.apple.Music"] = {
     ["playCurrent"] = {
       message = T("Play"),

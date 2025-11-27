@@ -756,6 +756,24 @@
         "key": "S"
       }
     },
+    "com.apple.helpviewer": {
+      "back": {
+        "mods": "command",
+        "key": "["
+      },
+      "forward": {
+        "mods": "command",
+        "key": "]"
+      },
+      "home": {
+        "mods": ["shift", "command"],
+        "key": "H"
+      },
+      "helpSearch": {
+        "mods": ["shift", "command"],
+        "key": "F"
+      }
+    },
     "com.apple.iCal": {
       "toggleCalendarList": {
         "mods": ["control", "command"],
