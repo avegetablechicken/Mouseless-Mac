@@ -1058,7 +1058,7 @@
         "key": "T"
       },
       "insertShape": {
-        "mods": ["control", "command"],
+        "mods": ["control", "option", "command"],
         "key": "S"
       },
       "insertLine": {
