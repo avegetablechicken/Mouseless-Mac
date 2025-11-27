@@ -41,7 +41,11 @@ end
 -- Utility to bind handler to Hyper+modifiers+key
 function module:bindNoSuspend(mods, key, message, pressedfn, releasedfn, repeatfn)
   local hotkey = hs.hotkey.new(mods, key, pressedfn, releasedfn, repeatfn)
-  local hyper = self.hyper == HYPER and "✧" or self.hyper
+  local hyper = self.hyper
+  if Mod.Hyper and (hyper:upper() == Mod.Hyper.Long:upper()
+      or hyper:upper() == Mod.Hyper.Short:upper()) then
+    hyper = Mod.Hyper.Symbol
+  end
   hotkey.msg = hyper .. hotkey.idx .. ": " .. message
   tinsert(self.hyperMode.keys, hotkey)
   log.f('Enabled hotkey %s', hotkey.msg)
@@ -50,7 +54,11 @@ end
 
 function module:bind(...)
   local hotkey = newHotkey(...)
-  local hyper = self.hyper == HYPER and "✧" or self.hyper
+  local hyper = self.hyper
+  if Mod.Hyper and (hyper:upper() == Mod.Hyper.Long:upper()
+      or hyper:upper() == Mod.Hyper.Short:upper()) then
+    hyper = Mod.Hyper.Symbol
+  end
   hotkey.msg = hyper .. hotkey.msg
   tinsert(self.hyperMode.keys, hotkey)
   log.f('Enabled hotkey %s', hotkey.msg)
@@ -67,7 +75,8 @@ function module:_new(hyper)
   o.hyperMode.Entered = false
   o.trigger = hs.hotkey.new("", o.hyper,
       function() o:enterHyperMode() end, function() o:exitHyperMode() end)
-  if o.hyper == HYPER then
+  if Mod.Hyper and (hyper:upper() == Mod.Hyper.Long:upper()
+      or hyper:upper() == Mod.Hyper.Short:upper()) then
     o.trigger.msg = "HYPER"
   end
   local logLevel = hs.hotkey.getLogLevel()
