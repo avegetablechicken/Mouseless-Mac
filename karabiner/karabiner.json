@@ -1692,7 +1692,7 @@
                         ]
                     },
                     {
-                        "description": "Right Option + F10/F11/F12 to volume mute/down/up",
+                        "description": "Right Option for volume mute/down/up",
                         "manipulators": [
                             {
                                 "conditions": [
@@ -1776,6 +1776,44 @@
                                     "modifiers": { "mandatory": ["right_option"] }
                                 },
                                 "to": [{ "key_code": "volume_increment" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "identifiers": [
+                                            {
+                                                "product_id": 45929,
+                                                "vendor_id": 1133
+                                            }
+                                        ],
+                                        "type": "device_if"
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "f11",
+                                    "modifiers": { "mandatory": ["right_option"] }
+                                },
+                                "to": [{ "key_code": "mute" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "identifiers": [
+                                            {
+                                                "product_id": 45929,
+                                                "vendor_id": 1133
+                                            }
+                                        ],
+                                        "type": "device_if"
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "f12",
+                                    "modifiers": { "mandatory": ["right_option"] }
+                                },
+                                "to": [{ "key_code": "volume_decrement" }],
                                 "type": "basic"
                             }
                         ]
