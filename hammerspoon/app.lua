@@ -1059,7 +1059,19 @@ Games.WF.Main = {
 
 -- ### Visual Studio Code
 local VSCode = {}
-VSCode.toggleSideBarSection = function(winUI, sidebar, section)
+VSCode.toggleSideBarSection = function(win, sidebar, section)
+  local pressfn
+  if Version.LessThan(win, "1.101") then
+    pressfn = Callback.Press
+  else
+    if appBuf.VSCodeTabClicked then return end
+    appBuf.VSCodeTabClicked = false
+    pressfn = function(button)
+      leftClickAndRestore(button, win)
+    end
+  end
+
+  local winUI = towinui(win)
   local ancestor = getc(winUI,
       nil, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
       nil, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
@@ -1081,7 +1093,7 @@ VSCode.toggleSideBarSection = function(winUI, sidebar, section)
       local button = getc(sec, AX.Button, 1)
           or getc(sec, AX.Group, 1, AX.Button, 1)
       if button[2].AXTitle == section then
-        Callback.Press(button)
+        pressfn(button)
         break
       end
     end
@@ -1092,7 +1104,13 @@ VSCode.toggleSideBarSection = function(winUI, sidebar, section)
       return t.AXTitle:upper():sub(1, #sidebar) == sidebar
           or t.AXDescription:upper():sub(1, #sidebar) == sidebar
     end)
-    Callback.Press(tab)
+    if Version.GreaterEqual(win, "1.101") then
+      appBuf.VSCodeTabClicked = true
+      hs.timer.doAfter(2, function()
+        appBuf.VSCodeTabClicked = nil
+      end)
+    end
+    pressfn(tab)
 
     local sections
     local totalDelay = 0
@@ -1105,7 +1123,6 @@ VSCode.toggleSideBarSection = function(winUI, sidebar, section)
       hs.timer.usleep(0.05 * 1000000)
       totalDelay = totalDelay + 0.05
     until totalDelay > 0.2
-    local hasToClick = false
     if sections == nil then
       leftClickAndRestore(tab, winUI:asHSWindow())
       repeat
@@ -1118,7 +1135,6 @@ VSCode.toggleSideBarSection = function(winUI, sidebar, section)
           totalDelay = totalDelay + 0.05
       until totalDelay > 2.0
       if sections == nil then return end
-      hasToClick = true
     end
     for _, sec in ipairs(sections) do
       local button = getc(sec, AX.Button, 1)
@@ -1127,11 +1143,7 @@ VSCode.toggleSideBarSection = function(winUI, sidebar, section)
         local records = getc(sec, AX.Group, 1, AX.Outline, 1, AX.Group, 1)
             or getc(sec, AX.Group, 1)
         if records == nil or #records == 1 then
-          if hasToClick then
-            leftClickAndRestore(button)
-          else
-            Callback.Press(button)
-          end
+          pressfn(button)
           break
         end
       end
@@ -3060,12 +3072,12 @@ appHotKeyCallbacks = {
           return false
         else
           local winUI = towinui(app:focusedWindow())
-          return winUI.AXIdentifier ~= "open-panel", winUI
+          return winUI.AXIdentifier ~= "open-panel", app:focusedWindow()
         end
       end,
       repeatable = true,
-      fn = function(winUI)
-        VSCode.toggleSideBarSection(winUI, "EXPLORER", "OUTLINE")
+      fn = function(win)
+        VSCode.toggleSideBarSection(win, "EXPLORER", "OUTLINE")
       end
     },
     ["view:toggleTimeline"] = {
@@ -3075,12 +3087,12 @@ appHotKeyCallbacks = {
           return false
         else
           local winUI = towinui(app:focusedWindow())
-          return winUI.AXIdentifier ~= "open-panel", winUI
+          return winUI.AXIdentifier ~= "open-panel", app:focusedWindow()
         end
       end,
       repeatable = true,
-      fn = function(winUI)
-        VSCode.toggleSideBarSection(winUI, "EXPLORER", "TIMELINE")
+      fn = function(win)
+        VSCode.toggleSideBarSection(win, "EXPLORER", "TIMELINE")
       end
     },
     ["toggleSearchEditorWholeWord"] = {
