@@ -4248,7 +4248,7 @@ appHotKeyCallbacks = {
       windowFilter = JabRef.WF.numberLibraries(1),
       condition = function(win)
         local row = tfind(getc(towinui(win), AX.TabGroup, 1, AX.Table, 1, AX.Row) or {},
-          function(r) print(r.AXFocused) return r.AXFocused
+          function(r) return r.AXFocused
         end)
         if row then
           local cell = tfind(getc(row, AX.Cell), function(c)
