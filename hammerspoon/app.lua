@@ -1048,12 +1048,7 @@ local Games = {}
 Games.WF = {}
 Games.WF.Main = {
   fn = function(win)
-    local buttons = getc(towinui(win), AX.Toolbar, 1,
-        AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
-    local button = tfind(buttons or {}, function(bt)
-      return bt.AXDescription == win:title()
-    end)
-    return button ~= nil
+    return getc(towinui(win), AX.Toolbar, 1) ~= nil
   end
 }
 
