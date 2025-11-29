@@ -526,10 +526,10 @@ Callback.Clickable = function(element, offset)
     element.AXPosition.y + offset[2],
   }
   local appHere = hs.axuielement.systemElementAtPosition(point)
-  while appHere ~= nil and appHere.AXParent ~= nil do
-    appHere = appHere.AXParent
-  end
   if appHere then
+    while appHere.AXParent do
+      appHere = appHere.AXParent
+    end
     local appid = appHere:asHSApplication():bundleID()
     local targetApp = getAppFromDescendantElement(element)
     if appid ~= targetApp:bundleID() then return false end
