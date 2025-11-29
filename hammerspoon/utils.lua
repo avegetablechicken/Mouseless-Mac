@@ -848,6 +848,8 @@ local function getQtExecutableLocales(appid, executable, prefix)
   if exists(localesFile) then
     qtExecutableLocales[appid] = hs.json.read(localesFile)
   else
+    local cmd = hs.execute("which lconvert | tr -d '\\n'", true)
+    if cmd == nil then return end
     local localesStr, ok = hs.execute(strfmt(
         [[/usr/bin/python3 scripts/qt_locales.py '%s' '%s']], executable, prefix))
     if ok then
