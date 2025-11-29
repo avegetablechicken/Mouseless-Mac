@@ -516,7 +516,7 @@ Callback.Click = function(position)
   leftClickAndRestore(position)
 end
 
-local function clickable(element, offset)
+Callback.Clickable = function(element, offset)
   if element == nil or not element:isValid() then return false end
   if offset == nil then
     offset = { element.AXSize.w / 2, element.AXSize.h / 2 }
@@ -1222,7 +1222,7 @@ end
 JabRef.showLibraryByIndex = function(idx)
   return function(win)
     local tab = getc(towinui(win), AX.TabGroup, 1, AX.RadioButton, idx)
-    return clickable(tab, { 10, 10 })
+    return Callback.Clickable(tab, { 10, 10 })
   end
 end
 
@@ -1251,7 +1251,7 @@ AppCleanerUninstaller.confirmButtonValid = function(title)
     if cancel == nil then return false end
     local locTitle = T(title, app)
     local button = getc(winUI, AX.StaticText, locTitle)
-    return clickable(button)
+    return Callback.Clickable(button)
   end
 end
 
@@ -1307,13 +1307,13 @@ QQLive.getChannel = function(index)
       local row = list[start + index]
       if row.AXPosition.y > list.AXPosition.y
           and row.AXPosition.y + row.AXSize.h < list[#list].AXPosition.y - 15 then
-        return clickable(row)
+        return Callback.Clickable(row)
       elseif row.AXPosition.y <= list.AXPosition.y
           and row.AXPosition.y + row.AXSize.h > list.AXPosition.y then
-        return clickable(row, { row.AXSize.w / 2, row.AXSize.h })
+        return Callback.Clickable(row, { row.AXSize.w / 2, row.AXSize.h })
       elseif row.AXPosition.y + row.AXSize.h >= list[#list].AXPosition.y - 15
           and row.AXPosition.y < list[#list].AXPosition.y - 15 then
-        return clickable(row, { row.AXSize.w / 2, 0 })
+        return Callback.Clickable(row, { row.AXSize.w / 2, 0 })
       end
     end
     return false
@@ -1797,7 +1797,7 @@ PasswordsMenuBarExtra.recordPosition = function(index)
         row = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
             AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index)
       end
-      return clickable(row)
+      return Callback.Clickable(row)
     end
     return false
   end
@@ -1816,7 +1816,7 @@ PasswordsMenuBarExtra.recordField = function(fieldTitle)
       for i=1,#fieldValues,2 do
         local titleElem = fieldValues[i]
         if titleElem.AXValue == title then
-          return clickable(fieldValues[i + 1])
+          return Callback.Clickable(fieldValues[i + 1])
         end
       end
       return false
@@ -1836,7 +1836,7 @@ PasswordsMenuBarExtra.recordField = function(fieldTitle)
       local cell = getc(row, AX.Cell, 1)
       local titleElem = getc(cell, AX.StaticText, 1)
       if titleElem and titleElem.AXValue == title then
-        return clickable(getc(cell, AX.StaticText, 2))
+        return Callback.Clickable(getc(cell, AX.StaticText, 2))
       end
     end
     return false
@@ -2350,7 +2350,7 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
         local searchField = getc(winUI, AX.Toolbar, 1, AX.Group, 2, AX.TextField, 1)
-        return clickable(searchField, { 10, 2 })
+        return Callback.Clickable(searchField, { 10, 2 })
       end,
       fn = Callback.Click
     }
@@ -3409,7 +3409,9 @@ appHotKeyCallbacks = {
             break
           end
         end
-        if firstSplitLine == 4 then return clickable(groups[3]) end
+        if firstSplitLine == 4 then
+          return Callback.Clickable(groups[3])
+        end
         return false
       end,
       fn = Callback.Click
@@ -3433,7 +3435,7 @@ appHotKeyCallbacks = {
           end
         end
         if secondSplitLine == nil or (secondSplitLine - firstSplitLine > 2) then
-          return clickable(groups[firstSplitLine + 2])
+          return Callback.Clickable(groups[firstSplitLine + 2])
         end
         return false
       end,
@@ -3460,7 +3462,7 @@ appHotKeyCallbacks = {
           end
         end
         if thirdSplitLine ~= nil and thirdSplitLine - secondSplitLine > 2 then
-          return clickable(groups[secondSplitLine + 2])
+          return Callback.Clickable(groups[secondSplitLine + 2])
         end
         return false
       end,
@@ -3487,7 +3489,7 @@ appHotKeyCallbacks = {
           end
         end
         if thirdSplitLine ~= nil and thirdSplitLine - secondSplitLine > 3 then
-          return clickable(groups[secondSplitLine + 3])
+          return Callback.Clickable(groups[secondSplitLine + 3])
         end
         return false
       end,
@@ -3514,7 +3516,7 @@ appHotKeyCallbacks = {
           end
         end
         if thirdSplitLine ~= nil and thirdSplitLine - secondSplitLine > 4 then
-          return clickable(groups[secondSplitLine + 4])
+          return Callback.Clickable(groups[secondSplitLine + 4])
         end
         return false
       end,
@@ -3961,7 +3963,7 @@ appHotKeyCallbacks = {
         if menu then
           local title = T("Settings", app)
           local menuItem = getc(menu, AX.StaticText, title)
-          return clickable(menuItem)
+          return Callback.Clickable(menuItem)
         end
 
         local button = tfind(getc(webarea, AX.Group), function(b)
@@ -3971,7 +3973,7 @@ appHotKeyCallbacks = {
           end) ~= nil
         end)
         if button ~= nil and button.AXPosition.x ~= winUI.AXPosition.x then
-          local ok, position = clickable(button)
+          local ok, position = Callback.Clickable(button)
           if ok then
             local bt = getc(webarea, AX.StaticText, "\xee\x83\xbe")
             if bt ~= nil then
@@ -4073,7 +4075,7 @@ appHotKeyCallbacks = {
         if button == nil then
           button = getc(webarea, AX.StaticText, "\xee\x82\xa8")
         end
-        return clickable(button)
+        return Callback.Clickable(button)
       end,
       fn = Callback.Click
     },
@@ -4093,7 +4095,7 @@ appHotKeyCallbacks = {
           return button ~= nil, button
         else
           local button = getc(webarea, AX.StaticText, "\xee\x84\x82")
-          return clickable(button)
+          return Callback.Clickable(button)
         end
       end,
       fn = function(result)
@@ -4250,7 +4252,7 @@ appHotKeyCallbacks = {
             local text = getc(c, AX.StaticText, 1)
             return text ~= nil and text.AXValue == "\xf3\xb0\x88\xa5"
           end)
-          return clickable(cell)
+          return Callback.Clickable(cell)
         end
       end,
       fn = Callback.Click
@@ -4455,7 +4457,7 @@ appHotKeyCallbacks = {
         local back = TC("Back", win)
         local bt = getc(towinui(win), AX.Group, 1,
             AX.SplitGroup, 1, AX.Button, back)
-        return clickable(bt)
+        return Callback.Clickable(bt)
       end,
       fn = Callback.Click
     },
@@ -4504,7 +4506,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local title = TC("Back", win)
-        return clickable(getc(towinui(win), AX.Button, title))
+        return Callback.Clickable(getc(towinui(win), AX.Button, title))
       end,
       fn = Callback.Click
     },
@@ -4847,7 +4849,7 @@ appHotKeyCallbacks = {
           until #winUI ~= 1
           bt = getc(winUI, AX.Button, 1)
         end
-        return clickable(bt)
+        return Callback.Clickable(bt)
       end,
       fn = Callback.Click
     },
@@ -4897,13 +4899,13 @@ appHotKeyCallbacks = {
           -- `WeChat` accessibility bug
           local ref = getc(winUI, AX.List, 1)
           if ref.AXPosition.x < winUI.AXPosition.x then
-            return clickable(winUI, {
+            return Callback.Clickable(winUI, {
               bt.AXPosition.x - ref.AXPosition.x + bt.AXSize.w / 2,
               winUI.AXSize.h - 13 - bt.AXSize.h / 2
                   - (ref.AXPosition.y + ref.AXSize.h - bt.AXPosition.y - bt.AXSize.h)
             })
           else
-            return clickable(bt)
+            return Callback.Clickable(bt)
           end
         end
       end,
@@ -4915,7 +4917,7 @@ appHotKeyCallbacks = {
       windowFilter = { allowSheet = true },
       condition = function(win)
         local frame = win:frame()
-        return clickable(towinui(win), { frame.w - 80, frame.h - 47 })
+        return Callback.Clickable(towinui(win), { frame.w - 80, frame.h - 47 })
       end,
       fn = Callback.Click
     }
@@ -4932,7 +4934,7 @@ appHotKeyCallbacks = {
         local image = getc(webarea, AX.Group, 1,
             AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Image, 1)
         if Version.GreaterEqual(win, "6.9.83") then
-          return clickable(image)
+          return Callback.Clickable(image)
         else
           return image ~= nil, image
         end
@@ -6316,7 +6318,7 @@ appHotKeyCallbacks = {
         if app:focusedWindow() == nil then return false end
         local searchButton = getc(towinui(app:focusedWindow()),
             AX.Toolbar, 1, AX.Group, -1, AX.TextField, 1, AX.Button, 1)
-        return clickable(searchButton)
+        return Callback.Clickable(searchButton)
       end,
       fn = Callback.Click
     }
@@ -6654,7 +6656,7 @@ appHotKeyCallbacks = {
       condition = function(win)
         local winUI = towinui(win)
         local searchField = getc(winUI, AX.TextField, 1)
-        return clickable(searchField, { 5, 5 })
+        return Callback.Clickable(searchField, { 5, 5 })
       end,
       fn = Callback.Click
     },
@@ -7013,7 +7015,7 @@ appHotKeyCallbacks = {
         if button == nil then
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
-        return clickable(button)
+        return Callback.Clickable(button)
       end,
       fn = Callback.Click
     },
@@ -7039,7 +7041,7 @@ appHotKeyCallbacks = {
         if button == nil then
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
-        return clickable(button)
+        return Callback.Clickable(button)
       end,
       fn = Callback.Click
     },
@@ -7065,7 +7067,7 @@ appHotKeyCallbacks = {
         if button == nil then
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
-        return clickable(button)
+        return Callback.Clickable(button)
       end,
       fn = Callback.Click
     },
@@ -7091,7 +7093,7 @@ appHotKeyCallbacks = {
         if button == nil then
           button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
         end
-        return clickable(button)
+        return Callback.Clickable(button)
       end,
       fn = Callback.Click
     },
@@ -9091,7 +9093,7 @@ local function registerNavigationForSettingsToolbar(app)
     if spec then
       local condition
       if toClick then
-        condition = function() return clickable(button) end
+        condition = bind(Callback.Clickable, button)
       end
       local msg
       if button.AXRole == AX.StaticText then
@@ -9349,7 +9351,7 @@ local specialSidebarRowsSelectFuncs = {
                 if row.AXSize.h > mean then
                   cnt = cnt + 1
                   if cnt == idx then
-                    return clickable(row)
+                    return Callback.Clickable(row)
                   end
                 end
               end
