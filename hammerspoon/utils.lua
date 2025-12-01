@@ -2454,7 +2454,9 @@ local function localizedStringImpl(str, appid, params, force)
 
   if appid == "com.openai.chat" then
     result, locale = localizeChatGPT(str, appLocale)
-    return result, appLocale, locale
+    if result ~= nil then
+      return result, appLocale, locale
+    end
   elseif appid:find("com.valvesoftware.steam") then
     locale = get(appLocaleDir, appid, appLocale)
     result, locale = localizeSteam(str, appLocale, locale)
@@ -3608,7 +3610,9 @@ local function delocalizedStringImpl(str, appid, params, force)
   end
   if appid == "com.openai.chat" then
     result, locale = delocalizeChatGPT(str, appLocale)
-    return result, appLocale, locale
+    if result ~= nil then
+      return result, appLocale, locale
+    end
   elseif appid:find("com.valvesoftware.steam") then
     locale = get(appLocaleDir, appid, appLocale)
     result, locale = delocalizeSteam(str, appLocale, locale)
