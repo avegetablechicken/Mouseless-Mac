@@ -4572,7 +4572,8 @@ MENUBAR_MANAGER_SHOW = {
       map = map or loadStatusItemsAutosaveName(find(appid))
       index = map and map[index] or "Item-" .. tostring(index - 1)
     end
-    if applicationVersion(manager:bundleID()) < 6 then
+    local major, minor, patch = applicationVersion(manager:bundleID())
+    if not (major == 6 and (minor < 1 or (minor == 1 and patch == 0))) then
       local clickMode = click == "right-click" and " with right click" or ""
       hs.osascript.applescript(strfmt([[
         tell application id "%s" to activate "%s-%s"%s

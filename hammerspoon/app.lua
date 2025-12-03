@@ -1392,8 +1392,8 @@ Bartender.barItemTitle = function(index, rightClick)
         return getc(g, AX.Image, 1).AXDescription
       end)
       if #appnames == 0 then return end
-      if Version.LessThan(win, "6") then
-        local app = win:application()
+      local app = win:application()
+      if Version.LessThan(app, "6") or Version.GreaterEqual(app, "6.1.1") then
         local appid = app:bundleID()
         local _, items = hs.osascript.applescript(strfmt([[
           tell application id "%s" to list menu bar items
@@ -1407,23 +1407,30 @@ Bartender.barItemTitle = function(index, rightClick)
         winBuf:register(winUI, 'bartenderBarItemNames', {})
         winBuf:register(winUI, 'bartenderBarItemIDs', {})
         local missedItemCnt = 0
-        local plistPath = hs.fs.pathToAbsolute(strfmt(
-            "~/Library/Preferences/%s.plist", appid))
-        if plistPath ~= nil then
-          local plist = hs.plist.read(plistPath)
-          local allwaysHidden = get(plist, "ProfileSettings",
-              "activeProfile", "AlwaysHide")
-          local itemIDIdx = splitterIndex + #appnames
-          while tcontain(allwaysHidden, itemList[itemIDIdx])
-              and itemIDIdx > splitterIndex do
-            itemIDIdx = itemIDIdx - 1
+        if Version.LessThan(app, "6") then
+          local plistPath = hs.fs.pathToAbsolute(strfmt(
+              "~/Library/Preferences/%s.plist", appid))
+          if plistPath ~= nil then
+            local plist = hs.plist.read(plistPath)
+            local allwaysHidden = get(plist, "ProfileSettings",
+                "activeProfile", "AlwaysHide")
+            local itemIDIdx = splitterIndex + #appnames
+            while tcontain(allwaysHidden, itemList[itemIDIdx])
+                and itemIDIdx > splitterIndex do
+              itemIDIdx = itemIDIdx - 1
+            end
+            missedItemCnt = #appnames - (itemIDIdx - splitterIndex)
           end
-          missedItemCnt = #appnames - (itemIDIdx - splitterIndex)
         end
         if missedItemCnt == 0 then
           for i = 1, #appnames do
             local appname = appnames[i]
-            local itemID = itemList[splitterIndex + 1 + #appnames - i]
+            local itemID
+            if Version.LessThan(app, "6") then
+              itemID = itemList[splitterIndex + 1 + #appnames - i]
+            else
+              itemID = itemList[splitterIndex - 1 - #appnames + i]
+            end
             local id, idx = itemID:match("(.-)%-Item%-(%d+)$")
             if id ~= nil then
               if idx == "0" then
