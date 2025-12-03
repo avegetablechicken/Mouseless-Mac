@@ -7165,7 +7165,8 @@ appHotKeyCallbacks = {
       end
     },
     ["quitInMenuBarMenu"] = {
-      message = function(app)
+      message = function(menu)
+        local app = getAppFromDescendantElement(menu)
         local quit = T("Quit", app)
         return quit .. ' ' .. app:name()
       end,
