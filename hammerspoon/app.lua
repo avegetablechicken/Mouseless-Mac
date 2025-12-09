@@ -553,7 +553,10 @@ local registerInMenuHotkeys
 -- ## function utilities for hotkey configs of specific application
 local appBuf, winBuf = {}, {}
 function winBuf:register(winUI, key, value)
-  Evt.onDestroy(winUI, function() winBuf[key] = nil end)
+  winBuf.observer = Evt.onDestroy(winUI, function()
+    winBuf[key] = nil
+    winBuf.observer = nil
+  end)
   winBuf[key] = value
   return winBuf[key]
 end
