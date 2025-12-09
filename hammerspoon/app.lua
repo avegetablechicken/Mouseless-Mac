@@ -1410,7 +1410,7 @@ Bartender.barItemTitle = function(index, rightClick)
         winBuf:register(winUI, 'bartenderBarItemNames', {})
         winBuf:register(winUI, 'bartenderBarItemIDs', {})
         local missedItemCnt = 0
-        if Version.LessThan(app, "6") then
+        if Version.LessThan(app, "5.5") then
           local plistPath = hs.fs.pathToAbsolute(strfmt(
               "~/Library/Preferences/%s.plist", appid))
           if plistPath ~= nil then
@@ -1429,7 +1429,7 @@ Bartender.barItemTitle = function(index, rightClick)
           for i = 1, #appnames do
             local appname = appnames[i]
             local itemID
-            if Version.LessThan(app, "6") then
+            if Version.LessThan(app, "5.5") then
               itemID = itemList[splitterIndex + 1 + #appnames - i]
             else
               itemID = itemList[splitterIndex - 1 - #appnames + i]
