@@ -5576,7 +5576,9 @@ appHotKeyCallbacks = {
   {
     ["toggleMenuBar"] = {
       message = T("Show menu bar item"),
-      bindCondition = Version.LessThan("6"),
+      bindCondition = function(app)
+        return Version.LessThan(app, "6") or Version.GreaterEqual(app, "6.1.1")
+      end,
       kind = HK.MENUBAR,
       background = true,
       fn = function(app)
@@ -5707,7 +5709,9 @@ appHotKeyCallbacks = {
     },
     ["searchMenuBar"] = {
       message = "Search Menu Bar",
-      bindCondition = Version.LessThan("6"),
+      bindCondition = function(app)
+        return Version.LessThan(app, "6") or Version.GreaterEqual(app, "6.1.1")
+      end,
       kind = HK.MENUBAR,
       background = true,
       fn = function(app)
