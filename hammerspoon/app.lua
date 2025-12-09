@@ -2242,6 +2242,14 @@ local specialCommonHotkeyConfigs = {
   },
 }
 
+local function specialCommonHotkeyConfigUpdated(hkID, newConfig)
+  local config = tcopy(specialCommonHotkeyConfigs[hkID])
+  for k, v in pairs(newConfig) do
+    config[k] = v
+  end
+  return config
+end
+
 appHotKeyCallbacks = {
   ["com.apple.finder"] =
   {
