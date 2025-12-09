@@ -6563,9 +6563,15 @@ appHotKeyCallbacks = {
       end,
       fn = Callback.Press
     },
-    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
-    ["minimize"] = specialCommonHotkeyConfigs["minimize"],
-    ["hide"] = specialCommonHotkeyConfigs["hide"]
+    ["closeWindow"] = specialCommonHotkeyConfigUpdated("closeWindow",
+      { bindCondition = Version.LessThan("15.4") }
+    ),
+    ["minimize"] = specialCommonHotkeyConfigUpdated("minimize",
+      { bindCondition = Version.LessThan("15.4") }
+    ),
+    ["hide"] = specialCommonHotkeyConfigUpdated("hide",
+      { bindCondition = Version.LessThan("15.4") }
+    ),
   },
 
   ["com.pigigaldi.pock"] =
