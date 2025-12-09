@@ -5825,18 +5825,8 @@ appHotKeyCallbacks = {
       fn = Callback.UISelect
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
-    ["minimize"] = {
-      mods = specialCommonHotkeyConfigs["minimize"].mods,
-      key = specialCommonHotkeyConfigs["minimize"].key,
-      message = TC("Minimize"),
-      bindCondition = Version.LessThan("6"),
-      condition = function(app)
-        local win = app:focusedWindow()
-        return win ~= nil and win:role() == AX.Window, win
-      end,
-      repeatable = true,
-      fn = function(win) win:minimize() end
-    },
+    ["minimize"] = specialCommonHotkeyConfigUpdated("minimize",
+        { bindCondition = Version.LessThan("6") }),
     ["quit"] = specialCommonHotkeyConfigs["quit"],
     ["hide"] = specialCommonHotkeyConfigs["hide"],
   },
