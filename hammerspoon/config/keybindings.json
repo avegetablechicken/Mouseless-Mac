@@ -1537,6 +1537,14 @@
       "toggleStatusBar": {
         "mods": "command",
         "key": "/"
+      },
+      "viewIcons": {
+        "mods": "command",
+        "key": "1"
+      },
+      "viewDetails": {
+        "mods": "command",
+        "key": "2"
       }
     },
     "com.parallels.desktop.console": {

@@ -6687,6 +6687,16 @@ appHotKeyCallbacks = {
       message = "Toggle status bar",
       condition = MenuItem.isEnabled({ "View", "Show status bar" }),
       fn = Callback.Select
+    },
+    ["viewIcons"] = {
+      message = "View > Icons",
+      condition = MenuItem.isEnabled({ "View", "Icons" }),
+      fn = Callback.Select
+    },
+    ["viewDetails"] = {
+      message = "View > Details",
+      condition = MenuItem.isEnabled({ "View", "Details" }),
+      fn = Callback.Select
     }
   },
 
