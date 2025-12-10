@@ -9123,7 +9123,7 @@ local function registerNavigationForSettingsToolbar(app)
     if spec then
       local condition
       if toClick then
-        condition = bind(Callback.Clickable, button)
+        condition = function() return Callback.Clickable(button) end
       end
       local msg
       if button.AXRole == AX.StaticText then
