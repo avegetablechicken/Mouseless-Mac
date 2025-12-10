@@ -9073,6 +9073,7 @@ local specialToolbarButtons = {
         return buttons, true
       end
     end
+    return buttons
   end,
   ["com.tencent.qq"] = waitForSettings(function(winUI)
     local groups = getc(winUI, AX.Group, 1, AX.Group, 1,
