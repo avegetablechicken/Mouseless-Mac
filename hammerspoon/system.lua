@@ -2589,12 +2589,7 @@ local function registerSearchMenuBar()
   chooser = hs.chooser.new(function(choice)
     if choice == nil then return end
     hs.timer.doAfter(0, function()
-      if choice.appid == hs.settings.bundleID then
-        -- fixme: hanging issue
-        hs.alert.show("Cannot trigger Hammerspoon menu bar item", 2)
-        return
-      end
-      menuBarItems[choice.id][1]:performAction(AX.Press)
+      leftClickAndRestore(menuBarItems[choice.id][1])
     end)
   end)
   chooser:searchSubText(true)
