@@ -1351,8 +1351,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     end
   end
   if index then
-    clickRightMenuBarItem({'com.apple.controlcenter', index},
-                          {}, OS_VERSION >= OS.Tahoe and "click" or nil)
+    clickRightMenuBarItem({'com.apple.controlcenter', index})
     registerControlCenterHotKeys(panel, true)
   else
     local menuBarItem = tfind(menuBarItems,
