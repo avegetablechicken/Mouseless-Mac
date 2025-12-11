@@ -2563,11 +2563,12 @@ local function registerSearchMenuBar()
     if ccFound or appid == 'com.apple.controlcenter' then
       ccFound = true
       local appname = app:name()
-      local title
+      local title, extraSearchPattern
       if #maps[appid] > 1 then
         local autosaveName = maps[appid][idx]
         if appid == 'com.apple.controlcenter' then
           title = appname
+          extraSearchPattern = autosaveName
           appname = item.AXDescription
           if title == appname then title = nil end
         elseif autosaveName ~= "Item-0" or #tifilter(maps[appid],
@@ -2581,6 +2582,7 @@ local function registerSearchMenuBar()
         image = app:bundleID() and hs.image.imageFromAppBundle(appid),
         id = #choices + 1,
         appid = appid,
+        extraPattern = extraSearchPattern
       }
     end
   end
@@ -2592,8 +2594,23 @@ local function registerSearchMenuBar()
       leftClickAndRestore(menuBarItems[choice.id][1])
     end)
   end)
-  chooser:searchSubText(true)
   chooser:choices(choices)
+  chooser:queryChangedCallback(function(query)
+    local newChoices = {}
+    local loweredQuery = string.lower(query)
+    for _, choice in ipairs(choices) do
+      if choice.text:lower():find(loweredQuery, 1, true)
+          or choice.appid:lower():find(loweredQuery, 1, true)
+          or (choice.subText and choice.subText:lower()
+              :find(loweredQuery, 1, true))
+          or (choice.extraPattern and choice.extraPattern:lower()
+              :find(loweredQuery, 1, true)) then
+        tinsert(newChoices, choice)
+      end
+    end
+    chooser:choices(newChoices)
+  end)
+  hs.keycodes.currentSourceID("com.apple.keylayout.ABC")
   chooser:show()
 end
 
