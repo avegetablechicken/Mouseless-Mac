@@ -4514,7 +4514,9 @@ function loadStatusItemsAutosaveName(app)
         tinsert(enabledItems, k:sub(prefix_len + 1))
       end
     end
-    tinsert(preferredPositions, { "Clock", 1 })
+    if tfind(preferredPositions, function(r) return r[1] == "Clock" end) == nil then
+      tinsert(preferredPositions, { "Clock", 1 })
+    end
     preferredPositions = tifilter(preferredPositions, function(p)
       return tcontain(enabledItems, p[1])
     end)
