@@ -2529,6 +2529,117 @@ ExecContinuously(function()
   end
 end)
 
+local function registerSearchMenuBar()
+  local menuBarItems, maps = {}, {}
+  local apps = hs.application.runningApplications()
+  for _, app in ipairs(apps) do
+    local appid = app:bundleID() or app:name()
+    local map = loadStatusItemsAutosaveName(app)
+    if map and #map > 0 then
+      maps[appid] = map
+      local appMenuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+      if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
+        appMenuBarItems = tifilter(appMenuBarItems, function(item)
+          return item.AXIdentifier ~= nil
+        end)
+      end
+      for i, item in ipairs(appMenuBarItems) do
+        tinsert(menuBarItems, { item, i })
+      end
+    end
+  end
+  if #menuBarItems == 0 then
+    return
+  end
+  table.sort(menuBarItems, function(a, b)
+    return a[1].AXPosition.x > b[1].AXPosition.x
+  end)
+
+  local choices = {}
+  local ccFound = false
+  for _, pair in ipairs(menuBarItems) do
+    local item, idx = pair[1], pair[2]
+    local app = item.AXParent.AXParent:asHSApplication()
+    local appid = app:bundleID() or app:name()
+    if ccFound or appid == 'com.apple.controlcenter' then
+      ccFound = true
+      local appname = app:name()
+      local title
+      if #maps[appid] > 1 then
+        local autosaveName = maps[appid][idx]
+        if appid == 'com.apple.controlcenter' then
+          title = appname
+          appname = item.AXDescription
+          if title == appname then title = nil end
+        elseif autosaveName ~= "Item-0" or #tifilter(maps[appid],
+            function(v) return v:sub(1, 5) == "Item-" end) > 1 then
+          title = autosaveName
+        end
+      end
+      choices[#choices + 1] = {
+        text = appname,
+        subText = title,
+        image = app:bundleID() and hs.image.imageFromAppBundle(appid),
+        id = #choices + 1,
+        appid = appid,
+      }
+    end
+  end
+
+  local chooser
+  chooser = hs.chooser.new(function(choice)
+    if choice == nil then return end
+    hs.timer.doAfter(0, function()
+      if choice.appid == hs.settings.bundleID then
+        -- fixme: hanging issue
+        hs.alert.show("Cannot trigger Hammerspoon menu bar item", 2)
+        return
+      end
+      menuBarItems[choice.id][1]:performAction(AX.Press)
+    end)
+  end)
+  chooser:searchSubText(true)
+  chooser:choices(choices)
+  chooser:show()
+end
+
+local hotkeySearchMenuBar
+local misc = KeybindingConfigs.hotkeys.global
+if misc ~= nil and misc["searchMenuBar"] ~= nil then
+  local menuBarManagers = {
+    "com.surteesstudios.Bartender",
+    "com.jordanbaird.Ice",
+  }
+  local anyRunning = tfind(menuBarManagers, function(appid)
+    return find(appid) ~= nil
+  end)
+  if not anyRunning then
+    hotkeySearchMenuBar = bindHotkeySpec(misc["searchMenuBar"],
+        'Search Menu Bar', registerSearchMenuBar)
+    hotkeySearchMenuBar.kind = HK.MENUBAR
+  end
+  foreach(menuBarManagers, function(appid)
+    ExecOnSilentLaunch(appid, function()
+      if hotkeySearchMenuBar then
+        hotkeySearchMenuBar:disable()
+      end
+      ExecOnSilentQuit(appid, function()
+        anyRunning = tfind(menuBarManagers, function(appid)
+          return find(appid) ~= nil
+        end)
+        if not anyRunning then
+          if hotkeySearchMenuBar == nil then
+            hotkeySearchMenuBar = bindHotkeySpec(misc["searchMenuBar"],
+                'Search Menu Bar', registerSearchMenuBar)
+            hotkeySearchMenuBar.kind = HK.MENUBAR
+          end
+          hotkeySearchMenuBar:enable()
+        end
+      end)
+    end)
+  end)
+end
+
 -- # callbacks
 
 -- application installation/uninstallation callbacks

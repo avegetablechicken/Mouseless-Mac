@@ -29,6 +29,10 @@
         "mods": "${hyper.hyper}",
         "key": "space"
       },
+      "searchMenuBar": {
+        "mods": "${hyper.daemon}",
+        "key": "space"
+      },
       "showCurrentWindowInfo": {
         "mods": "${hyper.daemon}",
         "key": "G"
