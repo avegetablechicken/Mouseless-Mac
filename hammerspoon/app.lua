@@ -1057,6 +1057,14 @@ Games.WF.Main = {
 
 -- ### Visual Studio Code
 local VSCode = {}
+VSCode.WF = {}
+VSCode.WF.Main = {
+  fn = function(win)
+    local winUI = towinui(win)
+    return winUI.AXIdentifier ~= "open-panel"
+  end
+}
+
 VSCode.toggleSideBarSection = function(win, sidebar, section)
   local pressfn
   if Version.LessThan(win, "1.101") then
@@ -3080,14 +3088,7 @@ appHotKeyCallbacks = {
   {
     ["view:toggleOutline"] = {
       message = "View: Toggle Outline",
-      condition = function(app)
-        if app:focusedWindow() == nil then
-          return false
-        else
-          local winUI = towinui(app:focusedWindow())
-          return winUI.AXIdentifier ~= "open-panel", app:focusedWindow()
-        end
-      end,
+      windowFilter = VSCode.WF.Main,
       repeatable = true,
       fn = function(win)
         VSCode.toggleSideBarSection(win, "EXPLORER", "OUTLINE")
@@ -3095,14 +3096,7 @@ appHotKeyCallbacks = {
     },
     ["view:toggleTimeline"] = {
       message = "View: Toggle Timeline",
-      condition = function(app)
-        if app:focusedWindow() == nil then
-          return false
-        else
-          local winUI = towinui(app:focusedWindow())
-          return winUI.AXIdentifier ~= "open-panel", app:focusedWindow()
-        end
-      end,
+      windowFilter = VSCode.WF.Main,
       repeatable = true,
       fn = function(win)
         VSCode.toggleSideBarSection(win, "EXPLORER", "TIMELINE")
@@ -3110,16 +3104,9 @@ appHotKeyCallbacks = {
     },
     ["toggleSearchEditorWholeWord"] = {
       message = "Search Editor: Toggle Match Whole Word",
-      condition = function(app)
-        if app:focusedWindow() == nil then
-          return false
-        else
-          local winUI = towinui(app:focusedWindow())
-          return winUI.AXIdentifier ~= "open-panel"
-        end
-      end,
+      windowFilter = VSCode.WF.Main,
       repeatable = true,
-      fn = function(app) hs.eventtap.keyStroke("⌘⌥", "W", nil, app) end
+      fn = function(win) hs.eventtap.keyStroke("⌘⌥", "W", nil, win:application()) end
     },
     ["openRecent"] = {
       message = "Open Recent",
