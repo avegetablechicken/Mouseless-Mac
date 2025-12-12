@@ -2436,7 +2436,7 @@ local function localizedStringImpl(str, appid, params, force)
         or SYSTEM_LOCALE
   end
 
-  local result
+  local result, locale
 
   if not force then
     locale = get(appLocaleDir, appid, appLocale)
@@ -2497,7 +2497,7 @@ local function localizedStringImpl(str, appid, params, force)
     end
   end
 
-  local locale, localeDir
+  local localeDir
   locale, localeDir, resourceDir, framework =
       getMatchedLocale(appid, appLocale, resourceDir, framework, appLocaleDir)
   if locale == nil then return end
@@ -3601,10 +3601,12 @@ local function delocalizedStringImpl(str, appid, params, force)
     appLocale = applicationLocale(appid)
   end
 
+  local result, locale
+
   if not force then
-    local locale = get(appLocaleDir, appid, appLocale)
+    locale = get(appLocaleDir, appid, appLocale)
     if locale then
-      local result = get(deLocaleMap, appid, locale, str)
+      result = get(deLocaleMap, appid, locale, str)
       if result ~= nil then return result end
     end
   end
@@ -3656,7 +3658,7 @@ local function delocalizedStringImpl(str, appid, params, force)
     end
   end
 
-  local locale, localeDir
+  local localeDir
   locale, localeDir, resourceDir, framework =
       getMatchedLocale(appid, appLocale, resourceDir, framework, appLocaleDir)
   if locale == nil then return end
