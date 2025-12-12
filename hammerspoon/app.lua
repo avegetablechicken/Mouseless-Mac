@@ -6564,6 +6564,20 @@ appHotKeyCallbacks = {
     ),
   },
 
+  ["me.guillaumeb.MonitorControl"] =
+  {
+    ["preferences"] = {
+      message = T("Preferences…"),
+      menubarFilter = { allowIndices = 1 },
+      fn = function(menu)
+        local app = getAppFromDescendantElement(menu)
+        local title = T("Preferences…", app)
+        local menuItem = getc(menu, AX.MenuItem, title)
+        if menuItem then Callback.Press(menuItem) end
+      end
+    }
+  },
+
   ["com.pigigaldi.pock"] =
   {
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],

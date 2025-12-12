@@ -2139,6 +2139,12 @@
         "key": "S"
       }
     },
+    "me.guillaumeb.MonitorControl": {
+      "preferences": {
+        "mods": "command",
+        "key": ","
+      }
+    },
     "cn.better365.iCopy": {
       "setting": {
         "mods": "command",
