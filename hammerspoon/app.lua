@@ -3861,6 +3861,20 @@ appHotKeyCallbacks = {
     }
   },
 
+  ["com.eusoft.freeeudic.LightPeek"] =
+  {
+    ["preferences"] = {
+      message = T("偏好设置..."),
+      menubarFilter = { allowIndices = 1 },
+      fn = function(menu)
+        local app = getAppFromDescendantElement(menu)
+        local title = T("偏好设置...", app)
+        local menuItem = getc(menu, AX.MenuItem, title)
+        if menuItem then Callback.Press(menuItem) end
+      end
+    }
+  },
+
   ["com.openai.chat"] =
   {
     ["toggleSidebar"] = {

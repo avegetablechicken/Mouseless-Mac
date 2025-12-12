@@ -1212,6 +1212,12 @@
         "key": "7"
       }
     },
+    "com.eusoft.freeeudic.LightPeek": {
+      "preferences": {
+        "mods": "command",
+        "key": ","
+      }
+    },
     "com.openai.chat": {
       "toggleSidebar": {
         "mods": ["control", "command"],
