@@ -2534,8 +2534,8 @@ local function registerSearchMenuBar()
   for _, app in ipairs(apps) do
     local appid = app:bundleID() or app:name()
     local map = loadStatusItemsAutosaveName(app)
-    if map and #map > 0 then
-      maps[appid] = map
+    if (map and #map > 0) or appid == 'com.apple.controlcenter' then
+      maps[appid] = map or {}
       local appMenuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
       if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
         appMenuBarItems = tifilter(appMenuBarItems, function(item)
@@ -2564,11 +2564,16 @@ local function registerSearchMenuBar()
       ccFound = true
       local appname = app:name()
       local title, extraSearchPattern
-      if #maps[appid] > 1 then
+      if #maps[appid] > 1 or appid == 'com.apple.controlcenter' then
         local autosaveName = maps[appid][idx]
         if appid == 'com.apple.controlcenter' then
           title = appname
-          extraSearchPattern = autosaveName
+          if autosaveName then
+            extraSearchPattern = autosaveName
+          else
+            local parts = strsplit(item.AXIdentifier, "%.")
+            extraSearchPattern = parts[#parts]
+          end
           appname = item.AXDescription
           if title == appname then title = nil end
         elseif autosaveName ~= "Item-0" or #tifilter(maps[appid],
