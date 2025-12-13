@@ -26,6 +26,7 @@
     "com.pigigaldi.pock",
     "io.mountainduck",
     "com.wiheads.paste-direct",
+    "com.eusoft.freeeudic",
     {
       "com.macosgame.iwallpaper": {
         "rejectTitles": "^$"
@@ -67,8 +68,7 @@
     "com.macitbetter.betterzip",
     "cn.better365.Cleaner",
     "com.tencent.Lemon",
-    "com.sublimetext.4",
-    "com.eusoft.freeeudic"
+    "com.sublimetext.4"
   ],
 
   "forbidden": [
