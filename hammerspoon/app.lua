@@ -7053,6 +7053,9 @@ appHotKeyCallbacks = {
         allowTitles = "Welcome to CLion"
       },
       condition = function(win)
+        local menuItemPath = {"File", "New", "Project…"}
+        local ok = win:application():findMenuItem(menuItemPath)
+        if ok then return ok, menuItemPath end
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
@@ -7063,7 +7066,13 @@ appHotKeyCallbacks = {
         end
         return Callback.Clickable(button)
       end,
-      fn = Callback.Click
+      fn = function(menuItemOrButton, win)
+        if menuItemOrButton.AXPosition then
+          Callback.Click(menuItemOrButton)
+        else
+          Callback.Select(menuItemOrButton, win)
+        end
+      end
     },
     ["open..."] = {
       message = "Open...",
@@ -7083,6 +7092,9 @@ appHotKeyCallbacks = {
         allowTitles = "Welcome to CLion"
       },
       condition = function(win)
+        local menuItemPath = {"File", "New", "Project…"}
+        local ok = win:application():findMenuItem(menuItemPath)
+        if ok then return ok, menuItemPath end
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
@@ -7093,7 +7105,13 @@ appHotKeyCallbacks = {
         end
         return Callback.Clickable(button)
       end,
-      fn = Callback.Click
+      fn = function(menuItemOrButton, win)
+        if menuItemOrButton.AXPosition then
+          Callback.Click(menuItemOrButton)
+        else
+          Callback.Select(menuItemOrButton, win)
+        end
+      end
     },
     ["open..."] = {
       message = "Open...",
@@ -7113,6 +7131,9 @@ appHotKeyCallbacks = {
         allowTitles = "Welcome to IntelliJ IDEA"
       },
       condition = function(win)
+        local menuItemPath = {"File", "New", "Project…"}
+        local ok = win:application():findMenuItem(menuItemPath)
+        if ok then return ok, menuItemPath end
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
@@ -7123,7 +7144,13 @@ appHotKeyCallbacks = {
         end
         return Callback.Clickable(button)
       end,
-      fn = Callback.Click
+      fn = function(menuItemOrButton, win)
+        if menuItemOrButton.AXPosition then
+          Callback.Click(menuItemOrButton)
+        else
+          Callback.Select(menuItemOrButton, win)
+        end
+      end
     },
     ["open..."] = {
       message = "Open...",
@@ -7143,6 +7170,9 @@ appHotKeyCallbacks = {
         allowTitles = "Welcome to PyCharm"
       },
       condition = function(win)
+        local menuItemPath = {"File", "New", "Project…"}
+        local ok = win:application():findMenuItem(menuItemPath)
+        if ok then return ok, menuItemPath end
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
@@ -7153,7 +7183,13 @@ appHotKeyCallbacks = {
         end
         return Callback.Clickable(button)
       end,
-      fn = Callback.Click
+      fn = function(menuItemOrButton, win)
+        if menuItemOrButton.AXPosition then
+          Callback.Click(menuItemOrButton)
+        else
+          Callback.Select(menuItemOrButton, win)
+        end
+      end
     },
     ["open..."] = {
       message = "Open...",
