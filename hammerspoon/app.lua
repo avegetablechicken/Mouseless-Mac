@@ -7056,7 +7056,10 @@ appHotKeyCallbacks = {
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
-          button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
+          button = getc(winUI, AX.Group, 2, AX.Button, 1)
+          if #button > 0 then
+            button = button[1]
+          end
         end
         return Callback.Clickable(button)
       end,
@@ -7067,7 +7070,8 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to CLion"
       },
-      fn = bind(Callback.Select, {"File", "Open..."})
+      condition = MenuItem.isEnabled({"File", "Open..."}, {"File", "Open…"}),
+      fn = Callback.Select
     }
   },
 
@@ -7082,7 +7086,10 @@ appHotKeyCallbacks = {
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
-          button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
+          button = getc(winUI, AX.Group, 2, AX.Button, 1)
+          if #button > 0 then
+            button = button[1]
+          end
         end
         return Callback.Clickable(button)
       end,
@@ -7093,7 +7100,8 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to CLion"
       },
-      fn = bind(Callback.Select, {"File", "Open..."})
+      condition = MenuItem.isEnabled({"File", "Open..."}, {"File", "Open…"}),
+      fn = Callback.Select
     }
   },
 
@@ -7108,7 +7116,10 @@ appHotKeyCallbacks = {
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
-          button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
+          button = getc(winUI, AX.Group, 2, AX.Button, 1)
+          if #button > 0 then
+            button = button[1]
+          end
         end
         return Callback.Clickable(button)
       end,
@@ -7119,7 +7130,8 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to IntelliJ IDEA"
       },
-      fn = bind(Callback.Select, {"File", "Open..."})
+      condition = MenuItem.isEnabled({"File", "Open..."}, {"File", "Open…"}),
+      fn = Callback.Select
     }
   },
 
@@ -7134,7 +7146,10 @@ appHotKeyCallbacks = {
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, 2, AX.Button, 1)
         if button == nil then
-          button = getc(winUI, AX.Group, 2, AX.Button, 1, AX.Button, 1)
+          button = getc(winUI, AX.Group, 2, AX.Button, 1)
+          if #button > 0 then
+            button = button[1]
+          end
         end
         return Callback.Clickable(button)
       end,
@@ -7145,7 +7160,8 @@ appHotKeyCallbacks = {
       windowFilter = {
         allowTitles = "Welcome to PyCharm"
       },
-      fn = bind(Callback.Select, {"File", "Open..."})
+      condition = MenuItem.isEnabled({"File", "Open..."}, {"File", "Open…"}),
+      fn = Callback.Select
     }
   },
 
