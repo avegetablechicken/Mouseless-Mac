@@ -7081,6 +7081,14 @@ appHotKeyCallbacks = {
       },
       condition = MenuItem.isEnabled({"File", "Open..."}, {"File", "Open…"}),
       fn = Callback.Select
+    },
+    ["openRecent"] = {
+      message = "Recent Projects",
+      windowFilter = {
+        allowTitles = "Welcome to CLion"
+      },
+      condition = MenuItem.isEnabled({"File", "Recent Projects"}),
+      fn = Callback.Select
     }
   },
 
@@ -7119,6 +7127,14 @@ appHotKeyCallbacks = {
         allowTitles = "Welcome to CLion"
       },
       condition = MenuItem.isEnabled({"File", "Open..."}, {"File", "Open…"}),
+      fn = Callback.Select
+    },
+    ["openRecent"] = {
+      message = "Recent Projects",
+      windowFilter = {
+        allowTitles = "Welcome to CLion"
+      },
+      condition = MenuItem.isEnabled({"File", "Recent Projects"}),
       fn = Callback.Select
     }
   },
@@ -7159,6 +7175,14 @@ appHotKeyCallbacks = {
       },
       condition = MenuItem.isEnabled({"File", "Open..."}, {"File", "Open…"}),
       fn = Callback.Select
+    },
+    ["openRecent"] = {
+      message = "Recent Projects",
+      windowFilter = {
+        allowTitles = "Welcome to IntelliJ IDEA"
+      },
+      condition = MenuItem.isEnabled({"File", "Recent Projects"}),
+      fn = Callback.Select
     }
   },
 
@@ -7197,6 +7221,14 @@ appHotKeyCallbacks = {
         allowTitles = "Welcome to PyCharm"
       },
       condition = MenuItem.isEnabled({"File", "Open..."}, {"File", "Open…"}),
+      fn = Callback.Select
+    },
+    ["openRecent"] = {
+      message = "Recent Projects",
+      windowFilter = {
+        allowTitles = "Welcome to PyCharm"
+      },
+      condition = MenuItem.isEnabled({"File", "Recent Projects"}),
       fn = Callback.Select
     }
   },
