@@ -1365,7 +1365,25 @@ end)
 local Barrier = {}
 Barrier.localizedMessage = function(message, params)
   return function(app)
-    local str = T(message, app, params)
+    local locale = type(params) == 'table' and params.locale or nil
+    local appid = getAppId(app)
+    local newParams = params
+    if locale == nil and hs.application.frontmostApplication():bundleID() == appid then
+      locale = appBuf.barrierLocale
+      if locale == nil then
+        locale = applicationLocale(appid)
+        appBuf.barrierLocale = locale
+      end
+      if type(newParams) == 'table' then
+        newParams = tcopy(newParams)
+        newParams.locale = locale
+      elseif type(newParams) == 'string' then
+        newParams = { localeFile = newParams, locale = locale }
+      else
+        newParams = { locale = locale }
+      end
+    end
+    local str = T(message, app, newParams)
     str = type(str) == 'string' and str or str[1]
     if message:find('&') then
       str = str:gsub("%(&%a%)", ""):gsub('&', '')
@@ -1382,7 +1400,25 @@ Barrier.localizedMessage = function(message, params)
 end
 
 Barrier.localizedString = function(message, app, params)
-  local str = T(message, app, params)
+  local locale = type(params) == 'table' and params.locale or nil
+  local appid = getAppId(app)
+  local newParams = params
+  if locale == nil and hs.application.frontmostApplication():bundleID() == appid then
+    locale = appBuf.barrierLocale
+    if locale == nil then
+      locale = applicationLocale(appid)
+      appBuf.barrierLocale = locale
+    end
+    if type(newParams) == 'table' then
+      newParams = tcopy(newParams)
+      newParams.locale = locale
+    elseif type(newParams) == 'string' then
+      newParams = { localeFile = newParams, locale = locale }
+    else
+      newParams = { locale = locale }
+    end
+  end
+  local str = T(message, app, newParams)
   str = type(str) == 'string' and str or str[1]
   if message:find('&') then
     str = str:gsub('&', "")
@@ -5317,7 +5353,8 @@ appHotKeyCallbacks = {
           if not invoked then return end
           menu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1)
         end
-        local title = T("&Start", app)
+        local locale = applicationLocale(app:bundleID())
+        local title = T("&Start", app, { locale = locale })
         title = title:gsub("%(&%a%)", ""):gsub("&", "")
         local start = getc(menu, AX.MenuItem, title)
         if start == nil then return end
@@ -5325,7 +5362,7 @@ appHotKeyCallbacks = {
           Callback.Press(start)
           hs.alert("Barrier started")
         else
-          title = T("S&top", app)
+          title = T("S&top", app, { locale = locale })
           title = title:gsub("%(&%a%)", ""):gsub("&", "")
           local stop = getc(menu, AX.MenuItem, title)
           if stop == nil then return end
@@ -5358,7 +5395,7 @@ appHotKeyCallbacks = {
         local menuBarItem = tfind(menuBarItems, function(item)
           return item.AXTitle == "Barrier"
         end)
-        local title = T("Change &Settings", app)
+        local title = T("Change &Settings", app, { locale = appBuf.barrierLocale })
         title = title:gsub("%(&%a%)", ""):gsub("&", "")
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, title)
         return menuItem and menuItem.AXEnabled, menuItem
