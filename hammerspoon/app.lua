@@ -2785,7 +2785,7 @@ appHotKeyCallbacks = {
             AX.ScrollArea, 2, AX.List, 1, AX.List, 1, AX.Unknown, 1)
             or getc(towinui(win), AX.SplitGroup, 1,
                 AX.ScrollArea, 2, AX.Group, 1)
-        local button = getc(g, AX.Button, T("Play", win))
+        local button = getc(g, AX.Button, A_Message)
             or getc(g, AX.Button, "Play")
         return button ~= nil, button
       end,
@@ -2849,9 +2849,8 @@ appHotKeyCallbacks = {
       windowFilter = Games.WF.Main,
       condition = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1, AX.Button)
-        local title = TC("Back", win)
         local button = tfind(buttons or {}, function(bt)
-          return bt.AXDescription == title
+          return bt.AXDescription == A_Message
         end)
         return button ~= nil, button
       end,
@@ -2914,9 +2913,8 @@ appHotKeyCallbacks = {
       fn = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1,
             AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
-        local title = TC("Search", win)
         local button = tfind(buttons or {}, function(bt)
-          return bt.AXDescription == title
+          return bt.AXDescription == A_Message
         end)
         if button then Callback.Press(button) end
       end
@@ -3012,10 +3010,10 @@ appHotKeyCallbacks = {
       end,
       fn = function(selected, app)
         selected:performAction(AX.ShowMenu)
+        local title = A_Message
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.menuOpened)
         observer:callback(function(obs, menu)
-          local title = T("Delete", app)
           local delete = getc(menu, AX.MenuItem, title)
           if delete then
             Callback.Press(delete) obs:stop() obs = nil
@@ -3300,9 +3298,7 @@ appHotKeyCallbacks = {
       message = T("Open Recent"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local app = getAppFromDescendantElement(menu)
-        local title = T("Open Recent", app)
-        local menuItem = getc(menu, AX.MenuItem, title)
+        local menuItem = getc(menu, AX.MenuItem, A_Message)
         if menuItem then Callback.Press(menuItem) end
       end
     },
@@ -3312,9 +3308,8 @@ appHotKeyCallbacks = {
         local win = app:focusedWindow()
         if win == nil then return false end
         local winUI = towinui(win)
-        local title = T("Don't Save", app)
-        local button = getc(winUI, AX.Buttonm, title)
-            or getc(winUI, AX.Window, 1, AX.Button, title)
+        local button = getc(winUI, AX.Buttonm, A_Message)
+            or getc(winUI, AX.Window, 1, AX.Button, A_Message)
         return button ~= nil, button
       end,
       fn = Callback.Press
@@ -3581,7 +3576,7 @@ appHotKeyCallbacks = {
       end,
       fn = function(position, win)
         local app = win:application()
-        local title = T("Open File Location", app)
+        local title = A_Message
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.created)
         observer:callback(function(obs)
@@ -3907,8 +3902,7 @@ appHotKeyCallbacks = {
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local app = getAppFromDescendantElement(menu)
-        local title = T("偏好设置...", app)
-        local menuItem = getc(menu, AX.MenuItem, title)
+        local menuItem = getc(menu, AX.MenuItem, A_Message)
         if menuItem then Callback.Press(menuItem) end
       end
     }
@@ -3955,11 +3949,10 @@ appHotKeyCallbacks = {
         end
       },
       fn = function(win)
-        local title = T("Open link", win)
         local button = tfind(getc(towinui(win), AX.Group, 1,
             AX.Group, 1, AX.Button) or {}, function(bt)
           return bt.AXAttributedDescription:getString()
-              and bt.AXAttributedDescription:getString() == title
+              and bt.AXAttributedDescription:getString() == A_Message
         end)
         if button ~= nil then Callback.Press(button) end
       end
@@ -4019,8 +4012,7 @@ appHotKeyCallbacks = {
         local menu = getc(webarea, AX.Group, 8, AX.Group, 2, AX.Group, 1)
 
         if menu then
-          local title = T("Settings", app)
-          local menuItem = getc(menu, AX.StaticText, title)
+          local menuItem = getc(menu, AX.StaticText, A_Message)
           return Callback.Clickable(menuItem)
         end
 
@@ -4059,8 +4051,7 @@ appHotKeyCallbacks = {
                   AX.ScrollArea, 1, AX.WebArea, 1)
               local menu = getc(webarea, AX.Group, 8, AX.Group, 2, AX.Group, 1)
               if menu then
-                local title = T("Settings", app)
-                menuItem = getc(menu, AX.StaticText, title)
+                menuItem = getc(menu, AX.StaticText, A_Message)
                 return true
               end
             end,
@@ -4077,9 +4068,8 @@ appHotKeyCallbacks = {
           local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
               AX.ScrollArea, 1, AX.WebArea, 1)
           if webarea then
-            local title = T("Settings", app)
             for _, g in ipairs(getc(webarea, AX.Group)) do
-              if g[1] and g[1].AXValue == title then
+              if g[1] and g[1].AXValue == A_Message then
                 leftClickAndRestore(g[1], app)
                 obs:stop() obs = nil
                 return
@@ -4290,9 +4280,9 @@ appHotKeyCallbacks = {
       end,
       fn = function(tab, win)
         tab:performAction(AX.ShowMenu)
+        local title = A_Message
         hs.timer.doAfter(0.1, function()
           local app = win:application()
-          local title = T("Reveal in file explorer", app)
           local item = getc(toappui(app), AX.Menu, 1, AX.MenuItem, title)
           if item then Callback.Press(item) end
         end)
@@ -4512,9 +4502,8 @@ appHotKeyCallbacks = {
         end
       },
       condition = function(win)
-        local back = TC("Back", win)
         local bt = getc(towinui(win), AX.Group, 1,
-            AX.SplitGroup, 1, AX.Button, back)
+            AX.SplitGroup, 1, AX.Button, A_Message)
         return Callback.Clickable(bt)
       end,
       fn = Callback.Click
@@ -4563,8 +4552,7 @@ appHotKeyCallbacks = {
         end
       },
       condition = function(win)
-        local title = TC("Back", win)
-        return Callback.Clickable(getc(towinui(win), AX.Button, title))
+        return Callback.Clickable(getc(towinui(win), AX.Button, A_Message))
       end,
       fn = Callback.Click
     },
@@ -4639,13 +4627,12 @@ appHotKeyCallbacks = {
             if hide then Callback.Press(hide) end
           end
         else
+          local title = A_Message
           hs.timer.doAfter(0.5, function()
             local app = win:application()
             local menu = toappui(app):elementAtPosition(
                 uioffset(chat.AXPosition, { 1, 1 }))
             if menu and menu.AXRole == AX.Menu then
-              local title = localizedString("Hide", app)
-              if type(title) == 'table' then title = title[#title] end
               local hide = getc(menu, AX.MenuItem, title)
               if hide then leftClickAndRestore(hide, app) end
             end
@@ -4742,12 +4729,8 @@ appHotKeyCallbacks = {
           until menuWin or totalDelay > 1
           local menuItems = getc(menuWin, AX.Group, 1, AX.Menu, 1, AX.MenuItem)
           if menuItems and #menuItems > 0 then
-            local exBundleID = "com.tencent.flue.WeChatAppEx"
-            local appLocale = applicationLocale(app:bundleID())
-            local title = localizedString("Open in default browser", exBundleID,
-                                          { locale = appLocale })
             local menuItem = tfind(menuItems, function(item)
-              return item.AXDescription == title
+              return item.AXDescription == A_Message
             end)
             if menuItem then Callback.Press(menuItem) end
           end
@@ -4783,8 +4766,7 @@ appHotKeyCallbacks = {
         local exBundleID = "com.tencent.flue.WeChatAppEx"
         local params = { locale = appLocale }
         local menuItemPath = {
-          localizedMenuBarItem("Window", exBundleID, params),
-          localizedString("Select Previous Tab", exBundleID, params)
+          localizedMenuBarItem("Window", exBundleID, params), A_Message
         }
         local menuItem = app:findMenuItem(menuItemPath)
         if menuItem ~= nil and menuItem.enabled then
@@ -4827,8 +4809,7 @@ appHotKeyCallbacks = {
         local exBundleID = "com.tencent.flue.WeChatAppEx"
         local appLocale = applicationLocale(win:application():bundleID())
         local menuItemPath = {
-          localizedMenuBarItem('File', exBundleID, { locale = appLocale }),
-          localizedString('Close All Tabs', exBundleID, { locale = appLocale })
+          localizedMenuBarItem('File', exBundleID, { locale = appLocale }), A_Message
         }
         local menuItem = win:application():findMenuItem(menuItemPath)
         return menuItem ~= nil and menuItem.enabled, menuItemPath
@@ -4938,10 +4919,9 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local title = T("Send", win)
-        local bt = getc(towinui(win), AX.Button, title)
+        local bt = getc(towinui(win), AX.Button, A_Message)
         if bt == nil then
-          title = localizedString("Send To (%d)", win)
+          local title = localizedString("Send To (%d)", win)
           if type(title) ~= 'table' then
             title = { title }
           end
@@ -5026,7 +5006,7 @@ appHotKeyCallbacks = {
           if titleBar == nil then return false end
         end
         for _, button in ipairs(titleBar) do
-          if button.AXHelp == "后退" then
+          if button.AXHelp == A_Message then
             return true, button
           end
         end
@@ -5054,7 +5034,7 @@ appHotKeyCallbacks = {
           if titleBar == nil then return false end
         end
         for _, button in ipairs(titleBar) do
-          if button.AXHelp == "前进" then
+          if button.AXHelp == A_Message then
             return true, button
           end
         end
@@ -5083,7 +5063,7 @@ appHotKeyCallbacks = {
         end
         local refreshButton, searchButton
         for _, button in ipairs(titleBar) do
-          if button.AXHelp == "刷新" then
+          if button.AXHelp == A_Message then
             refreshButton = button
           elseif button.AXHelp == nil then
             searchButton = button
@@ -5127,7 +5107,7 @@ appHotKeyCallbacks = {
         local menuBarItem = tfind(menuBarItems, function(item)
           return #item > 0 and item.AXTitle == '文件'
         end)
-        local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, '最近打开')
+        local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, A_Message)
         if menuItem ~= nil then
           Callback.Press(menuBarItem)
           Callback.Press(menuItem)
@@ -5201,8 +5181,7 @@ appHotKeyCallbacks = {
     ["preferences"] = {
       message = T("Preferences"),
       fn = function(app)
-        local title = T("Preferences", app)
-        app:selectMenuItem({ app:name(), title })
+        app:selectMenuItem({ app:name(), A_Message })
       end
     }
   },
@@ -5212,13 +5191,13 @@ appHotKeyCallbacks = {
     ["settings"] = {
       message = "设置",
       fn = function(app)
-        app:selectMenuItem({ app:name(), "设置" })
+        app:selectMenuItem({ app:name(), A_Message })
       end
     },
     ["showMainWindow"] = {
       message = "抖音窗口",
       fn = function(app)
-        app:selectMenuItem({ "窗口", "抖音窗口" })
+        app:selectMenuItem({ "窗口", A_Message })
       end
     }
   },
@@ -5398,9 +5377,7 @@ appHotKeyCallbacks = {
         local menuBarItem = tfind(menuBarItems, function(item)
           return item.AXTitle == "Barrier"
         end)
-        local title = T("Change &Settings", app, { locale = appBuf.barrierLocale })
-        title = title:gsub("%(&%a%)", ""):gsub("&", "")
-        local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, title)
+        local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, A_Message)
         return menuItem and menuItem.AXEnabled, menuItem
       end,
       fn = Callback.Press
@@ -5540,8 +5517,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local title = Barrier.localizedString("Auto config", win)
-        local autoconfig = getc(winUI, AX.CheckBox, 2, AX.CheckBox, title)
+        local autoconfig = getc(winUI, AX.CheckBox, 2, AX.CheckBox, A_Message)
         return autoconfig ~= nil and #autoconfig:actionNames() > 0, autoconfig
       end,
       fn = function(checkbox, win)
@@ -5560,9 +5536,7 @@ appHotKeyCallbacks = {
       message = Barrier.localizedMessage("Show"),
       menubarFilter = { allowIndices =  1 },
       condition = function(menu)
-        local app = getAppFromDescendantElement(menu)
-        local title = T("Show", app)
-        local menuItem = getc(menu, AX.MenuItem, title)
+        local menuItem = getc(menu, AX.MenuItem, A_Message)
         return menuItem and menuItem.AXEnabled, menuItem
       end,
       fn = Callback.Press
@@ -5614,7 +5588,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local winUI = towinui(win)
-        local button = getc(winUI, AX.Button, "Save")
+        local button = getc(winUI, AX.Button, A_Message)
         return button and button.AXEnabled, button
       end,
       fn = Callback.Press
@@ -6255,9 +6229,7 @@ appHotKeyCallbacks = {
       message = T("Preferences..."),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local app = getAppFromDescendantElement(menu)
-        local title = T("Preferences...", app)
-        local menuItem = getc(menu, AX.MenuItem, title)
+        local menuItem = getc(menu, AX.MenuItem, A_Message)
         if menuItem then Callback.Press(menuItem) end
       end
     }
@@ -6573,7 +6545,7 @@ appHotKeyCallbacks = {
       message = "Settings...",
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local menuItem = getc(menu, AX.MenuItem, "Settings...")
+        local menuItem = getc(menu, AX.MenuItem, A_Message)
         if menuItem then Callback.Press(menuItem) end
       end
     }
@@ -6611,9 +6583,7 @@ appHotKeyCallbacks = {
       message = T("Preferences…"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local app = getAppFromDescendantElement(menu)
-        local title = T("Preferences…", app)
-        local menuItem = getc(menu, AX.MenuItem, title)
+        local menuItem = getc(menu, AX.MenuItem, A_Message)
         if menuItem then Callback.Press(menuItem) end
       end
     }
@@ -7297,9 +7267,7 @@ appHotKeyCallbacks = {
       message = T("Preferences…"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local app = getAppFromDescendantElement(menu)
-        local title = T("Preferences…", app)
-        local menuItem = getc(menu, AX.MenuItem, title)
+        local menuItem = getc(menu, AX.MenuItem, A_Message)
         if menuItem then Callback.Press(menuItem) end
       end
     },
@@ -7307,9 +7275,7 @@ appHotKeyCallbacks = {
       message = T("Open Connection…"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local app = getAppFromDescendantElement(menu)
-        local title = T("Open Connection…", app)
-        local menuItem = getc(menu, AX.MenuItem, title)
+        local menuItem = getc(menu, AX.MenuItem, A_Message)
         if menuItem then Callback.Press(menuItem) end
       end
     },
@@ -7317,9 +7283,7 @@ appHotKeyCallbacks = {
       message = T("History"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local app = getAppFromDescendantElement(menu)
-        local title = T("History", app)
-        local menuItem = getc(menu, AX.MenuItem, title)
+        local menuItem = getc(menu, AX.MenuItem, A_Message)
         if menuItem then
           Callback.Press(menu.AXParent)
           hs.eventtap.event.newMouseEvent(
@@ -7339,10 +7303,7 @@ appHotKeyCallbacks = {
       end,
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local app = getAppFromDescendantElement(menu)
-        local quit = T("Quit", app)
-        local title = quit .. ' ' .. app:name()
-        local menuItem = getc(menu, AX.MenuItem, title)
+        local menuItem = getc(menu, AX.MenuItem, A_Message)
         if menuItem then Callback.Press(menuItem) end
       end
     }
@@ -7357,9 +7318,7 @@ appHotKeyCallbacks = {
       message = T("Preferences"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local app = getAppFromDescendantElement(menu)
-        local title = T("Preferences", app)
-        local menuItem = getc(menu, AX.MenuItem, title)
+        local menuItem = getc(menu, AX.MenuItem, A_Message)
         if menuItem then Callback.Press(menuItem) end
       end
     }
@@ -7393,9 +7352,7 @@ appHotKeyCallbacks = {
       message = T("Preferences"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local app = getAppFromDescendantElement(menu)
-        local title = T("Preferences", app)
-        local menuItem = getc(menu, AX.MenuItem, title)
+        local menuItem = getc(menu, AX.MenuItem, A_Message)
         if menuItem then Callback.Press(menuItem) end
       end
     }
