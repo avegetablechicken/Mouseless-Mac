@@ -298,6 +298,15 @@ local function getFunc(f)
   return nil
 end
 
+A_Hotkey, A_Message = nil, nil
+function A_HotkeyWrapper(fn, tbl)
+  return function()
+    A_Hotkey, A_Message = tbl.hotkey, tbl.message
+    local ret = fn()
+    A_Hotkey, A_Message = nil, nil
+    return ret
+  end
+end
 function newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
   if message == nil or getFunc(message) then
     repeatfn=releasedfn releasedfn=pressedfn pressedfn=message message=nil -- shift down arguments
@@ -309,6 +318,16 @@ function newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
   local validHyperModal = tfind(HyperModalList, function(modal)
     return type(mods) == 'string' and tosymbol(modal.hyper) == tosymbol(mods)
   end)
+  local tbl = {}
+  if pressedfn then
+    pressedfn = A_HotkeyWrapper(pressedfn, tbl)
+  end
+  if releasedfn then
+    releasedfn = A_HotkeyWrapper(releasedfn, tbl)
+  end
+  if repeatfn then
+    repeatfn = A_HotkeyWrapper(repeatfn, tbl)
+  end
   if validHyperModal ~= nil then
     hotkey = validHyperModal:bind("", key, message, pressedfn, releasedfn, repeatfn)
   else
@@ -317,6 +336,8 @@ function newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
       hotkey.msg = hotkey.idx .. ": " .. message
     end
   end
+  tbl.hotkey = hotkey
+  tbl.message = message
   return hotkey
 end
 

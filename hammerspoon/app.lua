@@ -8003,6 +8003,7 @@ local function wrapConditionChain(app, fn, mode, config)
     while cb do
       if cb.enabled then
         local f = mode == KEY_MODE.PRESS and cb.pressedfn or cb.repeatedfn
+        A_Message = cb.message
         succ, result = f()
         if succ then return end
         menuItemNotFound = menuItemNotFound
@@ -8098,9 +8099,12 @@ FLAGS["CALLBACK_IS_EXECUTING"] = false
 local function callBackExecutingWrapper(fn)
   return function()
     if FLAGS["CALLBACK_IS_EXECUTING"] then return end
+    local hotkey, message = A_Hotkey, A_Message
     hs.timer.doAfter(0, function()
       FLAGS["CALLBACK_IS_EXECUTING"] = true
+      A_Hotkey, A_Message = hotkey, message
       fn()
+      A_Hotkey, A_Message = nil, nil
       FLAGS["CALLBACK_IS_EXECUTING"] = false
     end)
   end
@@ -8113,6 +8117,8 @@ local function bindContextual(obj, config, ...)
     config.spec = nil
   end
   local pressedfn, cond = wrapCondition(obj, config, KEY_MODE.PRESS)
+  local tbl = { message = config.message }
+  cond = A_HotkeyWrapper(cond, tbl)
   if config.repeatedfn == nil and config.condition ~= nil then
     -- if hotkey condition is not satisfied, holding event should be passed to the app
     -- so callback for holding event must always be registered
@@ -8151,6 +8157,7 @@ local function bindContextual(obj, config, ...)
   local hotkey = bindHotkeySpec(config, config.message,
                                 pressedfn, nil, repeatedfn, ...)
   hotkey.deleteOnDisable = config.deleteOnDisable
+  tbl.hotkey = hotkey
   if type(cond) == 'table' then
     hotkey._chainedCond = cond
   else
