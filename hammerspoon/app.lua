@@ -2993,7 +2993,7 @@ appHotKeyCallbacks = {
       fn = Callback.Press
     },
     ["deleteLocation"] = {
-      message = TC("Delete"),
+      message = T("Delete"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local list = getc(towinui(app:focusedWindow()), AX.Group, 1,
