@@ -1055,6 +1055,24 @@ Games.WF.Main = {
   end
 }
 
+--- ### Weather
+local Weather = {}
+Weather.getLocationList = function(win)
+  if win == nil then return end
+  local list
+  if OS_VERSION >= OS.Tahoe and hs.host.operatingSystemVersion().minor >= 2 then
+    list = getc(towinui(win), AX.Group, 1,
+        AX.Group, 1, AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 1)
+  else
+    list = getc(towinui(win), AX.Group, 1,
+        AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
+    if OS_VERSION >= OS.Tahoe then list = getc(list, AX.Group, 1) end
+  end
+  if list and list.AXDescription == T("Location List", win) then
+    return list
+  end
+end
+
 -- ### Visual Studio Code
 local VSCode = {}
 VSCode.WF = {}
@@ -2950,18 +2968,13 @@ appHotKeyCallbacks = {
       message = "Previous Location",
       repeatable = true,
       condition = function(app)
-        if app:focusedWindow() == nil then return false end
-        local list = getc(towinui(app:focusedWindow()), AX.Group, 1,
-            AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
-        if OS_VERSION >= OS.Tahoe then list = getc(list, AX.Group, 1) end
-        if list and list.AXDescription == T("Location List", app) then
-          for i = 1, #list do
-            local desc = list[i][1].AXDescription
-            if (OS_VERSION < OS.Tahoe and list[i].AXSelected)
-                or (desc:match('^'..app:focusedWindow():title()..', ')
-                    or desc:match('^'..app:focusedWindow():title()..'、')) then
-              return true, list[(i - 2) % #list + 1][1]
-            end
+        local list = Weather.getLocationList(app:focusedWindow()) or {}
+        for i = 1, #list do
+          local desc = list[i][1].AXDescription
+          if (OS_VERSION < OS.Tahoe and list[i].AXSelected)
+              or (desc:match('^'..app:focusedWindow():title()..', ')
+                  or desc:match('^'..app:focusedWindow():title()..'、')) then
+            return true, list[(i - 2) % #list + 1][1]
           end
         end
         return false
@@ -2972,18 +2985,13 @@ appHotKeyCallbacks = {
       message = "Next Location",
       repeatable = true,
       condition = function(app)
-        if app:focusedWindow() == nil then return false end
-        local list = getc(towinui(app:focusedWindow()), AX.Group, 1,
-            AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
-        if OS_VERSION >= OS.Tahoe then list = getc(list, AX.Group, 1) end
-        if list and list.AXDescription == T("Location List", app) then
-          for i = 1, #list do
-            local desc = list[i][1].AXDescription
-            if (OS_VERSION < OS.Tahoe and list[i].AXSelected)
-                or (desc:match('^'..app:focusedWindow():title()..', ')
-                    or desc:match('^'..app:focusedWindow():title()..'、')) then
-              return true, list[i % #list + 1][1]
-            end
+        local list = Weather.getLocationList(app:focusedWindow()) or {}
+        for i = 1, #list do
+          local desc = list[i][1].AXDescription
+          if (OS_VERSION < OS.Tahoe and list[i].AXSelected)
+              or (desc:match('^'..app:focusedWindow():title()..', ')
+                  or desc:match('^'..app:focusedWindow():title()..'、')) then
+            return true, list[i % #list + 1][1]
           end
         end
         return false
@@ -2993,11 +3001,8 @@ appHotKeyCallbacks = {
     ["deleteLocation"] = {
       message = T("Delete"),
       condition = function(app)
-        if app:focusedWindow() == nil then return false end
-        local list = getc(towinui(app:focusedWindow()), AX.Group, 1,
-            AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
-        if OS_VERSION >= OS.Tahoe then list = getc(list, AX.Group, 1) end
-        if list and list.AXDescription == T("Location List", app) then
+        local list = Weather.getLocationList(app:focusedWindow())
+        if list then
           local selected = tfind(list.AXChildren or {}, function(item)
             local desc = item[1].AXDescription
             return (OS_VERSION < OS.Tahoe and item.AXSelected)
