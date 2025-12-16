@@ -2781,9 +2781,12 @@ appHotKeyCallbacks = {
       message = T("Play"),
       windowFilter = Music.WF.Main,
       condition = function(win)
-        local button = getc(towinui(win), AX.SplitGroup, 1,
-            AX.ScrollArea, 2, AX.List, 1, AX.List, 1,
-            AX.Unknown, 1, AX.Button, T("Play", win))
+        local g = getc(towinui(win), AX.SplitGroup, 1,
+            AX.ScrollArea, 2, AX.List, 1, AX.List, 1, AX.Unknown, 1)
+            or getc(towinui(win), AX.SplitGroup, 1,
+                AX.ScrollArea, 2, AX.Group, 1)
+        local button = getc(g, AX.Button, T("Play", win))
+            or getc(g, AX.Button, "Play")
         return button ~= nil, button
       end,
       fn = Callback.Press
