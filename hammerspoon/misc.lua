@@ -1443,13 +1443,13 @@ function()
       elseif kind == HK.APPKEY then
         msg = "AppKeys"
       elseif kind == HK.BACKGROUND then
-        msg = "for Background Apps"
+        msg = "Background Apps"
       elseif kind == HK.MENUBAR then
-        msg = "for Menu Bar Apps"
+        msg = "Menu Bar Apps"
       elseif kind == HK.IN_APP then
-        msg = "for Active App"
+        msg = "Active App"
       elseif kind == HK.IN_WIN then
-        msg = "for Frontmost Window"
+        msg = "Frontmost Window"
       elseif kind == HK.WIN_OP then
         msg = "Window Operations"
       else
