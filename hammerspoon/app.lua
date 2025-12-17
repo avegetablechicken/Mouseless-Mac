@@ -4065,6 +4065,7 @@ appHotKeyCallbacks = {
           if tfind(button.AXDOMClassList or {}, function(c)
             return c:find("nickName") ~= nil
           end) ~= nil then
+            local title = A_Message
             local menuItem
             local timer = hs.timer.waitUntil(function()
               local winUI = towinui(app:focusedWindow())
@@ -4072,7 +4073,7 @@ appHotKeyCallbacks = {
                   AX.ScrollArea, 1, AX.WebArea, 1)
               local menu = getc(webarea, AX.Group, 8, AX.Group, 2, AX.Group, 1)
               if menu then
-                menuItem = getc(menu, AX.StaticText, A_Message)
+                menuItem = getc(menu, AX.StaticText, title)
                 return true
               end
             end,
@@ -4083,6 +4084,7 @@ appHotKeyCallbacks = {
         end
 
         app = button
+        local title = A_Message
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.windowCreated)
         observer:callback(function(obs, winUI)
@@ -4090,7 +4092,7 @@ appHotKeyCallbacks = {
               AX.ScrollArea, 1, AX.WebArea, 1)
           if webarea then
             for _, g in ipairs(getc(webarea, AX.Group)) do
-              if g[1] and g[1].AXValue == A_Message then
+              if g[1] and g[1].AXValue == title then
                 leftClickAndRestore(g[1], app)
                 obs:stop() obs = nil
                 return
