@@ -1446,7 +1446,7 @@ function()
         msg = "for Background Apps"
       elseif kind == HK.MENUBAR then
         msg = "for Menu Bar Apps"
-      elseif kind == kind == HK.IN_APP then
+      elseif kind == HK.IN_APP then
         msg = "for Active App"
       elseif kind == HK.IN_WIN then
         msg = "for Frontmost Window"
