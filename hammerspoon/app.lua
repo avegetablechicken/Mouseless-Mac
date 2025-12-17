@@ -2966,7 +2966,6 @@ appHotKeyCallbacks = {
     },
     ["previousLocation"] = {
       message = "Previous Location",
-      repeatable = true,
       condition = function(app)
         local list = Weather.getLocationList(app:focusedWindow()) or {}
         for i = 1, #list do
@@ -2983,7 +2982,6 @@ appHotKeyCallbacks = {
     },
     ["nextLocation"] = {
       message = "Next Location",
-      repeatable = true,
       condition = function(app)
         local list = Weather.getLocationList(app:focusedWindow()) or {}
         for i = 1, #list do
