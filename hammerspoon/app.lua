@@ -4243,7 +4243,7 @@ appHotKeyCallbacks = {
         appHotKeyCallbacks[app:bundleID()]["toggleMiniChat"].fn(app)
       end
     },
-    ["showMainWindow"] = {
+    ["showMainWindowFromMB"] = {
       message = T("Open Yuanbao"),
       windowFilter = {
         allowRoles = AX.SystemDialog
@@ -6376,7 +6376,7 @@ appHotKeyCallbacks = {
       background = true,
       fn = Callback.Press
     },
-    ["showAllPasswords"] = {
+    ["showAllPasswordsFromMB"] = {
       message = T("Show all passwords"),
       windowFilter = PasswordsMenuBarExtra.WF,
       condition = function(win)
@@ -6492,7 +6492,7 @@ appHotKeyCallbacks = {
   },
 
   ["com.apple.weather.menu"] = {
-    ["openWeather"] = {
+    ["openWeatherFromMB"] = {
       message = T("Open Weather"),
       windowFilter = {
         allowRoles = AX.SystemDialog

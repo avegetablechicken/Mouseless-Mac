@@ -1258,7 +1258,7 @@
         "mods": "command",
         "key": "["
       },
-      "showMainWindow": {
+      "showMainWindowFromMB": {
         "mods": "command",
         "key": "O"
       }
@@ -2062,7 +2062,7 @@
         "mods": "command",
         "key": "N"
       },
-      "showAllPasswords": {
+      "showAllPasswordsFromMB": {
         "mods": "command",
         "key": "O"
       },
@@ -2122,7 +2122,7 @@
       }
     },
     "com.apple.weather.menu": {
-      "openWeather": {
+      "openWeatherFromMB": {
         "mods": "command",
         "key": "O"
       }
