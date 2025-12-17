@@ -3904,7 +3904,6 @@ appHotKeyCallbacks = {
       message = T("偏好设置..."),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local app = getAppFromDescendantElement(menu)
         local menuItem = getc(menu, AX.MenuItem, A_Message)
         if menuItem then Callback.Press(menuItem) end
       end
