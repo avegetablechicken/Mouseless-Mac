@@ -417,6 +417,16 @@ local function T(message, params, sep)
   end
 end
 
+local function TB(appid, message)
+  return function(thisAppId)
+    if message == nil then
+      message = appid
+      appid = thisAppId
+    end
+    return displayName(appid) .. ' > ' .. T(message)(thisAppId)
+  end
+end
+
 local function TMB(appid, message)
   return function(menu)
     local thisAppId = getAppId(menu)
@@ -3973,11 +3983,7 @@ appHotKeyCallbacks = {
       end
     },
     ["toggleChatBar"] = {
-      message = function()
-        local appid = "com.openai.chat"
-        local msg = localizedString("Open Chat Bar", appid)
-        return displayName(appid)..' > '..msg
-      end,
+      message = TB("Open Chat Bar"),
       background = true,
       fn = function(app)
         local output, status = hs.execute(strfmt([[
@@ -4193,11 +4199,7 @@ appHotKeyCallbacks = {
       fn = Callback.Press
     },
     ["toggleMiniChat"] = {
-      message = function()
-        local appid = "com.tencent.yuanbao"
-        local msg = localizedString("Open Mini Chat", appid)
-        return displayName(appid)..' > '..msg
-      end,
+      message = TB("Open Mini Chat"),
       background = true,
       fn = function(app)
         if Version.LessThan(app, "2") then
@@ -6367,7 +6369,7 @@ appHotKeyCallbacks = {
   ["com.apple.Passwords.MenuBarExtra"] =
   {
     ["showPasswordsDialog"] = {
-      message = TMB("com.apple.Passwords", "Show"),
+      message = TB("com.apple.Passwords", "Show"),
       background = true,
       fn = clickRightMenuBarItem
     },
