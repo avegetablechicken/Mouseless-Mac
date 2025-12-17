@@ -1504,6 +1504,7 @@ function()
           text = actualMsg,
           subText = idx
               .. (msg and " -- " .. msg or "")
+              .. (entry.source == HK_SOURCE.APP and " (built-in)" or "")
               .. (entry.valid and "" or " (DISABLED in current context)"),
           image = image,
           mods = mods,
