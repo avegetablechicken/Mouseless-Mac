@@ -6204,10 +6204,7 @@ appHotKeyCallbacks = {
       fn = clickRightMenuBarItem
     },
     ["preferencesFromMB"] = {
-      message = function(menu)
-        local app = getAppFromDescendantElement(menu)
-        return app:name() .. ' > ' .. T('Preferences', app)
-      end,
+      message = T({ "eul", "Preferences" }),
       menubarFilter = { allowTitles = 'eul' },
       fn = function(menu)
         local title = strsplit(A_Message, " > ")[2]
@@ -6359,9 +6356,7 @@ appHotKeyCallbacks = {
   ["com.apple.Passwords.MenuBarExtra"] =
   {
     ["showPasswordsDialog"] = {
-      message = function(app)
-        return displayName(app) .. ' > ' .. TC("Show", app)
-      end,
+      message = T({ "PasswordsMenuBarExtra", "Show" }),
       background = true,
       fn = clickRightMenuBarItem
     },
