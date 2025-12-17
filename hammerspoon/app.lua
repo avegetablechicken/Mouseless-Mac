@@ -3298,10 +3298,11 @@ appHotKeyCallbacks = {
       fn = Callback.Select
     },
     ["openRecentInMenuBarMenu"] = {
-      message = T("Open Recent"),
+      message = T({ "UPDF", "Open Recent" }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local menuItem = getc(menu, AX.MenuItem, A_Message)
+        local title = strsplit(A_Message, " > ")[2]
+        local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then Callback.Press(menuItem) end
       end
     },
@@ -3901,10 +3902,11 @@ appHotKeyCallbacks = {
   ["com.eusoft.freeeudic.LightPeek"] =
   {
     ["preferences"] = {
-      message = T("偏好设置..."),
+      message = T({ "LightPeek", "偏好设置..." }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local menuItem = getc(menu, AX.MenuItem, A_Message)
+        local title = strsplit(A_Message, " > ")[2]
+        local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then Callback.Press(menuItem) end
       end
     }
@@ -5535,10 +5537,11 @@ appHotKeyCallbacks = {
       end
     },
     ["showMainWindow"] = {
-      message = Barrier.localizedMessage("Show"),
+      message = T({ "Barrier", "Show" }),
       menubarFilter = { allowIndices =  1 },
       condition = function(menu)
-        local menuItem = getc(menu, AX.MenuItem, A_Message)
+        local title = strsplit(A_Message, " > ")[2]
+        local menuItem = getc(menu, AX.MenuItem, title)
         return menuItem and menuItem.AXEnabled, menuItem
       end,
       fn = Callback.Press
@@ -6207,10 +6210,10 @@ appHotKeyCallbacks = {
       end,
       menubarFilter = { allowTitles = 'eul' },
       fn = function(menu)
-        local app = getAppFromDescendantElement(menu)
-        local prefString = T('Preferences', app)
+        local title = strsplit(A_Message, " > ")[2]
         local button = getc(menu, AX.MenuItem, 1, AX.Group, 1,
-            AX.StaticText, prefString)
+            AX.StaticText, title)
+        local app = getAppFromDescendantElement(menu)
         leftClickAndRestore(button, app, 0.2)
       end
     }
@@ -6228,10 +6231,11 @@ appHotKeyCallbacks = {
       end
     },
     ["preferences"] = {
-      message = T("Preferences..."),
+      message = T({ "Dynamic Wallpaper", "Preferences..." }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local menuItem = getc(menu, AX.MenuItem, A_Message)
+        local title = strsplit(A_Message, " > ")[2]
+        local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then Callback.Press(menuItem) end
       end
     }
@@ -6326,7 +6330,8 @@ appHotKeyCallbacks = {
       message = function(menu)
         local menuItem = getc(menu, AX.MenuItem, -1)
         if menuItem then
-          return getc(menu, AX.MenuItem, -1).AXTitle
+          return displayName("com.apple.TextInputMenuAgent")
+              .. ' >' .. getc(menu, AX.MenuItem, -1).AXTitle
         end
       end,
       menubarFilter = { allowIndices = 1 },
@@ -6544,10 +6549,11 @@ appHotKeyCallbacks = {
   ["org.pqrs.Karabiner-Menu"] =
   {
     ["settings"] = {
-      message = "Settings...",
+      message = displayName("org.pqrs.Karabiner-Menu") .. " > Settings...",
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local menuItem = getc(menu, AX.MenuItem, A_Message)
+        local title = strsplit(A_Message, " > ")[2]
+        local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then Callback.Press(menuItem) end
       end
     }
@@ -6582,10 +6588,11 @@ appHotKeyCallbacks = {
   ["me.guillaumeb.MonitorControl"] =
   {
     ["preferences"] = {
-      message = T("Preferences…"),
+      message = T({ "MonitorControl", "Preferences…" }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local menuItem = getc(menu, AX.MenuItem, A_Message)
+        local title = strsplit(A_Message, " > ")[2]
+        local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then Callback.Press(menuItem) end
       end
     }
@@ -7266,26 +7273,29 @@ appHotKeyCallbacks = {
   ["io.mountainduck"] =
   {
     ["preferencesInMenuBarMenu"] = {
-      message = T("Preferences…"),
+      message = T({ "Mountain Duck", "Preferences…" }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local menuItem = getc(menu, AX.MenuItem, A_Message)
+        local title = strsplit(A_Message, " > ")[2]
+        local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then Callback.Press(menuItem) end
       end
     },
     ["openConnectionInMenuBarMenu"] = {
-      message = T("Open Connection…"),
+      message = T({ "Mountain Duck", "Open Connection…" }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local menuItem = getc(menu, AX.MenuItem, A_Message)
+        local title = strsplit(A_Message, " > ")[2]
+        local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then Callback.Press(menuItem) end
       end
     },
     ["historyInMenuBarMenu"] = {
-      message = T("History"),
+      message = T({ "Mountain Duck", "History" }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local menuItem = getc(menu, AX.MenuItem, A_Message)
+        local title = strsplit(A_Message, " > ")[2]
+        local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then
           Callback.Press(menu.AXParent)
           hs.eventtap.event.newMouseEvent(
@@ -7317,10 +7327,11 @@ appHotKeyCallbacks = {
 
   ["com.better365.BetterAndBetterHelper"] = {
     ["preferencesInMenuBarMenu"] = {
-      message = T("Preferences"),
+      message = T({ "BetterAndBetterHelper ", "Preferences" }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local menuItem = getc(menu, AX.MenuItem, A_Message)
+        local title = strsplit(A_Message, " > ")[2]
+        local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then Callback.Press(menuItem) end
       end
     }
@@ -7351,10 +7362,11 @@ appHotKeyCallbacks = {
       end
     },
     ["preferencesInMenuBarMenu"] = {
-      message = T("Preferences"),
+      message = T({ "iShotProHelper", "Preferences" }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
-        local menuItem = getc(menu, AX.MenuItem, A_Message)
+        local title = strsplit(A_Message, " > ")[2]
+        local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then Callback.Press(menuItem) end
       end
     }
