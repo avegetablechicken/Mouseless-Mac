@@ -300,9 +300,12 @@ end
 
 A_Hotkey, A_Message = nil, nil
 function A_HotkeyWrapper(fn, tbl)
-  return function()
+  if tbl == nil then
+    tbl = { hotkey = A_Hotkey, message = A_Message }
+  end
+  return function(...)
     A_Hotkey, A_Message = tbl.hotkey, tbl.message
-    local ret = fn()
+    local ret = fn(...)
     A_Hotkey, A_Message = nil, nil
     return ret
   end

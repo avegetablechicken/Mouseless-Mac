@@ -3034,15 +3034,14 @@ appHotKeyCallbacks = {
       end,
       fn = function(selected, app)
         selected:performAction(AX.ShowMenu)
-        local title = A_Message
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.menuOpened)
-        observer:callback(function(obs, menu)
-          local delete = getc(menu, AX.MenuItem, title)
+        observer:callback(A_HotkeyWrapper(function(obs, menu)
+          local delete = getc(menu, AX.MenuItem, A_Message)
           if delete then
             Callback.Press(delete) obs:stop() obs = nil
           end
-        end)
+        end))
         observer:start()
         Evt.StopOnDeactivated(app, observer)
       end
@@ -3601,12 +3600,11 @@ appHotKeyCallbacks = {
       end,
       fn = function(position, win)
         local app = win:application()
-        local title = A_Message
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.created)
-        observer:callback(function(obs)
+        observer:callback(A_HotkeyWrapper(function(obs)
           for _, elem in ipairs(toappui(app)) do
-            local menuItem = getc(elem, AX.Menu, 1, AX.MenuItem, title)
+            local menuItem = getc(elem, AX.Menu, 1, AX.MenuItem, A_Message)
             if menuItem then
               Callback.Press(menuItem)
               if hs.application.frontmostApplication():bundleID() == app:bundleID() then
@@ -3616,7 +3614,7 @@ appHotKeyCallbacks = {
               obs = nil
             end
           end
-        end)
+        end))
         observer:start()
         local clicked = rightClickAndRestore(position, app)
         if clicked then
@@ -4009,7 +4007,7 @@ appHotKeyCallbacks = {
         app:focusedWindow():close()
         app:hide()
         hs.timer.usleep(1000000)
-        appHotKeyCallbacks[app:bundleID()]["toggleChatBar"].fn(app)
+        A_HotkeyWrapper(appHotKeyCallbacks[app:bundleID()]["toggleChatBar"].fn)(app)
       end
     }
   },
@@ -4065,18 +4063,17 @@ appHotKeyCallbacks = {
           if tfind(button.AXDOMClassList or {}, function(c)
             return c:find("nickName") ~= nil
           end) ~= nil then
-            local title = A_Message
             local menuItem
-            local timer = hs.timer.waitUntil(function()
+            local timer = hs.timer.waitUntil(A_HotkeyWrapper(function()
               local winUI = towinui(app:focusedWindow())
               local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
                   AX.ScrollArea, 1, AX.WebArea, 1)
               local menu = getc(webarea, AX.Group, 8, AX.Group, 2, AX.Group, 1)
               if menu then
-                menuItem = getc(menu, AX.StaticText, title)
+                menuItem = getc(menu, AX.StaticText, A_Message)
                 return true
               end
-            end,
+            end),
             function() leftClickAndRestore(menuItem, app) end)
             Evt.StopOnDeactivated(app, timer)
           end
@@ -4084,15 +4081,14 @@ appHotKeyCallbacks = {
         end
 
         app = button
-        local title = A_Message
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.windowCreated)
-        observer:callback(function(obs, winUI)
+        observer:callback(A_HotkeyWrapper(function(obs, winUI)
           local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
               AX.ScrollArea, 1, AX.WebArea, 1)
           if webarea then
             for _, g in ipairs(getc(webarea, AX.Group)) do
-              if g[1] and g[1].AXValue == title then
+              if g[1] and g[1].AXValue == A_Message then
                 leftClickAndRestore(g[1], app)
                 obs:stop() obs = nil
                 return
@@ -4100,7 +4096,7 @@ appHotKeyCallbacks = {
             end
             winUI:asHSWindow():close()
           end
-        end)
+        end))
         observer:start()
         local clicked = clickRightMenuBarItem(app, {}, "right-click")
         if clicked then
@@ -4209,10 +4205,9 @@ appHotKeyCallbacks = {
           -- always show the icon to workaround it
           clickRightMenuBarItem(app, {}, "click")
         else
-          local title = strsplit(A_Message, " > ")[2]
           local observer = uiobserver.new(app:pid())
           observer:addWatcher(toappui(app), uinotifications.windowCreated)
-          observer:callback(function(obs, winUI)
+          observer:callback(A_HotkeyWrapper(function(obs, winUI)
             -- false invoke when menubar manager try to show or hide menubar icon
             -- in earley edition
             if winUI.AXSubrole == AX.StandardWindow then return end
@@ -4220,6 +4215,7 @@ appHotKeyCallbacks = {
             local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
               AX.ScrollArea, 1, AX.WebArea, 1)
             if webarea then
+              local title = strsplit(A_Message, " > ")[2]
               for _, g in ipairs(getc(webarea, AX.Group)) do
                 if g[1] and g[1].AXValue == title then
                   leftClickAndRestore(g[1], app)
@@ -4229,7 +4225,7 @@ appHotKeyCallbacks = {
               obs:stop()
               obs = nil
             end
-          end)
+          end))
           observer:start()
           local clicked = clickRightMenuBarItem(app, {}, "right-click")
           if clicked then
@@ -4255,7 +4251,7 @@ appHotKeyCallbacks = {
         app:focusedWindow():close()
         app:hide()
         hs.timer.usleep(1000000)
-        appHotKeyCallbacks[app:bundleID()]["toggleMiniChat"].fn(app)
+        A_HotkeyWrapper(appHotKeyCallbacks[app:bundleID()]["toggleMiniChat"].fn)(app)
       end
     },
     ["showMainWindowFromMB"] = {
@@ -4299,12 +4295,11 @@ appHotKeyCallbacks = {
       end,
       fn = function(tab, win)
         tab:performAction(AX.ShowMenu)
-        local title = A_Message
-        hs.timer.doAfter(0.1, function()
+        hs.timer.doAfter(0.1, A_HotkeyWrapper(function()
           local app = win:application()
-          local item = getc(toappui(app), AX.Menu, 1, AX.MenuItem, title)
+          local item = getc(toappui(app), AX.Menu, 1, AX.MenuItem, A_Message)
           if item then Callback.Press(item) end
-        end)
+        end))
       end
     },
     ["openRecordFile"] = {
@@ -4646,16 +4641,15 @@ appHotKeyCallbacks = {
             if hide then Callback.Press(hide) end
           end
         else
-          local title = A_Message
-          hs.timer.doAfter(0.5, function()
+          hs.timer.doAfter(0.5, A_HotkeyWrapper(function()
             local app = win:application()
             local menu = toappui(app):elementAtPosition(
                 uioffset(chat.AXPosition, { 1, 1 }))
             if menu and menu.AXRole == AX.Menu then
-              local hide = getc(menu, AX.MenuItem, title)
+              local hide = getc(menu, AX.MenuItem, A_Message)
               if hide then leftClickAndRestore(hide, app) end
             end
-          end)
+          end))
         end
       end
     },
@@ -7704,12 +7698,12 @@ local function registerRunningAppHotKeys(appid, app)
             cfg.fn(find(appid))
           else
             hs.execute(strfmt("open -g -b '%s'", appid))
-            hs.timer.doAfter(1, function()
+            hs.timer.doAfter(1, A_HotkeyWrapper(function()
               if find(appid) then
                 local cb = cfg.onLaunch or cfg.fn
                 cb(find(appid))
               end
-            end)
+            end))
           end
         end
       else
@@ -8080,14 +8074,11 @@ FLAGS["CALLBACK_IS_EXECUTING"] = false
 local function callBackExecutingWrapper(fn)
   return function()
     if FLAGS["CALLBACK_IS_EXECUTING"] then return end
-    local hotkey, message = A_Hotkey, A_Message
-    hs.timer.doAfter(0, function()
+    hs.timer.doAfter(0, A_HotkeyWrapper(function()
       FLAGS["CALLBACK_IS_EXECUTING"] = true
-      A_Hotkey, A_Message = hotkey, message
       fn()
-      A_Hotkey, A_Message = nil, nil
       FLAGS["CALLBACK_IS_EXECUTING"] = false
-    end)
+    end))
   end
 end
 
