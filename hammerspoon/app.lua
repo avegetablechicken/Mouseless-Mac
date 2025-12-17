@@ -3297,7 +3297,7 @@ appHotKeyCallbacks = {
       condition = MenuItem.isEnabled({ "File", "Open Quickly…" }),
       fn = Callback.Select
     },
-    ["openRecentInMenuBarMenu"] = {
+    ["openRecentFromMB"] = {
       message = T({ "UPDF", "Open Recent" }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
@@ -3901,7 +3901,7 @@ appHotKeyCallbacks = {
 
   ["com.eusoft.freeeudic.LightPeek"] =
   {
-    ["preferences"] = {
+    ["preferencesFromMB"] = {
       message = T({ "LightPeek", "偏好设置..." }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
@@ -5536,7 +5536,7 @@ appHotKeyCallbacks = {
         end
       end
     },
-    ["showMainWindow"] = {
+    ["showMainWindowFromMB"] = {
       message = T({ "Barrier", "Show" }),
       menubarFilter = { allowIndices =  1 },
       condition = function(menu)
@@ -6203,7 +6203,7 @@ appHotKeyCallbacks = {
       background = true,
       fn = clickRightMenuBarItem
     },
-    ["preferencesInMenuBarMenu"] = {
+    ["preferencesFromMB"] = {
       message = function(menu)
         local app = getAppFromDescendantElement(menu)
         return app:name() .. ' > ' .. T('Preferences', app)
@@ -6230,7 +6230,7 @@ appHotKeyCallbacks = {
                                    { localeFile = "HotkeyWindowController" }))
       end
     },
-    ["preferences"] = {
+    ["preferencesFromMB"] = {
       message = T({ "Dynamic Wallpaper", "Preferences..." }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
@@ -6326,7 +6326,7 @@ appHotKeyCallbacks = {
 
   ["com.apple.TextInputMenuAgent"] =
   {
-    ["openKeyboardSettings"] = {
+    ["openKeyboardSettingsFromMB"] = {
       message = function(menu)
         local menuItem = getc(menu, AX.MenuItem, -1)
         if menuItem then
@@ -6548,7 +6548,7 @@ appHotKeyCallbacks = {
 
   ["org.pqrs.Karabiner-Menu"] =
   {
-    ["settings"] = {
+    ["settingsFromMB"] = {
       message = displayName("org.pqrs.Karabiner-Menu") .. " > Settings...",
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
@@ -6587,7 +6587,7 @@ appHotKeyCallbacks = {
 
   ["me.guillaumeb.MonitorControl"] =
   {
-    ["preferences"] = {
+    ["preferencesFromMB"] = {
       message = T({ "MonitorControl", "Preferences…" }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
@@ -7272,7 +7272,7 @@ appHotKeyCallbacks = {
 
   ["io.mountainduck"] =
   {
-    ["preferencesInMenuBarMenu"] = {
+    ["preferencesFromMB"] = {
       message = T({ "Mountain Duck", "Preferences…" }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
@@ -7281,7 +7281,7 @@ appHotKeyCallbacks = {
         if menuItem then Callback.Press(menuItem) end
       end
     },
-    ["openConnectionInMenuBarMenu"] = {
+    ["openConnectionFromMB"] = {
       message = T({ "Mountain Duck", "Open Connection…" }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
@@ -7290,7 +7290,7 @@ appHotKeyCallbacks = {
         if menuItem then Callback.Press(menuItem) end
       end
     },
-    ["historyInMenuBarMenu"] = {
+    ["historyFromMB"] = {
       message = T({ "Mountain Duck", "History" }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
@@ -7307,7 +7307,7 @@ appHotKeyCallbacks = {
         end
       end
     },
-    ["quitInMenuBarMenu"] = {
+    ["quitFromMB"] = {
       message = function(menu)
         local app = getAppFromDescendantElement(menu)
         local quit = T("Quit", app)
@@ -7326,7 +7326,7 @@ appHotKeyCallbacks = {
   },
 
   ["com.better365.BetterAndBetterHelper"] = {
-    ["preferencesInMenuBarMenu"] = {
+    ["preferencesFromMB"] = {
       message = T({ "BetterAndBetterHelper ", "Preferences" }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
@@ -7361,7 +7361,7 @@ appHotKeyCallbacks = {
         safeGlobalKeyStroke(mods, key)
       end
     },
-    ["preferencesInMenuBarMenu"] = {
+    ["preferencesFromMB"] = {
       message = T({ "iShotProHelper", "Preferences" }),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)

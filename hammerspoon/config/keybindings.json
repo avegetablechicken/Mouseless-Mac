@@ -971,7 +971,7 @@
         "mods": ["shift", "command"],
         "key": "O"
       },
-      "openRecentInMenuBarMenu": {
+      "openRecentFromMB": {
         "mods": "control",
         "key": "R"
       }
@@ -1213,7 +1213,7 @@
       }
     },
     "com.eusoft.freeeudic.LightPeek": {
-      "preferences": {
+      "preferencesFromMB": {
         "mods": "command",
         "key": ","
       }
@@ -1894,31 +1894,31 @@
         "mods": "${hyper.daemon}",
         "key": "Z"
       },
-      "preferencesInMenuBarMenu": {
+      "preferencesFromMB": {
         "mods": "command",
         "key": ","
       }
     },
     "io.mountainduck": {
-      "preferencesInMenuBarMenu": {
+      "preferencesFromMB": {
         "mods": "command",
         "key": ","
       },
-      "openConnectionInMenuBarMenu": {
+      "openConnectionFromMB": {
         "mods": "command",
         "key": "N"
       },
-      "historyInMenuBarMenu": {
+      "historyFromMB": {
         "mods": "control",
         "key": "R"
       },
-      "quitInMenuBarMenu": {
+      "quitFromMB": {
         "mods": "command",
         "key": "Q"
       }
     },
     "com.better365.BetterAndBetterHelper": {
-      "preferencesInMenuBarMenu": {
+      "preferencesFromMB": {
         "mods": "command",
         "key": ","
       }
@@ -1929,7 +1929,7 @@
         "key": "O",
         "persist": true
       },
-      "preferencesInMenuBarMenu": {
+      "preferencesFromMB": {
         "mods": "command",
         "key": ","
       }
@@ -1939,7 +1939,7 @@
         "mods": "${hyper.daemon}",
         "key": "S"
       },
-      "preferences": {
+      "preferencesFromMB": {
         "mods": "command",
         "key": ","
       }
@@ -2021,7 +2021,7 @@
         "mods": "option",
         "key": "C"
       },
-      "showMainWindow": {
+      "showMainWindowF rom MB": {
         "mods": "command",
         "key": "O"
       }
@@ -2116,7 +2116,7 @@
       }
     },
     "com.apple.TextInputMenuAgent": {
-      "openKeyboardSettings": {
+      "openKeyboardSettingsFromMB": {
         "mods": "command",
         "key": ","
       }
@@ -2134,7 +2134,7 @@
       }
     },
     "org.pqrs.Karabiner-Menu": {
-      "settings": {
+      "settingsFromMB": {
         "mods": "command",
         "key": ","
       }
@@ -2146,7 +2146,7 @@
       }
     },
     "me.guillaumeb.MonitorControl": {
-      "preferences": {
+      "preferencesFromMB": {
         "mods": "command",
         "key": ","
       }
