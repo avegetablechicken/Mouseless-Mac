@@ -4205,6 +4205,7 @@ appHotKeyCallbacks = {
           -- always show the icon to workaround it
           clickRightMenuBarItem(app, {}, "click")
         else
+          local title = strsplit(A_Message, " > ")[2]
           local observer = uiobserver.new(app:pid())
           observer:addWatcher(toappui(app), uinotifications.windowCreated)
           observer:callback(function(obs, winUI)
@@ -4215,7 +4216,6 @@ appHotKeyCallbacks = {
             local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
               AX.ScrollArea, 1, AX.WebArea, 1)
             if webarea then
-              local title = T("Open Mini Chat", app)
               for _, g in ipairs(getc(webarea, AX.Group)) do
                 if g[1] and g[1].AXValue == title then
                   leftClickAndRestore(g[1], app)
