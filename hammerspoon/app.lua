@@ -6493,7 +6493,7 @@ appHotKeyCallbacks = {
 
   ["com.apple.weather.menu"] = {
     ["openWeatherFromMB"] = {
-      message = T("Open Weather"),
+      message = T({ "Weather", "Open Weather" }),
       windowFilter = {
         allowRoles = AX.SystemDialog
       },
