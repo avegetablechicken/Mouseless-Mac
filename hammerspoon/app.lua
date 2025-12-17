@@ -417,6 +417,17 @@ local function T(message, params, sep)
   end
 end
 
+local function TMB(appid, message)
+  return function(menu)
+    local thisAppId = getAppId(menu)
+    if message == nil then
+      message = appid
+      appid = thisAppId
+    end
+    return displayName(appid) .. ' > ' .. T(message)(thisAppId)
+  end
+end
+
 local Version = {}
 local function versionCompare(comp, versionStr, extra)
   local fn = function(app)
@@ -3298,7 +3309,7 @@ appHotKeyCallbacks = {
       fn = Callback.Select
     },
     ["openRecentFromMB"] = {
-      message = T({ "UPDF", "Open Recent" }),
+      message = TMB("Open Recent"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local title = strsplit(A_Message, " > ")[2]
@@ -3902,7 +3913,7 @@ appHotKeyCallbacks = {
   ["com.eusoft.freeeudic.LightPeek"] =
   {
     ["preferencesFromMB"] = {
-      message = T({ "LightPeek", "偏好设置..." }),
+      message = TMB("com.eusoft.freeeudic", "偏好设置..."),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local title = strsplit(A_Message, " > ")[2]
@@ -5537,7 +5548,7 @@ appHotKeyCallbacks = {
       end
     },
     ["showMainWindowFromMB"] = {
-      message = T({ "Barrier", "Show" }),
+      message = TMB("Show"),
       menubarFilter = { allowIndices =  1 },
       condition = function(menu)
         local title = strsplit(A_Message, " > ")[2]
@@ -6204,7 +6215,7 @@ appHotKeyCallbacks = {
       fn = clickRightMenuBarItem
     },
     ["preferencesFromMB"] = {
-      message = T({ "eul", "Preferences" }),
+      message = TMB("Preferences"),
       menubarFilter = { allowTitles = 'eul' },
       fn = function(menu)
         local title = strsplit(A_Message, " > ")[2]
@@ -6228,7 +6239,7 @@ appHotKeyCallbacks = {
       end
     },
     ["preferencesFromMB"] = {
-      message = T({ "Dynamic Wallpaper", "Preferences..." }),
+      message = TMB("Preferences..."),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local title = strsplit(A_Message, " > ")[2]
@@ -6356,7 +6367,7 @@ appHotKeyCallbacks = {
   ["com.apple.Passwords.MenuBarExtra"] =
   {
     ["showPasswordsDialog"] = {
-      message = T({ "PasswordsMenuBarExtra", "Show" }),
+      message = TMB("com.apple.Passwords", "Show"),
       background = true,
       fn = clickRightMenuBarItem
     },
@@ -6488,7 +6499,7 @@ appHotKeyCallbacks = {
 
   ["com.apple.weather.menu"] = {
     ["openWeatherFromMB"] = {
-      message = T({ "Weather", "Open Weather" }),
+      message = TMB("com.apple.weather", "Open Weather"),
       windowFilter = {
         allowRoles = AX.SystemDialog
       },
@@ -6544,7 +6555,7 @@ appHotKeyCallbacks = {
   ["org.pqrs.Karabiner-Menu"] =
   {
     ["settingsFromMB"] = {
-      message = displayName("org.pqrs.Karabiner-Menu") .. " > Settings...",
+      message = displayName("org.pqrs.Karabiner-Elements.Settings") .. " > Settings...",
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local title = strsplit(A_Message, " > ")[2]
@@ -6583,7 +6594,7 @@ appHotKeyCallbacks = {
   ["me.guillaumeb.MonitorControl"] =
   {
     ["preferencesFromMB"] = {
-      message = T({ "MonitorControl", "Preferences…" }),
+      message = TMB("Preferences…"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local title = strsplit(A_Message, " > ")[2]
@@ -7268,7 +7279,7 @@ appHotKeyCallbacks = {
   ["io.mountainduck"] =
   {
     ["preferencesFromMB"] = {
-      message = T({ "Mountain Duck", "Preferences…" }),
+      message = TMB("Preferences…"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local title = strsplit(A_Message, " > ")[2]
@@ -7277,7 +7288,7 @@ appHotKeyCallbacks = {
       end
     },
     ["openConnectionFromMB"] = {
-      message = T({ "Mountain Duck", "Open Connection…" }),
+      message = TMB("Open Connection…"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local title = strsplit(A_Message, " > ")[2]
@@ -7286,7 +7297,7 @@ appHotKeyCallbacks = {
       end
     },
     ["historyFromMB"] = {
-      message = T({ "Mountain Duck", "History" }),
+      message = TMB("History"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local title = strsplit(A_Message, " > ")[2]
@@ -7322,7 +7333,7 @@ appHotKeyCallbacks = {
 
   ["com.better365.BetterAndBetterHelper"] = {
     ["preferencesFromMB"] = {
-      message = T({ "BetterAndBetterHelper ", "Preferences" }),
+      message = TMB("cn.better365.BetterAndBetter", "Preferences"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local title = strsplit(A_Message, " > ")[2]
@@ -7357,7 +7368,7 @@ appHotKeyCallbacks = {
       end
     },
     ["preferencesFromMB"] = {
-      message = T({ "iShotProHelper", "Preferences" }),
+      message = TMB("cn.better365.iShotPro", "Preferences"),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local title = strsplit(A_Message, " > ")[2]
