@@ -6557,7 +6557,7 @@ appHotKeyCallbacks = {
   ["org.pqrs.Karabiner-Menu"] =
   {
     ["settingsFromMB"] = {
-      message = displayName("org.pqrs.Karabiner-Elements.Settings") .. " > Settings...",
+      message = TMB("org.pqrs.Karabiner-Elements.Settings", "Settings..."),
       menubarFilter = { allowIndices = 1 },
       fn = function(menu)
         local title = strsplit(A_Message, " > ")[2]
