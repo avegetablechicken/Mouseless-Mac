@@ -2181,12 +2181,7 @@ MenuItem.message = function(mods, key, titleIndex, menuBarItemTitle)
       menuBarItemTitle = titleIndex
       titleIndex = nil
     end
-    local menuItems
-    if menuBarItemTitle then
-      local title = localizedMenuBarItem(menuBarItemTitle, app:bundleID())
-      menuItems = { getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem, title) }
-    end
-    local menuItem = findMenuItemByKeyBinding(app, mods, key, true, menuItems)
+    local menuItem = findMenuItemByKeyBinding(app, mods, key, menuBarItemTitle)
     if menuItem == nil then return end
     if type(titleIndex) == 'number' then
       return menuItem[titleIndex]
@@ -2240,12 +2235,7 @@ CF = {
 -- if so, return the path of the menu item
 MenuItem.keybindingEnabled = function(mods, key, menuBarItemTitle)
   return function(app)
-    local menuItems
-    if menuBarItemTitle then
-      local title = localizedMenuBarItem(menuBarItemTitle, app:bundleID())
-      menuItems = { getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem, title) }
-    end
-    local menuItem, enabled = findMenuItemByKeyBinding(app, mods, key, true, menuItems)
+    local menuItem, enabled = findMenuItemByKeyBinding(app, mods, key, menuBarItemTitle)
     if menuItem ~= nil and enabled then
       return true, menuItem
     else
@@ -4553,7 +4543,7 @@ appHotKeyCallbacks = {
           local title = win:title()
           if title:find(app:name()) == nil then
             if Version.GreaterEqual(app, "4") then
-              local moments = findMenuItemByKeyBinding(app, "⌘", "4", true)
+              local moments = findMenuItemByKeyBinding(app, "⌘", "4", "Window")
               return moments and title == moments[2]
             else
               local album = T("Album_WindowTitle", win)
@@ -8944,7 +8934,7 @@ local function remapPreviousTab(app, menuItems)
     end)
   end
   if menuItems then
-    local menuItemPath = findMenuItemByKeyBinding(app, '⇧⌃', '⇥', true, menuItems)
+    local menuItemPath = findMenuItemByKeyBinding(app, '⇧⌃', '⇥', menuItems)
     callback(menuItemPath)
   else
     findMenuItemByKeyBinding(app, '⇧⌃', '⇥', callback)

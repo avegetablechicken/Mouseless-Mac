@@ -259,6 +259,11 @@ function findMenuItemByKeyBinding(app, mods, key, likelyToFind, menuItems)
     end)
   end
 
+  if menuItems == nil and likelyToFind ~= nil
+      and (type(likelyToFind) ~= 'boolean') then
+    menuItems = likelyToFind
+    likelyToFind = true
+  end
   if menuItems == nil then
     if likelyToFind then
       menuItems = getMenuBarItems(app)
@@ -266,6 +271,9 @@ function findMenuItemByKeyBinding(app, mods, key, likelyToFind, menuItems)
       menuItems = app:getMenuItems()
     end
     if menuItems == nil then return end
+  elseif type(menuItems) == 'string' then
+    local title = localizedMenuBarItem(menuItems, app:bundleID() or app:name())
+    menuItems = { getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem, title) }
   end
   return fn(menuItems)
 end
