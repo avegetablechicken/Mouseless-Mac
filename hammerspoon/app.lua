@@ -6624,6 +6624,14 @@ appHotKeyCallbacks = {
     ["hide"] = specialCommonHotkeyConfigs["hide"]
   },
 
+  ["com.ameba.SwiftBar"] =
+  {
+    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
+    ["minimize"] = specialCommonHotkeyConfigs["minimize"],
+    ["hide"] = specialCommonHotkeyConfigs["hide"],
+    ["quit"] = specialCommonHotkeyConfigs["quit"]
+  },
+
   ["com.apple.Image_Capture"] =
   {
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"]
