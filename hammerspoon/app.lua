@@ -441,8 +441,8 @@ end
 local Version = {}
 local function versionCompare(comp, versionStr, extra)
   local fn = function(app)
-    if app.application then app = app:application() end
-    local appMajor, appMinor, appPatch = applicationVersion(app:bundleID())
+    local appid = getAppId(app)
+    local appMajor, appMinor, appPatch = applicationVersion(appid)
     local version = strsplit(versionStr, "%.")
     local major, minor, patch
     major = tonumber(version[1]:match("%d+"))
@@ -7354,9 +7354,8 @@ appHotKeyCallbacks = {
     ["OCR"] = {
       message = "OCR",
       background = true,
-      bindCondition = function()
+      bindCondition = function(appid)
         -- the property update in command line is overridden when app quits
-        local appid = "cn.better365.iShotProHelper"
         local _, ok = hs.execute(strfmt(
             "defaults read '%s' dicOfShortCutKey | grep OCRRecorder", appid))
         return ok
@@ -7682,7 +7681,7 @@ local function registerRunningAppHotKeys(appid, app)
     local bindable
     if isPersistent and appInstalled then
       bindable = function()
-        return cfg.bindCondition == nil or cfg.bindCondition()
+        return cfg.bindCondition == nil or cfg.bindCondition(appid)
       end
     else
       bindable = function()
