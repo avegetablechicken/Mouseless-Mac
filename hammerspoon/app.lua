@@ -7691,7 +7691,7 @@ local function registerRunningAppHotKeys(appid, app)
           if FLAGS["LOADING"] then
             app = runningAppsOnLoading[appid]
           else
-            find(appid)
+            app = find(appid)
           end
         end
         running = app ~= nil
