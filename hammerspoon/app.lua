@@ -702,8 +702,13 @@ Messages.deleteSelected = function(app)
   local winUI = towinui(app:focusedWindow())
   local button
   if OS_VERSION >= OS.Tahoe then
-    button = getc(winUI, AX.Group, 1, AX.Group, 1,
-        AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 2)
+    if hs.host.operatingSystemVersion().minor >= 2 then
+      button = getc(winUI, AX.Group, 1, AX.Group, 1,
+          AX.Group, 1, AX.Group, 1, AX.Button, 2)
+    else
+      button = getc(winUI, AX.Group, 1, AX.Group, 1,
+          AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 2)
+    end
   else
     button = getc(winUI, AX.Group, 1, AX.Group, 1,
         AX.Group, 2, AX.Group, 1, AX.Button, 2)
@@ -732,17 +737,25 @@ Messages.deleteSelected = function(app)
   end)
 end
 
-Messages.deletable = function(app)
+Messages.messageItems = function(app)
   local appUI = toappui(app)
-  local messageItems
   if OS_VERSION >= OS.Tahoe then
-    messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-        AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-        AX.StaticText)
+    if hs.host.operatingSystemVersion().minor >= 2 then
+      return getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+          AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
+    else
+      return getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+          AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+          AX.StaticText)
+    end
   else
-    messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+    return getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
         AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
   end
+end
+
+Messages.deletable = function(app)
+  local messageItems = Messages.messageItems(app)
   if messageItems == nil or #messageItems == 0 then
     return false
   end
@@ -2452,16 +2465,7 @@ appHotKeyCallbacks = {
     ["deleteConversation"] = {
       message = T("Delete Conversation…"),
       condition = function(app)
-        local appUI = toappui(app)
-        local messageItems
-        if OS_VERSION >= OS.Tahoe then
-          messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-              AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-              AX.StaticText)
-        else
-          messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-              AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
-        end
+        local messageItems = Messages.messageItems(app)
         local desc = T('New Message', app)
         return tfind(messageItems or {}, function(msg)
           return msg.AXSelected == true and msg.AXDescription:sub(4) ~= desc
@@ -2471,8 +2475,13 @@ appHotKeyCallbacks = {
         local appUI = toappui(app)
         local button
         if OS_VERSION >= OS.Tahoe then
-          button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-              AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 2)
+          if hs.host.operatingSystemVersion().minor >= 2 then
+            button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+                AX.Group, 1, AX.Group, 1, AX.Button, 2)
+          else
+            button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+                AX.Group, 1, AX.Group, 1, AX.Button, 2)
+          end
         else
           button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
               AX.Group, 2, AX.Group, 1, AX.Button, 2)
@@ -2496,16 +2505,7 @@ appHotKeyCallbacks = {
     ["goToPreviousConversation"] = {
       message = MenuItem.message('⇧⌃', "⇥", "Window"),
       condition = function(app)
-        local appUI = toappui(app)
-        local messageItems
-        if OS_VERSION >= OS.Tahoe then
-          messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-              AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-              AX.StaticText)
-        else
-          messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-              AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
-        end
+        local messageItems = Messages.messageItems(app)
         local desc = T('New Message', app)
         if messageItems == nil or #messageItems == 0
             or (#messageItems == 1 and (messageItems[1].AXDescription == nil
@@ -2530,16 +2530,7 @@ appHotKeyCallbacks = {
     ["goToNextConversation"] = {
       message = MenuItem.message('⌃', "⇥", "Window"),
       condition = function(app)
-        local appUI = toappui(app)
-        local messageItems
-        if OS_VERSION >= OS.Tahoe then
-          messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-              AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-              AX.StaticText)
-        else
-          messageItems = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-              AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
-        end
+        local messageItems = Messages.messageItems(app)
         local desc = T('New Message', app)
         if messageItems == nil or #messageItems == 0
             or (#messageItems == 1 and (messageItems[1].AXDescription == nil
