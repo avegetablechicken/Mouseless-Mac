@@ -183,8 +183,10 @@ local function getScreenFrame(win)
         end)
       end
       maxW = (math.ceil(maxW / 10) - 3) * 10
-      frame.x = frame.x + maxW
       frame.w = frame.w - maxW
+      if buttons[1].AXPosition.x - g.AXPosition.x < g.AXSize.w / 2 then
+        frame.x = frame.x + maxW
+      end
     end
   end
   return frame
