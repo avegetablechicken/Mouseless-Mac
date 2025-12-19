@@ -2313,7 +2313,7 @@ local function localizeWeChat(str, appLocale)
   local appid = 'com.tencent.xinWeChat'
   local tmpBaseDir = localeTmpDir .. appid
   local locale = matchLocale(appLocale, WeChatLocales)
-  if locale == 'en' then return str end
+  if locale == 'en' then return str, locale end
   local localeFile = tmpBaseDir .. '/' .. locale .. '.txt'
   local enLocaleFile = tmpBaseDir .. '/en.txt'
   if not exists(localeFile) or not exists(enLocaleFile) then
