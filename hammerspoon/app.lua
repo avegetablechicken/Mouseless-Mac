@@ -1365,9 +1365,11 @@ WeChat.WF = {
       local app = win:application()
       local title = win:title()
       if title:find(app:name()) == nil then
-        if Version.GreaterEqual(app, "4") then
+        if Version.GreaterEqual(app, "4.0.6") then
           local moments = findMenuItemByKeyBinding(app, "⌘", "4", "Window")
           return moments and title == moments[2]
+        elseif Version.GreaterEqual(app, "4") then
+          return title == T("Moments", win)
         else
           local album = T("Album_WindowTitle", win)
           local moments = T("SNS_Feed_Window_Title", win)
