@@ -1206,19 +1206,19 @@ local function PDFChooser()
       end
       for i=5,#subMenuItems do
         local subMenuItem = subMenuItems[i]
-        if subMenuItem.AXEnabled then
-          if  subMenuItem.AXTitle ~= "" then
-            if subMenuItem.AXMenuItemMarkChar == "✓" then
-              tinsert(winTitles, subMenuItem.AXTitle)
-            end
-            tinsert(tabTitles, subMenuItem.AXTitle)
-          else
-            tinsert(winTabTitles, tabTitles)
-            tabTitles = {}
+        if subMenuItem.AXEnabled and subMenuItem.AXTitle ~= "" then
+          tinsert(tabTitles, subMenuItem.AXTitle)
+          if subMenuItem.AXMenuItemMarkChar == "✓" then
+            tinsert(winTitles, subMenuItem.AXTitle)
           end
+        elseif #tabTitles > 0 then
+          tinsert(winTabTitles, tabTitles)
+          tabTitles = {}
         end
       end
-      tinsert(winTabTitles, tabTitles)
+      if #tabTitles > 0 then
+        tinsert(winTabTitles, tabTitles)
+      end
       for i, winTitle in ipairs(winTitles) do
         tabTitles = winTabTitles[i]
         for _, tabTitle in ipairs(tabTitles) do
