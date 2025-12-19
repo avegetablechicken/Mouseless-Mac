@@ -4707,22 +4707,42 @@ appHotKeyCallbacks = {
           end
         end
       },
-      fn = function(win)
+      condition = function(win)
         local app = win:application()
-        if Version.LessThan(app, "4") then
+        if Version.LessThan(app, "4") then return true end
+        local button = getc(towinui(win), AX.Group, 1,
+            AX.Group, 1, AX.Group, 1, AX.Group, 1, nil, 1)
+        if button == nil then return false end
+        if button.AXRole == AX.PopUpButton then
+          local tabs = getc(towinui(win), AX.Group, 1,
+              AX.Group, 1, AX.Group, 1, AX.Group, 2,
+              AX.TabGroup, 1, AX.ScrollArea, 1,  AX.RadioButton)
+          local tab = tfind(tabs or {}, function(rb) return rb.AXValue == true end)
+          if tab then
+            local exBundleID = "com.tencent.flue.WeChatAppEx"
+            if tab.AXDescription
+                == localizedString("Mini-Program", exBundleID,
+                                   { locale = 'zh-Hans' }) then
+              return false
+            end
+          end
+        end
+        return true, button
+      end,
+      fn = function(button, win)
+        if win == nil then
+          win = button
           local frame = win:frame()
           local position = uioffset(frame, { frame.w - 60, 23 })
           leftClickAndRestore(position, win)
           return
         end
 
-        local button = getc(towinui(win), AX.Group, 1,
-            AX.Group, 1, AX.Group, 1, AX.Group, 1, nil, 1)
-        if button then Callback.Press(button) end
+        Callback.Press(button)
         if button and button.AXRole == AX.PopUpButton then
           local menuWin, totalDelay = nil, 0
           repeat
-            menuWin = tfind(getc(toappui(app), AX.Window), function(win)
+            menuWin = tfind(getc(toappui(win:application()), AX.Window), function(win)
               return #win ==  1 and #win[1] == 1 and win[1][1].AXRole == AX.Menu
             end)
             if menuWin == nil then
@@ -4738,7 +4758,7 @@ appHotKeyCallbacks = {
             if menuItem then
               Callback.Press(menuItem)
             else
-              hs.eventtap.keyStroke('', 'escape', nil, app)
+              hs.eventtap.keyStroke('', 'escape', nil, win:application())
             end
           end
         end
