@@ -8890,7 +8890,11 @@ local function registerObserversForMenuBarMenu(app, appConfig)
         observer = uiobserver.new(app:pid())
         if not appUI:isValid() then return end
         observer:addWatcher(appUI, uinotifications.menuOpened)
-        observer:callback(bind(registerInMenuHotkeys, app))
+        observer:callback(function(obs, menu)
+          if menu.AXParent.AXRole == AX.MenuBar then
+            registerInMenuHotkeys(app)
+          end
+        end)
         observer:start()
         MenuBarMenuObservers[appid] = observer
         Evt.StopOnTerminated(app, observer, function()
