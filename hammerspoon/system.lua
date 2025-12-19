@@ -1644,6 +1644,11 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         cbs = tifilter(getc(pane, AX.ScrollArea, 1,
             AX.Group, 1, AX.CheckBox) or {},
           function(cb) return cb.AXEnabled end)
+        if #cbs == 0 then
+          cbs = tifilter(getc(pane, AX.ScrollArea, 1,
+              AX.Group, 1, AX.DisclosureTriangle) or {},
+            function(cb) return cb.AXEnabled end)
+        end
       end
     until #cbs > 0 or totalDelay > 1 or not pane:isValid()
     if #cbs > 0 then
@@ -1663,6 +1668,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
           else
             name = cbs[i].AXAttributedDescription:getString()
           end
+        elseif panel == CC.ScreenMirror and cbs[i].AXAttributedDescription ~= nil then
+          name = cbs[i].AXAttributedDescription:getString()
         else
           name = cbs[i].AXIdentifier
           local _, nameIdx = name:find("device-", 1, true)
