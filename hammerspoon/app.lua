@@ -4735,7 +4735,11 @@ appHotKeyCallbacks = {
             local menuItem = tfind(menuItems, function(item)
               return item.AXDescription == A_Message
             end)
-            if menuItem then Callback.Press(menuItem) end
+            if menuItem then
+              Callback.Press(menuItem)
+            else
+              hs.eventtap.keyStroke('', 'escape', nil, app)
+            end
           end
         end
       end
