@@ -731,9 +731,13 @@ Messages.deleteSelected = function(app)
     "Delete Conversation…"
   })
   app:selectMenuItem(menuItem)
-  hs.timer.doAfter(0.1, function()
+  hs.timer.doAfter(0.2, function()
     if not app:isRunning() then return end
-    hs.eventtap.keyStroke("", "Return", nil, app)
+    if app:focusedWindow():role() == AX.Sheet then
+      local sheet = towinui(app:focusedWindow())
+      local delete = getc(sheet, AX.Button, T("Delete", app))
+      Callback.Press(delete)
+    end
   end)
 end
 
