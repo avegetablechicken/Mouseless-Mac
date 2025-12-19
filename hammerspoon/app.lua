@@ -4797,11 +4797,7 @@ appHotKeyCallbacks = {
     ["closeWindow"] = {
       mods = specialCommonHotkeyConfigs["closeWindow"].mods,
       key = specialCommonHotkeyConfigs["closeWindow"].key,
-      message = function(win)
-        local exBundleID = "com.tencent.flue.WeChatAppEx"
-        local appLocale = applicationLocale(win:application():bundleID())
-        return localizedString('Close All Tabs', exBundleID, { locale = appLocale })
-      end,
+      message = TC('Close Window'),
       bindCondition = Version.GreaterEqual("4"),
       windowFilter = {
         fn = function(win)
@@ -4827,7 +4823,8 @@ appHotKeyCallbacks = {
         local exBundleID = "com.tencent.flue.WeChatAppEx"
         local appLocale = applicationLocale(win:application():bundleID())
         local menuItemPath = {
-          localizedMenuBarItem('File', exBundleID, { locale = appLocale }), A_Message
+          localizedMenuBarItem('File', exBundleID, { locale = appLocale }),
+          localizedString('Close All Tabs', exBundleID, { locale = appLocale })
         }
         local menuItem = win:application():findMenuItem(menuItemPath)
         return menuItem ~= nil and menuItem.enabled, menuItemPath
