@@ -390,18 +390,47 @@ local function TG(message, params, params2)
   end
 end
 
+local function mostFrequent(t)
+    local count = {}
+    local firstIndex = {}
+
+    for i, v in ipairs(t) do
+        if not count[v] then
+            count[v] = 1
+            firstIndex[v] = i
+        else
+            count[v] = count[v] + 1
+        end
+    end
+
+    local maxValue = nil
+    local maxCount = 0
+    local minIndex = math.huge
+
+    for v, c in pairs(count) do
+        local idx = firstIndex[v]
+        if c > maxCount or (c == maxCount and idx < minIndex) then
+            maxCount = c
+            minIndex = idx
+            maxValue = v
+        end
+    end
+
+    return maxValue
+end
+
 local function T(message, params, sep)
   local fn = function(app)
     local appid = getAppId(app)
     if type(message) == 'string' then
       local str = localizedString(message, appid, params) or message
-      return type(str) == 'string' and str or str[1]
+      return type(str) == 'string' and str or mostFrequent(str)
     else
       if sep == nil then sep = ' > ' end
       local str = localizedMenuBarItem(message[1], appid, params) or message[1]
       for i=2,#message do
         local itemStr = localizedString(message[i], appid, params) or message[i]
-        str = str .. sep .. (type(itemStr) == 'string' and itemStr or itemStr[1])
+        str = str .. sep .. (type(itemStr) == 'string' and itemStr or mostFrequent(itemStr))
       end
       return str
     end
