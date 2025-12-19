@@ -10961,7 +10961,7 @@ end
 HoldToQuit = hs.loadSpoon("HoldToQuit")
 HoldToQuit.duration = 0.2
 HoldToQuit:init()
-HoldToQuit:bindHotkeys({ quit = { "⌘", "W" } })
+HoldToQuit:newHotkeys({ quit = { "⌘", "W" } })
 local function mayRequireHoldToCloseWindow(app)
   local appid = app:bundleID()
   if appid == nil then return end

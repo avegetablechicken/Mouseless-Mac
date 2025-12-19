@@ -129,4 +129,23 @@ function obj:bindHotkeys(mapping)
     return self
 end
 
+--- HoldToQuit:bindHotkeys(mapping)
+--- Method
+--- Binds hotkeys for HoldToQuit but do not activate it
+---
+--- Parameters:
+---  * mapping - A table containing hotkey modifier/key details for the following items:
+---   * show - This will define the quit hotkey
+function obj:newHotkeys(mapping)
+    if (self.hotkeyQbj) then
+        self.hotkeyQbj:delete()
+    end
+
+    local mod = mapping["quit"][1]
+    local key = mapping["quit"][2]
+    self.hotkeyQbj = hs.hotkey.new(mod, key, function() obj:onKeyDown() end, function() obj:onKeyUp() end)
+
+    return self
+end
+
 return obj
