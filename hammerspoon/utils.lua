@@ -3048,7 +3048,7 @@ local function delocalizeByQtExecutable(str, appid, appLocale, prefix)
   if locale == 'en' then return str:gsub('[^%s]-&(%a)', '%1'), locale end
   if type(extra) == 'string' then
     local file = extra
-    local result = delocalizeByQtImpl(str, extra:sub(1, -4) .. '.po')
+    local result = delocalizeByQtImpl(str, file:sub(1, -4) .. '.po')
     if result then return result, locale end
   elseif type(extra) == 'table' then
     for _, file in ipairs(extra) do
