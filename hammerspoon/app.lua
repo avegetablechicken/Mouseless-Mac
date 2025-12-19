@@ -4723,7 +4723,7 @@ appHotKeyCallbacks = {
           local menuWin, totalDelay = nil, 0
           repeat
             menuWin = tfind(getc(toappui(app), AX.Window), function(win)
-              return #win ==  1
+              return #win ==  1 and #win[1] == 1 and win[1][1].AXRole == AX.Menu
             end)
             if menuWin == nil then
               hs.timer.usleep(0.05 * 1000000)
