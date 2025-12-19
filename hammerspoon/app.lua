@@ -1568,7 +1568,8 @@ local Yuanbao = {}
 Yuanbao.WF = {}
 Yuanbao.WF.Main = {}
 Evt.OnRunning("com.tencent.yuanbao", function(app)
-  local title = T("Tencent Yuanbao", app)
+  local title = Version.LessThan(app, "2.48") and "Tencent Yuanbao" or "Yuanbao"
+  title = T(title, app)
   Yuanbao.WF.Main.allowTitles = '^' .. title .. '$'
 end)
 
