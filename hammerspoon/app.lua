@@ -1322,6 +1322,146 @@ AppCleanerUninstaller.confirmButtonValid = function(title)
   end
 end
 
+--- ## WeChat
+local WeChat = {}
+WeChat.WF = {
+  Main = {
+    fn = function(win)
+      local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
+      return view1 and view1.AXTitle == win:title()
+    end
+  },
+  Moments = {
+    fn = function(win)
+      local app = win:application()
+      local title = win:title()
+      if title:find(app:name()) == nil then
+        if Version.GreaterEqual(app, "4") then
+          local moments = findMenuItemByKeyBinding(app, "⌘", "4", "Window")
+          return moments and title == moments[2]
+        else
+          local album = T("Album_WindowTitle", win)
+          local moments = T("SNS_Feed_Window_Title", win)
+          local detail = T("SNS_Feed_Detail_Title", win)
+          return title:find(album .. '-') == 1
+              or title == moments .. '-' .. detail
+        end
+      end
+    end
+  },
+  AppEx = {
+    fn = function(win)
+      local app = win:application()
+      local appLocale = applicationLocale(app:bundleID())
+      local exBundleID = "com.tencent.flue.WeChatAppEx"
+      local params = { locale = appLocale }
+      local menuItemPath = {
+        localizedMenuBarItem("Window", exBundleID, params),
+        localizedString("Select Previous Tab", exBundleID, params)
+      }
+      if menuItemPath[2] then
+        local menuItem = app:findMenuItem(menuItemPath)
+        return menuItem ~= nil
+      end
+    end
+  },
+  AppExWeb = {
+    fn = function(win)
+      if Version.LessThan(win, "4") then
+        local g = getc(towinui(win), AX.Group, 1)
+        return g ~= nil and g.AXDOMClassList ~= nil
+      else
+        local bt = getc(towinui(win), AX.Group, 1,
+            AX.Group, 1, AX.Group, 1, AX.Group, 1, nil, 1)
+        return bt ~= nil
+            and (bt.AXRole == AX.Button or bt.AXRole == AX.PopUpButton)
+      end
+    end
+  },
+  AppExSingleTab = {
+    fn = function(win)
+      local exBundleID = "com.tencent.flue.WeChatAppEx"
+      local appLocale = applicationLocale(win:application():bundleID())
+      local menuItemPath = {
+        localizedMenuBarItem('File', exBundleID, { locale = appLocale }),
+        localizedString('Close All Tabs', exBundleID, { locale = appLocale })
+      }
+      if menuItemPath[2] then
+        local menuItem = win:application():findMenuItem(menuItemPath)
+        if menuItem == nil or not menuItem.enabled then return false end
+      end
+      menuItemPath[2] = localizedString('Close Tab', exBundleID,
+                                        { locale = appLocale })
+      if menuItemPath[2] then
+        local menuItem = win:application():findMenuItem(menuItemPath)
+        return menuItem and not menuItem.enabled
+      end
+    end
+  },
+  Confirm = {
+    allowSheet = true,
+    fn = function(win)
+      local winUI = towinui(win)
+      if #winUI == 4 then
+        return winUI[1].AXRole == AX.StaticText
+          and winUI[3].AXRole == AX.Button
+          and winUI[4].AXRole == AX.Button
+          and winUI[4].AXEnabled
+      elseif #winUI == 3 then
+        return winUI[1].AXRole == AX.StaticText
+        and winUI[2].AXRole == AX.StaticText
+        and winUI[3].AXRole == AX.Button
+        and winUI[3].AXEnabled
+      elseif #winUI == 1 then
+        repeat
+          winUI = winUI[1]
+        until #winUI ~= 1
+        return #winUI == 3
+          and winUI[1].AXRole == AX.StaticText
+          and winUI[2].AXRole == AX.Button
+          and winUI[3].AXRole == AX.Button
+          and winUI[3].AXEnabled
+      else
+        local title = localizedString("Send To", win)
+        if type(title) ~= 'table' then
+          title = { title }
+        end
+        for _, t in ipairs(title) do
+          local text = getc(winUI, AX.StaticText, 1)
+          if text and text.AXValue == t
+              and winUI[#winUI].AXRole == AX.Button then
+            return true
+          end
+        end
+        return false
+      end
+    end
+  },
+  ConfirmDefault = { allowSheet = true },
+  SendTo = {
+    allowSheet = true,
+    fn = function(win)
+      local winUI = towinui(win)
+      local title = T("Send", win)
+      local bt = getc(winUI, AX.Button, title)
+      if bt == nil then
+        title = localizedString("Send To (%d)", win)
+        if type(title) ~= 'table' then
+          title = { title }
+        end
+        for _, t in ipairs(title) do
+          t = t:gsub("%(%%d%)", "%%(%%d%%)")
+          bt = tfind(getc(winUI, AX.Button), function(b)
+            return b.AXTitle:match(t)
+          end)
+          if bt then break end
+        end
+      end
+      return bt ~= nil
+    end
+  }
+}
+
 --- ### QQLive
 local QQLive = {}
 QQLive.WF = {}
@@ -4494,12 +4634,7 @@ appHotKeyCallbacks = {
     ["backFromMinizedGroups"] = {
       message = TC("Back"),
       bindCondition = Version.Between("4", "4.0.6"),
-      windowFilter = {
-        fn = function(win)
-          local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
-          return view1 and view1.AXTitle == win:title()
-        end
-      },
+      windowFilter = WeChat.WF.Main,
       condition = function(win)
         local bt = getc(towinui(win), AX.Group, 1,
             AX.SplitGroup, 1, AX.Button, A_Message)
@@ -4510,12 +4645,7 @@ appHotKeyCallbacks = {
     ["backInOfficialAccounts"] = {
       message = TC("Back"),
       bindCondition = Version.LessThan("4"),
-      windowFilter = {
-        fn = function(win)
-          local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
-          return view1 and view1.AXTitle == win:title()
-        end
-      },
+      windowFilter = WeChat.WF.Main,
       condition = function(win)
         local back = T("Common.Navigation.Back", win)
         local g = getc(towinui(win), AX.SplitGroup, 1, AX.SplitGroup, 1)
@@ -4532,24 +4662,7 @@ appHotKeyCallbacks = {
     ["backInMoments"] = {
       message = TC("Back"),
       bindCondition = Version.LessThan("4.0.6"),
-      windowFilter = {
-        fn = function(win)
-          local app = win:application()
-          local title = win:title()
-          if title:find(app:name()) == nil then
-            if Version.GreaterEqual(app, "4") then
-              local moments = findMenuItemByKeyBinding(app, "⌘", "4", "Window")
-              return moments and title == moments[2]
-            else
-              local album = T("Album_WindowTitle", win)
-              local moments = T("SNS_Feed_Window_Title", win)
-              local detail = T("SNS_Feed_Detail_Title", win)
-              return title:find(album .. '-') == 1
-                  or title == moments .. '-' .. detail
-            end
-          end
-        end
-      },
+      windowFilter = WeChat.WF.Moments,
       condition = function(win)
         return Callback.Clickable(getc(towinui(win), AX.Button, A_Message))
       end,
@@ -4566,12 +4679,7 @@ appHotKeyCallbacks = {
         end
       end,
       bindCondition = Version.LessThan("4.0.6"),
-      windowFilter = {
-        fn = function(win)
-          local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
-          return view1 and view1.AXTitle == win:title()
-        end
-      },
+      windowFilter = WeChat.WF.Main,
       condition = function(win)
         local winUI = towinui(win)
         if Version.LessThan(win, "4") then
@@ -4641,12 +4749,7 @@ appHotKeyCallbacks = {
     ["showChatProfile"] = {
       message = T("Chats.Menu.Profile"),
       bindCondition = Version.LessThan("4"),
-      windowFilter = {
-        fn = function(win)
-          local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
-          return view1 and view1.AXTitle == win:title()
-        end
-      },
+      windowFilter = WeChat.WF.Main,
       condition = function(win)
         local winUI = towinui(win)
         local curChatTitle = getc(winUI, AX.SplitGroup, 1,
@@ -4689,19 +4792,7 @@ appHotKeyCallbacks = {
                                  { locale = appLocale })
         end
       end,
-      windowFilter = {
-        fn = function(win)
-          if Version.LessThan(win, "4") then
-            local g = getc(towinui(win), AX.Group, 1)
-            return g ~= nil and g.AXDOMClassList ~= nil
-          else
-            local bt = getc(towinui(win), AX.Group, 1,
-                AX.Group, 1, AX.Group, 1, AX.Group, 1, nil, 1)
-            return bt ~= nil
-                and (bt.AXRole == AX.Button or bt.AXRole == AX.PopUpButton)
-          end
-        end
-      },
+      windowFilter = WeChat.WF.AppEx,
       condition = function(win)
         local app = win:application()
         if Version.LessThan(app, "4") then return true end
@@ -4766,22 +4857,7 @@ appHotKeyCallbacks = {
         local params = { locale = appLocale }
         return localizedString("Select Previous Tab", exBundleID, params)
       end,
-      windowFilter = {
-        fn = function(win)
-          local app = win:application()
-          local appLocale = applicationLocale(app:bundleID())
-          local exBundleID = "com.tencent.flue.WeChatAppEx"
-          local params = { locale = appLocale }
-          local menuItemPath = {
-            localizedMenuBarItem("Window", exBundleID, params),
-            localizedString("Select Previous Tab", exBundleID, params)
-          }
-          if menuItemPath[2] then
-            local menuItem = app:findMenuItem(menuItemPath)
-            return menuItem ~= nil
-          end
-        end
-      },
+      windowFilter = WeChat.WF.AppEx,
       condition = function(win)
         local app = win:application()
         local appLocale = applicationLocale(app:bundleID())
@@ -4803,26 +4879,7 @@ appHotKeyCallbacks = {
       key = specialCommonHotkeyConfigs["closeWindow"].key,
       message = TC('Close Window'),
       bindCondition = Version.GreaterEqual("4"),
-      windowFilter = {
-        fn = function(win)
-          local exBundleID = "com.tencent.flue.WeChatAppEx"
-          local appLocale = applicationLocale(win:application():bundleID())
-          local menuItemPath = {
-            localizedMenuBarItem('File', exBundleID, { locale = appLocale }),
-            localizedString('Close All Tabs', exBundleID, { locale = appLocale })
-          }
-          if menuItemPath[2] then
-            local menuItem = win:application():findMenuItem(menuItemPath)
-            if menuItem == nil or not menuItem.enabled then return false end
-          end
-          menuItemPath[2] = localizedString('Close Tab', exBundleID,
-                                            { locale = appLocale })
-          if menuItemPath[2] then
-            local menuItem = win:application():findMenuItem(menuItemPath)
-            return menuItem and not menuItem.enabled
-          end
-        end
-      },
+      windowFilter = WeChat.WF.AppExSingleTab,
       condition = function(win)
         local exBundleID = "com.tencent.flue.WeChatAppEx"
         local appLocale = applicationLocale(win:application():bundleID())
@@ -4857,45 +4914,7 @@ appHotKeyCallbacks = {
       end,
       bindCondition = Version.Between("4", "4.0.6"),
       deleteOnDisable = true,
-      windowFilter = {
-        allowSheet = true,
-        fn = function(win)
-          local winUI = towinui(win)
-          if #winUI == 4 then
-            return winUI[1].AXRole == AX.StaticText
-              and winUI[3].AXRole == AX.Button
-              and winUI[4].AXRole == AX.Button
-              and winUI[4].AXEnabled
-          elseif #winUI == 3 then
-            return winUI[1].AXRole == AX.StaticText
-            and winUI[2].AXRole == AX.StaticText
-            and winUI[3].AXRole == AX.Button
-            and winUI[3].AXEnabled
-          elseif #winUI == 1 then
-            repeat
-              winUI = winUI[1]
-            until #winUI ~= 1
-            return #winUI == 3
-              and winUI[1].AXRole == AX.StaticText
-              and winUI[2].AXRole == AX.Button
-              and winUI[3].AXRole == AX.Button
-              and winUI[3].AXEnabled
-          else
-            local title = localizedString("Send To", win)
-            if type(title) ~= 'table' then
-              title = { title }
-            end
-            for _, t in ipairs(title) do
-              local text = getc(winUI, AX.StaticText, 1)
-              if text and text.AXValue == t
-                  and winUI[#winUI].AXRole == AX.Button then
-                return true
-              end
-            end
-            return false
-          end
-        end
-      },
+      windowFilter = WeChat.WF.Confirm,
       condition = function(win)
         local bt
         local winUI = towinui(win)
@@ -4914,28 +4933,7 @@ appHotKeyCallbacks = {
     ["send"] = {
       message = T("Send"),
       bindCondition = Version.Between("4", "4.0.6"),
-      windowFilter = {
-        allowSheet = true,
-        fn = function(win)
-          local winUI = towinui(win)
-          local title = T("Send", win)
-          local bt = getc(winUI, AX.Button, title)
-          if bt == nil then
-            title = localizedString("Send To (%d)", win)
-            if type(title) ~= 'table' then
-              title = { title }
-            end
-            for _, t in ipairs(title) do
-              t = t:gsub("%(%%d%)", "%%(%%d%%)")
-              bt = tfind(getc(winUI, AX.Button), function(b)
-                return b.AXTitle:match(t)
-              end)
-              if bt then break end
-            end
-          end
-          return bt ~= nil
-        end
-      },
+      windowFilter = WeChat.WF.SendTo,
       condition = function(win)
         local winUI = towinui(win)
         local bt = getc(towinui(win), AX.Button, A_Message)
@@ -4971,7 +4969,7 @@ appHotKeyCallbacks = {
     ["confirmAll"] = {
       message = TC("Confirm"),
       bindCondition = Version.GreaterEqual("4.0.6"),
-      windowFilter = { allowSheet = true },
+      windowFilter = WeChat.WF.ConfirmDefault,
       condition = function(win)
         local frame = win:frame()
         return Callback.Clickable(towinui(win), { frame.w - 80, frame.h - 47 })
