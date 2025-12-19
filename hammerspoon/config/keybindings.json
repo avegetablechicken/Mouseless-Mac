@@ -1354,6 +1354,30 @@
         "mods": ["shift", "command"],
         "key": "P"
       },
+      "previewPreview": {
+        "mods": ["shift", "command"],
+        "key": "\\"
+      },
+      "previewImageSize": {
+        "mods": "command",
+        "key": "0"
+      },
+      "previewRotate": {
+        "mods": "command",
+        "key": "R"
+      },
+      "previewEdit": {
+        "mods": "command",
+        "key": "E"
+      },
+      "previewTranslate": {
+        "mods": "command",
+        "key": "T"
+      },
+      "previewExtractText": {
+        "mods": "command",
+        "key": "Y"
+      },
       "openInDefaultBrowser": {
         "mods": ["shift", "command"],
         "key": "O"

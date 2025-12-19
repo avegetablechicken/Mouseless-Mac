@@ -1349,6 +1349,7 @@ WeChat.WF = {
       end
     end
   },
+  Preview = { },
   AppEx = {
     fn = function(win)
       local app = win:application()
@@ -1461,6 +1462,10 @@ WeChat.WF = {
     end
   }
 }
+Evt.OnRunning("com.tencent.xinWeChat", function(app)
+  local title = T("Preview", app)
+  WeChat.WF.Preview.allowTitles = '^' .. title .. '$'
+end)
 
 --- ### QQLive
 local QQLive = {}
@@ -4779,6 +4784,70 @@ appHotKeyCallbacks = {
           end
         end
       end
+    },
+    ["previewPreview"] = {
+      message = T("Preview"),
+      bindCondition = Version.LessThan("4.0.6"),
+      windowFilter = WeChat.WF.Preview,
+      condition = function(win)
+        local button = getc(towinui(win), AX.Button, A_Message, AX.Button, 1)
+        return Callback.Clickable(button)
+      end,
+      fn = Callback.Click
+    },
+    ["previewImageSize"] = {
+      message = function(win)
+        return T("Original image size", win) .. ' / ' .. T("Fit to Window", win)
+      end,
+      bindCondition = Version.LessThan("4.0.6"),
+      windowFilter = WeChat.WF.Preview,
+      condition = function(win)
+        local titles = strsplit(A_Message, ' / ')
+        local button = getc(towinui(win), AX.Button, titles[1], AX.Button, 1)
+            or getc(towinui(win), AX.Button, titles[2], AX.Button, 1)
+        return Callback.Clickable(button)
+      end,
+      fn = Callback.Click
+    },
+    ["previewRotate"] = {
+      message = T("Rotate"),
+      bindCondition = Version.LessThan("4.0.6"),
+      windowFilter = WeChat.WF.Preview,
+      condition = function(win)
+        local button = getc(towinui(win), AX.Button, A_Message, AX.Button, 1)
+        return Callback.Clickable(button)
+      end,
+      fn = Callback.Click
+    },
+    ["previewEdit"] = {
+      message = T("Edit"),
+      bindCondition = Version.LessThan("4.0.6"),
+      windowFilter = WeChat.WF.Preview,
+      condition = function(win)
+        local button = getc(towinui(win), AX.Button, A_Message, AX.Button, 1)
+        return Callback.Clickable(button)
+      end,
+      fn = Callback.Click
+    },
+    ["previewTranslate"] = {
+      message = T("Translate"),
+      bindCondition = Version.LessThan("4.0.6"),
+      windowFilter = WeChat.WF.Preview,
+      condition = function(win)
+        local button = getc(towinui(win), AX.Button, A_Message, AX.Button, 1)
+        return Callback.Clickable(button)
+      end,
+      fn = Callback.Click
+    },
+    ["previewExtractText"] = {
+      message = T("Extract Text"),
+      bindCondition = Version.LessThan("4.0.6"),
+      windowFilter = WeChat.WF.Preview,
+      condition = function(win)
+        local button = getc(towinui(win), AX.Button, A_Message, AX.Button, 1)
+        return Callback.Clickable(button)
+      end,
+      fn = Callback.Click
     },
     ["openInDefaultBrowser"] = {
       message = function(win)
