@@ -10055,7 +10055,7 @@ local function altMenuBarItem(app, reinvokeKey)
     local specialMap = specialLocalizedCommonMenuBarTitle[appid]
     if specialMap then
       for _, title in ipairs(itemLocTitles) do
-        if specialMap[title[2]] then
+        if title[1] ~= title[2] and specialMap[title[2]] then
           title[2] = specialMap[title[2]]
         end
       end
