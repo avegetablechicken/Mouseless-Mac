@@ -2563,6 +2563,7 @@ local function registerSearchMenuBar()
 
   local choices = {}
   local ccFound = false
+  local ccBentoBoxCnt = 0
   for _, pair in ipairs(menuBarItems) do
     local item, idx = pair[1], pair[2]
     local app = item.AXParent.AXParent:asHSApplication()
@@ -2576,6 +2577,18 @@ local function registerSearchMenuBar()
         if appid == 'com.apple.controlcenter' then
           if autosaveName then
             extraSearchPattern = autosaveName
+            if autosaveName:match('^BentoBox%-') then
+              if ccBentoBoxCnt > 0 then
+                title = "BentoBox-" .. tostring(ccBentoBoxCnt)
+              end
+              ccBentoBoxCnt = ccBentoBoxCnt + 1
+            end
+          elseif item.AXDescription:match('^'..appname) then
+            extraSearchPattern = "BentoBox-" .. tostring(ccBentoBoxCnt)
+            if ccBentoBoxCnt > 0 then
+              title = "BentoBox-" .. tostring(ccBentoBoxCnt)
+            end
+            ccBentoBoxCnt = ccBentoBoxCnt + 1
           else
             local parts = strsplit(item.AXIdentifier, "%.")
             extraSearchPattern = parts[#parts]
