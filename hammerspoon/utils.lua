@@ -4460,8 +4460,76 @@ function rightClickAndRestore(point, obj, delay)
   return clickAndRestoreImpl(false, point, obj, delay)
 end
 
+local function loadStatusItemsAutosaveNameControlCenterTahoe(app)
+  local appid = app:bundleID() or app:name()
+  local enabledItems = {}
+  local plistPath = hs.fs.pathToAbsolute(strfmt(
+      "~/Library/Preferences/%s.plist", appid))
+  if plistPath ~= nil then
+    defaults = hs.plist.read(plistPath)
+    if defaults then
+      local visiblePrefix = "NSStatusItem VisibleCC "
+      local prefix_len = #visiblePrefix
+      for k, v in pairs(defaults) do
+        if v == true and k:sub(1, prefix_len) == visiblePrefix then
+          tinsert(enabledItems, k:sub(prefix_len + 1))
+        end
+      end
+    end
+  end
+
+  local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+  if menuBarItems == nil then return end
+  menuBarItems = tifilter(menuBarItems, function(item)
+    return item.AXIdentifier
+        and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+  end)
+  local positions = {}
+  for i, item in ipairs(menuBarItems) do
+    tinsert(positions, { i, item })
+  end
+  table.sort(positions, function(a, b)
+    return a[2].AXPosition.x > b[2].AXPosition.x
+  end)
+
+  local map = {}
+  local ccBentoBoxCnt = 0
+  foreach(positions, function(r)
+    local item = r[2]
+    local autosaveName
+    if item.AXDescription:match('^'..app:name()) then
+      autosaveName = "BentoBox-" .. tostring(ccBentoBoxCnt)
+      ccBentoBoxCnt = ccBentoBoxCnt + 1
+    else
+      local ident = strsplit(item.AXIdentifier, '%.')[4]
+      autosaveName = tfind(enabledItems, function(name)
+        return name:lower():find(ident)
+      end)
+      if autosaveName == nil then
+        local name = delocalizedString(item.AXDescription, appid)
+        if name then
+          name = name:gsub(" ", ""):gsub("‑", "")
+          autosaveName = tfind(enabledItems, function(item)
+            return item == name
+          end)
+        end
+      end
+    end
+    if autosaveName then  -- should be true
+      map[r[1]] = autosaveName
+      map[autosaveName] = r[1]
+    end
+  end)
+
+  return map
+end
+
 function loadStatusItemsAutosaveName(app)
   local appid = app:bundleID() or app:name()
+  if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
+    return loadStatusItemsAutosaveNameControlCenterTahoe(app)
+  end
+
   local preferredPositions = {}
   local errorReadingDefaults = false
   local plistPath, defaults
@@ -4536,11 +4604,6 @@ function loadStatusItemsAutosaveName(app)
 
   local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
   if menuBarItems == nil then return end
-  if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
-    menuBarItems = tifilter(menuBarItems, function(item)
-      return item.AXIdentifier ~= nil
-    end)
-  end
   local positions = {}
   for i, item in ipairs(menuBarItems) do
     tinsert(positions, { i, item.AXPosition.x })
@@ -4616,6 +4679,7 @@ MENUBAR_MANAGER_SHOW = {
     if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
       menuBarItems = tifilter(menuBarItems, function(item)
         return item.AXIdentifier ~= nil
+            and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
       end)
     end
     local menuBarItem = menuBarItems[index]
@@ -4726,6 +4790,7 @@ MENUBAR_MANAGER_SHOW = {
     if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
       menuBarItems = tifilter(menuBarItems, function(item)
         return item.AXIdentifier ~= nil
+            and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
       end)
     end
     local menuBarItem = menuBarItems[index]
@@ -4830,6 +4895,7 @@ MENUBAR_MANAGER_SHOW = {
           if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
             menuBarItems = tifilter(menuBarItems, function(item)
               return item.AXIdentifier ~= nil
+                  and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
             end)
           end
           local menuBarItem = menuBarItems[index or 1]
@@ -4935,6 +5001,7 @@ function hiddenByMenuBarManager(app, index, map)
   if app:bundleID() == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
     menuBarItems = tifilter(menuBarItems, function(item)
       return item.AXIdentifier ~= nil
+          and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
     end)
   end
   local menuBarItem = menuBarItems[index or 1]
@@ -4975,6 +5042,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
     menuBarItems = tifilter(menuBarItems, function(item)
       return item.AXIdentifier ~= nil
+          and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
     end)
   end
   local menuBarItem = menuBarItems[menuBarIdx or 1]

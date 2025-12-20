@@ -1343,6 +1343,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
   if OS_VERSION >= OS.Tahoe then
     menuBarItems = tifilter(menuBarItems, function(item)
       return item.AXIdentifier ~= nil
+          and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
     end)
   end
   for i, elem in ipairs(menuBarItems) do
@@ -2541,12 +2542,13 @@ local function registerSearchMenuBar()
   for _, app in ipairs(apps) do
     local appid = app:bundleID() or app:name()
     local map = loadStatusItemsAutosaveName(app)
-    if (map and #map > 0) or appid == 'com.apple.controlcenter' then
+    if map and #map > 0 then
       maps[appid] = map or {}
       local appMenuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
       if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
         appMenuBarItems = tifilter(appMenuBarItems, function(item)
-          return item.AXIdentifier ~= nil
+          return item.AXIdentifier
+              and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
         end)
       end
       for i, item in ipairs(appMenuBarItems) do
@@ -2572,7 +2574,7 @@ local function registerSearchMenuBar()
       ccFound = true
       local appname = app:name()
       local title, extraSearchPattern
-      if #maps[appid] > 1 or appid == 'com.apple.controlcenter' then
+      if #maps[appid] > 1 then
         local autosaveName = maps[appid][idx]
         if appid == 'com.apple.controlcenter' then
           if autosaveName then
@@ -2584,11 +2586,15 @@ local function registerSearchMenuBar()
               ccBentoBoxCnt = ccBentoBoxCnt + 1
             end
           elseif item.AXDescription:match('^'..appname) then
-            extraSearchPattern = "BentoBox-" .. tostring(ccBentoBoxCnt)
-            if ccBentoBoxCnt > 0 then
-              title = "BentoBox-" .. tostring(ccBentoBoxCnt)
+            if OS_VERSION < OS.Tahoe then
+              extraSearchPattern = "BentoBox"
+            else
+              extraSearchPattern = "BentoBox-" .. tostring(ccBentoBoxCnt)
+              if ccBentoBoxCnt > 0 then
+                title = "BentoBox-" .. tostring(ccBentoBoxCnt)
+              end
+              ccBentoBoxCnt = ccBentoBoxCnt + 1
             end
-            ccBentoBoxCnt = ccBentoBoxCnt + 1
           else
             local parts = strsplit(item.AXIdentifier, "%.")
             extraSearchPattern = parts[#parts]
