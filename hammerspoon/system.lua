@@ -2574,15 +2574,14 @@ local function registerSearchMenuBar()
       if #maps[appid] > 1 or appid == 'com.apple.controlcenter' then
         local autosaveName = maps[appid][idx]
         if appid == 'com.apple.controlcenter' then
-          title = appname
           if autosaveName then
             extraSearchPattern = autosaveName
           else
             local parts = strsplit(item.AXIdentifier, "%.")
             extraSearchPattern = parts[#parts]
           end
+          extraSearchPattern = { appname, extraSearchPattern }
           appname = item.AXDescription
-          if title == appname then title = nil end
         elseif autosaveName ~= "Item-0" or #tifilter(maps[appid],
             function(v) return v:sub(1, 5) == "Item-" end) > 1 then
           title = autosaveName
