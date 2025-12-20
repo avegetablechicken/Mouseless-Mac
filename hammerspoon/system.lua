@@ -2622,8 +2622,10 @@ local function registerSearchMenuBar()
           or choice.appid:lower():find(loweredQuery, 1, true)
           or (choice.subText and choice.subText:lower()
               :find(loweredQuery, 1, true))
-          or (choice.extraPattern and choice.extraPattern:lower()
-              :find(loweredQuery, 1, true)) then
+          or (type(choice.extraPattern) == 'string' and choice.extraPattern:lower()
+              :find(loweredQuery, 1, true))
+          or (type(choice.extraPattern) == 'table' and tfind(choice.extraPattern,
+              function(pattern) return pattern:lower():find(loweredQuery, 1, true) end)) then
         tinsert(newChoices, choice)
       end
     end
