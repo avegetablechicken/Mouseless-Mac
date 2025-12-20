@@ -1500,12 +1500,14 @@ end)
 
 --- ### QQLive
 local QQLive = {}
+QQLive.channelHeader = "频道"
+QQLive.channelTailer = "全部频道"
 QQLive.WF = {}
 QQLive.WF.Main = {
   fn = function(win)
     local winUI = towinui(win)
-    return getc(winUI, AX.Group, 2, nil, "频道") ~= nil
-        and getc(winUI, AX.Group, 2, nil, "全部频道") ~= nil
+    return getc(winUI, AX.Group, 2, nil, QQLive.channelHeader) ~= nil
+        and getc(winUI, AX.Group, 2, nil, QQLive.channelTailer) ~= nil
   end
 }
 QQLive.channelName = function(index)
@@ -1516,7 +1518,7 @@ QQLive.channelName = function(index)
       if list == nil or #list == 0 then return end
       local start
       for i, txt in ipairs(list) do
-        if txt.AXValue == "频道" then
+        if txt.AXValue == QQLive.channelHeader then
           start = i
           break
         end
@@ -1540,7 +1542,7 @@ QQLive.getChannel = function(index)
     if list == nil or #list == 0 then return false end
     local start
     for i, txt in ipairs(list) do
-      if txt.AXValue == "频道" then
+      if txt.AXValue == QQLive.channelHeader then
         start = i
         break
       end
