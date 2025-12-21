@@ -1142,7 +1142,9 @@ Weather.getLocationList = function(win)
     if OS_VERSION >= OS.Tahoe then list = getc(list, AX.Group, 1) end
   end
   if list and list.AXDescription == T("Location List", win) then
-    return list
+    return tifilter(list.AXChildren or {}, function(elem)
+      return #elem > 0 and elem[1].AXRole == AX.Button
+    end)
   end
 end
 
@@ -3200,7 +3202,7 @@ appHotKeyCallbacks = {
       condition = function(app)
         local list = Weather.getLocationList(app:focusedWindow())
         if list then
-          local selected = tfind(list.AXChildren or {}, function(item)
+          local selected = tfind(list, function(item)
             local desc = item[1].AXDescription
             return (OS_VERSION < OS.Tahoe and item.AXSelected)
                 or (desc:match('^'..app:focusedWindow():title()..', ')
