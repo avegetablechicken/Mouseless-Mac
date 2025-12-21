@@ -11245,7 +11245,7 @@ function App_usbChangedCallback(device)
     attached_android_count = attached_android_count + 1
     for _, phone in ipairs(phones) do
       if device.productName == phone[1] and device.vendorName == phone[2] then
-        hs.application.launchOrFocus('MacDroid')
+        hs.application.launchOrFocusByBundleID("us.electronic.macdroid")
         break
       end
     end
@@ -11253,7 +11253,7 @@ function App_usbChangedCallback(device)
     attached_android_count = attached_android_count - 1
     if attached_android_count == 0 then
       quit('MacDroid Extension')
-      quit('MacDroid')
+      quit("us.electronic.macdroid")
     end
   end
 end
