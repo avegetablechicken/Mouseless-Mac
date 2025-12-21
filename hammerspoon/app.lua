@@ -9937,6 +9937,7 @@ local function altMenuBarItem(app, reinvokeKey)
   if modsLetter == "" or (type(modsLetter) == 'table' and #modsLetter == 0) then
     modsLetter = false
   end
+  local specAppMenu = get(KeybindingConfigs.hotkeys, "menubar", "appMenu")
   local excludedForIndex = get(KeybindingConfigs.hotkeys,
       "menubar", "index", "exclude")
   if excludedForIndex ~= nil and tcontain(excludedForIndex, appid) then
@@ -10157,9 +10158,6 @@ local function altMenuBarItem(app, reinvokeKey)
 
     local maxMenuBarItemHotkey =
         #menuBarItemTitles > 11 and 10 or (#menuBarItemTitles - 1)
-    local hotkey = bindAltMenu(app, modsIndex, "`", menuBarItemTitles[1],
-      function() app:selectMenuItem({ menuBarItemTitles[1] }) end)
-    tinsert(altMenuBarItemHotkeys, hotkey)
 
     local itemTitles = {}
     for i=2,#menuBarItemTitles do
@@ -10178,12 +10176,20 @@ local function altMenuBarItem(app, reinvokeKey)
     end
     for i=1,maxMenuBarItemHotkey do
       local fn = bind(clickMenuCallback, menuBarItemTitles[i + 1], i % 10)
-      hotkey = bindAltMenu(app, modsIndex, tostring(i % 10), itemTitles[i], fn)
+      local hotkey = bindAltMenu(app, modsIndex, tostring(i % 10), itemTitles[i], fn)
       tinsert(altMenuBarItemHotkeys, hotkey)
       if reinvokeKey == i % 10 then
         clickMenuCallback(menuBarItemTitles[i + 1])
       end
     end
+  end
+
+  -- app menu
+  if specAppMenu and specAppMenu.key then
+    local hotkey = bindAltMenu(app, specAppMenu.mods, specAppMenu.key,
+        menuBarItemTitles[1],
+        function() app:selectMenuItem({ menuBarItemTitles[1] }) end)
+    tinsert(altMenuBarItemHotkeys, hotkey)
   end
 end
 

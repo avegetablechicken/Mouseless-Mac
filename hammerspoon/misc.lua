@@ -667,6 +667,14 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
     for i, hotkey in ipairs(allKeys) do
       if hotkey.kind >= HK.IN_APP then insertIdx = i break end
     end
+    local appMenuHK = tfind(enabledAltMenuHotkeys, function(menuHK)
+      local pos = menuHK.msg:find(': ')
+      return pos and menuHK.msg:sub(pos - 1, pos - 1):match('[^%a%d]')
+    end)
+    if appMenuHK then
+      tinsert(allKeys, insertIdx, appMenuHK)
+      insertIdx = insertIdx + 1
+    end
     local app = hs.application.frontmostApplication()
     if app:bundleID() == "com.valvesoftware.steam.helper" then
       app = find("com.valvesoftware.steam") or app
@@ -685,7 +693,7 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
     end
     foreach(enabledAltMenuHotkeys, function(menuHK)
       local pos = menuHK.msg:find(': ')
-      if pos and menuHK.msg:sub(pos - 1, pos - 1):match('[^%a]') then
+      if pos and menuHK.msg:sub(pos - 1, pos - 1):match('%d') then
         tinsert(allKeys, insertIdx, menuHK)
         insertIdx = insertIdx + 1
       end
@@ -1353,6 +1361,14 @@ function()
     for i, hotkey in ipairs(allKeys) do
       if hotkey.kind >= HK.IN_APP then insertIdx = i break end
     end
+    local appMenuHK = tfind(enabledAltMenuHotkeys, function(menuHK)
+      local pos = menuHK.msg:find(': ')
+      return pos and menuHK.msg:sub(pos - 1, pos - 1):match('[^%a%d]')
+    end)
+    if appMenuHK then
+      tinsert(allKeys, insertIdx, appMenuHK)
+      insertIdx = insertIdx + 1
+    end
     local app = hs.application.frontmostApplication()
     local menuBarItems = getMenuBarItems(app, true)
     for _, item in ipairs(menuBarItems) do
@@ -1367,7 +1383,7 @@ function()
     end
     foreach(enabledAltMenuHotkeys, function(menuHK)
       local pos = menuHK.msg:find(': ')
-      if pos and menuHK.msg:sub(pos - 1, pos - 1):match('[^%a]') then
+      if pos and menuHK.msg:sub(pos - 1, pos - 1):match('%d') then
         tinsert(allKeys, insertIdx, menuHK)
         insertIdx = insertIdx + 1
       end
