@@ -9937,6 +9937,11 @@ local function altMenuBarItem(app, reinvokeKey)
   if modsLetter == "" or (type(modsLetter) == 'table' and #modsLetter == 0) then
     modsLetter = false
   end
+  local excludedForIndex = get(KeybindingConfigs.hotkeys,
+      "menubar", "index", "exclude")
+  if excludedForIndex ~= nil and tcontain(excludedForIndex, appid) then
+    modsIndex = false
+  end
   local excludedForLetter = get(KeybindingConfigs.hotkeys,
       "menubar", "letter", "exclude")
   if excludedForLetter ~= nil and tcontain(excludedForLetter, appid) then
