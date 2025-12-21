@@ -11237,7 +11237,9 @@ end
 -- ## usb callbacks
 
 -- launch `MacDroid` automatically when connected to android phone
-local phones = {{"ANA-AN00", "HUAWEI"}}
+local phones = ApplicationConfigs.androidDevices or {}
+local phonesManagers = ApplicationConfigs.manageAndroidDevices or {}
+if type(phonesManagers) == 'string' then phonesManagers = { phonesManagers } end
 local attached_android_count = 0
 
 function App_usbChangedCallback(device)
@@ -11245,15 +11247,24 @@ function App_usbChangedCallback(device)
     attached_android_count = attached_android_count + 1
     for _, phone in ipairs(phones) do
       if device.productName == phone[1] and device.vendorName == phone[2] then
-        hs.execute("open -g -b 'us.electronic.macdroid'")
-        break
+        for _, appid in ipairs(phonesManagers) do
+          if hs.application.pathForBundleID(appid) ~= nil
+              and hs.application.pathForBundleID(appid) ~= "" then
+            hs.execute(strfmt("open -g -b '%s'", appid))
+            return
+          end
+        end
       end
     end
   elseif device.eventType == "removed" then
     attached_android_count = attached_android_count - 1
     if attached_android_count == 0 then
-      quit('MacDroid Extension')
-      quit("us.electronic.macdroid")
+      for _, appid in ipairs(phonesManagers) do
+        quit(appid)
+        if appid == "us.electronic.macdroid" then
+          quit('MacDroid Extension')
+        end
+      end
     end
   end
 end

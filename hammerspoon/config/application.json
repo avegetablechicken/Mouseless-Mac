@@ -107,6 +107,11 @@
 
   "defaultMusicAppForControlCenter": "com.tencent.QQMusicMac",
 
+  "manageAndroidDevices": "us.electronic.macdroid",
+  "androidDevices": [
+    { "product": "ANA-AN00", "vendor": "HUAWEI" }
+  ],
+
   "inputSource": {
     "com.apple.dt.Xcode": "com.apple.keylayout.ABC",
     "com.jetbrains.CLion": "com.apple.keylayout.ABC",
