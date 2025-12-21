@@ -676,7 +676,7 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
       local title = item.AXTitle or ""
       local entry = tfind(enabledAltMenuHotkeys, function(menuHK)
         return menuHK.msg:sub(-#title-2) == ': ' .. title
-            and menuHK.msg:sub(-#title-3, -#title-3):match('[A-Z]')
+            and menuHK.msg:sub(-#title-3, -#title-3):match('%a')
       end)
       if entry ~= nil then
         tinsert(allKeys, insertIdx, entry)
@@ -685,7 +685,7 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
     end
     foreach(enabledAltMenuHotkeys, function(menuHK)
       local pos = menuHK.msg:find(': ')
-      if pos and menuHK.msg:sub(pos - 1, pos - 1):match('[^A-Z]') then
+      if pos and menuHK.msg:sub(pos - 1, pos - 1):match('[^%a]') then
         tinsert(allKeys, insertIdx, menuHK)
         insertIdx = insertIdx + 1
       end
@@ -1358,7 +1358,7 @@ function()
     for _, item in ipairs(menuBarItems) do
       local entry = tfind(enabledAltMenuHotkeys, function(menuHK)
         return menuHK.msg:sub(-#item.AXTitle-2) == ': ' .. item.AXTitle
-            and menuHK.msg:sub(-#item.AXTitle-3, -#item.AXTitle-3):match('[A-Z]')
+            and menuHK.msg:sub(-#item.AXTitle-3, -#item.AXTitle-3):match('%a')
       end)
       if entry ~= nil then
         tinsert(allKeys, insertIdx, entry)
@@ -1367,7 +1367,7 @@ function()
     end
     foreach(enabledAltMenuHotkeys, function(menuHK)
       local pos = menuHK.msg:find(': ')
-      if pos and menuHK.msg:sub(pos - 1, pos - 1):match('[^A-Z]') then
+      if pos and menuHK.msg:sub(pos - 1, pos - 1):match('[^%a]') then
         tinsert(allKeys, insertIdx, menuHK)
         insertIdx = insertIdx + 1
       end
