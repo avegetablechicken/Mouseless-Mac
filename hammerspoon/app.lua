@@ -9927,18 +9927,22 @@ local function altMenuBarItem(app, reinvokeKey)
   if appid ~= hs.application.frontmostApplication():bundleID() then
     return
   end
-  local enableIndex = get(KeybindingConfigs.hotkeys,
-      "menubar", "index", "enable")
-  local enableLetter = get(KeybindingConfigs.hotkeys,
-      "menubar", "letter", "enable")
-  if enableIndex == nil then enableIndex = false end
-  if enableLetter == nil then enableLetter = true end
+  local modsIndex = get(KeybindingConfigs.hotkeys,
+      "menubar", "index", "mods")
+  if modsIndex == "" or (type(modsIndex) == 'table' and #modsIndex == 0) then
+    modsIndex = false
+  end
+  local modsLetter = get(KeybindingConfigs.hotkeys,
+      "menubar", "letter", "mods")
+  if modsLetter == "" or (type(modsLetter) == 'table' and #modsLetter == 0) then
+    modsLetter = false
+  end
   local excludedForLetter = get(KeybindingConfigs.hotkeys,
       "menubar", "letter", "exclude")
   if excludedForLetter ~= nil and tcontain(excludedForLetter, appid) then
-    enableLetter = false
+    modsLetter = false
   end
-  if enableIndex == false and enableLetter == false then return end
+  if not (modsIndex or modsLetter) then return end
 
   if appid == "com.valvesoftware.steam.helper" then
     appid = "com.valvesoftware.steam"
@@ -10047,7 +10051,7 @@ local function altMenuBarItem(app, reinvokeKey)
 
   -- by initial or otherwise second letter in title
   local alreadySetHotkeys = {}
-  if enableLetter == true then
+  if modsLetter then
     local itemTitles = {}
     for i=2,#menuBarItemTitles do
       local title, letter = menuBarItemTitles[i]:match("(.-)%s*%((.-)%)")
@@ -10129,7 +10133,7 @@ local function altMenuBarItem(app, reinvokeKey)
       local spec = invMap[menuBarItemTitles[i]]
       if spec ~= nil then
         local fn = bind(clickMenuCallback, menuBarItemTitles[i], spec[1])
-        local hotkey = bindAltMenu(app, "⌥", spec[1], spec[2], fn)
+        local hotkey = bindAltMenu(app, modsLetter, spec[1], spec[2], fn)
         tinsert(altMenuBarItemHotkeys, hotkey)
         if reinvokeKey == spec[1] then
           clickMenuCallback(menuBarItemTitles[i])
@@ -10139,7 +10143,7 @@ local function altMenuBarItem(app, reinvokeKey)
   end
 
   -- by index
-  if enableIndex == true then
+  if modsIndex then
     if app:focusedWindow() ~= nil then
       windowOnBindAltMenu = app:focusedWindow():id()
     else
@@ -10148,7 +10152,7 @@ local function altMenuBarItem(app, reinvokeKey)
 
     local maxMenuBarItemHotkey =
         #menuBarItemTitles > 11 and 10 or (#menuBarItemTitles - 1)
-    local hotkey = bindAltMenu(app, "⌥", "`", menuBarItemTitles[1],
+    local hotkey = bindAltMenu(app, modsIndex, "`", menuBarItemTitles[1],
       function() app:selectMenuItem({ menuBarItemTitles[1] }) end)
     tinsert(altMenuBarItemHotkeys, hotkey)
 
@@ -10169,7 +10173,7 @@ local function altMenuBarItem(app, reinvokeKey)
     end
     for i=1,maxMenuBarItemHotkey do
       local fn = bind(clickMenuCallback, menuBarItemTitles[i + 1], i % 10)
-      hotkey = bindAltMenu(app, "⌥", tostring(i % 10), itemTitles[i], fn)
+      hotkey = bindAltMenu(app, modsIndex, tostring(i % 10), itemTitles[i], fn)
       tinsert(altMenuBarItemHotkeys, hotkey)
       if reinvokeKey == i % 10 then
         clickMenuCallback(menuBarItemTitles[i + 1])

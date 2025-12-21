@@ -310,11 +310,9 @@
     ],
 
     "menubar": {
-      "index": {
-        "enable": false
-      },
+      "index": { },
       "letter": {
-        "enable": true,
+        "mods": "option",
         "exclude": [
           "org.blenderfoundation.blender"
         ]
