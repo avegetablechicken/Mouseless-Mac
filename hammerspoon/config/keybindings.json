@@ -310,7 +310,15 @@
     ],
 
     "menubar": {
-      "index": { },
+      "index": {
+        "mods": false,
+        "exclude": [
+          "com.apple.Safari",
+          "com.google.Chrome",
+          "com.microsoft.edgemac",
+          "com.microsoft.edgemac.Dev"
+        ]
+      },
       "letter": {
         "mods": "option",
         "exclude": [
