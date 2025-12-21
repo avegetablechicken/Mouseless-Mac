@@ -1500,14 +1500,12 @@ end)
 
 --- ### QQLive
 local QQLive = {}
-QQLive.channelHeader = "频道"
-QQLive.channelTailer = "全部频道"
 QQLive.WF = {}
 QQLive.WF.Main = {
   fn = function(win)
     local winUI = towinui(win)
-    return getc(winUI, AX.Group, 2, nil, QQLive.channelHeader) ~= nil
-        and getc(winUI, AX.Group, 2, nil, QQLive.channelTailer) ~= nil
+    local text = getc(winUI, AX.Group, 2, nil, -1)
+    return text and text.AXValue == "全部频道"
   end
 }
 QQLive.channelName = function(index)
@@ -1517,16 +1515,21 @@ QQLive.channelName = function(index)
       local list = getc(towinui(win), AX.Group, 2)
       if list == nil or #list == 0 then return end
       local start
-      for i, txt in ipairs(list) do
-        if txt.AXValue == QQLive.channelHeader then
-          start = i
+      local verticalOffset, verticalOffsetChangeIdx
+      for i=2,#list do
+        local offset = list[i].AXPosition.y - list[i-1].AXPosition.y
+        if offset ~= verticalOffset then
+          verticalOffset = offset
+          verticalOffsetChangeIdx = i - 1
+        elseif i - verticalOffsetChangeIdx >= 5 then
+          start = verticalOffsetChangeIdx
           break
         end
       end
       if start == nil then return end
       for i = 1, 10 do
-        if #list - 2 >= start + i then
-          local row = list[start + i]
+        if #list - 2 >= start + i - 1 then
+          local row = list[start + i - 1]
           tinsert(QQLiveChannelNames, row.AXValue)
         end
       end
@@ -1541,15 +1544,20 @@ QQLive.getChannel = function(index)
     local list = getc(towinui(win), AX.Group, 2)
     if list == nil or #list == 0 then return false end
     local start
-    for i, txt in ipairs(list) do
-      if txt.AXValue == QQLive.channelHeader then
-        start = i
+    local verticalOffset, verticalOffsetChangeIdx
+    for i=2,#list do
+      local offset = list[i].AXPosition.y - list[i-1].AXPosition.y
+      if offset ~= verticalOffset then
+        verticalOffset = offset
+        verticalOffsetChangeIdx = i - 1
+      elseif i - verticalOffsetChangeIdx >= 5 then
+        start = verticalOffsetChangeIdx
         break
       end
     end
     if start == nil then return false end
-    if #list - 2 >= start + index then
-      local row = list[start + index]
+    if #list - 2 >= start + index - 1 then
+      local row = list[start + index - 1]
       if row.AXPosition.y > list.AXPosition.y
           and row.AXPosition.y + row.AXSize.h < list[#list].AXPosition.y - 15 then
         return Callback.Clickable(row)
