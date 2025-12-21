@@ -4838,8 +4838,10 @@ appHotKeyCallbacks = {
       bindCondition = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
-        local button = getc(towinui(win), AX.Button, A_Message, AX.Button, 1)
-        return Callback.Clickable(button)
+        local button = getc(towinui(win), AX.Button, A_Message)
+        if button and button.AXEnabled then
+          return Callback.Clickable(getc(button, AX.Button, 1))
+        end
       end,
       fn = Callback.Click
     },
@@ -4851,9 +4853,11 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         local titles = strsplit(A_Message, ' / ')
-        local button = getc(towinui(win), AX.Button, titles[1], AX.Button, 1)
-            or getc(towinui(win), AX.Button, titles[2], AX.Button, 1)
-        return Callback.Clickable(button)
+        local button = getc(towinui(win), AX.Button, titles[1])
+            or getc(towinui(win), AX.Button, titles[2])
+        if button and button.AXEnabled then
+          return Callback.Clickable(getc(button, AX.Button, 1))
+        end
       end,
       fn = Callback.Click
     },
@@ -4862,8 +4866,10 @@ appHotKeyCallbacks = {
       bindCondition = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
-        local button = getc(towinui(win), AX.Button, A_Message, AX.Button, 1)
-        return Callback.Clickable(button)
+        local button = getc(towinui(win), AX.Button, A_Message)
+        if button and button.AXEnabled then
+          return Callback.Clickable(getc(button, AX.Button, 1))
+        end
       end,
       fn = Callback.Click
     },
@@ -4872,8 +4878,10 @@ appHotKeyCallbacks = {
       bindCondition = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
-        local button = getc(towinui(win), AX.Button, A_Message, AX.Button, 1)
-        return Callback.Clickable(button)
+        local button = getc(towinui(win), AX.Button, A_Message)
+        if button and button.AXEnabled then
+          return Callback.Clickable(getc(button, AX.Button, 1))
+        end
       end,
       fn = Callback.Click
     },
@@ -4882,8 +4890,10 @@ appHotKeyCallbacks = {
       bindCondition = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
-        local button = getc(towinui(win), AX.Button, A_Message, AX.Button, 1)
-        return Callback.Clickable(button)
+        local button = getc(towinui(win), AX.Button, A_Message)
+        if button and button.AXEnabled then
+          return Callback.Clickable(getc(button, AX.Button, 1))
+        end
       end,
       fn = Callback.Click
     },
@@ -4892,8 +4902,10 @@ appHotKeyCallbacks = {
       bindCondition = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
-        local button = getc(towinui(win), AX.Button, A_Message, AX.Button, 1)
-        return Callback.Clickable(button)
+        local button = getc(towinui(win), AX.Button, A_Message)
+        if button and button.AXEnabled then
+          return Callback.Clickable(getc(button, AX.Button, 1))
+        end
       end,
       fn = Callback.Click
     },
