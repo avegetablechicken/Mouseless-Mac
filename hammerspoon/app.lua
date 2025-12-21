@@ -1596,11 +1596,8 @@ local EuDic = {}
 EuDic.WF = {}
 EuDic.WF.Main = { allowRoles = AX.StandardWindow }
 Evt.OnRunning("com.eusoft.freeeudic", function(app)
-  local functionName = T("词 典", app)
-  EuDic.WF.Main.fn = function(win)
-    local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 1)
-    return button and button.AXTitle == functionName
-  end
+  local title = T("欧路词典", app)
+  EuDic.WF.Main.allowTitles = '^' .. title .. '$'
 end)
 
 --- ### Parallels Desktop
@@ -4047,10 +4044,11 @@ appHotKeyCallbacks = {
         if button then return button.AXTitle end
       end,
       windowFilter = EuDic.WF.Main,
-      fn = function(win)
+      condition = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 2)
-        Callback.Press(button)
-      end
+        return button ~= nil, button
+      end,
+      fn = Callback.Press
     },
     ["function3"] = {
       message = function(win)
@@ -4058,10 +4056,11 @@ appHotKeyCallbacks = {
         if button then return button.AXTitle end
       end,
       windowFilter = EuDic.WF.Main,
-      fn = function(win)
+      condition = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 3)
-        Callback.Press(button)
-      end
+        return button ~= nil, button
+      end,
+      fn = Callback.Press
     },
     ["function4"] = {
       message = function(win)
@@ -4069,10 +4068,11 @@ appHotKeyCallbacks = {
         if button then return button.AXTitle end
       end,
       windowFilter = EuDic.WF.Main,
-      fn = function(win)
+      condition = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 4)
-        Callback.Press(button)
-      end
+        return button ~= nil, button
+      end,
+      fn = Callback.Press
     },
     ["function5"] = {
       message = function(win)
@@ -4080,10 +4080,11 @@ appHotKeyCallbacks = {
         if button then return button.AXTitle end
       end,
       windowFilter = EuDic.WF.Main,
-      fn = function(win)
+      condition = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 5)
-        Callback.Press(button)
-      end
+        return button ~= nil, button
+      end,
+      fn = Callback.Press
     },
     ["function6"] = {
       message = function(win)
@@ -4091,10 +4092,11 @@ appHotKeyCallbacks = {
         if button then return button.AXTitle end
       end,
       windowFilter = EuDic.WF.Main,
-      fn = function(win)
+      condition = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 6)
-        Callback.Press(button)
-      end
+        return button ~= nil, button
+      end,
+      fn = Callback.Press
     }
   },
 
