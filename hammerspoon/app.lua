@@ -566,6 +566,12 @@ Callback.Click = function(position)
   leftClickAndRestore(position)
 end
 
+Callback.ClickAndHold = function(delay)
+  return function(position)
+    leftClickAndRestore(position, nil, delay)
+  end
+end
+
 Callback.Clickable = function(element, offset)
   if element == nil or not element:isValid() then return false end
   if offset == nil then
@@ -5135,15 +5141,13 @@ appHotKeyCallbacks = {
         end
         for _, button in ipairs(titleBar) do
           if button.AXHelp == A_Message then
-            return true, button
+            return Callback.Clickable(button)
           end
         end
         return false
       end,
       repeatable = true,
-      fn = function(button, win)
-        leftClickAndRestore(button, win, 0.1)
-      end
+      fn = Callback.ClickAndHold(0.1)
     },
     ["forward"] = {
       message = "前进",
@@ -5163,15 +5167,13 @@ appHotKeyCallbacks = {
         end
         for _, button in ipairs(titleBar) do
           if button.AXHelp == A_Message then
-            return true, button
+            return Callback.Clickable(button)
           end
         end
         return false
       end,
       repeatable = true,
-      fn = function(button, win)
-        leftClickAndRestore(button, win, 0.1)
-      end
+      fn = Callback.ClickAndHold(0.1)
     },
     ["refresh"] = {
       message = "刷新",
@@ -5197,13 +5199,12 @@ appHotKeyCallbacks = {
             searchButton = button
           end
         end
-        return refreshButton ~= nil and searchButton ~= nil
-            and refreshButton.AXPosition.x ~= searchButton.AXPosition.x,
-            refreshButton
+        if refreshButton ~= nil and searchButton ~= nil
+            and refreshButton.AXPosition.x ~= searchButton.AXPosition.x then
+          return Callback.Clickable(refreshButton)
+        end
       end,
-      fn = function(button, win)
-        leftClickAndRestore(button, win, 0.1)
-      end
+      fn = Callback.ClickAndHold(0.1)
     },
     ["playBarCloseSingleSong"] = {
       message = TC("Close Window"),
