@@ -9875,7 +9875,7 @@ local function processInvalidAltMenu(app, reinvokeKey)
   local curWin = app:focusedWindow() and app:focusedWindow():id() or false
   local isSameWin = curWin == windowOnBindAltMenu
   if isSameWin then
-    local _, framework = getResourceDir(app:bundleID())
+    local _, framework = getResourceDir(appid)
     if framework.electron then
       onLaunchedAndActivated(app, reinvokeKey)
       return
@@ -9924,7 +9924,7 @@ local function altMenuBarItem(app, reinvokeKey)
   local appid = app:bundleID() or app:name()
   if appid == nil then return end
   -- check whether called by window filter (possibly with delay)
-  if app:bundleID() ~= hs.application.frontmostApplication():bundleID() then
+  if appid ~= hs.application.frontmostApplication():bundleID() then
     return
   end
   local enableIndex = get(KeybindingConfigs.hotkeys,
