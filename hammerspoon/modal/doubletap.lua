@@ -11,7 +11,9 @@ local module   = {}
 local modsShort = { Mod.Cmd.Short, Mod.Ctrl.Short, Mod.Alt.Short, Mod.Shift.Short }
 
 local function getIndex(keycode) -- key for hotkeys table
-  if HYPER and keycode == hs.keycodes.map[HYPER] then return "✧" end
+  if Mod.Hyper and keycode == hs.keycodes.map[Mod.Hyper.Long] then
+    return Mod.Hyper.Symbol
+  end
   local key = hs.keycodes.map[keycode]
   key = key and key:upper() or '[#'..keycode..']'
   return key
