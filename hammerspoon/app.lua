@@ -11245,7 +11245,7 @@ function App_usbChangedCallback(device)
     attached_android_count = attached_android_count + 1
     for _, phone in ipairs(phones) do
       if device.productName == phone[1] and device.vendorName == phone[2] then
-        hs.application.launchOrFocusByBundleID("us.electronic.macdroid")
+        hs.execute("open -g -b 'us.electronic.macdroid'")
         break
       end
     end
