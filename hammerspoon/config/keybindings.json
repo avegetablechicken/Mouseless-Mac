@@ -6,7 +6,8 @@
     "moveTo": ["fn", "control"],
     "moveTowards": ["fn", "shift", "control"],
     "moveToSpace": ["fn", "control"],
-    "moveToScreen": ["fn", "shift", "control"]
+    "moveToScreen": ["fn", "shift", "control"],
+    "resize": ["fn", "control"]
   },
 
   "parameters": {
@@ -154,35 +155,35 @@
         "key": "X"
       },
       "zoomToLeftHalf": {
-        "mods": ["fn", "control"],
+        "mods": "${hyper.resize}",
         "key": "left"
       },
       "zoomToRightHalf": {
-        "mods": ["fn", "control"],
+        "mods": "${hyper.resize}",
         "key": "right"
       },
       "zoomToTopHalf": {
-        "mods": ["fn", "control"],
+        "mods": "${hyper.resize}",
         "key": "up"
       },
       "zoomToBottomHalf": {
-        "mods": ["fn", "control"],
+        "mods": "${hyper.resize}",
         "key": "down"
       },
       "zoomToTopLeft": {
-        "mods": ["fn", "control"],
+        "mods": "${hyper.resize}",
         "key": "["
       },
       "zoomToTopRight": {
-        "mods": ["fn", "control"],
+        "mods": "${hyper.resize}",
         "key": "]"
       },
       "zoomToBottomLeft": {
-        "mods": ["fn", "control"],
+        "mods": "${hyper.resize}",
         "key": ";"
       },
       "zoomToBottomRight": {
-        "mods": ["fn", "control"],
+        "mods": "${hyper.resize}",
         "key": "'"
       },
       "zoomToLeft2/3": {
