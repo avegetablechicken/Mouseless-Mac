@@ -439,7 +439,8 @@ local HK_SOURCE = {
 local HK_MODAL = {
   REGULAR = 0,
   HYPER = 1,
-  DOUBLE_TAP = 2
+  DOUBLE_TAP = 2,
+  GLOBE = 3
 }
 
 local function loadAppHotkeys(t, showOrSearch)
@@ -1297,7 +1298,7 @@ function()
     for idx, keys in pairs(Globe.keys) do
       local hotkey = keys[1]
       if hotkey then
-        tinsert(allKeys, { modal = HK_MODAL.REGULAR, source = HK_SOURCE.REGULAR,
+        tinsert(allKeys, { modal = HK_MODAL.GLOBE, source = HK_SOURCE.REGULAR,
                            idx = idx, msg = hotkey.msg,
                            condition = hotkey.condition,
                            kind = hotkey.kind, subkind = hotkey.subkind,
@@ -1583,6 +1584,14 @@ function()
         for _, hotkey in ipairs(modal.hyperMode.keys) do
           hotkey:disable()
         end
+      end)
+    elseif choice.modal == HK_MODAL.GLOBE then
+      local event = hs.eventtap.event.newEvent()
+      event:setType(hs.eventtap.event.types.flagsChanged)
+      event:setFlags({ fn = true }):post()
+      hs.timer.doAfter(0.1, function()
+        hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', Mod.Fn.Long), key)
+        event:setFlags({}):post()
       end)
     elseif choice.modal == HK_MODAL.DOUBLE_TAP then
       local modsByteLen = 0
