@@ -219,7 +219,8 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local max = getScreenFrame(win)
+  local screen = win:screen()
+  local max = screen:frame()
   f.x = max.x
   f.y = max.y
   f.w = max.w / 2
@@ -233,7 +234,8 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local max = getScreenFrame(win)
+  local screen = win:screen()
+  local max = screen:frame()
   f.x = max.x + max.w / 2
   f.y = max.y
   f.w = max.w / 2
@@ -247,7 +249,8 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local max = getScreenFrame(win)
+  local screen = win:screen()
+  local max = screen:frame()
   f.x = max.x
   f.y = max.y
   f.w = max.w
@@ -261,7 +264,8 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local max = getScreenFrame(win)
+  local screen = win:screen()
+  local max = screen:frame()
   f.x = max.x
   f.y = max.y + max.h / 2
   f.w = max.w
@@ -275,7 +279,8 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local max = getScreenFrame(win)
+  local screen = win:screen()
+  local max = screen:frame()
   f.x = max.x
   f.y = max.y
   f.w = max.w / 2
@@ -289,7 +294,8 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local max = getScreenFrame(win)
+  local screen = win:screen()
+  local max = screen:frame()
   f.x = max.x + max.w / 2
   f.y = max.y
   f.w = max.w / 2
@@ -303,7 +309,8 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local max = getScreenFrame(win)
+  local screen = win:screen()
+  local max = screen:frame()
   f.x = max.x
   f.y = max.y + max.h / 2
   f.w = max.w / 2
@@ -317,7 +324,8 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local max = getScreenFrame(win)
+  local screen = win:screen()
+  local max = screen:frame()
   f.x = max.x + max.h / 2
   f.y = max.y + max.h / 2
   f.w = max.w / 2
@@ -331,7 +339,8 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local max = getScreenFrame(win)
+  local screen = win:screen()
+  local max = screen:frame()
   f.x = max.x
   f.y = max.y
   f.w = max.w / 3
@@ -345,7 +354,8 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local max = getScreenFrame(win)
+  local screen = win:screen()
+  local max = screen:frame()
   f.x = max.x + max.w * 2 / 3
   f.y = max.y
   f.w = max.w / 3
@@ -359,7 +369,8 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local max = getScreenFrame(win)
+  local screen = win:screen()
+  local max = screen:frame()
   f.x = max.x
   f.y = max.y
   f.w = max.w * 2 / 3
@@ -373,7 +384,8 @@ function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local max = getScreenFrame(win)
+  local screen = win:screen()
+  local max = screen:frame()
   f.x = max.x + max.w * 2 / 3
   f.y = max.y
   f.w = max.w * 2 / 3
@@ -391,7 +403,8 @@ function()
     frameCacheMaximize[win:id()] = nil
   else
     frameCacheMaximize[win:id()] = win:frame()
-    local max = getScreenFrame(win)
+    local screen = win:screen()
+    local max = screen:frame()
     win:setFrame(max)
   end
 end)
