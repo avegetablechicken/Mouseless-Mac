@@ -57,10 +57,13 @@ local function bindMoveWindowURL(direction, mode, fn)
 end
 
 local windowResizeFuncs = {}
-hs.urlevent.bind("windowresize", function(eventName, params)
-  local fn = windowResizeFuncs[params["mode"]]
-  if fn then fn() end
-end)
+local function bindURLEventForWindowResize()
+  hs.urlevent.bind("windowresize", function(eventName, params)
+    local fn = windowResizeFuncs[params["mode"]]
+    if fn then fn() end
+  end)
+end
+bindURLEventForWindowResize()
 
 local function bindResizeWindowURL(mode, fn)
   local newFn = fn
@@ -75,15 +78,17 @@ local function bindResizeWindowURL(mode, fn)
   windowResizeFuncs[mode] = newFn
 end
 
-local function bindResizeWindow(spec, message, fn, repeatable)
+local function bindResizeWindow(hkID, message, fn, repeatable)
+  local spec = winHK[hkID]
+  if spec == nil then return end
   local newFn = function()
     fn()
     local win = hs.window.focusedWindow()
     if win == nil then return end
     frameCacheMaximize[win:id()] = nil
   end
-  local repeatedFn = repeatable and newFn or nil
-  local hotkey = bindWindow(spec, message, newFn, nil, repeatedFn)
+  local repeatedfn = repeatable and newFn or nil
+  local hotkey = bindWindow(spec, message, newFn, nil, repeatedfn)
   hotkey.subkind = HK.WIN_OP_.RESIZE
   return hotkey
 end
@@ -266,7 +271,7 @@ function()
 end)
 
 -- move and zoom to top-left
-bindResizeWindowURL("top-left",
+bindResizeWindow("zoomToTopLeft", "Zoom to Top-Left",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -280,7 +285,7 @@ function()
 end)
 
 -- move and zoom to top-right
-bindResizeWindowURL("top-right",
+bindResizeWindow("zoomToTopRight", "Zoom to Top-Right",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -294,7 +299,7 @@ function()
 end)
 
 -- move and zoom to bottom-left
-bindResizeWindowURL("bottom-left",
+bindResizeWindow("zoomToBottomLeft", "Zoom to Bottom-Left",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -308,7 +313,7 @@ function()
 end)
 
 -- move and zoom to bottom-right
-bindResizeWindowURL("bottom-right",
+bindResizeWindow("zoomToBottomRight", "Zoom to Bottom-Right",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -322,7 +327,7 @@ function()
 end)
 
 -- move and zoom to left 1/3
-bindResizeWindowURL("left1/3",
+bindResizeWindow("zoomToLeft1/3", "Zoom to Left 1/3",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -336,7 +341,7 @@ function()
 end)
 
 -- move and zoom to right 1/3
-bindResizeWindowURL("right1/3",
+bindResizeWindow("zoomToRight1/3", "Zoom to Right 1/3",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -350,7 +355,7 @@ function()
 end)
 
 -- move and zoom to left 2/3
-bindResizeWindowURL("left2/3",
+bindResizeWindow("zoomToLeft2/3", "Zoom to Left 2/3",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -364,7 +369,7 @@ function()
 end)
 
 -- move and zoom to right 2/3
-bindResizeWindowURL("right2/3",
+bindResizeWindow("zoomToRight2/3", "Zoom to Right 2/3",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -393,7 +398,7 @@ function()
 end)
 
 -- expand on left
-bindResizeWindowURL("left-expand",
+bindResizeWindow("leftBorderExpand", "Left Border Expands",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -408,7 +413,7 @@ function()
 end)
 
 -- shrink on left
-bindResizeWindowURL("left-shrink",
+bindResizeWindow("leftBorderShrink", "Left Border Shrinks",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -421,7 +426,7 @@ function()
 end)
 
 -- expand on right
-bindResizeWindowURL("right-expand",
+bindResizeWindow("rightBorderExpand", "Right Border Expands",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -434,7 +439,7 @@ function()
 end)
 
 -- shrink on right
-bindResizeWindowURL("right-shrink",
+bindResizeWindow("rightBorderShrink", "Right Border Shrinks",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -445,7 +450,7 @@ function()
 end)
 
 -- expand on top
-bindResizeWindowURL("top-expand",
+bindResizeWindow("topBorderExpand", "Top Border Expands",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -460,7 +465,7 @@ function()
 end)
 
 -- shrink on top
-bindResizeWindowURL("top-shrink",
+bindResizeWindow("topBorderShrink", "Top Border Shrinks",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -473,7 +478,7 @@ function()
 end)
 
 -- expand on bottom
-bindResizeWindowURL("bottom-expand",
+bindResizeWindow("bottomBorderExpand", "Bottom Border Expands",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -486,7 +491,7 @@ function()
 end)
 
 -- shrink on bottom
-bindResizeWindowURL("bottom-shrink",
+bindResizeWindow("bottomBorderShrink", "Bottom Border Shrinks",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end

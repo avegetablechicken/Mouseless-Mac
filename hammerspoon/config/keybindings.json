@@ -151,6 +151,62 @@
         "mods": "${hyper.moveTowards}",
         "key": "X"
       },
+      "zoomToTopLeft": {
+        "mods": ["fn", "control"],
+        "key": "["
+      },
+      "zoomToTopRight": {
+        "mods": ["fn", "control"],
+        "key": "]"
+      },
+      "zoomToBottomLeft": {
+        "mods": ["fn", "control"],
+        "key": ";"
+      },
+      "zoomToBottomRight": {
+        "mods": ["fn", "control"],
+        "key": "'"
+      },
+      "zoomToLeft2/3": {
+        "mods": ["fn", "control", "option"],
+        "key": "left"
+      },
+      "zoomToRight2/3": {
+        "mods": ["fn", "control", "option"],
+        "key": "right"
+      },
+      "leftBorderExpand": {
+        "mods": ["fn", "option"],
+        "key": "left"
+      },
+      "leftBorderShrink": {
+        "mods": ["fn", "option", "shift"],
+        "key": "left"
+      },
+      "rightBorderExpand": {
+        "mods": ["fn", "option"],
+        "key": "right"
+      },
+      "rightBorderShrink": {
+        "mods": ["fn", "option", "shift"],
+        "key": "right"
+      },
+      "topBorderExpand": {
+        "mods": ["fn", "option"],
+        "key": "up"
+      },
+      "topBorderShrink": {
+        "mods": ["fn", "option", "shift"],
+        "key": "up"
+      },
+      "bottomBorderExpand": {
+        "mods": ["fn", "option"],
+        "key": "down"
+      },
+      "bottomBorderShrink": {
+        "mods": ["fn", "option", "shift"],
+        "key": "down"
+      },
       "focusScreen1": {
         "mods": ["shift", "control"],
         "key": "1"
