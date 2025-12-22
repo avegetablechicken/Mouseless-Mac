@@ -124,6 +124,46 @@
       "focusNextScreen": {
         "mods": ["shift", "control"],
         "key": "right"
+      },
+      "focusStageManagerWindow1": {
+        "mods": "fn",
+        "key": "1"
+      },
+      "focusStageManagerWindow2": {
+        "mods": "fn",
+        "key": "2"
+      },
+      "focusStageManagerWindow3": {
+        "mods": "fn",
+        "key": "3"
+      },
+      "focusStageManagerWindow4": {
+        "mods": "fn",
+        "key": "4"
+      },
+      "focusStageManagerWindow5": {
+        "mods": "fn",
+        "key": "5"
+      },
+      "focusStageManagerWindow6": {
+        "mods": "fn",
+        "key": "6"
+      },
+      "focusStageManagerWindow7": {
+        "mods": "fn",
+        "key": "7"
+      },
+      "focusStageManagerWindow8": {
+        "mods": "fn",
+        "key": "8"
+      },
+      "focusStageManagerWindow9": {
+        "mods": "fn",
+        "key": "9"
+      },
+      "focusStageManagerWindow10": {
+        "mods": "fn",
+        "key": "0"
       }
     },
 

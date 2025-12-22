@@ -1465,14 +1465,47 @@ function()
 end)
 
 -- window switcher for `Stage Manager`
-local stageManagerWindowSwitchFuncs = {}
-hs.urlevent.bind("stagemanager", function(eventName, params)
-  if params["index"] then
-    local index = tonumber(params["index"])
-    local fn = stageManagerWindowSwitchFuncs[index]
-    if fn then fn() end
+local function bindStageManagerWindow(spec, index)
+  local fn = function()
+    local manager = find("com.apple.WindowManager")
+    if manager then
+      local frame = hs.screen.mainScreen():frame()
+      local groups = getc(toappui(manager), AX.Group)
+      local g = tfind(groups or {}, function(g)
+        return g.AXPosition.x == frame.x
+      end)
+      if g then
+        local button = getc(g, AX.List, 1, AX.Button, index)
+        if button then button:performAction(AX.Press) end
+      end
+    end
   end
-end)
+  local locApp = localizedString("Stage Manager", "com.apple.controlcenter",
+                                 { localeFile = "StageManager",
+                                   locale = applicationLocale("com.apple.WindowManager") })
+  local locWindow = localizedString("Window", "com.apple.WindowManager")
+  local hotkey = bindHotkeySpec(spec, locApp..' > '..locWindow..' '..index, fn)
+  hotkey.kind = HK.WIN_OP
+  return hotkey
+end
+
+for i=1,10 do
+  local hkID = "focusStageManagerWindow"..tostring(i)
+  if winHK[hkID] then
+    bindStageManagerWindow(winHK[hkID], i)
+  end
+end
+
+local stageManagerWindowSwitchFuncs = {}
+local function bindURLEventForStageManager()
+  hs.urlevent.bind("stagemanager", function(eventName, params)
+    if params["index"] then
+      local index = tonumber(params["index"])
+      local fn = stageManagerWindowSwitchFuncs[index]
+      if fn then fn() end
+    end
+  end)
+end
 
 local function bindStageManagerWindowURL(index)
   local fn = function()
@@ -1496,8 +1529,4 @@ local function bindStageManagerWindowURL(index)
   local locWindow = localizedString("Window", "com.apple.WindowManager")
   registerURLHotkeyMessage("stagemanager", "index", tostring(index),
                            locApp..' > '..locWindow..' '..index)
-end
-
-for i=1,10 do
-  bindStageManagerWindowURL(i)
 end

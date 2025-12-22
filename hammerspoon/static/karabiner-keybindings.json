@@ -431,66 +431,6 @@
     },
     {
         "mods": "fn",
-        "key": "1",
-        "event": ["stagemanager", "index", "1"],
-        "kind": "WIN_OP"
-    },
-    {
-        "mods": "fn",
-        "key": "2",
-        "event": ["stagemanager", "index", "2"],
-        "kind": "WIN_OP"
-    },
-    {
-        "mods": "fn",
-        "key": "3",
-        "event": ["stagemanager", "index", "3"],
-        "kind": "WIN_OP"
-    },
-    {
-        "mods": "fn",
-        "key": "4",
-        "event": ["stagemanager", "index", "4"],
-        "kind": "WIN_OP"
-    },
-    {
-        "mods": "fn",
-        "key": "5",
-        "event": ["stagemanager", "index", "5"],
-        "kind": "WIN_OP"
-    },
-    {
-        "mods": "fn",
-        "key": "6",
-        "event": ["stagemanager", "index", "6"],
-        "kind": "WIN_OP"
-    },
-    {
-        "mods": "fn",
-        "key": "7",
-        "event": ["stagemanager", "index", "7"],
-        "kind": "WIN_OP"
-    },
-    {
-        "mods": "fn",
-        "key": "8",
-        "event": ["stagemanager", "index", "8"],
-        "kind": "WIN_OP"
-    },
-    {
-        "mods": "fn",
-        "key": "9",
-        "event": ["stagemanager", "index", "9"],
-        "kind": "WIN_OP"
-    },
-    {
-        "mods": "fn",
-        "key": "0",
-        "event": ["stagemanager", "index", "10"],
-        "kind": "WIN_OP"
-    },
-    {
-        "mods": "fn",
         "key": "Tab",
         "message": "Forward"
     },
