@@ -63,7 +63,6 @@ local function bindURLEventForWindowResize()
     if fn then fn() end
   end)
 end
-bindURLEventForWindowResize()
 
 local function bindResizeWindowURL(mode, fn)
   local newFn = fn
@@ -215,7 +214,7 @@ local function getScreenFrame(win)
 end
 
 -- move and zoom to left
-bindResizeWindowURL("left1/2",
+bindResizeWindow("zoomToLeftHalf", "Zoom To Left Half",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -229,7 +228,7 @@ function()
 end)
 
 -- move and zoom to right
-bindResizeWindowURL("right1/2",
+bindResizeWindow("zoomToRightHalf", "Zoom To Right Half",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -243,7 +242,7 @@ function()
 end)
 
 -- move and zoom to top
-bindResizeWindowURL("top1/2",
+bindResizeWindow("zoomToTopHalf", "Zoom To Top Half",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -257,7 +256,7 @@ function()
 end)
 
 -- move and zoom to bottom
-bindResizeWindowURL("bottom1/2",
+bindResizeWindow("zoomToBottomHalf", "Zoom To Bottom Half",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end

@@ -153,6 +153,22 @@
         "mods": "${hyper.moveTowards}",
         "key": "X"
       },
+      "zoomToLeftHalf": {
+        "mods": ["fn", "control"],
+        "key": "left"
+      },
+      "zoomToRightHalf": {
+        "mods": ["fn", "control"],
+        "key": "right"
+      },
+      "zoomToTopHalf": {
+        "mods": ["fn", "control"],
+        "key": "up"
+      },
+      "zoomToBottomHalf": {
+        "mods": ["fn", "control"],
+        "key": "down"
+      },
       "zoomToTopLeft": {
         "mods": ["fn", "control"],
         "key": "["
