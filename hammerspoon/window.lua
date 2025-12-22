@@ -599,12 +599,13 @@ function()
 end)
 
 -- move to center
-local centerHK = bindMoveWindow("moveToCenter", "Move to Center",
+local centerHK = bindMoveWindow("moveToCenter", "Center",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
   local f = win:frame()
-  local max = getScreenFrame(win)
+  local screen = win:screen()
+  local max = screen:frame()
 
   -- make the bahavior consistent with the system "Center" shortcut
   f.x = max.x + math.ceil((max.w - f.w) / 2)
