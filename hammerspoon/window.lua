@@ -4,6 +4,13 @@ local resizeStep = windowParams.windowResizeStep or 100
 
 local winHK = KeybindingConfigs.hotkeys.global
 
+local function newWindow(...)
+  local hotkey = newHotkeySpec(...)
+  if hotkey == nil then return nil end
+  hotkey.kind = HK.WIN_OP
+  return hotkey
+end
+
 local function bindWindow(...)
   local hotkey = bindHotkeySpec(...)
   if hotkey == nil then return nil end
@@ -77,6 +84,21 @@ local function bindResizeWindowURL(mode, fn)
   windowResizeFuncs[mode] = newFn
 end
 
+local function newResizeWindow(hkID, message, fn, repeatable)
+  local spec = winHK[hkID]
+  if spec == nil then return end
+  local newFn = function()
+    fn()
+    local win = hs.window.focusedWindow()
+    if win == nil then return end
+    frameCacheMaximize[win:id()] = nil
+  end
+  local repeatedfn = repeatable and newFn or nil
+  local hotkey = newWindow(spec, message, newFn, nil, repeatedfn)
+  hotkey.subkind = HK.WIN_OP_.RESIZE
+  return hotkey
+end
+
 local function bindResizeWindow(hkID, message, fn, repeatable)
   local spec = winHK[hkID]
   if spec == nil then return end
@@ -89,6 +111,18 @@ local function bindResizeWindow(hkID, message, fn, repeatable)
   local repeatedfn = repeatable and newFn or nil
   local hotkey = bindWindow(spec, message, newFn, nil, repeatedfn)
   hotkey.subkind = HK.WIN_OP_.RESIZE
+  return hotkey
+end
+
+HotkeysResizeConflictedSinceSequia = {}
+local function newResizeWindowMayConflict(...)
+  local hotkey
+  if FLAGS["LOADING"] and FLAGS["NO_MOVE_RESIZE"] then
+    hotkey = bindResizeWindow(...)
+  else
+    hotkey = newResizeWindow(...)
+  end
+  tinsert(HotkeysResizeConflictedSinceSequia, hotkey)
   return hotkey
 end
 
@@ -214,7 +248,7 @@ local function getScreenFrame(win)
 end
 
 -- move and zoom to left
-bindResizeWindow("zoomToLeftHalf", "Zoom To Left Half",
+newResizeWindowMayConflict("zoomToLeftHalf", "Zoom To Left Half",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -229,7 +263,7 @@ function()
 end)
 
 -- move and zoom to right
-bindResizeWindow("zoomToRightHalf", "Zoom To Right Half",
+newResizeWindowMayConflict("zoomToRightHalf", "Zoom To Right Half",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -244,7 +278,7 @@ function()
 end)
 
 -- move and zoom to top
-bindResizeWindow("zoomToTopHalf", "Zoom To Top Half",
+newResizeWindowMayConflict("zoomToTopHalf", "Zoom To Top Half",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -259,7 +293,7 @@ function()
 end)
 
 -- move and zoom to bottom
-bindResizeWindow("zoomToBottomHalf", "Zoom To Bottom Half",
+newResizeWindowMayConflict("zoomToBottomHalf", "Zoom To Bottom Half",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end

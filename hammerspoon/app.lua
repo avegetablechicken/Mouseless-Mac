@@ -9219,6 +9219,43 @@ local function registerZoomHotkeys(app)
   end
 end
 
+local function registerResizeHotkeys(app)
+  if OS_VERSION < OS.Sequoia then return end
+  local menu, submenu = "Window", "Move & Resize"
+  local menuItem = app:findMenuItem({ menu, submenu })
+  if menuItem == nil then
+    local appid = app:bundleID() or app:name()
+    local localizedMenu = localizedMenuBarItem('Window', appid)
+    local localizedSubmenu = TC(submenu, app)
+    if localizedSubmenu == submenu and SYSTEM_LOCALE:sub(1, 2) ~= 'en' then
+      localizedSubmenu = TC(submenu, app, { locale = SYSTEM_LOCALE })
+    end
+    if localizedSubmenu ~= nil then
+      menuItem = app:findMenuItem({ localizedMenu, localizedSubmenu })
+    end
+    if menuItem == nil then
+      if localizedSubmenu ~= nil then
+        menuItem = app:findMenuItem({ menu, localizedSubmenu })
+      end
+      if menuItem == nil then
+        menuItem = app:findMenuItem({ localizedMenu, submenu })
+      end
+    end
+  end
+  for _, hotkey in ipairs(HotkeysResizeConflictedSinceSequia or {}) do
+    if menuItem then
+      hotkey:disable()
+    else
+      hotkey:enable()
+    end
+  end
+  if FLAGS["LOADING"] then
+    FLAGS["NO_MOVE_RESIZE"] = menuItem == nil
+  else
+    FLAGS["NO_MOVE_RESIZE"] = nil
+  end
+end
+
 local function getToolbarButtons(winUI)
   local toolbar = getc(winUI, AX.Toolbar, 1)
   return getc(toolbar, AX.Button) or {}
@@ -10254,6 +10291,7 @@ local function watchMenuBarItems(app)
       remapPreviousTab(app)
       registerOpenRecent(app)
       registerZoomHotkeys(app)
+      registerResizeHotkeys(app)
     end
     if mbTitlesStrWin ~= menuBarItemTitlesString.win[appid] then
       menuBarItemTitlesString.win[appid] = mbTitlesStrWin
@@ -10292,6 +10330,7 @@ local function appMenuBarChangeCallback(app)
   remapPreviousTab(app)
   registerOpenRecent(app)
   registerZoomHotkeys(app)
+  registerResizeHotkeys(app)
   hs.timer.doAfter(1, function()
     if hs.application.frontmostApplication():bundleID() ~= app:bundleID() then
       return
@@ -10303,6 +10342,7 @@ local function appMenuBarChangeCallback(app)
       remapPreviousTab(app)
       registerOpenRecent(app)
       registerZoomHotkeys(app)
+      registerResizeHotkeys(app)
     end
   end)
 end
@@ -10395,6 +10435,7 @@ onLaunchedAndActivated = function(app, reinvokeKey)
   remapPreviousTab(app)
   registerOpenRecent(app)
   registerZoomHotkeys(app)
+  registerResizeHotkeys(app)
   registerObserverForMenuBarChange(app)
   registerObserverForSettingsMenuItem(app)
 
