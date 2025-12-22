@@ -84,7 +84,7 @@ end
 function hotkey:disable()
   if self.idx == nil then return end
   self._force_disable = true
-  module.keys[self.idx] = tifilter(module.keys[self.idx],
+  module.keys[self.idx] = tifilter(module.keys[self.idx] or {},
       function(hk) return hk._force_disable ~= true end)
   self._force_disable = nil
   log.f('Disabled hotkey %s', self.msg)
