@@ -66,7 +66,7 @@ local fnWatcher = eventtap.new({ event.types.flagsChanged }, fnHandler)
 local hotkey = {}
 
 function hotkey:enable()
-  if self.idx == nil then return end
+  if self.idx == nil or self.enabled then return end
   if module.keys[self.idx] == nil then
     module.keys[self.idx] = {}
   end
@@ -75,18 +75,19 @@ function hotkey:enable()
     frontmostHK.enabled = false
     log.f('Disabled previous hotkey %s', frontmostHK.msg)
   end
-  self.enbled = true
+  self.enabled = true
   log.f('Enabled hotkey %s', self.msg)
   tinsert(module.keys[self.idx], 1, self)
   return self
 end
 
 function hotkey:disable()
-  if self.idx == nil then return end
+  if self.idx == nil or not self.enabled then return end
   self._force_disable = true
   module.keys[self.idx] = tifilter(module.keys[self.idx] or {},
       function(hk) return hk._force_disable ~= true end)
   self._force_disable = nil
+  self.enabled = false
   log.f('Disabled hotkey %s', self.msg)
   local frontmostHK = module.keys[self.idx][1]
   if frontmostHK then
