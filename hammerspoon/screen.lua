@@ -138,22 +138,29 @@ tinsert(adjacentMonitorHotkeys, newHotkeySpec(ssHK["focusPrevScreen"], "Focus on
     bind(checkAndMoveCursurToMonitor, "l")))
 
 -- move window to next monitor
-bindWindowURL("screen", "right", bind(checkAndMoveWindowToMonitor, "r"))
+tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToNextScreen"], "Move to Next Monitor",
+    bind(checkAndMoveWindowToMonitor, "r")))
 -- move window to previous monitor
-bindWindowURL("screen", "left", bind(checkAndMoveWindowToMonitor, "l"))
+tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToPrevScreen"], "Move to Previous Monitor",
+    bind(checkAndMoveWindowToMonitor, "l")))
 
 for _, hotkey in ipairs(adjacentMonitorHotkeys) do
   hotkey.icon = image
 end
 
 local focusMonitorHotkeys = {}
+local moveToScreenHotkeys = {}
 local function registerMonitorHotkeys()
-  if #moveToScreenFuncs > 0 or #focusMonitorHotkeys > 0 then
+  if #moveToScreenHotkeys > 0 or #focusMonitorHotkeys > 0 then
     for _, hotkey in ipairs(focusMonitorHotkeys) do
+      hotkey:delete()
+    end
+    for _, hotkey in ipairs(moveToScreenHotkeys) do
       hotkey:delete()
     end
   end
   focusMonitorHotkeys = {}
+  moveToScreenHotkeys = {}
 
   local nscreens = #hs.screen.allScreens()
   if nscreens <= 1 then
@@ -169,7 +176,8 @@ local function registerMonitorHotkeys()
 
   -- move window to screen by idx
   for i=1,nscreens do
-    bindWindowURL("screen", i,
+    local hotkey
+    hotkey = bindWindow(ssHK["moveToScreen" .. i], "Move to Monitor " .. i,
         function()
           local win = hs.window.focusedWindow()
           if win == nil then return end
@@ -177,7 +185,8 @@ local function registerMonitorHotkeys()
             moveToScreen(win, hs.screen.allScreens()[i])
           end
         end)
-    local hotkey = bindHotkeySpec(ssHK["focusScreen" .. i], "Focus on Monitor " .. i,
+    tinsert(moveToScreenHotkeys, hotkey)
+    hotkey = bindHotkeySpec(ssHK["focusScreen" .. i], "Focus on Monitor " .. i,
         function()
           local win = hs.window.focusedWindow()
           if win == nil then return end

@@ -59,55 +59,6 @@
         "subkind": "SPACE_SCREEN"
     },
     {
-        "mods": ["fn", "shift", "control"],
-        "key": "1",
-        "message": "Move to 1st Screen",
-        "kind": "WIN_OP",
-        "subkind": "SPACE_SCREEN"
-    },
-    {
-        "mods": ["fn", "shift", "control"],
-        "key": "2",
-        "message": "Move to 2nd Screen",
-        "kind": "WIN_OP",
-        "subkind": "SPACE_SCREEN"
-    },
-    {
-        "mods": ["fn", "shift", "control"],
-        "key": "3",
-        "message": "Move to 3rd Screen",
-        "kind": "WIN_OP",
-        "subkind": "SPACE_SCREEN"
-    },
-    {
-        "mods": ["fn", "shift", "control"],
-        "key": "4",
-        "message": "Move to 4th Screen",
-        "kind": "WIN_OP",
-        "subkind": "SPACE_SCREEN"
-    },
-    {
-        "mods": ["fn", "shift", "control"],
-        "key": "5",
-        "message": "Move to 5th Screen",
-        "kind": "WIN_OP",
-        "subkind": "SPACE_SCREEN"
-    },
-    {
-        "mods": ["fn", "shift", "control", "command"],
-        "key": "Right",
-        "message": "Move to Next Screen",
-        "kind": "WIN_OP",
-        "subkind": "SPACE_SCREEN"
-    },
-    {
-        "mods": ["fn", "shift", "control", "command"],
-        "key": "Left",
-        "message": "Move to Previous Screen",
-        "kind": "WIN_OP",
-        "subkind": "SPACE_SCREEN"
-    },
-    {
         "mods": "fn",
         "key": "Tab",
         "message": "Forward"

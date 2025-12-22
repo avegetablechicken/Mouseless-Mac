@@ -4,7 +4,8 @@
     "app": ["option", "command"],
     "daemon": ["shift", "option"],
     "moveTo": ["fn", "control"],
-    "moveTowards": ["fn", "shift", "control"]
+    "moveTowards": ["fn", "shift", "control"],
+    "moveToScreen": ["fn", "shift", "control"]
   },
 
   "parameters": {
@@ -206,6 +207,50 @@
       "bottomBorderShrink": {
         "mods": ["fn", "option", "shift"],
         "key": "down"
+      },
+      "moveToScreen1": {
+        "mods": "${hyper.moveToScreen}",
+        "key": "1"
+      },
+      "moveToScreen2": {
+        "mods": "${hyper.moveToScreen}",
+        "key": "2"
+      },
+      "moveToScreen3": {
+        "mods": "${hyper.moveToScreen}",
+        "key": "3"
+      },
+      "moveToScreen4": {
+        "mods": "${hyper.moveToScreen}",
+        "key": "4"
+      },
+      "moveToScreen5": {
+        "mods": "${hyper.moveToScreen}",
+        "key": "5"
+      },
+      "moveToScreen6": {
+        "mods": "${hyper.moveToScreen}",
+        "key": "6"
+      },
+      "moveToScreen7": {
+        "mods": "${hyper.moveToScreen}",
+        "key": "7"
+      },
+      "moveToScreen8": {
+        "mods": "${hyper.moveToScreen}",
+        "key": "8"
+      },
+      "moveToScreen9": {
+        "mods": "${hyper.moveToScreen}",
+        "key": "9"
+      },
+      "moveToPrevScreen": {
+        "mods": ["fn", "shift", "control", "command"],
+        "key": "left"
+      },
+      "moveToNextScreen": {
+        "mods": ["fn", "shift", "control", "command"],
+        "key": "right"
       },
       "focusScreen1": {
         "mods": ["shift", "control"],
