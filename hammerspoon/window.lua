@@ -1474,7 +1474,7 @@ hs.urlevent.bind("stagemanager", function(eventName, params)
   end
 end)
 
-local function bindStageManagerWindow(index)
+local function bindStageManagerWindowURL(index)
   local fn = function()
     local manager = find("com.apple.WindowManager")
     if manager then
@@ -1499,5 +1499,5 @@ local function bindStageManagerWindow(index)
 end
 
 for i=1,10 do
-  bindStageManagerWindow(i)
+  bindStageManagerWindowURL(i)
 end
