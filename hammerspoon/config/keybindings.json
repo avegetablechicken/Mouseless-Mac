@@ -494,6 +494,68 @@
       }
     },
 
+    "com.apple.controlcenter": {
+      "airDrop": {
+        "mods": "fn",
+        "key": "A"
+      },
+      "battery": {
+        "mods": ["fn", "shift"],
+        "key": "B"
+      },
+      "bluetooth": {
+        "mods": "fn",
+        "key": "B"
+      },
+      "display": {
+        "mods": "fn",
+        "key": "D"
+      },
+      "focus": {
+        "mods": ["fn", "shift"],
+        "key": "F"
+      },
+      "hearing": {
+        "mods": "fn",
+        "key": "H"
+      },
+      "keyboardBrightness": {
+        "mods": "fn",
+        "key": "K"
+      },
+      "screenMirroring": {
+        "mods": "fn",
+        "key": "M"
+      },
+      "nowPlaying": {
+        "mods": "fn",
+        "key": "P"
+      },
+      "musicRecognition": {
+        "mods": "fn",
+        "key": "R"
+      },
+      "sound": {
+        "mods": "fn",
+        "key": "S"
+      },
+      "stageManager": {
+        "mods": ["fn", "shift"],
+        "key": "S"
+      },
+      "user": {
+        "mods": "fn",
+        "key": "U"
+      },
+      "wifi": {
+        "mods": "fn",
+        "key": "W"
+      },
+      "accessibilityShortcuts": {
+        "mods": "fn",
+        "key": "X"
+      }
+    },
     "com.apple.ActivityMonitor": {
       "search": {
         "mods": "command",

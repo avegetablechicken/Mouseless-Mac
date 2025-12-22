@@ -1019,6 +1019,7 @@ if OS_VERSION >= OS.Tahoe then
   CC.MusicRecognition = "Recognize Music"
 end
 
+local controlCenterLocalized
 local function newControlCenter(...)
   local hotkey = newHotkey(...)
   if hotkey == nil then return nil end
@@ -1035,16 +1036,24 @@ local function bindControlCenter(...)
   return hotkey
 end
 
-local controlCenterPanelFuncs = {}
-hs.urlevent.bind("controlcenter", function(eventName, params)
-  if params["panel"] == "Music Recognition" or params["panel"] == "Recognize Music" then
-    params["panel"] = CC.MusicRecognition
-  end
-  local fn = controlCenterPanelFuncs[params["panel"]]
-  if fn then fn() end
-end)
+local function bindControlCenterPanel(spec, panel, func)
+  local locAppName = displayName("com.apple.controlcenter")
+  local locPanel = controlCenterLocalized(panel)
+  local message = locAppName..' > '..locPanel
+  return bindControlCenter(spec, message, func)
+end
 
-local controlCenterLocalized
+local controlCenterPanelFuncs = {}
+local function bindURLEventForControlCenter()
+  hs.urlevent.bind("controlcenter", function(eventName, params)
+    if params["panel"] == "Music Recognition" or params["panel"] == "Recognize Music" then
+      params["panel"] = CC.MusicRecognition
+    end
+    local fn = controlCenterPanelFuncs[params["panel"]]
+    if fn then fn() end
+  end)
+end
+
 local function bindControlCenterPanelURL(panel, func)
   controlCenterPanelFuncs[panel] = func
 
@@ -1396,8 +1405,22 @@ if OS_VERSION >= OS.Sonoma then
     tinsert(controlCenterPanels, CC.Hearing)
   end
 end
-for _, panel in ipairs(controlCenterPanels) do
-  bindControlCenterPanelURL(panel, bind(popupControlCenterSubPanel, panel))
+if get(KeybindingConfigs.hotkeys, "com.apple.controlcenter") then
+  for _, panel in ipairs(controlCenterPanels) do
+    local hkID = panel:gsub(' ', '')
+    hkID = hkID:sub(1, 1):lower() .. hkID:sub(2)
+    local pos = panel:find('‑')
+    if pos then
+      hkID = hkID:sub(1, pos-1) .. hkID:sub(pos+3,pos+3):lower() .. hkID:sub(pos+4)
+    end
+    local spec = get(KeybindingConfigs.hotkeys, "com.apple.controlcenter", hkID)
+    if spec == nil and panel == CC.MusicRecognition then
+      spec = get(KeybindingConfigs.hotkeys, "com.apple.controlcenter", "musicRecognition")
+    end
+    if spec then
+      bindControlCenterPanel(spec, panel, bind(popupControlCenterSubPanel, panel))
+    end
+  end
 end
 
 local controlCenterHotKeys = nil
