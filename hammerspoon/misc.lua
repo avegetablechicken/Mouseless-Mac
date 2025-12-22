@@ -1286,7 +1286,7 @@ function()
 
   for _, modal in ipairs(tfilter(DoubleTapModalList,
                                  function(m) return m:isEnabled() end)) do
-    tinsert(allKeys, { modal = 2, source = 0,
+    tinsert(allKeys, { modal = HK_MODAL.DOUBLE_TAP, source = HK_SOURCE.REGULAR,
                        idx = modal.idx, msg = modal.msg,
                        condition = modal.condition,
                        kind = modal.kind, subkind = modal.subkind,
@@ -1297,7 +1297,7 @@ function()
     for idx, keys in pairs(Globe.keys) do
       local hotkey = keys[1]
       if hotkey then
-        tinsert(allKeys, { modal = 0, source = 0,
+        tinsert(allKeys, { modal = HK_MODAL.REGULAR, source = HK_SOURCE.REGULAR,
                            idx = idx, msg = hotkey.msg,
                            condition = hotkey.condition,
                            kind = hotkey.kind, subkind = hotkey.subkind,
@@ -1309,7 +1309,7 @@ function()
 
   for _, modal in ipairs(HyperModalList) do
     for _, hotkey in ipairs(modal.hyperMode.keys) do
-      tinsert(allKeys, { modal = 1, source = 0,
+      tinsert(allKeys, { modal = HK_MODAL.HYPER, source = HK_SOURCE.REGULAR,
                          hyper = modal.hyper,
                          idx = hotkey.idx, msg = hotkey.msg,
                          condition = hotkey.condition,
@@ -1321,7 +1321,7 @@ function()
 
   for _, entry in ipairs(hs.hotkey.getHotkeys()) do
     if entry.idx ~= nil then  -- weird bug
-      local newEntry = { modal = 0, source = 0,
+      local newEntry = { modal = HK_MODAL.REGULAR, source = HK_SOURCE.REGULAR,
                          idx = entry.idx, msg = entry.msg,
                          condition = entry.condition,
                          kind = entry.kind, subkind = entry.subkind,
