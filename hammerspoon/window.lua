@@ -2,6 +2,8 @@ local windowParams = KeybindingConfigs["parameters"] or {}
 local moveStep = windowParams.windowMoveStep or 20
 local resizeStep = windowParams.windowResizeStep or 100
 
+local winHK = KeybindingConfigs.hotkeys.global
+
 local function bindWindow(...)
   local hotkey = bindHotkeySpec(...)
   if hotkey == nil then return nil end
@@ -11,17 +13,34 @@ end
 
 local frameCacheMaximize = {}
 
+local function bindMoveWindow(hkID, message, fn, repeatable)
+  local spec = winHK[hkID]
+  if spec == nil then return end
+  local newFn = function()
+    fn()
+    local win = hs.window.focusedWindow()
+    if win == nil then return end
+    frameCacheMaximize[win:id()] = nil
+  end
+  local repeatedfn = repeatable and newFn or nil
+  local hotkey = bindWindow(spec, message, newFn, nil, repeatedfn)
+  hotkey.subkind = HK.WIN_OP_.MOVE
+  return hotkey
+end
+
 local windowMoveToFuncs = {}
 local windowMoveTowardsFuncs = {}
-hs.urlevent.bind("windowmove", function(eventName, params)
-  local fn
-  if params["mode"] == "to" then
-    fn = windowMoveToFuncs[params["direction"]]
-  elseif params["mode"] == "towards" then
-    fn = windowMoveTowardsFuncs[params["direction"]]
-  end
-  if fn then fn() end
-end)
+local function bindURLEventForWindowMove()
+  hs.urlevent.bind("windowmove", function(eventName, params)
+    local fn
+    if params["mode"] == "to" then
+      fn = windowMoveToFuncs[params["direction"]]
+    elseif params["mode"] == "towards" then
+      fn = windowMoveTowardsFuncs[params["direction"]]
+    end
+    if fn then fn() end
+  end)
+end
 
 local function bindMoveWindowURL(direction, mode, fn)
   local newFn = function()
@@ -69,12 +88,10 @@ local function bindResizeWindow(spec, message, fn, repeatable)
   return hotkey
 end
 
-local winHK = KeybindingConfigs.hotkeys.global
-
 -- continuously move the focused window
 
 -- move towards top-left
-bindMoveWindowURL("top-left", 2,
+bindMoveWindow("moveTowardsTopLeft", "Move towards Top-Left",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -86,7 +103,7 @@ function()
 end)
 
 -- move towards top
-bindMoveWindowURL("top", 2,
+bindMoveWindow("moveTowardsTop", "Move towards Top",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -97,7 +114,7 @@ function()
 end)
 
 -- move towards top-right
-bindMoveWindowURL("top-right", 2,
+bindMoveWindow("moveTowardsTopRight", "Move towards Top-Right",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -109,7 +126,7 @@ function()
 end)
 
 -- move towards left
-bindMoveWindowURL("left", 2,
+bindMoveWindow("moveTowardsLeft", "Move towards Left",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -120,7 +137,7 @@ function()
 end)
 
 -- move towards right
-bindMoveWindowURL("right", 2,
+bindMoveWindow("moveTowardsRight", "Move towards Right",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -131,7 +148,7 @@ function()
 end)
 
 -- move towards bottom-left
-bindMoveWindowURL("bottom-left", 2,
+bindMoveWindow("moveTowardsBottomLeft", "Move towards Bottom-Left",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -143,7 +160,7 @@ function()
 end)
 
 -- move towards bottom
-bindMoveWindowURL("bottom", 2,
+bindMoveWindow("moveTowardsBottom", "Move towards Bottom",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -154,7 +171,7 @@ function()
 end)
 
 -- move towards bottom-right
-bindMoveWindowURL("bottom-right", 2,
+bindMoveWindow("moveTowardsBottomRight", "Move towards Bottom-Right",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -480,7 +497,7 @@ function()
 end)
 
 -- move to top-left
-bindMoveWindowURL("top-left", 1,
+bindMoveWindow("moveToTopLeft", "Move to Top-Left",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -493,7 +510,7 @@ function()
 end)
 
 -- move to top
-bindMoveWindowURL("top", 1,
+bindMoveWindow("moveToTop", "Move to Top",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -506,7 +523,7 @@ function()
 end)
 
 -- move to top-right
-bindMoveWindowURL("top-right", 1,
+bindMoveWindow("moveToTopRight", "Move to Top-Right",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -520,7 +537,7 @@ function()
 end)
 
 -- move to left
-bindMoveWindowURL("left", 1,
+bindMoveWindow("moveToLeft", "Move to Left",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -532,7 +549,7 @@ function()
 end)
 
 -- move to center
-bindMoveWindowURL("center", 1,
+local centerHK = bindMoveWindow("moveToCenter", "Move to Center",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -544,9 +561,10 @@ function()
   f.y = max.y + math.ceil((max.h - f.h + 1) / 2)
   win:setFrame(f)
 end)
+if centerHK then centerHK.subkind = 0 end
 
 -- move to right
-bindMoveWindowURL("right", 1,
+bindMoveWindow("moveToRight", "Move to Right",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -559,7 +577,7 @@ function()
 end)
 
 -- move to bottom-left
-bindMoveWindowURL("bottom-left", 1,
+bindMoveWindow("moveToBottomLeft", "Move to Bottom-Left",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -572,7 +590,7 @@ function()
 end)
 
 -- move to bottom
-bindMoveWindowURL("bottom", 1,
+bindMoveWindow("moveToBottom", "Move to Bottom",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -585,7 +603,7 @@ function()
 end)
 
 -- move to bottom-right
-bindMoveWindowURL("bottom-right", 1,
+bindMoveWindow("moveToBottomRight", "Move to Bottom-Right",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -599,8 +617,7 @@ function()
 end)
 
 -- window-based switcher like Windows
-
-local misc = KeybindingConfigs.hotkeys.global
+local misc = winHK
 
 local function newWindowSwitch(...)
   local hotkey = newHotkeySpec(...)

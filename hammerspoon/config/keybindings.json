@@ -2,7 +2,9 @@
   "hyper": {
     "hyper": "F18",
     "app": ["option", "command"],
-    "daemon": ["shift", "option"]
+    "daemon": ["shift", "option"],
+    "moveTo": ["fn", "control"],
+    "moveTowards": ["fn", "shift", "control"]
   },
 
   "parameters": {
@@ -79,6 +81,74 @@
       },
       "showProxyMenu": {
         "mods": "${hyper.daemon}",
+        "key": "X"
+      },
+      "moveToCenter": {
+        "mods": "${hyper.moveTo}",
+        "key": "C"
+      },
+      "moveToTop": {
+        "mods": "${hyper.moveTo}",
+        "key": "W"
+      },
+      "moveToBottom": {
+        "mods": "${hyper.moveTo}",
+        "key": "S"
+      },
+      "moveToLeft": {
+        "mods": "${hyper.moveTo}",
+        "key": "A"
+      },
+      "moveToRight": {
+        "mods": "${hyper.moveTo}",
+        "key": "D"
+      },
+      "moveToTopLeft": {
+        "mods": "${hyper.moveTo}",
+        "key": "Q"
+      },
+      "moveToTopRight": {
+        "mods": "${hyper.moveTo}",
+        "key": "E"
+      },
+      "moveToBottomLeft": {
+        "mods": "${hyper.moveTo}",
+        "key": "Z"
+      },
+      "moveToBottomRight": {
+        "mods": "${hyper.moveTo}",
+        "key": "X"
+      },
+      "moveTowardsTop": {
+        "mods": "${hyper.moveTowards}",
+        "key": "W"
+      },
+      "moveTowardsBottom": {
+        "mods": "${hyper.moveTowards}",
+        "key": "S"
+      },
+      "moveTowardsLeft": {
+        "mods": "${hyper.moveTowards}",
+        "key": "A"
+      },
+      "moveTowardsRight": {
+        "mods": "${hyper.moveTowards}",
+        "key": "D"
+      },
+      "moveTowardsTopLeft": {
+        "mods": "${hyper.moveTowards}",
+        "key": "Q"
+      },
+      "moveTowardsTopRight": {
+        "mods": "${hyper.moveTowards}",
+        "key": "E"
+      },
+      "moveTowardsBottomLeft": {
+        "mods": "${hyper.moveTowards}",
+        "key": "Z"
+      },
+      "moveTowardsBottomRight": {
+        "mods": "${hyper.moveTowards}",
         "key": "X"
       },
       "focusScreen1": {
