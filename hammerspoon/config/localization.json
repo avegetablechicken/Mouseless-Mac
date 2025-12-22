@@ -24,15 +24,15 @@
     "功能": "Features",
     "学习": "Learn"
   },
+  "com.tencent.qq": {
+    "切换全屏": "Toggle fullscreen"
+  },
   "com.tencent.QQMusicMac": {
     "播放控制": "Controls"
   },
 
   "com.google.Chrome": {
     "标签页": "Tab"
-  },
-  "com.tencent.qq": {
-    "切换全屏": "Toggle fullscreen"
   },
   "com.tencent.yuanbao": [{}, {
     "Settings": "设置",
