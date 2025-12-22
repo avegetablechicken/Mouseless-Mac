@@ -87,11 +87,14 @@ end
 local function newResizeWindow(hkID, message, fn, repeatable)
   local spec = winHK[hkID]
   if spec == nil then return end
-  local newFn = function()
-    fn()
-    local win = hs.window.focusedWindow()
-    if win == nil then return end
-    frameCacheMaximize[win:id()] = nil
+  local newFn = fn
+  if hkID ~= "fill" then
+    newFn = function()
+      fn()
+      local win = hs.window.focusedWindow()
+      if win == nil then return end
+      frameCacheMaximize[win:id()] = nil
+    end
   end
   local repeatedfn = repeatable and newFn or nil
   local hotkey = newWindow(spec, message, newFn, nil, repeatedfn)
@@ -102,11 +105,14 @@ end
 local function bindResizeWindow(hkID, message, fn, repeatable)
   local spec = winHK[hkID]
   if spec == nil then return end
-  local newFn = function()
-    fn()
-    local win = hs.window.focusedWindow()
-    if win == nil then return end
-    frameCacheMaximize[win:id()] = nil
+  local newFn = fn
+  if hkID ~= "fill" then
+    newFn = function()
+      fn()
+      local win = hs.window.focusedWindow()
+      if win == nil then return end
+      frameCacheMaximize[win:id()] = nil
+    end
   end
   local repeatedfn = repeatable and newFn or nil
   local hotkey = bindWindow(spec, message, newFn, nil, repeatedfn)
@@ -428,7 +434,7 @@ function()
 end)
 
 -- maximize
-bindResizeWindowURL("max",
+local fillHK = newResizeWindowMayConflict("fill", "Fill",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -442,6 +448,7 @@ function()
     win:setFrame(max)
   end
 end)
+if fillHK then fillHK.subkind = 0 end
 
 -- expand on left
 bindResizeWindow("leftBorderExpand", "Left Border Expands",

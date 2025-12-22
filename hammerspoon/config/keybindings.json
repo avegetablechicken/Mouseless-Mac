@@ -86,6 +86,10 @@
         "mods": "${hyper.daemon}",
         "key": "X"
       },
+      "fill": {
+        "mods": ["fn", "control"],
+        "key": "F"
+      },
       "moveToCenter": {
         "mods": "${hyper.moveTo}",
         "key": "C"
