@@ -10,55 +10,6 @@
         "message": "Toggle Input Source"
     },
     {
-        "mods": ["fn", "control"],
-        "key": "1",
-        "message": "Move to 1st Space",
-        "kind": "WIN_OP",
-        "subkind": "SPACE_SCREEN"
-    },
-    {
-        "mods": ["fn", "control"],
-        "key": "2",
-        "message": "Move to 2nd Space",
-        "kind": "WIN_OP",
-        "subkind": "SPACE_SCREEN"
-    },
-    {
-        "mods": ["fn", "control"],
-        "key": "3",
-        "message": "Move to 3rd Space",
-        "kind": "WIN_OP",
-        "subkind": "SPACE_SCREEN"
-    },
-    {
-        "mods": ["fn", "control"],
-        "key": "4",
-        "message": "Move to 4th Space",
-        "kind": "WIN_OP",
-        "subkind": "SPACE_SCREEN"
-    },
-    {
-        "mods": ["fn", "control"],
-        "key": "5",
-        "message": "Move to 5th Space",
-        "kind": "WIN_OP",
-        "subkind": "SPACE_SCREEN"
-    },
-    {
-        "mods": ["fn", "control", "command"],
-        "key": "Right",
-        "message": "Move to Next Space",
-        "kind": "WIN_OP",
-        "subkind": "SPACE_SCREEN"
-    },
-    {
-        "mods": ["fn", "control", "command"],
-        "key": "Left",
-        "message": "Move to Previous Space",
-        "kind": "WIN_OP",
-        "subkind": "SPACE_SCREEN"
-    },
-    {
         "mods": "fn",
         "key": "Tab",
         "message": "Forward"

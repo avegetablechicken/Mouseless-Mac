@@ -5,6 +5,7 @@
     "daemon": ["shift", "option"],
     "moveTo": ["fn", "control"],
     "moveTowards": ["fn", "shift", "control"],
+    "moveToSpace": ["fn", "control"],
     "moveToScreen": ["fn", "shift", "control"]
   },
 
@@ -207,6 +208,50 @@
       "bottomBorderShrink": {
         "mods": ["fn", "option", "shift"],
         "key": "down"
+      },
+      "moveToSpace1": {
+        "mods": "${hyper.moveToSpace}",
+        "key": "1"
+      },
+      "moveToSpace2": {
+        "mods": "${hyper.moveToSpace}",
+        "key": "2"
+      },
+      "moveToSpace3": {
+        "mods": "${hyper.moveToSpace}",
+        "key": "3"
+      },
+      "moveToSpace4": {
+        "mods": "${hyper.moveToSpace}",
+        "key": "4"
+      },
+      "moveToSpace5": {
+        "mods": "${hyper.moveToSpace}",
+        "key": "5"
+      },
+      "moveToSpace6": {
+        "mods": "${hyper.moveToSpace}",
+        "key": "6"
+      },
+      "moveToSpace7": {
+        "mods": "${hyper.moveToSpace}",
+        "key": "7"
+      },
+      "moveToSpace8": {
+        "mods": "${hyper.moveToSpace}",
+        "key": "8"
+      },
+      "moveToSpace9": {
+        "mods": "${hyper.moveToSpace}",
+        "key": "9"
+      },
+      "moveToNextSpace": {
+        "mods": ["fn", "control", "command"],
+        "key": "right"
+      },
+      "moveToPrevSpace": {
+        "mods": ["fn", "control", "command"],
+        "key": "left"
       },
       "moveToScreen1": {
         "mods": "${hyper.moveToScreen}",

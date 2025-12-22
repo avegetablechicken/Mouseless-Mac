@@ -248,16 +248,42 @@ local function checkAndMoveWindowToSpace(space)
 end
 
 -- move window to next space
-bindWindowURL("space", "right", bind(checkAndMoveWindowToSpace, "r"))
+local adjacentSpaceHotkeys = {}
+tinsert(adjacentSpaceHotkeys, newWindow(ssHK["moveToNextSpace"], "Move to Next Space",
+    bind(checkAndMoveWindowToSpace, "r")))
 -- move window to previous space
-bindWindowURL("space", "left", bind(checkAndMoveWindowToSpace, "l"))
+tinsert(adjacentSpaceHotkeys, newWindow(ssHK["moveToPrevSpace"], "Move to Previous Space",
+    bind(checkAndMoveWindowToSpace, "l")))
 
+for _, hotkey in ipairs(adjacentSpaceHotkeys) do
+  hotkey.icon = image
+end
+
+local moveToSpaceHotkeys = {}
 local function registerMoveToSpaceHotkeys()
-  moveToSpaceFuncs = {}
+    if #moveToSpaceHotkeys > 0 then
+    for _, hotkey in ipairs(moveToSpaceHotkeys) do
+      hotkey:delete()
+    end
+  end
+  moveToSpaceHotkeys = {}
+
+  local user_spaces = getUserSpaces()
+  local nspaces = #user_spaces
+  if nspaces <= 1 then
+    for _, hotkey in ipairs(adjacentSpaceHotkeys) do
+      hotkey:disable()
+    end
+    return
+  end
+
+  for _, hotkey in ipairs(adjacentSpaceHotkeys) do
+    hotkey:enable()
+  end
 
   -- move window to space by idx
-  for i = 1, #getUserSpaces() do
-    bindWindowURL("space", i,
+  for i=1,nspaces do
+    local hotkey = bindWindow(ssHK["moveToSpace" .. i], "Move to Space " .. i,
       function()
         local win = hs.window.focusedWindow()
         if win == nil then return end
@@ -276,6 +302,10 @@ local function registerMoveToSpaceHotkeys()
         end
         win:focus()
       end)
+    if hotkey then
+      hotkey.icon = image
+      tinsert(moveToSpaceHotkeys, hotkey)
+    end
   end
 end
 registerMoveToSpaceHotkeys()
@@ -294,7 +324,7 @@ end
 ExecContinuously(function()
   local user_spaces = getUserSpaces()
   local nspaces = #user_spaces
-  if nspaces ~= #moveToSpaceFuncs then
+  if nspaces ~= #moveToSpaceHotkeys then
     registerMoveToSpaceHotkeys()
   end
 end)
