@@ -548,6 +548,19 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
                        source = HK_SOURCE.HS })
   end
 
+  if Globe and Globe.isEnabled() then
+    for idx, keys in pairs(Globe.keys) do
+      local hotkey = keys[1]
+      if hotkey then
+        tinsert(allKeys, { idx = idx, msg = hotkey.msg,
+                           condition = hotkey.condition,
+                           kind = hotkey.kind, subkind = hotkey.subkind,
+                           suspendable = hotkey.suspendable,
+                           source = HK_SOURCE.HS })
+      end
+    end
+  end
+
   for _, modal in ipairs(HyperModalList) do
     if modal.hyperMode.Entered == false then
       for _, hotkey in ipairs(modal.hyperMode.keys) do
@@ -1278,6 +1291,20 @@ function()
                        condition = modal.condition,
                        kind = modal.kind, subkind = modal.subkind,
                        icon = modal.icon })
+  end
+
+  if Globe and Globe.isEnabled() then
+    for idx, keys in pairs(Globe.keys) do
+      local hotkey = keys[1]
+      if hotkey then
+        tinsert(allKeys, { modal = 0, source = 0,
+                           idx = idx, msg = hotkey.msg,
+                           condition = hotkey.condition,
+                           kind = hotkey.kind, subkind = hotkey.subkind,
+                           appid = hotkey.appid, appPath = hotkey.appPath,
+                           icon = hotkey.icon })
+      end
+    end
   end
 
   for _, modal in ipairs(HyperModalList) do

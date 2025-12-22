@@ -146,7 +146,7 @@ function tosymbol(mod)
 end
 
 KeybindingConfigs = nil
-ModsInHSOrder = { Mod.Cmd.Long, Mod.Ctrl.Long, Mod.Alt.Long, Mod.Shift.Long }
+ModsInHSOrder = { Mod.Fn.Long, Mod.Cmd.Long, Mod.Ctrl.Long, Mod.Alt.Long, Mod.Shift.Long }
 local function loadKeybindings(filePath)
   KeybindingConfigs = hs.json.read(filePath)
   for k, hp in pairs(KeybindingConfigs.hyper or {}) do
@@ -215,6 +215,7 @@ local hyper = require('modal.hyper')
 if Mod.Hyper then
   tinsert(HyperModalList, hyper.install(Mod.Hyper.Long))
 end
+Globe = require('modal.globe')
 
 -- get hotkey idx like how Hammerspoon does that
 function hotkeyIdx(mods, key)
@@ -321,6 +322,18 @@ function newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
   local validHyperModal = tfind(HyperModalList, function(modal)
     return type(mods) == 'string' and tosymbol(modal.hyper) == tosymbol(mods)
   end)
+  local globeModal
+  if type(mods) == 'table' then
+    globeModal = tfind(mods, function(mod)
+      return tfind({ Mod.Fn.Long, Mod.Fn.Short, Mod.Fn.Symbol },
+                   function(fn) return mod:lower() == fn end) ~= nil
+    end) ~= nil
+  else
+    globeModal = tfind({ Mod.Fn.Long, Mod.Fn.Short, Mod.Fn.Symbol },
+        function(fn)
+          return mods:lower():find(fn) ~= nil
+        end) ~= nil
+  end
   local tbl = {}
   if pressedfn then
     pressedfn = A_HotkeyWrapper(pressedfn, tbl)
@@ -333,6 +346,8 @@ function newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
   end
   if validHyperModal ~= nil then
     hotkey = validHyperModal:bind("", key, message, pressedfn, releasedfn, repeatfn)
+  elseif globeModal then
+    hotkey = Globe.bind(mods, key, message, pressedfn, releasedfn)
   else
     hotkey = hs.hotkey.new(mods, key, pressedfn, releasedfn, repeatfn)
     if message ~= nil then
