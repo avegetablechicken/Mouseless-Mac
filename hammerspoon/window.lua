@@ -599,7 +599,7 @@ function()
 end)
 
 -- move to center
-local centerHK = bindMoveWindow("moveToCenter", "Center",
+local centerHK = newResizeWindowMayConflict("moveToCenter", "Center",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
