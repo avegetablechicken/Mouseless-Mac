@@ -1045,7 +1045,7 @@ hs.urlevent.bind("controlcenter", function(eventName, params)
 end)
 
 local controlCenterLocalized
-local function bindControlCenterURL(panel, func)
+local function bindControlCenterPanelURL(panel, func)
   controlCenterPanelFuncs[panel] = func
 
   local locAppName = displayName("com.apple.controlcenter")
@@ -1397,7 +1397,7 @@ if OS_VERSION >= OS.Sonoma then
   end
 end
 for _, panel in ipairs(controlCenterPanels) do
-  bindControlCenterURL(panel, bind(popupControlCenterSubPanel, panel))
+  bindControlCenterPanelURL(panel, bind(popupControlCenterSubPanel, panel))
 end
 
 local controlCenterHotKeys = nil
