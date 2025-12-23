@@ -450,8 +450,14 @@ function()
 end)
 if fillHK then fillHK.subkind = HK.PRIVELLEGE end
 
+local function bindResizeBorderWindow(...)
+  local hotkey = bindResizeWindow(...)
+  if hotkey then hotkey.subkind = HK.WIN_OP_.BORDER end
+  return hotkey
+end
+
 -- expand on left
-bindResizeWindow("leftBorderExpand", "Left Border Expands",
+bindResizeBorderWindow("leftBorderExpand", "Left Border Expands",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -466,7 +472,7 @@ function()
 end)
 
 -- shrink on left
-bindResizeWindow("leftBorderShrink", "Left Border Shrinks",
+bindResizeBorderWindow("leftBorderShrink", "Left Border Shrinks",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -479,7 +485,7 @@ function()
 end)
 
 -- expand on right
-bindResizeWindow("rightBorderExpand", "Right Border Expands",
+bindResizeBorderWindow("rightBorderExpand", "Right Border Expands",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -492,7 +498,7 @@ function()
 end)
 
 -- shrink on right
-bindResizeWindow("rightBorderShrink", "Right Border Shrinks",
+bindResizeBorderWindow("rightBorderShrink", "Right Border Shrinks",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -503,7 +509,7 @@ function()
 end)
 
 -- expand on top
-bindResizeWindow("topBorderExpand", "Top Border Expands",
+bindResizeBorderWindow("topBorderExpand", "Top Border Expands",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -518,7 +524,7 @@ function()
 end)
 
 -- shrink on top
-bindResizeWindow("topBorderShrink", "Top Border Shrinks",
+bindResizeBorderWindow("topBorderShrink", "Top Border Shrinks",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -531,7 +537,7 @@ function()
 end)
 
 -- expand on bottom
-bindResizeWindow("bottomBorderExpand", "Bottom Border Expands",
+bindResizeBorderWindow("bottomBorderExpand", "Bottom Border Expands",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -544,7 +550,7 @@ function()
 end)
 
 -- shrink on bottom
-bindResizeWindow("bottomBorderShrink", "Bottom Border Shrinks",
+bindResizeBorderWindow("bottomBorderShrink", "Bottom Border Shrinks",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end

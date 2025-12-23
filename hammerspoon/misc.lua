@@ -1478,7 +1478,7 @@ function()
         image = hs.image.imageFromAppBundle("com.apple.controlcenter")
       elseif entry.kind == HK.WIN_OP then
         if entry.subkind == HK.PRIVELLEGE or entry.subkind == HK.WIN_OP_.MOVE
-            or entry.subkind == HK.WIN_OP_.RESIZE
+            or entry.subkind == HK.WIN_OP_.RESIZE or entry.subkind == HK.WIN_OP_.BORDER
             or entry.subkind == HK.WIN_OP_.STAGE_MANAGER then
           image = hs.image.imageFromPath("static/rectangle.png")
         elseif entry.subkind == HK.WIN_OP_.SPACE_SCREEN then
