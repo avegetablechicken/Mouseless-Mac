@@ -2585,58 +2585,65 @@ local function registerSearchMenuBar()
     return a[1].AXPosition.x > b[1].AXPosition.x
   end)
 
+  for i, pair in ipairs(menuBarItems) do
+    local item = pair[1]
+    local app = item.AXParent.AXParent:asHSApplication()
+    local appid = app:bundleID() or app:name()
+    if appid == 'com.apple.controlcenter' then
+      for j=i-1,1,-1 do
+        tremove(menuBarItems, j)
+      end
+      break
+    end
+  end
   local choices = {}
-  local ccFound = false
   local ccBentoBoxCnt = 0
   for _, pair in ipairs(menuBarItems) do
     local item, idx = pair[1], pair[2]
     local app = item.AXParent.AXParent:asHSApplication()
     local appid = app:bundleID() or app:name()
-    if ccFound or appid == 'com.apple.controlcenter' then
-      ccFound = true
-      local appname = app:name()
-      local title, extraSearchPattern
-      if #maps[appid] > 1 then
-        local autosaveName = maps[appid][idx]
-        if appid == 'com.apple.controlcenter' then
-          if autosaveName then
-            extraSearchPattern = autosaveName
-            if autosaveName:match('^BentoBox%-') then
-              if ccBentoBoxCnt > 0 then
-                title = "BentoBox-" .. tostring(ccBentoBoxCnt)
-              end
-              ccBentoBoxCnt = ccBentoBoxCnt + 1
+    local appname = app:name()
+    local title, extraSearchPattern
+    if #maps[appid] > 1 then
+      local autosaveName = maps[appid][idx]
+      if appid == 'com.apple.controlcenter' then
+        if autosaveName then
+          extraSearchPattern = autosaveName
+          if autosaveName:match('^BentoBox%-') then
+            if ccBentoBoxCnt > 0 then
+              title = "BentoBox-" .. tostring(ccBentoBoxCnt)
             end
-          elseif item.AXDescription:match('^'..appname) then
-            if OS_VERSION < OS.Tahoe then
-              extraSearchPattern = "BentoBox"
-            else
-              extraSearchPattern = "BentoBox-" .. tostring(ccBentoBoxCnt)
-              if ccBentoBoxCnt > 0 then
-                title = "BentoBox-" .. tostring(ccBentoBoxCnt)
-              end
-              ccBentoBoxCnt = ccBentoBoxCnt + 1
-            end
-          else
-            local parts = strsplit(item.AXIdentifier, "%.")
-            extraSearchPattern = parts[#parts]
+            ccBentoBoxCnt = ccBentoBoxCnt + 1
           end
-          extraSearchPattern = { appname, extraSearchPattern }
-          appname = item.AXDescription
-        elseif autosaveName ~= "Item-0" or #tifilter(maps[appid],
-            function(v) return v:sub(1, 5) == "Item-" end) > 1 then
-          title = autosaveName
+        elseif item.AXDescription:match('^'..appname) then
+          if OS_VERSION < OS.Tahoe then
+            extraSearchPattern = "BentoBox"
+          else
+            extraSearchPattern = "BentoBox-" .. tostring(ccBentoBoxCnt)
+            if ccBentoBoxCnt > 0 then
+              title = "BentoBox-" .. tostring(ccBentoBoxCnt)
+            end
+            ccBentoBoxCnt = ccBentoBoxCnt + 1
+          end
+        else
+          local parts = strsplit(item.AXIdentifier, "%.")
+          extraSearchPattern = parts[#parts]
         end
+        extraSearchPattern = { appname, extraSearchPattern }
+        appname = item.AXDescription
+      elseif autosaveName ~= "Item-0" or #tifilter(maps[appid],
+          function(v) return v:sub(1, 5) == "Item-" end) > 1 then
+        title = autosaveName
       end
-      choices[#choices + 1] = {
-        text = appname,
-        subText = title,
-        image = app:bundleID() and hs.image.imageFromAppBundle(appid),
-        id = #choices + 1,
-        appid = appid,
-        extraPattern = extraSearchPattern
-      }
     end
+    choices[#choices + 1] = {
+      text = appname,
+      subText = title,
+      image = app:bundleID() and hs.image.imageFromAppBundle(appid),
+      id = #choices + 1,
+      appid = appid,
+      extraPattern = extraSearchPattern
+    }
   end
 
   local chooser
