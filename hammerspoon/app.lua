@@ -5020,6 +5020,7 @@ appHotKeyCallbacks = {
         local params = { locale = appLocale }
         return localizedString("Select Previous Tab", exBundleID, params)
       end,
+      bindCondition = Version.GreaterEqual("4"),
       windowFilter = WeChat.WF.AppEx,
       condition = function(win)
         local app = win:application()
