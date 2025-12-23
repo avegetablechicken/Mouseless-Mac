@@ -300,6 +300,11 @@ function quit(hint)
   return false
 end
 
+function installed(appid)
+  local path = hs.application.pathForBundleID(appid)
+  return path and path ~= ""
+end
+
 function applicationVersion(appid)
   local appPath = hs.application.pathForBundleID(appid)
   if appPath == nil or appPath == "" then return end
@@ -2454,9 +2459,7 @@ local function localizedStringImpl(str, appid, params, force)
     end
   end
 
-  if appid ~= '__macos'
-      and (hs.application.pathForBundleID(appid) == nil
-           or hs.application.pathForBundleID(appid) == "") then
+  if appid ~= '__macos' and not installed(appid) then
     return nil
   end
 

@@ -113,8 +113,7 @@ local function registerAppKeys()
       if config.vm == "com.parallels.desktop.console" then
         appPath = getParallelsVMPath(config.name)
         appid = hs.application.infoForBundlePath(appPath).CFBundleIdentifier
-        if hs.application.pathForBundleID(appid) == nil
-            or hs.application.pathForBundleID(appid) == "" then
+        if not installed(appid) then
           appid = nil
         end
       else
@@ -7807,11 +7806,9 @@ local function registerRunningAppHotKeys(appid, app)
         and keybinding.persist or cfg.persist
     local isBackground = isPersistent or (keybinding.background ~= nil
         and keybinding.background or cfg.background)
-    local appInstalled = hs.application.pathForBundleID(appid) ~= nil
-        and hs.application.pathForBundleID(appid) ~= ""
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local bindable
-    if isPersistent and appInstalled then
+    if isPersistent and installed(appid) then
       bindable = function()
         return cfg.bindCondition == nil or cfg.bindCondition(appid)
       end
@@ -10860,8 +10857,7 @@ end
 -- note: barrier is mistakenly recognized as an app prohibited from having GUI elements,
 --       so window filter does not work unless the app is activated once.
 --       we use uielement observer instead
-if hs.application.pathForBundleID("barrier") ~= nil
-    and hs.application.pathForBundleID("barrier") ~= "" then
+if installed("barrier") then
   Evt.OnRunning("barrier", function(app)
     local observer = uiobserver.new(app:pid())
     observer:addWatcher(toappui(app), uinotifications.windowCreated)
@@ -11329,8 +11325,7 @@ function App_usbChangedCallback(device)
     for _, phone in ipairs(phones) do
       if device.productName == phone[1] and device.vendorName == phone[2] then
         for _, appid in ipairs(phonesManagers) do
-          if hs.application.pathForBundleID(appid) ~= nil
-              and hs.application.pathForBundleID(appid) ~= "" then
+          if installed(appid) then
             hs.execute(strfmt("open -g -b '%s'", appid))
             return
           end

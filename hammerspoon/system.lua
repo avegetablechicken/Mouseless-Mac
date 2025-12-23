@@ -790,9 +790,7 @@ local function registerProxyMenuImpl(enabledProxy, mode)
 
   for _, candidate in ipairs(proxyMenuItemCandidates) do
     local appid = proxyAppBundleIDs[candidate.appname]
-    if ProxyConfigs[candidate.appname] ~= nil
-        and hs.application.pathForBundleID(appid) ~= nil
-        and hs.application.pathForBundleID(appid) ~= "" then
+    if ProxyConfigs[candidate.appname] ~= nil and installed(appid) then
       tinsert(proxyMenu, { title = "-" })
       tinsert(proxyMenu, {
         title = candidate.appname,
@@ -2367,8 +2365,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
                       { defaultMusicAppForControlCenter }
                 end
                 for _, appid in ipairs(defaultMusicAppForControlCenter) do
-                  local appPath = hs.application.pathForBundleID(appid)
-                  if appPath ~= nil and appPath ~= "" then
+                  if installed(appid) then
                     hs.application.launchOrFocusByBundleID(appid)
                     return
                   end
