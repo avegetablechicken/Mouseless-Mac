@@ -3621,6 +3621,11 @@ local function delocalizedStringImpl(str, appid, params, force)
       if result ~= nil then return result end
     end
   end
+
+  if appid ~= '__macos' and not installed(appid) then
+    return nil
+  end
+
   if appid == "com.openai.chat" then
     result, locale = delocalizeChatGPT(str, appLocale)
     if result ~= nil then
