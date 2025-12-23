@@ -1459,9 +1459,9 @@ function()
   loadAppHotkeys(allKeys, false)
 
   local choices = {}
-  local msg = nil
+  local msg, submsg = nil, nil
   local HSImage = hs.image.imageFromAppBundle(hs.settings.bundleID)
-  local kind = HK.PRIVELLEGE
+  local kind, subkind = HK.PRIVELLEGE, HK.PRIVELLEGE
   for _, entry in ipairs(allKeys) do
     if entry.msg:find(": ") == nil then
       goto continue
@@ -1541,6 +1541,25 @@ function()
       end
     end
 
+    if entry.kind == HK.WIN_OP then
+      if entry.subkind ~= subkind then
+        if entry.subkind == HK.WIN_OP_.MOVE then
+          submsg = "Move"
+        elseif entry.subkind == HK.WIN_OP_.RESIZE then
+          submsg = "Resize"
+        elseif entry.subkind == HK.WIN_OP_.BORDER then
+          submsg = "Resize by Border"
+        elseif entry.subkind == HK.WIN_OP_.SPACE_SCREEN then
+          submsg = "Space & Screen"
+        elseif entry.subkind == HK.WIN_OP_.STAGE_MANAGER then
+          submsg = "Stage Manager"
+        else
+          submsg = "Others (Window)"
+        end
+        subkind = entry.subkind
+      end
+    end
+
     local mods, key
     if entry.modal == HK_MODAL.DOUBLE_TAP then
       mods = ""
@@ -1588,6 +1607,7 @@ function()
           text = actualMsg,
           subText = idx
               .. (msg and " -- " .. msg or "")
+              .. (submsg and " > " .. submsg or "")
               .. (entry.source == HK_SOURCE.APP and " (built-in)" or "")
               .. (entry.valid and "" or " (DISABLED in current context)"),
           image = image,
