@@ -1363,8 +1363,13 @@ local WeChat = {}
 WeChat.WF = {
   Main = {
     fn = function(win)
-      local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
-      return view1 and view1.AXTitle == win:title()
+      if Version.GreaterEqual(win, "4") then
+        local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
+        return view1 and view1.AXTitle == win:title()
+      else
+        local view1 = getc(towinui(win), AX.RadioButton, 1)
+        return view1 and view1.AXDescription == T("Tabbar.Chats", win)
+      end
     end
   },
   Moments = {
