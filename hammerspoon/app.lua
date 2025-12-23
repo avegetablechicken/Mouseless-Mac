@@ -4688,26 +4688,29 @@ appHotKeyCallbacks = {
   ["com.tencent.xinWeChat"] =
   {
     ["backFromMinizedGroups"] = {
-      message = TC("Back"),
+      message = function(win)
+        return T("Minimized Groups", win) .. ' > ' .. TC("Back", win)
+      end,
       bindCondition = Version.Between("4", "4.0.6"),
       windowFilter = WeChat.WF.Main,
       condition = function(win)
+        local title = strsplit(A_Message, ' > ')[2]
         local bt = getc(towinui(win), AX.Group, 1,
-            AX.SplitGroup, 1, AX.Button, A_Message)
+            AX.SplitGroup, 1, AX.Button, title)
         return Callback.Clickable(bt)
       end,
       fn = Callback.Click
     },
     ["backInOfficialAccounts"] = {
-      message = TC("Back"),
+      message = T({ "Tabbar.OA", "Common.Navigation.Back" }),
       bindCondition = Version.LessThan("4"),
       windowFilter = WeChat.WF.Main,
       condition = function(win)
-        local back = T("Common.Navigation.Back", win)
         local g = getc(towinui(win), AX.SplitGroup, 1, AX.SplitGroup, 1)
         if g ~= nil then
+          local title = strsplit(A_Message, ' > ')[2]
           for _, bt in ipairs(getc(g, AX.Button)) do
-            if bt.AXTitle == back then
+            if bt.AXTitle == title then
               return true, bt
             end
           end
@@ -4727,11 +4730,24 @@ appHotKeyCallbacks = {
     ["hideChat"] = {
       message = function(win)
         if Version.LessThan(win, "4") then
-          return T("Chats.Menu.Hide", win)
+          local title = T("Chats.Menu.Hide", win)
+          local chats = getc(towinui(win), AX.SplitGroup, 1,
+              AX.ScrollArea, 1, AX.Table, 1)
+          if chats and chats.AXDescription then
+            return chats.AXDescription .. ' > ' .. title
+          else
+            return title
+          end
         else
           local title = localizedString("Hide", win)
           if type(title) == 'table' then title = title[#title] end
-          return title
+          local chats = getc(towinui(win), AX.Group, 1,
+              AX.SplitGroup, 1, AX.List, -1)
+          if chats and chats.AXTitle then
+            return chats.AXTitle .. ' > ' .. title
+          else
+            return title
+          end
         end
       end,
       bindCondition = Version.LessThan("4.0.6"),
@@ -4795,7 +4811,8 @@ appHotKeyCallbacks = {
             local menu = toappui(app):elementAtPosition(
                 uioffset(chat.AXPosition, { 1, 1 }))
             if menu and menu.AXRole == AX.Menu then
-              local hide = getc(menu, AX.MenuItem, A_Message)
+              local title = strsplit(A_Message, ' > ')[2]
+              local hide = getc(menu, AX.MenuItem, title)
               if hide then leftClickAndRestore(hide, app) end
             end
           end))
@@ -4803,7 +4820,16 @@ appHotKeyCallbacks = {
       end
     },
     ["showChatProfile"] = {
-      message = T("Chats.Menu.Profile"),
+      message = function(win)
+        local title = T("Chats.Menu.Profile", win)
+        local chats = getc(towinui(win), AX.SplitGroup, 1,
+            AX.ScrollArea, 1, AX.Table, 1)
+        if chats and chats.AXDescription then
+          return chats.AXDescription .. ' > ' .. title
+        else
+          return title
+        end
+      end,
       bindCondition = Version.LessThan("4"),
       windowFilter = WeChat.WF.Main,
       condition = function(win)
