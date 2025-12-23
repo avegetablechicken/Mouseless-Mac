@@ -36,13 +36,13 @@ end
 
   - Hotkeys to launch, activate or hide applications.
 
-  - Hotkeys to search / switch tabs or windows.
+  - Hotkeys to search / switch tabs, windows or menu bar icons.
 
     ![image-20231102163300185](./assets/switch-tabs.png)
 
   - Hotkeys for monitor / window operation.
 
-  - Hotkeys in specific applications or for specific windows.
+  - Hotkeys in specific applications or for specific windows (locale supported in most cases).
 
   - Hotkeys for operations in Control Center (since Big Sur).
 
@@ -50,7 +50,7 @@ end
 
   - Key remapping for virtual machines and remote desktops.
 
-  - Hotkeys to visualize or search all hotkeys.
+  - Hotkeys to visualize or search all hotkeys (hold modifiers to highlight).
 
     ![image-20231102162841696](./assets/show-keybindings.png)
 
@@ -64,6 +64,8 @@ end
 
 - Input sources for specific applications.
 
+- Keybindings with globe (fn) and touch-pad as a modifier
+
 - Synchronize configurations and desensitizing them.
 
 - Remove redundant text added by a website when you try to copy text on it.
@@ -71,7 +73,6 @@ end
 ### Karabiner-Elements
 
 - Map CapsLock to F18 (for hyper modal required by my hammerspoon configuration).
-- Fn-related hotkeys.
 - Touch pad-related hotkeys.
 - Safe quitting applications.
 
