@@ -745,7 +745,7 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
   local menu = ""
   local col = 0
   local ix = 0
-  local kind = HK.PRIVELLEGE
+  local kind, subkind = HK.PRIVELLEGE, HK.PRIVELLEGE
   for i, entry in ipairs(HSKeybindings.buffer) do
     if type(entry) == 'string' and showApp then
       local canShow = false
@@ -823,6 +823,37 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
             menu = menu.."<ul class='col col"..col.."'>"
           end
           menu = menu.."<li><div class='typetext'>".." "..msg.."</div></li>"
+        end
+      end
+
+      local submsg
+      if entry.kind == HK.WIN_OP then
+        if entry.subkind ~= subkind then
+          if entry.subkind == HK.WIN_OP_.MOVE then
+            submsg = "Move"
+          elseif entry.subkind == HK.WIN_OP_.RESIZE then
+            submsg = "Resize"
+          elseif entry.subkind == HK.WIN_OP_.BORDER then
+            submsg = "Resize by Border"
+          elseif entry.subkind == HK.WIN_OP_.SPACE_SCREEN then
+            submsg = "Space & Screen"
+          elseif entry.subkind == HK.WIN_OP_.STAGE_MANAGER then
+            submsg = "Stage Manager"
+          else
+            submsg = "Others (Window)"
+          end
+          subkind = entry.subkind
+        end
+        if submsg ~= nil then
+          ix = ix + 1
+          if ((ix - 1) % 15) == 0 then
+            if ix > 1 then
+              menu = menu.."</ul>"
+            end
+            col = col + 1
+            menu = menu.."<ul class='col col"..col.."'>"
+          end
+          menu = menu.."<li><div class='menutext'>".." "..submsg.."</div></li>"
         end
       end
 
