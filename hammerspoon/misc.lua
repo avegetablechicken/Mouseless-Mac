@@ -1477,6 +1477,8 @@ function()
         elseif entry.subkind == HK.WIN_OP_.SPACE_SCREEN then
           image = hs.image.imageFromPath("static/display.tiff")
         end
+      elseif entry.subkind == HK.WIN_OP_.SPACE_SCREEN then
+        image = hs.image.imageFromPath("static/display.tiff")
       end
     end
 

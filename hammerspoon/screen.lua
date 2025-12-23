@@ -128,14 +128,17 @@ local function checkAndMoveWindowToMonitor(monitor)
   end
 end
 
--- move cursor to next monitor
 local adjacentMonitorHotkeys = {}
-local image = hs.image.imageFromPath("static/display.tiff")
-tinsert(adjacentMonitorHotkeys, newHotkeySpec(ssHK["focusNextScreen"], "Focus on Next Screen",
-    bind(checkAndMoveCursurToMonitor, "r")))
--- move cursor to previous monitor
-tinsert(adjacentMonitorHotkeys, newHotkeySpec(ssHK["focusPrevScreen"], "Focus on Previous Screen",
-    bind(checkAndMoveCursurToMonitor, "l")))
+-- move cursor to next monitor
+local hotkey = newHotkeySpec(ssHK["focusNextScreen"], "Focus on Next Screen",
+    bind(checkAndMoveCursurToMonitor, "r"))
+hotkey.subkind = HK.WIN_OP_.SPACE_SCREEN
+tinsert(adjacentMonitorHotkeys, hotkey)
+-- move cursor to previous monitor'
+local hotkey = newHotkeySpec(ssHK["focusPrevScreen"], "Focus on Previous Screen",
+    bind(checkAndMoveCursurToMonitor, "l"))
+hotkey.subkind = HK.WIN_OP_.SPACE_SCREEN
+tinsert(adjacentMonitorHotkeys, hotkey)
 
 -- move window to next monitor
 tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToNextScreen"], "Move to Next Monitor",
@@ -143,10 +146,6 @@ tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToNextScreen"], "Move to Nex
 -- move window to previous monitor
 tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToPrevScreen"], "Move to Previous Monitor",
     bind(checkAndMoveWindowToMonitor, "l")))
-
-for _, hotkey in ipairs(adjacentMonitorHotkeys) do
-  hotkey.icon = image
-end
 
 local focusMonitorHotkeys = {}
 local moveToScreenHotkeys = {}
@@ -194,7 +193,7 @@ local function registerMonitorHotkeys()
             focusScreen(hs.screen.allScreens()[i])
           end
         end)
-    hotkey.icon = image
+    hotkey.subkind = HK.WIN_OP_.SPACE_SCREEN
     tinsert(focusMonitorHotkeys, hotkey)
   end
 end
