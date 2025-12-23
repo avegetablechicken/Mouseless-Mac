@@ -4876,7 +4876,7 @@ appHotKeyCallbacks = {
     },
     ["previewPreview"] = {
       message = T("Preview"),
-      bindCondition = Version.LessThan("4.0.6"),
+      bindCondition = Version.Between("4", "4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         local button = getc(towinui(win), AX.Button, A_Message)
@@ -4890,7 +4890,7 @@ appHotKeyCallbacks = {
       message = function(win)
         return T("Original image size", win) .. ' / ' .. T("Fit to Window", win)
       end,
-      bindCondition = Version.LessThan("4.0.6"),
+      bindCondition = Version.Between("4", "4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         local titles = strsplit(A_Message, ' / ')
@@ -4904,7 +4904,7 @@ appHotKeyCallbacks = {
     },
     ["previewRotate"] = {
       message = T("Rotate"),
-      bindCondition = Version.LessThan("4.0.6"),
+      bindCondition = Version.Between("4", "4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         local button = getc(towinui(win), AX.Button, A_Message)
@@ -4916,7 +4916,7 @@ appHotKeyCallbacks = {
     },
     ["previewEdit"] = {
       message = T("Edit"),
-      bindCondition = Version.LessThan("4.0.6"),
+      bindCondition = Version.Between("4", "4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         local button = getc(towinui(win), AX.Button, A_Message)
@@ -4928,7 +4928,7 @@ appHotKeyCallbacks = {
     },
     ["previewTranslate"] = {
       message = T("Translate"),
-      bindCondition = Version.LessThan("4.0.6"),
+      bindCondition = Version.Between("4", "4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         local button = getc(towinui(win), AX.Button, A_Message)
@@ -4940,7 +4940,7 @@ appHotKeyCallbacks = {
     },
     ["previewExtractText"] = {
       message = T("Extract Text"),
-      bindCondition = Version.LessThan("4.0.6"),
+      bindCondition = Version.Between("4", "4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         local button = getc(towinui(win), AX.Button, A_Message)
