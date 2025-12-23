@@ -1559,6 +1559,7 @@ local function bindStageManagerWindow(spec, index)
   local locWindow = localizedString("Window", "com.apple.WindowManager")
   local hotkey = bindHotkeySpec(spec, locApp..' > '..locWindow..' '..index, fn)
   hotkey.kind = HK.WIN_OP
+  hotkey.subkind = HK.WIN_OP_.STAGE_MANAGER
   return hotkey
 end
 
