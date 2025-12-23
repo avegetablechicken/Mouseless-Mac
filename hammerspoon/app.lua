@@ -4728,7 +4728,14 @@ appHotKeyCallbacks = {
       bindCondition = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.Moments,
       condition = function(win)
-        return Callback.Clickable(getc(towinui(win), AX.Button, A_Message))
+        local button
+        if Version.LessThan(win, "4") then
+          button = tfind(getc(towinui(win), AX.Button) or {},
+              function(bt) return bt.AXDescription == A_Message end)
+        else
+          button = getc(towinui(win), AX.Button, A_Message)
+        end
+        return Callback.Clickable(button)
       end,
       fn = Callback.Click
     },
