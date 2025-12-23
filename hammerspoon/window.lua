@@ -684,14 +684,14 @@ local misc = winHK
 local function newWindowSwitch(...)
   local hotkey = newHotkeySpec(...)
   if hotkey == nil then return nil end
-  hotkey.kind = HK.SWITCH
+  hotkey.kind = HK.QUICK_NAVIGATION
   return hotkey
 end
 
 local function bindWindowSwitch(...)
   local hotkey = bindHotkeySpec(...)
   if hotkey == nil then return nil end
-  hotkey.kind = HK.SWITCH
+  hotkey.kind = HK.QUICK_NAVIGATION
   return hotkey
 end
 

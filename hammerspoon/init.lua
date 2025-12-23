@@ -40,7 +40,7 @@ end
 
 HK = {
   PRIVELLEGE = 0,
-  SWITCH = 1,
+  QUICK_NAVIGATION = 1,
   IN_APP = 2,
   IN_APP_ = { MENU = 1, APP = 2, WINDOW = 3 },
   IN_WIN = 3,

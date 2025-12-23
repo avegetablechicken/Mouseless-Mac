@@ -795,8 +795,8 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
         and (entry.valid or (not validOnly and entry.msg:find(": ") ~= nil)) then
       local msg
       if entry.kind ~= kind then
-        if entry.kind == HK.SWITCH then
-          msg = "Misc for Switching"
+        if entry.kind == HK.QUICK_NAVIGATION then
+          msg = "Quick Navigation"
         elseif entry.kind == HK.APPKEY then
           msg = "AppKeys"
         elseif entry.kind == HK.BACKGROUND then
@@ -1522,8 +1522,8 @@ function()
 
     if entry.kind ~= kind then
       kind = entry.kind
-      if kind == HK.SWITCH then
-        msg = "Misc for Switching"
+      if kind == HK.QUICK_NAVIGATION then
+        msg = "Quick Navigation"
       elseif kind == HK.APPKEY then
         msg = "AppKeys"
       elseif kind == HK.BACKGROUND then
