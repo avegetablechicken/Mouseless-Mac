@@ -47,7 +47,7 @@ HK = {
   APPKEY = 4,
   BACKGROUND = 5,
   MENUBAR = 6,
-  MENUBAR_ = { CONTROL_CENTER = 0 },
+  MENUBAR_ = { CONTROL_CENTER = 1 },
   WIN_OP = 7,
   WIN_OP_ = { MOVE = 1, RESIZE = 2, SPACE_SCREEN = 3 },
 }

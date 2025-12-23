@@ -1477,7 +1477,7 @@ function()
           and entry.subkind == HK.MENUBAR_.CONTROL_CENTER then
         image = hs.image.imageFromAppBundle("com.apple.controlcenter")
       elseif entry.kind == HK.WIN_OP then
-        if entry.subkind == 0 or entry.subkind == HK.WIN_OP_.MOVE
+        if entry.subkind == HK.PRIVELLEGE or entry.subkind == HK.WIN_OP_.MOVE
             or entry.subkind == HK.WIN_OP_.RESIZE then
           image = hs.image.imageFromPath("static/rectangle.png")
         elseif entry.subkind == HK.WIN_OP_.SPACE_SCREEN then

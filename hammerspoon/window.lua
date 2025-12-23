@@ -448,7 +448,7 @@ function()
     win:setFrame(max)
   end
 end)
-if fillHK then fillHK.subkind = 0 end
+if fillHK then fillHK.subkind = HK.PRIVELLEGE end
 
 -- expand on left
 bindResizeWindow("leftBorderExpand", "Left Border Expands",
@@ -619,7 +619,7 @@ function()
   f.y = max.y + math.ceil((max.h - f.h + 1) / 2)
   win:setFrame(f)
 end)
-if centerHK then centerHK.subkind = 0 end
+if centerHK then centerHK.subkind = HK.PRIVELLEGE end
 
 -- move to right
 bindMoveWindow("moveToRight", "Move to Right",
