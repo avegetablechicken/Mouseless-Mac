@@ -130,7 +130,7 @@ end
 
 -- move cursor to next monitor
 local adjacentMonitorHotkeys = {}
-local image = hs.image.imageFromPath("static/display.png")
+local image = hs.image.imageFromPath("static/display.tiff")
 tinsert(adjacentMonitorHotkeys, newHotkeySpec(ssHK["focusNextScreen"], "Focus on Next Screen",
     bind(checkAndMoveCursurToMonitor, "r")))
 -- move cursor to previous monitor

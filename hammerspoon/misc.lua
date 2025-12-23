@@ -1475,7 +1475,7 @@ function()
             or entry.subkind == HK.WIN_OP_.RESIZE then
           image = hs.image.imageFromPath("static/rectangle.png")
         elseif entry.subkind == HK.WIN_OP_.SPACE_SCREEN then
-          image = hs.image.imageFromPath("static/display.png")
+          image = hs.image.imageFromPath("static/display.tiff")
         end
       end
     end
