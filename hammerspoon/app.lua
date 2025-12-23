@@ -9255,8 +9255,19 @@ local function registerZoomHotkeys(app)
   end
 end
 
+FullscreenObserver = nil
+local WINDOWMOVED_DELAY = 0.5
+local windowMovedTimer
 local function registerResizeHotkeys(app)
   if OS_VERSION < OS.Sequoia then return end
+  if FullscreenObserver then
+    FullscreenObserver:stop()
+    FullscreenObserver = nil
+  end
+  if windowMovedTimer then
+    windowMovedTimer:stop()
+    windowMovedTimer = nil
+  end
   local menu, submenu = "Window", "Move & Resize"
   local menuItem = app:findMenuItem({ menu, submenu })
   if menuItem == nil then
@@ -9278,17 +9289,41 @@ local function registerResizeHotkeys(app)
       end
     end
   end
+  local toEnable = menuItem == nil and not inFullscreenSpace()
   for _, hotkey in ipairs(HotkeysResizeConflictedSinceSequia or {}) do
-    if menuItem then
-      hotkey:disable()
-    else
+    if toEnable then
       hotkey:enable()
+    else
+      hotkey:disable()
     end
   end
   if FLAGS["LOADING"] then
-    FLAGS["NO_MOVE_RESIZE"] = menuItem == nil
+    FLAGS["NO_MOVE_RESIZE"] = toEnable
   else
     FLAGS["NO_MOVE_RESIZE"] = nil
+  end
+  if menuItem == nil then
+    FullscreenObserver = uiobserver.new(app:pid())
+    FullscreenObserver:addWatcher(toappui(app), uinotifications.windowResized)
+    FullscreenObserver:callback(function()
+      if windowMovedTimer then
+        windowMovedTimer:setNextTrigger(WINDOWMOVED_DELAY)
+        return
+      end
+      windowMovedTimer = hs.timer.doAfter(WINDOWMOVED_DELAY, function()
+        windowMovedTimer = nil
+        if inFullscreenSpace() then
+          for _, hotkey in ipairs(HotkeysResizeConflictedSinceSequia or {}) do
+            hotkey:disable()
+          end
+        else
+          for _, hotkey in ipairs(HotkeysResizeConflictedSinceSequia or {}) do
+            hotkey:enable()
+          end
+        end
+      end)
+    end)
+    FullscreenObserver:start()
   end
 end
 
