@@ -49,7 +49,7 @@ HK = {
   MENUBAR = 6,
   MENUBAR_ = { CONTROL_CENTER = 1 },
   WIN_OP = 7,
-  WIN_OP_ = { MOVE = 1, RESIZE = 2, BORDER = 3, SPACE_SCREEN = 4, STAGE_MANAGER = 5 },
+  WIN_OP_ = { MOVE = 1, MOVE_RESIZE = 2, INPLACE_RESIZE = 3, SPACE_SCREEN = 4, STAGE_MANAGER = 5 },
 }
 
 local function capitalize(str)

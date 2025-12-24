@@ -831,10 +831,10 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
         if entry.subkind ~= subkind then
           if entry.subkind == HK.WIN_OP_.MOVE then
             submsg = "Move"
-          elseif entry.subkind == HK.WIN_OP_.RESIZE then
-            submsg = "Resize"
-          elseif entry.subkind == HK.WIN_OP_.BORDER then
-            submsg = "Resize by Border"
+          elseif entry.subkind == HK.WIN_OP_.MOVE_RESIZE then
+            submsg = "Move & Resize"
+          elseif entry.subkind == HK.WIN_OP_.INPLACE_RESIZE then
+            submsg = "Resize in Place"
           elseif entry.subkind == HK.WIN_OP_.SPACE_SCREEN then
             submsg = "Space & Screen"
           elseif entry.subkind == HK.WIN_OP_.STAGE_MANAGER then
@@ -1509,7 +1509,7 @@ function()
         image = hs.image.imageFromAppBundle("com.apple.controlcenter")
       elseif entry.kind == HK.WIN_OP then
         if entry.subkind == HK.PRIVELLEGE or entry.subkind == HK.WIN_OP_.MOVE
-            or entry.subkind == HK.WIN_OP_.RESIZE or entry.subkind == HK.WIN_OP_.BORDER
+            or entry.subkind == HK.WIN_OP_.MOVE_RESIZE or entry.subkind == HK.WIN_OP_.INPLACE_RESIZE
             or entry.subkind == HK.WIN_OP_.STAGE_MANAGER then
           image = hs.image.imageFromPath("static/rectangle.png")
         elseif entry.subkind == HK.WIN_OP_.SPACE_SCREEN then
@@ -1545,10 +1545,10 @@ function()
       if entry.subkind ~= subkind then
         if entry.subkind == HK.WIN_OP_.MOVE then
           submsg = "Move"
-        elseif entry.subkind == HK.WIN_OP_.RESIZE then
-          submsg = "Resize"
-        elseif entry.subkind == HK.WIN_OP_.BORDER then
-          submsg = "Resize by Border"
+        elseif entry.subkind == HK.WIN_OP_.MOVE_RESIZE then
+          submsg = "Move & Resize"
+        elseif entry.subkind == HK.WIN_OP_.INPLACE_RESIZE then
+          submsg = "Resize in Place"
         elseif entry.subkind == HK.WIN_OP_.SPACE_SCREEN then
           submsg = "Space & Screen"
         elseif entry.subkind == HK.WIN_OP_.STAGE_MANAGER then

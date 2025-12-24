@@ -98,7 +98,7 @@ local function newResizeWindow(hkID, message, fn, repeatable)
   end
   local repeatedfn = repeatable and newFn or nil
   local hotkey = newWindow(spec, message, newFn, nil, repeatedfn)
-  hotkey.subkind = HK.WIN_OP_.RESIZE
+  hotkey.subkind = HK.WIN_OP_.MOVE_RESIZE
   return hotkey
 end
 
@@ -116,7 +116,7 @@ local function bindResizeWindow(hkID, message, fn, repeatable)
   end
   local repeatedfn = repeatable and newFn or nil
   local hotkey = bindWindow(spec, message, newFn, nil, repeatedfn)
-  hotkey.subkind = HK.WIN_OP_.RESIZE
+  hotkey.subkind = HK.WIN_OP_.MOVE_RESIZE
   return hotkey
 end
 
@@ -452,7 +452,7 @@ if fillHK then fillHK.subkind = HK.PRIVELLEGE end
 
 local function bindResizeBorderWindow(...)
   local hotkey = bindResizeWindow(...)
-  if hotkey then hotkey.subkind = HK.WIN_OP_.BORDER end
+  if hotkey then hotkey.subkind = HK.WIN_OP_.INPLACE_RESIZE end
   return hotkey
 end
 
