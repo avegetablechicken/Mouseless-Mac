@@ -2563,18 +2563,20 @@ local function registerSearchMenuBar()
   local apps = hs.application.runningApplications()
   for _, app in ipairs(apps) do
     local appid = app:bundleID() or app:name()
-    local map = loadStatusItemsAutosaveName(app)
+    local map, preferred = loadStatusItemsAutosaveName(app, true)
     if map and #map > 0 then
       maps[appid] = map or {}
-      local appMenuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
-      if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
-        appMenuBarItems = tifilter(appMenuBarItems, function(item)
-          return item.AXIdentifier
-              and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
-        end)
-      end
-      for i, item in ipairs(appMenuBarItems or {}) do
-        tinsert(menuBarItems, { item, i })
+      if appid ~= 'com.apple.controlcenter' or OS_VERSION < OS.Tahoe then
+        local appMenuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+        if appMenuBarItems then
+          for i, item in ipairs(appMenuBarItems) do
+            tinsert(menuBarItems, { item, i, preferred[i] })
+          end
+        else
+          for i, item in ipairs(preferred) do
+            tinsert(menuBarItems, { app, i, item })
+          end
+        end
       end
     end
   end
@@ -2582,12 +2584,45 @@ local function registerSearchMenuBar()
     return
   end
   table.sort(menuBarItems, function(a, b)
-    return a[1].AXPosition.x > b[1].AXPosition.x
+    if a[1].AXPosition and b[1].AXPosition then
+      return a[1].AXPosition.x > b[1].AXPosition.x
+    else
+      return a[3] < b[3]
+    end
   end)
+  if OS_VERSION >= OS.Tahoe then
+    local appMenuBarItems = getc(toappui(find('com.apple.controlcenter')),
+        AX.MenuBar, -1, AX.MenuBarItem)
+    appMenuBarItems = tifilter(appMenuBarItems, function(item)
+      return item.AXIdentifier
+          and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+    end)
+    local items = {}
+    for i, item in ipairs(appMenuBarItems) do
+      tinsert(items, { item, i })
+    end
+    table.sort(items, function(a, b)
+      return a[1].AXPosition.x > b[1].AXPosition.x
+    end)
+    foreach(items, function(item)
+      local position = item[1].AXPosition.x
+      for i=1,#menuBarItems do
+        if menuBarItems[i][1].AXPosition and menuBarItems[i][1].AXPosition.x < position then
+          tinsert(menuBarItems, i, item)
+          break
+        end
+      end
+    end)
+  end
 
   for i, pair in ipairs(menuBarItems) do
     local item = pair[1]
-    local app = item.AXParent.AXParent:asHSApplication()
+    local app
+    if item.AXPosition then
+      app = item.AXParent.AXParent:asHSApplication()
+    else
+      app = item
+    end
     local appid = app:bundleID() or app:name()
     if appid == 'com.apple.controlcenter' then
       for j=i-1,1,-1 do
@@ -2600,7 +2635,12 @@ local function registerSearchMenuBar()
   local ccBentoBoxCnt = 0
   for _, pair in ipairs(menuBarItems) do
     local item, idx = pair[1], pair[2]
-    local app = item.AXParent.AXParent:asHSApplication()
+    local app
+    if item.AXPosition then
+      app = item.AXParent.AXParent:asHSApplication()
+    else
+      app = item
+    end
     local appid = app:bundleID() or app:name()
     local appname = app:name()
     local title, extraSearchPattern
@@ -2650,7 +2690,19 @@ local function registerSearchMenuBar()
   chooser = hs.chooser.new(function(choice)
     if choice == nil then return end
     hs.timer.doAfter(0, function()
-      if not leftClickAndRestore(menuBarItems[choice.id][1], find(choice.appid)) then
+      local item = menuBarItems[choice.id][1]
+      if item.AXPosition == nil then
+        local left, right = menuBarItems[choice.id+1][1], menuBarItems[choice.id-1][1]
+        if left.AXPosition and right.AXPosition then
+          local position = hs.geometry.point(
+            (left.AXPosition.x + left.AXSize.w + right.AXPosition.x) / 2,
+            left.AXPosition.y + left.AXSize.h / 2
+          )
+          leftClickAndRestore(position)
+        end
+        return
+      end
+      if not leftClickAndRestore(item, find(choice.appid)) then
         if choice.appid == hs.settings.bundleID then
           -- fixme: hanging issue
           hs.alert.show("Cannot trigger Hammerspoon menu bar item", 2)
