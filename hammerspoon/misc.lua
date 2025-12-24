@@ -1609,7 +1609,7 @@ function()
               .. (msg and " -- " .. msg or "")
               .. (submsg and " > " .. submsg or "")
               .. (entry.source == HK_SOURCE.APP and " (built-in)" or "")
-              .. (entry.valid and "" or " (DISABLED in current context)"),
+              .. (entry.valid and "" or " [DISABLED contextually]"),
           image = image,
           mods = mods,
           key = key,
