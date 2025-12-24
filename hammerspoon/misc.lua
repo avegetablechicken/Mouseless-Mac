@@ -1509,8 +1509,8 @@ function()
         image = hs.image.imageFromAppBundle("com.apple.controlcenter")
       elseif entry.kind == HK.WIN_OP then
         if entry.subkind == HK.PRIVELLEGE or entry.subkind == HK.WIN_OP_.MOVE
-            or entry.subkind == HK.WIN_OP_.MOVE_RESIZE or entry.subkind == HK.WIN_OP_.INPLACE_RESIZE
-            or entry.subkind == HK.WIN_OP_.STAGE_MANAGER then
+            or entry.subkind == HK.WIN_OP_.MOVE_RESIZE
+            or entry.subkind == HK.WIN_OP_.INPLACE_RESIZE then
           image = hs.image.imageFromPath("static/rectangle.png")
         elseif entry.subkind == HK.WIN_OP_.SPACE_SCREEN then
           image = hs.image.imageFromPath("static/display.tiff")
