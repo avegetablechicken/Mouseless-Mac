@@ -571,6 +571,11 @@ Callback.ClickAndHold = function(delay)
   end
 end
 
+Callback.DoubleClick = function(position)
+  hs.execute(strfmt([[cliclick dc:%d,%d]],
+      math.floor(position.x), math.floor(position.y)), true)
+end
+
 Callback.Clickable = function(element, offset)
   if element == nil or not element:isValid() then return false end
   if offset == nil then
@@ -5434,17 +5439,17 @@ appHotKeyCallbacks = {
     ["confirmRemove"] = {
       message = T('Remove'),
       condition = AppCleanerUninstaller.confirmButtonValid('Remove'),
-      fn = function(position) leftClick(position) end  -- fixme: false click
+      fn = Callback.DoubleClick
     },
     ["confirmUpdate"] = {
       message = T('Update'),
       condition = AppCleanerUninstaller.confirmButtonValid('Update'),
-      fn = function(position) leftClick(position) end  -- fixme: false click
+      fn = Callback.DoubleClick
     },
     ["confirmRetry"] = {
       message = T('Retry'),
       condition = AppCleanerUninstaller.confirmButtonValid('Retry'),
-      fn = function(position) leftClick(position) end  -- fixme: false click
+      fn = Callback.DoubleClick
     }
   },
 
@@ -5479,17 +5484,17 @@ appHotKeyCallbacks = {
     ["confirmRemove"] = {
       message = T('PartialRemove_Remove'),
       condition = AppCleanerUninstaller.confirmButtonValid('PartialRemove_Remove'),
-      fn = function(position) leftClick(position) end  -- fixme: false click
+      fn = Callback.DoubleClick
     },
     ["confirmUpdate"] = {
       message = T('UpdateButtonTitle'),
       condition = AppCleanerUninstaller.confirmButtonValid('UpdateButtonTitle'),
-      fn = function(position) leftClick(position) end  -- fixme: false click
+      fn = Callback.DoubleClick
     },
     ["confirmRetry"] = {
       message = T('PartialRemove_Retry'),
       condition = AppCleanerUninstaller.confirmButtonValid('PartialRemove_Retry'),
-      fn = function(position) leftClick(position) end  -- fixme: false click
+      fn = Callback.DoubleClick
     }
   },
 
