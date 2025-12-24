@@ -9462,9 +9462,11 @@ local specialToolbarButtons = {
 
 local settingsToolbarHotkeys = {}
 local function registerNavigationForSettingsToolbar(app)
+  local appid = app:bundleID() or app:name()
+
   local deleteFunc = function ()
     for _, hotkey in ipairs(settingsToolbarHotkeys) do
-      disableConditionInChain(app:bundleID(), hotkey, true)
+      disableConditionInChain(appid, hotkey, true)
       hotkey:delete()
     end
     settingsToolbarHotkeys = {}
@@ -9481,7 +9483,6 @@ local function registerNavigationForSettingsToolbar(app)
     until win or totalDelay > 0.1
   end
   if win == nil then return end
-  local appid = app:bundleID() or app:name()
   local winUI = towinui(win)
   local func = specialToolbarButtons[appid] or getToolbarButtons
   local buttons, toClick = func(winUI)
