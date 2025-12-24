@@ -613,7 +613,7 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
     source = HK_SOURCE.HS
   })
   tinsert(allKeys, {
-    idx = "2", msg = "2: Show Activated Application's Keybindings",
+    idx = "2", msg = "2: Show Focused Application's Keybindings",
     kind = HK.PRIVELLEGE, subkind = -1,
     source = HK_SOURCE.HS
   })
@@ -793,6 +793,12 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
     elseif (((entry.source == HK_SOURCE.HS or entry.source == HK_SOURCE.KARABINER)
         and showCustom) or (entry.source == HK_SOURCE.APP and showApp))
         and (entry.valid or (not validOnly and entry.msg:find(": ") ~= nil)) then
+      if ix == 0 then
+        local msg = "Hammerspoon"
+        ix = ix + 1
+        menu = menu.."<ul class='col col"..col.."'>"
+            .."<li><div class='typetext'>".." "..msg.."</div></li>"
+      end
       local msg
       if entry.kind ~= kind then
         if entry.kind == HK.QUICK_NAVIGATION then
@@ -800,15 +806,15 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
         elseif entry.kind == HK.APPKEY then
           msg = "AppKeys"
         elseif entry.kind == HK.BACKGROUND then
-          msg = "Background Apps"
+          msg = "Background"
         elseif entry.kind == HK.MENUBAR then
-          msg = "Menu Bar Apps"
+          msg = "Menu Bar"
         elseif kind < HK.IN_APP and entry.kind == HK.IN_APP then
           msg = hs.application.frontmostApplication():name()
         elseif entry.kind == HK.IN_WIN then
-          msg = "Frontmost Window"
+          msg = "Focused Window"
         elseif entry.kind == HK.WIN_OP then
-          msg = "Window Operations"
+          msg = "Window Miscs"
         else
           msg = "Others"
         end
@@ -947,10 +953,10 @@ local function generateHtml(validOnly, showCustom, showApp, evFlags, reload)
   if showCustom == true and showApp == false then
     title = "Keybindings of Hammerspoon & Karabiner-Elements"
   elseif showCustom == false and showApp == true then
-    title = "Keybindings of Activated Application: "
+    title = "Keybindings of Focused Application: "
         .. hs.application.frontmostApplication():name()
   else
-    title = "Keybindings of Hammerspoon, Karabiner-Elements and Activated Application"
+    title = "Keybindings of Hammerspoon, Karabiner-Elements and Focused Application"
   end
   local allmenuitems = processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
 
@@ -1527,15 +1533,15 @@ function()
       elseif kind == HK.APPKEY then
         msg = "AppKeys"
       elseif kind == HK.BACKGROUND then
-        msg = "Background Apps"
+        msg = "Background"
       elseif kind == HK.MENUBAR then
-        msg = "Menu Bar Apps"
+        msg = "Menu Bar"
       elseif kind == HK.IN_APP then
-        msg = "Active App"
+        msg = "Focused App"
       elseif kind == HK.IN_WIN then
-        msg = "Frontmost Window"
+        msg = "Focused Window"
       elseif kind == HK.WIN_OP then
-        msg = "Window Operations"
+        msg = "Window Miscs"
       else
         msg = "Others"
       end
