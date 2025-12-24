@@ -2739,6 +2739,16 @@ local function registerSearchMenuBar()
       end
       if not leftClickAndRestore(item, find(choice.appid)) then
         if choice.appid == hs.settings.bundleID then
+          if choice.subText == caffeine:autosaveName() then
+            caffeineClicked()
+            return
+          elseif choice.subText == proxy:autosaveName() then
+            local frame = proxy:_frame()
+            local screenFrame = hs.screen.mainScreen():frame()
+            proxy:popupMenu({ x = frame.x,
+                              y = screenFrame.y + screenFrame.h - frame.y })
+            return
+          end
           -- fixme: hanging issue
           hs.alert.show("Cannot trigger Hammerspoon menu bar item", 2)
           return
