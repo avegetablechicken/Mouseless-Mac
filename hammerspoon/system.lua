@@ -2702,6 +2702,10 @@ local function registerSearchMenuBar()
         end
         return
       end
+      if choice.appid:sub(1, 10) == 'com.apple.' then
+        menuBarItems[choice.id][1]:performAction(AX.Press)
+        return
+      end
       if not leftClickAndRestore(item, find(choice.appid)) then
         if choice.appid == hs.settings.bundleID then
           -- fixme: hanging issue
