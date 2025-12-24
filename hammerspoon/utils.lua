@@ -4507,7 +4507,8 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
   if menuBarItems == nil then return end
   menuBarItems = tifilter(menuBarItems, function(item)
     return item.AXIdentifier
-        and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+        and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+          or item.AXIdentifier:sub(-13) == '.liveActivity')
   end)
   local positions = {}
   for i, item in ipairs(menuBarItems) do
@@ -4740,7 +4741,8 @@ MENUBAR_MANAGER_SHOW = {
     if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
       menuBarItems = tifilter(menuBarItems, function(item)
         return item.AXIdentifier ~= nil
-            and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+            and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+              or item.AXIdentifier:sub(-13) == '.liveActivity')
       end)
     end
     local menuBarItem = menuBarItems[index]
@@ -4851,7 +4853,8 @@ MENUBAR_MANAGER_SHOW = {
     if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
       menuBarItems = tifilter(menuBarItems, function(item)
         return item.AXIdentifier ~= nil
-            and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+            and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+              or item.AXIdentifier:sub(-13) == '.liveActivity')
       end)
     end
     local menuBarItem = menuBarItems[index]
@@ -4956,7 +4959,8 @@ MENUBAR_MANAGER_SHOW = {
           if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
             menuBarItems = tifilter(menuBarItems, function(item)
               return item.AXIdentifier ~= nil
-                  and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+                  and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+                    or item.AXIdentifier:sub(-13) == '.liveActivity')
             end)
           end
           local menuBarItem = menuBarItems[index or 1]
@@ -5062,7 +5066,8 @@ function hiddenByMenuBarManager(app, index, map)
   if app:bundleID() == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
     menuBarItems = tifilter(menuBarItems, function(item)
       return item.AXIdentifier ~= nil
-          and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+          and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+            or item.AXIdentifier:sub(-13) == '.liveActivity')
     end)
   end
   local menuBarItem = menuBarItems[index or 1]
@@ -5103,7 +5108,8 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
     menuBarItems = tifilter(menuBarItems, function(item)
       return item.AXIdentifier ~= nil
-          and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+          and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+            or item.AXIdentifier:sub(-13) == '.liveActivity')
     end)
   end
   local menuBarItem = menuBarItems[menuBarIdx or 1]

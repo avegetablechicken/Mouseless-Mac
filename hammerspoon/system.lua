@@ -2589,7 +2589,8 @@ local function registerSearchMenuBar()
         AX.MenuBar, -1, AX.MenuBarItem)
     appMenuBarItems = tifilter(appMenuBarItems, function(item)
       return item.AXIdentifier
-          and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+          and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+            or item.AXIdentifier:sub(-13) == '.liveActivity')
     end)
     local items = {}
     for i, item in ipairs(appMenuBarItems) do
@@ -2659,6 +2660,8 @@ local function registerSearchMenuBar()
             end
             ccBentoBoxCnt = ccBentoBoxCnt + 1
           end
+        elseif item.AXIdentifier:sub(-13) == '.liveActivity' then
+          extraSearchPattern = item.AXIdentifier
         else
           local parts = strsplit(item.AXIdentifier, "%.")
           extraSearchPattern = parts[#parts]
@@ -2726,8 +2729,13 @@ local function registerSearchMenuBar()
         return
       end
       if choice.appid:sub(1, 10) == 'com.apple.' then
-        menuBarItems[choice.id][1]:performAction(AX.Press)
-        return
+        if type(choice.extraPattern) ~= 'table'
+            or tfind(choice.extraPattern, function(pattern)
+                  return pattern:sub(-13) == '.liveActivity'
+                end) == nil then
+          menuBarItems[choice.id][1]:performAction(AX.Press)
+          return
+        end
       end
       if not leftClickAndRestore(item, find(choice.appid)) then
         if choice.appid == hs.settings.bundleID then
