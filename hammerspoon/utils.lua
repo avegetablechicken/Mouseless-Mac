@@ -4468,9 +4468,9 @@ function rightClickAndRestore(point, obj, delay)
   return clickAndRestoreImpl(false, point, obj, delay)
 end
 
-local function loadStatusItemsAutosaveNameControlCenterTahoe(app)
+local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferredPosition)
   local appid = app:bundleID() or app:name()
-  local enabledItems = {}
+  local enabledItems, preferredPositions = {}, {}
   local plistPath = hs.fs.pathToAbsolute(strfmt(
       "~/Library/Preferences/%s.plist", appid))
   if plistPath ~= nil then
@@ -4484,6 +4484,23 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app)
         end
       end
     end
+
+    if requirePreferredPosition == true then
+      local prefix = "NSStatusItem Preferred Position "
+      local prefix_len = #prefix
+      for k, v in pairs(defaults) do
+        if k:sub(1, prefix_len) == prefix then
+          tinsert(preferredPositions, { k:sub(prefix_len + 1), tonumber(v) })
+          found = true
+        end
+      end
+      if tfind(preferredPositions, function(r) return r[1] == "Clock" end) == nil then
+        tinsert(preferredPositions, { "Clock", 1 })
+      end
+      preferredPositions = tifilter(preferredPositions, function(p)
+        return tcontain(enabledItems, p[1])
+      end)
+    end
   end
 
   local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
@@ -4496,11 +4513,14 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app)
   for i, item in ipairs(menuBarItems) do
     tinsert(positions, { i, item })
   end
+  table.sort(preferredPositions, function(a, b)
+    return a[2] < b[2]
+  end)
   table.sort(positions, function(a, b)
     return a[2].AXPosition.x > b[2].AXPosition.x
   end)
 
-  local map = {}
+  local map, preferred = {}, {}
   local ccBentoBoxCnt = 0
   foreach(positions, function(r)
     local item = r[2]
@@ -4526,16 +4546,29 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app)
     if autosaveName then  -- should be true
       map[r[1]] = autosaveName
       map[autosaveName] = r[1]
+      if requirePreferredPosition == true then
+        local matched = tfind(preferredPositions, function(a)
+          return a[1] == autosaveName
+        end)
+        if matched then
+          preferred[r[1]] = matched[2]
+          preferred[autosaveName] = matched[2]
+        end
+      end
     end
   end)
 
-  return map
+  if requirePreferredPosition == true then
+    return map, preferred
+  else
+    return map
+  end
 end
 
-function loadStatusItemsAutosaveName(app)
+function loadStatusItemsAutosaveName(app, requirePreferredPosition)
   local appid = app:bundleID() or app:name()
   if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
-    return loadStatusItemsAutosaveNameControlCenterTahoe(app)
+    return loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferredPosition)
   end
 
   local preferredPositions = {}
@@ -4625,12 +4658,20 @@ function loadStatusItemsAutosaveName(app)
     return r1[2] > r2[2]
   end)
 
-  local map = {}
+  local map, preferred = {}, {}
   for i, r in ipairs(positions) do
     map[r[1]] = preferredPositions[i][1]
     map[preferredPositions[i][1]] = r[1]
+    if requirePreferredPosition == true then
+      preferred[r[1]] = preferredPositions[i][2]
+      preferred[preferredPositions[i][1]] = preferredPositions[i][2]
+    end
   end
-  return map
+  if requirePreferredPosition == true then
+    return map, preferred
+  else
+    return map
+  end
 end
 
 local function showHiddenMenuBarItems(manager)
