@@ -4644,7 +4644,19 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
   if #preferredPositions == 0 then return end
 
   local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
-  if menuBarItems == nil then return end
+  if menuBarItems == nil then
+    if appid == "at.obdev.littlesnitch.agent" then
+      local autosaveName = preferredPositions[1][1]
+      local preferredPosition = preferredPositions[1][2]
+      local map = { autosaveName, [autosaveName] = 1 }
+      if requirePreferredPosition == true then
+        return map, { preferredPosition, [autosaveName] = preferredPosition }
+      else
+        return map
+      end
+    end
+    return
+  end
   local positions = {}
   for i, item in ipairs(menuBarItems) do
     tinsert(positions, { i, item.AXPosition.x })

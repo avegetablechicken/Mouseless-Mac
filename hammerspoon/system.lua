@@ -2573,7 +2573,7 @@ local function registerSearchMenuBar()
               and item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
         end)
       end
-      for i, item in ipairs(appMenuBarItems) do
+      for i, item in ipairs(appMenuBarItems or {}) do
         tinsert(menuBarItems, { item, i })
       end
     end
