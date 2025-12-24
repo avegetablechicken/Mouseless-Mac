@@ -2676,10 +2676,39 @@ local function registerSearchMenuBar()
         title = autosaveName
       end
     end
+    local image
+    if app:bundleID() then
+      image = hs.image.imageFromAppBundle(appid)
+    else
+      local pathStr, ok = hs.execute(strfmt([[
+          lsof -a -d txt -p %s 2>/dev/null | sed -n '2p' | awk '{print $NF}']], app:pid()))
+      if ok and pathStr ~= "" then
+        local parts = {}
+        for part in string.gmatch(pathStr, "[^/]+") do
+            table.insert(parts, part)
+        end
+
+        for i = #parts, 1, -1 do
+          if parts[i]:sub(-4) == ".app" then
+            local subPath = {}
+            for j = 1, i do
+                table.insert(subPath, parts[j])
+            end
+            local appPath = "/" .. table.concat(subPath, "/")
+            local info = hs.application.infoForBundlePath(appPath)
+            if info and info.CFBundleIdentifier then
+              extraSearchPattern = info.CFBundleIdentifier
+              image = hs.image.imageFromAppBundle(info.CFBundleIdentifier)
+              break
+            end
+          end
+        end
+      end
+    end
     choices[#choices + 1] = {
       text = appname,
       subText = title,
-      image = app:bundleID() and hs.image.imageFromAppBundle(appid),
+      image = image,
       id = #choices + 1,
       appid = appid,
       extraPattern = extraSearchPattern
