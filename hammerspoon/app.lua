@@ -3617,12 +3617,9 @@ appHotKeyCallbacks = {
           maxX = math.max(maxX, buttons[#buttons - 2].AXPosition.x)
           local mousePosition = hs.mouse.absolutePosition()
           local position = hs.geometry.point{ maxX + 100, buttons[#buttons].AXPosition.y }
-          hs.eventtap.event.newMouseEvent(
-              hs.eventtap.event.types.leftMouseDown, position):post()
-          hs.eventtap.event.newMouseEvent(
-              hs.eventtap.event.types.leftMouseUp, position):post()
-          hs.eventtap.event.newMouseEvent(
-              hs.eventtap.event.types.mouseMoved, mousePosition):post()
+          mouseDown(position)
+          mouseUp(position)
+          mouseMove(mousePosition)
           hs.timer.usleep(1000000)
         end
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
@@ -6259,14 +6256,11 @@ appHotKeyCallbacks = {
         ]], app:bundleID()))
         if isAdvancedMode ~= "1" then
           local position = hs.mouse.absolutePosition()
-          hs.eventtap.event.newMouseEvent(
-              hs.eventtap.event.types.mouseMoved, uioffset(icon, {-10, 10})):post()
+          mouseMove(uioffset(icon, {-10, 10}))
           hs.timer.doAfter(0.2, function()
-            hs.eventtap.event.newMouseEvent(
-                hs.eventtap.event.types.mouseMoved, uioffset(icon, {-20, 10})):post()
+            mouseMove(uioffset(icon, {-20, 10}))
             hs.timer.doAfter(0.2, function()
-              hs.eventtap.event.newMouseEvent(
-                  hs.eventtap.event.types.mouseMoved, position):post()
+              mouseMove(position)
             end)
           end)
         else
@@ -7480,11 +7474,9 @@ appHotKeyCallbacks = {
         local menuItem = getc(menu, AX.MenuItem, title)
         if menuItem then
           Callback.Press(menu.AXParent)
-          hs.eventtap.event.newMouseEvent(
-            hs.eventtap.event.types.mouseMoved, uioffset(menuItem, { 20, 5 })):post()
+          mouseMove(uioffset(menuItem, { 20, 5 }))
           hs.timer.doAfter(0.1, function()
-            hs.eventtap.event.newMouseEvent(
-              hs.eventtap.event.types.mouseMoved, uioffset(menuItem, { 10, 5 })):post()
+            mouseMove(uioffset(menuItem, { 10, 5 }))
           end)
         end
       end

@@ -323,6 +323,37 @@ function applicationVersion(appid)
   return major, minor, patch
 end
 
+function mouseMove(position, modifiers)
+  hs.eventtap.event.newMouseEvent(
+    hs.eventtap.event.types.mouseMoved,
+    position, modifiers
+  ):post()
+end
+
+function mouseDown(position, modifiers)
+  hs.eventtap.event.newMouseEvent(
+    hs.eventtap.event.types.leftMouseDown,
+    position, modifiers
+  ):post()
+end
+
+function mouseUp(position, modifiers)
+  hs.eventtap.event.newMouseEvent(
+    hs.eventtap.event.types.leftMouseUp,
+    position, modifiers
+  ):post()
+end
+
+function mouseDrag(start_position, end_position, modifiers)
+  mouseMove(start_position, modifiers)
+  mouseDown(start_position, modifiers)
+  hs.eventtap.event.newMouseEvent(
+    hs.eventtap.event.types.leftMouseDragged,
+    end_position, modifiers
+  ):post()
+  mouseUp(end_position, modifiers)
+end
+
 function getSSID(interface)
   local ssid = hs.wifi.currentNetwork()
   if ssid == nil then
@@ -4808,11 +4839,9 @@ MENUBAR_MANAGER_SHOW = {
       }
       hs.mouse.absolutePosition(point)
 
-      hs.eventtap.event.newMouseEvent(
-          hs.eventtap.event.types.leftMouseDown, point, {Mod.Alt.Short}):post()
+      mouseDown(point, {Mod.Alt.Short})
       hs.timer.usleep(0.05 * 1000000)
-      hs.eventtap.event.newMouseEvent(
-          hs.eventtap.event.types.leftMouseUp, point, {Mod.Alt.Short}):post()
+      mouseUp(point, {Mod.Alt.Short})
 
       hs.mouse.absolutePosition(oldPos)
     end
@@ -4923,11 +4952,9 @@ MENUBAR_MANAGER_SHOW = {
       }
       hs.mouse.absolutePosition(point)
 
-      hs.eventtap.event.newMouseEvent(
-          hs.eventtap.event.types.leftMouseDown, point, {Mod.Alt.Short}):post()
+      mouseDown(point, {Mod.Alt.Short})
       hs.timer.usleep(0.05 * 1000000)
-      hs.eventtap.event.newMouseEvent(
-          hs.eventtap.event.types.leftMouseUp, point, {Mod.Alt.Short}):post()
+      mouseUp(point, {Mod.Alt.Short})
 
       hs.mouse.absolutePosition(oldPos)
     end
@@ -4949,11 +4976,9 @@ MENUBAR_MANAGER_SHOW = {
         index = map and map[index]
         if index == nil then return true end
       end
-      hs.eventtap.event.newMouseEvent(
-          hs.eventtap.event.types.mouseMoved, uioffset(icon, {-10, 10})):post()
+      mouseMove(uioffset(icon, {-10, 10}))
       hs.timer.doAfter(0.2, function()
-        hs.eventtap.event.newMouseEvent(
-            hs.eventtap.event.types.mouseMoved, uioffset(icon, {-20, 10})):post()
+        mouseMove(uioffset(icon, {-20, 10}))
         hs.timer.doAfter(3, function()
           local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
           if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
