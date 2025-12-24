@@ -9452,6 +9452,11 @@ local specialToolbarButtons = {
       return getc(g, AX.Group, 1, AX.StaticText, 1)
     end)
     return buttons, true
+  end),
+  ["com.netease.uuremote"] = waitForSettings(function(winUI)
+    local toolbar = getc(winUI, AX.Toolbar, 1)
+    return tmap(getc(toolbar, AX.Group) or {},
+        function(g) return getc(g, AX.StaticText, 1) end), true
   end)
 }
 
