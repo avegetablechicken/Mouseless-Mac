@@ -2724,7 +2724,11 @@ local function registerSearchMenuBar()
             (left.AXPosition.x + left.AXSize.w + right.AXPosition.x) / 2,
             left.AXPosition.y + left.AXSize.h / 2
           )
-          leftClickAndRestore(position)
+          if choice.appid == "at.obdev.littlesnitch.agent" then
+            rightClickAndRestore(position)
+          else
+            leftClickAndRestore(position)
+          end
         end
         return
       end
