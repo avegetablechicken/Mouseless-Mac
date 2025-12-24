@@ -381,6 +381,7 @@ function newHotkeySpec(spec, ...)
 end
 
 function bindHotkeySpecImpl(spec, ...)
+  if spec == nil then return end
   local hotkey = newHotkeyImpl(spec.mods, spec.key, ...)
   if hotkey ~= nil then
     local validHyperModal = tfind(HyperModalList, function(modal)
@@ -423,7 +424,7 @@ function registerURLHotkeyMessage(event, key, value, message)
   URLHotkeyMessages[event][key][value] = message
 end
 
-local misc = KeybindingConfigs.hotkeys.global
+local misc = KeybindingConfigs.hotkeys.global or {}
 
 -- toggle hotkeys
 FLAGS["SUSPEND"] = false
@@ -443,15 +444,19 @@ local toggleHotkey = bindHotkeySpecImpl(misc["toggleHotkeys"], "Toggle Hotkeys",
     HSKeybindings:update(validOnly, showCustom, showApp)
   end
 end)
-toggleHotkey.kind = HK.PRIVELLEGE
+if toggleHotkey then
+  toggleHotkey.kind = HK.PRIVELLEGE
+end
 
 -- reload
-bindHotkeySpec(misc["reloadHammerspoon"], "Reload Hammerspoon", function()
-  hs.reload()
-end).kind = HK.PRIVELLEGE
+local reloadHotkey = bindHotkeySpec(misc["reloadHammerspoon"], "Reload Hammerspoon",
+    function() hs.reload() end)
+if reloadHotkey then
+  reloadHotkey.kind = HK.PRIVELLEGE
+end
 
 -- toggle hamerspoon console
-bindHotkeySpec(misc["toggleConsole"], "Toggle Hammerspoon Console",
+local consoleHotkey = bindHotkeySpec(misc["toggleConsole"], "Toggle Hammerspoon Console",
 function()
   local consoleWin = hs.console.hswindow()
   if consoleWin and consoleWin:isVisible() then
@@ -461,7 +466,10 @@ function()
   else
     hs.toggleConsole()
   end
-end).kind = HK.PRIVELLEGE
+end)
+if consoleHotkey then
+  consoleHotkey.kind = HK.PRIVELLEGE
+end
 
 processesExecEvery = {}
 function ExecContinuously(action)

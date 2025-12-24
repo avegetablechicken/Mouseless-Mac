@@ -1,4 +1,4 @@
-local misc = KeybindingConfigs.hotkeys.global
+local misc = KeybindingConfigs.hotkeys.global or {}
 local miscConfig = {}
 if exists("config/misc.json") then
   miscConfig = hs.json.read("config/misc.json")
@@ -6,7 +6,7 @@ end
 
 -- call `ShortCuts` to copy to PC
 local iconForShortcuts = hs.image.imageFromAppBundle("com.apple.shortcuts")
-bindHotkeySpec(misc["copyToPC"], "Copy to PC",
+local copyPCHotkey = bindHotkeySpec(misc["copyToPC"], "Copy to PC",
 function()
   hs.eventtap.keyStroke("⌘", "C")
   local task = hs.task.new("/usr/bin/osascript", nil,
@@ -20,10 +20,13 @@ function()
       if app then app:kill() end
     end
   end)
-end).icon = iconForShortcuts
+end)
+if copyPCHotkey then
+  copyPCHotkey.icon = iconForShortcuts
+end
 
 -- call `ShortCuts` to paste from PC
-bindHotkeySpec(misc["pasteFromPC"], "Paste from PC",
+local pastePCHotkey = bindHotkeySpec(misc["pasteFromPC"], "Paste from PC",
 function()
   local task = hs.task.new("/usr/bin/osascript",
       function(exitCode)
@@ -39,7 +42,10 @@ function()
       if app then app:kill() end
     end
   end)
-end).icon = iconForShortcuts
+end)
+if pastePCHotkey then
+  pastePCHotkey.icon = iconForShortcuts
+end
 
 -- hold command and double tap C to prepend to pasteboard
 local pasteboardKeyDown = false
@@ -1651,4 +1657,6 @@ function()
   chooser:choices(choices)
   chooser:show()
 end)
-searchHotkey.kind = HK.PRIVELLEGE
+if searchHotkey then
+  searchHotkey.kind = HK.PRIVELLEGE
+end

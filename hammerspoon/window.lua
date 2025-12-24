@@ -2,7 +2,7 @@ local windowParams = KeybindingConfigs["parameters"] or {}
 local moveStep = windowParams.windowMoveStep or 20
 local resizeStep = windowParams.windowResizeStep or 100
 
-local winHK = KeybindingConfigs.hotkeys.global
+local winHK = KeybindingConfigs.hotkeys.global or {}
 
 local function newWindow(...)
   local hotkey = newHotkeySpec(...)

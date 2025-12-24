@@ -50,7 +50,7 @@ hs.urlevent.bind("windowspace", function(eventName, params)
   if fn then fn() end
 end)
 
-local ssHK = KeybindingConfigs.hotkeys.global
+local ssHK = KeybindingConfigs.hotkeys.global or {}
 
 -- # monitor ops
 
@@ -130,22 +130,30 @@ end
 
 local adjacentMonitorHotkeys = {}
 -- move cursor to next monitor
-local hotkey = newHotkeySpec(ssHK["focusNextScreen"], "Focus on Next Screen",
-    bind(checkAndMoveCursurToMonitor, "r"))
-hotkey.subkind = HK.WIN_OP_.SPACE_SCREEN
-tinsert(adjacentMonitorHotkeys, hotkey)
+if ssHK["focusNextScreen"] then
+  local hotkey = newHotkeySpec(ssHK["focusNextScreen"], "Focus on Next Screen",
+      bind(checkAndMoveCursurToMonitor, "r"))
+  hotkey.subkind = HK.WIN_OP_.SPACE_SCREEN
+  tinsert(adjacentMonitorHotkeys, hotkey)
+end
 -- move cursor to previous monitor'
-local hotkey = newHotkeySpec(ssHK["focusPrevScreen"], "Focus on Previous Screen",
-    bind(checkAndMoveCursurToMonitor, "l"))
-hotkey.subkind = HK.WIN_OP_.SPACE_SCREEN
-tinsert(adjacentMonitorHotkeys, hotkey)
+if ssHK["focusPrevScreen"] then
+  local hotkey = newHotkeySpec(ssHK["focusPrevScreen"], "Focus on Previous Screen",
+      bind(checkAndMoveCursurToMonitor, "l"))
+  hotkey.subkind = HK.WIN_OP_.SPACE_SCREEN
+  tinsert(adjacentMonitorHotkeys, hotkey)
+end
 
 -- move window to next monitor
-tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToNextScreen"], "Move to Next Monitor",
-    bind(checkAndMoveWindowToMonitor, "r")))
+if ssHK["moveToNextScreen"] then
+  tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToNextScreen"], "Move to Next Monitor",
+      bind(checkAndMoveWindowToMonitor, "r")))
+end
 -- move window to previous monitor
-tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToPrevScreen"], "Move to Previous Monitor",
-    bind(checkAndMoveWindowToMonitor, "l")))
+if ssHK["moveToPrevScreen"] then
+  tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToPrevScreen"], "Move to Previous Monitor",
+      bind(checkAndMoveWindowToMonitor, "l")))
+end
 
 local focusMonitorHotkeys = {}
 local moveToScreenHotkeys = {}
@@ -193,8 +201,10 @@ local function registerMonitorHotkeys()
             focusScreen(hs.screen.allScreens()[i])
           end
         end)
-    hotkey.subkind = HK.WIN_OP_.SPACE_SCREEN
-    tinsert(focusMonitorHotkeys, hotkey)
+    if hotkey then
+      hotkey.subkind = HK.WIN_OP_.SPACE_SCREEN
+      tinsert(focusMonitorHotkeys, hotkey)
+    end
   end
 end
 registerMonitorHotkeys()

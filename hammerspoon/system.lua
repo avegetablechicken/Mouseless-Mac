@@ -955,12 +955,14 @@ end
 registerProxyMenuWrapper()
 
 
-local menubarHK = KeybindingConfigs.hotkeys.global
+local menubarHK = KeybindingConfigs.hotkeys.global or {}
 
 local proxyHotkey = bindHotkeySpec(menubarHK["showProxyMenu"], "Show Proxy Menu",
     bind(clickRightMenuBarItem, {hs.settings.bundleID, proxy:title()}))
-proxyHotkey.kind = HK.MENUBAR
-proxyHotkey.icon = hs.image.imageFromAppBundle("com.apple.systempreferences")
+if proxyHotkey then
+  proxyHotkey.kind = HK.MENUBAR
+  proxyHotkey.icon = hs.image.imageFromAppBundle("com.apple.systempreferences")
+end
 
 for appname, appid in pairs(proxyAppBundleIDs) do
   ExecOnSilentLaunch(appid, function()
