@@ -10849,7 +10849,6 @@ end
 AutoHideQuitWindowFilter:subscribe(hs.window.filter.windowDestroyed,
   function(win)
     if win == nil or win:application() == nil then return end
-    local appid = win:application():bundleID()
     processAppWithoutWindow(win:application())
   end)
 
