@@ -47,7 +47,7 @@ end
 
 -- helper mission control functions
 
-function getMissionControlGroup()
+local function getMissionControlGroup()
   local dock_app = hs.application.applicationsForBundleID("com.apple.dock")[1]
   local dock_element = hs.axuielement.applicationElement(dock_app)
   for _, element in ipairs(dock_element) do
@@ -59,7 +59,7 @@ function getMissionControlGroup()
   return nil, "mission control is not open"
 end
 
-function getDisplayGroups()
+local function getDisplayGroups()
   local mc_group, err = getMissionControlGroup()
   if err then
     return nil, err
@@ -75,7 +75,7 @@ function getDisplayGroups()
   return display_groups
 end
 
-function getMissionControlWindows()
+local function getMissionControlWindows()
   local display_groups, err = getDisplayGroups()
   if err then
     return nil, err
@@ -95,7 +95,7 @@ function getMissionControlWindows()
   return windows
 end
 
-function getMissionControlSpaces()
+local function getMissionControlSpaces()
   local display_groups, err = getDisplayGroups()
   if err or not display_groups then
     return nil, err
