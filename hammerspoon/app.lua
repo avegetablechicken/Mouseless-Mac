@@ -9299,7 +9299,8 @@ local function registerResizeHotkeys(app)
   else
     FLAGS["NO_MOVE_RESIZE"] = nil
   end
-  if menuItem == nil then
+  if menuItem == nil and
+      tcontain(toappui(app):attributeNames() or {}, "AXFocusedWindow") then
     FullscreenObserver = uiobserver.new(app:pid())
     FullscreenObserver:addWatcher(toappui(app), uinotifications.windowResized)
     FullscreenObserver:callback(function()
