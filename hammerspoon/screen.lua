@@ -280,10 +280,6 @@ tinsert(adjacentSpaceHotkeys, newWindow(ssHK["moveToNextSpace"], "Move to Next S
 tinsert(adjacentSpaceHotkeys, newWindow(ssHK["moveToPrevSpace"], "Move to Previous Space",
     bind(checkAndMoveWindowToSpace, "l")))
 
-for _, hotkey in ipairs(adjacentSpaceHotkeys) do
-  hotkey.icon = image
-end
-
 -- Register hotkeys for moving windows to indexed spaces.
 local moveToSpaceHotkeys = {}
 local function registerMoveToSpaceHotkeys()
@@ -329,7 +325,6 @@ local function registerMoveToSpaceHotkeys()
         win:focus()
       end)
     if hotkey then
-      hotkey.icon = image
       tinsert(moveToSpaceHotkeys, hotkey)
     end
   end
