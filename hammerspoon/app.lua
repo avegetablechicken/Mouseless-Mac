@@ -9383,9 +9383,36 @@ local function updateAppLocale(appid)
 end
 
 
--- ## hotkeys or configs shared by multiple apps
+------------------------------------------------------------
+-- Shared hotkeys and behaviors across multiple applications
+--
+-- This section defines cross-app hotkeys that:
+--   - are not bound to a single app explicitly
+--   - depend on menu bar structure or standard menu items
+--   - need to adapt dynamically to localization and app behaviors
+--
+-- Typical examples include:
+--   - remapping tab navigation
+--   - opening "Recent" menus
+--   - window zoom / resize
+--   - menu bar navigation (Alt-based access)
+--   - open/save panel navigation
+--
+-- Most hotkeys here are:
+--   - registered lazily
+--   - rebuilt when menu bar changes
+--   - automatically cleaned up on app deactivation
+------------------------------------------------------------
 
--- basically aims to remap ctrl+` to shift+ctrl+tab to make it more convenient for fingers
+-- Remap "previous tab" behavior for apps that support tab switching.
+--
+-- This globally remaps:
+--   Ctrl + `  →  Shift + Ctrl + Tab
+--
+-- The hotkey is:
+--   - skipped if app explicitly defines its own handler
+--   - skipped for excluded apps
+--   - dynamically rebuilt when menu items change
 local remapPreviousTabHotkey
 local function remapPreviousTab(app, menuItems)
   if remapPreviousTabHotkey then
@@ -9398,6 +9425,9 @@ local function remapPreviousTab(app, menuItems)
   if specApp ~= nil or spec == nil or tcontain(spec.excluded or {}, appid) then
     return
   end
+
+  -- Register a conditional hotkey that selects the resolved menu item
+  -- only when the menu item exists and is enabled.
   local callback = function(menuItemPath)
     local fn = function()
       app:selectMenuItem(menuItemPath)
@@ -9428,7 +9458,12 @@ local function remapPreviousTab(app, menuItems)
   end
 end
 
--- register hotkey to open recent when it is available
+-- Register a shared hotkey for "Open Recent" menu item.
+--
+-- The hotkey:
+--   - is only registered if the menu exists and is enabled
+--   - respects localization and app-specific menu naming
+--   - is skipped if app defines its own implementation
 local openRecentHotkey
 local function registerOpenRecent(app)
   if openRecentHotkey then
@@ -9441,6 +9476,11 @@ local function registerOpenRecent(app)
   if specApp ~= nil or spec == nil or tcontain(spec.excluded or {}, appid) then
     return
   end
+
+  -- Resolve localized "File > Open Recent" menu path across:
+  --   - Apple apps
+  --   - third-party apps
+  --   - mixed localization environments
   local localizedFile = 'File'
   if app:findMenuItem({ localizedFile }) == nil then
     localizedFile = localizedMenuBarItem("File", appid)
@@ -9499,6 +9539,12 @@ local function registerOpenRecent(app)
   end
 end
 
+-- Register shared window zoom hotkeys (Zoom / Zoom All).
+--
+-- These hotkeys are bound only when:
+--   - the corresponding menu items exist
+--   - the app does not override them
+--   - the app is not excluded
 local zoomHotkeys = {}
 local function registerZoomHotkeys(app)
   for _, hotkey in pairs(zoomHotkeys) do
@@ -9560,6 +9606,15 @@ local function registerZoomHotkeys(app)
   end
 end
 
+-- Enable or disable resize-related hotkeys based on fullscreen state.
+--
+-- Background:
+--   Since macOS Sequoia, native "Move & Resize" menu items may
+--   conflict with custom resize hotkeys.
+--
+-- This function dynamically:
+--   - disables conflicting hotkeys in fullscreen spaces
+--   - re-enables them when returning to normal spaces
 FullscreenObserver = nil
 local WINDOWMOVED_DELAY = 0.5
 local windowMovedTimer
@@ -9612,6 +9667,7 @@ local function registerResizeHotkeys(app)
     FullscreenObserver = uiobserver.new(app:pid())
     FullscreenObserver:addWatcher(toappui(app), uinotifications.windowResized)
     FullscreenObserver:callback(function()
+      -- Delay handling to debounce continuous resize events
       if windowMovedTimer then
         windowMovedTimer:setNextTrigger(WINDOWMOVED_DELAY)
         return
@@ -9633,11 +9689,13 @@ local function registerResizeHotkeys(app)
   end
 end
 
+-- Fetch toolbar buttons from a window UI hierarchy.
 local function getToolbarButtons(winUI)
   local toolbar = getc(winUI, AX.Toolbar, 1)
   return getc(toolbar, AX.Button) or {}
 end
 
+-- Fetch tab-group buttons for apps that implement tabs as radio buttons.
 local function getTabGroupButtons(winUI)
   local tabgroup = getc(winUI, AX.TabGroup, 1)
   local buttons = {}
@@ -9650,6 +9708,9 @@ local function getTabGroupButtons(winUI)
   end
 end
 
+-- Retry wrapper for toolbar discovery when UI is not immediately ready.
+--
+-- Used for apps where toolbar elements appear asynchronously.
 local function waitForSettings(fn, maxWaitTime)
   return function(winUI)
     fn = fn or getToolbarButtons
@@ -9671,6 +9732,10 @@ local function waitForSettings(fn, maxWaitTime)
   end
 end
 
+-- App-specific overrides for extracting toolbar buttons.
+--
+-- Some apps use non-standard accessibility hierarchies.
+-- This table provides per-app strategies to locate toolbar-like controls.
 local specialToolbarButtons = {
   ["com.apple.TextEdit"] = getTabGroupButtons,
   ["org.xquartz.X11"] = getTabGroupButtons,
@@ -9766,6 +9831,15 @@ local specialToolbarButtons = {
   end)
 }
 
+-- Register numbered navigation hotkeys for Settings / Preferences windows.
+--
+-- Features:
+--   - Dynamically detects toolbar buttons
+--   - Binds numeric hotkeys to toolbar items
+--   - Cleans up automatically on window close / app deactivation
+--
+-- This enables keyboard navigation in apps that lack native shortcuts
+-- for settings toolbar switching.
 local settingsToolbarHotkeys = {}
 local function registerNavigationForSettingsToolbar(app)
   local appid = app:bundleID() or app:name()
@@ -9865,6 +9939,10 @@ local function registerNavigationForSettingsToolbar(app)
   Evt.StopOnTerminated(app, closeObserver, deleteFunc)
 end
 
+-- Observe selection of "Settings…" / "Preferences…" menu items.
+--
+-- When triggered, automatically registers toolbar navigation hotkeys
+-- for the newly opened settings window.
 local function registerObserverForSettingsMenuItem(app)
   local appUI = toappui(app)
 
@@ -9966,6 +10044,18 @@ local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
   end
   observer:callback(callback)
 end
+
+------------------------------------------------------------
+-- Open / Save panel navigation and confirmation hotkeys
+--
+-- This section adds:
+--   - numeric navigation for sidebar locations
+--   - hotkeys to confirm "Don't Save" / delete dialogs
+--
+-- Behavior:
+--   - only active while open/save panels are visible
+--   - dynamically adapts to app-specific UI structures
+------------------------------------------------------------
 
 -- bind hotkeys for open or save panel that are similar in `Finder`
 -- & hotkey to confirm delete
@@ -10077,6 +10167,12 @@ local specialSidebarRowsSelectFuncs = {
   end
 }
 
+-- Register navigation and confirmation hotkeys for open/save panels.
+--
+-- Hotkeys are:
+--   - bound per focused window
+--   - rebuilt on panel content changes
+--   - cleaned up on panel close or app deactivation
 local function registerForOpenSavePanel(app, retry)
   for _, hotkey in ipairs(openSavePanelHotkeys) do
     hotkey:delete()
@@ -10246,7 +10342,13 @@ local function registerForOpenSavePanel(app, retry)
   Evt.StopOnDeactivated(app, observer)
 end
 
--- bind `alt+?` hotkeys to select left menu bar items
+-- Bind a single Alt-based menu bar navigation hotkey.
+--
+-- This handles:
+--   - non-frontmost apps (e.g. Steam helper)
+--   - focus redirection
+--   - menu activation via accessibility APIs
+
 local altMenuBarItemHotkeys = {}
 
 local function bindAltMenu(app, mods, key, message, fn)
@@ -10359,6 +10461,17 @@ Evt.OnRunning("com.tencent.xinWeChat", function(app)
   end
 end)
 
+-- Dynamically bind Alt-based hotkeys for menu bar items.
+--
+-- Supports:
+--   - letter-based access (Alt + letter)
+--   - index-based access (Alt + number)
+--   - window-specific menu bars
+--
+-- Hotkeys are rebuilt when:
+--   - menu bar structure changes
+--   - focused window changes
+--   - localization differs
 local function altMenuBarItem(app, reinvokeKey)
   -- delete previous hotkeys
   for _, hotkey in ipairs(altMenuBarItemHotkeys) do
@@ -10639,7 +10752,9 @@ local function altMenuBarItem(app, reinvokeKey)
   end
 end
 
--- some apps may change their menu bar items irregularly
+-- Generate a comparable string representation of menu bar titles.
+--
+-- Used to detect structural changes in menu bars.
 local menuBarItemTitlesString = { app = {}, win = {} }
 
 local function getMenuBarItemTitlesStringImpl(menuBarItems)
@@ -10708,6 +10823,9 @@ if exists(appsMayChangeMenuBarTmpFile) then
   end
 end
 
+-- Callback invoked when menu bar structure may have changed.
+--
+-- This triggers re-registration of shared hotkeys.
 local function appMenuBarChangeCallback(app)
   local appid = app:bundleID() or app:name()
   local menuBarItemStr, winMenuBarItemStr = getMenuBarItemTitlesString(app)
@@ -10740,6 +10858,12 @@ local function appMenuBarChangeCallback(app)
   end)
 end
 
+-- Register observers to detect menu bar changes.
+--
+-- Some apps change menu bars:
+--   - dynamically
+--   - per focused window
+--   - asynchronously after launch
 local function registerObserverForMenuBarChange(app)
   local appid = app:bundleID() or app:name()
 
