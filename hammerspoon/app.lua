@@ -8,12 +8,24 @@ foreach(hs.application.runningApplications(), function(app)
 end)
 
 
+------------------------------------------------------------
 -- # appkeys
+-- Application-level hotkeys (launch / focus / hide)
+------------------------------------------------------------
 
--- launch or hide applications
+-- Launch an application or hide it if already focused
+--
+-- Behavior:
+--  • If the app is not focused, bring it to front (or launch it)
+--  • If the app is already focused, hide it
+--  • Special handling is applied for Finder due to Desktop windows
 local function focusOrHide(hint)
   local app = nil
 
+  -- Resolve application hint:
+  --  • table: try each entry until one resolves
+  --  • string: bundle id or app name
+  --  • otherwise: assume hs.application
   if type(hint) == "table" then
     for _, h in ipairs(hint) do
       app = find(h)
@@ -25,6 +37,12 @@ local function focusOrHide(hint)
     app = hint
   end
 
+  -- Finder special case
+  --
+  -- Finder always has a "Desktop" window, which breaks the
+  -- usual focus-or-hide logic. We explicitly distinguish:
+  --  • desktop-only state
+  --  • non-desktop Finder windows
   if app ~= nil and app:bundleID() == "com.apple.finder" then
     local appid = app:bundleID()
     local windowFilter = hs.window.filter.new(false):setAppFilter(app:name())
@@ -68,6 +86,10 @@ local function focusOrHide(hint)
   end
 end
 
+-- Resolve Parallels VM application bundle path by OS name
+--
+-- Parallels stores VMs as *.pvm bundles, but the internal
+-- app name may not exactly match the requested OS name.
 local function getParallelsVMPath(osname)
   local PVMDir = os.getenv("HOME") .. "/Parallels"
   local path = strfmt(PVMDir .. "/%s.pvm/%s.app", osname, osname)
@@ -83,8 +105,13 @@ local function getParallelsVMPath(osname)
   end
 end
 
+-- Registered application hotkeys
 local appkeys = {}
 
+-- Register all application-level hotkeys
+--
+-- Hotkeys are rebuilt every time this function runs to ensure
+-- consistency with current configuration and running apps.
 local function registerAppKeys()
   for _, hotkey in ipairs(appkeys) do
     hotkey:delete()
@@ -133,6 +160,8 @@ local function registerAppKeys()
       end
       appid = hs.application.infoForBundlePath(appPath).CFBundleIdentifier
     end
+
+    -- Register hotkey if application is resolvable
     if appPath ~= nil then
       local appname
       if appid ~= nil then
@@ -159,12 +188,27 @@ local function registerAppKeys()
   end
 end
 
+-- Register appkeys immediately on load
 registerAppKeys()
 
 
+------------------------------------------------------------
 -- ## function utilities for process management on app switching
+--
+-- This section provides a unified event-dispatch layer for
+-- application lifecycle changes, including:
+--  • launch / running
+--  • activation / deactivation
+--  • termination
+--
+-- All callbacks registered here are later invoked by the
+-- global application watcher defined in init.lua.
+-- Individual modules only register intent here; they do NOT
+-- directly interact with hs.application.watcher.
+------------------------------------------------------------
 
 -- get hs.application from AXUIElement
+-- Used when callbacks are triggered from UI observers
 local function getAppFromDescendantElement(elem)
   local appUI = elem
   repeat
@@ -173,7 +217,8 @@ local function getAppFromDescendantElement(elem)
   return appUI:asHSApplication()
 end
 
--- get app's bundle identifier
+-- normalize application identifier
+-- Accepts bundleID, hs.application, or AX element
 local function getAppId(app)
   if type(app) == 'string' then
     return app
@@ -187,14 +232,25 @@ local function getAppId(app)
   end
 end
 
+-- check whether an app is a background-only LSUIElement
+-- such apps do not emit normal launch/terminate events
 local function isLSUIElement(appid)
   local info = hs.application.infoForBundleID(appid)
   return info and info.LSUIElement == true
 end
 
+------------------------------------------------------------
+-- Evt
+--
+-- Centralized registry for application lifecycle callbacks.
+-- Callbacks are grouped by event type and app identifier.
+------------------------------------------------------------
 local Evt = {}
 
+-- callbacks executed when application is launched
 Evt.ProcOnLaunched = {}
+-- Register a callback to run when an app is launched
+-- LSUIElement apps are handled via silent launch polling
 Evt.OnLaunched = function(appid, action)
   if isLSUIElement(appid) then
     ExecOnSilentLaunch(appid, action)
@@ -207,6 +263,8 @@ Evt.OnLaunched = function(appid, action)
   tinsert(Evt.ProcOnLaunched[appid], action)
 end
 
+-- Register a callback that runs immediately if app is already running,
+-- otherwise runs when the app is launched
 Evt.OnRunning = function(appid, action)
   Evt.OnLaunched(appid, action)
   local app
@@ -218,7 +276,9 @@ Evt.OnRunning = function(appid, action)
   if app then action(app) end
 end
 
+-- callbacks executed when application becomes frontmost
 Evt.ProcOnActivated = {}
+-- Register a callback for app activation
 Evt.OnActivated = function(appid, action)
   if Evt.ProcOnActivated[appid] == nil then
     Evt.ProcOnActivated[appid] = {}
@@ -226,7 +286,9 @@ Evt.OnActivated = function(appid, action)
   tinsert(Evt.ProcOnActivated[appid], action)
 end
 
+-- callbacks executed when application loses focus
 Evt.ProcOnDeactivated = {}
+-- Register a callback for app deactivation
 Evt.OnDeactivated = function(app, action)
   local appid = getAppId(app)
   if Evt.ProcOnDeactivated[appid] == nil then
@@ -235,7 +297,10 @@ Evt.OnDeactivated = function(app, action)
   tinsert(Evt.ProcOnDeactivated[appid], action)
 end
 
+-- callbacks executed when application terminates
 Evt.ProcOnTerminated = {}
+-- Register a callback for app termination
+-- LSUIElement apps are handled via silent quit polling
 Evt.OnTerminated = function(app, action)
   local appid = getAppId(app)
   if isLSUIElement(appid) then
@@ -249,6 +314,7 @@ Evt.OnTerminated = function(app, action)
   tinsert(Evt.ProcOnTerminated[appid], action)
 end
 
+-- Stop a UI observer when the app is deactivated
 Evt.StopOnDeactivated = function(app, observer, action)
   local appid = getAppId(app)
   Evt.OnDeactivated(appid, function()
@@ -258,6 +324,7 @@ Evt.StopOnDeactivated = function(app, observer, action)
   end)
 end
 
+-- Stop a UI observer when the app terminates
 Evt.StopOnTerminated = function(app, observer, action)
   local appid = getAppId(app)
   Evt.OnTerminated(appid, function()
@@ -267,6 +334,8 @@ Evt.StopOnTerminated = function(app, observer, action)
   end)
 end
 
+-- Register a one-shot observer that fires when a UI element is destroyed
+-- Optionally stops on app deactivation or termination
 Evt.onDestroy = function(element, callback, stopWhen, callbackOnStop)
   if not element:isValid() then return end
   local app = getAppFromDescendantElement(element)
@@ -291,7 +360,31 @@ Evt.onDestroy = function(element, callback, stopWhen, callbackOnStop)
   return closeObserver
 end
 
--- fetch localized string as hotkey message after activating the app
+------------------------------------------------------------
+-- ## localized title generators for hotkey descriptions
+--
+-- This section provides a family of helper functions (TC / TG / T / TB / TMB)
+-- used to dynamically generate human-readable hotkey messages.
+--
+-- All returned values are either:
+--  • a function(app) -> string
+--  • or an immediate string when an app context is provided
+--
+-- These helpers unify:
+--  • application-specific localization
+--  • menu path resolution
+--  • fallback strategies across macOS versions
+------------------------------------------------------------
+
+-- Generate a localized title, primarily used for widely shared UI strings.
+--
+-- It searches for localized strings from system resources
+-- (AppKit, system frameworks, or other Apple-provided bundles),
+-- instead of relying on application-specific localization files.
+--
+-- This makes TC suitable for common actions such as:
+--   Hide / Quit / Back / Forward / Zoom
+-- where consistent system wording is preferred.
 local function TC(message, params, params2)
   local fn
   if message == "Hide" or message == "Quit" then
@@ -363,6 +456,8 @@ local function TC(message, params, params2)
   end
 end
 
+-- Generate localized accessibility symbol names
+-- Used for system-level UI elements (toolbar icons, symbols)
 local function TG(message, params, params2)
   local fn = function(app)
     local appid = getAppId(app)
@@ -389,6 +484,8 @@ local function TG(message, params, params2)
   end
 end
 
+-- Pick the most frequent value from a list
+-- Used when localization returns multiple candidates
 local function mostFrequent(t)
     local count = {}
     local firstIndex = {}
@@ -418,6 +515,9 @@ local function mostFrequent(t)
     return maxValue
 end
 
+-- Unified localization entry:
+--  • string      -> localized string
+--  • table path  -> localized menu path
 local function T(message, params, sep)
   local fn = function(app)
     local appid = getAppId(app)
@@ -445,6 +545,9 @@ local function T(message, params, sep)
   end
 end
 
+-- Prefix localized title with application display name
+-- Used for hotkeys that DO NOT require the target application
+-- to be running
 local function TB(appid, message)
   return function(thisAppId)
     if message == nil then
@@ -455,6 +558,7 @@ local function TB(appid, message)
   end
 end
 
+-- Same as TB, but accepts menu element instead of app bundle identifier
 local function TMB(appid, message)
   return function(menu)
     local thisAppId = getAppId(menu)
@@ -466,7 +570,16 @@ local function TMB(appid, message)
   end
 end
 
+------------------------------------------------------------
+-- ## application version comparison utilities
+--
+-- Provides composable predicates for app version matching.
+------------------------------------------------------------
+
 local Version = {}
+
+-- Build a version comparison predicate
+-- Supported operators: == ~= < <= > >=
 local function versionCompare(comp, versionStr, extra)
   local fn = function(app)
     local appid = getAppId(app)
@@ -504,29 +617,100 @@ local function versionCompare(comp, versionStr, extra)
   end
 end
 
+-- Check if app version is less than target
 Version.LessThan = function(...)
   return versionCompare("<", ...)
 end
 
+-- Check if app version is greater than target
 Version.GreaterThan = function(...)
   return versionCompare(">", ...)
 end
 
+-- Check if app version >= target
 Version.GreaterEqual = function(...)
   return versionCompare(">=", ...)
 end
 
+-- Check if app version <= target
 Version.LessEqual = function(...)
   return versionCompare("<=", ...)
 end
 
+-- Check whether app version is within a half-open interval.
+--
+-- Version.Between(a, b) means:
+--   a <= version < b
 Version.Between = function(version1, version2)
   return function(app)
     return Version.GreaterEqual(app, version1) and Version.LessThan(app, version2)
   end
 end
 
+------------------------------------------------------------
+-- Parsing and emitting key bindings stored in plist files
+------------------------------------------------------------
+
+-- Parse a key binding encoded in macOS plist format.
+--
+-- Some applications store their key bindings in plist files,
+-- where modifiers and keys are represented as bit masks.
+local function parsePlistKeyBinding(mods, key)
+  mods = tonumber(mods) key = tonumber(key)
+  if mods == nil or key == nil then return end
+  key = hs.keycodes.map[key]
+  local modList = {}
+  if mods >= (1 << 17) then
+    if mods >= (1 << 23) then tinsert(modList, Mod.Fn) end
+    if (mods % (1 << 23)) >= (1 << 20) then tinsert(modList, Mod.Cmd.Long) end
+    if (mods % (1 << 20)) >= (1 << 19) then tinsert(modList, Mod.Alt.Long) end
+    if (mods % (1 << 19)) >= (1 << 18) then tinsert(modList, Mod.Ctrl.Long) end
+    if (mods % (1 << 18)) >= (1 << 17) then tinsert(modList, Mod.Shift.Long) end
+  else
+    if mods >= (1 << 12) then tinsert(modList, Mod.Ctrl.Long) end
+    if (mods % (1 << 12)) >= (1 << 11) then tinsert(modList, Mod.Alt.Long) end
+    if (mods % (1 << 11)) >= (1 << 9) then tinsert(modList, Mod.Shift.Long) end
+    if (mods % (1 << 9)) >= (1 << 8) then tinsert(modList, Mod.Cmd.Long) end
+  end
+  return modList, key
+end
+
+-- Dump a key binding into plist-compatible encoded values.
+
+local function dumpPlistKeyBinding(mode, mods, key)
+  local modIdx = 0
+  if mode == 1 then
+    if tcontain(mods, Mod.Cmd.Long) then modIdx = (1 << 8) end
+    if tcontain(mods, Mod.Alt.Long) then modIdx = modIdx + (1 << 11) end
+    if tcontain(mods, Mod.Ctrl.Long) then modIdx = modIdx + (1 << 12) end
+    if tcontain(mods, Mod.Shift.Long) then modIdx = modIdx + (1 << 9) end
+  elseif mode == 2 then
+    if key:lower():match("^f(%d+)$") then modIdx = 1 << 23 end
+    if tcontain(mods, Mod.Cmd.Long) then modIdx = modIdx + (1 << 20) end
+    if tcontain(mods, Mod.Alt.Long) then modIdx = modIdx + (1 << 19) end
+    if tcontain(mods, Mod.Ctrl.Long) then modIdx = modIdx + (1 << 18) end
+    if tcontain(mods, Mod.Shift.Long) then modIdx = modIdx + (1 << 17) end
+  end
+  key = hs.keycodes.map[key]
+  return modIdx, key
+end
+
+------------------------------------------------------------
+-- ## callback helpers for UI actions
+--
+-- This section defines reusable callback generators that
+-- encapsulate low-level UI interactions such as:
+--  • pressing buttons
+--  • clicking coordinates
+--  • selecting rows
+--
+-- These callbacks are referenced by hotkey configs and
+-- executed by the dispatcher.
+------------------------------------------------------------
+
 local Callback = {}
+
+-- Perform AX.Press while safely handling Ctrl-modifier edge cases
 Callback.Press = function(pressable)
   local flags = hs.eventtap.checkKeyboardModifiers()
   if not flags[Mod.Ctrl.Short] then
@@ -557,25 +741,30 @@ Callback.Press = function(pressable)
   end
 end
 
+-- Select a UI row element
 Callback.UISelect = function(row)
   row.AXSelected = true
 end
 
+-- Perform a left click at a fixed position
 Callback.Click = function(position)
   leftClickAndRestore(position)
 end
 
+-- Click and hold for a specified delay
 Callback.ClickAndHold = function(delay)
   return function(position)
     leftClickAndRestore(position, nil, delay)
   end
 end
 
+-- Perform a system-level double click
 Callback.DoubleClick = function(position)
   hs.execute(strfmt([[cliclick dc:%d,%d]],
       math.floor(position.x), math.floor(position.y)), true)
 end
 
+-- Check whether an element is safely clickable and return click point
 Callback.Clickable = function(element, offset)
   if element == nil or not element:isValid() then return false end
   if offset == nil then
@@ -598,7 +787,25 @@ Callback.Clickable = function(element, offset)
 end
 
 
--- # hotkeys in specific application
+----------------------------------------------------------------------
+-- Hotkeys in specific applications
+--
+-- This section defines:
+--   1. Window / application classifiers (WF: Window Filter)
+--   2. Title providers for hotkey display
+--   3. Action callbacks bound to specific UI elements
+--
+-- Design principles:
+--   - Hotkeys are registered dynamically per application/window
+--   - A hotkey exists ONLY when its target window matches WF rules
+--   - Titles are computed lazily and may depend on UI structure
+--
+-- Core concepts:
+--   - WF (Window Filter): describes *where* a hotkey is valid
+--   - Callback: describes *what* the hotkey does
+--   - Title function: describes *how the hotkey is shown*
+----------------------------------------------------------------------
+
 local appHotKeyCallbacks
 local runningAppHotKeys = {}
 local inAppHotKeys = {}
@@ -610,8 +817,17 @@ local registerInWinHotKeys, unregisterInWinHotKeys
 local registerDaemonAppInWinHotkeys
 local registerInMenuHotkeys
 
--- ## function utilities for hotkey configs of specific application
-local appBuf, winBuf = {}, {}
+-- appBuf:
+-- Application-scoped runtime cache.
+--
+-- Data in appBuf lives until another application activates
+local appBuf = {}
+
+-- winBuf:
+-- Window-scoped runtime cache.
+--
+-- Data is automatically cleaned up when the window is destroyed.
+local winBuf = {}
 function winBuf:register(winUI, key, value)
   winBuf.observer = Evt.onDestroy(winUI, function()
     winBuf[key] = nil
@@ -2350,47 +2566,11 @@ end
 
 -- ## functin utilities for hotkey configs
 
--- some apps save key bindings in plist files
--- we need to parse them and remap specified key bindings to them
-local function parsePlistKeyBinding(mods, key)
-  mods = tonumber(mods) key = tonumber(key)
-  if mods == nil or key == nil then return end
-  key = hs.keycodes.map[key]
-  local modList = {}
-  if mods >= (1 << 17) then
-    if mods >= (1 << 23) then tinsert(modList, Mod.Fn) end
-    if (mods % (1 << 23)) >= (1 << 20) then tinsert(modList, Mod.Cmd.Long) end
-    if (mods % (1 << 20)) >= (1 << 19) then tinsert(modList, Mod.Alt.Long) end
-    if (mods % (1 << 19)) >= (1 << 18) then tinsert(modList, Mod.Ctrl.Long) end
-    if (mods % (1 << 18)) >= (1 << 17) then tinsert(modList, Mod.Shift.Long) end
-  else
-    if mods >= (1 << 12) then tinsert(modList, Mod.Ctrl.Long) end
-    if (mods % (1 << 12)) >= (1 << 11) then tinsert(modList, Mod.Alt.Long) end
-    if (mods % (1 << 11)) >= (1 << 9) then tinsert(modList, Mod.Shift.Long) end
-    if (mods % (1 << 9)) >= (1 << 8) then tinsert(modList, Mod.Cmd.Long) end
-  end
-  return modList, key
-end
-
--- dump specified key bindings to plist files
-local function dumpPlistKeyBinding(mode, mods, key)
-  local modIdx = 0
-  if mode == 1 then
-    if tcontain(mods, Mod.Cmd.Long) then modIdx = (1 << 8) end
-    if tcontain(mods, Mod.Alt.Long) then modIdx = modIdx + (1 << 11) end
-    if tcontain(mods, Mod.Ctrl.Long) then modIdx = modIdx + (1 << 12) end
-    if tcontain(mods, Mod.Shift.Long) then modIdx = modIdx + (1 << 9) end
-  elseif mode == 2 then
-    if key:lower():match("^f(%d+)$") then modIdx = 1 << 23 end
-    if tcontain(mods, Mod.Cmd.Long) then modIdx = modIdx + (1 << 20) end
-    if tcontain(mods, Mod.Alt.Long) then modIdx = modIdx + (1 << 19) end
-    if tcontain(mods, Mod.Ctrl.Long) then modIdx = modIdx + (1 << 18) end
-    if tcontain(mods, Mod.Shift.Long) then modIdx = modIdx + (1 << 17) end
-  end
-  key = hs.keycodes.map[key]
-  return modIdx, key
-end
-
+-- Fetch menu item title as a hotkey message by key binding.
+--
+-- This helper is mainly used to:
+--   - Derive user-facing hotkey descriptions from menu key bindings
+--   - Keep displayed messages consistent with the application's menu
 local MenuItem = {}
 -- fetch title of menu item as hotkey message by key binding
 MenuItem.message = function(mods, key, titleIndex, menuBarItemTitle)
@@ -2418,8 +2598,16 @@ MenuItem.message = function(mods, key, titleIndex, menuBarItemTitle)
   end
 end
 
--- check if the menu item whose path is specified is enabled
--- if so, return the path of the menu item
+-- Check whether a specified menu item path is currently enabled.
+--
+-- This function is commonly used as a hotkey condition:
+--   - It tests menu availability at runtime
+--   - It does NOT trigger the menu item
+--
+-- If an enabled menu item is found:
+--   returns true, localizedMenuPath
+-- Otherwise:
+--   returns false
 MenuItem.isEnabled = function(menuItemTitle, params, ...)
   local args = { menuItemTitle, params, ... }
   params = nil
@@ -2439,7 +2627,8 @@ MenuItem.isEnabled = function(menuItemTitle, params, ...)
   end
 end
 
--- possible reasons for failure of hotkey condition
+-- possible reasons for failure of hotkey condition-- Possible reasons for hotkey condition failure.
+--
 CF = {
   noMenuItemMatchKeybinding = 0,
   uIElementNotFocused       = 1,
@@ -2449,8 +2638,12 @@ CF = {
   userConditionFail         = 5,
 }
 
--- check if the menu item whose key binding is specified is enabled
--- if so, return the path of the menu item
+-- Check whether a menu item associated with a specific key binding
+-- is currently enabled.
+--
+-- This differs from MenuItem.isEnabled in that:
+--   - The menu item is identified by its key binding
+--   - The check is closer to the actual shortcut behavior
 MenuItem.keybindingEnabled = function(mods, key, menuBarItemTitle)
   return function(app)
     local menuItem, enabled = findMenuItemByKeyBinding(app, mods, key, menuBarItemTitle)
@@ -2462,8 +2655,15 @@ MenuItem.keybindingEnabled = function(mods, key, menuBarItemTitle)
   end
 end
 
--- select the menu item returned by the condition
--- work as hotkey callback
+-- Select a menu item path returned by a hotkey condition.
+--
+-- This function is designed to be used directly as a hotkey callback.
+-- It ensures:
+--   - The correct menu bar item is activated if necessary
+--   - The final menu item is selected reliably
+--
+-- The input menuItemTitle must be a valid menu path,
+-- typically returned by MenuItem.isEnabled or MenuItem.keybindingEnabled.
 Callback.Select = function(menuItemTitle, app)
   if app.application then app = app:application() end
   if #menuItemTitle == 0 then
