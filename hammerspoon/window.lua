@@ -495,7 +495,7 @@ local function bindResizeBorderWindow(...)
 end
 
 -- Expand left border
-bindResizeBorderWindow("leftBorderExpand", "Left Border Expands",
+bindResizeBorderWindow("leftBorderExpand", "Expand Left Border",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -510,7 +510,7 @@ function()
 end)
 
 -- Shrink left border
-bindResizeBorderWindow("leftBorderShrink", "Left Border Shrinks",
+bindResizeBorderWindow("leftBorderShrink", "Shrink Left Border",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -523,7 +523,7 @@ function()
 end)
 
 -- Expand right border
-bindResizeBorderWindow("rightBorderExpand", "Right Border Expands",
+bindResizeBorderWindow("rightBorderExpand", "Expand Right Border",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -536,7 +536,7 @@ function()
 end)
 
 -- Shrink right border
-bindResizeBorderWindow("rightBorderShrink", "Right Border Shrinks",
+bindResizeBorderWindow("rightBorderShrink", "Shrink Right Border",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -547,7 +547,7 @@ function()
 end)
 
 -- Expand top border
-bindResizeBorderWindow("topBorderExpand", "Top Border Expands",
+bindResizeBorderWindow("topBorderExpand", "Expand Top Border",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -562,7 +562,7 @@ function()
 end)
 
 -- Shrink top border
-bindResizeBorderWindow("topBorderShrink", "Top Border Shrinks",
+bindResizeBorderWindow("topBorderShrink", "Shrink Top Border",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -575,7 +575,7 @@ function()
 end)
 
 -- Expand bottom border
-bindResizeBorderWindow("bottomBorderExpand", "Bottom Border Expands",
+bindResizeBorderWindow("bottomBorderExpand", "Expand Bottom Border",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -588,7 +588,7 @@ function()
 end)
 
 -- Shrink bottom border
-bindResizeBorderWindow("bottomBorderShrink", "Bottom Border Shrinks",
+bindResizeBorderWindow("bottomBorderShrink", "Shrink Bottom Border",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
