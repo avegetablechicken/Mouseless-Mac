@@ -8122,6 +8122,34 @@ local function unregisterRunningAppHotKeys(appid)
   end
 end
 
+------------------------------------------------------------
+-- Context-aware hotkey registration
+--
+-- This section implements a unified hotkey system that supports:
+--
+--   - App-scoped hotkeys (active application)
+--   - Window-scoped hotkeys (focused window, with filters)
+--   - Background (daemon) app hotkeys
+--   - Menu bar–scoped hotkeys
+--
+-- A hotkey may be registered:
+--   - eagerly or lazily
+--   - conditionally (runtime UI / menu / focus state)
+--   - chained with other hotkeys sharing the same key binding
+--
+-- The core idea is:
+--   hotkey = keybinding + condition + execution context
+--
+-- All hotkeys are dynamically enabled / disabled based on:
+--   - app lifecycle
+--   - window focus changes
+--   - menu open / close state
+------------------------------------------------------------
+
+-- Check whether an application owns menu bar status items.
+--
+-- This is used to determine whether we should register
+-- menu bar observers for hotkey validity tracking.
 local function hasStatusItems(app)
   local appid = app:bundleID() or app:name()
   local errorReadingDefaults = false
@@ -8166,8 +8194,19 @@ local function hasStatusItems(app)
   return false
 end
 
+-- Register observers to track menu bar selection state for hotkey validity.
+--
+-- Purpose:
+--   When a right-side menu bar item is expanded, certain hotkeys
+--   should be disabled or redirected to avoid interfering with menu input.
+--
+-- This observer:
+--   - Tracks menu open / close events
+--   - Sets FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"]
+--
+-- Note:
+--   This process is expensive and is registered per-app only once.
 MenuBarMenuSelectedObservers = {}
--- note: this process takes a long time for each app
 local function registerMenuBarObserverForHotkeyValidity(app)
   local appid = app:bundleID() or app:name()
   if MenuBarMenuSelectedObservers[appid] then return end
@@ -8186,9 +8225,11 @@ local function registerMenuBarObserverForHotkeyValidity(app)
       observer:addWatcher(appUI, uinotifications.menuClosed)
       observer:callback(function(_, menu, notification)
         if notification == uinotifications.menuClosed then
-          -- assume last menubar menu is closed before next menubar menu is opened
+          -- When a menu is closed, assume no menu bar item is selected
           FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = false
         else
+          -- Determine whether the opened menu belongs to the right side
+          -- of the menu bar (i.e. status items instead of app menus)
           local elem = menu.AXParent
           while elem and elem.AXRole ~= AX.MenuBar do
             elem = elem.AXParent
@@ -8211,9 +8252,19 @@ end
 WindowCreatedSinceFilter = hs.window.filter.new(true)
 local windowCreatedSinceTime = {}
 
+-- Redirect hotkey execution to the system-focused UI element if needed.
+--
+-- This wrapper handles cases where:
+--   - the hotkey target is not the frontmost app/window
+--   - a menu bar item is currently expanded
+--
+-- It ensures that:
+--   - hotkeys do not interfere with menu interaction
+--   - fallback keystrokes are sent to the correct UI context
 local function resendToFocusedUIElement(cond, nonFrontmostWindow)
   return function(obj)
     local focusedApp = hs.axuielement.systemWideElement().AXFocusedApplication
+    -- Lazily initialize RIGHT_MENUBAR_ITEM_SELECTED if unknown
     if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] == nil and focusedApp == nil then
       local apps = hs.application.runningApplications()
       local appMenuBarItems = tmap(apps, function(app)
@@ -8256,8 +8307,10 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
   end
 end
 
--- check whether the menu bar item is selected
--- if a menu is extended, hotkeys with no modifiers are disabled
+-- Disable hotkeys when a left-side menu bar menu is expanded.
+--
+-- This prevents hotkeys without modifiers from interfering
+-- with normal menu navigation.
 local function noSelectedLeftMenuBarItemFunc(fn)
   return function(obj)
     local app = obj.application ~= nil and obj:application() or obj
@@ -8270,7 +8323,9 @@ local function noSelectedLeftMenuBarItemFunc(fn)
   end
 end
 
--- if a text field with value is focused, hotkeys with no modifiers are disabled
+-- Disable hotkeys when a non-empty text field is focused.
+--
+-- This avoids breaking text input by unmodified hotkeys.
 local function noFocusedNonEmptyTextFieldFunc(fn)
   return function(obj)
     local focused = hs.axuielement.systemWideElement().AXFocusedUIElement
@@ -8288,6 +8343,14 @@ KEY_MODE = {
 
 ActivatedAppConditionChain = {}
 DaemonAppConditionChain = {}
+
+-- Append a conditional hotkey into a per-app condition chain.
+--
+-- Multiple hotkeys may share the same key binding.
+-- They are stored as a linked list and evaluated in order:
+--   newest → oldest
+--
+-- The first satisfied condition wins.
 local function appendConditionChain(app, config, pressedfn, repeatedfn, cond)
   local appid = app:bundleID() or app:name()
   local mods, key = config.mods, config.key
@@ -8338,6 +8401,14 @@ local function disableConditionInChain(appid, hotkey, delete)
   end
 end
 
+-- Execute a chain of conditional hotkeys sharing the same key binding.
+--
+-- Evaluation order:
+--   1. Try the current hotkey
+--   2. Walk backward through the condition chain
+--   3. If no condition matches, fall back to:
+--        - menu item selection (if available)
+--        - raw keystroke delivery
 local function wrapConditionChain(app, fn, mode, config)
   return function()
     local succ, result = fn()
@@ -8371,6 +8442,18 @@ local function wrapConditionChain(app, fn, mode, config)
   end
 end
 
+-- Wrap a hotkey callback with condition evaluation and fallback logic.
+--
+-- This function:
+--   - Evaluates the user-defined condition
+--   - Handles focus / menu / text-field edge cases
+--   - Decides whether to:
+--       * execute the callback
+--       * resend keystrokes
+--       * abort execution
+--
+-- It returns:
+--   wrappedFn, wrappedCondition
 local function wrapCondition(obj, config, mode)
   local mods, key = config.mods, config.key
   local func = mode == KEY_MODE.REPEAT and config.repeatedfn or config.fn
@@ -8407,6 +8490,8 @@ local function wrapCondition(obj, config, mode)
     return oldCond(o)
   end
   local fn = func
+  -- Final execution wrapper that unifies:
+  --   condition checking, fallback routing, and callback invocation
   fn = function()
     local o = obj or app:focusedWindow()
     local satisfied, result, url = cond(o)
@@ -8454,6 +8539,17 @@ local function callBackExecutingWrapper(fn)
   end
 end
 
+-- Bind a hotkey with full contextual awareness.
+--
+-- This is the central assembly point that combines:
+--   - key binding
+--   - condition logic
+--   - execution context (app / window / menu)
+--   - repeat handling
+--   - condition chaining
+--
+-- All higher-level bind helpers (AppBind / WinBind / MenuBarBind)
+-- eventually delegate here.
 local function bindContextual(obj, config, ...)
   if config.spec ~= nil then
     config.mods = config.spec.mods
@@ -8510,6 +8606,7 @@ local function bindContextual(obj, config, ...)
   return hotkey
 end
 
+-- Bind a hotkey scoped to the active application.
 function AppBind(app, config, ...)
   local hotkey = bindContextual(app, config, ...)
   hotkey.kind = HK.IN_APP
@@ -8517,7 +8614,11 @@ function AppBind(app, config, ...)
   return hotkey
 end
 
--- hotkeys for active app
+-- Register hotkeys for an active application.
+--
+-- Hotkeys are:
+--   - enabled on activation
+--   - disabled or deleted on deactivation / termination
 registerInAppHotKeys = function(app)
   local appid = app:bundleID() or app:name()
   if appHotKeyCallbacks[appid] == nil then return end
@@ -8607,6 +8708,7 @@ unregisterInAppHotKeys = function(appid, delete)
   end
 end
 
+-- Bind a hotkey scoped to a specific window of the active application.
 function AppWinBind(win, config, ...)
   local hotkey = bindContextual(win, config, ...)
   hotkey.kind = HK.IN_APP
@@ -8650,6 +8752,11 @@ local function sameFilter(a, b)
   return true
 end
 
+-- Register hotkeys for a focused window matching a filter.
+--
+-- Window-scoped hotkeys are dynamically managed based on:
+--   - window focus
+--   - window title / role / URL
 registerInWinHotKeys = function(win, filter)
   if win == nil then return end
   local app = win:application()
@@ -8939,6 +9046,7 @@ local function registerWinFiltersForApp(app)
   end
 end
 
+-- Bind a hotkey scoped to a focused window.
 function WinBind(win, config, ...)
   local hotkey = bindContextual(win, config, ...)
   hotkey.kind = HK.IN_WIN
@@ -9107,7 +9215,7 @@ local function registerWinFiltersForDaemonApp(app, appConfig)
   end
 end
 
--- hotkeys for menu belonging to menubar app
+-- Bind a hotkey scoped to an open menu bar menu.
 function MenuBarBind(menu, config)
   local hotkey = bindContextual(menu, config)
   hotkey.kind = HK.MENUBAR
