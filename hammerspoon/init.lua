@@ -1,9 +1,27 @@
+-- Hammerspoon entry point.
+--
+-- This file bootstraps the entire configuration, including:
+-- - Global constants and helpers
+-- - Keybinding and modifier normalization
+-- - Hotkey creation and suspension logic
+-- - Watchers for system, application, and configuration changes
+--
+-- Other modules are loaded at the end of this file and rely
+-- on the globals initialized here.
+
 ---@diagnostic disable: lowercase-global
 
+-- Track startup time for profiling and diagnostics.
 local t = hs.timer.absoluteTime()
+
+-- Global runtime flags.
 FLAGS = {}
 FLAGS["LOADING"] = true
 
+-- macOS version mapping and detection.
+--
+-- Provides a normalized OS_VERSION string for conditional logic
+-- across different macOS releases.
 OS = {
   Cheetah           = "10.00",
   Puma              = "10.01",
@@ -38,6 +56,7 @@ else
   OS_VERSION = tostring(vm)
 end
 
+-- Hotkey kind and subkind definitions.
 HK = {
   PRIVELLEGE = 0,
   QUICK_NAVIGATION = 1,
@@ -52,6 +71,10 @@ HK = {
   WIN_OP_ = { MOVE = 1, MOVE_RESIZE = 2, INPLACE_RESIZE = 3, SPACE_SCREEN = 4, STAGE_MANAGER = 5 },
 }
 
+-- Accessibility role, subrole, and action aliases.
+--
+-- This flattens hs.axuielement enums into a single AX table
+-- for convenience and readability.
 local function capitalize(str)
   return str:sub(1, 1):upper() .. str:sub(2)
 end
@@ -67,6 +90,7 @@ for k, v in pairs(hs.axuielement.roles) do AX[capitalize(k)] = v end
 for k, v in pairs(hs.axuielement.subroles) do AX[capitalize(k)] = v end
 for k, v in pairs(hs.axuielement.actions) do AX[capitalize(k)] = v end
 
+-- Common utility aliases for concise functional-style code.
 strfmt = string.format
 strsplit = hs.fnutils.split
 tinsert = table.insert
@@ -88,8 +112,35 @@ towinui = hs.axuielement.windowElement
 uiobserver = hs.axuielement.observer
 uinotifications = hs.axuielement.observer.notifications
 
+-- Exclude WebKit WebContent helper processes from hs.window.filter.
+--
+-- Motivation:
+-- Many applications spawn one or more "com.apple.WebKit.WebContent" processes.
+-- When hs.window.filter initializes, treating these processes as GUI apps
+-- causes noticeable delays and unnecessary overhead.
+--
+-- Important:
+-- This line alone does NOT fully take effect.
+-- hs.window.filter internally checks only the application name when deciding
+-- whether an app is a GUI app, so WebContent processes may still be watched.
+--
+-- To make this exclusion effective, the following change is required in:
+-- /Applications/Hammerspoon.app/Contents/Resources/extensions/hs/window_filter.lua
+--
+-- In function: startAppWatcher
+--
+--   - if app:kind()<0 or not windowfilter.isGuiApp(appname) then
+--   + if app:kind()<0 or not windowfilter.isGuiApp(appname)
+--   +    or not windowfilter.isGuiApp(app:bundleID()) then
+--
+-- After this modification, WebKit WebContent processes will be correctly
+-- ignored, significantly reducing window filter initialization latency.
 hs.window.filter.ignoreAlways["com.apple.WebKit.WebContent"] = true
 
+-- Modifier key representations.
+--
+-- Each modifier provides long, short, and symbolic forms
+-- for display and normalization.
 Mod = {
   Cmd = {
     Long = 'command',
@@ -118,6 +169,7 @@ Mod = {
   }
 }
 
+-- Convert a modifier representation to its long form.
 function tolong(mod)
   for _, tbl in pairs(Mod) do
     if mod == tbl.Short or mod == tbl.Symbol then
@@ -127,6 +179,7 @@ function tolong(mod)
   return mod
 end
 
+-- Convert a modifier representation to its short form.
 function toshort(mod)
   for _, tbl in pairs(Mod) do
     if mod == tbl.Long or mod == tbl.Symbol then
@@ -136,6 +189,7 @@ function toshort(mod)
   return mod
 end
 
+-- Convert a modifier representation to its symbolic form.
 function tosymbol(mod)
   for _, tbl in pairs(Mod) do
     if mod:upper() == tbl.Long:upper() or mod:upper() == tbl.Short:upper() then
@@ -145,8 +199,17 @@ function tosymbol(mod)
   return mod
 end
 
+-- Load and normalize keybinding configuration.
+--
+-- This handles:
+-- - Hyper key expansion
+-- - Modifier substitution
+-- - Hotkey spec normalization
+
 KeybindingConfigs = nil
 ModsInHSOrder = { Mod.Fn.Long, Mod.Cmd.Long, Mod.Ctrl.Long, Mod.Alt.Long, Mod.Shift.Long }
+
+-- Load keybinding configuration from file.
 local function loadKeybindings(filePath)
   KeybindingConfigs = hs.json.read(filePath)
   for k, hp in pairs(KeybindingConfigs.hyper or {}) do
@@ -203,10 +266,13 @@ local function loadKeybindings(filePath)
 end
 loadKeybindings("config/keybindings.json")
 
+-- Load application-specific configuration.
 ApplicationConfigs = {}
 if hs.fs.attributes("config/application.json") ~= nil then
   ApplicationConfigs = hs.json.read("config/application.json")
 end
+
+-- Initialize modal key handlers.
 
 HyperModalList = {}
 DoubleTapModalList = {}
@@ -217,7 +283,7 @@ if Mod.Hyper then
 end
 Globe = require('modal.globe')
 
--- get hotkey idx like how Hammerspoon does that
+-- Compute a hotkey index consistent with Hammerspoon internals.
 function hotkeyIdx(mods, key)
   key = key:upper()
   local idx = ""
@@ -241,7 +307,7 @@ function hotkeyIdx(mods, key)
   return idx .. key
 end
 
--- send key strokes to the system. but if the key binding is registered, disable it temporally
+-- Send a global keystroke while temporarily disabling conflicting hotkeys.
 function safeGlobalKeyStroke(mods, key)
   local idx = hotkeyIdx(mods, key)
   local conflicted = tfind(hs.hotkey.getHotkeys(), function(hk)
@@ -260,6 +326,10 @@ function safeGlobalKeyStroke(mods, key)
   end
 end
 
+-- Wrap a hotkey callback with suspend-aware behavior.
+--
+-- When hotkeys are suspended, the original keystroke
+-- is forwarded to the system instead.
 function suspendWrapper(fn, mods, key, predicates)
   if fn ~= nil then
     local oldFn = fn
@@ -287,6 +357,7 @@ function suspendWrapper(fn, mods, key, predicates)
   return fn
 end
 
+-- Normalize callable values to functions.
 local function getFunc(f)
   if f == nil then return nil end
   if type(f) == 'function' then return f end
@@ -299,6 +370,7 @@ local function getFunc(f)
   return nil
 end
 
+-- Inject hotkey context into callback execution.
 A_Hotkey, A_Message = nil, nil
 function A_HotkeyWrapper(fn, tbl)
   if tbl == nil then
@@ -311,6 +383,13 @@ function A_HotkeyWrapper(fn, tbl)
     return ret
   end
 end
+
+-- Core hotkey creation implementation.
+--
+-- Handles:
+-- - Hyper and Globe modals
+-- - Message association
+-- - Press / release / repeat callbacks
 function newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
   if message == nil or getFunc(message) then
     repeatfn=releasedfn releasedfn=pressedfn pressedfn=message message=nil -- shift down arguments
@@ -359,6 +438,7 @@ function newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
   return hotkey
 end
 
+-- Create a new hotkey with suspend support.
 function newHotkey(mods, key, message, pressedfn, releasedfn, repeatfn, predicates)
   if message == nil or getFunc(message) then
     predicates = repeatfn
@@ -375,11 +455,13 @@ function newHotkey(mods, key, message, pressedfn, releasedfn, repeatfn, predicat
   return hotkey
 end
 
+-- Create a hotkey from a spec table.
 function newHotkeySpec(spec, ...)
   if spec == nil then return nil end
   return newHotkey(spec.mods, spec.key, ...)
 end
 
+-- Bind a hotkey from a spec without suspend support.
 function bindHotkeySpecImpl(spec, ...)
   if spec == nil then return end
   local hotkey = newHotkeyImpl(spec.mods, spec.key, ...)
@@ -395,6 +477,7 @@ function bindHotkeySpecImpl(spec, ...)
   return hotkey
 end
 
+-- Bind and enable a hotkey.
 function bindHotkey(mods, ...)
   local hotkey = newHotkey(mods, ...)
   if hotkey ~= nil then
@@ -408,11 +491,13 @@ function bindHotkey(mods, ...)
   return hotkey
 end
 
+-- Bind and enable a hotkey from a spec table.
 function bindHotkeySpec(spec, ...)
   if spec == nil then return nil end
   return bindHotkey(spec.mods, spec.key, ...)
 end
 
+-- Register display messages for URL-triggered hotkeys.
 URLHotkeyMessages = {}
 function registerURLHotkeyMessage(event, key, value, message)
   if URLHotkeyMessages[event] == nil then
@@ -426,7 +511,7 @@ end
 
 local misc = KeybindingConfigs.hotkeys.global or {}
 
--- toggle hotkeys
+-- Toggle all Hammerspoon hotkeys.
 FLAGS["SUSPEND"] = false
 HSKeybindings = nil
 local toggleHotkey = bindHotkeySpecImpl(misc["toggleHotkeys"], "Toggle Hotkeys", function()
@@ -448,14 +533,14 @@ if toggleHotkey then
   toggleHotkey.kind = HK.PRIVELLEGE
 end
 
--- reload
+-- Reload Hammerspoon configuration.
 local reloadHotkey = bindHotkeySpec(misc["reloadHammerspoon"], "Reload Hammerspoon",
     function() hs.reload() end)
 if reloadHotkey then
   reloadHotkey.kind = HK.PRIVELLEGE
 end
 
--- toggle hamerspoon console
+-- Toggle the Hammerspoon console window.
 local consoleHotkey = bindHotkeySpec(misc["toggleConsole"], "Toggle Hammerspoon Console",
 function()
   local consoleWin = hs.console.hswindow()
@@ -471,6 +556,7 @@ if consoleHotkey then
   consoleHotkey.kind = HK.PRIVELLEGE
 end
 
+-- Register an action to be executed continuously.
 processesExecEvery = {}
 function ExecContinuously(action)
   local timeKey = tostring(hs.timer.absoluteTime())
@@ -478,27 +564,37 @@ function ExecContinuously(action)
   return timeKey
 end
 
+-- Stop a continuously executed action.
 function StopExecContinuously(timeKey)
   processesExecEvery[timeKey] = nil
 end
 
+-- Periodic executor for continuous actions.
 ContinuousWatcher = hs.timer.new(0.25, function()
   for _, proc in pairs(processesExecEvery) do
     proc()
   end
 end, true)
 
+-- Reload configuration when Lua files change.
 local function reloadConfig(files)
   if any(files, function(file) return file:sub(-4) == ".lua" end) then
     hs.reload()
   end
 end
 
+-- Central callback dispatchers.
+--
+-- The callbacks defined in this section act as a thin routing layer.
+-- They receive events from Hammerspoon watchers and forward them to
+-- module-specific callback implementations.
+
+-- Application lifecycle callbacks.
 local function applicationCallback(appname, eventType, app)
   App_applicationCallback(appname, eventType, app)
 end
 
--- for apps that launch silently
+-- Handle silently launched applications.
 local processesOnSilentLaunch = {}
 local launchedApps = {}
 function ExecOnSilentLaunch(appid, action)
@@ -510,6 +606,7 @@ function ExecOnSilentLaunch(appid, action)
   launchedApps[appid] = find(appid)
 end
 
+-- Handle silently terminated applications.
 local processesOnSilentQuit = {}
 function ExecOnSilentQuit(appid, action)
   if processesOnSilentQuit[appid] == nil then
@@ -549,6 +646,7 @@ ExecContinuously(function()
   launchedApps = launchedAppsTmp
 end)
 
+-- Handle application installation changes.
 local function applicationInstalledCallback(files, flagTables)
   local newFiles, newFlagTables = {}, {}
   for i, file in ipairs(files) do
@@ -564,20 +662,24 @@ local function applicationInstalledCallback(files, flagTables)
   end
 end
 
+-- Handle monitor configuration changes.
 local function monitorChangedCallback()
   App_monitorChangedCallback()
   System_monitorChangedCallback()
   Screen_monitorChangedCallback()
 end
 
+-- Handle USB device changes.
 local function usbChangedCallback(device)
   App_usbChangedCallback(device)
 end
 
+-- Handle network configuration changes.
 local function networkChangedCallback(storeObj, changedKeys)
   System_networkChangedCallback(storeObj, changedKeys)
 end
 
+-- Start all watchers and background services.
 ContinuousWatcher:start()
 ConfigWatcher = hs.pathwatcher.new(os.getenv("HOME") .. "/.hammerspoon/", reloadConfig):start()
 AppWatcher = hs.application.watcher.new(applicationCallback):start()
@@ -602,27 +704,31 @@ NetworkWatcher:monitorKeys(NetworkMonitorKeys)
 NetworkWatcher:setCallback(networkChangedCallback)
 NetworkWatcher:start()
 
+-- Show an alert via URL trigger.
 hs.urlevent.bind("alert", function(eventName, params)
   hs.alert.show(params["text"])
 end)
 
--- manage app
+-- Load application management module.
 require "app"
 
--- change system preferences
+-- Load system preference management module.
 require "system"
 
--- move window in current space
+-- Load window management module.
 require "window"
 
--- move cursor or window to other monitor
+-- Load screen and space management module.
 require "screen"
 
--- manage filesystem
+-- Load filesystem utilities.
 require "fs"
 
--- miscellaneous function
+-- Load miscellaneous utilities.
 require "misc"
 
+-- Mark configuration loading as complete.
 FLAGS["LOADING"] = false
+
+-- Log total loading time.
 print(strfmt("-- Loading time: %d ms", (hs.timer.absoluteTime() - t) // 1000000))
