@@ -1,9 +1,26 @@
+-- Window movement / resize parameters (user-configurable)
 local windowParams = KeybindingConfigs["parameters"] or {}
 local moveStep = windowParams.windowMoveStep or 20
 local resizeStep = windowParams.windowResizeStep or 100
 
+-- Global window-related hotkeys
 local winHK = KeybindingConfigs.hotkeys.global or {}
 
+-- Cache original window frames for toggle-style maximize.
+-- The cache is cleared whenever the window is moved or resized
+-- by non-maximize (non-filling) operations.
+local frameCacheMaximize = {}
+
+-- Functions in this file fall into two categories:
+--
+-- 1) Internal hotkey handlers
+--    - Invoked directly by Hammerspoon hotkeys
+--
+-- 2) URL-triggered handlers
+--    - Invoked via hs.urlevent
+--    - Intended for external tools (e.g. Karabiner) to trigger
+
+-- Create a window-operation hotkey.
 local function newWindow(...)
   local hotkey = newHotkeySpec(...)
   if hotkey == nil then return nil end
@@ -11,6 +28,7 @@ local function newWindow(...)
   return hotkey
 end
 
+-- Bind a window-operation hotkey.
 local function bindWindow(...)
   local hotkey = bindHotkeySpec(...)
   if hotkey == nil then return nil end
@@ -18,8 +36,7 @@ local function bindWindow(...)
   return hotkey
 end
 
-local frameCacheMaximize = {}
-
+-- Bind a window-movement hotkey.
 local function bindMoveWindow(hkID, message, fn, repeatable)
   local spec = winHK[hkID]
   if spec == nil then return end
@@ -27,6 +44,7 @@ local function bindMoveWindow(hkID, message, fn, repeatable)
     fn()
     local win = hs.window.focusedWindow()
     if win == nil then return end
+    -- Any manual move/resize invalidates the cached maximize frame
     frameCacheMaximize[win:id()] = nil
   end
   local repeatedfn = repeatable and newFn or nil
@@ -35,6 +53,7 @@ local function bindMoveWindow(hkID, message, fn, repeatable)
   return hotkey
 end
 
+-- Register URL handlers for window movement operations.
 local windowMoveToFuncs = {}
 local windowMoveTowardsFuncs = {}
 local function bindURLEventForWindowMove()
@@ -49,6 +68,10 @@ local function bindURLEventForWindowMove()
   end)
 end
 
+-- Bind a window-move action to a URL-accessible entry point.
+--
+-- This function is used to expose window movement operations
+-- to external programs through hs.urlevent.
 local function bindMoveWindowURL(direction, mode, fn)
   local newFn = function()
     fn()
@@ -63,6 +86,7 @@ local function bindMoveWindowURL(direction, mode, fn)
   end
 end
 
+-- Register URL handlers for window resize operations.
 local windowResizeFuncs = {}
 local function bindURLEventForWindowResize()
   hs.urlevent.bind("windowresize", function(eventName, params)
@@ -71,6 +95,7 @@ local function bindURLEventForWindowResize()
   end)
 end
 
+-- Bind a window-resize action to a URL-accessible entry point.
 local function bindResizeWindowURL(mode, fn)
   local newFn = fn
   if mode ~= "max" then
@@ -84,6 +109,7 @@ local function bindResizeWindowURL(mode, fn)
   windowResizeFuncs[mode] = newFn
 end
 
+-- Create a window resize hotkey.
 local function newResizeWindow(hkID, message, fn, repeatable)
   local spec = winHK[hkID]
   if spec == nil then return end
@@ -102,6 +128,7 @@ local function newResizeWindow(hkID, message, fn, repeatable)
   return hotkey
 end
 
+-- Bind a window-resize hotkey.
 local function bindResizeWindow(hkID, message, fn, repeatable)
   local spec = winHK[hkID]
   if spec == nil then return end
@@ -120,6 +147,7 @@ local function bindResizeWindow(hkID, message, fn, repeatable)
   return hotkey
 end
 
+-- Create or bind a window resize hotkey that may conflict with system behavior.
 HotkeysResizeConflictedSinceSequia = {}
 local function newResizeWindowMayConflict(...)
   local hotkey
@@ -134,7 +162,7 @@ end
 
 -- continuously move the focused window
 
--- move towards top-left
+-- Move towards top-left
 bindMoveWindow("moveTowardsTopLeft", "Move towards Top-Left",
 function()
   local win = hs.window.focusedWindow()
@@ -146,7 +174,7 @@ function()
   win:setFrame(f)
 end)
 
--- move towards top
+-- Move towards top
 bindMoveWindow("moveTowardsTop", "Move towards Top",
 function()
   local win = hs.window.focusedWindow()
@@ -157,7 +185,7 @@ function()
   win:setFrame(f)
 end)
 
--- move towards top-right
+-- Move towards top-right
 bindMoveWindow("moveTowardsTopRight", "Move towards Top-Right",
 function()
   local win = hs.window.focusedWindow()
@@ -169,7 +197,7 @@ function()
   win:setFrame(f)
 end)
 
--- move towards left
+-- Move towards left
 bindMoveWindow("moveTowardsLeft", "Move towards Left",
 function()
   local win = hs.window.focusedWindow()
@@ -180,7 +208,7 @@ function()
   win:setFrame(f)
 end)
 
--- move towards right
+-- Move towards right
 bindMoveWindow("moveTowardsRight", "Move towards Right",
 function()
   local win = hs.window.focusedWindow()
@@ -191,7 +219,7 @@ function()
   win:setFrame(f)
 end)
 
--- move towards bottom-left
+-- Move towards bottom-left
 bindMoveWindow("moveTowardsBottomLeft", "Move towards Bottom-Left",
 function()
   local win = hs.window.focusedWindow()
@@ -203,7 +231,7 @@ function()
   win:setFrame(f)
 end)
 
--- move towards bottom
+-- Move towards bottom
 bindMoveWindow("moveTowardsBottom", "Move towards Bottom",
 function()
   local win = hs.window.focusedWindow()
@@ -214,7 +242,7 @@ function()
   win:setFrame(f)
 end)
 
--- move towards bottom-right
+-- Move towards bottom-right
 bindMoveWindow("moveTowardsBottomRight", "Move towards Bottom-Right",
 function()
   local win = hs.window.focusedWindow()
@@ -226,7 +254,11 @@ function()
   win:setFrame(f)
 end)
 
-
+-- Get the usable screen frame for a window.
+--
+-- This function adjusts the screen frame to account for system UI
+-- elements (e.g. Stage Manager), so window positioning aligns with
+-- what the user visually perceives as available space.
 local function getScreenFrame(win)
   local frame = win:screen():frame()
   local manager = find("com.apple.WindowManager")
@@ -253,7 +285,7 @@ local function getScreenFrame(win)
   return frame
 end
 
--- move and zoom to left
+-- Move and zoom to left half
 newResizeWindowMayConflict("zoomToLeftHalf", "Zoom To Left Half",
 function()
   local win = hs.window.focusedWindow()
@@ -268,7 +300,7 @@ function()
   win:setFrame(f)
 end)
 
--- move and zoom to right
+-- Move and zoom to right half
 newResizeWindowMayConflict("zoomToRightHalf", "Zoom To Right Half",
 function()
   local win = hs.window.focusedWindow()
@@ -283,7 +315,7 @@ function()
   win:setFrame(f)
 end)
 
--- move and zoom to top
+-- Move and zoom to top half
 newResizeWindowMayConflict("zoomToTopHalf", "Zoom To Top Half",
 function()
   local win = hs.window.focusedWindow()
@@ -298,7 +330,7 @@ function()
   win:setFrame(f)
 end)
 
--- move and zoom to bottom
+-- Move and zoom to bottom half
 newResizeWindowMayConflict("zoomToBottomHalf", "Zoom To Bottom Half",
 function()
   local win = hs.window.focusedWindow()
@@ -313,7 +345,7 @@ function()
   win:setFrame(f)
 end)
 
--- move and zoom to top-left
+-- Move and zoom to top-left quadrant
 bindResizeWindow("zoomToTopLeft", "Zoom to Top-Left",
 function()
   local win = hs.window.focusedWindow()
@@ -328,7 +360,7 @@ function()
   win:setFrame(f)
 end)
 
--- move and zoom to top-right
+-- Move and zoom to top-right quadrant
 bindResizeWindow("zoomToTopRight", "Zoom to Top-Right",
 function()
   local win = hs.window.focusedWindow()
@@ -343,7 +375,7 @@ function()
   win:setFrame(f)
 end)
 
--- move and zoom to bottom-left
+-- Move and zoom to bottom-left quadrant
 bindResizeWindow("zoomToBottomLeft", "Zoom to Bottom-Left",
 function()
   local win = hs.window.focusedWindow()
@@ -358,7 +390,7 @@ function()
   win:setFrame(f)
 end)
 
--- move and zoom to bottom-right
+-- Move and zoom to bottom-right quadrant
 bindResizeWindow("zoomToBottomRight", "Zoom to Bottom-Right",
 function()
   local win = hs.window.focusedWindow()
@@ -373,7 +405,7 @@ function()
   win:setFrame(f)
 end)
 
--- move and zoom to left 1/3
+-- Move and zoom to left 1/3
 bindResizeWindow("zoomToLeft1/3", "Zoom to Left 1/3",
 function()
   local win = hs.window.focusedWindow()
@@ -388,7 +420,7 @@ function()
   win:setFrame(f)
 end)
 
--- move and zoom to right 1/3
+-- Move and zoom to right 1/3
 bindResizeWindow("zoomToRight1/3", "Zoom to Right 1/3",
 function()
   local win = hs.window.focusedWindow()
@@ -403,7 +435,7 @@ function()
   win:setFrame(f)
 end)
 
--- move and zoom to left 2/3
+-- Move and zoom to left 2/3
 bindResizeWindow("zoomToLeft2/3", "Zoom to Left 2/3",
 function()
   local win = hs.window.focusedWindow()
@@ -418,7 +450,7 @@ function()
   win:setFrame(f)
 end)
 
--- move and zoom to right 2/3
+-- Move and zoom to right 2/3
 bindResizeWindow("zoomToRight2/3", "Zoom to Right 2/3",
 function()
   local win = hs.window.focusedWindow()
@@ -433,7 +465,9 @@ function()
   win:setFrame(f)
 end)
 
--- maximize
+-- Toggle maximize for the focused window.
+-- If the window is already maximized via this hotkey, restore
+-- it to its previously cached frame.
 local fillHK = newResizeWindowMayConflict("fill", "Fill",
 function()
   local win = hs.window.focusedWindow()
@@ -450,13 +484,15 @@ function()
 end)
 if fillHK then fillHK.subkind = HK.PRIVELLEGE end
 
+-- Resize window by dragging a single border inward or outward.
+-- The opposite border remains fixed.
 local function bindResizeBorderWindow(...)
   local hotkey = bindResizeWindow(...)
   if hotkey then hotkey.subkind = HK.WIN_OP_.INPLACE_RESIZE end
   return hotkey
 end
 
--- expand on left
+-- Expand left border
 bindResizeBorderWindow("leftBorderExpand", "Left Border Expands",
 function()
   local win = hs.window.focusedWindow()
@@ -471,7 +507,7 @@ function()
   win:setFrame(f)
 end)
 
--- shrink on left
+-- Shrink left border
 bindResizeBorderWindow("leftBorderShrink", "Left Border Shrinks",
 function()
   local win = hs.window.focusedWindow()
@@ -484,7 +520,7 @@ function()
   win:setFrame(f)
 end)
 
--- expand on right
+-- Expand right border
 bindResizeBorderWindow("rightBorderExpand", "Right Border Expands",
 function()
   local win = hs.window.focusedWindow()
@@ -497,7 +533,7 @@ function()
   win:setFrame(f)
 end)
 
--- shrink on right
+-- Shrink right border
 bindResizeBorderWindow("rightBorderShrink", "Right Border Shrinks",
 function()
   local win = hs.window.focusedWindow()
@@ -508,7 +544,7 @@ function()
   win:setFrame(f)
 end)
 
--- expand on top
+-- Expand top border
 bindResizeBorderWindow("topBorderExpand", "Top Border Expands",
 function()
   local win = hs.window.focusedWindow()
@@ -523,7 +559,7 @@ function()
   win:setFrame(f)
 end)
 
--- shrink on top
+-- Shrink top border
 bindResizeBorderWindow("topBorderShrink", "Top Border Shrinks",
 function()
   local win = hs.window.focusedWindow()
@@ -536,7 +572,7 @@ function()
   win:setFrame(f)
 end)
 
--- expand on bottom
+-- Expand bottom border
 bindResizeBorderWindow("bottomBorderExpand", "Bottom Border Expands",
 function()
   local win = hs.window.focusedWindow()
@@ -549,7 +585,7 @@ function()
   win:setFrame(f)
 end)
 
--- shrink on bottom
+-- Shrink bottom border
 bindResizeBorderWindow("bottomBorderShrink", "Bottom Border Shrinks",
 function()
   local win = hs.window.focusedWindow()
@@ -560,7 +596,7 @@ function()
   win:setFrame(f)
 end)
 
--- move to top-left
+-- Move to top-left
 bindMoveWindow("moveToTopLeft", "Move to Top-Left",
 function()
   local win = hs.window.focusedWindow()
@@ -573,7 +609,7 @@ function()
   win:setFrame(f)
 end)
 
--- move to top
+-- Move to top
 bindMoveWindow("moveToTop", "Move to Top",
 function()
   local win = hs.window.focusedWindow()
@@ -586,7 +622,7 @@ function()
   win:setFrame(f)
 end)
 
--- move to top-right
+-- Move to top-right
 bindMoveWindow("moveToTopRight", "Move to Top-Right",
 function()
   local win = hs.window.focusedWindow()
@@ -599,7 +635,7 @@ function()
   win:setFrame(f)
 end)
 
--- move to left
+-- Move to left
 bindMoveWindow("moveToLeft", "Move to Left",
 function()
   local win = hs.window.focusedWindow()
@@ -611,7 +647,7 @@ function()
   win:setFrame(f)
 end)
 
--- move to center
+-- Move to center
 local centerHK = newResizeWindowMayConflict("moveToCenter", "Center",
 function()
   local win = hs.window.focusedWindow()
@@ -627,7 +663,7 @@ function()
 end)
 if centerHK then centerHK.subkind = HK.PRIVELLEGE end
 
--- move to right
+-- Move to right
 bindMoveWindow("moveToRight", "Move to Right",
 function()
   local win = hs.window.focusedWindow()
@@ -639,7 +675,7 @@ function()
   win:setFrame(f)
 end)
 
--- move to bottom-left
+-- Move to bottom-left
 bindMoveWindow("moveToBottomLeft", "Move to Bottom-Left",
 function()
   local win = hs.window.focusedWindow()
@@ -652,7 +688,7 @@ function()
   win:setFrame(f)
 end)
 
--- move to bottom
+-- Move to bottom
 bindMoveWindow("moveToBottom", "Move to Bottom",
 function()
   local win = hs.window.focusedWindow()
@@ -665,7 +701,7 @@ function()
   win:setFrame(f)
 end)
 
--- move to bottom-right
+-- Move to bottom-right
 bindMoveWindow("moveToBottomRight", "Move to Bottom-Right",
 function()
   local win = hs.window.focusedWindow()
@@ -678,7 +714,10 @@ function()
   win:setFrame(f)
 end)
 
--- window-based switcher like Windows
+-- Window-based switcher (Windows-style Alt-Tab behavior)
+--
+-- Visible windows across all user spaces are included.
+-- NOTE: Fullscreen spaces are ignored unless they have been focused at least once.
 local misc = winHK
 
 local function newWindowSwitch(...)
@@ -706,8 +745,16 @@ local function runningAppDisplayNames(bundleIDs)
   return appnames
 end
 
--- visible windows on all user spaces (wallpaper apps excluded)
--- fixme: full screen space will be ignored if not once focused
+-- Applications to be excluded from the window switcher.
+--
+-- The configuration supports two forms:
+--   - A plain string bundle ID (treated as a boolean exclusion)
+--   - A table mapping bundle IDs to hs.window.filter rules
+--
+-- The code below normalizes the configuration into a single table:
+--   ignoredApps[bundleID] = filterRule | false
+--
+-- This allows flexible per-app filtering while keeping the runtime logic simple.
 local ignoredApps
 do
   local ignoredAppsLoaded = ApplicationConfigs["windowSwitcherIgnore"] or {}
@@ -727,6 +774,14 @@ end
 
 local switcher
 
+-- Indicates whether hotkeys are currently "owned" by the window switcher.
+--
+-- When true:
+--   - Certain hotkeys are conditionally enabled
+--   - Global hotkey handling may be suspended
+--
+-- This flag is toggled dynamically while the modifier key is held,
+-- and is reset as soon as the modifier is released.
 local hotkeyEnabledByWindowSwitcher = false
 local function enabledByWindowSwitcherFunc()
   return hotkeyEnabledByWindowSwitcher
@@ -735,6 +790,9 @@ end
 local windowSwitcherWindowIdx = nil
 local windowSwitcherWindowNumber = nil
 local nextWindowHotkey, lastWindowHotkey
+-- Hotkey triggered by the "back" action while switching windows.
+-- This exists separately from the normal backward hotkey so it can
+-- be enabled only during active window switching
 local anotherLastWindowHotkey
 local anotherLastWindowModifierTap
 
@@ -905,6 +963,10 @@ local function unregisterWindowSwitcher()
   end
 end
 
+-- Disable the built-in window switcher when an external one (e.g. AltTab)
+-- is running, and re-enable it when the external switcher exits.
+--
+-- This avoids conflicting behaviors and duplicate hotkey handling.
 if misc["switchWindow"] ~= nil then
   local altTabBundleID = "com.lwouis.alt-tab-macos"
   if find(altTabBundleID) == nil then
@@ -916,8 +978,17 @@ if misc["switchWindow"] ~= nil then
   end)
 end
 
--- visible windows of all browsers on all user spaces
--- fixme: full screen space will be ignored if not once focused
+
+-- Browser window switcher.
+--
+-- This section implements a dedicated window/tab switcher for browsers.
+-- Unlike the general window switcher, this one:
+--   - Restricts scope to a predefined set of browser bundle IDs
+--   - Treats browser windows as a separate navigation domain
+--
+-- Known limitations:
+-- - Fullscreen browser windows are ignored unless previously focused
+
 local browserBundleIDs = {
   "com.apple.Safari",
   "com.google.Chrome",
@@ -1102,9 +1173,21 @@ end)
 
 require 'utils'
 
+-- Browser tab chooser.
+--
+-- Presents a unified chooser for switching between tabs across
+-- all supported browsers.
 local function browserChooser()
+  -- Each choice represents a single browser tab.
+  -- Tabs are flattened across all windows and browsers
+  -- to allow global fuzzy searching.
   local choices = {}
-  -- get URLs and titles of all tabs of all browsers
+
+  -- Enumerate tabs for each supported browser.
+  --
+  -- Safari and Chromium-based browsers differ in how tab IDs
+  -- and titles are exposed via AppleScript, so they are handled
+  -- with small but necessary variations.
   for _, browser in ipairs(browserBundleIDs) do
     local app = find(browser)
     if app ~= nil then
@@ -1116,6 +1199,10 @@ local function browserChooser()
         field = 'title'
         tabIDCmd = 'set theID to id of atab'
       end
+      -- Build AppleScript dynamically to collect tab metadata.
+      --
+      -- The script returns a flattened string because AppleScript
+      -- does not reliably return structured data for complex objects.
       local script = [[
         set theResult to ""
         tell application id "]] .. browser .. [["
@@ -1159,9 +1246,16 @@ local function browserChooser()
     return
   end
 
+  -- Handle tab selection.
+  --
+  -- Tab activation is browser-specific and may involve:
+  -- - Selecting the tab via AppleScript
+  -- - Focusing the target window
   local chooser = hs.chooser.new(function(choice)
     if not choice then return end
     local findTabCmd, focusTabCmd, titleField
+    -- Safari requires index-based tab selection.
+    -- Chromium-based browsers allow direct ID matching.
     if choice.browser == "com.apple.Safari" then
       findTabCmd = 'j is ' .. choice.id
       focusTabCmd = [[
@@ -1212,6 +1306,11 @@ local function browserChooser()
   chooser:show()
 end
 
+-- PDF / Tab chooser.
+--
+-- This chooser provides a unified interface to switch between:
+--   - PDF documents in dedicated PDF apps
+--   - PDF tabs opened in browsers
 local function PDFChooser()
   local choices = {}
 
@@ -1521,8 +1620,7 @@ local function PDFChooser()
   chooser:show()
 end
 
--- show a dialog to specify a tab title from all windows of browsers or `PDF Expert`
--- use it to switch to a tab
+-- Show a chooser for switching to a tab across browsers and PDF applications.
 bindWindowSwitch(misc["searchTab"], 'Switch to Tab',
 function()
   local app = hs.application.frontmostApplication()
@@ -1543,7 +1641,7 @@ function()
   browserChooser()
 end)
 
--- window switcher for `Stage Manager`
+-- Bind a Stage Manager window-switch hotkey.
 local function bindStageManagerWindow(spec, index)
   local fn = function()
     local manager = find("com.apple.WindowManager")
@@ -1576,6 +1674,7 @@ for i=1,10 do
   end
 end
 
+-- Register URL handlers for Stage Manager window switching.
 local stageManagerWindowSwitchFuncs = {}
 local function bindURLEventForStageManager()
   hs.urlevent.bind("stagemanager", function(eventName, params)
@@ -1587,6 +1686,7 @@ local function bindURLEventForStageManager()
   end)
 end
 
+-- Bind a Stage Manager window-switch URL handler.
 local function bindStageManagerWindowURL(index)
   local fn = function()
     local manager = find("com.apple.WindowManager")
