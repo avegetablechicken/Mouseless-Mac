@@ -270,15 +270,17 @@ local function getScreenFrame(win)
     if g then
       local maxW = 0
       local buttons = getc(g, AX.List, 1, AX.Button) or {}
-      if buttons[1] and buttons[1].AXPosition.x > g.AXPosition.x then
-        foreach(buttons, function(bt)
-          if bt.AXSize.w > maxW then maxW = bt.AXSize.w end
-        end)
-      end
-      maxW = (math.ceil(maxW / 10) - 3) * 10
-      frame.w = frame.w - maxW
-      if buttons[1].AXPosition.x - g.AXPosition.x < g.AXSize.w / 2 then
-        frame.x = frame.x + maxW
+      if buttons[1] then
+        if buttons[1].AXPosition.x > g.AXPosition.x then
+          foreach(buttons, function(bt)
+            if bt.AXSize.w > maxW then maxW = bt.AXSize.w end
+          end)
+        end
+        maxW = (math.ceil(maxW / 10) - 3) * 10
+        frame.w = frame.w - maxW
+        if buttons[1].AXPosition.x - g.AXPosition.x < g.AXSize.w / 2 then
+          frame.x = frame.x + maxW
+        end
       end
     end
   end
