@@ -10037,6 +10037,10 @@ local function processInvalidAltMenu(app, reinvokeKey)
   hs.json.write(json, appsMayChangeMenuBarTmpFile, false, true)
 end
 
+-- Applications typically use standard menu bar titles (e.g., "File", "Edit",
+-- "View", "Window", "Help"). Because these titles are often localized by the OS,
+-- we intentionally do not attempt to de-localize them through app bundle searches.
+-- Note that some apps may still use uncommon English titles.
 local specialLocalizedCommonMenuBarTitle = {
   ["com.tencent.yuanbao"] = { View = "Display" },
 }
