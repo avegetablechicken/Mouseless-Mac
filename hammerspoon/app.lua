@@ -10038,9 +10038,15 @@ local function processInvalidAltMenu(app, reinvokeKey)
 end
 
 local specialLocalizedCommonMenuBarTitle = {
-  ["com.tencent.xinWeChat"] = { View = "Show" },
   ["com.tencent.yuanbao"] = { View = "Display" },
 }
+Evt.OnRunning("com.tencent.xinWeChat", function(app)
+  local appid = app:bundleID()
+  if applicationVersion(appid) >= 4 then
+    specialLocalizedCommonMenuBarTitle[appid] = { View = "Show" }
+  end
+end)
+
 local function altMenuBarItem(app, reinvokeKey)
   -- delete previous hotkeys
   for _, hotkey in ipairs(altMenuBarItemHotkeys) do
