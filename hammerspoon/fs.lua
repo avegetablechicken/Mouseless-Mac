@@ -1,3 +1,15 @@
+-- File synchronization utilities.
+--
+-- This section implements a lightweight file sync mechanism based on
+-- filesystem watchers. It is primarily used to mirror selected files
+-- or directories to target locations, with optional pre/post processing.
+--
+-- Design notes:
+-- - Synchronization is event-driven via hs.pathwatcher
+-- - Per-file hooks allow custom behavior without hardcoding logic
+-- - Git repositories are intentionally ignored by default
+
+-- Synchronize changed files from a watched directory to a target directory.
 local function syncFiles(targetDir, watchedDir, changedPaths, beforeFunc, workFunc, afterFunc)
   local relativePaths = {}
   for i, path in ipairs(changedPaths) do
@@ -27,6 +39,12 @@ local function syncFiles(targetDir, watchedDir, changedPaths, beforeFunc, workFu
   end
 end
 
+-- Compute a filesystem path with variable expansion.
+--
+-- Supports:
+-- - ${VAR} and environment variables
+-- - $(command) shell substitution
+-- - ~/ home directory expansion
 local function computePath(variables, path)
   local HOME_DIR = os.getenv("HOME")
   path = path:gsub("%${(.-)}", function(key)
@@ -50,11 +68,15 @@ local function computePath(variables, path)
   return path
 end
 
-
+-- Extract the file name from a filesystem path.
 local function getFileName(path)
   return path:match(".*/([^/]*)")
 end
 
+-- Post-process a synced file using a shell command.
+--
+-- The file is temporarily renamed to ensure atomic replacement
+-- after post-processing completes.
 local function postprocessAfterFunc(command, targetDir, watchedDir, path)
   local target = targetDir .. "/" .. getFileName(path)
   hs.execute(strfmt([[
@@ -69,6 +91,12 @@ rm "%s"
     target .. ".tmp"))
 end
 
+-- Load file synchronization configuration.
+--
+-- Configuration is read from config/sync.json and supports:
+-- - Variable definitions for path computation
+-- - File-to-target mappings
+-- - Optional post-processing hooks
 local config
 if hs.fs.attributes("config/sync.json") ~= nil then
   config = hs.json.read("config/sync.json")
@@ -93,6 +121,10 @@ for k, v in pairs(config.file or {}) do
   tinsert(filesToSync, spec)
 end
 
+-- Register filesystem watchers for configured sync paths.
+--
+-- Each watcher reacts to file changes and triggers synchronization
+-- according to the corresponding configuration entry.
 SyncPathWatchers = {}
 for _, tuple in ipairs(filesToSync) do
   local beforeFunc
@@ -115,7 +147,21 @@ for _, tuple in ipairs(filesToSync) do
   tinsert(SyncPathWatchers, watcher)
 end
 
--- listen to other devices on port 8086 and copy received text/image/file to clipboard
+
+-- HTTP-based clipboard bridge.
+--
+-- This section exposes a simple HTTP server that allows other devices
+-- on the local network to exchange clipboard contents with this machine.
+--
+-- Supported content types:
+-- - Plain text
+-- - Images (PNG / JPEG / TIFF)
+-- - Files (saved to ~/Downloads)
+--
+-- GET requests return the current clipboard contents.
+-- Non-GET requests push content into the local clipboard.
+
+--- Handle incoming HTTP requests for clipboard synchronization.
 local function handleRequest(method, path, headers, body)
   print("[LOG] Received " .. method .. " request for " .. path)
   print("[LOG] Headers: " .. hs.inspect.inspect(headers))
@@ -219,4 +265,5 @@ local function handleRequest(method, path, headers, body)
   return response.body, response.status, response.headers
 end
 
+-- Start the local HTTP server for clipboard sharing.
 HTTPServer = hs.httpserver.new():setPort(8086):setCallback(handleRequest):start()
