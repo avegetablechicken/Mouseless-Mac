@@ -1,10 +1,15 @@
 ---@diagnostic disable: lowercase-global
 
+-- # table / AX query helpers
+
+-- Recursively access nested table fields with a variadic key path.
 function get(table, key, ...)
   if table == nil or key == nil then return table end
   return get(table[key], ...)
 end
 
+-- Recursively traverse AXUIElement children by role, index or identifier.
+-- Supports numeric index, negative index, AXIdentifier, AXTitle and AXValue.
 function getc(element, role, index, ...)
   if element == nil or (role == nil and index == nil) then return element end
   local children, child
@@ -31,22 +36,31 @@ function getc(element, role, index, ...)
   return getc(child, ...)
 end
 
+-- # filesystem helpers
+
+-- Check whether a filesystem path exists.
 function exists(path)
   return hs.fs.attributes(path) ~= nil
 end
 
+-- Check whether a path points to a regular file.
 function isfile(path)
   return hs.fs.attributes(path, 'mode') == 'file'
 end
 
+-- Check whether a path points to a directory.
 function isdir(path)
   return hs.fs.attributes(path, 'mode') == 'directory'
 end
 
+-- Create a directory if it does not already exist.
 function mkdir(path)
   if not exists(path) then hs.fs.mkdir(path) end
 end
 
+-- # geometry / UI helpers
+
+-- Offset an AXPosition or point by a given vector.
 function uioffset(point, offset)
   if point.AXPosition then
     point = point.AXPosition
@@ -57,6 +71,7 @@ function uioffset(point, offset)
   }
 end
 
+-- Determine whether the focused window is in a fullscreen (non-user) space.
 function inFullscreenSpace()
   local focusedWindow = hs.application.frontmostApplication():focusedWindow()
   if focusedWindow ~= nil and focusedWindow:id() ~= 0 then
@@ -70,12 +85,14 @@ function inFullscreenSpace()
   return false
 end
 
+-- Detect whether the menu bar is currently visible on the main screen.
 function menuBarVisible()
   local frame = hs.screen.mainScreen():fullFrame()
   local elem = hs.axuielement.systemElementAtPosition(frame.x, frame.y)
   return elem.AXRole == AX.MenuBar
 end
 
+-- Get menu bar items of an application, optionally ignoring Apple and App menus.
 function getMenuBarItems(app, ignoreAppMenu, ignoreAppleMenu)
   if ignoreAppleMenu == nil then ignoreAppleMenu = true end
   local menuBarItems = getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem) or {}
@@ -88,6 +105,9 @@ function getMenuBarItems(app, ignoreAppMenu, ignoreAppleMenu)
   return menuBarItems
 end
 
+-- # menu item helpers
+
+-- Mapping of special control characters to readable key symbols.
 SPECIAL_KEY_SIMBOL_MAP = {
   ['\b'] = '⌫',
   ['\t'] = '⇥',
@@ -118,6 +138,7 @@ SPECIAL_KEY_SIMBOL_MAP = {
   ['\xf0\x9f\x8e\xa4'] = '🎤︎',
 }
 
+-- Find a menu item by title path, with localization fallback support.
 function findMenuItem(app, menuItemTitle, params)
   local menuItem = app:findMenuItem(menuItemTitle)
   if menuItem ~= nil then return menuItem, menuItemTitle end
@@ -141,6 +162,7 @@ function findMenuItem(app, menuItemTitle, params)
   return app:findMenuItem(targetMenuItem), targetMenuItem
 end
 
+-- Internal recursive implementation for matching menu items by key binding.
 local function findMenuItemByKeyBindingImpl(mods, key, menuItem)
   if menuItem.AXChildren == nil or #menuItem.AXChildren == 0 then return end
   -- werid bug in apps like `UPDF`! have to query this value once to make sure
@@ -182,6 +204,7 @@ local function findMenuItemByKeyBindingImpl(mods, key, menuItem)
   end
 end
 
+-- Binary representation of modifier symbols for fast comparison.
 local modifierBinary = {
   ["⌘"] = 1 << 3,
   ["⌃"] = 1 << 2,
@@ -189,6 +212,8 @@ local modifierBinary = {
   ["⇧"] = 1 << 0
 }
 
+-- Normalize modifier representation for menu item matching.
+-- Returns either a binary mask (likelyToFind=true) or modifier list.
 local function getModsRepr(mods, likelyToFind)
   if mods == '' then mods = {} end
   if type(mods) == 'string' and mods:byte(1, 1) < 127 then
@@ -233,6 +258,8 @@ local function getModsRepr(mods, likelyToFind)
   end
 end
 
+-- Find a menu item by its keyboard shortcut.
+-- Supports synchronous lookup, async callback, and pre-filtered menu trees.
 function findMenuItemByKeyBinding(app, mods, key, likelyToFind, menuItems)
   local fn = function(menuItems)
     if menuItems == nil then return end
@@ -278,6 +305,9 @@ function findMenuItemByKeyBinding(app, mods, key, likelyToFind, menuItems)
   return fn(menuItems)
 end
 
+-- # application helpers
+
+-- Filter out Parallels helper processes from application lists.
 local function filterParallels(apps)
   return tfind(apps, function(app)
     return app:bundleID() == nil
@@ -286,11 +316,13 @@ local function filterParallels(apps)
   end)
 end
 
+-- Find an application by name or bundle id, excluding Parallels helpers.
 function find(hint, exact)
   if exact == nil then exact = true end
   return filterParallels{hs.application.find(hint, exact)}
 end
 
+-- Quit an application by name or bundle id.
 function quit(hint)
   local app = find(hint, true)
   if app ~= nil then
@@ -300,11 +332,13 @@ function quit(hint)
   return false
 end
 
+-- Check whether an application bundle is installed.
 function installed(appid)
   local path = hs.application.pathForBundleID(appid)
   return path and path ~= ""
 end
 
+-- Retrieve application version as (major, minor, patch).
 function applicationVersion(appid)
   local appPath = hs.application.pathForBundleID(appid)
   if appPath == nil or appPath == "" then return end
@@ -323,6 +357,9 @@ function applicationVersion(appid)
   return major, minor, patch
 end
 
+-- # mouse event helpers
+
+-- Move mouse cursor to a screen position.
 function mouseMove(position, modifiers)
   hs.eventtap.event.newMouseEvent(
     hs.eventtap.event.types.mouseMoved,
@@ -330,6 +367,7 @@ function mouseMove(position, modifiers)
   ):post()
 end
 
+-- Simulate mouse button press at a position.
 function mouseDown(position, modifiers)
   hs.eventtap.event.newMouseEvent(
     hs.eventtap.event.types.leftMouseDown,
@@ -337,6 +375,7 @@ function mouseDown(position, modifiers)
   ):post()
 end
 
+-- Simulate mouse button release at a position.
 function mouseUp(position, modifiers)
   hs.eventtap.event.newMouseEvent(
     hs.eventtap.event.types.leftMouseUp,
@@ -344,6 +383,7 @@ function mouseUp(position, modifiers)
   ):post()
 end
 
+-- Simulate a mouse drag operation.
 function mouseDrag(start_position, end_position, modifiers)
   mouseMove(start_position, modifiers)
   mouseDown(start_position, modifiers)
@@ -354,6 +394,9 @@ function mouseDrag(start_position, end_position, modifiers)
   mouseUp(end_position, modifiers)
 end
 
+-- # network / Wi-Fi helpers
+
+-- Get current Wi-Fi SSID with multiple fallbacks across macOS versions.
 function getSSID(interface)
   local ssid = hs.wifi.currentNetwork()
   if ssid == nil then
@@ -4435,9 +4478,13 @@ function displayName(app)
   return appname
 end
 
--- helpers for click menubar to the right
 
+-- Low-level click helpers
+
+-- Perform a left or right click at a given point or AX element.
+-- Optionally verifies the target belongs to the specified application.
 local function clickImpl(leftClick, point, obj)
+  -- Normalize AX element to screen coordinates (center point)
   if point.AXPosition ~= nil then
     point = hs.geometry.point {
       point.AXPosition.x + point.AXSize.w / 2,
@@ -4446,6 +4493,8 @@ local function clickImpl(leftClick, point, obj)
   elseif point.x == nil then
     point = hs.geometry.point(point)
   end
+
+  -- Ensure the click target belongs to the expected application
   if obj ~= nil then
     local appHere = hs.axuielement.systemElementAtPosition(point)
     while appHere ~= nil and appHere.AXParent ~= nil do
@@ -4457,6 +4506,8 @@ local function clickImpl(leftClick, point, obj)
       if appid ~= targetApp:bundleID() then return false end
     end
   end
+
+  -- Dispatch actual mouse event
   if leftClick then
     hs.eventtap.leftClick(point)
   else
@@ -4465,6 +4516,7 @@ local function clickImpl(leftClick, point, obj)
   return true
 end
 
+-- Click and restore the mouse position afterward.
 local function clickAndRestoreImpl(leftClick, point, obj, delay)
   if type(obj) == 'number' then
     delay = obj obj = nil
@@ -4483,25 +4535,44 @@ local function clickAndRestoreImpl(leftClick, point, obj, delay)
   return false
 end
 
+-- Left click a point.
 function leftClick(point, obj)
   return clickImpl(true, point, obj)
 end
 
+-- Right click a point.
 function rightClick(point, obj)
   return clickImpl(false, point, obj)
 end
 
+-- Left click and restore cursor position.
 function leftClickAndRestore(point, obj, delay)
   return clickAndRestoreImpl(true, point, obj, delay)
 end
 
+-- Right click and restore cursor position.
 function rightClickAndRestore(point, obj, delay)
   return clickAndRestoreImpl(false, point, obj, delay)
 end
 
+
+-- helpers for clicking menu bar items on the right side
+-- these utilities simulate mouse interactions on menu bar items,
+-- and are mainly used to work around limitations of AX.Press
+-- and menu bar managers (Bartender / Ice / iBar / etc.)
+
+------------------------------------------------------------
+-- Load menu bar autosave names and preferred positions
+-- Used to map menu bar item indices <-> persistent identifiers
+------------------------------------------------------------
+
+-- Load autosave names for Control Center menu bar items on macOS Tahoe+.
+-- Control Center uses a different persistence model starting from Tahoe.
 local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferredPosition)
   local appid = app:bundleID() or app:name()
   local enabledItems, preferredPositions = {}, {}
+
+  -- Read Control Center visibility settings
   local plistPath = hs.fs.pathToAbsolute(strfmt(
       "~/Library/Preferences/%s.plist", appid))
   if plistPath ~= nil then
@@ -4516,6 +4587,7 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
       end
     end
 
+    -- Load preferred ordering if requested
     if requirePreferredPosition == true then
       local prefix = "NSStatusItem Preferred Position "
       local prefix_len = #prefix
@@ -4534,6 +4606,7 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
     end
   end
 
+  -- Collect menu bar items that belong to Control Center
   local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
   if menuBarItems == nil then return end
   menuBarItems = tifilter(menuBarItems, function(item)
@@ -4541,6 +4614,8 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
         and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
           or item.AXIdentifier:sub(-13) == '.liveActivity')
   end)
+  
+  -- Sort by on-screen position (right to left)
   local positions = {}
   for i, item in ipairs(menuBarItems) do
     tinsert(positions, { i, item })
@@ -4552,11 +4627,14 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
     return a[2].AXPosition.x > b[2].AXPosition.x
   end)
 
+  -- Build bidirectional mapping: index <-> autosave name
   local map, preferred = {}, {}
   local ccBentoBoxCnt = 0
   foreach(positions, function(r)
     local item = r[2]
     local autosaveName
+
+    -- BentoBox items are unnamed; assign synthetic identifiers
     if item.AXDescription:match('^'..app:name()) then
       autosaveName = "BentoBox-" .. tostring(ccBentoBoxCnt)
       ccBentoBoxCnt = ccBentoBoxCnt + 1
@@ -4597,16 +4675,27 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
   end
 end
 
+-- Build a stable mapping between "visual index" and "autosave name"
+-- so we can address menu bar items reliably across reorders.
 function loadStatusItemsAutosaveName(app, requirePreferredPosition)
   local appid = app:bundleID() or app:name()
+
+  -- Special case: Control Center on Tahoe+ has different persistence keys.
   if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
     return loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferredPosition)
   end
+
+  ----------------------------------------------------------
+  -- Phase 1: read preferred positions from app defaults/plists
+  -- We try container plist first, then normal plist, then `defaults read`.
+  ----------------------------------------------------------
 
   local preferredPositions = {}
   local errorReadingDefaults = false
   local plistPath, defaults
   local prefix = "NSStatusItem Preferred Position "
+
+  -- First try sandbox container plist (common for sandboxed apps)
   plistPath = hs.fs.pathToAbsolute(strfmt(
       "~/Library/Containers/%s/Data/Library/Preferences/%s.plist", appid, appid))
   if plistPath ~= nil then
@@ -4622,6 +4711,8 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
       errorReadingDefaults = true
     end
   end
+
+  -- Fallback: standard preference plist (non-sandboxed apps)
   if #preferredPositions == 0 then
     plistPath = hs.fs.pathToAbsolute(strfmt(
         "~/Library/Preferences/%s.plist", appid))
@@ -4640,6 +4731,8 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
       end
     end
   end
+
+  -- Last resort: shell `defaults read` text parsing (when plist read fails)
   if #preferredPositions == 0 and errorReadingDefaults then
     local records = hs.execute(strfmt([[
       defaults read %s | grep '"%s'
@@ -4655,6 +4748,8 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
     end
   end
 
+  -- Control Center (pre-Tahoe) needs filtering by visibility
+  -- because preferences can include items not currently shown.
   if appid == 'com.apple.controlcenter' then
     local enabledItems = {}
     local visiblePrefix = OS_VERSION >= OS.Tahoe
@@ -4675,8 +4770,15 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
 
   if #preferredPositions == 0 then return end
 
+  ----------------------------------------------------------
+  -- Phase 2: map preferred positions to actual AX MenuBarItem indices
+  -- We require counts to match to avoid bad mappings.
+  ----------------------------------------------------------
+
   local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
   if menuBarItems == nil then
+    -- Special case: Little Snitch exposes no AX menubar item list,
+    -- but the defaults still contain one persistent status item.
     if appid == "at.obdev.littlesnitch.agent" then
       local autosaveName = preferredPositions[1][1]
       local preferredPosition = preferredPositions[1][2]
@@ -4689,12 +4791,15 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
     end
     return
   end
+
+  -- Collect menu bar positions (x coordinate) to align with preferred ordering
   local positions = {}
   for i, item in ipairs(menuBarItems) do
     tinsert(positions, { i, item.AXPosition.x })
   end
 
   if #preferredPositions ~= #positions then return end
+  -- Sort preferred positions (ascending) and actual items (right-to-left)
   table.sort(preferredPositions, function(r1, r2)
     return r1[2] < r2[2]
   end)
@@ -4702,6 +4807,7 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
     return r1[2] > r2[2]
   end)
 
+  -- Build bidirectional map: index -> autosaveName and autosaveName -> index
   local map, preferred = {}, {}
   for i, r in ipairs(positions) do
     map[r[1]] = preferredPositions[i][1]
@@ -4718,6 +4824,11 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
   end
 end
 
+------------------------------------------------------------
+-- Helpers used when menu bar items are hidden by a manager
+------------------------------------------------------------
+
+-- Show hidden items panel for managers that expose a single "reveal" icon.
 local function showHiddenMenuBarItems(manager)
   local icon = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 1)
   if icon then
@@ -4726,8 +4837,9 @@ local function showHiddenMenuBarItems(manager)
   return false
 end
 
+-- Activate a menu bar item by AX.Press or by mouse click.
+-- Some apps do not respond to AX.Press reliably, so click fallback exists.
 local function activateMenuBarItem(menuBarItem, click)
-  -- note: some apps do not react to AX.Press, you have to click them.
   if click == "right-click" then
     rightClickAndRestore(menuBarItem)
   elseif click then
@@ -4737,12 +4849,29 @@ local function activateMenuBarItem(menuBarItem, click)
   end
 end
 
+------------------------------------------------------------
+-- MENUBAR_MANAGER_SHOW
+-- Adaptation table: how to reveal / click items hidden by a manager.
+-- Each entry either:
+--   - is a function(manager, appid, index, map, click) -> boolean done?
+--   - or is a string appid meaning "use showHiddenMenuBarItems"
+------------------------------------------------------------
+
 MENUBAR_MANAGER_SHOW = {
+  ----------------------------------------------------------
+  -- Bartender
+  -- Strategy:
+  --   - Most releases: use Bartender AppleScript "activate <appid-index>"
+  --   - Early Bartener 6 releases: open Bartender Bar window,
+  --     then locate the correct icon inside the bar and click it.
+  ----------------------------------------------------------
   ["com.surteesstudios.Bartender"] = function(manager, appid, index, map, click)
     if type(index) == 'number' then
       map = map or loadStatusItemsAutosaveName(find(appid))
       index = map and map[index] or "Item-" .. tostring(index - 1)
     end
+
+    -- Prefer AppleScript for stable Bartender versions (more direct).
     local major, minor, patch = applicationVersion(manager:bundleID())
     if not (major == 6 and (minor < 1 or (minor == 1 and patch == 0))) then
       local clickMode = click == "right-click" and " with right click" or ""
@@ -4752,8 +4881,11 @@ MENUBAR_MANAGER_SHOW = {
       return true
     end
 
+    -- Early Bartener 6 releases: open Bartender menu bar item (must exist).
     local icon = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, "Bartender")
     if icon == nil then return end
+
+    -- If not using Bartender Bar, simply toggling icon shows items.
     local useBartenderBar = hs.execute(strfmt([[
       defaults read "%s" UseBartenderBar | tr -d '\n'
     ]], manager:bundleID()))
@@ -4768,6 +4900,9 @@ MENUBAR_MANAGER_SHOW = {
       index = map and map[index]
       if index == nil then return true end
     end
+
+    -- Compute the "order inside hidden bar" for the target icon:
+    -- we count sibling items with same relative position class.
     local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
     if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
       menuBarItems = tifilter(menuBarItems, function(item)
@@ -4798,6 +4933,7 @@ MENUBAR_MANAGER_SHOW = {
       end
     end
 
+    -- Watch for "Bartender Bar" window creation, then click the icon.
     local observer = uiobserver.new(manager:pid())
     observer:addWatcher(toappui(manager), uinotifications.windowCreated)
     observer:callback(function(obs, elem)
@@ -4829,6 +4965,8 @@ MENUBAR_MANAGER_SHOW = {
     end)
     observer:start()
 
+    -- If the item is in normal visible region, a normal click opens bar;
+    -- otherwise alt-click trick to reveal hidden section.
     if menuBarItem.AXPosition.x > iconAllwaysHiddenPosition then
       leftClickAndRestore(icon)
     else
@@ -4849,6 +4987,11 @@ MENUBAR_MANAGER_SHOW = {
     return true
   end,
 
+  ----------------------------------------------------------
+  -- Barbee
+  -- Strategy: ask Barbee to show item via AppleScript.
+  -- Note: it may kill itself (known issue).
+  ----------------------------------------------------------
   ["com.HyperartFlow.Barbee"] = function(manager, appid, index, map)
     if type(index) == 'number' then
       map = map or loadStatusItemsAutosaveName(find(appid))
@@ -4861,9 +5004,18 @@ MENUBAR_MANAGER_SHOW = {
     return true
   end,
 
+  ----------------------------------------------------------
+  -- Ice
+  -- Strategy:
+  --   - If Ice Bar is disabled, clicking the icon is enough.
+  --   - If Ice Bar is enabled, open Ice Bar window and click the Nth icon
+  --     for the target app (supports right-click).
+  ----------------------------------------------------------
   ["com.jordanbaird.Ice"] = function(manager, appid, index, map, click)
     local icon = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 1)
     if icon == nil then return end
+
+    -- If Ice Bar is not used, toggling icon reveals hidden items.
     local useIceBar = hs.execute(strfmt([[
       defaults read "%s" UseIceBar | tr -d '\n'
     ]], manager:bundleID()))
@@ -4878,6 +5030,8 @@ MENUBAR_MANAGER_SHOW = {
       index = map and map[index]
       if index == nil then return true end
     end
+
+    -- Determine Nth occurrence among this app's items (multiple items possible)
     local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
     if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
       menuBarItems = tifilter(menuBarItems, function(item)
@@ -4909,6 +5063,7 @@ MENUBAR_MANAGER_SHOW = {
       end
     end
 
+    -- Watch for "Ice Bar" window and click the correct icon.
     local observer = uiobserver.new(manager:pid())
     observer:addWatcher(toappui(manager), uinotifications.windowCreated)
     observer:callback(function(obs, elem)
@@ -4920,9 +5075,9 @@ MENUBAR_MANAGER_SHOW = {
           local title = button.AXAttributedDescription:getString()
           if title == hs.application.nameForBundleID(appid)
               or title == app:name()
-              -- `Ice` set the display name of "com.apple.Passwords.MenuBarExtra"
-              -- to "Passwords" (see in https://github.com/jordanbaird/Ice/blob/
-              -- main/Ice/MenuBar/MenuBarItems/MenuBarItem.swift)
+              -- `Ice` renames "com.apple.Passwords.MenuBarExtra" to "Passwords"
+              -- (see in https://github.com/jordanbaird/Ice/blob/main
+              -- /Ice/MenuBar/MenuBarItems/MenuBarItem.swift)
               or (appid == "com.apple.Passwords.MenuBarExtra"
                   and title == "Passwords") then
             count = count + 1
@@ -4941,6 +5096,7 @@ MENUBAR_MANAGER_SHOW = {
     end)
     observer:start()
 
+    -- Open Ice Bar (normal or via alt-trick if icon is itself hidden)
     if iconAllwaysHidden == nil
         or (menuBarItem.AXPosition.x > iconAllwaysHidden.AXPosition.x) then
       leftClickAndRestore(icon)
@@ -4962,6 +5118,12 @@ MENUBAR_MANAGER_SHOW = {
     return true
   end,
 
+  ----------------------------------------------------------
+  -- iBar
+  -- Strategy:
+  --   - If not advancedMode: hover-move to trigger UI, then click target.
+  --   - If advancedMode: open iBarmenu window and click entry by identifier.
+  ----------------------------------------------------------
   ["cn.better365.iBar"] = function(manager, appid, index, map, click)
     local icon = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 1)
     if not icon then return end
@@ -4976,6 +5138,8 @@ MENUBAR_MANAGER_SHOW = {
         index = map and map[index]
         if index == nil then return true end
       end
+
+      -- iBar (non-advanced) relies on cursor hover gestures to reveal hidden icons.
       mouseMove(uioffset(icon, {-10, 10}))
       hs.timer.doAfter(0.2, function()
         mouseMove(uioffset(icon, {-20, 10}))
@@ -4997,7 +5161,9 @@ MENUBAR_MANAGER_SHOW = {
       return true
     end
 
+    -- Advanced mode: open iBarmenu panel and click target entry.
     leftClickAndRestore(icon)
+
     if type(index) == 'number' then
       map = map or loadStatusItemsAutosaveName(find(appid))
       index = map and map[index] or "Item-" .. tostring(index - 1)
@@ -5010,6 +5176,7 @@ MENUBAR_MANAGER_SHOW = {
       end,
       function()
         local winUI = towinui(manager:focusedWindow())
+        -- If index specified: click exact entry matching "<index> >>> <appid>"
         if index ~= nil then
           local itemRepr = index .. ' >>> ' .. appid
           for _, bt in ipairs(getc(winUI, AX.Button)) do
@@ -5020,6 +5187,7 @@ MENUBAR_MANAGER_SHOW = {
             end
           end
         else
+          -- If index omitted: if only one item for app exists, click it.
           local appItems = {}
           for i, bt in ipairs(getc(winUI, AX.Button)) do
             if bt.AXIdentifier:find(appid) then
@@ -5036,6 +5204,10 @@ MENUBAR_MANAGER_SHOW = {
     return true
   end,
 
+  ----------------------------------------------------------
+  -- Vanilla
+  -- Strategy: find its icon-like window and click it to reveal.
+  ----------------------------------------------------------
   ["net.matthewpalmer.Vanilla"] = function(manager)
     local icon = tfind(getc(toappui(manager), AX.Window), function(win)
       return #win == 1 and win[1].AXRole == AX.Image
@@ -5046,22 +5218,27 @@ MENUBAR_MANAGER_SHOW = {
     return false
   end,
 
+  -- Managers that can be handled by generic "click first menu bar item" reveal
   "com.dwarvesv.minimalbar",
   "com.mortennn.Dozer",
 }
 
+-- Detect which menu bar manager is actually active/visible
 local function getValidMenuBarManager()
+  -- Leftmost screen x coordinate: used to decide if an item is "hidden"
   local leftmostHorizontal = 0
   foreach(hs.screen.allScreens(), function(screen)
     leftmostHorizontal = math.min(screen:fullFrame().x, leftmostHorizontal)
   end)
+
+  -- Pick the first manager that has a visible UI on the menu bar area.
   for appid, fn in pairs(MENUBAR_MANAGER_SHOW) do
     if type(fn) == 'string' then
       appid = fn
     end
     local app = find(appid)
     if app then
-      local maxX  -- incase it is hidden by other menu bar managers
+      local maxX  -- used to avoid false positives if the manager is itself hidden
       if appid == "net.matthewpalmer.Vanilla" then
         local icon = tfind(getc(toappui(app), AX.Window), function(win)
           return #win == 1 and win[1].AXRole == AX.Image
@@ -5079,6 +5256,7 @@ local function getValidMenuBarManager()
   end
 end
 
+-- Check whether a menu bar item is hidden by a manager
 function hiddenByMenuBarManager(app, index, map)
   local manager = getValidMenuBarManager()
   if manager == nil then return false end
@@ -5096,6 +5274,7 @@ function hiddenByMenuBarManager(app, index, map)
     end)
   end
   local menuBarItem = menuBarItems[index or 1]
+  -- Any item with x < leftmost screen x is considered "off-screen hidden".
   local leftmostHorizontal = 0
   foreach(hs.screen.allScreens(), function(screen)
     leftmostHorizontal = math.min(screen:fullFrame().x, leftmostHorizontal)
@@ -5103,8 +5282,10 @@ function hiddenByMenuBarManager(app, index, map)
   return menuBarItem.AXPosition.x < leftmostHorizontal, manager, map
 end
 
+-- Open a menu bar item, then navigate submenus and finally press the leaf menu item.
 function clickRightMenuBarItem(appid, menuItemPath, show)
   local menuBarId, app
+  -- Support passing {appid, menubarIndex} as appid argument.
   if type(appid) == 'table' then
     menuBarId = appid[2] appid = appid[1]
   end
@@ -5118,9 +5299,14 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   if type(menuItemPath) ~= 'table' then
     menuItemPath = { menuItemPath }
   end
+  -- If no submenu path is provided, default to showing the menu.
   if #menuItemPath == 0 and show == nil then
     show = true
   end
+
+  -- Resolve menu bar index:
+  --   - numeric index: direct
+  --   - string autosaveName: translate via loadStatusItemsAutosaveName
 
   local menuBarIdx = menuBarId
   local map
@@ -5140,14 +5326,19 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   local menuBarItem = menuBarItems[menuBarIdx or 1]
   if menuBarItem == nil then return false end
 
+  -- Rnsure the menu bar item is actually visible
+  -- If it's hidden by a manager, ask that manager to reveal it.
+
   if show then
     local click = type(show) == "string" and show or false
     local hidden, manager
     hidden, manager, map = hiddenByMenuBarManager(app, menuBarId, map)
     if hidden then
       assert(manager)
+      -- Use manager-specific reveal strategy if available, else generic.
       local showFunc = MENUBAR_MANAGER_SHOW[manager:bundleID()]
           or bind(showHiddenMenuBarItems, manager)
+      -- `done=false` means: manager reveals panel; we need delayed activation.
       local done = showFunc(manager, appid, menuBarId or 1, map, click)
       if not done then
         if menuBarItem then
@@ -5159,12 +5350,16 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
         end
       end
     elseif menuBarItem then
+      -- Not hidden: just activate directly.
       activateMenuBarItem(menuBarItem, click)
     else
       return false
     end
   end
   if #menuItemPath == 0 then return true end
+
+  -- Traverse submenu path and press the final item.
+  -- Each step expects an AX.Menu(1) under current node.
 
   local menu = menuBarItem
   for _, item in ipairs(menuItemPath) do
