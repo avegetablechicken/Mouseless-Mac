@@ -1,8 +1,22 @@
+-- System-level features and integrations.
+--
+-- This module provides:
+-- - System menubar utilities (caffeine, proxy, Control Center)
+-- - Network and proxy management helpers
+-- - Control Center automation and hotkeys
+-- - System-related callbacks (battery / network / monitor)
+--
+-- Most logic here is UI-automation heavy and relies on Accessibility APIs.
+
 require "utils"
 
--- menubar for caffeine
+-- Caffeine menubar.
+--
+-- Provides a simple menubar toggle to control display sleep state
+-- via hs.caffeinate.
 local caffeine = hs.menubar.new(true, "CAFFEINE")
 
+-- Update caffeine menubar title according to display sleep state
 local function setCaffeineDisplay(state)
   if state then
     caffeine:setTitle("AWAKE")
@@ -11,6 +25,7 @@ local function setCaffeineDisplay(state)
   end
 end
 
+-- Toggle display idle sleep and update caffeine menubar
 local function caffeineClicked()
   setCaffeineDisplay(hs.caffeinate.toggle("displayIdle"))
 end
@@ -20,7 +35,13 @@ if caffeine then
   setCaffeineDisplay(hs.caffeinate.get("displayIdle"))
 end
 
--- system proxy helpers
+-- System proxy helpers.
+--
+-- These helpers manage macOS system proxy settings using `networksetup`,
+-- and provide a unified interface for different proxy clients and modes
+-- (PAC / Global).
+
+-- Get current primary network service name or service ID
 local function getNetworkService(userDefinedName)
   if userDefinedName == nil then
     userDefinedName = true
@@ -40,6 +61,7 @@ local function getNetworkService(userDefinedName)
   end
 end
 
+-- Disable all system proxy settings for the given network service
 local function disable_proxy(networkservice)
   networkservice = networkservice or getNetworkService()
   hs.execute('networksetup -setproxyautodiscovery "' .. networkservice .. '" off')
@@ -49,6 +71,7 @@ local function disable_proxy(networkservice)
   hs.execute('networksetup -setsocksfirewallproxystate "' .. networkservice .. '" off')
 end
 
+-- Enable system proxy using PAC file for a proxy client
 local function enable_proxy_PAC(client, networkservice, location)
   networkservice = networkservice or getNetworkService()
   hs.execute('networksetup -setproxyautodiscovery "' .. networkservice .. '" off')
@@ -68,6 +91,7 @@ local function enable_proxy_PAC(client, networkservice, location)
   hs.execute('networksetup -setautoproxystate "' .. networkservice .. '" on')
 end
 
+-- Enable system proxy using global (HTTP / HTTPS / SOCKS) mode
 local function enable_proxy_global(client, networkservice, location)
   networkservice = networkservice or getNetworkService()
   hs.execute('networksetup -setproxyautodiscovery "' .. networkservice .. '" off')
@@ -90,13 +114,21 @@ local function enable_proxy_global(client, networkservice, location)
   hs.execute('networksetup -setsocksfirewallproxystate "' .. networkservice .. '" on')
 end
 
+-- Proxy client togglers.
+--
+-- These functions control third-party proxy applications by automating
+-- their menu bar UI via Accessibility APIs.
+--
+-- They are responsible only for toggling the proxy client state
+-- (connect / disconnect), not for configuring system proxy settings.
+
 local proxyAppBundleIDs = {
   V2RayX = "cenmrev.V2RayX",
   V2rayU = "net.yanue.V2rayU",
   MonoCloud = "com.MonoCloud.MonoProxyMac",
 }
 
--- toggle connect/disconnect VPN using `V2RayX`
+-- Toggle connect/disconnect VPN using `V2RayX`
 local function toggleV2RayX(enable, alert)
   local appid = proxyAppBundleIDs.V2RayX
   if find(appid) == nil then
@@ -158,7 +190,7 @@ local function toggleV2RayX(enable, alert)
   return true
 end
 
--- toggle connect/disconnect VPN using `V2rayU`
+-- Toggle connect/disconnect VPN using `V2rayU`
 local function toggleV2RayU(enable, alert)
   local appid = proxyAppBundleIDs.V2rayU
   if find(appid) == nil then
@@ -222,7 +254,7 @@ local function toggleV2RayU(enable, alert)
   return true
 end
 
--- toggle connect/disconnect VPN using `MonoCloud`(`MonoProxyMac`)
+-- Toggle connect/disconnect VPN using `MonoCloud`
 local function toggleMonoCloud(enable, alert)
   local appid = proxyAppBundleIDs.MonoCloud
   if find(appid) == nil then
@@ -267,6 +299,12 @@ local function toggleMonoCloud(enable, alert)
   return true
 end
 
+-- Proxy activation strategies.
+--
+-- Maps proxy clients and modes (global / pac) to activation routines,
+-- combining application toggling and system proxy configuration.
+
+-- Activate proxy client and configure system proxy according to mode
 local proxyActivateFuncs = {
   V2RayX = {
     global = function()
@@ -322,6 +360,7 @@ local proxyActivateFuncs = {
 
 local shellCommandsExecutedOnLoading = {}
 local function executeProxyCondition(condition, returnCode)
+  -- Phase 1: evaluate shell command condition (cached during loading)
   if condition.shell_command then
     local status, rc
     if FLAGS["LOADING"] then
@@ -347,6 +386,7 @@ local function executeProxyCondition(condition, returnCode)
 
   if returnCode then return -1 end
 
+  -- Phase 2: evaluate Wi-Fi SSID based condition
   local interface = hs.network.primaryInterfaces()
   local interfaceName = getNetworkService(true)
   if condition.ssid then
@@ -361,6 +401,8 @@ local function executeProxyCondition(condition, returnCode)
       end
     end
   end
+
+  -- Phase 3: evaluate Ethernet IP based condition
   if condition.etherNet then
     if interfaceName:match('^USB (.-) LAN$') then
       local ip = NetworkWatcher
@@ -384,9 +426,13 @@ local proxy = hs.menubar.new(true, "PROXY")
 proxy:setTitle("PROXY")
 local proxyMenu = {}
 
--- load proxy configs
+-- Proxy configuration loader.
+--
+-- Loads and normalizes proxy configurations from JSON files,
+-- supporting optional conditions and multiple locations.
 ProxyConfigs = {}
 
+-- Parse proxy configuration definitions into normalized runtime structure
 local function parseProxyConfigurations(configs)
   for name, config in pairs(configs) do
     ProxyConfigs[name] = {}
@@ -440,6 +486,11 @@ if privateProxyConfigs ~= nil then
   parseProxyConfigurations(privateProxyConfigs)
 end
 
+-- Proxy menubar.
+--
+-- Builds and maintains a dynamic menubar menu reflecting
+-- current system proxy state and available proxy configurations.
+
 local proxyMenuItemCandidates =
 {
   {
@@ -491,6 +542,15 @@ local proxyMenuItemCandidates =
   },
 }
 
+-- Proxy menu registration and state synchronization.
+--
+-- This section:
+-- - Detects current system proxy state
+-- - Matches it against configured proxy definitions
+-- - Builds the menubar menu accordingly
+-- - Reacts to network changes and service switches
+
+-- Wrap proxy menu item to update checked state and extra info dynamically
 local function updateProxyWrapper(wrapped, appname)
   local fn = function(mod, item)
     wrapped.fn(mod, item)
@@ -533,6 +593,7 @@ local function updateProxyWrapper(wrapped, appname)
   }
 end
 
+-- Register proxy menu entries for a specific proxy configuration
 local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
   local config, loc
   if ProxyConfigs[name].locations then
@@ -592,6 +653,7 @@ local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
   return proxyMenuIdx
 end
 
+-- Parse current system proxy state and detect enabled proxy and mode
 local function parseProxyInfo(info, require_mode)
   if require_mode == nil then require_mode = true end
   local enabledProxy = ""
@@ -711,6 +773,7 @@ local function registerProxySettingsEntry(menu)
   })
 end
 
+-- Build and register proxy menubar according to current system state
 local function registerProxyMenuImpl(enabledProxy, mode)
   if enabledProxy == nil then
     enabledProxy, mode = parseProxyInfo(NetworkWatcher:proxies())
@@ -851,6 +914,7 @@ local function registerProxyMenuImpl(enabledProxy, mode)
   proxy:setMenu(proxyMenu)
 end
 
+-- Register proxy menubar with retry logic on network availability
 local function registerProxyMenu(retry, enabledProxy, mode)
   if not getNetworkService() then
     local menu = {{
@@ -886,6 +950,7 @@ if exists("config/misc.json") then
   proxySettings = hs.json.read("config/misc.json").proxy
 end
 
+-- Network watcher callback to re-register proxy menu on network changes
 local lastIpv4State
 local function registerProxyMenuWrapper(storeObj, changedKeys)
   NetworkMonitorKeys = tifilter(NetworkMonitorKeys, function(key)
@@ -996,8 +1061,20 @@ local function toggleSystemProxy(networkservice)
     end
 end
 
+
+-- Control Center automation.
+--
+-- This section provides deep automation for macOS Control Center,
+-- including:
+-- - Opening specific panels
+-- - Registering panel-specific hotkeys
+-- - Handling UI differences across macOS versions
+--
+-- Implementation relies heavily on Accessibility APIs and
+-- version-specific UI heuristics.
+
 -- assume `Control Center` window is always frontmost
--- so not necessary to call "inAppHotKeysWrapper"
+
 local CC = {
   AXShortcuts       = "Accessibility Shortcuts",
   AirDrop           = "AirDrop",
@@ -1019,7 +1096,14 @@ if OS_VERSION >= OS.Tahoe then
   CC.MusicRecognition = "Recognize Music"
 end
 
+-- Control Center hotkey bindings.
+--
+-- Hotkeys registered here are contextual and only active
+-- while Control Center UI is present.
+
 local controlCenterLocalized
+
+-- Create a Control Center specific hotkey
 local function newControlCenter(...)
   local hotkey = newHotkey(...)
   if hotkey == nil then return nil end
@@ -1028,6 +1112,7 @@ local function newControlCenter(...)
   return hotkey
 end
 
+-- Bind a Control Center hotkey using hotkey spec
 local function bindControlCenter(...)
   local hotkey = bindHotkeySpec(...)
   if hotkey == nil then return nil end
@@ -1036,6 +1121,7 @@ local function bindControlCenter(...)
   return hotkey
 end
 
+-- Bind hotkey to open a specific Control Center panel
 local function bindControlCenterPanel(spec, panel, func)
   local locAppName = displayName("com.apple.controlcenter")
   local locPanel = controlCenterLocalized(panel)
@@ -1043,6 +1129,7 @@ local function bindControlCenterPanel(spec, panel, func)
   return bindControlCenter(spec, message, func)
 end
 
+-- Register URL event handler for Control Center panel switching
 local controlCenterPanelFuncs = {}
 local function bindURLEventForControlCenter()
   hs.urlevent.bind("controlcenter", function(eventName, params)
@@ -1054,6 +1141,7 @@ local function bindURLEventForControlCenter()
   end)
 end
 
+-- Register URL-based Control Center panel trigger
 local function bindControlCenterPanelURL(panel, func)
   controlCenterPanelFuncs[panel] = func
 
@@ -1199,7 +1287,13 @@ local function getBluetoothConnectedDevices()
   return devices
 end
 
+-- Open or switch to a specific Control Center sub-panel
 local function popupControlCenterSubPanel(panel, allowReentry)
+  -- Phase 1: detect current Control Center window and UI container
+  -- Phase 2: locate panel entry point based on OS version
+  -- Phase 3: perform UI action to enter panel
+  -- Phase 4: register panel-specific hotkeys
+
   local app = find("com.apple.controlcenter")
   local appUI = toappui(app)
   local pane
@@ -1438,6 +1532,9 @@ local focusOptionHotkeys, focusOptionWatcher
 ---@diagnostic disable-next-line: lowercase-global
 function registerControlCenterHotKeys(panel, inMenuBar)
   local appUI = toappui(find('com.apple.controlcenter'))
+
+  -- Locate Control Center window and root pane.
+  -- This may block briefly because Control Center UI is created lazily.
   local pane = getc(appUI, AX.Window, 1)
   local winTotalDelay = 0
   if pane == nil then
@@ -1448,6 +1545,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       pane = getc(appUI, AX.Window, 1)
     until pane ~= nil
   end
+  -- Normalize root pane structure across macOS versions.
+  -- Starting from Ventura, most Control Center content is nested under AX.Group.
   if OS_VERSION >= OS.Ventura then
     pane = getc(pane, AX.Group, 1)
     if panel == CC.Hearing then
@@ -1460,16 +1559,21 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     end
   end
 
+  -- Helper to localize Control Center UI labels for the current panel.
   local function mayLocalize(value)
     return controlCenterLocalized(panel, value)
   end
 
+  -- Clear previously registered Control Center hotkeys.
+  -- Hotkeys are panel-scoped and must be recreated on each panel entry.
   if controlCenterHotKeys ~= nil then
     for _, hotkey in ipairs(controlCenterHotKeys) do
       hotkey:delete()
     end
   end
   controlCenterHotKeys = {}
+  -- Reset transient hotkeys used by expandable UI elements
+  -- (e.g. disclosure triangles, background sounds, network lists).
   if hotkeyShow ~= nil then
     hotkeyShow:delete()
     hotkeyShow = nil
@@ -1485,7 +1589,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     backgroundSoundsHotkeys = nil
   end
 
-  -- back to main panel
+  -- Register hotkey to return to the main Control Center panel.
+  -- This is only available when entering from a sub-panel.
   if not inMenuBar then
     local msg = "Back"
     local appLocale = applicationValidLocale('com.apple.controlcenter')
@@ -1529,7 +1634,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     end
   end
 
-  -- jump to related panel in `System Preferences`
+  -- Register shortcut to jump from Control Center panel
+  -- to its corresponding System Settings page (if available).
   if tcontain({ CC.WiFi, CC.Bluetooth, CC.Focus, CC.KbBrightness,
                 CC.ScreenMirror, CC.Display, CC.Sound,
                 CC.AXShortcuts, CC.Battery,
@@ -1558,7 +1664,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     end
   end
 
-  -- pandel with a switch-off button
+  -- Panels with a top-level enable/disable switch.
+  -- Bind Space to toggle the main checkbox.
   if tcontain({CC.WiFi, CC.Bluetooth, CC.AirDrop}, panel) then
     local checkbox
     local totalDelay = 0
@@ -1587,7 +1694,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     end
   end
 
-  -- panel with a slider
+  -- Panels containing a primary slider.
+  -- Provide fine-grained and jump-to-min/max shortcuts.
   if tcontain({CC.Display, CC.Sound, CC.KbBrightness}, panel) then
     local name = panel == CC.Sound and "Volume" or "Brightness"
     local actions = {{ '=', 'Up'}, {'-', 'Down'}}
@@ -1649,7 +1757,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     end
   end
 
-  -- panel with a list of devices
+  -- Panels displaying a list of selectable devices.
+  -- Dynamically assign numeric hotkeys to visible entries.
   if tcontain({CC.Bluetooth, CC.Sound, CC.ScreenMirror}, panel) then
     local cbs
     local totalDelay = 0
@@ -1710,6 +1819,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     end
   end
 
+  -- Helper to register left/right arrow hotkeys
+  -- for expanding or collapsing disclosure sections.
   local registerHotkeyForTraingleDisclosure = function(actionFunc, msg, enabled)
     if enabled == 0 then
       hotkeyShow = newControlCenter("", "Right", "Show " .. msg,
@@ -1747,6 +1858,10 @@ function registerControlCenterHotKeys(panel, inMenuBar)
   end
 
   if panel == CC.WiFi then
+    -- Wi-Fi panel special handling:
+    -- - Expand "Other Networks"
+    -- - Bind numeric keys to available SSIDs
+    -- - Track list changes dynamically
     local triangle
     local totalDelay = 0
     repeat
@@ -1844,6 +1959,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     selectNetworkActionFunc()
     selectNetworkWatcher = ExecContinuously(selectNetworkActionFunc)
   elseif panel == "AirDrop" then
+    -- AirDrop panel:
+    -- Bind numeric keys to switch AirDrop visibility modes.
     local cb
     repeat
       hs.timer.usleep(0.05 * 1000000)
@@ -1867,6 +1984,9 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       end
     end
   elseif panel == CC.Focus then
+    -- Focus panel supports hierarchical options.
+    -- First-level keys toggle focus modes,
+    -- second-level keys control options of the active mode.
     local cb1
     repeat
       hs.timer.usleep(0.05 * 1000000)
@@ -1940,6 +2060,9 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       focusOptionHotkeys = nil
     end
   elseif panel == CC.Display then
+    -- Display panel:
+    -- Provide shortcuts for display toggles (Dark Mode / Night Shift / True Tone),
+    -- brightness control, and external display options.
     local role = OS_VERSION < OS.Ventura and AX.ScrollArea or AX.Group
     local sa1
     local totalDelay = 0
@@ -2169,6 +2292,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       end
     end
   elseif panel == CC.MusicRecognition then
+    -- Music Recognition panel:
+    -- Bind shortcut to start or stop music recognition.
     local msg = "Start Listening"
     msg = controlCenterLocalized(panel, msg) or msg
     local hotkey = newControlCenter("", "Space", msg,
@@ -2185,6 +2310,9 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       return
     end
   elseif panel == CC.Hearing then
+    -- Hearing panel:
+    -- Control background sounds, volume sliders, and sound profiles
+    -- with expandable disclosure support.
     local hearingFunc
     hearingFunc = function()
       if hotkeyShow ~= nil then
@@ -2308,6 +2436,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
 
     hearingFunc()
   elseif panel == CC.NowPlaying then
+    -- Now Playing panel:
+    -- Bind media transport controls and per-session playback shortcuts.
     local result
     local button2
     repeat
@@ -2433,6 +2563,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
   end
 end
 
+-- Handle Control Center window creation and register dynamic hotkeys
 local controlCenter = find("com.apple.controlcenter")
 ControlCenterObserver = uiobserver.new(controlCenter:pid())
 ControlCenterObserver:addWatcher(
@@ -2511,6 +2642,7 @@ end
 ControlCenterObserver:callback(controlCenterObserverCallback)
 ControlCenterObserver:start()
 
+-- Detect currently active Control Center panel
 local function getActiveControlCenterPanel()
   local appUI = toappui(find('com.apple.controlcenter'))
   local pane = getc(appUI, AX.Window, 1)
@@ -2552,7 +2684,16 @@ ExecContinuously(function()
   end
 end)
 
+
+-- Menu bar item search.
+--
+-- Provides a chooser-based interface to search and trigger
+-- menu bar items across running applications.
+
 local function registerSearchMenuBar()
+  -- Collect menu bar items from all running applications.
+  -- For each app, try to load autosaved status item identifiers
+  -- and map them to accessibility menu bar elements if available.
   local menuBarItems, maps = {}, {}
   local apps = hs.application.runningApplications()
   for _, app in ipairs(apps) do
@@ -2577,6 +2718,10 @@ local function registerSearchMenuBar()
   if #menuBarItems == 0 then
     return
   end
+
+  -- Sort menu bar items by their on-screen position (right to left),
+  -- falling back to autosave name order when accessibility position
+  -- is unavailable.
   table.sort(menuBarItems, function(a, b)
     if a[1].AXPosition and b[1].AXPosition then
       return a[1].AXPosition.x > b[1].AXPosition.x
@@ -2584,6 +2729,10 @@ local function registerSearchMenuBar()
       return a[3] < b[3]
     end
   end)
+
+  -- On newer macOS versions, Control Center hosts additional menu bar items
+  -- (e.g. empty entries and Live Activities) that need to be excluded or
+  -- merged  into the global menu bar ordering
   if OS_VERSION >= OS.Tahoe then
     local appMenuBarItems = getc(toappui(find('com.apple.controlcenter')),
         AX.MenuBar, -1, AX.MenuBarItem)
@@ -2610,6 +2759,8 @@ local function registerSearchMenuBar()
     end)
   end
 
+  -- Trim menu bar items to only those to the right of Control Center,
+  -- since items on the left are not reachable via Control Center UI.
   for i, pair in ipairs(menuBarItems) do
     local item = pair[1]
     local app
@@ -2626,6 +2777,10 @@ local function registerSearchMenuBar()
       break
     end
   end
+
+  -- Build chooser entries from collected menu bar items.
+  -- Each entry includes display text, optional subtitle,
+  -- application icon, and extra search patterns.
   local choices = {}
   local ccBentoBoxCnt = 0
   for _, pair in ipairs(menuBarItems) do
@@ -2642,6 +2797,9 @@ local function registerSearchMenuBar()
     if #maps[appid] > 1 then
       local autosaveName = maps[appid][idx]
       if appid == 'com.apple.controlcenter' then
+        -- Special handling for Control Center items:
+        -- - Normalize BentoBox naming
+        -- - Attach additional search patterns
         if autosaveName then
           extraSearchPattern = autosaveName
           if autosaveName:match('^BentoBox%-') then
@@ -2673,10 +2831,19 @@ local function registerSearchMenuBar()
         title = autosaveName
       end
     end
+
+    -- Resolve icon and search metadata for menu bar items.
+    --
+    -- Prefer using the application's bundle ID to fetch its icon directly.
+    -- However, some menu bar items are backed by helper processes or
+    -- non-bundled executables, in which case `app:bundleID()` is nil.
     local image
     if app:bundleID() then
       image = hs.image.imageFromAppBundle(appid)
     else
+      -- Fallback for processes without a bundle ID:
+      -- Inspect the executable path via `lsof` to locate the enclosing `.app`
+      -- bundle, then infer its bundle identifier manually.
       local pathStr, ok = hs.execute(strfmt([[
           lsof -a -d txt -p %s 2>/dev/null | sed -n '2p' | awk '{print $NF}']], app:pid()))
       if ok and pathStr ~= "" then
@@ -2685,6 +2852,7 @@ local function registerSearchMenuBar()
             table.insert(parts, part)
         end
 
+        -- Walk backwards to find the nearest enclosing `.app` bundle
         for i = #parts, 1, -1 do
           if parts[i]:sub(-4) == ".app" then
             local subPath = {}
@@ -2712,6 +2880,9 @@ local function registerSearchMenuBar()
     }
   end
 
+  -- Chooser callback:
+  -- Trigger the selected menu bar item using the most reliable method
+  -- (accessibility press or simulated mouse click), depending on the item.
   local chooser
   chooser = hs.chooser.new(function(choice)
     if choice == nil then return end
@@ -2743,6 +2914,9 @@ local function registerSearchMenuBar()
       end
       if not leftClickAndRestore(item, find(choice.appid)) then
         if choice.appid == hs.settings.bundleID then
+          -- Special-case handling for Hammerspoon menu bar items
+          -- (e.g. caffeine and proxy), which cannot always be triggered
+          -- via accessibility actions.
           if choice.subText == caffeine:autosaveName() then
             caffeineClicked()
             return
@@ -2762,6 +2936,10 @@ local function registerSearchMenuBar()
     end)
   end)
   chooser:choices(choices)
+
+  -- Dynamic filtering:
+  -- Match query against app name, bundle ID, item title,
+  -- and additional extracted identifiers.
   chooser:queryChangedCallback(function(query)
     local newChoices = {}
     local loweredQuery = string.lower(query)
