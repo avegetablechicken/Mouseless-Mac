@@ -1,3 +1,4 @@
+-- Create a window-operation hotkey for screen/space operations.
 local function newWindow(...)
   local hotkey = newHotkeySpec(...)
   if hotkey == nil then return nil end
@@ -6,6 +7,7 @@ local function newWindow(...)
   return hotkey
 end
 
+-- Bind a window-operation hotkey for screen/space operations.
 local function bindWindow(...)
   local hotkey = bindHotkeySpec(...)
   if hotkey == nil then return nil end
@@ -14,6 +16,7 @@ local function bindWindow(...)
   return hotkey
 end
 
+-- Bind a window screen/space URL handler.
 local moveToSpaceFuncs, adjacentSpaceFuncs = {}, {}
 local moveToScreenFuncs, adjacentMonitorFuncs = {}, {}
 local function bindWindowURL(mode, directionOrIndex, fn)
@@ -32,6 +35,7 @@ local function bindWindowURL(mode, directionOrIndex, fn)
   end
 end
 
+-- Handle window screen/space operations triggered via URL.
 hs.urlevent.bind("windowspace", function(eventName, params)
   local fn
   if params["mode"] == "space" then
@@ -54,12 +58,12 @@ local ssHK = KeybindingConfigs.hotkeys.global or {}
 
 -- # monitor ops
 
--- move cursor to other monitor
-
+-- Check whether a window belongs to the given screen.
 local function isInScreen(screen, win)
   return win:screen() == screen
 end
 
+-- Focus the given screen and move cursor to it.
 local function focusScreen(screen)
   -- Get windows within screen, ordered from front to back.
   -- If no windows exist, bring focus to desktop. Otherwise, set focus on
@@ -79,6 +83,7 @@ local function focusScreen(screen)
   hs.alert.show("Focus on \"" .. screenName .. "\"")
 end
 
+-- Focus the adjacent screen and move cursor accordingly.
 local function checkAndMoveCursurToMonitor(monitor)
   if #hs.screen.allScreens() > 1 then
     local monitorToFocus = monitor == "r" and hs.screen.mainScreen():next() or hs.screen.mainScreen():previous()
@@ -90,12 +95,14 @@ end
 
 -- move window (along with cursor) to other monitor
 
+-- Move the mouse cursor to the center of the given screen.
 local function centerMouse(scrn)
     local rect = scrn:fullFrame()
     local center = hs.geometry.rectMidPoint(rect)
     hs.mouse.absolutePosition(center)
 end
 
+-- Move a window to the given screen and keep cursor centered.
 local consistencyDelay = 0.9 -- seconds
 local function moveToScreen(win, screen)
   if win:isFullScreen() then
@@ -117,6 +124,7 @@ local function moveToScreen(win, screen)
   hs.alert.show("Move \"" .. win:title() .. "\" to \"" .. screenName .. "\"")
 end
 
+-- Move the focused window to the adjacent screen.
 local function checkAndMoveWindowToMonitor(monitor)
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -128,15 +136,17 @@ local function checkAndMoveWindowToMonitor(monitor)
   end
 end
 
+-- Register hotkeys for focusing adjacent monitors.
 local adjacentMonitorHotkeys = {}
--- move cursor to next monitor
+
+-- Register hotkeys for focusing the next screen.
 if ssHK["focusNextScreen"] then
   local hotkey = newHotkeySpec(ssHK["focusNextScreen"], "Focus on Next Screen",
       bind(checkAndMoveCursurToMonitor, "r"))
   hotkey.subkind = HK.WIN_OP_.SPACE_SCREEN
   tinsert(adjacentMonitorHotkeys, hotkey)
 end
--- move cursor to previous monitor'
+-- Register hotkeys for focusing the previous screen.
 if ssHK["focusPrevScreen"] then
   local hotkey = newHotkeySpec(ssHK["focusPrevScreen"], "Focus on Previous Screen",
       bind(checkAndMoveCursurToMonitor, "l"))
@@ -144,17 +154,18 @@ if ssHK["focusPrevScreen"] then
   tinsert(adjacentMonitorHotkeys, hotkey)
 end
 
--- move window to next monitor
+-- Register hotkeys for moving window to the next screen.
 if ssHK["moveToNextScreen"] then
   tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToNextScreen"], "Move to Next Monitor",
       bind(checkAndMoveWindowToMonitor, "r")))
 end
--- move window to previous monitor
+-- Register hotkeys for moving window to the previous screen.
 if ssHK["moveToPrevScreen"] then
   tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToPrevScreen"], "Move to Previous Monitor",
       bind(checkAndMoveWindowToMonitor, "l")))
 end
 
+--  Register hotkeys for focusing or moving windows to indexed screens.
 local focusMonitorHotkeys = {}
 local moveToScreenHotkeys = {}
 local function registerMonitorHotkeys()
@@ -212,6 +223,7 @@ registerMonitorHotkeys()
 
 -- # space ops
 
+-- Collect all user spaces across all screens.
 local function getUserSpaces()
   local user_spaces = {}
   for _, screen in ipairs(hs.screen.allScreens()) do
@@ -229,6 +241,7 @@ if OS_VERSION >= OS.Sequoia then
   Drag = hs.loadSpoon("Drag")
 end
 
+-- Move the focused window to the adjacent user space.
 local function checkAndMoveWindowToSpace(space)
   local user_spaces = getUserSpaces()
   local nspaces = #user_spaces
@@ -256,11 +269,14 @@ local function checkAndMoveWindowToSpace(space)
   end
 end
 
--- move window to next space
+-- Register hotkeys for moving window to adjacent spaces.
 local adjacentSpaceHotkeys = {}
+
+-- Register hotkeys for moving window to the next space.
 tinsert(adjacentSpaceHotkeys, newWindow(ssHK["moveToNextSpace"], "Move to Next Space",
     bind(checkAndMoveWindowToSpace, "r")))
--- move window to previous space
+
+-- Register hotkeys for moving window to the previous space.
 tinsert(adjacentSpaceHotkeys, newWindow(ssHK["moveToPrevSpace"], "Move to Previous Space",
     bind(checkAndMoveWindowToSpace, "l")))
 
@@ -268,6 +284,7 @@ for _, hotkey in ipairs(adjacentSpaceHotkeys) do
   hotkey.icon = image
 end
 
+-- Register hotkeys for moving windows to indexed spaces.
 local moveToSpaceHotkeys = {}
 local function registerMoveToSpaceHotkeys()
     if #moveToSpaceHotkeys > 0 then
@@ -320,16 +337,13 @@ end
 registerMoveToSpaceHotkeys()
 
 
--- watch screen changes
-
+-- Refresh screen-related hotkeys on screen configuration changes.
 function Screen_monitorChangedCallback()
   registerMonitorHotkeys()
   registerMoveToSpaceHotkeys()
 end
 
--- watch space changes
-
--- detect number of user spaces
+-- Monitor user space count changes and refresh space hotkeys.
 ExecContinuously(function()
   local user_spaces = getUserSpaces()
   local nspaces = #user_spaces
