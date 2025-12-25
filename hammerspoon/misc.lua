@@ -1,10 +1,23 @@
+-- Miscellaneous utilities and productivity helpers.
+--
+-- This module contains small but high-impact features, including:
+-- - Cross-device clipboard integration via Shortcuts
+-- - Pasteboard preprocessing and cleanup
+-- - SMS verification code extraction
+-- - Global hotkey cheatsheet and search
+--
+-- Most features here are event-driven and operate globally.
+
 local misc = KeybindingConfigs.hotkeys.global or {}
 local miscConfig = {}
 if exists("config/misc.json") then
   miscConfig = hs.json.read("config/misc.json")
 end
 
--- call `ShortCuts` to copy to PC
+-- Copy selected content and forward it to another device via Shortcuts.
+--
+-- This triggers a predefined Shortcuts workflow ("Paste to PC"),
+-- and automatically cleans up the Shortcuts app if it was launched transiently.
 local iconForShortcuts = hs.image.imageFromAppBundle("com.apple.shortcuts")
 local copyPCHotkey = bindHotkeySpec(misc["copyToPC"], "Copy to PC",
 function()
@@ -25,7 +38,9 @@ if copyPCHotkey then
   copyPCHotkey.icon = iconForShortcuts
 end
 
--- call `ShortCuts` to paste from PC
+-- Fetch clipboard content from another device via Shortcuts and paste locally.
+--
+-- The paste action is only performed when the Shortcuts workflow succeeds.
 local pastePCHotkey = bindHotkeySpec(misc["pasteFromPC"], "Paste from PC",
 function()
   local task = hs.task.new("/usr/bin/osascript",
@@ -47,7 +62,10 @@ if pastePCHotkey then
   pastePCHotkey.icon = iconForShortcuts
 end
 
--- hold command and double tap C to prepend to pasteboard
+-- Prepend previous clipboard content by double-tapping Cmd+C.
+--
+-- This event tap tracks a Cmd+C key sequence within a short time window
+-- and concatenates the new content with the previous pasteboard text.
 local pasteboardKeyDown = false
 local pasteboardKeyUp = false
 local pasteboardBuffer = nil
@@ -99,7 +117,10 @@ function(ev)
   return false
 end):start()
 
--- detect clipboard change and remove suffix added by website
+-- Pasteboard sanitizer.
+--
+-- Detect clipboard changes and strip known suffix patterns
+-- commonly added by websites or applications.
 local pasteboardFilterPatterns = miscConfig.pasteboardFilter or {}
 GeneralPBWatcher = hs.pasteboard.watcher.new(
 function(v)
@@ -115,7 +136,14 @@ function(v)
   end
 end)
 
--- parse verification code from new message
+-- SMS verification code detection.
+--
+-- This section monitors newly received Messages,
+-- extracts verification codes using configurable patterns,
+-- and automatically copies them to the pasteboard.
+--
+-- Implementation relies on querying the Messages SQLite database
+-- and observing Notification Center UI events.
 local verificationPatterns = miscConfig.verificationFilter or {}
 local defaultVerificationPattern = 'verification code'
 local locDefaultVerificationPattern = localizedString(
@@ -128,6 +156,7 @@ if locDefaultVerificationPattern then
 else
   locDefaultVerificationPattern = defaultVerificationPattern
 end
+-- Parse verification code from the most recent incoming message.
 local function parseVerificationCodeFromFirstMessage()
   local content, ok = hs.execute([[
     /usr/bin/sqlite3 $HOME/Library/Messages/chat.db \
@@ -158,6 +187,10 @@ local function parseVerificationCodeFromFirstMessage()
   end
 end
 
+-- Observe Notification Center windows to detect incoming messages.
+--
+-- When a new message arrives, attempt to extract a verification code
+-- and notify the user.
 local notificationCenterApp = find("com.apple.notificationcenterui")
 NewMessageWindowObserver = uiobserver.new(notificationCenterApp:pid())
 NewMessageWindowObserver:addWatcher(
@@ -175,16 +208,28 @@ NewMessageWindowObserver:callback(function()
 end)
 NewMessageWindowObserver:start()
 
--- show all hammerspoon keybinds
+
+-- Hotkey cheatsheet and search infrastructure.
+--
+-- HSKeybindings collects hotkeys from multiple sources:
+-- - Hammerspoon
+-- - Karabiner-Elements
+-- - Application menu items
+--
+-- It supports contextual validity, modal highlighting,
+-- and interactive execution via chooser.
+
 HSKeybindings = {}
 HSKeybindings.__index = HSKeybindings
 HSKeybindings.buffer = nil
 
+-- Initialize the hotkey cheatsheet state.
 function HSKeybindings:init()
   self.sheetView = nil
   self:reset()
 end
 
+-- Reset internal state and cached hotkey data.
 function HSKeybindings:reset()
   HSKeybindings.buffer = nil
   self.validOnly = true
@@ -242,6 +287,8 @@ local keySymbolMap = {
   PAGEDOWN = "⇟",
 }
 
+-- Load Karabiner-Elements keybindings and normalize them
+-- into the same structure as Hammerspoon hotkeys.
 local function loadKarabinerKeyBindings(filePath)
   local json = hs.json.read(filePath)
   local keyBindings = {}
@@ -300,6 +347,12 @@ local function menuItemHotkeyIdx(mods, key)
   return idx
 end
 
+-- Recursively extract menu item hotkeys from an application's menu tree.
+--
+-- This function:
+-- - Resolves command glyphs and modifiers
+-- - Handles localized menu titles
+-- - Applies OS-version-specific heuristics (e.g. Sequoia window menus)
 local windowMenuItemsSinceSequoia1 = {
   ["⌃F"] = "Fill", ["⌃C"] = "Center"
 }
@@ -427,6 +480,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
   end
 end
 
+-- Collect all menu-based hotkeys from the given application.
 local function getMenuHotkeys(app, titleAsEntry, titlePrefix)
   local appHotkeys = {}
   for _, menuItem in ipairs(app:getMenuItems() or {}) do
@@ -538,7 +592,14 @@ end
 
 local trackpad = require('modal.trackpad')
 local karaHotkeys
+
+-- Collect, normalize, validate, and render all available hotkeys.
+--
+-- This function aggregates hotkeys from multiple sources,
+-- evaluates their contextual validity, and produces
+-- an HTML-compatible representation for display.
 local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
+  -- Phase 1: collect hotkeys from active modals (Hyper / Globe / DoubleTap / Trackpad / Basic).
   local allKeys = {}
   local enabledAltMenuHotkeys = {}
 
@@ -623,6 +684,7 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
     source = HK_SOURCE.HS
   })
 
+  -- Phase 2: merge Karabiner hotkeys if Karabiner daemon is running.
   if karaHotkeys == nil then
     local _, karaIsRunning = hs.execute("pgrep Karabiner-VirtualHIDDevice-Daemon")
     if karaIsRunning then
@@ -634,6 +696,7 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
   end
   allKeys = tconcat(allKeys, karaHotkeys or {})
 
+  -- Phase 3: evaluate contextual validity for each hotkey entry.
   for _, entry in ipairs(allKeys) do
     testValid(entry)
   end
@@ -641,6 +704,7 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
     testValid(entry)
   end
 
+  -- Phase 4: normalize symbols and sort hotkeys by kind and subkind.
   for _, entry in ipairs(allKeys) do
     local pos = entry.msg:find(": ")
     if pos ~= nil then
@@ -725,10 +789,28 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
 
   ::L_endCollect::
 
+  -- Phase 5: inject application menu hotkeys at appropriate positions.
   if (showApp and not HSKeybindings.appHotkeysLoaded) or reload == true then
     loadAppHotkeys(HSKeybindings.buffer, true)
   end
 
+  -- Phase 6: render hotkeys into HTML columns for webview display.
+  --
+  -- This phase transforms the normalized hotkey list into an HTML structure
+  -- suitable for webview rendering. The output is a multi-column layout
+  -- grouped by semantic kind and subkind, rather than by registration order.
+  --
+  -- Rendering responsibilities in this phase:
+  -- - Group hotkeys by kind (Privilege / App / Window / Menu / etc.)
+  -- - Insert visual section headers when group boundaries change
+  -- - Highlight currently pressed modifier combinations
+  -- - Dim or hide contextually invalid hotkeys
+  -- - Split content into balanced columns for readability
+
+  -- Highlight hotkeys matching currently pressed modifier flags.
+  --
+  -- Matching combinations are visually emphasized to help
+  -- users discover valid key sequences interactively.
   local evFlagsRepr
   if evFlags ~= nil then
     evFlagsRepr = ""
@@ -747,9 +829,11 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
   local ix = 0
   local kind, subkind = HK.PRIVELLEGE, HK.PRIVELLEGE
   for i, entry in ipairs(HSKeybindings.buffer) do
+    -- String entries are used as section markers injected earlier.
     if type(entry) == 'string' and showApp then
       local canShow = false
       local j = i + 1
+      -- Skip non-renderable placeholders unless application hotkeys are enabled.
       while j <= #HSKeybindings.buffer
           and type(HSKeybindings.buffer[j]) ~= 'string' do
         if HSKeybindings.buffer[j].kind == HK.IN_APP then
@@ -793,6 +877,10 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
     elseif (((entry.source == HK_SOURCE.HS or entry.source == HK_SOURCE.KARABINER)
         and showCustom) or (entry.source == HK_SOURCE.APP and showApp))
         and (entry.valid or (not validOnly and entry.msg:find(": ") ~= nil)) then
+
+      -- Detect top-level kind transition.
+      -- When the hotkey kind changes, insert a section header
+      -- (e.g. "Hammerspoon", "Focused App", "Window Miscs").
       if ix == 0 then
         local msg = "Hammerspoon"
         ix = ix + 1
@@ -832,6 +920,9 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
         end
       end
 
+      -- Handle Window Operation sub-groups.
+      -- Subkind boundaries introduce a second-level header
+      -- such as "Move", "Resize", "Space & Screen", etc.
       local submsg
       if entry.kind == HK.WIN_OP then
         if entry.subkind ~= subkind then
@@ -865,12 +956,25 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
 
       ix = ix + 1
       if ((ix - 1) % 15) == 0 then
+        -- Column layout management.
+        -- Each column contains a fixed number of entries to avoid
+        -- excessively long vertical scrolling.
+        --
+        -- New columns are started when the entry count reaches the limit,
+        -- ensuring visual balance across different screen sizes.
         if ix > 1 then
           menu = menu.."</ul>"
         end
         col = col + 1
         menu = menu.."<ul class='col col"..col.."'>"
       end
+
+      -- Decompose hotkey representation into modifier symbols and key.
+      --
+      -- This logic accounts for:
+      -- - Variable-width modifier symbols (e.g. 🌐︎)
+      -- - Keys that are themselves modifiers
+      -- - Karabiner-specific combinations
       local modsLen, modsByteLen = 0, 0
       for _, mod in ipairs(modifierSymbols) do
         if entry.idx:find(mod) then
@@ -903,6 +1007,10 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
       local pos = entry.msg:find(": ")
       local actualMsg = entry.msg:sub(pos + 2)
       if not entry.valid then
+        -- Render contextually invalid hotkeys in a disabled style.
+        --
+        -- Disabled entries are still shown (unless filtered),
+        -- but visually dimmed to indicate unmet conditions.
         if evFlagsRepr ~= modsRepr
             and (modsRepr ~= "&nbsp;" or evFlagsRepr ~= key) then
           menu = menu .. "<li><font color='grey'><div class='modstext'>"
@@ -918,6 +1026,7 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
       else
         if evFlagsRepr ~= modsRepr
             and (modsRepr ~= "&nbsp;" or evFlagsRepr ~= key) then
+          -- Highlight hotkeys matching currently pressed modifier flags.
           menu = menu .. "<li><div class='modstext'>"
               .. modsRepr .. "</div><div class='keytext'>"
               .. key .. "</div><div class='cmdtext'>"
@@ -937,6 +1046,12 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
     end
   end
 
+  -- Emit final HTML list item.
+  --
+  -- Each entry is rendered with three aligned fields:
+  -- - modifier symbols
+  -- - primary key
+  -- - action description
   menu = menu .. "</ul>"
   return menu
 end
@@ -1096,11 +1211,7 @@ local function generateHtml(validOnly, showCustom, showApp, evFlags, reload)
   return html
 end
 
---- HSKeybindings:show()
---- Method
---- Show current application's keybindings in a webview
----
-
+-- Show the hotkey cheatsheet in a centered webview.
 function HSKeybindings:show()
   self.sheetView = hs.webview.new({x=0, y=0, w=0, h=0})
   self.sheetView:windowTitle("HSKeybindings")
@@ -1130,6 +1241,7 @@ function HSKeybindings:show()
   loadAppHotkeys(self.buffer, true)
 end
 
+-- Update cheatsheet content and refresh the webview.
 function HSKeybindings:update(validOnly, showCustom, showApp, reload)
   if validOnly ~= nil then self.validOnly = validOnly end
   if showCustom ~= nil then self.showCustom = showCustom end
@@ -1141,16 +1253,13 @@ function HSKeybindings:update(validOnly, showCustom, showApp, reload)
   self.isShowing = true
 end
 
+-- Highlight hotkeys based on currently pressed modifier flags.
 function HSKeybindings:highlight(evFlags)
   self.evFlags = evFlags
   self:update()
 end
 
---- HSKeybindings:hide()
---- Method
---- Hide the cheatsheet webview
----
-
+-- Hide and destroy the hotkey cheatsheet view.
 function HSKeybindings:hide()
   self.sheetView:hide()
   self.sheetView:delete()
@@ -1288,41 +1397,15 @@ end)
 hkKeybinding.kind = HK.PRIVELLEGE
 tinsert(DoubleTapModalList, hkKeybinding)
 
-
--- show info of current window
-bindHotkeySpec(misc["showCurrentWindowInfo"], "Show Info of Current Window",
-function()
-  local win = hs.window.frontmostWindow()
-  if not win then return false end
-  local title = win:title()
-  local id = win:id()
-  local role = win:role()
-  if role == AX.Window then
-    local subrole = win:subrole()
-    role = role .. ' (' .. subrole .. ')'
-  end
-  local pid = win:pid()
-  local frame = win:frame()
-  local app = win:application()
-  hs.focus()
-  hs.dialog.blockAlert("Current Window",
-    strfmt([[
-      Window: %s (#%d)
-      Role: %s
-      Process: #%s
-      Position: (%d, %d)
-      Size: %dx%d
-
-      App: %s (%s)]],
-    title, id, role, pid, frame.x, frame.y, frame.w, frame.h,
-    app:name(), app:bundleID() or app:name()))
-end)
-
 local keySymbolInvMap = {}
 for k, v in pairs(keySymbolMap) do
   keySymbolInvMap[v] = k
 end
 
+-- Search and trigger hotkeys via a chooser interface.
+--
+-- This allows interactive execution of hotkeys without memorization,
+-- supporting multiple modal types and input methods.
 local searchHotkey = bindHotkeySpec(misc["searchHotkeys"], "Search Hotkey",
 function()
   local allKeys = {}
@@ -1464,6 +1547,11 @@ function()
 
   loadAppHotkeys(allKeys, false)
 
+  -- Chooser execution callback.
+  --
+  -- This callback simulates the selected hotkey according to its modal type
+  -- (regular / hyper / globe / double-tap), reproducing the original
+  -- user input sequence as faithfully as possible.
   local choices = {}
   local msg, submsg = nil, nil
   local HSImage = hs.image.imageFromAppBundle(hs.settings.bundleID)
@@ -1632,6 +1720,11 @@ function()
     if not choice.valid then return end
     local key = keySymbolInvMap[choice.key] or choice.key
     if choice.modal == HK_MODAL.REGULAR then
+      -- Case 1: trigger regular hotkeys.
+      --
+      -- Regular hotkeys are replayed directly via eventtap.
+      -- Application-scoped hotkeys are dispatched to the frontmost app,
+      -- while global hotkeys are sent system-wide.
       if choice.source == HK_SOURCE.APP then
         hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', Mod.Fn.Long), key,
                               nil, hs.application.frontmostApplication())
@@ -1639,6 +1732,11 @@ function()
         hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', Mod.Fn.Long), key)
       end
     elseif choice.modal == HK_MODAL.HYPER then
+      -- Case 2: trigger Hyper modal hotkeys.
+      --
+      -- Temporarily enable all Hyper modal bindings,
+      -- replay the selected key sequence,
+      -- then disable them again to restore modal state.
       local modal = tfind(HyperModalList, function(modal)
         return modal.hyper == choice.hyper
       end)
@@ -1652,6 +1750,10 @@ function()
         end
       end)
     elseif choice.modal == HK_MODAL.GLOBE then
+      -- Case 3: trigger Globe (Fn) modal hotkeys.
+      --
+      -- Fn-based shortcuts require explicit flag manipulation,
+      -- since Fn is not a standard modifier in eventtap.
       local event = hs.eventtap.event.newEvent()
       event:setType(hs.eventtap.event.types.flagsChanged)
       event:setFlags({ fn = true }):post()
@@ -1660,6 +1762,16 @@ function()
         event:setFlags({}):post()
       end)
     elseif choice.modal == HK_MODAL.DOUBLE_TAP then
+      -- Case 4: trigger double-tap hotkeys.
+      --
+      -- Double-tap shortcuts are emulated by replaying
+      -- the original input sequence twice, including:
+      -- - pure modifier double-taps
+      -- - key-only double-taps
+      -- - modifier + key combinations
+
+      -- Extract modifier and key segments from the compact representation.
+      -- Modifier symbols may be multi-byte and repeated.
       local modsByteLen = 0
       for _, mod in ipairs(modifierSymbols) do
         while choice.key:find(mod, modsByteLen + 1) do
@@ -1677,6 +1789,8 @@ function()
       end
       key = key:sub(1, key:len() / 2)
       if tcontain({ "⌘", "⌥", "⌃", "⇧" }, key) then
+        -- Case: double-tap on a modifier key.
+        -- Emulate rapid press-and-release of the modifier flag.
         local flag = toshort(key)
         local event = hs.eventtap.event.newEvent()
         event:setType(hs.eventtap.event.types.flagsChanged)
@@ -1685,6 +1799,8 @@ function()
         event:setFlags({ [flag] = true }):post()
         event:setFlags({}):post()
       elseif mods == "" then
+        -- Case: double-tap on a standalone key.
+        -- Emit two consecutive key press sequences.
         key = keySymbolInvMap[key] or key
         local keycode = hs.keycodes.map[key]
         mods = key:lower():match('^f%d+$') and Mod.Fn.Long or ''
@@ -1693,6 +1809,8 @@ function()
         hs.eventtap.event.newKeyEvent(mods, keycode, true):post()
         hs.eventtap.event.newKeyEvent(mods, keycode, false):post()
       else
+        -- Case: double-tap with modifiers.
+        -- Reconstruct modifier list and replay the full key chord twice.
         key = keySymbolInvMap[key] or key
         local keycode = hs.keycodes.map[key]
         local modsList = {}
@@ -1710,6 +1828,7 @@ function()
         end)
       end
     end
+    -- End of chooser execution.
   end)
   chooser:searchSubText(true)
   chooser:choices(choices)
@@ -1718,3 +1837,33 @@ end)
 if searchHotkey then
   searchHotkey.kind = HK.PRIVELLEGE
 end
+
+
+-- Show detailed information about the currently focused window.
+bindHotkeySpec(misc["showCurrentWindowInfo"], "Show Info of Current Window",
+function()
+  local win = hs.window.frontmostWindow()
+  if not win then return false end
+  local title = win:title()
+  local id = win:id()
+  local role = win:role()
+  if role == AX.Window then
+    local subrole = win:subrole()
+    role = role .. ' (' .. subrole .. ')'
+  end
+  local pid = win:pid()
+  local frame = win:frame()
+  local app = win:application()
+  hs.focus()
+  hs.dialog.blockAlert("Current Window",
+    strfmt([[
+      Window: %s (#%d)
+      Role: %s
+      Process: #%s
+      Position: (%d, %d)
+      Size: %dx%d
+
+      App: %s (%s)]],
+    title, id, role, pid, frame.x, frame.y, frame.w, frame.h,
+    app:name(), app:bundleID() or app:name()))
+end)
