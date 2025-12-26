@@ -4643,7 +4643,8 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
       autosaveName = tfind(enabledItems, function(name)
         return name:lower():find(ident)
       end)
-      if autosaveName == nil then
+      if autosaveName == nil
+          and item.AXIdentifier:sub(-13) ~= '.liveActivity' then
         local name = delocalizedString(item.AXDescription, appid)
         if name then
           name = name:gsub(" ", ""):gsub("‑", "")
@@ -4653,7 +4654,7 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
         end
       end
     end
-    if autosaveName then  -- should be true
+    if autosaveName then
       map[r[1]] = autosaveName
       map[autosaveName] = r[1]
       if requirePreferredPosition == true then
