@@ -10419,9 +10419,6 @@ end
 --   - non-frontmost apps (e.g. Steam helper)
 --   - focus redirection
 --   - menu activation via accessibility APIs
-
-local altMenuBarItemHotkeys = {}
-
 local function bindAltMenu(app, mods, key, message, fn)
   local config = {
     mods = mods, key = key, message = message, fn = fn,
@@ -10543,6 +10540,7 @@ end)
 --   - menu bar structure changes
 --   - focused window changes
 --   - localization differs
+local altMenuBarItemHotkeys = {}
 local function altMenuBarItem(app, reinvokeKey)
   -- delete previous hotkeys
   for _, hotkey in ipairs(altMenuBarItemHotkeys) do
