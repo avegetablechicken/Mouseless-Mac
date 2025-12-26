@@ -9584,7 +9584,7 @@ local function registerZoomHotkeys(app)
     local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
     local specApp = get(appHotKeyCallbacks[appid], hkID)
     if specApp ~= nil or spec == nil or tcontain(spec.excluded or {}, appid) then
-      return
+      goto ZOOM_CONTINUE
     end
 
     local title = menuItemTitles[i]
@@ -9630,6 +9630,7 @@ local function registerZoomHotkeys(app)
         info = nil
       end)
     end
+    ::ZOOM_CONTINUE::
   end
 end
 
