@@ -9022,9 +9022,10 @@ end
 
 local function registerWinFiltersForApp(app)
   local appid = app:bundleID() or app:name()
+  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
+
   for hkID, cfg in pairs(appHotKeyCallbacks[appid] or {}) do
-    local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID)
-        or { mods = cfg.mods, key = cfg.key }
+    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     if hasKey == false then
       local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
@@ -9062,10 +9063,12 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
   if daemonAppFocusedWindowHotkeys[wid] == nil then
     daemonAppFocusedWindowHotkeys[wid] = {}
   end
+  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
+
   local closeObserver
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
     local app = find(appid)
-    local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID) or cfg
+    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
@@ -9198,9 +9201,10 @@ end
 
 local function registerWinFiltersForDaemonApp(app, appConfig)
   local appid = app:bundleID() or app:name()
+  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
+
   for hkID, cfg in pairs(appConfig) do
-    local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID)
-        or { mods = cfg.mods, key = cfg.key }
+    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local isBackground = keybinding.background ~= nil
@@ -9229,10 +9233,11 @@ registerInMenuHotkeys = function(app)
   if menuBarMenuHotkeys[appid] == nil then
     menuBarMenuHotkeys[appid] = {}
   end
+  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
+
   local closeObserver
   for hkID, cfg in pairs(appConfig) do
-    local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID)
-        or { mods = cfg.mods, key = cfg.key }
+    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local menubarFilter = keybinding.menubarFilter or cfg.menubarFilter
     local bindable = function()
@@ -9333,9 +9338,10 @@ end
 MenuBarMenuObservers = {}
 local function registerObserversForMenuBarMenu(app, appConfig)
   local appid = app:bundleID() or app:name()
+  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
+
   for hkID, cfg in pairs(appConfig) do
-    local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID)
-        or { mods = cfg.mods, key = cfg.key }
+    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isMenuBarMenu = keybinding.menubarFilter ~= nil
         or cfg.menubarFilter ~= nil
