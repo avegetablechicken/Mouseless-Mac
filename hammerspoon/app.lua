@@ -9651,8 +9651,14 @@ end
 FullscreenObserver = nil
 local WINDOWMOVED_DELAY = 0.5
 local windowMovedTimer
+local resizeCornerHotkeys = {}
 local function registerResizeHotkeys(app)
   if OS_VERSION < OS.Sequoia then return end
+
+  for _, hotkey in pairs(resizeCornerHotkeys) do
+    hotkey:delete()
+  end
+  resizeCornerHotkeys = {}
   if FullscreenObserver then
     FullscreenObserver:stop()
     FullscreenObserver = nil
@@ -9661,6 +9667,7 @@ local function registerResizeHotkeys(app)
     windowMovedTimer:stop()
     windowMovedTimer = nil
   end
+
   local menu, submenu = "Window", "Move & Resize"
   local menuItem = app:findMenuItem({ menu, submenu })
   if menuItem == nil then
@@ -9673,12 +9680,17 @@ local function registerResizeHotkeys(app)
     if localizedSubmenu ~= nil then
       menuItem = app:findMenuItem({ localizedMenu, localizedSubmenu })
     end
-    if menuItem == nil then
+    if menuItem then
+      menu, submenu = localizedMenu, localizedSubmenu
+    else
       if localizedSubmenu ~= nil then
         menuItem = app:findMenuItem({ menu, localizedSubmenu })
       end
-      if menuItem == nil then
+      if menuItem then
+        submenu = localizedSubmenu
+      else
         menuItem = app:findMenuItem({ localizedMenu, submenu })
+        menu = localizedMenu
       end
     end
   end
@@ -9695,8 +9707,40 @@ local function registerResizeHotkeys(app)
   else
     FLAGS["NO_MOVE_RESIZE"] = nil
   end
-  if menuItem == nil and
-      tcontain(toappui(app):attributeNames() or {}, "AXFocusedWindow") then
+  if menuItem then
+    local appid = app:bundleID() or app:name()
+    for _, title in ipairs { 'Top Left', 'Top Right', 'Bottom Left', 'Bottom Right' } do
+      local hkID = 'zoomTo' .. title:gsub(' ', '')
+      local spec = get(KeybindingConfigs.hotkeys.global, hkID)
+      if spec and not tcontain(spec.excluded or {}, appid) then
+        if submenu ~= "Move & Resize" then
+          local oldTitle = title
+          title = TC(oldTitle, app)
+          if title == title and SYSTEM_LOCALE:sub(1, 2) ~= 'en' then
+            title = TC(oldTitle, app, { locale = SYSTEM_LOCALE })
+          end
+        end
+        local menuItemPath = { menu, submenu, title }
+        local hotkey = AppBind(app, {
+          spec = spec, message = submenu .. ' > ' .. title,
+          condition = function()
+            local menuItemCond = app:findMenuItem(menuItemPath)
+            return menuItemCond ~= nil and menuItemCond.enabled
+          end,
+          fn = function() app:selectMenuItem(menuItemPath) end
+        })
+        local info = {
+          _chainedCond = hotkey._chainedCond,
+          idx = hotkey.idx
+        }
+        Evt.OnDeactivated(app, function()
+          disableConditionInChain(appid, info, true)
+          info = nil
+        end)
+        tinsert(resizeCornerHotkeys, hotkey)
+      end
+    end
+  elseif tcontain(toappui(app):attributeNames() or {}, "AXFocusedWindow") then
     FullscreenObserver = uiobserver.new(app:pid())
     FullscreenObserver:addWatcher(toappui(app), uinotifications.windowResized)
     FullscreenObserver:callback(function()
