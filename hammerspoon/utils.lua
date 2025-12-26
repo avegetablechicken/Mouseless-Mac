@@ -4614,7 +4614,7 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
         and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
           or item.AXIdentifier:sub(-13) == '.liveActivity')
   end)
-  
+
   -- Sort by on-screen position (right to left)
   local positions = {}
   for i, item in ipairs(menuBarItems) do

@@ -2732,7 +2732,7 @@ local function registerSearchMenuBar()
 
   -- On newer macOS versions, Control Center hosts additional menu bar items
   -- (e.g. empty entries and Live Activities) that need to be excluded or
-  -- merged  into the global menu bar ordering
+  -- merged into the global menu bar ordering
   if OS_VERSION >= OS.Tahoe then
     local appMenuBarItems = getc(toappui(find('com.apple.controlcenter')),
         AX.MenuBar, -1, AX.MenuBarItem)
