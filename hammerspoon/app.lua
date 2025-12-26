@@ -9485,7 +9485,7 @@ local function remapPreviousTab(app, menuItems)
   end
   if menuItems then
     local menuItemPath = findMenuItemByKeyBinding(app, '⇧⌃', '⇥', menuItems)
-    callback(menuItemPath)
+    if menuItemPath then callback(menuItemPath) end
   else
     findMenuItemByKeyBinding(app, '⇧⌃', '⇥', callback)
   end
