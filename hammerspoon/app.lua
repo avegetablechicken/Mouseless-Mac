@@ -9447,7 +9447,7 @@ end
 --   - skipped for excluded apps
 --   - dynamically rebuilt when menu items change
 local remapPreviousTabHotkey
-local function remapPreviousTab(app, menuItems)
+local function remapPreviousTab(app)
   if remapPreviousTabHotkey then
     remapPreviousTabHotkey:delete()
     remapPreviousTabHotkey = nil
@@ -9461,7 +9461,7 @@ local function remapPreviousTab(app, menuItems)
 
   -- Register a conditional hotkey that selects the resolved menu item
   -- only when the menu item exists and is enabled.
-  local callback = function(menuItemPath)
+  findMenuItemByKeyBinding(app, '⇧⌃', '⇥', function(menuItemPath)
     local fn = function()
       app:selectMenuItem(menuItemPath)
     end
@@ -9482,13 +9482,7 @@ local function remapPreviousTab(app, menuItems)
       disableConditionInChain(appid, info, true)
       info = nil
     end)
-  end
-  if menuItems then
-    local menuItemPath = findMenuItemByKeyBinding(app, '⇧⌃', '⇥', menuItems)
-    if menuItemPath then callback(menuItemPath) end
-  else
-    findMenuItemByKeyBinding(app, '⇧⌃', '⇥', callback)
-  end
+  end)
 end
 
 -- Register a shared hotkey for "Open Recent" menu item.
