@@ -5248,8 +5248,6 @@ appHotKeyCallbacks = {
       fn = Callback.Select
     },
     ["closeWindow"] = {
-      mods = specialCommonHotkeyConfigs["closeWindow"].mods,
-      key = specialCommonHotkeyConfigs["closeWindow"].key,
       message = TC('Close Window'),
       bindCondition = Version.GreaterEqual("4"),
       windowFilter = WeChat.WF.AppExSingleTab,
@@ -7147,15 +7145,11 @@ appHotKeyCallbacks = {
       fn = Callback.Select
     },
     ["minimize"] = {
-      mods = specialCommonHotkeyConfigs["minimize"].mods,
-      key = specialCommonHotkeyConfigs["minimize"].key,
       message = T("Minimize"),
       condition = MenuItem.isEnabled({ "Window", "Minimize" }),
       fn = Callback.Select
     },
     ["closeWindow"] = {
-      mods = specialCommonHotkeyConfigs["closeWindow"].mods,
-      key = specialCommonHotkeyConfigs["closeWindow"].key,
       message = T("Close Window"),
       condition = function(app)
         local menuItem, menuItemTitle =
@@ -7182,8 +7176,6 @@ appHotKeyCallbacks = {
   ["org.wireshark.Wireshark"] =
   {
     ["closeWindow"] = {
-      mods = specialCommonHotkeyConfigs["closeWindow"].mods,
-      key = specialCommonHotkeyConfigs["closeWindow"].key,
       message = T("Close"),
       condition = function(app)
         local menuItem, menuItemTitle =
@@ -8639,8 +8631,10 @@ registerInAppHotKeys = function(app)
       local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
       if hasKey == false then
         local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
+            or specialCommonHotkeyConfigs[hkID]
         if kbShared ~= nil then
-          keybinding = { mods = kbShared.mods, key = kbShared.key }
+          keybinding.mods = kbShared.mods
+          keybinding.key = kbShared.key
           hasKey = true
         end
       end
@@ -8780,8 +8774,10 @@ registerInWinHotKeys = function(win, filter)
       local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
       if hasKey == false then
         local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
+            or specialCommonHotkeyConfigs[hkID]
         if kbShared ~= nil then
-          keybinding = { mods = kbShared.mods, key = kbShared.key }
+          keybinding.mods = kbShared.mods
+          keybinding.key = kbShared.key
           hasKey = true
         end
       end
@@ -9029,8 +9025,8 @@ local function registerWinFiltersForApp(app)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     if hasKey == false then
       local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
+          or specialCommonHotkeyConfigs[hkID]
       if kbShared ~= nil then
-        keybinding = { mods = kbShared.mods, key = kbShared.key }
         hasKey = true
       end
     end
@@ -9070,6 +9066,15 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
     local app = find(appid)
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    if hasKey == false then
+      local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
+          or specialCommonHotkeyConfigs[hkID]
+      if kbShared ~= nil then
+        keybinding.mods = kbShared.mods
+        keybinding.key = kbShared.key
+        hasKey = true
+      end
+    end
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
     local windowFilter = keybinding.windowFilter or cfg.windowFilter
@@ -9206,6 +9211,13 @@ local function registerWinFiltersForDaemonApp(app, appConfig)
   for hkID, cfg in pairs(appConfig) do
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    if hasKey == false then
+      local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
+          or specialCommonHotkeyConfigs[hkID]
+      if kbShared ~= nil then
+        hasKey = true
+      end
+    end
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
@@ -9239,6 +9251,14 @@ registerInMenuHotkeys = function(app)
   for hkID, cfg in pairs(appConfig) do
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    if hasKey == false then
+      local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
+          or specialCommonHotkeyConfigs[hkID]
+      if kbShared ~= nil then
+        keybinding = { mods = kbShared.mods, key = kbShared.key }
+        hasKey = true
+      end
+    end
     local menubarFilter = keybinding.menubarFilter or cfg.menubarFilter
     local bindable = function()
       return cfg.bindCondition == nil or cfg.bindCondition(app)
@@ -9343,6 +9363,13 @@ local function registerObserversForMenuBarMenu(app, appConfig)
   for hkID, cfg in pairs(appConfig) do
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    if hasKey == false then
+      local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
+          or specialCommonHotkeyConfigs[hkID]
+      if kbShared ~= nil then
+        hasKey = true
+      end
+    end
     local isMenuBarMenu = keybinding.menubarFilter ~= nil
         or cfg.menubarFilter ~= nil
     local bindable = function()
