@@ -10550,7 +10550,6 @@ local function altMenuBarItem(app, reinvokeKey)
   windowOnBindAltMenu = nil
 
   local appid = app:bundleID() or app:name()
-  if appid == nil then return end
   -- check whether called by window filter (possibly with delay)
   if appid ~= hs.application.frontmostApplication():bundleID() then
     return
