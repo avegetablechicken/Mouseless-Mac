@@ -11798,6 +11798,14 @@ function App_applicationCallback(appname, eventType, app)
     end
     FLAGS["MENUBAR_ITEMS_PREPARED"] = nil
   elseif eventType == hs.application.watcher.activated then
+    for bid, processes in pairs(Evt.ProcOnDeactivated) do
+      local b = find(bid)
+      for _, proc in ipairs(processes) do
+        proc(b)
+      end
+      Evt.ProcOnDeactivated[bid] = nil
+    end
+
     if launchTimer then
       launchTimer:stop() launchTimer = nil
       FLAGS["APP_LAUNCHING"] = FLAGS["APP_LAUNCHING_OVERRIDE"]
@@ -11822,29 +11830,12 @@ function App_applicationCallback(appname, eventType, app)
     elseif FLAGS["APP_LAUNCHING"] and appsLaunchSlow[appid] == nil then
       FLAGS["MENUBAR_ITEMS_PREPARED"] = false
     end
-  elseif eventType == hs.application.watcher.deactivated and appname ~= nil then
-    for _, proc in ipairs(Evt.ProcOnDeactivated[appid] or {}) do
-      proc(app)
-    end
-    Evt.ProcOnDeactivated[appid] = nil
   elseif eventType == hs.application.watcher.terminated then
-    for _, proc in ipairs(Evt.ProcOnDeactivated[appid] or {}) do
-      proc()
-    end
-    Evt.ProcOnDeactivated[appid] = nil
     for _, proc in ipairs(Evt.ProcOnTerminated[appid] or {}) do
       proc()
     end
     Evt.ProcOnTerminated[appid] = nil
   elseif eventType == hs.application.watcher.deactivated and appname == nil then
-    for id, processes in pairs(Evt.ProcOnDeactivated) do
-      if find(id) == nil then
-        for _, proc in ipairs(processes) do
-          proc()
-        end
-        Evt.ProcOnDeactivated[id] = nil
-      end
-    end
     for id, processes in pairs(Evt.ProcOnTerminated) do
       if find(id) == nil then
         for _, proc in ipairs(processes) do
