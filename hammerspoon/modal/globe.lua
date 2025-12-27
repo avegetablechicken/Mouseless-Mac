@@ -82,17 +82,20 @@ function hotkey:enable()
 end
 
 function hotkey:disable()
-  if self.idx == nil or not self.enabled then return end
+  if self.idx == nil then return end
+  local frontmostHK = get(module.keys, self.idx, 1)
   self._force_disable = true
   module.keys[self.idx] = tifilter(module.keys[self.idx] or {},
       function(hk) return hk._force_disable ~= true end)
   self._force_disable = nil
   self.enabled = false
   log.f('Disabled hotkey %s', self.msg)
-  local frontmostHK = module.keys[self.idx][1]
-  if frontmostHK then
-    frontmostHK.enabled = true
-    log.f('Re-enabled previous hotkey %s', frontmostHK.msg)
+  if frontmostHK == self then
+    frontmostHK = module.keys[self.idx][1]
+    if frontmostHK then
+      frontmostHK.enabled = true
+      log.f('Re-enabled previous hotkey %s', frontmostHK.msg)
+    end
   end
   return self
 end
