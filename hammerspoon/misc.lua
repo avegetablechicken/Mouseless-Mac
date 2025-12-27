@@ -1822,7 +1822,11 @@ function()
   chooser:choices(choices)
 
   local hkKeybindingsLastModifier = {}
+  local firstCmd, secondCmd, firstCmdTime = false, false, 0
   local callback = function(ev)
+    if firstCmd and (hs.timer.secondsSinceEpoch() - firstCmdTime) > 0.5 then
+      firstCmd, secondCmd, firstCmdTime = false, false, 0
+    end
     local evFlags = ev:getFlags()
     if ev:getType() == hs.eventtap.event.types.keyDown then
       if Mod.Hyper and ev:getKeyCode() == hs.keycodes.map[Mod.Hyper.Long] then
@@ -1861,7 +1865,24 @@ function()
       for k, v in pairs(evFlags) do
         cnt = cnt + 1
       end
-      if cnt > 0 and (cnt ~= 1 or evFlags.cmd ~= true) then
+      if secondCmd then
+        chooser:choices(choices)
+        firstCmd, secondCmd, firstCmdTime = false, false, 0
+      end
+      if cnt == 1 and evFlags.cmd == true then
+        if not firstCmd then
+          firstCmdTime, firstCmd = hs.timer.secondsSinceEpoch(), true
+        elseif firstCmd then
+          firstCmd, secondCmd, firstCmdTime = false, true, 0
+          local filterd = tifilter(choices, function(choice)
+            return (choice.modal == HK_MODAL.REGULAR and choice.mods == Mod.Cmd.Symbol)
+                or (choice.modal == HK_MODAL.HYPER and choice.key == Mod.Cmd.Symbol)
+                or (choice.modal == HK_MODAL.DOUBLE_TAP
+                    and choice.key == Mod.Cmd.Symbol..Mod.Cmd.Symbol)
+          end)
+          chooser:choices(filterd)
+        end
+      elseif cnt > 0 then
         local filterd = tifilter(choices, function(choice)
           local mods
           if evFlags.hyper then
