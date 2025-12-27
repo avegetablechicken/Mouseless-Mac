@@ -398,7 +398,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
             and (subItem.AXTitle == "Emoji & Symbols"
                  or delocalizedMenuItem(subItem.AXTitle, appid, true)
                     == "Emoji & Symbols") then
-          idx = "🌐︎E"
+          idx = Mod.Fn.Symbol..'E'
         end
       elseif subItem.AXMenuItemCmdChar == 'F'
           and subItem.AXMenuItemCmdGlyph == ""
@@ -408,23 +408,23 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
         if subItem.AXTitle == "Enter Full Screen"
             or subItem.AXTitle == "Exit Full Screen"
             or subItem.AXTitle == "Zoom" then
-          idx = "🌐︎F"
+          idx = Mod.Fn.Symbol..'F'
         else
           local enTitle = delocalizedMenuItem(subItem.AXTitle, appid)
           if enTitle == "Enter Full Screen"
               or enTitle == "Exit Full Screen"
               or enTitle == "Zoom" then
-            idx = "🌐︎F"
+            idx = Mod.Fn.Symbol..'F'
           else
             local lowerTitle = subItem.AXTitle:lower()
             if lowerTitle:find("full screen")
                 or lowerTitle:find("fullscreen") then
-              idx = "🌐︎F"
+              idx = Mod.Fn.Symbol..'F'
             elseif enTitle then
               enTitle = enTitle:lower()
               if enTitle:find("full screen")
                   or enTitle:find("fullscreen") then
-                idx = "🌐︎F"
+                idx = Mod.Fn.Symbol.."︎F"
               end
             end
           end
@@ -443,7 +443,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
             if idx == hkIdx and (subItem.AXTitle == itemTitle
                 or delocalizedMenuItem(subItem.AXTitle, appid, true)
                    == itemTitle) then
-              idx = "🌐︎" .. idx
+              idx = Mod.Fn.Symbol .. idx
               break
             end
           end
@@ -454,7 +454,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
             if idx == hkIdx and (subItem.AXTitle == itemTitle
                 or delocalizedMenuItem(subItem.AXTitle, appid, true)
                    == itemTitle) then
-              idx = "🌐︎" .. idx
+              idx = Mod.Fn.Symbol .. idx
               break
             end
           end
@@ -469,7 +469,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
         local delocTitle = delocalizedMenuItem(subItem.AXTitle, appid)
         idx = tindex(windowMenuItemsSinceSequoia2, delocTitle)
       end
-      if idx ~= nil then idx = "🌐︎" .. idx end
+      if idx ~= nil then idx = Mod.Fn.Symbol .. idx end
     end
     if idx ~= nil then
       tinsert(t, { idx = idx, msg = idx .. ": " .. title,
@@ -979,7 +979,7 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
       for _, mod in ipairs(modifierSymbols) do
         if entry.idx:find(mod) then
           modsLen = modsLen + 1
-          if mod == "🌐︎" then
+          if mod == Mod.Fn.Symbol then
             modsByteLen = modsByteLen + 7
           else
             modsByteLen = modsByteLen + 3
@@ -1666,7 +1666,7 @@ function()
       for _, mod in ipairs(modifierSymbols) do
         if entry.idx:find(mod) then
           modsLen = modsLen + 1
-          if mod == "🌐︎" then
+          if mod == Mod.Fn.Symbol then
             modsByteLen = modsByteLen + 7
           else
             modsByteLen = modsByteLen + 3
@@ -1726,10 +1726,10 @@ function()
       -- Application-scoped hotkeys are dispatched to the frontmost app,
       -- while global hotkeys are sent system-wide.
       if choice.source == HK_SOURCE.APP then
-        hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', Mod.Fn.Long), key,
+        hs.eventtap.keyStroke(choice.mods:gsub(Mod.Fn.Symbol, Mod.Fn.Long), key,
                               nil, hs.application.frontmostApplication())
       else
-        hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', Mod.Fn.Long), key)
+        hs.eventtap.keyStroke(choice.mods:gsub(Mod.Fn.Symbol, Mod.Fn.Long), key)
       end
     elseif choice.modal == HK_MODAL.HYPER then
       -- Case 2: trigger Hyper modal hotkeys.
@@ -1758,7 +1758,7 @@ function()
       event:setType(hs.eventtap.event.types.flagsChanged)
       event:setFlags({ fn = true }):post()
       hs.timer.doAfter(0.1, function()
-        hs.eventtap.keyStroke(choice.mods:gsub('🌐︎', Mod.Fn.Long), key)
+        hs.eventtap.keyStroke(choice.mods:gsub(Mod.Fn.Symbol, Mod.Fn.Long), key)
         event:setFlags({}):post()
       end)
     elseif choice.modal == HK_MODAL.DOUBLE_TAP then
@@ -1775,7 +1775,7 @@ function()
       local modsByteLen = 0
       for _, mod in ipairs(modifierSymbols) do
         while choice.key:find(mod, modsByteLen + 1) do
-          if mod == "🌐︎" then
+          if mod == Mod.Fn.Symbol then
             modsByteLen = modsByteLen + 7
           else
             modsByteLen = modsByteLen + 3
