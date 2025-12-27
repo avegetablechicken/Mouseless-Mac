@@ -263,7 +263,10 @@ local modifiersShowReverseOrder =
   "trackpad:top-left",
 }
 
-local modifierSymbols = { Mod.Hyper.Symbol }
+local modifierSymbols = {}
+if Mod.Hyper then
+  tinsert(modifierSymbols, Mod.Hyper.Symbol)
+end
 foreach(modifiersShowReverseOrder, function(mod)
   local symbol = tosymbol2(mod)
   if tindex(modifierSymbols, symbol) == nil then
@@ -1263,10 +1266,8 @@ function HSKeybindings:hide()
 end
 
 local doubletap = require('modal.doubletap')
-local hkKeybinding
-local thisHyperKey = Mod.Hyper.Long
-hkKeybinding = doubletap.bind("", thisHyperKey, "Show Keybindings",
-function()
+local hkKeybinding, thisHyperKey
+local function showAllKeybindings()
   local hkKeybindingsLastModifier, hkKeybindingsSpacePressed
   local hkKeybindingsWatcher, hkHideKeybindingsWatcher
   local cancelFunc = function()
@@ -1389,9 +1390,14 @@ function()
         function() cancelFunc() return false end)
   end
   hs.timer.doAfter(0.3, function() hkHideKeybindingsWatcher:start() end)
-end)
-hkKeybinding.kind = HK.PRIVELLEGE
-tinsert(DoubleTapModalList, hkKeybinding)
+end
+if Mod.Hyper then
+  thisHyperKey = Mod.Hyper.Long
+  hkKeybinding = doubletap.bind("", thisHyperKey,
+      "Show Keybindings", showAllKeybindings)
+  hkKeybinding.kind = HK.PRIVELLEGE
+  tinsert(DoubleTapModalList, hkKeybinding)
+end
 
 local keySymbolInvMap = {}
 for k, v in pairs(keySymbolMap) do
