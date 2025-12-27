@@ -1265,7 +1265,6 @@ function HSKeybindings:hide()
   self.isShowing = false
 end
 
-local doubletap = require('modal.doubletap')
 local hkKeybinding, thisHyperKey
 local function showAllKeybindings()
   local hkKeybindingsLastModifier, hkKeybindingsSpacePressed
@@ -1393,7 +1392,7 @@ local function showAllKeybindings()
 end
 if Mod.Hyper then
   thisHyperKey = Mod.Hyper.Long
-  hkKeybinding = doubletap.bind("", thisHyperKey,
+  hkKeybinding = DoubleTap.bind("", thisHyperKey,
       "Show Keybindings", showAllKeybindings)
   hkKeybinding.kind = HK.PRIVELLEGE
   tinsert(DoubleTapModalList, hkKeybinding)

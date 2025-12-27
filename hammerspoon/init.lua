@@ -282,6 +282,7 @@ if Mod.Hyper then
   tinsert(HyperModalList, hyper.install(Mod.Hyper.Long))
 end
 Globe = require('modal.globe')
+DoubleTap = require('modal.doubletap')
 
 -- Compute a hotkey index consistent with Hammerspoon internals.
 function hotkeyIdx(mods, key)
