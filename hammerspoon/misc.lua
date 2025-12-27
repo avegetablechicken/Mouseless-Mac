@@ -1820,7 +1820,93 @@ function()
   end)
   chooser:searchSubText(true)
   chooser:choices(choices)
+
+  local hkKeybindingsLastModifier = {}
+  local callback = function(ev)
+    local evFlags = ev:getFlags()
+    if ev:getType() == hs.eventtap.event.types.keyDown then
+      if Mod.Hyper and ev:getKeyCode() == hs.keycodes.map[Mod.Hyper.Long] then
+        evFlags.hyper = true
+        if evFlags.fn and Mod.Hyper.Long:lower():match('^f%d-$') then
+          evFlags.fn = nil
+        end
+      else
+        return
+      end
+    elseif ev:getType() == hs.eventtap.event.types.keyUp then
+      if Mod.Hyper and ev:getKeyCode() == hs.keycodes.map[Mod.Hyper.Long] then
+        evFlags.hyper = nil
+        if evFlags.fn and Mod.Hyper.Long:lower():match('^f%d-$') then
+          evFlags.fn = nil
+        end
+      else
+        return
+      end
+    end
+    local sameFlags = true
+    for k, v in pairs(evFlags) do
+      if hkKeybindingsLastModifier[k] ~= v then
+        sameFlags = false
+        break
+      end
+    end
+    for k, v in pairs(hkKeybindingsLastModifier) do
+      if evFlags[k] ~= v then
+        sameFlags = false
+        break
+      end
+    end
+    if not sameFlags then
+      local cnt = 0
+      for k, v in pairs(evFlags) do
+        cnt = cnt + 1
+      end
+      if cnt > 0 and (cnt ~= 1 or evFlags.cmd ~= true) then
+        local filterd = tifilter(choices, function(choice)
+          local mods
+          if evFlags.hyper then
+            if not ((choice.modal == HK_MODAL.HYPER and Mod.Hyper
+                    and choice.hyper == Mod.Hyper.Long)
+                or (choice.modal == HK_MODAL.DOUBLE_TAP and Mod.Hyper
+                    and choice.key == Mod.Hyper.Long..Mod.Hyper.Long)) then
+              return false
+            end
+          end
+          mods = choice.mods
+          for _, mod in ipairs(modifierSymbols) do
+            if mods:find(mod) then
+              if evFlags[toshort(mod)] ~= true then
+                return false
+              end
+            end
+          end
+          for k, v in pairs(evFlags) do
+            if k ~= 'hyper' and mods:find(tosymbol(k)) == nil then
+              return false
+            end
+          end
+          return true
+        end)
+        chooser:choices(filterd)
+      else
+        chooser:choices(choices)
+      end
+      hkKeybindingsLastModifier = evFlags
+    end
+  end
+  local hkKeybindingsWatcher = hs.eventtap.new({
+      hs.eventtap.event.types.flagsChanged,
+      hs.eventtap.event.types.keyDown,
+      hs.eventtap.event.types.keyUp},
+      callback)
+  hkKeybindingsWatcher:start()
+  chooser:hideCallback(function()
+    hkKeybindingsWatcher:stop()
+    hkKeybindingsWatcher = nil
+    hkKeybinding:enable()
+  end)
   chooser:show()
+  hkKeybinding:disable()
 end)
 if searchHotkey then
   searchHotkey.kind = HK.PRIVELLEGE
