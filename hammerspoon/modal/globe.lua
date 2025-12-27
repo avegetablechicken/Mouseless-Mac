@@ -84,10 +84,9 @@ end
 function hotkey:disable()
   if self.idx == nil then return end
   local frontmostHK = get(module.keys, self.idx, 1)
-  self._force_disable = true
-  module.keys[self.idx] = tifilter(module.keys[self.idx] or {},
-      function(hk) return hk._force_disable ~= true end)
-  self._force_disable = nil
+  local pos = tindex(module.keys[self.idx] or {}, self)
+  if pos == nil then return end
+  tremove(module.keys[self.idx], pos)
   self.enabled = false
   log.f('Disabled hotkey %s', self.msg)
   if frontmostHK == self then
