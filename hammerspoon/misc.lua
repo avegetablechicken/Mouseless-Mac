@@ -979,11 +979,7 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
       for _, mod in ipairs(modifierSymbols) do
         if entry.idx:find(mod) then
           modsLen = modsLen + 1
-          if mod == Mod.Fn.Symbol then
-            modsByteLen = modsByteLen + 7
-          else
-            modsByteLen = modsByteLen + 3
-          end
+          modsByteLen = modsByteLen + mod:len()
         end
       end
       if modsByteLen == entry.idx:len() then
@@ -1666,11 +1662,7 @@ function()
       for _, mod in ipairs(modifierSymbols) do
         if entry.idx:find(mod) then
           modsLen = modsLen + 1
-          if mod == Mod.Fn.Symbol then
-            modsByteLen = modsByteLen + 7
-          else
-            modsByteLen = modsByteLen + 3
-          end
+          modsByteLen = modsByteLen + mod:len()
         end
       end
       if modsByteLen == entry.idx:len() then
@@ -1775,11 +1767,7 @@ function()
       local modsByteLen = 0
       for _, mod in ipairs(modifierSymbols) do
         while choice.key:find(mod, modsByteLen + 1) do
-          if mod == Mod.Fn.Symbol then
-            modsByteLen = modsByteLen + 7
-          else
-            modsByteLen = modsByteLen + 3
-          end
+          modsByteLen = modsByteLen + mod:len()
         end
       end
       local key = choice.key:sub(modsByteLen + 1)
