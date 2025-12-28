@@ -1880,10 +1880,9 @@ function()
         elseif firstCmd then
           firstCmd, secondCmd, firstCmdTime = false, true, 0
           local filterd = tifilter(choices, function(choice)
-            return (choice.modal == HK_MODAL.REGULAR and choice.mods == Mod.Cmd.Symbol)
-                or (choice.modal == HK_MODAL.HYPER and choice.key == Mod.Cmd.Symbol)
-                or (choice.modal == HK_MODAL.DOUBLE_TAP
-                    and choice.key == Mod.Cmd.Symbol..Mod.Cmd.Symbol)
+            return (choice.modal == HK_MODAL.REGULAR and choice.mods == '⌘')
+                or (choice.modal == HK_MODAL.HYPER and choice.key == '⌘')
+                or (choice.modal == HK_MODAL.DOUBLE_TAP and choice.key == '⌘⌘')
           end)
           chooser:choices(filterd)
         end

@@ -23,7 +23,7 @@ obj.duration = 1
 --- Variable
 --- Default hotkey mapping
 obj.defaultHotkey = {
-    quit = { {"cmd"}, "Q" }
+    quit = { "⌘", "Q" }
 }
 
 --- HoldToQuit.hotkeyQbj
