@@ -2730,7 +2730,7 @@ local function registerSearchMenuBar()
     end
   end)
 
-  -- On newer macOS versions, Control Center hosts additional menu bar items
+  -- On Tahoe and newer macOS, Control Center hosts additional menu bar items
   -- (e.g. empty entries and Live Activities) that need to be excluded or
   -- merged into the global menu bar ordering
   if OS_VERSION >= OS.Tahoe then
@@ -2759,8 +2759,7 @@ local function registerSearchMenuBar()
     end)
   end
 
-  -- Trim menu bar items to only those to the right of Control Center,
-  -- since items on the left are not reachable via Control Center UI.
+  -- Trim menu bar items to only those to the right of Control Center.
   for i, pair in ipairs(menuBarItems) do
     local item = pair[1]
     local app
