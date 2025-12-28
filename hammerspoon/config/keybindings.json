@@ -465,11 +465,7 @@
       {
         "mods": "${hyper.hyper}",
         "key": "Q",
-        "bundleID": [
-          "com.tencent.QQMusicMac",
-          "com.netease.163music",
-          "com.apple.Music"
-        ]
+        "bundleID": "com.tencent.qq"
       },
       {
         "mods": "${hyper.hyper}",
@@ -495,9 +491,8 @@
         "mods": "${hyper.hyper}",
         "key": "T",
         "bundleID": [
-          "com.vallettaventures.Texpad",
-          "texstudio",
-          "TeXShop"
+          "abnerworks.Typora",
+          "com.coderforart.iOS.MWeb"
         ]
       },
       {
@@ -552,6 +547,15 @@
       },
       {
         "mods": "${hyper.hyper}",
+        "key": "L",
+        "bundleID": [
+          "com.vallettaventures.Texpad",
+          "texstudio",
+          "TeXShop"
+        ]
+      },
+      {
+        "mods": "${hyper.hyper}",
         "key": "Z",
         "bundleID": "com.apple.systempreferences"
       },
@@ -580,8 +584,9 @@
         "mods": "${hyper.hyper}",
         "key": "M",
         "bundleID": [
-          "abnerworks.Typora",
-          "com.coderforart.iOS.MWeb"
+          "com.tencent.QQMusicMac",
+          "com.netease.163music",
+          "com.apple.Music"
         ]
       }
     ],
