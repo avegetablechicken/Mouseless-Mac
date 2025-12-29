@@ -2753,9 +2753,10 @@ local function registerSearchMenuBar()
       for i=1,#menuBarItems do
         if menuBarItems[i][1].AXPosition and menuBarItems[i][1].AXPosition.x < position then
           tinsert(menuBarItems, i, item)
-          break
+          return
         end
       end
+      tinsert(menuBarItems, #menuBarItems+1, item)
     end)
   end
 
