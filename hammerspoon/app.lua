@@ -11827,7 +11827,7 @@ function App_applicationCallback(appname, eventType, app)
     registerForOpenSavePanel(app)
     if not FLAGS["APP_LAUNCHING"] then
       local enabledHyperModal = tfind(HyperModalList, function(modal)
-        return modal.hyperMode.Entered
+        return modal:isEnabled()
       end)
       if enabledHyperModal then
         hs.timer.doAfter(0.3, function()

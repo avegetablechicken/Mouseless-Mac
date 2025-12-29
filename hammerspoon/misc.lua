@@ -633,7 +633,7 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
   end
 
   for _, modal in ipairs(HyperModalList) do
-    if modal.hyperMode.Entered == false then
+    if not modal:isEnabled() then
       for _, hotkey in ipairs(modal.hyperMode.keys) do
         tinsert(allKeys, { idx = hotkey.idx, msg = hotkey.msg,
                            condition = hotkey.condition,

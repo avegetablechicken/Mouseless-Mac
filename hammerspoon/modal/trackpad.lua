@@ -120,6 +120,10 @@ function This._startEventTapper()
   end
 end
 
+function This.isEnabled()
+  return This.eventtapper and This.eventtapper:isEnabled()
+end
+
 function This.bindNoSuspend(mods, ...)
   local modsCode = getModsCode(mods)
   if This.keys[modsCode] == nil then

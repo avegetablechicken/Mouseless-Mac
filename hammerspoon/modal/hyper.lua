@@ -15,6 +15,10 @@ function module:enterHyperMode()
   self.hyperMode.Entered = true
 end
 
+function module:isEnabled()
+  return self.hyperMode and self.hyperMode.Entered
+end
+
 -- Utility to bind handler to Hyper+modifiers+key
 function module:bindNoSuspend(mods, key, message, pressedfn, releasedfn, repeatfn)
   local hotkey = hs.hotkey.new(mods, key, pressedfn, releasedfn, repeatfn)
