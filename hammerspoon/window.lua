@@ -261,7 +261,7 @@ end)
 -- what the user visually perceives as available space.
 local function getScreenFrame(win)
   local frame = win:screen():frame()
-  local manager = find("com.apple.WindowManager")
+  local manager = find(windowManagerId)
   if manager then
     local groups = getc(toappui(manager), AX.Group)
     local g = tfind(groups or {}, function(g)
@@ -1644,9 +1644,10 @@ function()
 end)
 
 -- Bind a Stage Manager window-switch hotkey.
+local windowManagerId = "com.apple.WindowManager"
 local function bindStageManagerWindow(spec, index)
   local fn = function()
-    local manager = find("com.apple.WindowManager")
+    local manager = find(windowManagerId)
     if manager then
       local frame = hs.screen.mainScreen():frame()
       local groups = getc(toappui(manager), AX.Group)
@@ -1661,20 +1662,57 @@ local function bindStageManagerWindow(spec, index)
   end
   local locApp = localizedString("Stage Manager", "com.apple.controlcenter",
                                  { localeFile = "StageManager",
-                                   locale = applicationLocale("com.apple.WindowManager") })
-  local locWindow = localizedString("Window", "com.apple.WindowManager")
+                                   locale = applicationLocale(windowManagerId) })
+  local locWindow = localizedString("Window", windowManagerId)
   local hotkey = bindHotkeySpec(spec, locApp..' > '..locWindow..' '..index, fn)
   hotkey.kind = HK.WIN_OP
   hotkey.subkind = HK.WIN_OP_.STAGE_MANAGER
   return hotkey
 end
 
-for i=1,10 do
-  local hkID = "focusStageManagerWindow"..tostring(i)
-  if winHK[hkID] then
-    bindStageManagerWindow(winHK[hkID], i)
+local function isStageManagerEnabled()
+  if FLAGS["LOADING"] then
+    local plistPath = hs.fs.pathToAbsolute(strfmt(
+        "~/Library/Preferences/%s.plist", windowManagerId))
+    if plistPath ~= nil then
+      local defaults = hs.plist.read(plistPath)
+      if defaults then
+        return defaults.GloballyEnabled == true
+      end
+    end
+  end
+
+  local globallyEnabled = hs.execute(strfmt([[
+      defaults read '%s' GloballyEnabled | tr -d '\n'
+    ]], windowManagerId))
+  return globallyEnabled == "1"
+end
+
+local stageManagerWindowHotkeys
+local function manageStageManagerWindowHotkeys()
+  if isStageManagerEnabled() then
+    if stageManagerWindowHotkeys == nil then
+      stageManagerWindowHotkeys = {}
+      for i=1,10 do
+        local hkID = "focusStageManagerWindow"..tostring(i)
+        if winHK[hkID] then
+          local hotkey = bindStageManagerWindow(winHK[hkID], i)
+          tinsert(stageManagerWindowHotkeys, hotkey)
+        end
+      end
+    end
+    for _, hotkey in ipairs(stageManagerWindowHotkeys) do
+      hotkey:enable()
+    end
+  else
+    for _, hotkey in ipairs(stageManagerWindowHotkeys or {}) do
+      hotkey:delete()
+    end
+    stageManagerWindowHotkeys = nil
   end
 end
+manageStageManagerWindowHotkeys()
+ExecContinuously(manageStageManagerWindowHotkeys)
 
 -- Register URL handlers for Stage Manager window switching.
 local stageManagerWindowSwitchFuncs = {}
@@ -1691,7 +1729,7 @@ end
 -- Bind a Stage Manager window-switch URL handler.
 local function bindStageManagerWindowURL(index)
   local fn = function()
-    local manager = find("com.apple.WindowManager")
+    local manager = find(windowManagerId)
     if manager then
       local frame = hs.screen.mainScreen():frame()
       local groups = getc(toappui(manager), AX.Group)
@@ -1707,8 +1745,8 @@ local function bindStageManagerWindowURL(index)
   stageManagerWindowSwitchFuncs[index] = fn
   local locApp = localizedString("Stage Manager", "com.apple.controlcenter",
                                  { localeFile = "StageManager",
-                                   locale = applicationLocale("com.apple.WindowManager") })
-  local locWindow = localizedString("Window", "com.apple.WindowManager")
+                                   locale = applicationLocale(windowManagerId) })
+  local locWindow = localizedString("Window", windowManagerId)
   registerURLHotkeyMessage("stagemanager", "index", tostring(index),
                            locApp..' > '..locWindow..' '..index)
 end
