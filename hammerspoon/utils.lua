@@ -4566,6 +4566,16 @@ end
 -- Used to map menu bar item indices <-> persistent identifiers
 ------------------------------------------------------------
 
+function getValidControlCenterMenuBarItemsTahoe(app)
+  local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+  menuBarItems = tifilter(menuBarItems, function(item)
+    return item.AXIdentifier
+        and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
+          or item.AXIdentifier:sub(-13) == '.liveActivity')
+  end)
+  return menuBarItems
+end
+
 -- Load autosave names for Control Center menu bar items on macOS Tahoe+.
 -- Control Center uses a different persistence model starting from Tahoe.
 local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferredPosition)
@@ -4607,13 +4617,7 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
   end
 
   -- Collect menu bar items that belong to Control Center
-  local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
-  if menuBarItems == nil then return end
-  menuBarItems = tifilter(menuBarItems, function(item)
-    return item.AXIdentifier
-        and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
-          or item.AXIdentifier:sub(-13) == '.liveActivity')
-  end)
+  local menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
 
   -- Sort by on-screen position (right to left)
   local positions = {}
@@ -4904,13 +4908,11 @@ MENUBAR_MANAGER_SHOW = {
 
     -- Compute the "order inside hidden bar" for the target icon:
     -- we count sibling items with same relative position class.
-    local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+    local menuBarItems
     if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
-      menuBarItems = tifilter(menuBarItems, function(item)
-        return item.AXIdentifier ~= nil
-            and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
-              or item.AXIdentifier:sub(-13) == '.liveActivity')
-      end)
+      menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
+    else
+      menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
     end
     local menuBarItem = menuBarItems[index]
     local indicesForHidden = {}
@@ -5033,13 +5035,11 @@ MENUBAR_MANAGER_SHOW = {
     end
 
     -- Determine Nth occurrence among this app's items (multiple items possible)
-    local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+    local menuBarItems
     if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
-      menuBarItems = tifilter(menuBarItems, function(item)
-        return item.AXIdentifier ~= nil
-            and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
-              or item.AXIdentifier:sub(-13) == '.liveActivity')
-      end)
+      menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
+    else
+      menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
     end
     local menuBarItem = menuBarItems[index]
     local iconAllwaysHidden = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 3)
@@ -5145,13 +5145,11 @@ MENUBAR_MANAGER_SHOW = {
       hs.timer.doAfter(0.2, function()
         mouseMove(uioffset(icon, {-20, 10}))
         hs.timer.doAfter(3, function()
-          local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+          local menuBarItems
           if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
-            menuBarItems = tifilter(menuBarItems, function(item)
-              return item.AXIdentifier ~= nil
-                  and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
-                    or item.AXIdentifier:sub(-13) == '.liveActivity')
-            end)
+            menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
+          else
+            menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
           end
           local menuBarItem = menuBarItems[index or 1]
           if menuBarItem then
@@ -5266,13 +5264,11 @@ function hiddenByMenuBarManager(app, index, map)
     index = map and map[index]
     if index == nil then return false end
   end
-  local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+  local menuBarItems
   if app:bundleID() == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
-    menuBarItems = tifilter(menuBarItems, function(item)
-      return item.AXIdentifier ~= nil
-          and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
-            or item.AXIdentifier:sub(-13) == '.liveActivity')
-    end)
+    menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
+  else
+    menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
   end
   local menuBarItem = menuBarItems[index or 1]
   -- Any item with x < leftmost screen x is considered "off-screen hidden".
@@ -5316,13 +5312,11 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
     menuBarIdx = map and map[menuBarIdx]
     if menuBarIdx == nil then return false end
   end
-  local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+  local menuBarItems
   if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
-    menuBarItems = tifilter(menuBarItems, function(item)
-      return item.AXIdentifier ~= nil
-          and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
-            or item.AXIdentifier:sub(-13) == '.liveActivity')
-    end)
+    menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
+  else
+    menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
   end
   local menuBarItem = menuBarItems[menuBarIdx or 1]
   if menuBarItem == nil then return false end

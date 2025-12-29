@@ -2734,13 +2734,7 @@ local function registerSearchMenuBar()
   -- (e.g. empty entries and Live Activities) that need to be excluded or
   -- merged into the global menu bar ordering
   if OS_VERSION >= OS.Tahoe then
-    local appMenuBarItems = getc(toappui(find('com.apple.controlcenter')),
-        AX.MenuBar, -1, AX.MenuBarItem)
-    appMenuBarItems = tifilter(appMenuBarItems, function(item)
-      return item.AXIdentifier
-          and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
-            or item.AXIdentifier:sub(-13) == '.liveActivity')
-    end)
+    local appMenuBarItems = getValidControlCenterMenuBarItemsTahoe(controlCenter)
     local items = {}
     for i, item in ipairs(appMenuBarItems) do
       tinsert(items, { item, i })
