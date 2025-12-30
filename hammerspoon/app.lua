@@ -9660,30 +9660,8 @@ end
 FullscreenObserver = nil
 local WINDOWMOVED_DELAY = 0.5
 local windowMovedTimer
-local function registerResizeHotkeys(app, force)
+local function registerResizeHotkeys(app)
   if OS_VERSION < OS.Sequoia then return end
-
-  local appid = app:bundleID() or app:name()
-  local allTitles = { 'Top Left', 'Top Right', 'Bottom Left', 'Bottom Right' }
-  local titles = {}
-  for _, title in ipairs(allTitles) do
-    local hkID = 'zoomTo' .. title:gsub(' ', '')
-    local hotkey = get(inAppHotKeys, appid, hkID)
-    if hotkey then
-      if force then
-        hotkey:delete()
-        disableConditionInChain(appid, hotkey, true)
-        inAppHotKeys[appid][hkID] = nil
-        tinsert(titles, title)
-      else
-        hotkey:enable()
-        enableConditionInChain(hotkey)
-      end
-    else
-      tinsert(titles, title)
-    end
-  end
-
   if FullscreenObserver then
     FullscreenObserver:stop()
     FullscreenObserver = nil
@@ -9692,7 +9670,6 @@ local function registerResizeHotkeys(app, force)
     windowMovedTimer:stop()
     windowMovedTimer = nil
   end
-
   local menu, submenu = "Window", "Move & Resize"
   local menuItem = app:findMenuItem({ menu, submenu })
   if menuItem == nil then
@@ -9704,17 +9681,12 @@ local function registerResizeHotkeys(app, force)
     if localizedSubmenu ~= nil then
       menuItem = app:findMenuItem({ localizedMenu, localizedSubmenu })
     end
-    if menuItem then
-      menu, submenu = localizedMenu, localizedSubmenu
-    else
+    if menuItem == nil then
       if localizedSubmenu ~= nil then
         menuItem = app:findMenuItem({ menu, localizedSubmenu })
       end
-      if menuItem then
-        submenu = localizedSubmenu
-      else
+      if menuItem == nil then
         menuItem = app:findMenuItem({ localizedMenu, submenu })
-        menu = localizedMenu
       end
     end
   end
@@ -9731,33 +9703,8 @@ local function registerResizeHotkeys(app, force)
   else
     FLAGS["NO_MOVE_RESIZE"] = nil
   end
-  if menuItem then
-    for _, title in ipairs(titles) do
-      local hkID = 'zoomTo' .. title:gsub(' ', '')
-      local spec = get(KeybindingConfigs.hotkeys.global, hkID)
-      if spec and not tcontain(spec.excluded or {}, appid) then
-        if submenu ~= "Move & Resize" then
-          local oldTitle = title
-          title = TC(oldTitle, app)
-          if title == title and SYSTEM_LOCALE:sub(1, 2) ~= 'en' then
-            title = TC(oldTitle, app, { locale = SYSTEM_LOCALE })
-          end
-        end
-        local menuItemPath = { menu, submenu, title }
-        if inAppHotKeys[appid] == nil then
-          inAppHotKeys[appid] = {}
-        end
-        inAppHotKeys[appid][hkID] = AppBind(app, {
-          spec = spec, message = submenu .. ' > ' .. title,
-          condition = function()
-            local menuItemCond = app:findMenuItem(menuItemPath)
-            return menuItemCond ~= nil and menuItemCond.enabled
-          end,
-          fn = function() app:selectMenuItem(menuItemPath) end
-        })
-      end
-    end
-  elseif tcontain(toappui(app):attributeNames() or {}, "AXFocusedWindow") then
+  if menuItem == nil and
+      tcontain(toappui(app):attributeNames() or {}, "AXFocusedWindow") then
     FullscreenObserver = uiobserver.new(app:pid())
     FullscreenObserver:addWatcher(toappui(app), uinotifications.windowResized)
     FullscreenObserver:callback(function()

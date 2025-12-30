@@ -348,7 +348,7 @@ function()
 end)
 
 -- Move and zoom to top-left quadrant
-newResizeWindowMayConflict("zoomToTopLeft", "Zoom to Top-Left",
+bindResizeWindow("zoomToTopLeft", "Zoom to Top-Left",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -363,7 +363,7 @@ function()
 end)
 
 -- Move and zoom to top-right quadrant
-newResizeWindowMayConflict("zoomToTopRight", "Zoom to Top-Right",
+bindResizeWindow("zoomToTopRight", "Zoom to Top-Right",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -378,7 +378,7 @@ function()
 end)
 
 -- Move and zoom to bottom-left quadrant
-newResizeWindowMayConflict("zoomToBottomLeft", "Zoom to Bottom-Left",
+bindResizeWindow("zoomToBottomLeft", "Zoom to Bottom-Left",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
@@ -393,7 +393,7 @@ function()
 end)
 
 -- Move and zoom to bottom-right quadrant
-newResizeWindowMayConflict("zoomToBottomRight", "Zoom to Bottom-Right",
+bindResizeWindow("zoomToBottomRight", "Zoom to Bottom-Right",
 function()
   local win = hs.window.focusedWindow()
   if win == nil then return end
