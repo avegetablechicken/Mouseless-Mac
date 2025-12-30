@@ -22,8 +22,9 @@ function module:enterHyperMode()
   self.hyperMode:enter()
   self.hyperMode.Entered = true
 
-  -- hyper key up may be captured by `Parallels Desktop`
+  -- hyper modal exiting callback may be blocked by other time-consuming callbacks
   -- we need to check if hyper key is still pressed
+  -- fixme: current implementation makes hyper hotkey unrepeatable
   self.hyperPressed = true
   self.hyperTapper = hs.eventtap.new({hs.eventtap.event.types.keyDown}, function(e)
     if e:getKeyCode() == hs.keycodes.map[self.hyper] then
