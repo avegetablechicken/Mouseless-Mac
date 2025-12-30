@@ -3682,7 +3682,7 @@ appHotKeyCallbacks = {
           if item.AXTitle == "" then break end
           if #item == 0 then
             if item.AXMenuItemMarkChar then
-              return true, item
+              return item.AXEnabled, item
             end
             firstSidebarMenuItem = firstSidebarMenuItem or item
           end
