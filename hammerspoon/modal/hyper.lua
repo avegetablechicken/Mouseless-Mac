@@ -8,11 +8,34 @@ local module = {}
 function module:exitHyperMode()
   self.hyperMode:exit()
   self.hyperMode.Entered = false
+  if self.hyperTapper then
+    self.hyperTapper:stop()
+    self.hyperTapper = nil
+  end
+  if self.hyperTimer then
+    self.hyperTimer:stop()
+    self.hyperTimer = nil
+  end
 end
 
 function module:enterHyperMode()
   self.hyperMode:enter()
   self.hyperMode.Entered = true
+
+  -- hyper key up may be captured by `Parallels Desktop`
+  -- we need to check if hyper key is still pressed
+  self.hyperPressed = true
+  self.hyperTapper = hs.eventtap.new({hs.eventtap.event.types.keyDown}, function(e)
+    if e:getKeyCode() == hs.keycodes.map[self.hyper] then
+      self.hyperPressed = true
+    end
+  end):start()
+  self.hyperTimer = hs.timer.doEvery(1, function()
+    if not self.hyperPressed then
+      self:exitHyperMode()
+    end
+    self.hyperPressed = false
+  end):start()
 end
 
 function module:isEnabled()

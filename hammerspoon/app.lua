@@ -11826,16 +11826,7 @@ function App_applicationCallback(appname, eventType, app)
     FLAGS["NO_RESHOW_KEYBINDING"] = true
     registerForOpenSavePanel(app)
     if not FLAGS["APP_LAUNCHING"] then
-      local enabledHyperModal = tfind(HyperModalList, function(modal)
-        return modal:isEnabled()
-      end)
-      if enabledHyperModal then
-        hs.timer.doAfter(0.3, function()
-          FLAGS["MENUBAR_ITEMS_PREPARED"] = onLaunchedAndActivated(app)
-        end)
-      else
-        FLAGS["MENUBAR_ITEMS_PREPARED"] = onLaunchedAndActivated(app)
-      end
+      FLAGS["MENUBAR_ITEMS_PREPARED"] = onLaunchedAndActivated(app)
     elseif FLAGS["APP_LAUNCHING"] and appsLaunchSlow[appid] == nil then
       FLAGS["MENUBAR_ITEMS_PREPARED"] = false
     end
