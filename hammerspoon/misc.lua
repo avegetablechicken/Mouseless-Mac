@@ -1285,12 +1285,9 @@ local function showAllKeybindings()
     hkKeybinding:enable()
   end
 
-  local enteredModal = tfind(HyperModalList, function(modal)
-    return tosymbol(modal.hyper) == tosymbol(thisHyperKey)
+  foreach(HyperModalList, function(modal)
+    modal:exitHyperMode()
   end)
-  if enteredModal then
-    enteredModal:exitHyperMode()
-  end
 
   HSKeybindings:show()
   hkKeybinding:disable()
