@@ -1289,8 +1289,7 @@ local function showAllKeybindings()
     return tosymbol(modal.hyper) == tosymbol(thisHyperKey)
   end)
   if enteredModal then
-    enteredModal.hyperMode:exit()
-    enteredModal.hyperMode.Entered = false
+    enteredModal:exitHyperMode()
   end
 
   HSKeybindings:show()
