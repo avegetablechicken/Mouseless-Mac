@@ -5164,7 +5164,7 @@ appHotKeyCallbacks = {
                                  { locale = appLocale })
         end
       end,
-      windowFilter = WeChat.WF.AppEx,
+      windowFilter = WeChat.WF.AppExWeb,
       condition = function(win)
         local app = win:application()
         if Version.LessThan(app, "4") then return true end
