@@ -1273,7 +1273,8 @@ function HSKeybindings:hide()
 end
 
 local hkKeybinding
-local function showAllKeybindings()
+hkKeybinding = bindHotkeySpec(misc["showHotkeys"], "Show Keybindings",
+function()
   local hkKeybindingsLastModifier, hkKeybindingsSpacePressed
   local hkKeybindingsWatcher, hkHideKeybindingsWatcher
   local cancelFunc = function()
@@ -1392,9 +1393,7 @@ local function showAllKeybindings()
         function() cancelFunc() return false end)
   end
   hs.timer.doAfter(0.3, function() hkHideKeybindingsWatcher:start() end)
-end
-hkKeybinding = bindHotkeySpec(misc["showHotkeys"],
-    "Show Keybindings", showAllKeybindings)
+end)
 if hkKeybinding then
   hkKeybinding.kind = HK.PRIVELLEGE
 end
