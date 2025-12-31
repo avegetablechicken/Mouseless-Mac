@@ -39,12 +39,21 @@ function module:_install(mods, key)
       self.mods = { Mod.Fn.Long }
     end
   else
-    if type(mods) == 'string' then mods = { mods } end
     local idx, modsRepr = "", {}
-    for _, mod in ipairs(modsShort) do
-      if tcontain(mods, tolong(mod)) then
-        idx = idx .. mod
-        tinsert(modsRepr, toshort(mod))
+    if type(mods) == 'string' and utf8.len(mods) ~= mods:len() then
+      for _, mod in ipairs(modsShort) do
+        if mods:find(tosymbol(mod)) then
+          idx = idx .. mod
+          tinsert(modsRepr, mod)
+        end
+      end
+    else
+      if type(mods) == 'string' then mods = { mods } end
+      for _, mod in ipairs(modsShort) do
+        if tcontain(mods, mod) or tcontain(mods, tolong(mod)) then
+          idx = idx .. mod
+          tinsert(modsRepr, mod)
+        end
       end
     end
     if key:lower():match('^f%d+$') then
