@@ -259,6 +259,7 @@ end)
 -- This function adjusts the screen frame to account for system UI
 -- elements (e.g. Stage Manager), so window positioning aligns with
 -- what the user visually perceives as available space.
+local windowManagerId = "com.apple.WindowManager"
 local function getScreenFrame(win)
   local frame = win:screen():frame()
   local manager = find(windowManagerId)
@@ -1644,7 +1645,6 @@ function()
 end)
 
 -- Bind a Stage Manager window-switch hotkey.
-local windowManagerId = "com.apple.WindowManager"
 local function bindStageManagerWindow(spec, index)
   local fn = function()
     local manager = find(windowManagerId)
