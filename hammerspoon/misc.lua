@@ -427,7 +427,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
               enTitle = enTitle:lower()
               if enTitle:find("full screen")
                   or enTitle:find("fullscreen") then
-                idx = Mod.Fn.Symbol.."︎F"
+                idx = Mod.Fn.Symbol..'F'
               end
             end
           end
