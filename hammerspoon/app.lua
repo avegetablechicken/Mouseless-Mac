@@ -10007,16 +10007,14 @@ local function registerObserverForSettingsMenuItem(app)
     settingsMenu = settingsMenu or tfind(appMenuItems, function(item)
       return item.AXTitle and
           (item.AXTitle:find(sets:sub(1, -4))
-          or item.AXTitle:find(prefs:sub(1, -4)))
+          or item.AXTitle:find(prefs:sub(1, -4))
+          or item.AXTitle:find("Settings")
+          or item.AXTitle:find("Preferences"))
     end)
     settingsMenu = settingsMenu or tfind(appMenuItems, function(item)
       if item.AXMenuItemCmdChar == ','
           and item.AXMenuItemCmdModifiers == 0 then
-        local title = item.AXTitle
-        if title:find("Settings") or title:find("Preferences") then
-          return true
-        end
-        title = delocalizedString(item.AXTitle, app)
+        local title = delocalizedString(item.AXTitle, app)
         if title then
           return title:find("Settings") or title:find("Preferences")
         end
@@ -10062,7 +10060,9 @@ local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
       settingsMenu = settingsMenu or tfind(menuItems, function(item)
         return item.AXTitle and
             (item.AXTitle:find(sets:sub(1, -4))
-            or item.AXTitle:find(prefs:sub(1, -4)))
+            or item.AXTitle:find(prefs:sub(1, -4))
+            or item.AXTitle:find("Settings")
+            or item.AXTitle:find("Preferences"))
       end)
       if settingsMenu ~= nil then
         observer:addWatcher(toappui(app), uinotifications.menuItemSelected)
