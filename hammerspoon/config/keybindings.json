@@ -30,6 +30,10 @@
         "mods": "${hyper.daemon}",
         "key": "H"
       },
+      "showHotkeys": {
+        "mods": "${hyper.hyper}",
+        "key": "F18"
+      },
       "searchHotkeys": {
         "mods": "${hyper.hyper}",
         "key": "space"

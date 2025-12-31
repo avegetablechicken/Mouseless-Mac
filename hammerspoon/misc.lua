@@ -1272,7 +1272,7 @@ function HSKeybindings:hide()
   self.isShowing = false
 end
 
-local hkKeybinding, thisHyperKey
+local hkKeybinding
 local function showAllKeybindings()
   local hkKeybindingsLastModifier, hkKeybindingsSpacePressed
   local hkKeybindingsWatcher, hkHideKeybindingsWatcher
@@ -1393,12 +1393,10 @@ local function showAllKeybindings()
   end
   hs.timer.doAfter(0.3, function() hkHideKeybindingsWatcher:start() end)
 end
-if Mod.Hyper then
-  thisHyperKey = Mod.Hyper.Long
-  hkKeybinding = DoubleTap.bind("", thisHyperKey,
-      "Show Keybindings", showAllKeybindings)
+hkKeybinding = bindHotkeySpec(misc["showHotkeys"],
+    "Show Keybindings", showAllKeybindings)
+if hkKeybinding then
   hkKeybinding.kind = HK.PRIVELLEGE
-  tinsert(DoubleTapModalList, hkKeybinding)
 end
 
 local keySymbolInvMap = {}

@@ -398,22 +398,6 @@ function newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
   pressedfn = getFunc(pressedfn)
   releasedfn = getFunc(releasedfn)
   repeatfn = getFunc(repeatfn)
-  local hotkey
-  local validHyperModal = tfind(HyperModalList, function(modal)
-    return type(mods) == 'string' and tosymbol(modal.hyper) == tosymbol(mods)
-  end)
-  local globeModal
-  if type(mods) == 'table' then
-    globeModal = tfind(mods, function(mod)
-      return tfind({ Mod.Fn.Long, Mod.Fn.Short, Mod.Fn.Symbol },
-                   function(fn) return mod:lower() == fn end) ~= nil
-    end) ~= nil
-  else
-    globeModal = tfind({ Mod.Fn.Long, Mod.Fn.Short, Mod.Fn.Symbol },
-        function(fn)
-          return mods:lower():find(fn) ~= nil
-        end) ~= nil
-  end
   local tbl = {}
   if pressedfn then
     pressedfn = A_HotkeyWrapper(pressedfn, tbl)
@@ -424,16 +408,48 @@ function newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
   if repeatfn then
     repeatfn = A_HotkeyWrapper(repeatfn, tbl)
   end
-  if validHyperModal ~= nil then
-    hotkey = validHyperModal:bind("", key, message, pressedfn, releasedfn, repeatfn)
-  elseif globeModal then
-    hotkey = Globe.bind(mods, key, message, pressedfn, releasedfn)
-  else
-    hotkey = hs.hotkey.new(mods, key, pressedfn, releasedfn, repeatfn)
-    if message ~= nil then
-      hotkey.msg = hotkey.idx .. ": " .. message
+
+  local hotkey
+
+  if type(mods) == 'string' then
+    if tosymbol(mods) == tosymbol(key) or mods:lower() == key:lower() then
+      hotkey = DoubleTap.bind("", key, message, pressedfn)
+      tinsert(DoubleTapModalList, hotkey)
+      goto END_NEW_HOTKEY_IMPL
     end
   end
+
+  for _, modal in ipairs(HyperModalList) do
+    if type(mods) == 'string' and tosymbol(modal.hyper) == tosymbol(mods) then
+      hotkey = modal:bind("", key, message, pressedfn, releasedfn, repeatfn)
+      goto END_NEW_HOTKEY_IMPL
+    end
+  end
+
+  if type(mods) == 'table' then
+    if tfind(mods, function(mod)
+      return tfind({ Mod.Fn.Long, Mod.Fn.Short, Mod.Fn.Symbol },
+                   function(fn) return mod:lower() == fn end) ~= nil
+    end) ~= nil then
+      hotkey = Globe.bind(mods, key, message, pressedfn, releasedfn)
+      goto END_NEW_HOTKEY_IMPL
+    end
+  else
+    if tfind({ Mod.Fn.Long, Mod.Fn.Short, Mod.Fn.Symbol },
+        function(fn)
+          return mods:lower():find(fn) ~= nil
+        end) ~= nil then
+      hotkey = Globe.bind(mods, key, message, pressedfn, releasedfn)
+      goto END_NEW_HOTKEY_IMPL
+    end
+  end
+
+  hotkey = hs.hotkey.new(mods, key, pressedfn, releasedfn, repeatfn)
+  if message ~= nil then
+    hotkey.msg = hotkey.idx .. ": " .. message
+  end
+
+  ::END_NEW_HOTKEY_IMPL::
   tbl.hotkey = hotkey
   tbl.message = message
   return hotkey
