@@ -1242,6 +1242,10 @@ end
 
 -- Update cheatsheet content and refresh the webview.
 function HSKeybindings:update(validOnly, showCustom, showApp, reload)
+  if self.sheetView == nil then
+    self.isShowing = false
+    return
+  end
   if validOnly ~= nil then self.validOnly = validOnly end
   if showCustom ~= nil then self.showCustom = showCustom end
   if showApp ~= nil then self.showApp = showApp end
@@ -1260,8 +1264,11 @@ end
 
 -- Hide and destroy the hotkey cheatsheet view.
 function HSKeybindings:hide()
-  self.sheetView:hide()
-  self.sheetView:delete()
+  if self.sheetView then
+    self.sheetView:hide()
+    self.sheetView:delete()
+  end
+  self.sheetView = nil
   self.isShowing = false
 end
 
