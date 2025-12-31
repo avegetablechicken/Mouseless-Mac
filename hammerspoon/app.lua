@@ -10857,7 +10857,7 @@ local function watchMenuBarItems(app)
       remapPreviousTab(app, true)
       registerOpenRecent(app, true)
       registerZoomHotkeys(app, true)
-      registerResizeHotkeys(app, true)
+      registerResizeHotkeys(app)
     end
     if mbTitlesStrWin ~= menuBarItemTitlesString.win[appid] then
       menuBarItemTitlesString.win[appid] = mbTitlesStrWin
@@ -10899,7 +10899,7 @@ local function appMenuBarChangeCallback(app)
   remapPreviousTab(app, true)
   registerOpenRecent(app, true)
   registerZoomHotkeys(app, true)
-  registerResizeHotkeys(app, true)
+  registerResizeHotkeys(app)
   hs.timer.doAfter(1, function()
     if hs.application.frontmostApplication():bundleID() ~= app:bundleID() then
       return
@@ -10911,7 +10911,7 @@ local function appMenuBarChangeCallback(app)
       remapPreviousTab(app, true)
       registerOpenRecent(app, true)
       registerZoomHotkeys(app, true)
-      registerResizeHotkeys(app, true)
+      registerResizeHotkeys(app)
     end
   end)
 end
