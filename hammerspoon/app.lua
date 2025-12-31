@@ -1812,7 +1812,8 @@ local Yuanbao = {}
 Yuanbao.WF = {}
 Yuanbao.WF.Main = {}
 Evt.OnRunning("com.tencent.yuanbao", function(app)
-  local title = Version.LessThan(app, "2.48") and "Tencent Yuanbao" or "Yuanbao"
+  local title
+  title = Version.LessThan(app, "2.48") and "Tencent Yuanbao" or "Yuanbao"
   title = T(title, app)
   Yuanbao.WF.Main.allowTitles = '^' .. title .. '$'
 end)
@@ -1858,15 +1859,17 @@ Barrier.localizedMessage = function(message, params)
       end
     end
     local str = T(message, app, newParams)
-    str = type(str) == 'string' and str or str[1]
+    assert(type(str) == 'string')
     if message:find('&') then
       str = str:gsub("%(&%a%)", ""):gsub('&', '')
     end
     if message:sub(#message) == ':' then
       local len = utf8.len(str)
-      local lastChar = str:sub(utf8.offset(str, len))
-      if lastChar == ':' or lastChar == '：' then
-        str = str:sub(1, utf8.offset(str, len) - 1)
+      if len then
+        local lastChar = str:sub(utf8.offset(str, len))
+        if lastChar == ':' or lastChar == '：' then
+          str = str:sub(1, utf8.offset(str, len) - 1)
+        end
       end
     end
     return str
@@ -1893,7 +1896,7 @@ Barrier.localizedString = function(message, app, params)
     end
   end
   local str = T(message, app, newParams)
-  str = type(str) == 'string' and str or str[1]
+  assert(type(str) == 'string')
   if message:find('&') then
     str = str:gsub('&', "")
   end
@@ -5721,6 +5724,7 @@ appHotKeyCallbacks = {
         end
         local locale = applicationLocale(app:bundleID())
         local title = T("&Start", app, { locale = locale })
+        assert(type(title) == 'string')
         title = title:gsub("%(&%a%)", ""):gsub("&", "")
         local start = getc(menu, AX.MenuItem, title)
         if start == nil then return end
@@ -5729,6 +5733,7 @@ appHotKeyCallbacks = {
           hs.alert("Barrier started")
         else
           title = T("S&top", app, { locale = locale })
+          assert(type(title) == 'string')
           title = title:gsub("%(&%a%)", ""):gsub("&", "")
           local stop = getc(menu, AX.MenuItem, title)
           if stop == nil then return end
@@ -9518,7 +9523,8 @@ local function registerOpenRecent(app, force)
   --   - Apple apps
   --   - third-party apps
   --   - mixed localization environments
-  local localizedFile = 'File'
+  local localizedFile
+  localizedFile = 'File'
   if app:findMenuItem({ localizedFile }) == nil then
     localizedFile = localizedMenuBarItem("File", appid)
     if localizedFile == nil then return end
@@ -10016,7 +10022,7 @@ local function registerObserverForSettingsMenuItem(app)
       if item.AXMenuItemCmdChar == ','
           and item.AXMenuItemCmdModifiers == 0 then
         local title = delocalizedString(item.AXTitle, app)
-        if title then
+        if type(title) == 'string' then
           return title:find("Settings") or title:find("Preferences")
         end
       end
@@ -11492,7 +11498,8 @@ local function isDefaultRemoteDesktopWindow(window)
     local result = wFilter:isWindowAllowed(window)
     if result then
       local winUI = towinui(window)
-      local title = "Cancel"
+      local title
+      title = "Cancel"
       if window:application():name() == "Windows App" then
         title = T(title, window:application())
       end

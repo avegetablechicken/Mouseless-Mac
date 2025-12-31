@@ -1597,7 +1597,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     if appLocale ~= nil then
       local result = localizedString(msg, 'com.apple.AppStore',
                                      { locale = appLocale })
-      if result then
+      if type(result) == 'string' then
         msg = result
       end
     end
@@ -2294,8 +2294,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
   elseif panel == CC.MusicRecognition then
     -- Music Recognition panel:
     -- Bind shortcut to start or stop music recognition.
-    local msg = "Start Listening"
-    msg = controlCenterLocalized(panel, msg) or msg
+    local msg = controlCenterLocalized(panel, "Start Listening")
+    if type(msg) ~= 'string' then return end
     local hotkey = newControlCenter("", "Space", msg,
       function()
         local cb
@@ -2699,6 +2699,7 @@ local function registerSearchMenuBar()
   for _, app in ipairs(apps) do
     local appid = app:bundleID() or app:name()
     local map, preferred = loadStatusItemsAutosaveName(app, true)
+    assert(preferred)
     if map and #map > 0 then
       maps[appid] = map or {}
       if appid ~= 'com.apple.controlcenter' or OS_VERSION < OS.Tahoe then
@@ -2985,6 +2986,7 @@ if misc ~= nil and misc["searchMenuBar"] ~= nil then
           if hotkeySearchMenuBar == nil then
             hotkeySearchMenuBar = bindHotkeySpec(misc["searchMenuBar"],
                 'Search Menu Bar', registerSearchMenuBar)
+            if hotkeySearchMenuBar == nil then return end
             hotkeySearchMenuBar.kind = HK.MENUBAR
           end
           hotkeySearchMenuBar:enable()

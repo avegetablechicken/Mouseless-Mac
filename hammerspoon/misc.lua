@@ -423,7 +423,7 @@ local function getSubMenuHotkeys(t, menuItem, titleAsEntry, titlePrefix, appid)
             if lowerTitle:find("full screen")
                 or lowerTitle:find("fullscreen") then
               idx = Mod.Fn.Symbol..'F'
-            elseif enTitle then
+            elseif type(enTitle) == 'string' then
               enTitle = enTitle:lower()
               if enTitle:find("full screen")
                   or enTitle:find("fullscreen") then
@@ -1275,6 +1275,8 @@ end
 local hkKeybinding
 hkKeybinding = bindHotkeySpec(misc["showHotkeys"], "Show Keybindings",
 function()
+  assert(hkKeybinding)
+
   local hkKeybindingsLastModifier, hkKeybindingsSpacePressed
   local hkKeybindingsWatcher, hkHideKeybindingsWatcher
   local cancelFunc = function()
