@@ -1935,10 +1935,14 @@ function()
   chooser:hideCallback(function()
     hkKeybindingsWatcher:stop()
     hkKeybindingsWatcher = nil
-    hkKeybinding:enable()
+    if hkKeybinding then
+      hkKeybinding:enable()
+    end
   end)
   chooser:show()
-  hkKeybinding:disable()
+  if hkKeybinding then
+    hkKeybinding:disable()
+  end
 end)
 if searchHotkey then
   searchHotkey.kind = HK.PRIVELLEGE
