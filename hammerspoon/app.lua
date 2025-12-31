@@ -9673,7 +9673,7 @@ local function registerResizeHotkeys(app)
   local menu, submenu = "Window", "Move & Resize"
   local menuItem = app:findMenuItem({ menu, submenu })
   if menuItem == nil then
-    local localizedMenu = localizedMenuBarItem('Window', appid)
+    local localizedMenu = localizedMenuBarItem('Window', app:bundleID())
     local localizedSubmenu = TC(submenu, app)
     if localizedSubmenu == submenu and SYSTEM_LOCALE:sub(1, 2) ~= 'en' then
       localizedSubmenu = TC(submenu, app, { locale = SYSTEM_LOCALE })
