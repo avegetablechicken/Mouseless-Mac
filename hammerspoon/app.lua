@@ -1477,7 +1477,8 @@ WPS.WF = {}
 WPS.WF.Home = {}
 WPS.WF.NonHome = {}
 Evt.OnRunning("com.kingsoft.wpsoffice.mac", function(app)
-  WPS.WF.Home.allowTitles = T("Home", app)
+  local title = T("Home", app)
+  WPS.WF.Home.allowTitles = '^'..title..'$'
   WPS.WF.NonHome.rejectTitles = WPS.WF.Home.allowTitles
 end)
 
