@@ -2699,8 +2699,8 @@ local function registerSearchMenuBar()
   for _, app in ipairs(apps) do
     local appid = app:bundleID() or app:name()
     local map, preferred = loadStatusItemsAutosaveName(app, true)
-    assert(preferred)
     if map and #map > 0 then
+      assert(preferred)
       maps[appid] = map or {}
       if appid ~= 'com.apple.controlcenter' or OS_VERSION < OS.Tahoe then
         local appMenuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
