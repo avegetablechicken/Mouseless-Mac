@@ -2460,8 +2460,8 @@ Web.Weibo.sideBarTitle = function(idx, isCommon)
     if source == nil then return end
     local start, stop
     if isCommon then
-      local header = [[<h2 class="Nav_title_[^>]-">首页</h2>]]
-      local tailer = [[<div class="[^>]-Home_split_[^>]-">]]
+      local header = [[<h2 class="[^>]-_title_[^>]-">首页</h2>]]
+      local tailer = [[<div class="[^>]-woo%-divider%-[^>]-">]]
       _, start = source:find(header)
       if start == nil then
         hs.timer.usleep(1 * 1000000)
@@ -2472,8 +2472,11 @@ Web.Weibo.sideBarTitle = function(idx, isCommon)
       if start == nil then return end
       stop = source:find(tailer, start + 1) or source:len()
     else
-      local header = [[<h3 class="Home_title_[^>]-">自定义分组</h3>]]
-      local tailer = [[<button class="[^>]-Home_btn_[^>]-">]]
+      local header = [[<h3 class="[^>]-_title_[^>]-">自定义分组</h3>]]
+      local tailers = {
+        [[<span class="[^>]-">展开</span></span></button>]],
+        [[<span class="[^>]-">收起</span></span></button>]]
+      }
       _, start = source:find(header)
       if start == nil then
         hs.timer.usleep(1 * 1000000)
@@ -2482,17 +2485,18 @@ Web.Weibo.sideBarTitle = function(idx, isCommon)
         _, start = source:find(header)
       end
       if start == nil then return end
-      stop = source:find(tailer, start + 1) or source:len()
+      stop = source:find(tailers[1], start + 1) or
+          source:find(tailers[2], start + 1) or source:len()
     end
     source = source:sub(start + 1, stop - 1)
     if isCommon then
       local url, title = source:match(
-          [[<a class="ALink_none[^>]-href="/(.-)">.- title="(.-)"]])
+          [[<a href="/(.-)"[^>]-><div role="link" title="(.-)"]])
       tinsert(weiboSideBarTitles, title)
       tinsert(weiboSideBarURLs, url)
     end
     for url, title in source:gmatch(
-        [[<a class="ALink_none[^>]-href="/(mygroup.-)">.- title="(.-)"]]) do
+        [[<a href="/(mygroups.-)"[^>]-><div role="link" title="(.-)"]]) do
       tinsert(weiboSideBarTitles, title)
       tinsert(weiboSideBarURLs, url)
     end
