@@ -2427,7 +2427,10 @@ local function getTabUrl(app)
       tell application id "%s" to get URL of active tab of front window
     ]], app:bundleID()))
   end
-  if ok then return url end
+  if ok and url then
+    if url:sub(-2) == '//' then url = url:sub(1, -2) end
+    return url
+  end
 end
 
 local function setTabUrl(app, url)
