@@ -4415,6 +4415,13 @@ function applicationValidLocale(appid)
   if resourceDir == nil then return end
   local locale = getMatchedLocale(appid, appLocale,
       resourceDir, framework, appLocaleDir)
+  if locale and get(appLocaleDir, appid, appLocale) == nil then
+    if appLocaleDir[appid] == nil then
+      appLocaleDir[appid] = {}
+    end
+    appLocaleDir[appid][appLocale] = locale
+    hs.json.write(appLocaleDir, localeMatchTmpFile, false, true)
+  end
   return locale
 end
 
