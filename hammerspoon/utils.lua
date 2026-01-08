@@ -4511,6 +4511,8 @@ local function clickImpl(leftClick, point, obj)
       local appid = appHere:asHSApplication():bundleID()
       local targetApp = obj.application and obj:application() or obj
       if appid ~= targetApp:bundleID() then return false end
+    else
+      return false
     end
   end
 

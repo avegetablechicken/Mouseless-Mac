@@ -781,9 +781,11 @@ Callback.Clickable = function(element, offset)
     end
     local appid = appHere:asHSApplication():bundleID()
     local targetApp = getAppFromDescendantElement(element)
-    if appid ~= targetApp:bundleID() then return false end
+    if appid == targetApp:bundleID() then
+      return true, point
+    end
   end
-  return true, point
+  return false
 end
 
 
