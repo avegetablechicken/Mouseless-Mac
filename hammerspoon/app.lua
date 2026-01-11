@@ -7014,6 +7014,38 @@ appHotKeyCallbacks = {
     ["quit"] = specialCommonHotkeyConfigs["quit"]
   },
 
+  ["com.apple.controlcenter"] =
+  {
+    ["closeWindow"] = {
+      mods = "", key = "Escape",
+      message = TC("Close Window"),
+      bindCondition = function() return OS_VERSION >= OS.Tahoe end,
+      windowFilter = {
+        allowTitles = "^$",
+        allowRoles = AX.SystemDialog
+      },
+      background = true,
+      nonFrontmost = true,
+      condition = function(win)
+        local g = getc(towinui(win), AX.Group, 1, AX.Group, 1)
+        if g == nil or g.AXIdentifier == nil then
+          return false
+        end
+        local ident = g.AXIdentifier
+        local s, e = ident:find('.liveActivity')
+        if s == nil then return false end
+        local prefix = ident:sub(1, e)
+        local menuBarItems = getc(toappui(win:application()),
+            AX.MenuBar, -1, AX.MenuBarItem)
+        local menuBarItem = tfind(menuBarItems, function(item)
+          return item.AXIdentifier and item.AXIdentifier:sub(1, e) == prefix
+        end)
+        return Callback.Clickable(menuBarItem)
+      end,
+      fn = Callback.Click
+    }
+  },
+
   ["com.apple.Image_Capture"] =
   {
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"]
