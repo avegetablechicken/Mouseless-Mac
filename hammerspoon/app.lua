@@ -11043,6 +11043,13 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
   local hasDaemonAppWindowHotkey = any(appConfig, function(cfg, hkID)
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    if hasKey == false then
+      local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
+          or specialCommonHotkeyConfigs[hkID]
+      if kbShared ~= nil then
+        hasKey = true
+      end
+    end
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
