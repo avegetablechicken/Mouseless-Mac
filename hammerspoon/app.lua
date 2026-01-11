@@ -760,8 +760,16 @@ end
 
 -- Perform a system-level double click
 Callback.DoubleClick = function(position)
-  hs.execute(strfmt([[cliclick dc:%d,%d]],
-      math.floor(position.x), math.floor(position.y)), true)
+  local cmd = hs.execute("which cliclick | tr -d '\\n'", true)
+  if cmd == nil then
+    hs.alert([[
+      Cliclick NOT INSTALLED.
+      You can install it by `brew install cliclick`.]])
+    return
+  end
+  local task = hs.task.new(cmd, nil,
+      { strfmt([[dc:%d,%d]], math.floor(position.x), math.floor(position.y)) })
+  task:start()
 end
 
 -- Check whether an element is safely clickable and return click point
