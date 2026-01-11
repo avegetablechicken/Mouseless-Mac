@@ -9829,6 +9829,7 @@ local specialToolbarButtons = {
   ["com.apple.TextEdit"] = getTabGroupButtons,
   ["org.xquartz.X11"] = getTabGroupButtons,
   ["com.apple.FaceTime"] = waitForSettings(),
+  ["com.apple.Safari"] = waitForSettings(),
   ["com.torusknot.SourceTreeNotMAS"] = function(winUI)
     local fn = getToolbarButtons
     local buttons = fn(winUI)
