@@ -3886,7 +3886,13 @@ function delocalizedString(str, appid, params, force)
     appid = appid:bundleID()
   elseif appid.application then
     appid = appid:application():bundleID()
+  elseif type(appid) == 'table' then
+    force = params params = appid appid = nil
   end
+  if appid == nil and (type(params) ~= 'table' or params.framework == nil) then
+    return
+  end
+  appid = appid or '__macos'
   local result, appLocale, locale =
       delocalizedStringImpl(str, appid, params, force)
   if appLocale == nil or (force and result == nil) then return result end
