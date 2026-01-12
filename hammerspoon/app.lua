@@ -441,6 +441,13 @@ local function TC(message, params, params2)
             return result
           end
         end
+        params.framework = "UIKitMacHelper.framework"
+        params.localeFile = "MainMenu"
+        local result = localizedString(message, params, true)
+        if result then
+          result = result:gsub('“%%@”', ''):gsub('%%@', '')
+          return result
+        end
       end
       return message
     end
