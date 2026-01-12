@@ -7030,7 +7030,12 @@ appHotKeyCallbacks = {
       bindCondition = function() return OS_VERSION >= OS.Tahoe end,
       windowFilter = {
         allowTitles = "^$",
-        allowRoles = AX.SystemDialog
+        allowRoles = AX.SystemDialog,
+        fn = function(win)
+          local g = getc(towinui(win), AX.Group, 1, AX.Group, 1)
+          return g and g.AXIdentifier
+              and g.AXIdentifier:find('.liveActivity') ~= nil
+        end
       },
       background = true,
       nonFrontmost = true,
