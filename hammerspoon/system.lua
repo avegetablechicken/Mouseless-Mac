@@ -2965,6 +2965,20 @@ if misc ~= nil and misc["searchMenuBar"] ~= nil then
     "com.surteesstudios.Bartender",
     "com.jordanbaird.Ice",
   }
+  local onQuit = function()
+    local anyRunning = tfind(menuBarManagers, function(appid)
+      return find(appid) ~= nil
+    end)
+    if not anyRunning then
+      if hotkeySearchMenuBar == nil then
+        hotkeySearchMenuBar = bindHotkeySpec(misc["searchMenuBar"],
+            'Search Menu Bar', registerSearchMenuBar)
+        if hotkeySearchMenuBar == nil then return end
+        hotkeySearchMenuBar.kind = HK.MENUBAR
+      end
+      hotkeySearchMenuBar:enable()
+    end
+  end
   local anyRunning = tfind(menuBarManagers, function(appid)
     return find(appid) ~= nil
   end)
@@ -2972,26 +2986,19 @@ if misc ~= nil and misc["searchMenuBar"] ~= nil then
     hotkeySearchMenuBar = bindHotkeySpec(misc["searchMenuBar"],
         'Search Menu Bar', registerSearchMenuBar)
     hotkeySearchMenuBar.kind = HK.MENUBAR
+  else
+    foreach(menuBarManagers, function(appid)
+      if find(appid) then
+        ExecOnSilentQuit(appid, onQuit)
+      end
+    end)
   end
   foreach(menuBarManagers, function(appid)
     ExecOnSilentLaunch(appid, function()
       if hotkeySearchMenuBar then
         hotkeySearchMenuBar:disable()
       end
-      ExecOnSilentQuit(appid, function()
-        anyRunning = tfind(menuBarManagers, function(appid)
-          return find(appid) ~= nil
-        end)
-        if not anyRunning then
-          if hotkeySearchMenuBar == nil then
-            hotkeySearchMenuBar = bindHotkeySpec(misc["searchMenuBar"],
-                'Search Menu Bar', registerSearchMenuBar)
-            if hotkeySearchMenuBar == nil then return end
-            hotkeySearchMenuBar.kind = HK.MENUBAR
-          end
-          hotkeySearchMenuBar:enable()
-        end
-      end)
+      ExecOnSilentQuit(appid, onQuit)
     end)
   end)
 end
