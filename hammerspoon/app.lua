@@ -11164,6 +11164,13 @@ for appid, _ in pairs(DaemonAppFocusedWindowObservers) do
           or { mods = cfg.mods, key = cfg.key }
       if keybinding.nonFrontmost or cfg.nonFrontmost then
         local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+        if hasKey == false then
+          local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
+              or specialCommonHotkeyConfigs[hkID]
+          if kbShared ~= nil then
+            hasKey = true
+          end
+        end
         if hasKey then
           tinsert(nonFrontmostFilters, keybinding.windowFilter or cfg.windowFilter)
         end
