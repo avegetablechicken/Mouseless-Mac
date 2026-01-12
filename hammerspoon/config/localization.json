@@ -5,7 +5,6 @@
     "com.apple.mobilephone": "ConversationKit.framework",
     "com.apple.journal": "UIKitCore.framework",
     "com.apple.Safari": "Safari.framework",
-    "com.apple.Home": "UIKitMacHelper.framework",
     "com.apple.Passwords.MenuBarExtra": "PasswordManagerUI.framework",
     "com.apple.iMovieApp": "Flexo.framework",
     "com.charliemonroe.Downie-4": "XUCore.framework",
