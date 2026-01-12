@@ -4301,6 +4301,14 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
         delocTitle = delocalizedString(title, appid, localeFile)
         titleMap[title] = delocTitle
       end
+      if not delocTitle then
+        local params = {
+          framework = "UIKitMacHelper.framework",
+          localeFile = "MainMenu"
+        }
+        delocTitle = delocalizedString(title, params, true)
+        titleMap[title] = delocTitle
+      end
       if delocTitle then
         if not isValid(delocTitle) then
           if titleMap[delocTitle] ~= nil then
