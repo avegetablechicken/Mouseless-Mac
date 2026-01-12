@@ -5379,7 +5379,7 @@ appHotKeyCallbacks = {
         local webarea = getc(towinui(win), AX.Group, 1,
             AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.WebArea, 1)
         local image = getc(webarea, AX.Group, 1,
-            AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Image, 1)
+            AX.Group, 2, AX.Group, 1, nil, 1, AX.Image, 1)
         if Version.GreaterEqual(win, "6.9.83") then
           return Callback.Clickable(image)
         else
