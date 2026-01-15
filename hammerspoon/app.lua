@@ -10112,8 +10112,8 @@ end
 local function registerObserverForSettingsMenuItem(app)
   local appUI = toappui(app)
 
-  local getMenuItem = function()
-    local appMenu = getc(appUI, AX.MenuBar, 1, AX.MenuBarItem, 2)
+  local getMenuItem = function(appMenu)
+    appMenu = appMenu or getc(appUI, AX.MenuBar, 1, AX.MenuBarItem, 2)
     local appMenuItems = getc(appMenu, AX.Menu, 1, AX.MenuItem)
     if appMenuItems == nil or #appMenuItems == 0 then return end
 
@@ -10148,7 +10148,9 @@ local function registerObserverForSettingsMenuItem(app)
     end)
     return settingsMenu
   end
-  local settingsMenu = getMenuItem()
+  local menuBarItems = getMenuBarItemsBuffer(app)
+  if menuBarItems == nil or #menuBarItems == 0 then return end
+  local settingsMenu = getMenuItem(menuBarItems[1])
   if settingsMenu == nil then return end
   local observer = uiobserver.new(app:pid())
   observer:addWatcher(appUI, uinotifications.menuItemSelected)
