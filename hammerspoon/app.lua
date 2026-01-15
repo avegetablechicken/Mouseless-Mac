@@ -380,6 +380,13 @@ function winBuf:register(winUI, key, value)
   return winBuf[key]
 end
 
+local function getMenuBarItemsBuffer(app)
+  if appBuf.menuBarItems == nil then
+    appBuf.menuBarItems = getMenuBarItems(app)
+  end
+  return appBuf.menuBarItems
+end
+
 ------------------------------------------------------------
 -- ## localized title generators for hotkey descriptions
 --
@@ -5543,7 +5550,7 @@ appHotKeyCallbacks = {
       fn = function(app)
         -- in early version of macOS there was a duplicated menu bar item '文件'
         -- which does not have menu items. So we have to manually filter it out
-        local menuBarItems = getMenuBarItems(app) or {}
+        local menuBarItems = getMenuBarItemsBuffer(app) or {}
         local menuBarItem = tfind(menuBarItems, function(item)
           return #item > 0 and item.AXTitle == '文件'
         end)
@@ -10701,7 +10708,7 @@ local function altMenuBarItem(app, force, reinvokeKey)
   end
   local menuBarItemActualIndices = {}
   if menuBarItemTitles == nil then
-    menuBarItems = getMenuBarItems(app) or {}
+    menuBarItems = getMenuBarItemsBuffer(app) or {}
     if #menuBarItems == 0 then return end
     local itemDict = {}
     menuBarItemTitles = {}
@@ -10942,9 +10949,14 @@ local function getMenuBarItemTitlesStringImpl(menuBarItems)
   return table.concat(menuBarItemTitles, "|")
 end
 
-local function getMenuBarItemTitlesString(app)
-  local menuBarItems = getMenuBarItems(app) or {}
-  local appMenuBarStr = getMenuBarItemTitlesStringImpl(menuBarItems)
+local function getMenuBarItemTitlesString(app, menuBarItems)
+  if menuBarItems == false then
+    return ""
+  elseif menuBarItems == nil then
+    menuBarItems = getMenuBarItems(app)
+    appBuf.menuBarItems = menuBarItems
+  end
+  local appMenuBarStr = getMenuBarItemTitlesStringImpl(menuBarItems or {})
   local winMenuBarStr
   if app:focusedWindow() ~= nil then
     local winUI = towinui(app:focusedWindow())
@@ -10962,7 +10974,7 @@ end
 local function watchMenuBarItems(app)
   local appid = app:bundleID() or app:name()
   menuBarItemTitlesString.app[appid], menuBarItemTitlesString.win[appid]
-      = getMenuBarItemTitlesString(app)
+      = getMenuBarItemTitlesString(app, getMenuBarItemsBuffer(app) or false)
   local watcher = ExecContinuously(function()
     local app = find(appid)
     if app == nil then return end
@@ -11107,7 +11119,7 @@ if not LAZY_REGISTER_MENUBAR_OBSERVER then
 end
 
 onLaunchedAndActivated = function(app, reinvokeKey)
-  local menuBarItems = getMenuBarItems(app)
+  local menuBarItems = getMenuBarItemsBuffer(app)
   local localeUpdated = updateAppLocale(app)
   local menuBarChanged = reinvokeKey ~= nil
   altMenuBarItem(app, nil, reinvokeKey)
