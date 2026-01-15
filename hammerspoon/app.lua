@@ -5543,7 +5543,7 @@ appHotKeyCallbacks = {
       fn = function(app)
         -- in early version of macOS there was a duplicated menu bar item '文件'
         -- which does not have menu items. So we have to manually filter it out
-        local menuBarItems = getMenuBarItems(app)
+        local menuBarItems = getMenuBarItems(app) or {}
         local menuBarItem = tfind(menuBarItems, function(item)
           return #item > 0 and item.AXTitle == '文件'
         end)
@@ -5815,7 +5815,7 @@ appHotKeyCallbacks = {
     ["changeSettings"] = {
       message = Barrier.localizedMessage("Change &Settings"),
       condition = function(app)
-        local menuBarItems = getMenuBarItems(app, true)
+        local menuBarItems = getMenuBarItems(app, true) or {}
         local menuBarItem = tfind(menuBarItems, function(item)
           return item.AXTitle == "Barrier"
         end)
@@ -8402,7 +8402,7 @@ end
 local function noSelectedLeftMenuBarItemFunc(fn)
   return function(obj)
     local app = obj.application ~= nil and obj:application() or obj
-    for i, menuBarItem in ipairs(getMenuBarItems(app, false, false)) do
+    for i, menuBarItem in ipairs(getMenuBarItems(app, false, false) or {}) do
       if i > 1 and menuBarItem.AXSelected then
         return false, CF.leftMenubarItemSelected
       end
@@ -10701,7 +10701,7 @@ local function altMenuBarItem(app, force, reinvokeKey)
   end
   local menuBarItemActualIndices = {}
   if menuBarItemTitles == nil then
-    menuBarItems = getMenuBarItems(app)
+    menuBarItems = getMenuBarItems(app) or {}
     if #menuBarItems == 0 then return end
     local itemDict = {}
     menuBarItemTitles = {}
@@ -10943,7 +10943,7 @@ local function getMenuBarItemTitlesStringImpl(menuBarItems)
 end
 
 local function getMenuBarItemTitlesString(app)
-  local menuBarItems = getMenuBarItems(app)
+  local menuBarItems = getMenuBarItems(app) or {}
   local appMenuBarStr = getMenuBarItemTitlesStringImpl(menuBarItems)
   local winMenuBarStr
   if app:focusedWindow() ~= nil then
@@ -11132,7 +11132,7 @@ onLaunchedAndActivated = function(app, reinvokeKey)
   registerObserverForMenuBarChange(app)
   registerObserverForSettingsMenuItem(app)
 
-  return #menuBarItems > 0
+  return menuBarItems ~= nil
 end
 if frontApp then
   registerForOpenSavePanel(frontApp)
@@ -11810,27 +11810,33 @@ local function selectInputSourceInApp(app)
 end
 
 -- some apps may launch slowly. Wait until complete launch to operate on menu bar items
+
+local function getNumberOfMenuBarItems(app)
+  local menuBarItems = getMenuBarItems(app)
+  return menuBarItems and #menuBarItems or 0
+end
+
 local appsLaunchSlow = {
   ["com.google.Chrome"] = function(app)
     return findMenuItem(app, { "Help" }) ~= nil
   end,
   ["org.zotero.zotero"] = function(app)
-    return #getMenuBarItems(app) > 0
+    return getNumberOfMenuBarItems(app) > 0
   end,
   ["com.microsoft.VSCode"] = function(app)
-    return #getMenuBarItems(app) > 1
+    return getNumberOfMenuBarItems(app) > 1
   end,
   ["com.jetbrains.CLion"] = function(app)
-    return #getMenuBarItems(app) > 2
+    return getNumberOfMenuBarItems(app) > 2
   end,
   ["com.jetbrains.CLion-EAP"] = function(app)
-    return #getMenuBarItems(app) > 2
+    return getNumberOfMenuBarItems(app) > 2
   end,
   ["com.jetbrains.intellij"] = function(app)
-    return #getMenuBarItems(app) > 2
+    return getNumberOfMenuBarItems(app) > 2
   end,
   ["com.jetbrains.pycharm"] = function(app)
-    return #getMenuBarItems(app) > 2
+    return getNumberOfMenuBarItems(app) > 2
   end
 }
 

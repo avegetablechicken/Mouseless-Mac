@@ -766,7 +766,7 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
     if app:bundleID() == "com.valvesoftware.steam.helper" then
       app = find("com.valvesoftware.steam") or app
     end
-    local menuBarItems = getMenuBarItems(app, true)
+    local menuBarItems = getMenuBarItems(app, true) or {}
     for _, item in ipairs(menuBarItems) do
       local title = item.AXTitle or ""
       local entry = tfind(enabledAltMenuHotkeys, function(menuHK)
@@ -1527,7 +1527,7 @@ function()
       insertIdx = insertIdx + 1
     end
     local app = hs.application.frontmostApplication()
-    local menuBarItems = getMenuBarItems(app, true)
+    local menuBarItems = getMenuBarItems(app, true) or {}
     for _, item in ipairs(menuBarItems) do
       local entry = tfind(enabledAltMenuHotkeys, function(menuHK)
         return menuHK.msg:sub(-#item.AXTitle-2) == ': ' .. item.AXTitle

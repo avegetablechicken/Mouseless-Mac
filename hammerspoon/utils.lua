@@ -95,7 +95,8 @@ end
 -- Get menu bar items of an application, optionally ignoring Apple and App menus.
 function getMenuBarItems(app, ignoreAppMenu, ignoreAppleMenu)
   if ignoreAppleMenu == nil then ignoreAppleMenu = true end
-  local menuBarItems = getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem) or {}
+  local menuBarItems = getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem)
+  if menuBarItems == nil then return end
   if ignoreAppMenu and #menuBarItems > 1 then
     tremove(menuBarItems, 2)
   end
@@ -2568,7 +2569,7 @@ local function localizedStringImpl(str, appid, params, force)
   if resourceDir == nil then return nil end
   if framework.chromium then
     if find(appid) then
-      local menuBarItems = getMenuBarItems(find(appid), true)
+      local menuBarItems = getMenuBarItems(find(appid), true) or {}
       if #menuBarItems ~= 0 then
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
           if tfind(menuBarItems,
@@ -3734,7 +3735,7 @@ local function delocalizedStringImpl(str, appid, params, force)
   if resourceDir == nil then return nil end
   if framework.chromium then
     if find(appid) then
-      local menuBarItems = getMenuBarItems(find(appid), true)
+      local menuBarItems = getMenuBarItems(find(appid), true) or {}
       if #menuBarItems ~= 0 then
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
           if tfind(menuBarItems,
@@ -3936,7 +3937,7 @@ end
 
 electronLocale = function(app, localesPath)
   local appid = app:bundleID()
-  local menubar = getMenuBarItems(app, true)
+  local menubar = getMenuBarItems(app, true) or {}
   if #menubar == 0 then return end
   local item = tfind(menubar, function(item)
     return delocMap.common[item.AXTitle] == nil
@@ -3982,7 +3983,7 @@ end
 
 javaLocale = function(app, javahome, localesPath)
   local appid = app:bundleID()
-  local menubar = getMenuBarItems(app, true)
+  local menubar = getMenuBarItems(app, true) or {}
   if #menubar == 0 then return end
   local item = tfind(menubar, function(item)
     return delocMap.common[item.AXTitle] == nil
