@@ -11821,16 +11821,16 @@ local appsLaunchSlow = {
     return #getMenuBarItems(app) > 1
   end,
   ["com.jetbrains.CLion"] = function(app)
-    return #getMenuBarItems(app) > 10
+    return #getMenuBarItems(app) > 2
   end,
   ["com.jetbrains.CLion-EAP"] = function(app)
-    return #getMenuBarItems(app) > 10
+    return #getMenuBarItems(app) > 2
   end,
   ["com.jetbrains.intellij"] = function(app)
-    return #getMenuBarItems(app) > 10
+    return #getMenuBarItems(app) > 2
   end,
   ["com.jetbrains.pycharm"] = function(app)
-    return #getMenuBarItems(app) > 10
+    return #getMenuBarItems(app) > 2
   end
 }
 
