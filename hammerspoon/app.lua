@@ -360,6 +360,26 @@ Evt.onDestroy = function(element, callback, stopWhen, callbackOnStop)
   return closeObserver
 end
 
+-- appBuf:
+-- Application-scoped runtime cache.
+--
+-- Data in appBuf lives until another application activates
+local appBuf = {}
+
+-- winBuf:
+-- Window-scoped runtime cache.
+--
+-- Data is automatically cleaned up when the window is destroyed.
+local winBuf = {}
+function winBuf:register(winUI, key, value)
+  winBuf.observer = Evt.onDestroy(winUI, function()
+    winBuf[key] = nil
+    winBuf.observer = nil
+  end)
+  winBuf[key] = value
+  return winBuf[key]
+end
+
 ------------------------------------------------------------
 -- ## localized title generators for hotkey descriptions
 --
@@ -385,6 +405,22 @@ end
 -- This makes TC suitable for common actions such as:
 --   Hide / Quit / Back / Forward / Zoom
 -- where consistent system wording is preferred.
+
+local function getValidLocaleBuffer(appid)
+  local frontApp = hs.application.frontmostApplication()
+  if frontApp and frontApp:bundleID() == appid then
+    if appBuf.validLocale then
+      return appBuf.validLocale
+    else
+      local locale = applicationValidLocale(appid)
+      appBuf.validLocale = locale
+      return locale
+    end
+  else
+    return applicationValidLocale(appid)
+  end
+end
+
 local function TC(message, params, params2)
   local fn
   if message == "Hide" or message == "Quit" then
@@ -393,7 +429,7 @@ local function TC(message, params, params2)
       local appid = getAppId(app)
       params = params and tcopy(params) or {}
       if params.locale == nil then
-        params.locale = applicationValidLocale(appid)
+        params.locale = getValidLocaleBuffer(appid)
       end
       if params.locale ~= nil then
         local result = localizedString(message .. ' App Store',
@@ -411,7 +447,7 @@ local function TC(message, params, params2)
       local appid = getAppId(app)
       params = params and tcopy(params) or {}
       if params.locale == nil then
-        params.locale = applicationValidLocale(appid)
+        params.locale = getValidLocaleBuffer(appid)
       end
       if params.locale ~= nil then
         local targetAppId = message == "Zoom" and "com.apple.AppStore"
@@ -428,7 +464,7 @@ local function TC(message, params, params2)
       local appid = getAppId(app)
       params = params and tcopy(params) or {}
       if params.locale == nil then
-        params.locale = applicationValidLocale(appid)
+        params.locale = getValidLocaleBuffer(appid)
       end
       if params.locale ~= nil then
         params.framework = "AppKit.framework"
@@ -470,7 +506,7 @@ local function TG(message, params, params2)
     local appid = getAppId(app)
     params = params and tcopy(params) or {}
     if params.locale == nil then
-      params.locale = applicationValidLocale(appid)
+      params.locale = getValidLocaleBuffer(appid)
     end
     if params.locale ~= nil then
       params.framework = "AccessibilitySharedSupport.framework"
@@ -833,26 +869,6 @@ local registerInAppHotKeys, unregisterInAppHotKeys
 local registerInWinHotKeys, unregisterInWinHotKeys
 local registerDaemonAppInWinHotkeys
 local registerInMenuHotkeys
-
--- appBuf:
--- Application-scoped runtime cache.
---
--- Data in appBuf lives until another application activates
-local appBuf = {}
-
--- winBuf:
--- Window-scoped runtime cache.
---
--- Data is automatically cleaned up when the window is destroyed.
-local winBuf = {}
-function winBuf:register(winUI, key, value)
-  winBuf.observer = Evt.onDestroy(winUI, function()
-    winBuf[key] = nil
-    winBuf.observer = nil
-  end)
-  winBuf[key] = value
-  return winBuf[key]
-end
 
 local WF = {}
 
