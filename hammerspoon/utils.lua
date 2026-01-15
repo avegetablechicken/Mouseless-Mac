@@ -4408,20 +4408,21 @@ function localizedMenuBarItem(title, appid, params)
   end
 end
 
-function applicationValidLocale(appid)
+function applicationValidLocale(appid, menuBarItems)
   local appLocale, valid = applicationLocale(appid)
   if valid then return appLocale end
   local resourceDir, framework = getResourceDir(appid)
   if framework.chromium then
     if find(appid) then
-      local menuBarItems = getMenuBarItems(find(appid), true)
-      if #menuBarItems ~= 0 then
+      if menuBarItems == nil then
+        menuBarItems = getMenuBarItems(find(appid)) or {}
+      end
+      if #menuBarItems > 1 then
         for _, title in ipairs{ 'File', 'Edit', 'Window', 'Help' } do
-          if tfind(menuBarItems,
-              function(item)
-                return item.AXTitle == title
-              end) ~= nil then
-            return 'en'
+          for i=2,#menuBarItems do
+            if menuBarItems[i].AXTitle == title then
+              return 'en'
+            end
           end
         end
       end

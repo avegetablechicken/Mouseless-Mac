@@ -419,7 +419,7 @@ local function getValidLocaleBuffer(appid)
     if appBuf.validLocale then
       return appBuf.validLocale
     else
-      local locale = applicationValidLocale(appid)
+      local locale = applicationValidLocale(appid, appBuf.menuBarItems)
       appBuf.validLocale = locale
       return locale
     end
