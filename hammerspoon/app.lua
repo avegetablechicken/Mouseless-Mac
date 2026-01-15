@@ -421,6 +421,7 @@ local function getValidLocaleBuffer(appid)
   end
 end
 
+local commonLocalizedStringsCache = {}
 local function TC(message, params, params2)
   local fn
   if message == "Hide" or message == "Quit" then
@@ -467,6 +468,10 @@ local function TC(message, params, params2)
         params.locale = getValidLocaleBuffer(appid)
       end
       if params.locale ~= nil then
+        if commonLocalizedStringsCache[params.locale]
+            and commonLocalizedStringsCache[params.locale][message] then
+          return commonLocalizedStringsCache[params.locale][message]
+        end
         params.framework = "AppKit.framework"
         for i, stem in ipairs{ 'MenuCommands', 'Menus', 'Common' } do
           params.localeFile = stem
@@ -474,6 +479,10 @@ local function TC(message, params, params2)
           local result = localizedString(message, params, retry)
           if result then
             result = result:gsub('“%%@”', ''):gsub('%%@', '')
+            if commonLocalizedStringsCache[params.locale] == nil then
+              commonLocalizedStringsCache[params.locale] = {}
+            end
+            commonLocalizedStringsCache[params.locale][message] = result
             return result
           end
         end
@@ -482,6 +491,10 @@ local function TC(message, params, params2)
         local result = localizedString(message, params, true)
         if result then
           result = result:gsub('“%%@”', ''):gsub('%%@', '')
+          if commonLocalizedStringsCache[params.locale] == nil then
+            commonLocalizedStringsCache[params.locale] = {}
+          end
+          commonLocalizedStringsCache[params.locale][message] = result
           return result
         end
       end
