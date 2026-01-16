@@ -10007,7 +10007,7 @@ local specialToolbarButtons = {
 -- This enables keyboard navigation in apps that lack native shortcuts
 -- for settings toolbar switching.
 local settingsToolbarHotkeys = {}
-local function registerNavigationForSettingsToolbar(app)
+local function registerNavigationForSettingsToolbar(app, fromRightMenuBar)
   local appid = app:bundleID() or app:name()
 
   local deleteFunc = function ()
@@ -10101,8 +10101,21 @@ local function registerNavigationForSettingsToolbar(app)
     end
   end)
   closeObserver:start()
-  Evt.StopOnDeactivated(app, closeObserver, deleteFunc)
-  Evt.StopOnTerminated(app, closeObserver, deleteFunc)
+  if fromRightMenuBar then
+    local wf = hs.window.filter.new(true)
+    wf:subscribe(hs.window.filter.windowFocused, function()
+      local w = hs.window.frontmostWindow()
+      if win:id() ~= w:id() then
+        closeObserver:stop() closeObserver = nil
+        deleteFunc()
+        wf:unsubscribeAll()
+        wf = nil
+      end
+    end)
+  else
+    Evt.StopOnDeactivated(app, closeObserver, deleteFunc)
+    Evt.StopOnTerminated(app, closeObserver, deleteFunc)
+  end
 end
 
 -- Observe selection of "Settings…" / "Preferences…" menu items.
@@ -10170,17 +10183,16 @@ local function registerObserverForSettingsMenuItem(app)
   Evt.StopOnDeactivated(app, observer)
 end
 
--- fixme: menuItemSelected event seems to escape for menu item in right
--- menu bar menu, so the code below does not work as expected actually
 local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
   local oldCallback = observer:callback()
+  local settingsMenu
   local callback = function(obs, elem, notification)
     if notification == uinotifications.menuOpened
         and elem.AXParent.AXRole == AX.MenuBar then
       local menuItems = getc(elem, AX.MenuItem)
       local sets = TC("Settings…", app)
       local prefs = TC("Preferences…", app)
-      local settingsMenu = tfind(menuItems, function(item)
+      settingsMenu = tfind(menuItems, function(item)
         return item.AXTitle and
             (item.AXTitle:find(sets) or item.AXTitle:find(prefs))
       end)
@@ -10191,20 +10203,22 @@ local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
             or item.AXTitle:find("Settings")
             or item.AXTitle:find("Preferences"))
       end)
-      if settingsMenu ~= nil then
-        observer:addWatcher(toappui(app), uinotifications.menuItemSelected)
+      settingsMenu = settingsMenu or tfind(menuItems, function(item)
+      if item.AXMenuItemCmdChar == ','
+          and item.AXMenuItemCmdModifiers == 0 then
+        local title = delocalizedString(item.AXTitle, app)
+        if type(title) == 'string' then
+          return title:find("Settings") or title:find("Preferences")
+        end
       end
-    elseif notification == uinotifications.menuClosed
-        and elem.AXParent.AXRole == AX.MenuBar then
-      observer:removeWatcher(toappui(app), uinotifications.menuItemSelected)
-    elseif notification == uinotifications.menuItemSelected
-        and elem.AXParent.AXParent.AXRole == AX.MenuBar then
-      local sets = TC("Settings…", app)
-      local prefs = TC("Preferences…", app)
-      if elem.AXTitle:find(sets:sub(1, -4))
-          or elem.AXTitle:find(prefs:sub(1, -4)) then
-        registerNavigationForSettingsToolbar(app)
+      return false
+    end)
+      if settingsMenu then
+        observer:addWatcher(toappui(app), uinotifications.menuClosed)
       end
+    elseif settingsMenu and notification == uinotifications.menuClosed
+        and elem.AXParent.AXRole == AX.Application then
+      registerNavigationForSettingsToolbar(app, true)
     end
     if oldCallback then
       oldCallback(obs, elem, notification)
