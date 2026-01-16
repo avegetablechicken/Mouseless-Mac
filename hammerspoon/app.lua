@@ -9193,16 +9193,11 @@ local function registerSingleWinFilterForApp(app, filter, retry)
         unregisterInWinHotKeys(appid, false, filter)
         return
       end
-      local tempFilter
-      local empty = true
-      tempFilter = {}
-      for k, v in pairs(actualFilter) do
-        if k ~= "allowTitles" and k ~= "rejectTitles" then
-          tempFilter[k] = v
-          empty = false
-        end
+      local tempFilter = tcopy(actualFilter)
+      tempFilter.allowTitles, tempFilter.rejectTitles = nil, nil
+      if sameFilter(tempFilter, {}) then
+        tempFilter = true
       end
-      if empty then tempFilter = true end
       windowFilter:setAppFilter(app:name(), tempFilter)
       action()
       windowFilter:setAppFilter(app:name(), actualFilter)
