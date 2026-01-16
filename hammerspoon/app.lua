@@ -9062,6 +9062,29 @@ unregisterInWinHotKeys = function(appid, delete, filter)
   end
 end
 
+local function normalizeWindowFilter(filter)
+  local normal, extended = nil, {}
+  if type(filter) == 'table' then
+    if filter.allowSheet or filter.allowPopover then
+      normal = false
+    else
+      normal = tcopy(filter)
+      normal.allowSheet, normal.allowPopover, normal.fn, normal.allowURLs = nil, nil, nil, nil
+      if sameFilter(normal, {}) then normal = nil end
+    end
+    extended = {
+      allowSheet = filter.allowSheet,
+      allowPopover = filter.allowPopover,
+      condition = filter.fn,
+      allowURLs = filter.allowURLs,
+    }
+  elseif filter == false then
+    normal = false
+  end
+
+  return normal, extended
+end
+
 local function isWebsiteAllowed(win, allowURLs)
   if win:subrole() ~= AX.StandardWindow then
     return false
@@ -9078,6 +9101,18 @@ local function isWebsiteAllowed(win, allowURLs)
     end
   end
   return false
+end
+
+local function isWindowAllowed(win, filter)
+  if win == nil then return false end
+  local normal, extended = normalizeWindowFilter(filter)
+  return (extended.allowURLs == nil or isWebsiteAllowed(win, extended.allowURLs))
+      and ((extended.allowSheet and win:role() == AX.Sheet)
+        or (extended.allowPopover and win:role() == AX.Popover)
+        or hs.window.filter.new(false)
+            :setAppFilter(win:application():name(), normal)
+            :isWindowAllowed(win))
+      and (extended.condition == nil or extended.condition(win))
 end
 
 FocusedWindowObservers = {}
@@ -9100,39 +9135,20 @@ local function registerSingleWinFilterForApp(app, filter, retry)
     return
   end
 
-  local actualFilter, allowSheet, allowPopover, condition, allowURLs
-  if type(filter) == 'table' then
-    actualFilter = tcopy(filter)
-    allowSheet, allowPopover = filter.allowSheet, filter.allowPopover
-    actualFilter.allowSheet, actualFilter.allowPopover = nil, nil
-    condition, allowURLs = actualFilter.fn, actualFilter.allowURLs
-    actualFilter.fn, actualFilter.allowURLs = nil, nil
-    if sameFilter(actualFilter, {}) then actualFilter = true end
-  else
-    actualFilter = filter
-  end
-  if allowSheet or allowPopover then
-    actualFilter = false
-  end
-  local windowFilter = hs.window.filter.new(false):setAppFilter(app:name(), actualFilter)
-
-  local observer = uiobserver.new(app:pid())
   local win = app:focusedWindow()
-  if win and (allowURLs == nil or isWebsiteAllowed(win, allowURLs))
-      and ((allowSheet and win:role() == AX.Sheet)
-        or (allowPopover and win:role() == AX.Popover)
-        or windowFilter:isWindowAllowed(win))
-      and (condition == nil or condition(win)) then
+  if isWindowAllowed(win, filter) then
     registerInWinHotKeys(win, filter)
   end
 
+  local normal, extended = normalizeWindowFilter(filter)
+  local observer = uiobserver.new(app:pid())
   observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
   observer:addWatcher(appUI, uinotifications.windowMiniaturized)
-  if allowPopover then
+  if extended.allowPopover then
     observer:addWatcher(appUI, uinotifications.focusedUIElementChanged)
   end
-  if win and (allowURLs or (type(filter) == 'table'
-      and (filter.allowTitles or filter.rejectTitles))) then
+  if win and (extended.allowURLs or
+      (normal and (normal.allowTitles or normal.rejectTitles))) then
     observer:addWatcher(towinui(win), uinotifications.titleChanged)
   end
   observer:callback(function(_, element, notification)
@@ -9143,8 +9159,8 @@ local function registerSingleWinFilterForApp(app, filter, retry)
       return
     end
     if notification == uinotifications.focusedWindowChanged
-        and win ~= nil and (allowURLs or (type(filter) == 'table'
-            and (filter.allowTitles or filter.rejectTitles))) then
+        and win and (extended.allowURLs
+            or (normal and (normal.allowTitles or normal.rejectTitles))) then
       observer:addWatcher(towinui(win), uinotifications.titleChanged)
     end
     if notification == uinotifications.windowMiniaturized then
@@ -9152,23 +9168,12 @@ local function registerSingleWinFilterForApp(app, filter, retry)
     end
     if not element:isValid() then return end
 
-    local action = function()
-      if win ~= nil and win:application() ~= nil
-          and (allowURLs == nil or isWebsiteAllowed(win, allowURLs))
-          and ((allowSheet and win:role() == AX.Sheet)
-            or (allowPopover and win:role() == AX.Popover)
-            or windowFilter:isWindowAllowed(win))
-          and (condition == nil or condition(win)) then
-        registerInWinHotKeys(win, filter)
-      else
-        unregisterInWinHotKeys(appid, false, filter)
-      end
-    end
     -- "hs.window.filter" waits for stop of changing title,
     -- affecting the return of "hs.window.filter.isWindowAllowed"
     -- we have to workaround it
-    if notification == uinotifications.titleChanged and (type(filter) == 'table'
-        and (filter.allowTitles or filter.rejectTitles)) then
+    local ignoreTitleChange = false
+    if notification == uinotifications.titleChanged
+        and normal and (normal.allowTitles or normal.rejectTitles) then
       local function matchTitles(titles, t)
         if type(titles) == 'string' then
           titles = { titles }
@@ -9177,7 +9182,7 @@ local function registerSingleWinFilterForApp(app, filter, retry)
           if t:match(title) then return true end
         end
       end
-      local allowTitles, rejectTitles = filter.allowTitles, filter.rejectTitles
+      local allowTitles, rejectTitles = normal.allowTitles, normal.rejectTitles
       if allowTitles then
         if type(allowTitles) == 'number' then
           if #win:title() <= allowTitles then
@@ -9193,17 +9198,20 @@ local function registerSingleWinFilterForApp(app, filter, retry)
         unregisterInWinHotKeys(appid, false, filter)
         return
       end
-      local tempFilter = tcopy(actualFilter)
-      tempFilter.allowTitles, tempFilter.rejectTitles = nil, nil
-      if sameFilter(tempFilter, {}) then
-        tempFilter = true
-      end
-      windowFilter:setAppFilter(app:name(), tempFilter)
-      action()
-      windowFilter:setAppFilter(app:name(), actualFilter)
-      return
+      ignoreTitleChange = true
     end
-    action()
+
+    local f = filter
+    if ignoreTitleChange then
+      f = tcopy(f)
+      f.allowTitles, f.rejectTitles = nil, nil
+      if sameFilter(f, {}) then f = nil end
+    end
+    if isWindowAllowed(win, f) then
+      registerInWinHotKeys(win, filter)
+    else
+      unregisterInWinHotKeys(appid, false, filter)
+    end
   end)
   observer:start()
   if FocusedWindowObservers[appid] == nil then
@@ -9365,27 +9373,12 @@ local function registerSingleWinFilterForDaemonApp(app, filter, retry)
     return
   end
 
-  local actualFilter, allowSheet, allowPopover, condition
-  if type(filter) == 'table' then
-    actualFilter = tcopy(filter)
-    allowSheet, allowPopover = filter.allowSheet, filter.allowPopover
-    actualFilter.allowSheet, actualFilter.allowPopover = nil, nil
-    condition = actualFilter.fn
-    actualFilter.fn, actualFilter.allowURLs = nil, nil
-    if sameFilter(actualFilter, {}) then actualFilter = true end
-  else
-    actualFilter = filter
-  end
-  if allowSheet or allowPopover then
-    actualFilter = false
-  end
-
   local observer = uiobserver.new(app:pid())
   observer:addWatcher(appUI, uinotifications.windowCreated)
-  if allowSheet then
+  if type(filter) == 'table' and filter.allowSheet then
     observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
   end
-  if allowPopover then
+  if type(filter) == 'table' and filter.allowPopover then
     observer:addWatcher(appUI, uinotifications.focusedUIElementChanged)
   end
   observer:callback(function(_, element, notification)
@@ -9402,14 +9395,8 @@ local function registerSingleWinFilterForDaemonApp(app, filter, retry)
       if elem == nil then return end
     end
 
-    local windowFilter = hs.window.filter.new(false):setAppFilter(
-        app:name(), actualFilter)
     local win = element:asHSWindow()
-    if win ~= nil
-        and ((allowSheet and win:role() == AX.Sheet)
-          or (allowPopover and win:role() == AX.Popover)
-          or windowFilter:isWindowAllowed(win))
-        and (condition == nil or condition(win)) then
+    if isWindowAllowed(win, filter) then
       registerDaemonAppInWinHotkeys(win, appid, filter)
     end
   end)
@@ -11298,26 +11285,7 @@ if frontWin ~= nil then
   local frontWinAppID = frontWin:application():bundleID() or frontWin:application():name()
   if DaemonAppFocusedWindowObservers[frontWinAppID] ~= nil then
     for filter, _ in pairs(DaemonAppFocusedWindowObservers[frontWinAppID]) do
-      local actualFilter, allowSheet, allowPopover, condition
-      if type(filter) == 'table' then
-        actualFilter = tcopy(filter)
-        allowSheet, allowPopover = filter.allowSheet, filter.allowPopover
-        actualFilter.allowSheet, actualFilter.allowPopover = nil, nil
-        condition = actualFilter.fn
-        actualFilter.fn, actualFilter.allowURLs = nil, nil
-        if sameFilter(actualFilter, {}) then actualFilter = true end
-      else
-        actualFilter = filter
-      end
-      if allowSheet or allowPopover then
-        actualFilter = false
-      end
-      local windowFilter = hs.window.filter.new(false):setAppFilter(
-          frontWin:application():name(), actualFilter)
-      if (allowSheet and frontWin:role() == AX.Sheet)
-          or (allowPopover and frontWin:role() == AX.Popover)
-          or windowFilter:isWindowAllowed(frontWin)
-          and (condition == nil or condition(frontWin)) then
+      if isWindowAllowed(frontWin, filter) then
         registerDaemonAppInWinHotkeys(frontWin, frontWinAppID, filter)
       end
     end
@@ -11347,28 +11315,9 @@ for appid, _ in pairs(DaemonAppFocusedWindowObservers) do
       end
     end
     for _, filter in ipairs(nonFrontmostFilters) do
-      local actualFilter, allowSheet, allowPopover, condition
-      if type(filter) == 'table' then
-        actualFilter = tcopy(filter)
-        allowSheet, allowPopover = filter.allowSheet, filter.allowPopover
-        actualFilter.allowSheet, actualFilter.allowPopover = nil, nil
-        condition = actualFilter.fn
-        actualFilter.fn, actualFilter.allowURLs = nil, nil
-        if sameFilter(actualFilter, {}) then actualFilter = true end
-      else
-        actualFilter = filter
-      end
-      if allowSheet or allowPopover then
-        actualFilter = false
-      end
-      local windowFilter = hs.window.filter.new(false):setAppFilter(
-          app:name(), actualFilter)
       local win = tfind(app:visibleWindows(), function(win)
-        return (frontWin == nil or win:id() ~= frontWin:id())
-          and (allowSheet and win:role() == AX.Sheet)
-          or (allowPopover and win:role() == AX.Popover)
-          or windowFilter:isWindowAllowed(win)
-          and (condition == nil or condition(win))
+        local isAllowed = isWindowAllowed(win, filter)
+        return isAllowed
       end)
       if win then
         registerDaemonAppInWinHotkeys(win, appid, filter)
