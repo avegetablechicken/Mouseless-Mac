@@ -9106,7 +9106,8 @@ end
 local function isWindowAllowed(win, filter)
   if win == nil then return false end
   local normal, extended = normalizeWindowFilter(filter)
-  return (extended.allowURLs == nil or isWebsiteAllowed(win, extended.allowURLs))
+  return win
+      and (extended.allowURLs == nil or isWebsiteAllowed(win, extended.allowURLs))
       and ((extended.allowSheet and win:role() == AX.Sheet)
         or (extended.allowPopover and win:role() == AX.Popover)
         or hs.window.filter.new(false)
