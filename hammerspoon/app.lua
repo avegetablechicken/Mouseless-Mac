@@ -1668,6 +1668,7 @@ WeChat.WF = {
     end
   },
   Preview = { },
+  PhotoEditor = { },
   AppEx = {
     fn = function(win)
       local app = win:application()
@@ -1783,6 +1784,8 @@ WeChat.WF = {
 Evt.OnRunning("com.tencent.xinWeChat", function(app)
   local title = T("Preview", app)
   WeChat.WF.Preview.allowTitles = '^' .. title .. '$'
+  title = T("Photo Editor", app)
+  WeChat.WF.PhotoEditor.allowTitles = '^' .. title .. '$'
 end)
 
 --- ### QQLive
@@ -5208,6 +5211,106 @@ appHotKeyCallbacks = {
       message = T("Extract Text"),
       bindCondition = Version.Between("4", "4.0.6"),
       windowFilter = WeChat.WF.Preview,
+      condition = function(win)
+        local button = getc(towinui(win), AX.Button, A_Message)
+        if button and button.AXEnabled then
+          return Callback.Clickable(getc(button, AX.Button, 1))
+        end
+      end,
+      fn = Callback.Click
+    },
+    ["photoEditorInsertRectangle"] = {
+      message = T("Rectangle Tool"),
+      bindCondition = Version.Between("4", "4.0.6"),
+      windowFilter = WeChat.WF.PhotoEditor,
+      condition = function(win)
+        local button = getc(towinui(win), AX.Button, A_Message)
+        if button and button.AXEnabled then
+          return Callback.Clickable(getc(button, AX.Button, 1))
+        end
+      end,
+      fn = Callback.Click
+    },
+    ["photoEditorInsertEllipse"] = {
+      message = T("Ellipse Tool"),
+      bindCondition = Version.Between("4", "4.0.6"),
+      windowFilter = WeChat.WF.PhotoEditor,
+      condition = function(win)
+        local button = getc(towinui(win), AX.Button, A_Message)
+        if button and button.AXEnabled then
+          return Callback.Clickable(getc(button, AX.Button, 1))
+        end
+      end,
+      fn = Callback.Click
+    },
+    ["photoEditorInsertMosaic"] = {
+      message = T("Mosaic"),
+      bindCondition = Version.Between("4", "4.0.6"),
+      windowFilter = WeChat.WF.PhotoEditor,
+      condition = function(win)
+        local button = getc(towinui(win), AX.Button, A_Message)
+        if button and button.AXEnabled then
+          return Callback.Clickable(getc(button, AX.Button, 1))
+        end
+      end,
+      fn = Callback.Click
+    },
+    ["photoEditorInsertText"] = {
+      message = function(win)
+        local title = localizedString("Text", win)
+        if type(title) ~= 'table' then return title end
+        local buttons = getc(towinui(win), AX.Button)
+        local button = tfind(buttons or {}, function(bt)
+          return tfind(title, function(t) return bt.AXTitle == t end) ~= nil
+        end)
+        if button then return button.AXTitle end
+      end,
+      bindCondition = Version.Between("4", "4.0.6"),
+      windowFilter = WeChat.WF.PhotoEditor,
+      condition = function(win)
+        local button = getc(towinui(win), AX.Button, A_Message)
+        if button and button.AXEnabled then
+          return Callback.Clickable(getc(button, AX.Button, 1))
+        end
+      end,
+      fn = Callback.Click
+    },
+    ["photoEditorSavePhoto"] = {
+      message = function(win)
+        local title = localizedString("Save", win)
+        if type(title) ~= 'table' then return title end
+        local buttons = getc(towinui(win), AX.Button)
+        local button = tfind(buttons or {}, function(bt)
+          return tfind(title, function(t) return bt.AXTitle == t end) ~= nil
+        end)
+        if button then return button.AXTitle end
+      end,
+      bindCondition = Version.Between("4", "4.0.6"),
+      windowFilter = WeChat.WF.PhotoEditor,
+      condition = function(win)
+        local button = getc(towinui(win), AX.Button, A_Message)
+        if button and button.AXEnabled then
+          return Callback.Clickable(getc(button, AX.Button, 1))
+        end
+      end,
+      fn = Callback.Click
+    },
+    ["photoEditorSendToChat"] = {
+      message = T("Send to Chat"),
+      bindCondition = Version.Between("4", "4.0.6"),
+      windowFilter = WeChat.WF.PhotoEditor,
+      condition = function(win)
+        local button = getc(towinui(win), AX.Button, A_Message)
+        if button and button.AXEnabled then
+          return Callback.Clickable(getc(button, AX.Button, 1))
+        end
+      end,
+      fn = Callback.Click
+    },
+    ["photoEditorDone"] = {
+      message = T("Done"),
+      bindCondition = Version.Between("4", "4.0.6"),
+      windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
         local button = getc(towinui(win), AX.Button, A_Message)
         if button and button.AXEnabled then

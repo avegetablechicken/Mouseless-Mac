@@ -1736,6 +1736,34 @@
         "mods": "command",
         "key": "Y"
       },
+      "photoEditorInsertRectangle": {
+        "mods": "command",
+        "key": "R"
+      },
+      "photoEditorInsertEllipse": {
+        "mods": "command",
+        "key": "E"
+      },
+      "photoEditorInsertMosaic": {
+        "mods": ["control", "command"],
+        "key": "M"
+      },
+      "photoEditorInsertText": {
+        "mods": ["control", "command"],
+        "key": "T"
+      },
+      "photoEditorSavePhoto": {
+        "mods": "command",
+        "key": "S"
+      },
+      "photoEditorSendToChat": {
+        "mods": ["control", "command"],
+        "key": "F"
+      },
+      "photoEditorDone": {
+        "mods": "command",
+        "key": "Return"
+      },
       "openInDefaultBrowser": {
         "mods": ["shift", "command"],
         "key": "O"
