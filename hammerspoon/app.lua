@@ -10110,12 +10110,48 @@ local function registerNavigationForSettingsToolbar(app, fromRightMenuBar)
 
   local win = app:focusedWindow()
   if win == nil then
-    local totalDelay = 0
-    repeat
-      hs.timer.usleep(10000)
-      totalDelay = totalDelay + 0.01
-      win = app:focusedWindow()
-    until win or totalDelay > 0.1
+    local apath = app:path()
+    local parts = hs.fnutils.split(apath, "/")
+    local apps = { app }
+    -- Walk backwards to find all the enclosing `.app` bundle
+    for i = #parts, 1, -1 do
+      if parts[i]:sub(-4) == ".app" then
+        local subPath = {}
+        for j = 1, i do
+            table.insert(subPath, parts[j])
+        end
+        local appPath = "/" .. table.concat(subPath, "/")
+        local info = hs.application.infoForBundlePath(appPath)
+        if info and info.CFBundleIdentifier then
+          local id = info.CFBundleIdentifier
+          local a = find(id)
+          if a then
+            win = a:focusedWindow()
+            if win then
+              app = a
+              appid = app:bundleID() or app:name()
+              break
+            end
+            tinsert(apps, a)
+          end
+        end
+      end
+    end
+    if win == nil then
+      local totalDelay = 0
+      repeat
+        hs.timer.usleep(10000)
+        totalDelay = totalDelay + 0.01
+        for _, a in ipairs(apps) do
+          win = a:focusedWindow()
+          if win then
+            app = a
+            appid = app:bundleID() or app:name()
+            break
+          end
+        end
+      until totalDelay > 0.1
+    end
   end
   if win == nil then return end
   local winUI = towinui(win)
