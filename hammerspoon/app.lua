@@ -10274,10 +10274,11 @@ end
 
 local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
   local oldCallback = observer:callback()
-  local settingsMenu
+  local settingsMenu, menuClosedObservedBefore
   local callback = function(obs, elem, notification)
     if notification == uinotifications.menuOpened
         and elem.AXParent.AXRole == AX.MenuBar then
+      settingsMenu = nil
       local menuItems = getc(elem, AX.MenuItem)
       local sets = TC("Settings…", app)
       local prefs = TC("Preferences…", app)
@@ -10303,10 +10304,18 @@ local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
         return false
       end)
       if settingsMenu then
-        observer:addWatcher(toappui(app), uinotifications.menuClosed)
+        menuClosedObservedBefore = tindex(observer:watching(toappui(app)),
+            uinotifications.menuClosed) ~= nil
+        if not menuClosedObservedBefore then
+          observer:addWatcher(toappui(app), uinotifications.menuClosed)
+        end
       end
     elseif settingsMenu and notification == uinotifications.menuClosed
         and elem.AXParent.AXRole == AX.Application then
+      if menuClosedObservedBefore == true then
+        observer:removeWatcher(toappui(app), uinotifications.menuClosed)
+      end
+      settingsMenu, menuClosedObservedBefore = nil, nil
       registerNavigationForSettingsToolbar(app, true)
     end
     if oldCallback then
