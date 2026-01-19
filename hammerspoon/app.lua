@@ -10303,6 +10303,19 @@ local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
         end
         return false
       end)
+      local appid = app:bundleID() or app:name()
+      local appCfg = appHotKeyCallbacks[appid] or {}
+      local keybindings = KeybindingConfigs.hotkeys[appid] or {}
+      for hkID, cfg in pairs(appCfg) do
+        local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+        local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+        local isMenuBarMenu = keybinding.menubarFilter ~= nil
+            or cfg.menubarFilter ~= nil
+        if hasKey and isMenuBarMenu
+            and hotkeyIdx(keybinding.mods, keybinding.key) == '⌘,' then
+          settingsMenu = true
+        end
+      end
       if settingsMenu then
         menuClosedObservedBefore = tindex(observer:watching(toappui(app)),
             uinotifications.menuClosed) ~= nil
