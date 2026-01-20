@@ -8317,18 +8317,16 @@ local function registerRunningAppHotKeys(appid, app)
 end
 
 local function unregisterRunningAppHotKeys(appid)
-  if appHotKeyCallbacks[appid] == nil then return end
+  if appHotKeyCallbacks[appid] == nil
+      or runningAppHotKeys[appid] == nil then return end
 
-  local allDeleted = true
-  for hkID, hotkey in pairs(runningAppHotKeys[appid] or {}) do
+  for hkID, hotkey in pairs(runningAppHotKeys[appid]) do
     if not hotkey.persist then
       hotkey:delete()
       runningAppHotKeys[appid][hkID] = nil
-    else
-      allDeleted = false
     end
   end
-  if allDeleted then
+  if next(runningAppHotKeys[appid]) == nil then
     runningAppHotKeys[appid] = nil
   end
 end
@@ -8910,24 +8908,22 @@ end
 
 unregisterInAppHotKeys = function(appid, delete)
   if type(appid) ~= 'string' then appid = appid:bundleID() or appid:name() end
+  if inAppHotKeys[appid] == nil then return end
 
-  local allDeleted = delete
   if delete then
-    for hkID, hotkey in pairs(inAppHotKeys[appid] or {}) do
+    for hkID, hotkey in pairs(inAppHotKeys[appid]) do
       CtxDelete(hotkey)
       inAppHotKeys[appid][hkID] = nil
     end
   else
-    for hkID, hotkey in pairs(inAppHotKeys[appid] or {}) do
+    for hkID, hotkey in pairs(inAppHotKeys[appid]) do
       CtxDisable(hotkey)
       if hotkey.deleteOnDisable then
         inAppHotKeys[appid][hkID] = nil
-      else
-        allDeleted = false
       end
     end
   end
-  if allDeleted then
+  if next(inAppHotKeys[appid]) == nil then
     inAppHotKeys[appid] = nil
   end
 end
@@ -9063,7 +9059,6 @@ unregisterInWinHotKeys = function(appid, delete, filter)
     return
   end
 
-  local allDeleted = delete
   if delete then
     for hkID, hotkey in pairs(hotkeys) do
       CtxDelete(hotkey)
@@ -9074,12 +9069,10 @@ unregisterInWinHotKeys = function(appid, delete, filter)
       CtxDisable(hotkey)
       if hotkey.deleteOnDisable then
         hotkeys[hkID] = nil
-      else
-        allDeleted = false
       end
     end
   end
-  if allDeleted then
+  if next(hotkeys) == nil then
     inWinHotKeys[appid][filter] = nil
   end
 end
@@ -9092,7 +9085,7 @@ local function normalizeWindowFilter(filter)
     else
       normal = tcopy(filter)
       normal.allowSheet, normal.allowPopover, normal.fn, normal.allowURLs = nil, nil, nil, nil
-      if sameFilter(normal, {}) then normal = nil end
+      if next(normal) == nil then normal = nil end
     end
     extended = {
       allowSheet = filter.allowSheet,
@@ -9228,7 +9221,7 @@ local function registerSingleWinFilterForApp(app, filter, retry)
     if ignoreTitleChange then
       f = tcopy(f)
       f.allowTitles, f.rejectTitles = nil, nil
-      if sameFilter(f, {}) then f = nil end
+      if next(f) == nil then f = nil end
     end
     if isWindowAllowed(win, f) then
       registerInWinHotKeys(win, filter)
