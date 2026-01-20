@@ -10096,17 +10096,31 @@ local specialToolbarButtons = {
 -- This enables keyboard navigation in apps that lack native shortcuts
 -- for settings toolbar switching.
 local settingsToolbarHotkeys = {}
-local function registerNavigationForSettingsToolbar(app, fromRightMenuBar)
-  local appid = app:bundleID() or app:name()
 
-  local deleteFunc = function ()
-    for _, hotkey in ipairs(settingsToolbarHotkeys) do
-      disableConditionInChain(appid, hotkey, true)
-      hotkey:delete()
+local function reactivateValidSettingsToolbarHotkeys()
+  local focusedWin = hs.window.frontmostWindow()
+  local focusedWinId = focusedWin and focusedWin:id() or nil
+  for wid, hotkeys in pairs(settingsToolbarHotkeys) do
+    local win = hs.window.get(wid)
+    if win == nil then return end
+    if wid ~= focusedWinId then
+      local appid = win:application():bundleID() or win:application():name()
+      for _, hotkey in ipairs(hotkeys) do
+        disableConditionInChain(appid, hotkey)
+        hotkey:disable()
+      end
+    else
+      for _, hotkey in ipairs(hotkeys) do
+        hotkey:enable()
+        enableConditionInChain(hotkey)
+      end
     end
-    settingsToolbarHotkeys = {}
   end
-  deleteFunc()
+end
+
+local function registerNavigationForSettingsToolbar(app)
+  local appid = app:bundleID() or app:name()
+  reactivateValidSettingsToolbarHotkeys()
 
   local win = app:focusedWindow()
   if win == nil then
@@ -10184,7 +10198,10 @@ local function registerNavigationForSettingsToolbar(app, fromRightMenuBar)
         spec = spec, message = msg,
         condition = condition, fn = bind(callback, button)
       })
-      tinsert(settingsToolbarHotkeys, hotkey)
+      if settingsToolbarHotkeys[win:id()] == nil then
+        settingsToolbarHotkeys[win:id()] = {}
+      end
+      tinsert(settingsToolbarHotkeys[win:id()], hotkey)
     end
   end
   if #buttons == 0 then return end
@@ -10201,8 +10218,11 @@ local function registerNavigationForSettingsToolbar(app, fromRightMenuBar)
   closeObserver:callback(function(obs, elem, notification)
     if notification == uinotifications.uIElementDestroyed then
       obs:stop() obs = nil
-      deleteFunc()
-      return
+      for _, hotkey in ipairs(settingsToolbarHotkeys[win:id()]) do
+        disableConditionInChain(appid, hotkey, true)
+        hotkey:delete()
+      end
+      settingsToolbarHotkeys[win:id()] = nil
     elseif notification == uinotifications.windowMiniaturized then
       closeObserver:addWatcher(winUI, uinotifications.windowDeminiaturized)
       closeObserver:removeWatcher(winUI, uinotifications.windowMiniaturized)
@@ -10210,37 +10230,9 @@ local function registerNavigationForSettingsToolbar(app, fromRightMenuBar)
       closeObserver:addWatcher(winUI, uinotifications.windowMiniaturized)
       closeObserver:removeWatcher(winUI, uinotifications.windowDeminiaturized)
     end
-    if app:focusedWindow() and app:focusedWindow():id() == win:id() then
-      for _, hotkey in ipairs(settingsToolbarHotkeys) do
-        hotkey:enable()
-        enableConditionInChain(hotkey)
-      end
-    elseif hs.window.get(win:id()) == nil then
-      obs:stop() obs = nil
-      deleteFunc()
-    else
-      for _, hotkey in ipairs(settingsToolbarHotkeys) do
-        disableConditionInChain(app:bundleID(), hotkey)
-        hotkey:disable()
-      end
-    end
+    reactivateValidSettingsToolbarHotkeys()
   end)
   closeObserver:start()
-  if fromRightMenuBar then
-    local wf = hs.window.filter.new(true)
-    wf:subscribe(hs.window.filter.windowFocused, function()
-      local w = hs.window.frontmostWindow()
-      if win:id() ~= w:id() then
-        closeObserver:stop() closeObserver = nil
-        deleteFunc()
-        wf:unsubscribeAll()
-        wf = nil
-      end
-    end)
-  else
-    Evt.StopOnDeactivated(app, closeObserver, deleteFunc)
-    Evt.StopOnTerminated(app, closeObserver, deleteFunc)
-  end
 end
 
 -- Observe selection of "Settings…" / "Preferences…" menu items.
@@ -10365,7 +10357,7 @@ local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
         observer:removeWatcher(toappui(app), uinotifications.menuClosed)
       end
       settingsMenu, menuClosedObservedBefore = nil, nil
-      registerNavigationForSettingsToolbar(app, true)
+      registerNavigationForSettingsToolbar(app)
     end
     if oldCallback then
       oldCallback(obs, elem, notification)
@@ -12061,6 +12053,7 @@ function App_applicationCallback(appname, eventType, app)
     end
     mayRequireHoldToCloseWindow(app)
     selectInputSourceInApp(app)
+    reactivateValidSettingsToolbarHotkeys()
 
     FLAGS["NO_RESHOW_KEYBINDING"] = true
     registerForOpenSavePanel(app)
