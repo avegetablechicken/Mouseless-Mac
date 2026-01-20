@@ -928,7 +928,7 @@ Finder.sidebarItemTitle = function(idx)
                 for _, hotkeys in pairs(inWinHotKeys[appid]) do
                   for hkID, hotkey in pairs(hotkeys) do
                     if hkID:match('^open(.-)SidebarItem$') then
-                      hotkey:delete()
+                      CtxDelete(hotkey)
                       hotkeys[hkID] = nil
                     end
                   end
@@ -1365,7 +1365,7 @@ Music.viewTitle = function(index)
             for _, hotkeys in pairs(inWinHotKeys[appid]) do
               for hkID, hotkey in pairs(hotkeys) do
                 if hkID:match('^view(%d-)$') then
-                  hotkey:delete()
+                  CtxDelete(hotkey)
                   hotkeys[hkID] = nil
                 end
               end
@@ -10505,7 +10505,7 @@ local specialSidebarRowsSelectFuncs = {
 --   - cleaned up on panel close or app deactivation
 local function registerForOpenSavePanel(app, retry)
   for _, hotkey in ipairs(openSavePanelHotkeys) do
-    hotkey:delete()
+    CtxDelete(hotkey)
   end
   openSavePanelHotkeys = {}
 
@@ -10805,10 +10805,10 @@ local function altMenuBarItem(app, force, reinvokeKey)
   for hkID, hotkey in pairs(inAppHotKeys[appid] or {}) do
     if hkID:sub(1, #prefix) == prefix then
       if force then
-        hotkey:delete()
+        CtxDelete(hotkey)
         inAppHotKeys[appid][hkID] = nil
       else
-        hotkey:enable()
+        CtxEnable(hotkey)
         enabled = true
       end
     end
@@ -11291,7 +11291,7 @@ onLaunchedAndActivated = function(app, reinvokeKey)
         function(observer) observer:stop() end)
     FocusedWindowObservers[appid] = nil
     foreach(inWinHotKeys[appid] or {}, function(hotkeys)
-      foreach(hotkeys, function(hk) hk:delete() end)
+      foreach(hotkeys, function(hk) CtxDelete(hk) end)
     end)
     inWinHotKeys[appid] = nil
     ActivatedAppConditionChain[appid] = nil
