@@ -8580,6 +8580,7 @@ local function appendConditionChain(app, config, pressedfn, repeatedfn, cond)
     message = message,
     enabled = true,
     previous = prevHotkeyInfo,
+    _chainRef = chain[appid],
   }
   if prevHotkeyInfo then
     prevHotkeyInfo.next = chain[appid][hkIdx]
@@ -8592,7 +8593,7 @@ local function enableConditionInChain(hotkey)
   hotkey._chainedCond.enabled = true
 end
 
-local function disableConditionInChain(appid, hotkey, delete)
+local function disableConditionInChain(hotkey, delete)
   if hotkey._chainedCond == nil then return end
   hotkey._chainedCond.enabled = false
   if delete or hotkey.deleteOnDisable then
@@ -8602,11 +8603,9 @@ local function disableConditionInChain(appid, hotkey, delete)
     if hotkey._chainedCond.next then
       hotkey._chainedCond.next.previous = hotkey._chainedCond.previous
     else
-      local chain = (hotkey.kind == HK.IN_WIN or hotkey.kind == HK.MENUBAR)
-          and DaemonAppConditionChain or ActivatedAppConditionChain
-      if chain[appid] then
-        chain[appid][hotkey.idx] = hotkey._chainedCond.previous
-      end
+      local chainRef = hotkey._chainedCond._chainRef
+      assert(chainRef)
+      chainRef[hotkey.idx] = hotkey._chainedCond.previous
     end
   end
 end
@@ -8897,14 +8896,14 @@ unregisterInAppHotKeys = function(appid, delete)
   local allDeleted = delete
   if delete then
     for hkID, hotkey in pairs(inAppHotKeys[appid] or {}) do
-      disableConditionInChain(appid, hotkey, true)
+      disableConditionInChain(hotkey, true)
       hotkey:delete()
       inAppHotKeys[appid][hkID] = nil
     end
   else
     for hkID, hotkey in pairs(inAppHotKeys[appid] or {}) do
       hotkey:disable()
-      disableConditionInChain(appid, hotkey)
+      disableConditionInChain(hotkey)
       if hotkey.deleteOnDisable then
         hotkey:delete()
         inAppHotKeys[appid][hkID] = nil
@@ -9053,14 +9052,14 @@ unregisterInWinHotKeys = function(appid, delete, filter)
   local allDeleted = delete
   if delete then
     for hkID, hotkey in pairs(hotkeys) do
-      disableConditionInChain(appid, hotkey, true)
+      disableConditionInChain(hotkey, true)
       hotkey:delete()
       hotkeys[hkID] = nil
     end
   else
     for hkID, hotkey in pairs(hotkeys) do
       hotkey:disable()
-      disableConditionInChain(appid, hotkey)
+      disableConditionInChain(hotkey)
       if hotkey.deleteOnDisable then
         hotkey:delete()
         hotkeys[hkID] = nil
@@ -9348,7 +9347,7 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
             if daemonAppFocusedWindowHotkeys[wid] ~= nil then
               for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[wid]) do
                 if hotkey.idx ~= nil then
-                  disableConditionInChain(appid, hotkey, true)
+                  disableConditionInChain(hotkey, true)
                   hotkey:delete()
                   daemonAppFocusedWindowHotkeys[wid][i] = nil
                 end
@@ -9551,7 +9550,7 @@ registerInMenuHotkeys = function(app)
             if menuBarMenuHotkeys[appid] ~= nil then
               for i, hotkey in ipairs(menuBarMenuHotkeys[appid]) do
                 if hotkey.idx ~= nil then
-                  disableConditionInChain(appid, hotkey, true)
+                  disableConditionInChain(hotkey, true)
                   hotkey:delete()
                   menuBarMenuHotkeys[appid][i] = nil
                 end
@@ -9672,7 +9671,7 @@ local function remapPreviousTab(app, force)
   if hotkey then
     if force then
       hotkey:delete()
-      disableConditionInChain(appid, hotkey, true)
+      disableConditionInChain(hotkey, true)
       inAppHotKeys[appid][hkID] = nil
     else
       hotkey:enable()
@@ -9719,7 +9718,7 @@ local function registerOpenRecent(app, force)
   if hotkey then
     if force then
       hotkey:delete()
-      disableConditionInChain(appid, hotkey, true)
+      disableConditionInChain(hotkey, true)
       inAppHotKeys[appid][hkID] = nil
     else
       hotkey:enable()
@@ -9807,7 +9806,7 @@ local function registerZoomHotkeys(app, force)
     if hotkey then
       if force then
         hotkey:delete()
-        disableConditionInChain(appid, hotkey, true)
+        disableConditionInChain(hotkey, true)
         inAppHotKeys[appid][hkID] = nil
         tinsert(menuItemTitles, allMenuItemTitles[i])
         tinsert(hkIDs, hkID)
@@ -10116,9 +10115,8 @@ local function reactivateValidSettingsToolbarHotkeys()
     local win = hs.window.get(wid)
     if win == nil then return end
     if wid ~= focusedWinId then
-      local appid = win:application():bundleID() or win:application():name()
       for _, hotkey in ipairs(hotkeys) do
-        disableConditionInChain(appid, hotkey)
+        disableConditionInChain(hotkey)
         hotkey:disable()
       end
     else
@@ -10231,7 +10229,7 @@ local function registerNavigationForSettingsToolbar(app)
     if notification == uinotifications.uIElementDestroyed then
       obs:stop() obs = nil
       for _, hotkey in ipairs(settingsToolbarHotkeys[win:id()]) do
-        disableConditionInChain(appid, hotkey, true)
+        disableConditionInChain(hotkey, true)
         hotkey:delete()
       end
       settingsToolbarHotkeys[win:id()] = nil
@@ -10563,7 +10561,7 @@ local function registerForOpenSavePanel(app, retry)
   local actionFunc
   actionFunc = function(winUI, callByObserver)
     for _, hotkey in ipairs(openSavePanelHotkeys) do
-      disableConditionInChain(appid, hotkey, true)
+      disableConditionInChain(hotkey, true)
       hotkey:delete()
     end
     openSavePanelHotkeys = {}
@@ -10619,7 +10617,7 @@ local function registerForOpenSavePanel(app, retry)
           appBuf.lastRowCountChangedTimer = hs.timer.doAfter(0.3, function()
             appBuf.lastRowCountChangedTimer = nil
             for _, hotkey in ipairs(openSavePanelHotkeys) do
-              disableConditionInChain(appid, hotkey, true)
+              disableConditionInChain(hotkey, true)
               hotkey:delete()
             end
             openSavePanelHotkeys = {}
@@ -10655,7 +10653,7 @@ local function registerForOpenSavePanel(app, retry)
     Evt.onDestroy(winUI,
       function()
         for _, hotkey in ipairs(openSavePanelHotkeys) do
-          disableConditionInChain(appid, hotkey, true)
+          disableConditionInChain(hotkey, true)
           hotkey:delete()
         end
         openSavePanelHotkeys = {}
