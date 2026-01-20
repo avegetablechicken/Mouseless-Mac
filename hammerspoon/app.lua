@@ -1044,6 +1044,15 @@ Messages.deleteSelected = function(app)
     if app:focusedWindow():role() == AX.Sheet then
       local sheet = towinui(app:focusedWindow())
       local delete = getc(sheet, AX.Button, T("Delete", app))
+      if delete == nil then
+        local totalDelay = 0
+        repeat
+          hs.timer.usleep(0.05 * 1000000)
+          totalDelay = totalDelay + 0.05
+          delete = getc(sheet, AX.Button, T("Delete", app))
+        until delete or totalDelay >= 0.5
+        if delete == nil then return end
+      end
       Callback.Press(delete)
     end
   end)
