@@ -845,7 +845,10 @@ Callback.Clickable = function(element, offset)
     element.AXPosition.x + offset[1],
     element.AXPosition.y + offset[2],
   }
-  local appHere = hs.axuielement.systemElementAtPosition(point)
+  local appHere, errMsg = hs.axuielement.systemElementAtPosition(point)
+  if appHere == nil and errMsg == "Function or method not implemented" then
+    return true, point
+  end
   if appHere then
     while appHere.AXParent do
       appHere = appHere.AXParent
