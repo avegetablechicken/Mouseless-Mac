@@ -12036,11 +12036,13 @@ function App_applicationCallback(appname, eventType, app)
     FLAGS["MENUBAR_ITEMS_PREPARED"] = nil
   elseif eventType == hs.application.watcher.activated then
     for bid, processes in pairs(Evt.ProcOnDeactivated) do
-      local b = find(bid)
-      for _, proc in ipairs(processes) do
-        proc(b)
+      if bid ~= appid then
+        local b = find(bid)
+        for _, proc in ipairs(processes) do
+          proc(b)
+        end
+        Evt.ProcOnDeactivated[bid] = nil
       end
-      Evt.ProcOnDeactivated[bid] = nil
     end
 
     if launchTimer then
