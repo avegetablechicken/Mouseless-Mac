@@ -10215,7 +10215,7 @@ local function registerNavigationForSettingsToolbar(app)
   closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
   closeObserver:addWatcher(winUI, uinotifications.windowMiniaturized)
   closeObserver:addWatcher(toappui(app), uinotifications.focusedWindowChanged)
-  closeObserver:callback(function(obs, elem, notification)
+  closeObserver:callback(function(obs, ele, notification)
     if notification == uinotifications.uIElementDestroyed then
       obs:stop() obs = nil
       for _, hotkey in ipairs(settingsToolbarHotkeys[win:id()]) do
@@ -10224,11 +10224,11 @@ local function registerNavigationForSettingsToolbar(app)
       end
       settingsToolbarHotkeys[win:id()] = nil
     elseif notification == uinotifications.windowMiniaturized then
-      closeObserver:addWatcher(winUI, uinotifications.windowDeminiaturized)
-      closeObserver:removeWatcher(winUI, uinotifications.windowMiniaturized)
+      closeObserver:addWatcher(ele, uinotifications.windowDeminiaturized)
+      closeObserver:removeWatcher(ele, uinotifications.windowMiniaturized)
     elseif notification == uinotifications.windowDeminiaturized then
-      closeObserver:addWatcher(winUI, uinotifications.windowMiniaturized)
-      closeObserver:removeWatcher(winUI, uinotifications.windowDeminiaturized)
+      closeObserver:addWatcher(ele, uinotifications.windowMiniaturized)
+      closeObserver:removeWatcher(ele, uinotifications.windowDeminiaturized)
     end
     reactivateValidSettingsToolbarHotkeys()
   end)
