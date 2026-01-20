@@ -10183,6 +10183,13 @@ local function registerNavigationForSettingsToolbar(app)
   local winUI = towinui(win)
   local func = specialToolbarButtons[appid] or getToolbarButtons
   local buttons, toClick = func(winUI)
+  if #buttons == 0 then return end
+  local elem = buttons[1]
+  repeat
+    elem = elem.AXParent
+  until elem.AXRole == AX.Window
+  winUI = elem
+  win = winUI:asHSWindow()
   local callback = toClick and Callback.Click or Callback.Press
   for i, button in ipairs(buttons) do
     local suffix
@@ -10216,13 +10223,6 @@ local function registerNavigationForSettingsToolbar(app)
       tinsert(settingsToolbarHotkeys[win:id()], hotkey)
     end
   end
-  if #buttons == 0 then return end
-  local elem = buttons[1]
-  repeat
-    elem = elem.AXParent
-  until elem.AXRole == AX.Window
-  winUI = elem
-  win = winUI:asHSWindow()
   local closeObserver = uiobserver.new(app:pid())
   closeObserver:addWatcher(winUI, uinotifications.uIElementDestroyed)
   closeObserver:addWatcher(winUI, uinotifications.windowMiniaturized)
