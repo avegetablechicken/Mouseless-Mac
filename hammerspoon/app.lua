@@ -8320,9 +8320,10 @@ local function unregisterRunningAppHotKeys(appid)
   if appHotKeyCallbacks[appid] == nil then return end
 
   local allDeleted = true
-  for _, hotkey in pairs(runningAppHotKeys[appid] or {}) do
+  for hkID, hotkey in pairs(runningAppHotKeys[appid] or {}) do
     if not hotkey.persist then
       hotkey:delete()
+      runningAppHotKeys[appid][hkID] = nil
     else
       allDeleted = false
     end
