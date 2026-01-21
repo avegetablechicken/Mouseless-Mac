@@ -700,12 +700,16 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
   allKeys = tconcat(allKeys, karaHotkeys or {})
 
   -- Phase 3: evaluate contextual validity for each hotkey entry.
+  FLAGS["BATCH_VERIFY_HOTKEYS"] = true
+  A_ConditionBuffer = {}
   for _, entry in ipairs(allKeys) do
     testValid(entry)
   end
   for _, entry in ipairs(enabledAltMenuHotkeys) do
     testValid(entry)
   end
+  FLAGS["BATCH_VERIFY_HOTKEYS"] = false
+  A_ConditionBuffer = {}
 
   -- Phase 4: normalize symbols and sort hotkeys by kind and subkind.
   for _, entry in ipairs(allKeys) do
@@ -1465,12 +1469,16 @@ function()
     end
   end
 
+  FLAGS["BATCH_VERIFY_HOTKEYS"] = true
+  A_ConditionBuffer = {}
   for _, entry in ipairs(allKeys) do
     testValid(entry)
   end
   for _, entry in ipairs(enabledAltMenuHotkeys) do
     testValid(entry)
   end
+  FLAGS["BATCH_VERIFY_HOTKEYS"] = false
+  A_ConditionBuffer = {}
 
   for _, entry in ipairs(allKeys) do
     local pos = entry.msg:find(": ")

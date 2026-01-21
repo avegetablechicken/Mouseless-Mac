@@ -380,6 +380,13 @@ function winBuf:register(winUI, key, value)
   return winBuf[key]
 end
 
+-- A_ConditionBuffer:
+-- Condition evaluation cache.
+--
+-- Used to memoize expensive condition checks during
+-- batch hotkey verification.
+A_ConditionBuffer = {}
+
 local function getMenuBarItemsBuffer(app)
   if appBuf.menuBarItems == nil then
     appBuf.menuBarItems = getMenuBarItems(app)
