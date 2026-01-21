@@ -1854,19 +1854,41 @@ end
 
 QQLive.getChannel = function(index)
   return function(win)
-    local list = getc(towinui(win), AX.Group, 2)
-    if list == nil or #list == 0 then return false end
     local start = winBuf.QQLiveChannelStartIndex
-    if #list - 2 >= start + index - 1 then
+    local list, rowCnt, lastRow
+    if FLAGS["BATCH_VERIFY_HOTKEYS"] then
+      if A_ConditionBuffer.QQLiveChannelList == nil then
+        list = getc(towinui(win), AX.Group, 2)
+        if list == nil then return false end
+        rowCnt = #list
+        if rowCnt == 0 then return false end
+        lastRow = list[rowCnt]
+        A_ConditionBuffer.QQLiveChannelList = list
+        A_ConditionBuffer.QQLiveRowCount = rowCnt
+        A_ConditionBuffer.QQLiveLastRow = lastRow
+      else
+        list = A_ConditionBuffer.QQLiveChannelList
+        rowCnt = A_ConditionBuffer.QQLiveRowCount
+        lastRow = A_ConditionBuffer.QQLiveLastRow
+      end
+    else
+      list = getc(towinui(win), AX.Group, 2)
+      if list == nil then return false end
+      rowCnt = #list
+      if rowCnt == 0 then return false end
+    end
+
+    if rowCnt - 2 >= start + index - 1 then
       local row = list[start + index - 1]
+      lastRow = lastRow or list[rowCnt]
       if row.AXPosition.y > list.AXPosition.y
-          and row.AXPosition.y + row.AXSize.h < list[#list].AXPosition.y - 15 then
+          and row.AXPosition.y + row.AXSize.h < lastRow.AXPosition.y - 15 then
         return Callback.Clickable(row)
       elseif row.AXPosition.y <= list.AXPosition.y
           and row.AXPosition.y + row.AXSize.h > list.AXPosition.y then
         return Callback.Clickable(row, { row.AXSize.w / 2, row.AXSize.h })
-      elseif row.AXPosition.y + row.AXSize.h >= list[#list].AXPosition.y - 15
-          and row.AXPosition.y < list[#list].AXPosition.y - 15 then
+      elseif row.AXPosition.y + row.AXSize.h >= lastRow.AXPosition.y - 15
+          and row.AXPosition.y < lastRow.AXPosition.y - 15 then
         return Callback.Clickable(row, { row.AXSize.w / 2, 0 })
       end
     end
