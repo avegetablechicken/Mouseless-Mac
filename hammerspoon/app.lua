@@ -1816,19 +1816,23 @@ QQLive.channelName = function(index)
     if #QQLiveChannelNames == 0 then
       local list = getc(towinui(win), AX.Group, 2)
       if list == nil or #list == 0 then return end
-      local start = 1
-      local verticalOffset, verticalOffsetChangeIdx
-      for i=2,math.min(10, #list) do
-        local offset = list[i].AXPosition.y - list[i-1].AXPosition.y
-        if offset ~= verticalOffset then
-          verticalOffset = offset
-          verticalOffsetChangeIdx = i - 1
-        elseif i - verticalOffsetChangeIdx >= 3 then
-          start = verticalOffsetChangeIdx
-          break
+      local start = winBuf.QQLiveChannelStartIndex
+      if start == nil then
+        start = 1
+        local verticalOffset, verticalOffsetChangeIdx
+        for i=2,math.min(10, #list) do
+          local offset = list[i].AXPosition.y - list[i-1].AXPosition.y
+          if offset ~= verticalOffset then
+            verticalOffset = offset
+            verticalOffsetChangeIdx = i - 1
+          elseif i - verticalOffsetChangeIdx >= 3 then
+            start = verticalOffsetChangeIdx
+            break
+          end
         end
+        if start == 1 then start = 4 end
+        winBuf:register(towinui(win), "QQLiveChannelStartIndex", start)
       end
-      if start == 1 then start = 4 end
       for i = 1, 10 do
         if #list - 2 >= start + i - 1 then
           local row = list[start + i - 1]
@@ -1845,19 +1849,7 @@ QQLive.getChannel = function(index)
   return function(win)
     local list = getc(towinui(win), AX.Group, 2)
     if list == nil or #list == 0 then return false end
-    local start = 1
-    local verticalOffset, verticalOffsetChangeIdx
-    for i=2,math.min(10, #list) do
-      local offset = list[i].AXPosition.y - list[i-1].AXPosition.y
-      if offset ~= verticalOffset then
-        verticalOffset = offset
-        verticalOffsetChangeIdx = i - 1
-      elseif i - verticalOffsetChangeIdx >= 3 then
-        start = verticalOffsetChangeIdx
-        break
-      end
-    end
-    if start == 1 then start = 4 end
+    local start = winBuf.QQLiveChannelStartIndex
     if #list - 2 >= start + index - 1 then
       local row = list[start + index - 1]
       if row.AXPosition.y > list.AXPosition.y
