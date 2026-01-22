@@ -11414,6 +11414,14 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
   local hasMenuBarMenuHotkey = any(appConfig, function(cfg, hkID)
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+    if hasKey == false then
+      local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
+          or specialCommonHotkeyConfigs[hkID]
+      if kbShared ~= nil then
+        keybinding.mods = kbShared.mods
+        keybinding.key = kbShared.key
+      end
+    end
     local isMenuBarMenu = keybinding.menubarFilter ~= nil
         or cfg.menubarFilter ~= nil
     return hasKey and isMenuBarMenu
