@@ -375,13 +375,14 @@ local appBuf = {}
 --
 -- Data is automatically cleaned up when the window is destroyed.
 local winBuf = {}
-function winBuf:register(winUI, key, value)
-  winBuf.observer = Evt.OnDestroy(winUI, function()
-    winBuf[key] = nil
-    winBuf.observer = nil
-  end)
-  winBuf[key] = value
-  return winBuf[key]
+
+function winBuf.get(win)
+  local wid = win:id()
+  if winBuf[wid] == nil then
+    winBuf[wid] = {}
+    Evt.OnDestroy(towinui(win), function() winBuf[wid] = nil end)
+  end
+  return winBuf[wid]
 end
 
 -- A_ConditionBuffer:
@@ -1824,11 +1825,12 @@ QQLive.WF.Main = {
 }
 QQLive.channelName = function(index)
   return function(win)
-    local QQLiveChannelNames = appBuf.QQLiveChannelNames or {}
-    if #QQLiveChannelNames == 0 then
+    local winbuf = winBuf.get(win)
+    local channelNames = winbuf.channelNames or {}
+    if #channelNames == 0 then
       local list = getc(towinui(win), AX.Group, 2)
       if list == nil or #list == 0 then return end
-      local start = winBuf.QQLiveChannelStartIndex
+      local start = winbuf.channelStartIndex
       if start == nil then
         start = 1
         local verticalOffset, verticalOffsetChangeIdx
@@ -1843,23 +1845,23 @@ QQLive.channelName = function(index)
           end
         end
         if start == 1 then start = 4 end
-        winBuf:register(towinui(win), "QQLiveChannelStartIndex", start)
+        winbuf.channelStartIndex = start
       end
       for i = 1, 10 do
         if #list - 2 >= start + i - 1 then
           local row = list[start + i - 1]
-          tinsert(QQLiveChannelNames, row.AXValue)
+          tinsert(channelNames, row.AXValue)
         end
       end
-      appBuf.QQLiveChannelNames = QQLiveChannelNames
+      winbuf.channelNames = channelNames
     end
-    return QQLiveChannelNames[index]
+    return channelNames[index]
   end
 end
 
 QQLive.getChannel = function(index)
   return function(win)
-    local start = winBuf.QQLiveChannelStartIndex
+    local start = winBuf.get(win).channelStartIndex
     local list, rowCnt, lastRow
     if FLAGS["BATCH_VERIFY_HOTKEYS"] then
       if A_ConditionBuffer.QQLiveChannelList == nil then
@@ -2003,7 +2005,8 @@ Bartender.WF = {}
 Bartender.WF.Bar = { allowTitles = "^Bartender Bar$" }
 Bartender.barItemTitle = function(index, rightClick)
   return function(win)
-    if winBuf.bartenderBarItemNames == nil then
+    local winbuf = winBuf.get(win)
+    if winbuf.itemNames == nil then
       local winUI = towinui(win)
       local icons = getc(winUI, AX.ScrollArea, 1, AX.List, 1, AX.List, 1)
       local appnames = tmap(getc(icons, AX.Group), function(g)
@@ -2022,8 +2025,8 @@ Bartender.barItemTitle = function(index, rightClick)
         if barSplitterIndex ~= nil then
           splitterIndex = splitterIndex - (#appnames - (barSplitterIndex - 1))
         end
-        winBuf:register(winUI, 'bartenderBarItemNames', {})
-        winBuf:register(winUI, 'bartenderBarItemIDs', {})
+        winbuf.itemNames = {}
+        winbuf.itemIDs = {}
         local missedItemCnt = 0
         if Version.LessThan(app, "5.5") then
           local plistPath = hs.fs.pathToAbsolute(strfmt(
@@ -2052,35 +2055,35 @@ Bartender.barItemTitle = function(index, rightClick)
             local id, idx = itemID:match("(.-)%-Item%-(%d+)$")
             if id ~= nil then
               if idx == "0" then
-                tinsert(winBuf.bartenderBarItemNames, appname)
+                tinsert(winbuf.itemNames, appname)
               else
-                tinsert(winBuf.bartenderBarItemNames,
+                tinsert(winbuf.itemNames,
                     strfmt("%s (Item %s)", appname, idx))
               end
-              tinsert(winBuf.bartenderBarItemIDs, itemID)
+              tinsert(winbuf.itemIDs, itemID)
             else
               local appByName = find(appname)
               if appByName == nil or
                   appByName:bundleID() ~= itemID:sub(1, #appByName:bundleID()) then
-                tinsert(winBuf.bartenderBarItemNames, appname)
-                tinsert(winBuf.bartenderBarItemIDs, itemID)
+                tinsert(winbuf.itemNames, appname)
+                tinsert(winbuf.itemIDs, itemID)
               elseif appByName ~= nil then
                 local itemShortName = itemID:sub(#appByName:bundleID() + 2)
-                tinsert(winBuf.bartenderBarItemNames,
+                tinsert(winbuf.itemNames,
                     strfmt("%s (%s)", appname, itemShortName))
-                tinsert(winBuf.bartenderBarItemIDs, itemID)
+                tinsert(winbuf.itemIDs, itemID)
               end
             end
           end
         else
           for i = 1, #appnames do
-            tinsert(winBuf.bartenderBarItemNames, appnames[i])
-            tinsert(winBuf.bartenderBarItemIDs, i)
+            tinsert(winbuf.itemNames, appnames[i])
+            tinsert(winbuf.itemIDs, i)
           end
         end
       elseif #appnames > 0 then
-        winBuf:register(winUI, 'bartenderBarItemNames', {})
-        winBuf:register(winUI, 'bartenderBarItemIDs', {})
+        winbuf.itemNames = {}
+        winbuf.itemIDs = {}
         local alwaysHiddenBar = false
         for _, appname in ipairs(appnames) do
           local hint = appname
@@ -2131,15 +2134,14 @@ Bartender.barItemTitle = function(index, rightClick)
                 msg = msg..'-'..autosaveName
               end
             end
-            tinsert(winBuf.bartenderBarItemNames, msg)
-            tinsert(winBuf.bartenderBarItemIDs, i)
+            tinsert(winbuf.itemNames, msg)
+            tinsert(winbuf.itemIDs, i)
           end
         end
       end
     end
-    if winBuf.bartenderBarItemNames ~= nil and index <= #winBuf.bartenderBarItemNames then
-      return (rightClick and "Right-click " or "Click ")
-          .. winBuf.bartenderBarItemNames[index]
+    if winbuf.itemNames ~= nil and index <= #winbuf.itemNames then
+      return (rightClick and "Right-click " or "Click ") .. winbuf.itemNames[index]
     end
   end
 end
@@ -2147,10 +2149,11 @@ end
 Bartender.clickBarItem = function(index, rightClick)
   return function(win)
     local appid = win:application():bundleID()
-    local itemID = winBuf.bartenderBarItemIDs[index]
+    local winbuf = winBuf.get(win)
+    local itemID = winbuf.itemIDs[index]
     if type(itemID) == 'string' then
       local script = strfmt('tell application id "%s" to activate "%s"',
-          appid, winBuf.bartenderBarItemIDs[index])
+          appid, winbuf.itemIDs[index])
       if rightClick then
         script = script .. " with right click"
       end
@@ -2236,16 +2239,16 @@ Barbee.WF.Bar = {
 }
 Barbee.barItemTitle = function(index)
   return function(win)
-    if winBuf.barbeeBarItemNames == nil then
+    local winbuf = winBuf.get(win)
+    if winbuf.itemNames == nil then
       local winUI = towinui(win)
       local buttons = getc(winUI, AX.Group, 1, AX.Button)
-      winBuf:register(winUI, 'barbeeBarItemNames', tmap(buttons, function(bt)
+      winbuf.itemNames = tmap(buttons, function(bt)
         return bt.AXHelp
-      end))
+      end)
     end
-    if winBuf.barbeeBarItemNames ~= nil and index <= #winBuf.barbeeBarItemNames then
-      return "Click "
-          .. winBuf.barbeeBarItemNames[#winBuf.barbeeBarItemNames + 1 - index]
+    if winbuf.itemNames ~= nil and index <= #winbuf.itemNames then
+      return "Click " .. winbuf.itemNames[#winbuf.itemNames + 1 - index]
     end
   end
 end
@@ -2263,9 +2266,10 @@ Ice.WF = {}
 Ice.WF.Bar = { allowTitles = "^Ice Bar$" }
 Ice.barItemTitle = function(index)
   return function(win)
-    if winBuf.IceBarItemNames == nil then
+    local winbuf = winBuf.get(win)
+    if winbuf.itemNames == nil then
       local winUI = towinui(win)
-      winBuf:register(winUI, 'IceBarItemNames', {})
+      winbuf.itemNames = {}
       local buttons = getc(winUI, AX.Group, 1,
           AX.ScrollArea, 1, AX.Image) or {}
       local alwaysHiddenBar = false
@@ -2326,10 +2330,10 @@ Ice.barItemTitle = function(index)
             end
           end
         end
-        tinsert(winBuf.IceBarItemNames, msg)
+        tinsert(winbuf.itemNames, msg)
       end
     end
-    return winBuf.IceBarItemNames[index]
+    return winbuf.itemNames[index]
   end
 end
 
