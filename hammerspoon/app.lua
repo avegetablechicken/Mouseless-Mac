@@ -336,7 +336,7 @@ end
 
 -- Register a one-shot observer that fires when a UI element is destroyed
 -- Optionally stops on app deactivation or termination
-Evt.onDestroy = function(element, callback, stopWhen, callbackOnStop)
+Evt.OnDestroy = function(element, callback, stopWhen, callbackOnStop)
   if not element:isValid() then return end
   local app = getAppFromDescendantElement(element)
   local observer = uiobserver.new(app:pid())
@@ -376,7 +376,7 @@ local appBuf = {}
 -- Data is automatically cleaned up when the window is destroyed.
 local winBuf = {}
 function winBuf:register(winUI, key, value)
-  winBuf.observer = Evt.onDestroy(winUI, function()
+  winBuf.observer = Evt.OnDestroy(winUI, function()
     winBuf[key] = nil
     winBuf.observer = nil
   end)
@@ -9071,7 +9071,7 @@ registerInWinHotKeys = function(win, filter)
   end
 
   if needCloseWatcher then
-    Evt.onDestroy(towinui(win),
+    Evt.OnDestroy(towinui(win),
       function() unregisterInWinHotKeys(appid, true, filter) end,
       hs.application.watcher.deactivated, true
     )
@@ -9373,7 +9373,7 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
         end
 
         if not observed then
-          Evt.onDestroy(winUI, function()
+          Evt.OnDestroy(winUI, function()
             if daemonAppFocusedWindowHotkeys[wid] ~= nil then
               for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[wid]) do
                 if hotkey.idx ~= nil then
@@ -9574,7 +9574,7 @@ registerInMenuHotkeys = function(app)
         config.repeatedfn = config.repeatable and config.fn or nil
         tinsert(menuBarMenuHotkeys[appid], MenuBarBind(menu, config))
         if not observed then
-          Evt.onDestroy(menu, function()
+          Evt.OnDestroy(menu, function()
             if menuBarMenuHotkeys[appid] ~= nil then
               for i, hotkey in ipairs(menuBarMenuHotkeys[appid]) do
                 if hotkey.idx ~= nil then
@@ -10635,7 +10635,7 @@ local function registerForOpenSavePanel(app, retry)
           end)
         end)
         observer:start()
-        Evt.onDestroy(winUI, function()
+        Evt.OnDestroy(winUI, function()
           if observer then
             observer:stop() observer = nil
           end
@@ -10660,7 +10660,7 @@ local function registerForOpenSavePanel(app, retry)
     end
 
     if dontSaveButton == nil and outlineRows == nil then return end
-    Evt.onDestroy(winUI,
+    Evt.OnDestroy(winUI,
       function()
         for _, hotkey in ipairs(openSavePanelHotkeys) do
           CtxDelete(hotkey)
@@ -11614,7 +11614,7 @@ local function registerPseudoWindowDestroyObserver(app, roles)
             hs.timer.doAfter(appsWithoutWindowDelay[appid], oldCallback)
           end
         end
-        pseudoWindowObserver = Evt.onDestroy(
+        pseudoWindowObserver = Evt.OnDestroy(
           results[1],
           pseudoWindowObserverCallback,
           hs.application.watcher.deactivated
