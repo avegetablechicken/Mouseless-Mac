@@ -8684,9 +8684,9 @@ end
 --   wrappedFn, wrappedCondition
 local function wrapCondition(obj, config, mode)
   local mods, key = config.mods, config.key
-  local func = mode == KEY_MODE.REPEAT and config.repeatedfn or config.fn
-  local condition = config.condition
+  local callback = mode == KEY_MODE.REPEAT and config.repeatedfn or config.fn
   local cond = function(o)
+    local condition = config.condition
     if condition == nil then return true end
     if o.application then
       condition = A_WinBufWrapper(condition)
@@ -8720,13 +8720,13 @@ local function wrapCondition(obj, config, mode)
     o = o or obj or app:focusedWindow()
     return oldCond(o)
   end
-  local fn = func
   -- Final execution wrapper that unifies:
   --   condition checking, fallback routing, and callback invocation
-  fn = function()
+  local fn = function()
     local o = obj or app:focusedWindow()
     local satisfied, result, url = cond(o)
     if satisfied then
+      local func = callback
       if result ~= nil then  -- condition function can pass result to callback function
         func = bind(func, result)
         if url ~= nil then
