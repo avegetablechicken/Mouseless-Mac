@@ -397,13 +397,6 @@ local function A_WinBufWrapper(fn)
   end
 end
 
--- A_ConditionBuffer:
--- Condition evaluation cache.
---
--- Used to memoize expensive condition checks during
--- batch hotkey verification.
-A_ConditionBuffer = {}
-
 local function getMenuBarItemsBuffer(app)
   if appBuf.menuBarItems == nil then
     appBuf.menuBarItems = getMenuBarItems(app)
@@ -1855,8 +1848,10 @@ local QQLive = {}
 QQLive.WF = {}
 QQLive.WF.Main = {
   fn = function(win)
+    assert(A_WinBuf)
     local winUI = towinui(win)
     local text = getc(winUI, AX.Group, 2, nil, -1)
+    A_WinBuf.lastRow = text
     return text and text.AXValue == "全部频道"
   end
 }
@@ -1884,12 +1879,15 @@ QQLive.channelName = function(index)
         if start == 1 then start = 4 end
         A_WinBuf.channelStartIndex = start
       end
+      local rowCnt = #list
       for i = 1, 10 do
-        if #list - 2 >= start + i - 1 then
+        if rowCnt - 2 >= start + i - 1 then
           local row = list[start + i - 1]
           tinsert(channelNames, row.AXValue)
         end
       end
+      A_WinBuf.channelList = list
+      A_WinBuf.rowCount = rowCnt
       A_WinBuf.channelNames = channelNames
     end
     return channelNames[index]
@@ -1897,32 +1895,12 @@ QQLive.channelName = function(index)
 end
 
 QQLive.getChannel = function(index)
-  return function(win)
+  return function()
     assert(A_WinBuf)
     local start = A_WinBuf.channelStartIndex
-    local list, rowCnt, lastRow
-    if FLAGS["BATCH_VERIFY_HOTKEYS"] then
-      if A_ConditionBuffer.QQLiveChannelList == nil then
-        list = getc(towinui(win), AX.Group, 2)
-        if list == nil then return false end
-        rowCnt = #list
-        if rowCnt == 0 then return false end
-        lastRow = list[rowCnt]
-        A_ConditionBuffer.QQLiveChannelList = list
-        A_ConditionBuffer.QQLiveRowCount = rowCnt
-        A_ConditionBuffer.QQLiveLastRow = lastRow
-      else
-        list = A_ConditionBuffer.QQLiveChannelList
-        rowCnt = A_ConditionBuffer.QQLiveRowCount
-        lastRow = A_ConditionBuffer.QQLiveLastRow
-      end
-    else
-      list = getc(towinui(win), AX.Group, 2)
-      if list == nil then return false end
-      rowCnt = #list
-      if rowCnt == 0 then return false end
-    end
-
+    local list = A_WinBuf.channelList
+    local rowCnt = A_WinBuf.rowCount
+    local lastRow = A_WinBuf.lastRow
     if rowCnt - 2 >= start + index - 1 then
       local row = list[start + index - 1]
       lastRow = lastRow or list[rowCnt]
