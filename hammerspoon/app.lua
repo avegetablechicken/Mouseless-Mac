@@ -9306,7 +9306,7 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
   end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
 
-  local closeObserver
+  local observed = false
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
     local app = find(appid)
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
@@ -9368,8 +9368,8 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
           end
         end
 
-        closeObserver = closeObserver or Evt.onDestroy(winUI,
-          function()
+        if not observed then
+          Evt.onDestroy(winUI, function()
             if daemonAppFocusedWindowHotkeys[wid] ~= nil then
               for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[wid]) do
                 if hotkey.idx ~= nil then
@@ -9384,8 +9384,9 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
             -- WindowCreatedSinceFilter:unsubscribeAll()
             windowCreatedSinceTime[wid] = nil
           end,
-          hs.application.watcher.terminated, true
-        )
+          hs.application.watcher.terminated, true)
+          observed = true
+        end
       end
     end
   end
@@ -9490,7 +9491,7 @@ registerInMenuHotkeys = function(app)
   end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
 
-  local closeObserver
+  local observed = false
   for hkID, cfg in pairs(appConfig) do
     local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
@@ -9568,8 +9569,8 @@ registerInMenuHotkeys = function(app)
         end
         config.repeatedfn = config.repeatable and config.fn or nil
         tinsert(menuBarMenuHotkeys[appid], MenuBarBind(menu, config))
-        if closeObserver == nil then
-          closeObserver = uiobserver.new(app:pid())
+        if not observed then
+          local closeObserver = uiobserver.new(app:pid())
           closeObserver:addWatcher(menu, uinotifications.menuClosed)
           local callback = function(obs)
             if menuBarMenuHotkeys[appid] ~= nil then
@@ -9591,6 +9592,7 @@ registerInMenuHotkeys = function(app)
           Evt.StopOnTerminated(app, closeObserver, function()
             callback(closeObserver)
           end)
+          observed = true
         end
       end
     end
