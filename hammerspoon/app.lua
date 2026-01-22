@@ -899,7 +899,7 @@ end
 --   - Title function: describes *how the hotkey is shown*
 ----------------------------------------------------------------------
 
-local appHotKeyCallbacks
+local appHotKeyCallbacks, A_CommonCallback
 local runningAppHotKeys = {}
 local inAppHotKeys = {}
 local inWinHotKeys = {}
@@ -4524,7 +4524,7 @@ appHotKeyCallbacks = {
         app:focusedWindow():close()
         app:hide()
         hs.timer.usleep(1000000)
-        appHotKeyCallbacks[app:bundleID()]["toggleChatBar"].fn(app)
+        A_CommonCallback(app)
       end
     }
   },
@@ -4768,7 +4768,7 @@ appHotKeyCallbacks = {
         app:focusedWindow():close()
         app:hide()
         hs.timer.usleep(1000000)
-        appHotKeyCallbacks[app:bundleID()]["toggleMiniChat"].fn(app)
+        A_CommonCallback(app)
       end
     },
     ["showMainWindowFromMB"] = {
@@ -8301,9 +8301,15 @@ local function registerRunningAppHotKeys(appid, app)
           else
             hs.execute(strfmt("open -g -b '%s'", appid))
             hs.timer.doAfter(1, A_HotkeyWrapper(function()
-              if find(appid) then
-                local cb = cfg.onLaunch or cfg.fn
-                cb(find(appid))
+              local newApp = find(appid)
+              if newApp then
+                if cfg.onLaunch then
+                  A_CommonCallback = cfg.fn
+                  cfg.onLaunch(newApp)
+                  A_CommonCallback = nil
+                else
+                  cfg.fn(newApp)
+                end
               end
             end))
           end
