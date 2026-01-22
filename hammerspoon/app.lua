@@ -2550,12 +2550,13 @@ end
 Web.Weibo = {}
 Web.Weibo.sideBarTitle = function(idx, isCommon)
   return function(win)
-    if isCommon and appBuf.weiboSideBarCommonGroupTitles then
-      return appBuf.weiboSideBarCommonGroupTitles[idx]
-    elseif not isCommon and appBuf.weiboSideBarCustomGroupTitles then
-      return appBuf.weiboSideBarCustomGroupTitles[idx]
+    local winbuf = winBuf.get(win)
+    if isCommon and winbuf.sideBarCommonGroupTitles then
+      return winbuf.sideBarCommonGroupTitles[idx]
+    elseif not isCommon and winbuf.sideBarCustomGroupTitles then
+      return winbuf.sideBarCustomGroupTitles[idx]
     end
-    local weiboSideBarTitles, weiboSideBarURLs = {}, {}
+    local sideBarTitles, sideBarURLs = {}, {}
     local app = win:application()
     local source = getTabSource(app)
     if source == nil then return end
@@ -2593,33 +2594,34 @@ Web.Weibo.sideBarTitle = function(idx, isCommon)
     if isCommon then
       local url, title = source:match(
           [[<a href="/(.-)"[^>]-><div role="link" title="(.-)"]])
-      tinsert(weiboSideBarTitles, title)
-      tinsert(weiboSideBarURLs, url)
+      tinsert(sideBarTitles, title)
+      tinsert(sideBarURLs, url)
     end
     for url, title in source:gmatch(
         [[<a href="/(mygroups.-)"[^>]-><div role="link" title="(.-)"]]) do
-      tinsert(weiboSideBarTitles, title)
-      tinsert(weiboSideBarURLs, url)
+      tinsert(sideBarTitles, title)
+      tinsert(sideBarURLs, url)
     end
     if isCommon then
-      appBuf.weiboSideBarCommonGroupTitles = weiboSideBarTitles
-      appBuf.weiboSideBarCommonGroupURLs = weiboSideBarURLs
+      winbuf.sideBarCommonGroupTitles = sideBarTitles
+      winbuf.sideBarCommonGroupURLs = sideBarURLs
     else
-      appBuf.weiboSideBarCustomGroupTitles = weiboSideBarTitles
-      appBuf.weiboSideBarCustomGroupURLs = weiboSideBarURLs
+      winbuf.sideBarCustomGroupTitles = sideBarTitles
+      winbuf.sideBarCustomGroupURLs = sideBarURLs
     end
-    return weiboSideBarTitles[idx]
+    return sideBarTitles[idx]
   end
 end
 
 Web.Weibo.navigateToSideBarCondition = function(idx, isCommon)
-  return function()
-    if isCommon and appBuf.weiboSideBarCommonGroupURLs
-        and #appBuf.weiboSideBarCommonGroupURLs >= idx then
-      return true, appBuf.weiboSideBarCommonGroupURLs[idx]
-    elseif not isCommon and appBuf.weiboSideBarCustomGroupURLs
-        and #appBuf.weiboSideBarCustomGroupURLs >= idx then
-      return true, appBuf.weiboSideBarCustomGroupURLs[idx]
+  return function(win)
+    local winbuf = winBuf.get(win)
+    if isCommon and winbuf.sideBarCommonGroupURLs
+        and #winbuf.sideBarCommonGroupURLs >= idx then
+      return true, winbuf.sideBarCommonGroupURLs[idx]
+    elseif not isCommon and winbuf.sideBarCustomGroupURLs
+        and #winbuf.sideBarCustomGroupURLs >= idx then
+      return true, winbuf.sideBarCustomGroupURLs[idx]
     end
     return false
   end
@@ -2635,8 +2637,9 @@ end
 Web.Douyin = {}
 Web.Douyin.tabTitle = function(idx)
   return function(win)
-    if appBuf.douyinTabTitles then return appBuf.douyinTabTitles[idx] end
-    appBuf.douyinTabTitles, appBuf.douyinTabURLs = {}, {}
+    local winbuf = winBuf.get(win)
+    if winbuf.tabTitles then return winbuf.tabTitles[idx] end
+    winbuf.tabTitles, winbuf.tabURLs = {}, {}
     local app = win:application()
     local source = getTabSource(app)
     if source == nil then return end
@@ -2644,19 +2647,20 @@ Web.Douyin.tabTitle = function(idx)
     for url, title in source:gmatch(
         [[<div class="tab\-[^>]-><a href="(.-)".-<span class=".-">(.-)</span>]]) do
       if url ~= lastURL then
-        tinsert(appBuf.douyinTabTitles, title)
-        tinsert(appBuf.douyinTabURLs, url)
+        tinsert(winbuf.tabTitles, title)
+        tinsert(winbuf.tabURLs, url)
       end
       lastURL = url
     end
-    return appBuf.douyinTabTitles[idx]
+    return winbuf.tabTitles[idx]
   end
 end
 
 Web.Douyin.navigateToTabCondition = function(idx)
-  return function()
-    if appBuf.douyinTabURLs and #appBuf.douyinTabURLs >= idx then
-      return true, appBuf.douyinTabURLs[idx]
+  return function(win)
+    local winbuf = winBuf.get(win)
+    if winbuf.tabURLs and #winbuf.tabURLs >= idx then
+      return true, winbuf.tabURLs[idx]
     end
     return false
   end
