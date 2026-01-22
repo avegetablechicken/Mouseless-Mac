@@ -9179,7 +9179,7 @@ local function isWindowAllowed(win, filter)
         or hs.window.filter.new(false)
             :setAppFilter(win:application():name(), normal)
             :isWindowAllowed(win))
-      and (extended.condition == nil or extended.condition(win))
+      and (extended.condition == nil or A_WinBufWrapper(extended.condition)(win))
 end
 
 FocusedWindowObservers = {}
