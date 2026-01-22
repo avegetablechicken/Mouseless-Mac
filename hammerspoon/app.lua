@@ -375,14 +375,26 @@ local appBuf = {}
 --
 -- Data is automatically cleaned up when the window is destroyed.
 local winBuf = {}
+local winCloseObservers = {}
 
-function winBuf.get(win)
-  local wid = win:id()
-  if winBuf[wid] == nil then
-    winBuf[wid] = {}
-    Evt.OnDestroy(towinui(win), function() winBuf[wid] = nil end)
+local A_WinBuf = nil
+local function A_WinBufWrapper(fn)
+  return function(win)
+    local wid = win:id()
+    if winBuf[wid] == nil then
+      winBuf[wid] = {}
+    end
+    A_WinBuf = winBuf[wid]
+    local r1, r2, r3 = fn(win)
+    A_WinBuf = nil
+    if winCloseObservers[wid] == nil and next(winBuf[wid]) then
+      winCloseObservers[wid] = Evt.OnDestroy(towinui(win), function()
+        winBuf[wid] = nil
+        winCloseObservers[wid] = nil
+      end)
+    end
+    return r1, r2, r3
   end
-  return winBuf[wid]
 end
 
 -- A_ConditionBuffer:
@@ -1825,12 +1837,12 @@ QQLive.WF.Main = {
 }
 QQLive.channelName = function(index)
   return function(win)
-    local winbuf = winBuf.get(win)
-    local channelNames = winbuf.channelNames or {}
+    assert(A_WinBuf)
+    local channelNames = A_WinBuf.channelNames or {}
     if #channelNames == 0 then
       local list = getc(towinui(win), AX.Group, 2)
       if list == nil or #list == 0 then return end
-      local start = winbuf.channelStartIndex
+      local start = A_WinBuf.channelStartIndex
       if start == nil then
         start = 1
         local verticalOffset, verticalOffsetChangeIdx
@@ -1845,7 +1857,7 @@ QQLive.channelName = function(index)
           end
         end
         if start == 1 then start = 4 end
-        winbuf.channelStartIndex = start
+        A_WinBuf.channelStartIndex = start
       end
       for i = 1, 10 do
         if #list - 2 >= start + i - 1 then
@@ -1853,7 +1865,7 @@ QQLive.channelName = function(index)
           tinsert(channelNames, row.AXValue)
         end
       end
-      winbuf.channelNames = channelNames
+      A_WinBuf.channelNames = channelNames
     end
     return channelNames[index]
   end
@@ -1861,7 +1873,8 @@ end
 
 QQLive.getChannel = function(index)
   return function(win)
-    local start = winBuf.get(win).channelStartIndex
+    assert(A_WinBuf)
+    local start = A_WinBuf.channelStartIndex
     local list, rowCnt, lastRow
     if FLAGS["BATCH_VERIFY_HOTKEYS"] then
       if A_ConditionBuffer.QQLiveChannelList == nil then
@@ -2005,8 +2018,8 @@ Bartender.WF = {}
 Bartender.WF.Bar = { allowTitles = "^Bartender Bar$" }
 Bartender.barItemTitle = function(index, rightClick)
   return function(win)
-    local winbuf = winBuf.get(win)
-    if winbuf.itemNames == nil then
+    assert(A_WinBuf)
+    if A_WinBuf.itemNames == nil then
       local winUI = towinui(win)
       local icons = getc(winUI, AX.ScrollArea, 1, AX.List, 1, AX.List, 1)
       local appnames = tmap(getc(icons, AX.Group), function(g)
@@ -2025,8 +2038,8 @@ Bartender.barItemTitle = function(index, rightClick)
         if barSplitterIndex ~= nil then
           splitterIndex = splitterIndex - (#appnames - (barSplitterIndex - 1))
         end
-        winbuf.itemNames = {}
-        winbuf.itemIDs = {}
+        A_WinBuf.itemNames = {}
+        A_WinBuf.itemIDs = {}
         local missedItemCnt = 0
         if Version.LessThan(app, "5.5") then
           local plistPath = hs.fs.pathToAbsolute(strfmt(
@@ -2055,35 +2068,35 @@ Bartender.barItemTitle = function(index, rightClick)
             local id, idx = itemID:match("(.-)%-Item%-(%d+)$")
             if id ~= nil then
               if idx == "0" then
-                tinsert(winbuf.itemNames, appname)
+                tinsert(A_WinBuf.itemNames, appname)
               else
-                tinsert(winbuf.itemNames,
+                tinsert(A_WinBuf.itemNames,
                     strfmt("%s (Item %s)", appname, idx))
               end
-              tinsert(winbuf.itemIDs, itemID)
+              tinsert(A_WinBuf.itemIDs, itemID)
             else
               local appByName = find(appname)
               if appByName == nil or
                   appByName:bundleID() ~= itemID:sub(1, #appByName:bundleID()) then
-                tinsert(winbuf.itemNames, appname)
-                tinsert(winbuf.itemIDs, itemID)
+                tinsert(A_WinBuf.itemNames, appname)
+                tinsert(A_WinBuf.itemIDs, itemID)
               elseif appByName ~= nil then
                 local itemShortName = itemID:sub(#appByName:bundleID() + 2)
-                tinsert(winbuf.itemNames,
+                tinsert(A_WinBuf.itemNames,
                     strfmt("%s (%s)", appname, itemShortName))
-                tinsert(winbuf.itemIDs, itemID)
+                tinsert(A_WinBuf.itemIDs, itemID)
               end
             end
           end
         else
           for i = 1, #appnames do
-            tinsert(winbuf.itemNames, appnames[i])
-            tinsert(winbuf.itemIDs, i)
+            tinsert(A_WinBuf.itemNames, appnames[i])
+            tinsert(A_WinBuf.itemIDs, i)
           end
         end
       elseif #appnames > 0 then
-        winbuf.itemNames = {}
-        winbuf.itemIDs = {}
+        A_WinBuf.itemNames = {}
+        A_WinBuf.itemIDs = {}
         local alwaysHiddenBar = false
         for _, appname in ipairs(appnames) do
           local hint = appname
@@ -2134,26 +2147,26 @@ Bartender.barItemTitle = function(index, rightClick)
                 msg = msg..'-'..autosaveName
               end
             end
-            tinsert(winbuf.itemNames, msg)
-            tinsert(winbuf.itemIDs, i)
+            tinsert(A_WinBuf.itemNames, msg)
+            tinsert(A_WinBuf.itemIDs, i)
           end
         end
       end
     end
-    if winbuf.itemNames ~= nil and index <= #winbuf.itemNames then
-      return (rightClick and "Right-click " or "Click ") .. winbuf.itemNames[index]
+    if A_WinBuf.itemNames ~= nil and index <= #A_WinBuf.itemNames then
+      return (rightClick and "Right-click " or "Click ") .. A_WinBuf.itemNames[index]
     end
   end
 end
 
 Bartender.clickBarItem = function(index, rightClick)
   return function(win)
+    assert(A_WinBuf)
     local appid = win:application():bundleID()
-    local winbuf = winBuf.get(win)
-    local itemID = winbuf.itemIDs[index]
+    local itemID = A_WinBuf.itemIDs[index]
     if type(itemID) == 'string' then
       local script = strfmt('tell application id "%s" to activate "%s"',
-          appid, winbuf.itemIDs[index])
+          appid, A_WinBuf.itemIDs[index])
       if rightClick then
         script = script .. " with right click"
       end
@@ -2239,16 +2252,16 @@ Barbee.WF.Bar = {
 }
 Barbee.barItemTitle = function(index)
   return function(win)
-    local winbuf = winBuf.get(win)
-    if winbuf.itemNames == nil then
+    assert(A_WinBuf)
+    if A_WinBuf.itemNames == nil then
       local winUI = towinui(win)
       local buttons = getc(winUI, AX.Group, 1, AX.Button)
-      winbuf.itemNames = tmap(buttons, function(bt)
+      A_WinBuf.itemNames = tmap(buttons, function(bt)
         return bt.AXHelp
       end)
     end
-    if winbuf.itemNames ~= nil and index <= #winbuf.itemNames then
-      return "Click " .. winbuf.itemNames[#winbuf.itemNames + 1 - index]
+    if A_WinBuf.itemNames ~= nil and index <= #A_WinBuf.itemNames then
+      return "Click " .. A_WinBuf.itemNames[#A_WinBuf.itemNames + 1 - index]
     end
   end
 end
@@ -2266,10 +2279,10 @@ Ice.WF = {}
 Ice.WF.Bar = { allowTitles = "^Ice Bar$" }
 Ice.barItemTitle = function(index)
   return function(win)
-    local winbuf = winBuf.get(win)
-    if winbuf.itemNames == nil then
+    assert(A_WinBuf)
+    if A_WinBuf.itemNames == nil then
       local winUI = towinui(win)
-      winbuf.itemNames = {}
+      A_WinBuf.itemNames = {}
       local buttons = getc(winUI, AX.Group, 1,
           AX.ScrollArea, 1, AX.Image) or {}
       local alwaysHiddenBar = false
@@ -2330,10 +2343,10 @@ Ice.barItemTitle = function(index)
             end
           end
         end
-        tinsert(winbuf.itemNames, msg)
+        tinsert(A_WinBuf.itemNames, msg)
       end
     end
-    return winbuf.itemNames[index]
+    return A_WinBuf.itemNames[index]
   end
 end
 
@@ -2550,11 +2563,11 @@ end
 Web.Weibo = {}
 Web.Weibo.sideBarTitle = function(idx, isCommon)
   return function(win)
-    local winbuf = winBuf.get(win)
-    if isCommon and winbuf.sideBarCommonGroupTitles then
-      return winbuf.sideBarCommonGroupTitles[idx]
-    elseif not isCommon and winbuf.sideBarCustomGroupTitles then
-      return winbuf.sideBarCustomGroupTitles[idx]
+    assert(A_WinBuf)
+    if isCommon and A_WinBuf.sideBarCommonGroupTitles then
+      return A_WinBuf.sideBarCommonGroupTitles[idx]
+    elseif not isCommon and A_WinBuf.sideBarCustomGroupTitles then
+      return A_WinBuf.sideBarCustomGroupTitles[idx]
     end
     local sideBarTitles, sideBarURLs = {}, {}
     local app = win:application()
@@ -2603,25 +2616,25 @@ Web.Weibo.sideBarTitle = function(idx, isCommon)
       tinsert(sideBarURLs, url)
     end
     if isCommon then
-      winbuf.sideBarCommonGroupTitles = sideBarTitles
-      winbuf.sideBarCommonGroupURLs = sideBarURLs
+      A_WinBuf.sideBarCommonGroupTitles = sideBarTitles
+      A_WinBuf.sideBarCommonGroupURLs = sideBarURLs
     else
-      winbuf.sideBarCustomGroupTitles = sideBarTitles
-      winbuf.sideBarCustomGroupURLs = sideBarURLs
+      A_WinBuf.sideBarCustomGroupTitles = sideBarTitles
+      A_WinBuf.sideBarCustomGroupURLs = sideBarURLs
     end
     return sideBarTitles[idx]
   end
 end
 
 Web.Weibo.navigateToSideBarCondition = function(idx, isCommon)
-  return function(win)
-    local winbuf = winBuf.get(win)
-    if isCommon and winbuf.sideBarCommonGroupURLs
-        and #winbuf.sideBarCommonGroupURLs >= idx then
-      return true, winbuf.sideBarCommonGroupURLs[idx]
-    elseif not isCommon and winbuf.sideBarCustomGroupURLs
-        and #winbuf.sideBarCustomGroupURLs >= idx then
-      return true, winbuf.sideBarCustomGroupURLs[idx]
+  return function()
+    assert(A_WinBuf)
+    if isCommon and A_WinBuf.sideBarCommonGroupURLs
+        and #A_WinBuf.sideBarCommonGroupURLs >= idx then
+      return true, A_WinBuf.sideBarCommonGroupURLs[idx]
+    elseif not isCommon and A_WinBuf.sideBarCustomGroupURLs
+        and #A_WinBuf.sideBarCustomGroupURLs >= idx then
+      return true, A_WinBuf.sideBarCustomGroupURLs[idx]
     end
     return false
   end
@@ -2637,9 +2650,9 @@ end
 Web.Douyin = {}
 Web.Douyin.tabTitle = function(idx)
   return function(win)
-    local winbuf = winBuf.get(win)
-    if winbuf.tabTitles then return winbuf.tabTitles[idx] end
-    winbuf.tabTitles, winbuf.tabURLs = {}, {}
+    assert(A_WinBuf)
+    if A_WinBuf.tabTitles then return A_WinBuf.tabTitles[idx] end
+    A_WinBuf.tabTitles, A_WinBuf.tabURLs = {}, {}
     local app = win:application()
     local source = getTabSource(app)
     if source == nil then return end
@@ -2647,20 +2660,20 @@ Web.Douyin.tabTitle = function(idx)
     for url, title in source:gmatch(
         [[<div class="tab\-[^>]-><a href="(.-)".-<span class=".-">(.-)</span>]]) do
       if url ~= lastURL then
-        tinsert(winbuf.tabTitles, title)
-        tinsert(winbuf.tabURLs, url)
+        tinsert(A_WinBuf.tabTitles, title)
+        tinsert(A_WinBuf.tabURLs, url)
       end
       lastURL = url
     end
-    return winbuf.tabTitles[idx]
+    return A_WinBuf.tabTitles[idx]
   end
 end
 
 Web.Douyin.navigateToTabCondition = function(idx)
-  return function(win)
-    local winbuf = winBuf.get(win)
-    if winbuf.tabURLs and #winbuf.tabURLs >= idx then
-      return true, winbuf.tabURLs[idx]
+  return function()
+    assert(A_WinBuf)
+    if A_WinBuf.tabURLs and #A_WinBuf.tabURLs >= idx then
+      return true, A_WinBuf.tabURLs[idx]
     end
     return false
   end
@@ -8702,6 +8715,9 @@ local function wrapCondition(obj, config, mode)
   local condition = config.condition
   local cond = function(o)
     if condition == nil then return true end
+    if o.application then
+      condition = A_WinBufWrapper(condition)
+    end
     local satisfied, result = condition(o)
     if not satisfied then result = CF.userConditionFail end
     return satisfied, result
@@ -8739,14 +8755,15 @@ local function wrapCondition(obj, config, mode)
     local satisfied, result, url = cond(o)
     if satisfied then
       if result ~= nil then  -- condition function can pass result to callback function
+        func = bind(func, result)
         if url ~= nil then
-          func(result, url, o)
-        else
-          func(result, o)
+          func = bind(func, url)
         end
-      else
-        func(o)
       end
+      if o.application then
+        func = A_WinBufWrapper(func)
+      end
+      func(o)
       return true
     elseif result == CF.rightMenubarItemSelected then
       safeGlobalKeyStroke(mods, key)
@@ -9052,7 +9069,7 @@ registerInWinHotKeys = function(win, filter)
           and sameFilter(windowFilter, filter) then
         local msg, fallback
         if type(cfg.message) == 'string' then msg = cfg.message
-        else msg, fallback = cfg.message(win) end
+        else msg, fallback = A_WinBufWrapper(cfg.message)(win) end
         if msg ~= nil and hotkeys[hkID] == nil then
           -- double check for website-specific hotkeys
           local config = tcopy(cfg)
@@ -9342,7 +9359,7 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
     if hasKey and isForWindow and isBackground and bindable()
         and sameFilter(windowFilter, filter) then
       local msg = type(cfg.message) == 'string'
-          and cfg.message or cfg.message(win)
+          and cfg.message or A_WinBufWrapper(cfg.message)(win)
       if msg ~= nil then
         local config = tcopy(cfg)
         config.mods = keybinding.mods
