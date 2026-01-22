@@ -895,6 +895,7 @@ local inAppHotKeys = {}
 local inWinHotKeys = {}
 local daemonAppFocusedWindowHotkeys = {}
 local menuBarMenuHotkeys = {}
+local CtxEnable, CtxDisable, CtxDelete
 local registerInAppHotKeys, unregisterInAppHotKeys
 local registerInWinHotKeys, unregisterInWinHotKeys
 local registerDaemonAppInWinHotkeys
@@ -8835,12 +8836,12 @@ local function bindContextual(obj, config, ...)
   return hotkey
 end
 
-local function CtxEnable(hotkey)
+CtxEnable = function(hotkey)
   hotkey:enable()
   enableConditionInChain(hotkey)
 end
 
-local function CtxDisable(hotkey)
+CtxDisable = function(hotkey)
   hotkey:disable()
   disableConditionInChain(hotkey)
   if hotkey.deleteOnDisable then
@@ -8848,7 +8849,7 @@ local function CtxDisable(hotkey)
   end
 end
 
-local function CtxDelete(hotkey)
+CtxDelete = function(hotkey)
   disableConditionInChain(hotkey, true)
   hotkey:delete()
 end
@@ -8938,10 +8939,10 @@ unregisterInAppHotKeys = function(appid, delete)
     end
   else
     for hkID, hotkey in pairs(inAppHotKeys[appid]) do
-      CtxDisable(hotkey)
       if hotkey.deleteOnDisable then
         inAppHotKeys[appid][hkID] = nil
       end
+      CtxDisable(hotkey)
     end
   end
   if next(inAppHotKeys[appid]) == nil then
@@ -9087,10 +9088,10 @@ unregisterInWinHotKeys = function(appid, delete, filter)
     end
   else
     for hkID, hotkey in pairs(hotkeys) do
-      CtxDisable(hotkey)
       if hotkey.deleteOnDisable then
         hotkeys[hkID] = nil
       end
+      CtxDisable(hotkey)
     end
   end
   if next(hotkeys) == nil then
