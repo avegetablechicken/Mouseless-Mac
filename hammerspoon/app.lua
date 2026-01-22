@@ -4524,7 +4524,7 @@ appHotKeyCallbacks = {
         app:focusedWindow():close()
         app:hide()
         hs.timer.usleep(1000000)
-        A_HotkeyWrapper(appHotKeyCallbacks[app:bundleID()]["toggleChatBar"].fn)(app)
+        appHotKeyCallbacks[app:bundleID()]["toggleChatBar"].fn(app)
       end
     }
   },
@@ -4768,7 +4768,7 @@ appHotKeyCallbacks = {
         app:focusedWindow():close()
         app:hide()
         hs.timer.usleep(1000000)
-        A_HotkeyWrapper(appHotKeyCallbacks[app:bundleID()]["toggleMiniChat"].fn)(app)
+        appHotKeyCallbacks[app:bundleID()]["toggleMiniChat"].fn(app)
       end
     },
     ["showMainWindowFromMB"] = {
