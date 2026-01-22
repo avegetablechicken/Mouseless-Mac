@@ -9029,8 +9029,8 @@ end
 --   - window focus
 --   - window title / role / URL
 registerInWinHotKeys = function(win, filter)
-  if win == nil then return end
-  local app = win:application()
+  local app = win and win:application()
+  if app == nil then return end
   local appid = app:bundleID() or app:name()
   if appHotKeyCallbacks[appid] == nil then return end
   local keybindings = KeybindingConfigs.hotkeys[appid] or {}
@@ -9172,7 +9172,7 @@ end
 local function isWindowAllowed(win, filter)
   if win == nil then return false end
   local normal, extended = normalizeWindowFilter(filter)
-  return win
+  return win and win:application()
       and (extended.allowURLs == nil or isWebsiteAllowed(win, extended.allowURLs))
       and ((extended.allowSheet and win:role() == AX.Sheet)
         or (extended.allowPopover and win:role() == AX.Popover)
