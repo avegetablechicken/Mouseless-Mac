@@ -8256,10 +8256,26 @@ for _, appid in ipairs{
   end
 end
 
+local function getKeybinding(appid, hkID, defaultCommon)
+  -- prefer properties specified in configuration file than in code
+  local userCfgs = KeybindingConfigs.hotkeys[appid] or {}
+  local config = appHotKeyCallbacks[appid][hkID]
+  local keybinding = userCfgs[hkID] or { mods = config.mods, key = config.key }
+  local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+  if hasKey == false and defaultCommon then
+    local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
+        or specialCommonHotkeyConfigs[hkID]
+    if kbShared ~= nil then
+      keybinding.mods = kbShared.mods
+      keybinding.key = kbShared.key
+    end
+  end
+  return keybinding
+end
+
 -- hotkeys for background apps
 local function registerRunningAppHotKeys(appid, app)
   if appHotKeyCallbacks[appid] == nil then return end
-  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
 
   if runningAppHotKeys[appid] == nil then
     runningAppHotKeys[appid] = {}
@@ -8272,8 +8288,7 @@ local function registerRunningAppHotKeys(appid, app)
       runningAppHotKeys[appid][hkID]:enable()
       goto L_CONTINUE
     end
-    -- prefer properties specified in configuration file than in code
-    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+    local keybinding = getKeybinding(appid, hkID)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isPersistent = keybinding.persist ~= nil
         and keybinding.persist or cfg.persist
@@ -8878,7 +8893,6 @@ end
 --   - disabled or deleted on deactivation / termination
 registerInAppHotKeys = function(app)
   local appid = app:bundleID() or app:name()
-  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
 
   if not inAppHotKeys[appid] then
     inAppHotKeys[appid] = {}
@@ -8889,18 +8903,8 @@ registerInAppHotKeys = function(app)
       local hotkey = inAppHotKeys[appid][hkID]
       CtxEnable(hotkey)
     else
-      -- prefer properties specified in configuration file than in code
-      local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+      local keybinding = getKeybinding(appid, hkID, true)
       local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-      if hasKey == false then
-        local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
-            or specialCommonHotkeyConfigs[hkID]
-        if kbShared ~= nil then
-          keybinding.mods = kbShared.mods
-          keybinding.key = kbShared.key
-          hasKey = true
-        end
-      end
       local isBackground = keybinding.background ~= nil
           and keybinding.background or cfg.background
       local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
@@ -9034,18 +9038,8 @@ registerInWinHotKeys = function(win, filter)
       hotkeys[hkID] = nil
     end
     if hotkeys[hkID] == nil then
-      -- prefer properties specified in configuration file than in code
-      local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+      local keybinding = getKeybinding(appid, hkID, true)
       local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-      if hasKey == false then
-        local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
-            or specialCommonHotkeyConfigs[hkID]
-        if kbShared ~= nil then
-          keybinding.mods = kbShared.mods
-          keybinding.key = kbShared.key
-          hasKey = true
-        end
-      end
       local isForWindow = windowFilter ~= nil
       local isBackground = keybinding.background ~= nil
           and keybinding.background or cfg.background
@@ -9279,18 +9273,9 @@ end
 
 local function registerWinFiltersForApp(app)
   local appid = app:bundleID() or app:name()
-  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
-
   for hkID, cfg in pairs(appHotKeyCallbacks[appid] or {}) do
-    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+    local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    if hasKey == false then
-      local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
-          or specialCommonHotkeyConfigs[hkID]
-      if kbShared ~= nil then
-        hasKey = true
-      end
-    end
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
@@ -9320,22 +9305,12 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
   if daemonAppFocusedWindowHotkeys[wid] == nil then
     daemonAppFocusedWindowHotkeys[wid] = {}
   end
-  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
 
   local observed = false
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
     local app = find(appid)
-    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+    local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    if hasKey == false then
-      local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
-          or specialCommonHotkeyConfigs[hkID]
-      if kbShared ~= nil then
-        keybinding.mods = kbShared.mods
-        keybinding.key = kbShared.key
-        hasKey = true
-      end
-    end
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
     local windowFilter = keybinding.windowFilter or cfg.windowFilter
@@ -9466,18 +9441,9 @@ end
 
 local function registerWinFiltersForDaemonApp(app, appConfig)
   local appid = app:bundleID() or app:name()
-  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
-
   for hkID, cfg in pairs(appConfig) do
-    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+    local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    if hasKey == false then
-      local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
-          or specialCommonHotkeyConfigs[hkID]
-      if kbShared ~= nil then
-        hasKey = true
-      end
-    end
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
@@ -9505,20 +9471,11 @@ registerInMenuHotkeys = function(app)
   if menuBarMenuHotkeys[appid] == nil then
     menuBarMenuHotkeys[appid] = {}
   end
-  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
 
   local observed = false
   for hkID, cfg in pairs(appConfig) do
-    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+    local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    if hasKey == false then
-      local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
-          or specialCommonHotkeyConfigs[hkID]
-      if kbShared ~= nil then
-        keybinding = { mods = kbShared.mods, key = kbShared.key }
-        hasKey = true
-      end
-    end
     local menubarFilter = keybinding.menubarFilter or cfg.menubarFilter
     local bindable = function()
       return cfg.bindCondition == nil or cfg.bindCondition(app)
@@ -9609,18 +9566,10 @@ end
 MenuBarMenuObservers = {}
 local function registerObserversForMenuBarMenu(app, appConfig)
   local appid = app:bundleID() or app:name()
-  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
 
   for hkID, cfg in pairs(appConfig) do
-    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+    local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    if hasKey == false then
-      local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
-          or specialCommonHotkeyConfigs[hkID]
-      if kbShared ~= nil then
-        hasKey = true
-      end
-    end
     local isMenuBarMenu = keybinding.menubarFilter ~= nil
         or cfg.menubarFilter ~= nil
     local bindable = function()
@@ -10367,9 +10316,8 @@ local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
       end)
       local appid = app:bundleID() or app:name()
       local appCfg = appHotKeyCallbacks[appid] or {}
-      local keybindings = KeybindingConfigs.hotkeys[appid] or {}
       for hkID, cfg in pairs(appCfg) do
-        local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+        local keybinding = getKeybinding(appid, hkID)
         local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
         local isMenuBarMenu = keybinding.menubarFilter ~= nil
             or cfg.menubarFilter ~= nil
@@ -11270,10 +11218,9 @@ local frontWin = hs.window.frontmostWindow()
 -- register hotkeys for background apps
 for appid, appConfig in pairs(appHotKeyCallbacks) do
   registerRunningAppHotKeys(appid)
-  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
   local hasNotPersistentBackgroundHotkey =
       any(appConfig, function(cfg, hkID)
-    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+    local keybinding = getKeybinding(appid, hkID)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
@@ -11339,17 +11286,9 @@ end
 
 -- register watchers for window belonging to daemon app
 for appid, appConfig in pairs(appHotKeyCallbacks) do
-  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
   local hasDaemonAppWindowHotkey = any(appConfig, function(cfg, hkID)
-    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+    local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    if hasKey == false then
-      local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
-          or specialCommonHotkeyConfigs[hkID]
-      if kbShared ~= nil then
-        hasKey = true
-      end
-    end
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
@@ -11380,17 +11319,9 @@ for appid, _ in pairs(DaemonAppFocusedWindowObservers) do
   if app then
     local nonFrontmostFilters = {}
     for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
-      local keybinding = get(KeybindingConfigs.hotkeys[appid], hkID)
-          or { mods = cfg.mods, key = cfg.key }
+      local keybinding = getKeybinding(appid, hkID, true)
       if keybinding.nonFrontmost or cfg.nonFrontmost then
         local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-        if hasKey == false then
-          local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
-              or specialCommonHotkeyConfigs[hkID]
-          if kbShared ~= nil then
-            hasKey = true
-          end
-        end
         if hasKey then
           tinsert(nonFrontmostFilters, keybinding.windowFilter or cfg.windowFilter)
         end
@@ -11410,18 +11341,9 @@ end
 
 -- register watchers for menu of menubar app
 for appid, appConfig in pairs(appHotKeyCallbacks) do
-  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
   local hasMenuBarMenuHotkey = any(appConfig, function(cfg, hkID)
-    local keybinding = keybindings[hkID] or { mods = cfg.mods, key = cfg.key }
+    local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    if hasKey == false then
-      local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
-          or specialCommonHotkeyConfigs[hkID]
-      if kbShared ~= nil then
-        keybinding.mods = kbShared.mods
-        keybinding.key = kbShared.key
-      end
-    end
     local isMenuBarMenu = keybinding.menubarFilter ~= nil
         or cfg.menubarFilter ~= nil
     return hasKey and isMenuBarMenu
