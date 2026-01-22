@@ -339,25 +339,25 @@ end
 Evt.onDestroy = function(element, callback, stopWhen, callbackOnStop)
   if not element:isValid() then return end
   local app = getAppFromDescendantElement(element)
-  local closeObserver = uiobserver.new(app:pid())
-  closeObserver:addWatcher(element, uinotifications.uIElementDestroyed)
-  closeObserver:callback(function(obs, ...)
+  local observer = uiobserver.new(app:pid())
+  observer:addWatcher(element, uinotifications.uIElementDestroyed)
+  observer:callback(function(obs, ...)
     callback(obs, ...) obs:stop() obs = nil
   end)
-  closeObserver:start()
+  observer:start()
 
   if type(stopWhen) == 'number' then
     stopWhen = { stopWhen }
   end
   for _, ev in ipairs(stopWhen or {}) do
     if ev == hs.application.watcher.deactivated then
-      Evt.StopOnDeactivated(app, closeObserver, callbackOnStop and callback)
+      Evt.StopOnDeactivated(app, observer, callbackOnStop and callback)
     elseif ev == hs.application.watcher.terminated then
-      Evt.StopOnTerminated(app, closeObserver, callbackOnStop and callback)
+      Evt.StopOnTerminated(app, observer, callbackOnStop and callback)
     end
   end
 
-  return closeObserver
+  return observer
 end
 
 -- appBuf:
