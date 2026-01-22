@@ -340,7 +340,11 @@ Evt.onDestroy = function(element, callback, stopWhen, callbackOnStop)
   if not element:isValid() then return end
   local app = getAppFromDescendantElement(element)
   local observer = uiobserver.new(app:pid())
-  observer:addWatcher(element, uinotifications.uIElementDestroyed)
+  if element.AXRole == AX.Menu then
+    observer:addWatcher(element, uinotifications.menuClosed)
+  else
+    observer:addWatcher(element, uinotifications.uIElementDestroyed)
+  end
   observer:callback(function(obs, ...)
     callback(obs, ...) obs:stop() obs = nil
   end)
@@ -9570,9 +9574,7 @@ registerInMenuHotkeys = function(app)
         config.repeatedfn = config.repeatable and config.fn or nil
         tinsert(menuBarMenuHotkeys[appid], MenuBarBind(menu, config))
         if not observed then
-          local closeObserver = uiobserver.new(app:pid())
-          closeObserver:addWatcher(menu, uinotifications.menuClosed)
-          local callback = function(obs)
+          Evt.onDestroy(menu, function()
             if menuBarMenuHotkeys[appid] ~= nil then
               for i, hotkey in ipairs(menuBarMenuHotkeys[appid]) do
                 if hotkey.idx ~= nil then
@@ -9584,14 +9586,7 @@ registerInMenuHotkeys = function(app)
                 menuBarMenuHotkeys[appid] = nil
               end
             end
-            obs:stop()
-            obs = nil
-          end
-          closeObserver:callback(callback)
-          closeObserver:start()
-          Evt.StopOnTerminated(app, closeObserver, function()
-            callback(closeObserver)
-          end)
+          end, hs.application.watcher.terminated, true)
           observed = true
         end
       end
