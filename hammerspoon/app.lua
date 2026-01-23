@@ -910,6 +910,7 @@ local registerInAppHotKeys, unregisterInAppHotKeys
 local registerInWinHotKeys, unregisterInWinHotKeys
 local registerDaemonAppInWinHotkeys
 local registerInMenuHotkeys
+local registerNavigationForSettingsToolbar
 
 local WF = {}
 
@@ -10086,7 +10087,7 @@ local function reactivateValidSettingsToolbarHotkeys()
   end
 end
 
-local function registerNavigationForSettingsToolbar(app)
+registerNavigationForSettingsToolbar = function(app)
   local appid = app:bundleID() or app:name()
   reactivateValidSettingsToolbarHotkeys()
 
