@@ -10120,6 +10120,12 @@ registerNavigationForSettingsToolbar = function(app)
   local win = app:focusedWindow()
   if win == nil then
     local apath = app:path()
+    if apath == nil then
+      apath = hs.execute(strfmt([[
+          lsof -a -d txt -p %s 2>/dev/null
+          | sed -n '2p' | awk '{print $NF}']], app:pid()))
+      if apath == nil then apath = "" end
+    end
     local parts = hs.fnutils.split(apath, "/")
     local apps = { app }
     -- Walk backwards to find all the enclosing `.app` bundle
