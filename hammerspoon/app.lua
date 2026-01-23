@@ -10225,7 +10225,7 @@ registerNavigationForSettingsToolbar = function(app)
       else
         msg = button.AXTitle or button.AXDescription
       end
-      if msg == "" and button.AXAttributedDescription ~= nil then
+      if msg == nil or msg == "" and button.AXAttributedDescription ~= nil then
         msg = button.AXAttributedDescription:getString()
       end
       local hotkey = AppWinBind(win, {
