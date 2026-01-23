@@ -10260,6 +10260,15 @@ registerNavigationForSettingsToolbar = function(app)
       closeObserver:removeWatcher(ele, uinotifications.windowDeminiaturized)
     end
     reactivateValidSettingsToolbarHotkeys()
+    if appid == "com.apple.finder"
+        and uinotifications.focusedWindowChanged
+        and hs.window.get(win:id()) == nil then
+      obs:stop() obs = nil
+      for _, hotkey in ipairs(settingsToolbarHotkeys[win:id()]) do
+        CtxDelete(hotkey)
+      end
+      settingsToolbarHotkeys[win:id()] = nil
+    end
   end)
   closeObserver:start()
   return closeObserver
