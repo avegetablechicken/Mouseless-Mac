@@ -9935,8 +9935,8 @@ end
 local function getSidebarRows(winUI)
   local splitgroup = getc(winUI, AX.SplitGroup, 1)
       or getc(winUI, AX.Group, 1, AX.SplitGroup, 1)
-  local scrollarea = getc(splitgroup, AX.ScrollArea, 1)
-      or getc(splitgroup, AX.Group, 1, AX.ScrollArea, 1)
+  local scrollarea = getc(splitgroup, AX.Group, 1, AX.ScrollArea, 1)
+      or getc(splitgroup, AX.ScrollArea, 1)
   return getc(scrollarea, AX.Outline, 1, AX.Row) or {}
 end
 
