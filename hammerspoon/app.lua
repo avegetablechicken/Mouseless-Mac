@@ -10378,7 +10378,7 @@ local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
         end
       end
     elseif settingsMenu and notification == uinotifications.menuClosed
-        and elem.AXParent.AXRole == AX.Application then
+        and (elem.AXParent == nil or elem.AXParent.AXRole == AX.Application) then
       if menuClosedObservedBefore == true then
         observer:removeWatcher(toappui(app), uinotifications.menuClosed)
       end
