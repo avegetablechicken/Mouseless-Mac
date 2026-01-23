@@ -10098,6 +10098,7 @@ local settingsToolbarHotkeys = {}
 local function reactivateValidSettingsToolbarHotkeys()
   local focusedWin = hs.window.frontmostWindow()
   local focusedWinId = focusedWin and focusedWin:id() or nil
+  local enabled = false
   for wid, hotkeys in pairs(settingsToolbarHotkeys) do
     local win = hs.window.get(wid)
     if win == nil then return end
@@ -10106,16 +10107,20 @@ local function reactivateValidSettingsToolbarHotkeys()
         CtxDisable(hotkey)
       end
     else
+      enabled = true
       for _, hotkey in ipairs(hotkeys) do
         CtxEnable(hotkey)
       end
     end
   end
+  return enabled
 end
 
 registerNavigationForSettingsToolbar = function(app)
   local appid = app:bundleID() or app:name()
-  reactivateValidSettingsToolbarHotkeys()
+  if reactivateValidSettingsToolbarHotkeys() then
+    return
+  end
 
   local win = app:focusedWindow()
   if win == nil then
