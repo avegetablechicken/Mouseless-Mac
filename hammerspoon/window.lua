@@ -1646,25 +1646,30 @@ end)
 
 -- Bind a Stage Manager window-switch hotkey.
 local function bindStageManagerWindow(spec, index)
-  local fn = function()
-    local manager = find(windowManagerId)
-    if manager then
+  local condition = function()
+    local buttons = A_ConBuf:get("stageManagerButtons", function()
+      local manager = find(windowManagerId)
+      if manager == nil then return {} end
       local frame = hs.screen.mainScreen():frame()
       local groups = getc(toappui(manager), AX.Group)
       local g = tfind(groups or {}, function(g)
         return g.AXPosition.x == frame.x
       end)
-      if g then
-        local button = getc(g, AX.List, 1, AX.Button, index)
-        if button then button:performAction(AX.Press) end
-      end
-    end
+      return getc(g, AX.List, 1, AX.Button) or {}
+    end)
+    local button = buttons[index]
+    return button ~= nil, button
+  end
+  local fn = function()
+    local satisfied, button = condition()
+    if satisfied and button then button:performAction(AX.Press) end
   end
   local locApp = localizedString("Stage Manager", "com.apple.controlcenter",
                                  { localeFile = "StageManager",
                                    locale = applicationLocale(windowManagerId) })
   local locWindow = localizedString("Window", windowManagerId)
   local hotkey = bindHotkeySpec(spec, locApp..' > '..locWindow..' '..index, fn)
+  hotkey.condition = condition
   hotkey.kind = HK.WIN_OP
   hotkey.subkind = HK.WIN_OP_.STAGE_MANAGER
   return hotkey
