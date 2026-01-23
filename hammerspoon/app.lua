@@ -8468,7 +8468,6 @@ local function registerMenuBarObserverForHotkeyValidity(app)
   if hasStatusItems(app) then
     local appUI = toappui(app)
     local menuBarItems = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem) or {}
-    menuBarItems = tifilter(menuBarItems, function(item) return #item > 0 end)
     if #menuBarItems > 0 then
       local observer = uiobserver.new(app:pid())
       observer:addWatcher(appUI, uinotifications.menuOpened)
