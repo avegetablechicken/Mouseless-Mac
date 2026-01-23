@@ -374,6 +374,51 @@ local appBuf = {}
 -- Window-scoped runtime cache.
 --
 -- Data is automatically cleaned up when the window is destroyed.
+local WinBuf = {}
+WinBuf.__index = WinBuf
+
+function WinBuf.new()
+  local o = {}
+  setmetatable(o, WinBuf)
+  return o
+end
+
+function WinBuf:get(...)
+  local n = select("#", ...)
+  local fn = select(n, ...)
+  local keys = {}
+  for i = 1, n - 1 do
+    keys[i] = select(i, ...)
+  end
+
+  local need_compute = false
+  for _, k in ipairs(keys) do
+    if self[k] == nil then
+      need_compute = true
+      break
+    end
+  end
+  if need_compute then
+    local results = { fn() }
+
+    assert(
+      #results == #keys,
+      ("A_WinBuf:get key count (%d) != fn return count (%d)")
+        :format(#keys, #results)
+    )
+
+    for i, k in ipairs(keys) do
+      self[k] = results[i]
+    end
+  end
+
+  local out = {}
+  for i, k in ipairs(keys) do
+    out[i] = self[k]
+  end
+  return table.unpack(out)
+end
+
 local winBuf = {}
 local winCloseObservers = {}
 
@@ -382,7 +427,7 @@ local function A_WinBufWrapper(fn)
   return function(win)
     local wid = win:id()
     if winBuf[wid] == nil then
-      winBuf[wid] = {}
+      winBuf[wid] = WinBuf.new()
     end
     A_WinBuf = winBuf[wid]
     local results = table.pack(fn(win))
@@ -1859,13 +1904,12 @@ QQLive.WF.Main = {
 QQLive.channelName = function(index)
   return function(win)
     assert(A_WinBuf)
-    local channelNames = A_WinBuf.channelNames or {}
-    if #channelNames == 0 then
+    local _, _, channelNames = A_WinBuf:get("channelList", "rowCount", "channelNames",
+    function()
       local list = getc(towinui(win), AX.Group, 2)
       if list == nil or #list == 0 then return end
-      local start = A_WinBuf.channelStartIndex
-      if start == nil then
-        start = 1
+      local start = A_WinBuf:get("channelStartIndex", function()
+        local start = 1
         local verticalOffset, verticalOffsetChangeIdx
         for i=2,math.min(10, #list) do
           local offset = list[i].AXPosition.y - list[i-1].AXPosition.y
@@ -1878,19 +1922,18 @@ QQLive.channelName = function(index)
           end
         end
         if start == 1 then start = 4 end
-        A_WinBuf.channelStartIndex = start
-      end
+        return start
+      end)
       local rowCnt = #list
+      local channelNames = {}
       for i = 1, 10 do
         if rowCnt - 2 >= start + i - 1 then
           local row = list[start + i - 1]
           tinsert(channelNames, row.AXValue)
         end
       end
-      A_WinBuf.channelList = list
-      A_WinBuf.rowCount = rowCnt
-      A_WinBuf.channelNames = channelNames
-    end
+      return list, rowCnt, channelNames
+    end)
     return channelNames[index]
   end
 end
@@ -2023,14 +2066,16 @@ Bartender.WF.Bar = { allowTitles = "^Bartender Bar$" }
 Bartender.barItemTitle = function(index, rightClick)
   return function(win)
     assert(A_WinBuf)
-    if A_WinBuf.itemNames == nil then
+    local itemNames, _ = A_WinBuf:get("itemNames", "itemIDs", function()
       local winUI = towinui(win)
       local icons = getc(winUI, AX.ScrollArea, 1, AX.List, 1, AX.List, 1)
       local appnames = tmap(getc(icons, AX.Group), function(g)
         return getc(g, AX.Image, 1).AXDescription
       end)
-      if #appnames == 0 then return end
+      if #appnames == 0 then return {}, {} end
       local app = win:application()
+
+      local itemNames, itemIDs = {}, {}
       if Version.LessThan(app, "6") or Version.GreaterEqual(app, "6.1.1") then
         local appid = app:bundleID()
         local _, items = hs.osascript.applescript(strfmt([[
@@ -2042,8 +2087,6 @@ Bartender.barItemTitle = function(index, rightClick)
         if barSplitterIndex ~= nil then
           splitterIndex = splitterIndex - (#appnames - (barSplitterIndex - 1))
         end
-        A_WinBuf.itemNames = {}
-        A_WinBuf.itemIDs = {}
         local missedItemCnt = 0
         if Version.LessThan(app, "5.5") then
           local plistPath = hs.fs.pathToAbsolute(strfmt(
@@ -2072,35 +2115,31 @@ Bartender.barItemTitle = function(index, rightClick)
             local id, idx = itemID:match("(.-)%-Item%-(%d+)$")
             if id ~= nil then
               if idx == "0" then
-                tinsert(A_WinBuf.itemNames, appname)
+                tinsert(itemNames, appname)
               else
-                tinsert(A_WinBuf.itemNames,
-                    strfmt("%s (Item %s)", appname, idx))
+                tinsert(itemNames, strfmt("%s (Item %s)", appname, idx))
               end
-              tinsert(A_WinBuf.itemIDs, itemID)
+              tinsert(itemIDs, itemID)
             else
               local appByName = find(appname)
               if appByName == nil or
                   appByName:bundleID() ~= itemID:sub(1, #appByName:bundleID()) then
-                tinsert(A_WinBuf.itemNames, appname)
-                tinsert(A_WinBuf.itemIDs, itemID)
+                tinsert(itemNames, appname)
+                tinsert(itemIDs, itemID)
               elseif appByName ~= nil then
                 local itemShortName = itemID:sub(#appByName:bundleID() + 2)
-                tinsert(A_WinBuf.itemNames,
-                    strfmt("%s (%s)", appname, itemShortName))
-                tinsert(A_WinBuf.itemIDs, itemID)
+                tinsert(itemNames, strfmt("%s (%s)", appname, itemShortName))
+                tinsert(itemIDs, itemID)
               end
             end
           end
         else
           for i = 1, #appnames do
-            tinsert(A_WinBuf.itemNames, appnames[i])
-            tinsert(A_WinBuf.itemIDs, i)
+            tinsert(itemNames, appnames[i])
+            tinsert(itemIDs, i)
           end
         end
       elseif #appnames > 0 then
-        A_WinBuf.itemNames = {}
-        A_WinBuf.itemIDs = {}
         local alwaysHiddenBar = false
         for _, appname in ipairs(appnames) do
           local hint = appname
@@ -2151,14 +2190,15 @@ Bartender.barItemTitle = function(index, rightClick)
                 msg = msg..'-'..autosaveName
               end
             end
-            tinsert(A_WinBuf.itemNames, msg)
-            tinsert(A_WinBuf.itemIDs, i)
+            tinsert(itemNames, msg)
+            tinsert(itemIDs, i)
           end
         end
       end
-    end
-    if A_WinBuf.itemNames ~= nil and index <= #A_WinBuf.itemNames then
-      return (rightClick and "Right-click " or "Click ") .. A_WinBuf.itemNames[index]
+      return itemNames, itemIDs
+    end)
+    if index <= #itemNames then
+      return (rightClick and "Right-click " or "Click ") .. itemNames[index]
     end
   end
 end
@@ -2257,15 +2297,15 @@ Barbee.WF.Bar = {
 Barbee.barItemTitle = function(index)
   return function(win)
     assert(A_WinBuf)
-    if A_WinBuf.itemNames == nil then
+    local itemNames = A_WinBuf:get("itemNames", function()
       local winUI = towinui(win)
       local buttons = getc(winUI, AX.Group, 1, AX.Button)
-      A_WinBuf.itemNames = tmap(buttons, function(bt)
+      return tmap(buttons, function(bt)
         return bt.AXHelp
       end)
-    end
-    if A_WinBuf.itemNames ~= nil and index <= #A_WinBuf.itemNames then
-      return "Click " .. A_WinBuf.itemNames[#A_WinBuf.itemNames + 1 - index]
+    end)
+    if index <= #itemNames then
+      return "Click " .. itemNames[#itemNames + 1 - index]
     end
   end
 end
@@ -2284,9 +2324,9 @@ Ice.WF.Bar = { allowTitles = "^Ice Bar$" }
 Ice.barItemTitle = function(index)
   return function(win)
     assert(A_WinBuf)
-    if A_WinBuf.itemNames == nil then
+    local itemNames = A_WinBuf:get("itemNames", function()
       local winUI = towinui(win)
-      A_WinBuf.itemNames = {}
+      local itemNames = {}
       local buttons = getc(winUI, AX.Group, 1,
           AX.ScrollArea, 1, AX.Image) or {}
       local alwaysHiddenBar = false
@@ -2347,10 +2387,11 @@ Ice.barItemTitle = function(index)
             end
           end
         end
-        tinsert(A_WinBuf.itemNames, msg)
+        tinsert(itemNames, msg)
       end
-    end
-    return A_WinBuf.itemNames[index]
+      return itemNames
+    end)
+    return itemNames[index]
   end
 end
 
@@ -2655,21 +2696,24 @@ Web.Douyin = {}
 Web.Douyin.tabTitle = function(idx)
   return function(win)
     assert(A_WinBuf)
-    if A_WinBuf.tabTitles then return A_WinBuf.tabTitles[idx] end
-    A_WinBuf.tabTitles, A_WinBuf.tabURLs = {}, {}
-    local app = win:application()
-    local source = getTabSource(app)
-    if source == nil then return end
-    local lastURL = ""
-    for url, title in source:gmatch(
-        [[<div class="tab\-[^>]-><a href="(.-)".-<span class=".-">(.-)</span>]]) do
-      if url ~= lastURL then
-        tinsert(A_WinBuf.tabTitles, title)
-        tinsert(A_WinBuf.tabURLs, url)
+    local tabTitles, _ = A_WinBuf:get("tabTitles", "tabURLs", function()
+      local tabTitles, tabURLs = {}, {}
+      local app = win:application()
+      local source = getTabSource(app)
+      if source then
+        local lastURL = ""
+        for url, title in source:gmatch(
+            [[<div class="tab\-[^>]-><a href="(.-)".-<span class=".-">(.-)</span>]]) do
+          if url ~= lastURL then
+            tinsert(tabTitles, title)
+            tinsert(tabURLs, url)
+          end
+          lastURL = url
+        end
       end
-      lastURL = url
-    end
-    return A_WinBuf.tabTitles[idx]
+      return tabTitles, tabURLs
+    end)
+    return tabTitles[idx]
   end
 end
 
