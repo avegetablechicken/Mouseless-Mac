@@ -5750,6 +5750,20 @@ appHotKeyCallbacks = {
       message = T("Preferences"),
       fn = function(app)
         app:selectMenuItem({ app:name(), A_Message })
+        local observer = registerNavigationForSettingsToolbar(app)
+        assert(observer)
+        local win = app:focusedWindow()
+        if win == nil then return end
+        local wid = win:id()
+        local key
+        key = ExecContinuously(function()
+          local w = hs.window.get(wid)
+          if w == nil or win:application():bundleID() ~= app:bundleID() then
+            StopExecContinuously(key)
+            local callback = observer:callback()
+            callback(observer, towinui(win), uinotifications.uIElementDestroyed)
+          end
+        end)
       end
     }
   },
@@ -10051,6 +10065,9 @@ local specialToolbarButtons = {
     end)
     return buttons, true
   end),
+  ["com.tencent.meeting"] = function(winUI)
+    return getc(winUI, AX.CheckBox), true
+  end,
   ["com.netease.uuremote"] = waitForSettings(function(winUI)
     local toolbar = getc(winUI, AX.Toolbar, 1)
     return tmap(getc(toolbar, AX.Group) or {},
