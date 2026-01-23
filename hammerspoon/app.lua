@@ -385,7 +385,7 @@ local function A_WinBufWrapper(fn)
       winBuf[wid] = {}
     end
     A_WinBuf = winBuf[wid]
-    local r1, r2, r3 = fn(win)
+    local results = table.pack(fn(win))
     A_WinBuf = nil
     if winCloseObservers[wid] == nil and next(winBuf[wid]) then
       winCloseObservers[wid] = Evt.OnDestroy(towinui(win), function()
@@ -393,7 +393,7 @@ local function A_WinBufWrapper(fn)
         winCloseObservers[wid] = nil
       end)
     end
-    return r1, r2, r3
+    return table.unpack(results, 1, results.n)
   end
 end
 
