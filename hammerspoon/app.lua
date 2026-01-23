@@ -10200,6 +10200,7 @@ local function registerNavigationForSettingsToolbar(app)
     reactivateValidSettingsToolbarHotkeys()
   end)
   closeObserver:start()
+  return closeObserver
 end
 
 -- Observe selection of "Settings…" / "Preferences…" menu items.
