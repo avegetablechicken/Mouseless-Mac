@@ -556,6 +556,63 @@ local function getValidMessage(hotkeyInfo)
   end
 end
 
+-- A_ConBuf:
+-- Condition evaluation cache.
+--
+-- Used to memoize expensive condition checks during
+-- batch hotkey verification.
+A_ConBuf = {}
+
+function A_ConBuf:get(...)
+  local n = select("#", ...)
+  local fn = select(n, ...)
+  local keys = {}
+  for i = 1, n - 1 do
+    keys[i] = select(i, ...)
+  end
+
+  if not FLAGS["BATCH_VERIFY_HOTKEYS"] then
+    return fn()
+  end
+
+  local need_compute = false
+  for _, k in ipairs(keys) do
+    if self.map[k] == nil then
+      need_compute = true
+      break
+    end
+  end
+  if need_compute then
+    local results = { fn() }
+
+    assert(
+      #results == #keys,
+      ("A_ConBuf:get key count (%d) != fn return count (%d)")
+        :format(#keys, #results)
+    )
+
+    for i, k in ipairs(keys) do
+      self.map[k] = results[i]
+    end
+  end
+
+  local out = {}
+  for i, k in ipairs(keys) do
+    out[i] = self.map[k]
+  end
+  return table.unpack(out)
+end
+
+local function setConditionBuffer()
+  FLAGS["BATCH_VERIFY_HOTKEYS"] = true
+  A_ConBuf.map = {}
+end
+
+local function resetConditionBuffer()
+  FLAGS["BATCH_VERIFY_HOTKEYS"] = false
+  A_ConBuf.map = nil
+end
+
 local function testValid(entry)
   local pos = entry.msg:find(": ")
   local valid = pos ~= nil and not (entry.suspendable and FLAGS["SUSPEND"])
@@ -700,12 +757,14 @@ local function processHotkeys(validOnly, showCustom, showApp, evFlags, reload)
   allKeys = tconcat(allKeys, karaHotkeys or {})
 
   -- Phase 3: evaluate contextual validity for each hotkey entry.
+  setConditionBuffer()
   for _, entry in ipairs(allKeys) do
     testValid(entry)
   end
   for _, entry in ipairs(enabledAltMenuHotkeys) do
     testValid(entry)
   end
+  resetConditionBuffer()
 
   -- Phase 4: normalize symbols and sort hotkeys by kind and subkind.
   for _, entry in ipairs(allKeys) do
@@ -1465,12 +1524,14 @@ function()
     end
   end
 
+  setConditionBuffer()
   for _, entry in ipairs(allKeys) do
     testValid(entry)
   end
   for _, entry in ipairs(enabledAltMenuHotkeys) do
     testValid(entry)
   end
+  resetConditionBuffer()
 
   for _, entry in ipairs(allKeys) do
     local pos = entry.msg:find(": ")
