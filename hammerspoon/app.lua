@@ -9932,6 +9932,15 @@ local function getToolbarButtons(winUI)
   return getc(toolbar, AX.Button) or {}
 end
 
+-- Fetch outline rows for apps that use sidebar to navigate
+local function getSidebarRows(winUI)
+  local splitgroup = getc(winUI, AX.SplitGroup, 1)
+      or getc(winUI, AX.Group, 1, AX.SplitGroup, 1)
+  local scrollarea = getc(splitgroup, AX.ScrollArea, 1)
+      or getc(splitgroup, AX.Group, 1, AX.ScrollArea, 1)
+  return getc(scrollarea, AX.Outline, 1, AX.Row) or {}
+end
+
 -- Fetch tab-group buttons for apps that implement tabs as radio buttons.
 local function getTabGroupButtons(winUI)
   local tabgroup = getc(winUI, AX.TabGroup, 1)
@@ -10155,8 +10164,15 @@ registerNavigationForSettingsToolbar = function(app)
   end
   if win == nil then return end
   local winUI = towinui(win)
-  local func = specialToolbarButtons[appid] or getToolbarButtons
-  local buttons, toClick = func(winUI)
+  local buttons, toClick
+  if specialToolbarButtons[appid] then
+    buttons, toClick = specialToolbarButtons[appid](winUI)
+  else
+    buttons, toClick = getSidebarRows(winUI)
+    if #buttons == 0 then
+      buttons, toClick = getToolbarButtons(winUI)
+    end
+  end
   if #buttons == 0 then return end
   local elem = buttons[1]
   repeat
@@ -10164,7 +10180,14 @@ registerNavigationForSettingsToolbar = function(app)
   until elem.AXRole == AX.Window
   winUI = elem
   win = winUI:asHSWindow()
-  local callback = toClick and Callback.Click or Callback.Press
+  local callback
+  if toClick then
+    callback = Callback.Click
+  elseif buttons[1].AXSubrole == AX.OutlineRow then
+    callback = Callback.UISelect
+  else
+    callback = Callback.Press
+  end
   for i, button in ipairs(buttons) do
     local suffix
     if i == 1 then suffix = "st"
@@ -10181,6 +10204,14 @@ registerNavigationForSettingsToolbar = function(app)
       local msg
       if button.AXRole == AX.StaticText then
         msg = button.AXValue
+      elseif button.AXSubrole == AX.OutlineRow then
+        local ele = getc(button, AX.Cell, 1, AX.StaticText, 1)
+        if ele then
+          msg = ele.AXValue
+        else
+          ele = getc(button, AX.Cell, 1, AX.Unknown, 1)
+          msg = ele.AXAttributedDescription:getString()
+        end
       else
         msg = button.AXTitle or button.AXDescription
       end
