@@ -5149,6 +5149,9 @@ appHotKeyCallbacks = {
           local curChatTitle = getc(winUI, AX.SplitGroup, 1,
               AX.SplitGroup, 1, AX.StaticText, 1)
               or getc(winUI, AX.SplitGroup, 1, AX.StaticText, 1)
+          if curChatTitle and curChatTitle.AXSize.h <= 5 then
+            return false
+          end
           if curChatTitle == nil then
             local curChat = tfind(chats, function(row)
               return row.AXFocused
