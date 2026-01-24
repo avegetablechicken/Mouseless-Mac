@@ -10315,14 +10315,19 @@ local specialToolbarButtons = {
 -- for settings toolbar switching.
 local settingsToolbarHotkeys = {}
 
-local function reactivateValidSettingsToolbarHotkeys()
+local function reactivateValidSettingsToolbarHotkeys(observer)
   local focusedWin = hs.window.frontmostWindow()
   local focusedWinId = focusedWin and focusedWin:id() or nil
   local enabled = false
   for wid, hotkeys in pairs(settingsToolbarHotkeys) do
     local win = hs.window.get(wid)
-    if win == nil then return end
-    if wid ~= focusedWinId then
+    if win == nil then
+      for _, hotkey in ipairs(settingsToolbarHotkeys[wid]) do
+        CtxDelete(hotkey)
+      end
+      settingsToolbarHotkeys[wid] = nil
+      if observer then observer:stop() end
+    elseif wid ~= focusedWinId then
       for _, hotkey in ipairs(hotkeys) do
         CtxDisable(hotkey)
       end
@@ -10477,16 +10482,7 @@ registerNavigationForSettingsToolbar = function(app)
       closeObserver:addWatcher(ele, uinotifications.windowMiniaturized)
       closeObserver:removeWatcher(ele, uinotifications.windowDeminiaturized)
     end
-    reactivateValidSettingsToolbarHotkeys()
-    if appid == "com.apple.finder"
-        and uinotifications.focusedWindowChanged
-        and hs.window.get(win:id()) == nil then
-      obs:stop() obs = nil
-      for _, hotkey in ipairs(settingsToolbarHotkeys[win:id()]) do
-        CtxDelete(hotkey)
-      end
-      settingsToolbarHotkeys[win:id()] = nil
-    end
+    reactivateValidSettingsToolbarHotkeys(obs)
   end)
   closeObserver:start()
   return closeObserver
