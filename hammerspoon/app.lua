@@ -11132,9 +11132,6 @@ local function altMenuBarItem(app, force, reinvokeKey)
       windowOnBindAltMenu = false
     end
 
-    local maxMenuBarItemHotkey =
-        #menuBarItemTitles > 11 and 10 or (#menuBarItemTitles - 1)
-
     local itemTitles = {}
     for i=2,#menuBarItemTitles do
       local title, letter = menuBarItemTitles[i]:match("(.-)%s*%((.-)%)")
@@ -11154,7 +11151,7 @@ local function altMenuBarItem(app, force, reinvokeKey)
       inAppHotKeys[appid] = {}
     end
     local prefixI = prefix .. 'index__'
-    for i=1,maxMenuBarItemHotkey do
+    for i=1,math.min(10, #menuBarItemTitles - 1) do
       local fn = bind(clickMenuCallback, menuBarItemTitles[i + 1], i % 10)
       local hotkey = bindAltMenu(app, modsIndex, tostring(i % 10), itemTitles[i], fn)
       inAppHotKeys[appid][prefixI..tostring(i)] = hotkey
