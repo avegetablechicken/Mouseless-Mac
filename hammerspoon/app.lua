@@ -9225,17 +9225,10 @@ registerInWinHotKeys = function(win, filter)
   local needCloseWatcher = true
   local url
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
-    local windowFilter = get(keybindings, hkID, "windowFilter")
-        or cfg.windowFilter
-    if hotkeys[hkID] and type(windowFilter) == 'table'
-        and windowFilter.allowURLs
-        and sameFilter(windowFilter, filter) then
-      CtxDelete(hotkeys[hkID])
-      hotkeys[hkID] = nil
-    end
     if hotkeys[hkID] == nil then
       local keybinding = getKeybinding(appid, hkID, true)
       local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
+      local windowFilter = keybinding.windowFilter or cfg.windowFilter
       local isForWindow = windowFilter ~= nil
       local isBackground = keybinding.background ~= nil
           and keybinding.background or cfg.background
