@@ -10300,6 +10300,14 @@ local specialToolbarButtons = {
       tinsert(buttons, getc(r, AX.Cell, 1, AX.StaticText, 1))
     end
     return buttons, true
+  end,
+  ["com.colliderli.iina"] = function(winUI)
+    local buttons = {}
+    local rows = getc(winUI, AX.ScrollArea, 1, AX.Table, 1, AX.Row)
+    for _, r in ipairs(rows or {}) do
+      tinsert(buttons, getc(r, AX.Cell, 1, AX.StaticText, 1))
+    end
+    return buttons, true
   end
 }
 
