@@ -9332,7 +9332,13 @@ local function isWebsiteAllowed(win, allowURLs)
   if win:subrole() ~= AX.StandardWindow then
     return false
   end
-  local url = getTabUrl(win:application())
+  local app = win:application()
+  if app:bundleID() == "com.apple.Safari" then
+    if not MenuItem.isEnabled({ "View", "Show Sidebar" },
+                              { "View", "Hide Sidebar" })(app) then
+    return false end
+  end
+  local url = getTabUrl(app)
   if url ~= nil then
     if type(allowURLs) == 'string' then
       allowURLs = { allowURLs }
