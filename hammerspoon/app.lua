@@ -4579,14 +4579,16 @@ appHotKeyCallbacks = {
     ["settings"] = {
       message = T("Settings"),
       condition = function(app)
-        if app:focusedWindow() == nil then
+        local win = app:focusedWindow()
+        if win == nil then
           return Version.GreaterEqual(app, "2")
         end
-        if app:focusedWindow():title() == T("Tencent Yuanbao Setting", app) then
+        if win:title() == T("Yuanbao Setting", app)
+            or win:title() == T("Tencent Yuanbao Setting", app) then
           return false
         end
 
-        local winUI = towinui(app:focusedWindow())
+        local winUI = towinui(win)
         local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
           AX.ScrollArea, 1, AX.WebArea, 1)
         if webarea == nil then return false end
