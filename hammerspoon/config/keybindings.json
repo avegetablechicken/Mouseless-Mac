@@ -1752,6 +1752,10 @@
         "mods": ["control", "command"],
         "key": "T"
       },
+      "photoEditorCrop": {
+        "mods": "command",
+        "key": "T"
+      },
       "photoEditorSavePhoto": {
         "mods": "command",
         "key": "S"
