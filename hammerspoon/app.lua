@@ -897,6 +897,14 @@ Callback.DoubleClick = function(position)
   task:start()
 end
 
+Callback.PressClick = function(target)
+  if target.AXPosition then
+    Callback.Press(target)
+  else
+    Callback.Click(target)
+  end
+end
+
 -- Check whether an element is safely clickable and return click point
 Callback.Clickable = function(element, offset)
   if element == nil or not element:isValid() then return false end
@@ -4729,10 +4737,7 @@ appHotKeyCallbacks = {
           return Callback.Clickable(button)
         end
       end,
-      fn = function(result)
-        local action = result.AXTitle ~= nil and Callback.Press or Callback.Click
-        action(result)
-      end
+      fn = Callback.PressClick
     },
     ["maximize"] = {
       mods = get(KeybindingConfigs.hotkeys.shared, "zoom", "mods"),
@@ -5599,13 +5604,7 @@ appHotKeyCallbacks = {
           return image ~= nil, image
         end
       end,
-      fn = function(image)
-        if image.AXPosition then
-          Callback.Press(image)
-        else
-          Callback.Click(image)
-        end
-      end
+      fn = Callback.PressClick
     }
   },
 
