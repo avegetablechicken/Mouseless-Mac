@@ -10100,7 +10100,11 @@ local specialToolbarButtons = {
     end
   end,
   ["com.tencent.xinWeChat"] = function(winUI)
-    -- only in version < 4.0.6
+    if Version.LessThan(winUI, "4") then
+      return getToolbarButtons(winUI)
+    elseif Version.GreaterEqual(winUI, "4.0.6") then
+      return {}
+    end
     local buttons = {}
     local found = false
     for _, elem in ipairs(winUI) do
