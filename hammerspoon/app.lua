@@ -866,11 +866,6 @@ Callback.Press = function(pressable)
   end
 end
 
--- Select a UI row element
-Callback.UISelect = function(row)
-  row.AXSelected = true
-end
-
 -- Perform a left click at a fixed position
 Callback.Click = function(position)
   leftClickAndRestore(position)
@@ -10421,7 +10416,7 @@ registerNavigationForSettingsToolbar = function(app)
   if toClick then
     callback = Callback.Click
   elseif buttons[1].AXSubrole == AX.OutlineRow then
-    callback = Callback.UISelect
+    callback = function(row) row.AXSelected = true end
   else
     callback = Callback.Press
   end
