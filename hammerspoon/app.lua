@@ -10431,7 +10431,8 @@ registerNavigationForSettingsToolbar = function(app)
   else
     callback = Callback.Press
   end
-  for i, button in ipairs(buttons) do
+  local i = 1
+  for _, button in ipairs(buttons) do
     local suffix
     if i == 1 then suffix = "st"
     elseif i == 2 then suffix = "nd"
@@ -10453,7 +10454,9 @@ registerNavigationForSettingsToolbar = function(app)
           msg = ele.AXValue
         else
           ele = getc(button, AX.Cell, 1, AX.Unknown, 1)
-          msg = ele.AXAttributedDescription:getString()
+          if ele then
+            msg = ele.AXAttributedDescription:getString()
+          end
         end
       else
         msg = button.AXTitle or button.AXDescription
@@ -10461,14 +10464,17 @@ registerNavigationForSettingsToolbar = function(app)
       if (msg == nil or msg == "") and button.AXAttributedDescription ~= nil then
         msg = button.AXAttributedDescription:getString()
       end
-      local hotkey = AppWinBind(win, {
-        spec = spec, message = msg,
-        condition = condition, fn = bind(callback, button)
-      })
-      if settingsToolbarHotkeys[win:id()] == nil then
-        settingsToolbarHotkeys[win:id()] = {}
+      if msg then
+        i = i + 1
+        local hotkey = AppWinBind(win, {
+          spec = spec, message = msg,
+          condition = condition, fn = bind(callback, button)
+        })
+        if settingsToolbarHotkeys[win:id()] == nil then
+          settingsToolbarHotkeys[win:id()] = {}
+        end
+        tinsert(settingsToolbarHotkeys[win:id()], hotkey)
       end
-      tinsert(settingsToolbarHotkeys[win:id()], hotkey)
     end
   end
   local closeObserver = uiobserver.new(app:pid())
