@@ -761,10 +761,6 @@
         "mods": ["fn", "shift"],
         "key": "F"
       },
-      "hearing": {
-        "mods": "fn",
-        "key": "H"
-      },
       "keyboardBrightness": {
         "mods": "fn",
         "key": "K"
@@ -777,10 +773,6 @@
         "mods": "fn",
         "key": "P"
       },
-      "musicRecognition": {
-        "mods": "fn",
-        "key": "R"
-      },
       "sound": {
         "mods": "fn",
         "key": "S"
@@ -789,17 +781,9 @@
         "mods": ["fn", "shift"],
         "key": "S"
       },
-      "user": {
-        "mods": "fn",
-        "key": "U"
-      },
       "wifi": {
         "mods": "fn",
         "key": "W"
-      },
-      "accessibilityShortcuts": {
-        "mods": "fn",
-        "key": "X"
       }
     },
     "com.apple.ActivityMonitor": {
