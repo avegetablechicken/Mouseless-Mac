@@ -89,6 +89,9 @@
       },
       "com.macosgame.iwallpaper": {
         "rejectTitles": "^$"
+      },
+      "theboringteam.boringnotch" : {
+        "allowRoles": "AXStandardWindow"
       }
     }
   ],
