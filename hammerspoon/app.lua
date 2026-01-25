@@ -422,7 +422,7 @@ end
 local winBuf = {}
 local winCloseObservers = {}
 
-local A_WinBuf = nil
+local A_WinBuf = {}
 local function A_WinBufWrapper(fn)
   return function(win)
     local wid = win:id()
@@ -431,7 +431,7 @@ local function A_WinBufWrapper(fn)
     end
     A_WinBuf = winBuf[wid]
     local results = table.pack(fn(win))
-    A_WinBuf = nil
+    A_WinBuf = {}
     if winCloseObservers[wid] == nil and next(winBuf[wid]) then
       winCloseObservers[wid] = Evt.OnDestroy(towinui(win), function()
         winBuf[wid] = nil
@@ -1750,7 +1750,6 @@ WeChat.WF = {
   PhotoEditor = { },
   AppEx = {
     fn = function(win)
-      assert(A_WinBuf)
       local app = win:application()
       local appLocale = applicationLocale(app:bundleID())
       local exBundleID = "com.tencent.flue.WeChatAppEx"
@@ -1770,7 +1769,6 @@ WeChat.WF = {
   },
   AppExWeb = {
     fn = function(win)
-      assert(A_WinBuf)
       if Version.LessThan(win, "4") then
         local g = getc(towinui(win), AX.Group, 1)
         return g ~= nil and g.AXDOMClassList ~= nil
@@ -1785,7 +1783,6 @@ WeChat.WF = {
   },
   AppExSingleTab = {
     fn = function(win)
-      assert(A_WinBuf)
       local exBundleID = "com.tencent.flue.WeChatAppEx"
       local appLocale = applicationLocale(win:application():bundleID())
       local menuItemPath = {
@@ -1812,7 +1809,6 @@ WeChat.WF = {
   Confirm = {
     allowSheet = true,
     fn = function(win)
-      assert(A_WinBuf)
       local winUI = towinui(win)
       if #winUI == 4 then
         if winUI[1].AXRole == AX.StaticText
@@ -1863,7 +1859,6 @@ WeChat.WF = {
   SendTo = {
     allowSheet = true,
     fn = function(win)
-      assert(A_WinBuf)
       local winUI = towinui(win)
       local title = T("Send", win)
       local bt = getc(winUI, AX.Button, title)
@@ -1890,7 +1885,6 @@ Evt.OnRunning("com.tencent.xinWeChat", function(app)
     if WeChat.WF.Preview.fn == nil then
       local edit = T("Edit", app)
       WeChat.WF.Preview.fn = function(win)
-        assert(A_WinBuf)
         local buttons = getc(towinui(win), AX.Button)
         local button = tfind(buttons, function(bt)
           return bt.AXHelp == edit
@@ -1905,7 +1899,6 @@ Evt.OnRunning("com.tencent.xinWeChat", function(app)
     if WeChat.WF.PhotoEditor.fn == nil then
       local crop = T("Crop", app)
       WeChat.WF.PhotoEditor.fn = function(win)
-        assert(A_WinBuf)
         local buttons = getc(towinui(win), AX.Button)
         local button = tfind(buttons, function(bt)
           return bt.AXHelp == crop
@@ -1927,7 +1920,6 @@ local QQLive = {}
 QQLive.WF = {}
 QQLive.WF.Main = {
   fn = function(win)
-    assert(A_WinBuf)
     local winUI = towinui(win)
     local text = getc(winUI, AX.Group, 2, nil, -1)
     A_WinBuf.lastRow = text
@@ -1936,7 +1928,6 @@ QQLive.WF.Main = {
 }
 QQLive.channelName = function(index)
   return function(win)
-    assert(A_WinBuf)
     local _, _, channelNames = A_WinBuf:get("channelList", "rowCount", "channelNames",
     function()
       local list = getc(towinui(win), AX.Group, 2)
@@ -1973,7 +1964,6 @@ end
 
 QQLive.getChannel = function(index)
   return function()
-    assert(A_WinBuf)
     local start = A_WinBuf.channelStartIndex
     local list = A_WinBuf.channelList
     local rowCnt = A_WinBuf.rowCount
@@ -2098,7 +2088,6 @@ Bartender.WF = {}
 Bartender.WF.Bar = { allowTitles = "^Bartender Bar$" }
 Bartender.barItemTitle = function(index, rightClick)
   return function(win)
-    assert(A_WinBuf)
     local itemNames, _ = A_WinBuf:get("itemNames", "itemIDs", function()
       local winUI = towinui(win)
       local icons = getc(winUI, AX.ScrollArea, 1, AX.List, 1, AX.List, 1)
@@ -2238,7 +2227,6 @@ end
 
 Bartender.clickBarItem = function(index, rightClick)
   return function(win)
-    assert(A_WinBuf)
     local appid = win:application():bundleID()
     local itemID = A_WinBuf.itemIDs[index]
     if type(itemID) == 'string' then
@@ -2279,7 +2267,6 @@ end)
 
 Bartender.sidebarItemTitle = function(index)
   return function(win)
-    assert(A_WinBuf)
     local winUI = towinui(win)
     if Version.LessThan(win, "6") then
       local rows = A_WinBuf:get("sidebarRows", function()
@@ -2305,7 +2292,6 @@ end
 
 Bartender.clickSidebarItem = function(index)
   return function()
-    assert(A_WinBuf)
     local row = A_WinBuf.sidebarRows[index]
     if row then row.AXSelected = true end
   end
@@ -2328,7 +2314,6 @@ Barbee.WF.Bar = {
 }
 Barbee.barItemTitle = function(index)
   return function(win)
-    assert(A_WinBuf)
     local itemNames = A_WinBuf:get("itemNames", function()
       local winUI = towinui(win)
       local buttons = getc(winUI, AX.Group, 1, AX.Button)
@@ -2355,7 +2340,6 @@ Ice.WF = {}
 Ice.WF.Bar = { allowTitles = "^Ice Bar$" }
 Ice.barItemTitle = function(index)
   return function(win)
-    assert(A_WinBuf)
     local itemNames = A_WinBuf:get("itemNames", function()
       local winUI = towinui(win)
       local itemNames = {}
@@ -2444,7 +2428,6 @@ Ice.WF.Main = {
 }
 Ice.sidebarItemTitle = function(index)
   return function(win)
-    assert(A_WinBuf)
     local rows = A_WinBuf:get("sidebarRows", function()
       local rows = getc(towinui(win), AX.Group, 1, AX.SplitGroup, 1,
           AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row) or {}
@@ -2460,7 +2443,6 @@ end
 
 Ice.clickSidebarItem = function(index)
   return function()
-    assert(A_WinBuf)
     local row = A_WinBuf.sidebarRows[index]
     if row then row.AXSelected = true end
   end
@@ -2644,7 +2626,6 @@ end
 Web.Weibo = {}
 Web.Weibo.sideBarTitle = function(idx, isCommon)
   return function(win)
-    assert(A_WinBuf)
     if isCommon and A_WinBuf.sideBarCommonGroupTitles then
       return A_WinBuf.sideBarCommonGroupTitles[idx]
     elseif not isCommon and A_WinBuf.sideBarCustomGroupTitles then
@@ -2709,7 +2690,6 @@ end
 
 Web.Weibo.navigateToSideBarCondition = function(idx, isCommon)
   return function()
-    assert(A_WinBuf)
     if isCommon and A_WinBuf.sideBarCommonGroupURLs
         and #A_WinBuf.sideBarCommonGroupURLs >= idx then
       return true, A_WinBuf.sideBarCommonGroupURLs[idx]
@@ -2731,7 +2711,6 @@ end
 Web.Douyin = {}
 Web.Douyin.tabTitle = function(idx)
   return function(win)
-    assert(A_WinBuf)
     local tabTitles, _ = A_WinBuf:get("tabTitles", "tabURLs", function()
       local tabTitles, tabURLs = {}, {}
       local app = win:application()
@@ -2755,7 +2734,6 @@ end
 
 Web.Douyin.navigateToTabCondition = function(idx)
   return function()
-    assert(A_WinBuf)
     if A_WinBuf.tabURLs and #A_WinBuf.tabURLs >= idx then
       return true, A_WinBuf.tabURLs[idx]
     end
@@ -5313,7 +5291,6 @@ appHotKeyCallbacks = {
       condition = function(win)
         local titles = strsplit(A_Message, ' / ')
         if Version.LessThan(win, "4") then
-          assert(A_WinBuf)
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == titles[1] or bt.AXHelp == titles[2]
@@ -5335,7 +5312,6 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         if Version.LessThan(win, "4") then
-          assert(A_WinBuf)
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5356,7 +5332,6 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         if Version.LessThan(win, "4") then
-          assert(A_WinBuf)
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5377,7 +5352,6 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         if Version.LessThan(win, "4") then
-          assert(A_WinBuf)
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5398,7 +5372,6 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         if Version.LessThan(win, "4") then
-          assert(A_WinBuf)
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5423,7 +5396,6 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
         if Version.LessThan(win, "4") then
-          assert(A_WinBuf)
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5448,7 +5420,6 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
         if Version.LessThan(win, "4") then
-          assert(A_WinBuf)
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5473,7 +5444,6 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
         if Version.LessThan(win, "4") then
-          assert(A_WinBuf)
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5502,7 +5472,6 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
         if Version.LessThan(win, "4") then
-          assert(A_WinBuf)
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5522,7 +5491,6 @@ appHotKeyCallbacks = {
       bindCondition = Version.LessThan("4"),
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function()
-        assert(A_WinBuf)
         local buttons = A_WinBuf.buttons
         local button = tfind(buttons, function(bt)
           return bt.AXHelp == A_Message
@@ -5569,7 +5537,6 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
         if Version.LessThan(win, "4") then
-          assert(A_WinBuf)
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXDescription == A_Message
@@ -5600,7 +5567,6 @@ appHotKeyCallbacks = {
       condition = function(win)
         local app = win:application()
         if Version.LessThan(app, "4") then return true end
-        assert(A_WinBuf)
         local button = A_WinBuf.closeWebButton
         if button.AXRole == AX.PopUpButton then
           local tabs = getc(towinui(win), AX.Group, 1,
@@ -5663,7 +5629,6 @@ appHotKeyCallbacks = {
       bindCondition = Version.GreaterEqual("4"),
       windowFilter = WeChat.WF.AppEx,
       condition = function(win)
-        assert(A_WinBuf)
         local menuItemPath = A_WinBuf.selectMenuItemPath
         local menuItem = win:application():findMenuItem(menuItemPath)
         if menuItem ~= nil and menuItem.enabled then
@@ -5678,7 +5643,6 @@ appHotKeyCallbacks = {
       bindCondition = Version.GreaterEqual("4"),
       windowFilter = WeChat.WF.AppExSingleTab,
       condition = function(win)
-        assert(A_WinBuf)
         local menuItemPath = A_WinBuf.closeWindowMenuItemPath
         local menuItem = win:application():findMenuItem(menuItemPath)
         return menuItem ~= nil and menuItem.enabled, menuItemPath
@@ -5687,7 +5651,6 @@ appHotKeyCallbacks = {
     },
     ["confirm"] = {
       message = function()
-        assert(A_WinBuf)
         local bt = A_WinBuf.confirmButton
         return bt.AXTitle ~= "" and bt.AXTitle or bt.AXDescription
       end,
@@ -5695,7 +5658,6 @@ appHotKeyCallbacks = {
       deleteOnDisable = true,
       windowFilter = WeChat.WF.Confirm,
       condition = function()
-        assert(A_WinBuf)
         return Callback.Clickable(A_WinBuf.confirmButton)
       end,
       fn = Callback.Click
@@ -5705,7 +5667,6 @@ appHotKeyCallbacks = {
       bindCondition = Version.Between("4", "4.0.6"),
       windowFilter = WeChat.WF.SendTo,
       condition = function(win)
-        assert(A_WinBuf)
         local bt = A_WinBuf.sendButton
         if bt and bt.AXEnabled then
           -- `WeChat` accessibility bug
