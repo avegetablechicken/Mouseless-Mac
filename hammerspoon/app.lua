@@ -2449,9 +2449,14 @@ Ice.WF.Main = {
 }
 Ice.sidebarItemTitle = function(index)
   return function(win)
-    local row = getc(towinui(win), AX.Group, 1,
-        AX.SplitGroup, 1, AX.Group, 1, AX.ScrollArea, 1,
-        AX.Outline, 1, AX.Row, index + 1, AX.Cell, 1, AX.StaticText, 1)
+    assert(A_WinBuf)
+    local rows = A_WinBuf:get("sidebarRows", function()
+      local rows = getc(towinui(win), AX.Group, 1, AX.SplitGroup, 1,
+          AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row) or {}
+      tremove(rows, 1)
+      return rows
+    end)
+    local row = getc(rows[index], AX.Cell, 1, AX.StaticText, 1)
     if row ~= nil then
       return row.AXValue
     end
@@ -2459,10 +2464,9 @@ Ice.sidebarItemTitle = function(index)
 end
 
 Ice.clickSidebarItem = function(index)
-  return function(win)
-    local row = getc(towinui(win), AX.Group, 1,
-        AX.SplitGroup, 1, AX.Group, 1, AX.ScrollArea, 1,
-        AX.Outline, 1, AX.Row, index + 1)
+  return function()
+    assert(A_WinBuf)
+    local row = A_WinBuf.sidebarRows[index]
     if row then row.AXSelected = true end
   end
 end
