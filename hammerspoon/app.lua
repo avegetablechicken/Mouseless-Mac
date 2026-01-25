@@ -10144,7 +10144,13 @@ end
 -- Used for apps where toolbar elements appear asynchronously.
 local function waitForSettings(fn, maxWaitTime)
   return function(winUI)
-    fn = fn or getToolbarButtons
+    fn = fn or function()
+      local buttons, toClick = getSidebarRows(winUI)
+      if #buttons == 0 then
+        buttons, toClick = getToolbarButtons(winUI)
+      end
+      return buttons, toClick
+    end
     local buttons, toClick = fn(winUI)
     if #buttons == 0 then
       local app = getAppFromDescendantElement(winUI)
