@@ -1,7 +1,6 @@
 {
   "hyper": {
     "hyper": "F18",
-    "app": ["option", "command"],
     "daemon": ["shift", "option"],
     "moveTo": ["fn", "control"],
     "moveTowards": ["fn", "shift", "control"],
@@ -410,7 +409,7 @@
 
     "appkeys": [
       {
-        "mods": "${hyper.app}",
+        "mods": ["option", "command"],
         "key": "tab",
         "bundleID": [
           "app.remixdesign.LaunchOS",
@@ -418,53 +417,14 @@
         ]
       },
       {
-        "mods": "${hyper.app}",
-        "key": "W",
-        "bundleID": "com.tencent.xinWeChat"
-      },
-      {
-        "mods": "${hyper.app}",
-        "key": "A",
-        "bundleID": [
-          "com.googlecode.iterm2",
-          "com.apple.Terminal"
-        ]
-      },
-      {
-        "mods": "${hyper.app}",
-        "key": "S",
-        "bundleID": [
-          "com.sublimetext.4",
-          "com.apple.TextEdit"
-        ]
-      },
-      {
-        "mods": "${hyper.app}",
-        "key": "F",
-        "bundleID": "com.apple.finder"
-      },
-      {
-        "mods": "${hyper.app}",
-        "key": "Z",
-        "bundleID": "com.apple.Safari"
-      },
-      {
-        "mods": "${hyper.app}",
+        "mods": ["option", "command"],
         "key": "X",
         "bundleID": "com.microsoft.VSCode"
       },
       {
-        "mods": "${hyper.app}",
-        "key": "P",
-        "bundleID": "com.apple.Preview"
-      },
-      {
-        "mods": "${hyper.app}",
-        "key": "K",
-        "bundleID": [
-          "com.apple.iWork.Keynote",
-          "com.microsoft.Powerpoint"
-        ]
+        "mods": "${hyper.hyper}",
+        "key": ",",
+        "bundleID": "com.apple.systempreferences"
       },
       {
         "mods": "${hyper.hyper}",
@@ -474,8 +434,7 @@
       {
         "mods": "${hyper.hyper}",
         "key": "W",
-        "vm": "com.parallels.desktop.console",
-        "name": "Windows"
+        "bundleID": "com.tencent.xinWeChat"
       },
       {
         "mods": "${hyper.hyper}",
@@ -523,15 +482,20 @@
       {
         "mods": "${hyper.hyper}",
         "key": "P",
-        "bundleID": [
-          "com.apple.iWork.Pages",
-          "com.microsoft.Word"
-        ]
+        "bundleID": "com.apple.Preview"
       },
       {
         "mods": "${hyper.hyper}",
         "key": "A",
-        "bundleID": "com.apple.ActivityMonitor"
+        "bundleID": [
+          "com.googlecode.iterm2",
+          "com.apple.Terminal"
+        ]
+      },
+      {
+        "mods": "${hyper.hyper}",
+        "key": "S",
+        "bundleID": "com.apple.Safari"
       },
       {
         "mods": "${hyper.hyper}",
@@ -543,10 +507,23 @@
       },
       {
         "mods": "${hyper.hyper}",
+        "key": "F",
+        "bundleID": "com.apple.finder"
+      },
+      {
+        "mods": "${hyper.hyper}",
         "key": "J",
         "bundleID": [
           "JabRef",
           "org.zotero.zotero"
+        ]
+      },
+      {
+        "mods": "${hyper.hyper}",
+        "key": "K",
+        "bundleID": [
+          "com.apple.iWork.Keynote",
+          "com.microsoft.Powerpoint"
         ]
       },
       {
@@ -561,7 +538,10 @@
       {
         "mods": "${hyper.hyper}",
         "key": "Z",
-        "bundleID": "com.apple.systempreferences"
+        "bundleID": [
+          "com.sublimetext.4",
+          "com.apple.TextEdit"
+        ]
       },
       {
         "mods": "${hyper.hyper}",
@@ -1248,16 +1228,6 @@
       "view:toggleTimeline": {
         "mods": "command",
         "key": "8"
-      },
-      "toggleSearchEditorWholeWord": {
-        "mods": ["shift", "option", "command"],
-        "key": "W"
-      }
-    },
-    "com.sublimetext.4": {
-      "toggleSearchEditorWholeWord": {
-        "mods": ["shift", "option", "command"],
-        "key": "W"
       }
     },
     "com.renfei.SnippetsLab": {
