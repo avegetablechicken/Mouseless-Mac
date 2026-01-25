@@ -2284,17 +2284,23 @@ end)
 
 Bartender.sidebarItemTitle = function(index)
   return function(win)
+    assert(A_WinBuf)
     local winUI = towinui(win)
     if Version.LessThan(win, "6") then
-      local row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
-          AX.Outline, 1, AX.Row, index, AX.Cell, 1, AX.StaticText, 1)
+      local rows = A_WinBuf:get("sidebarRows", function()
+        return getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
+            AX.Outline, 1, AX.Row) or {}
+      end)
+      local row = getc(rows[index], AX.Cell, 1, AX.StaticText, 1)
       if row ~= nil then
         return row.AXValue
       end
     else
-      local row = getc(winUI, AX.Group, 1, AX.SplitGroup, 1,
-          AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index,
-          AX.Cell, 1, AX.Unknown, 1)
+      local rows = A_WinBuf:get("sidebarRows", function()
+        return getc(winUI, AX.Group, 1, AX.SplitGroup, 1,
+            AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row) or {}
+      end)
+      local row = getc(rows[index], AX.Cell, 1, AX.Unknown, 1)
       if row ~= nil then
         return row.AXAttributedDescription:getString()
       end
@@ -2302,18 +2308,11 @@ Bartender.sidebarItemTitle = function(index)
   end
 end
 
-Bartender.sidebarItemSelectable = function(index)
-  return function(win)
-    local winUI = towinui(win)
-    local row
-    if Version.LessThan(win, "6") then
-      row = getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
-          AX.Outline, 1, AX.Row, index)
-    else
-      row = getc(winUI, AX.Group, 1, AX.SplitGroup, 1,
-          AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index)
-    end
-    return row ~= nil, row
+Bartender.clickSidebarItem = function(index)
+  return function()
+    assert(A_WinBuf)
+    local row = A_WinBuf.sidebarRows[index]
+    if row then row.AXSelected = true end
   end
 end
 
@@ -6563,64 +6562,55 @@ appHotKeyCallbacks = {
     {
       message = Bartender.sidebarItemTitle(1),
       windowFilter = Bartender.WF.Main,
-      condition = Bartender.sidebarItemSelectable(1),
-      fn = Callback.UISelect
+      fn = Bartender.clickSidebarItem(1)
     },
     ["view2"] =
     {
       message = Bartender.sidebarItemTitle(2),
       windowFilter = Bartender.WF.Main,
-      condition = Bartender.sidebarItemSelectable(2),
-      fn = Callback.UISelect
+      fn = Bartender.clickSidebarItem(2)
     },
     ["view3"] =
     {
       message = Bartender.sidebarItemTitle(3),
       windowFilter = Bartender.WF.Main,
-      condition = Bartender.sidebarItemSelectable(3),
-      fn = Callback.UISelect
+      fn = Bartender.clickSidebarItem(3)
     },
     ["view4"] =
     {
       message = Bartender.sidebarItemTitle(4),
       windowFilter = Bartender.WF.Main,
-      condition = Bartender.sidebarItemSelectable(4),
-      fn = Callback.UISelect
+      fn = Bartender.clickSidebarItem(4)
     },
     ["view5"] =
     {
       message = Bartender.sidebarItemTitle(5),
       windowFilter = Bartender.WF.Main,
-      condition = Bartender.sidebarItemSelectable(5),
-      fn = Callback.UISelect
+      fn = Bartender.clickSidebarItem(5)
     },
     ["view6"] =
     {
       message = Bartender.sidebarItemTitle(6),
       windowFilter = Bartender.WF.Main,
-      condition = Bartender.sidebarItemSelectable(6),
-      fn = Callback.UISelect
+      fn = Bartender.clickSidebarItem(6)
     },
     ["view7"] =
     {
       message = Bartender.sidebarItemTitle(7),
       windowFilter = Bartender.WF.Main,
-      condition = Bartender.sidebarItemSelectable(7),
-      fn = Callback.UISelect
+      fn = Bartender.clickSidebarItem(7)
     },
     ["view8"] =
     {
       message = Bartender.sidebarItemTitle(8),
       windowFilter = Bartender.WF.Main,
-      condition = Bartender.sidebarItemSelectable(8),
-      fn = Callback.UISelect
+      fn = Bartender.clickSidebarItem(8)
     },
     ["view9"] =
     {
       message = Bartender.sidebarItemTitle(9),
       windowFilter = Bartender.WF.Main,
-      condition = Bartender.sidebarItemSelectable(9),
-      fn = Callback.UISelect
+      fn = Bartender.clickSidebarItem(9)
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
     ["minimize"] = specialCommonHotkeyConfigUpdated("minimize",
