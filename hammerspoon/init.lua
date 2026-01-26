@@ -573,7 +573,7 @@ if consoleHotkey then
   consoleHotkey.kind = HK.PRIVELLEGE
 end
 
--- Register an action to be executed continuously.
+-- Register an action to be executed repeatedly
 processesExecEvery = {}
 function ExecContinuously(action)
   local timeKey = tostring(hs.timer.absoluteTime())
@@ -581,9 +581,18 @@ function ExecContinuously(action)
   return timeKey
 end
 
--- Stop a continuously executed action.
+-- Register an action to be executed repeatedly at a small timer interval.
+processesExecEveryQuick = {}
+function ExecContinuouslyQuick(action)
+  local timeKey = tostring(hs.timer.absoluteTime())
+  processesExecEveryQuick[timeKey] = action
+  return timeKey
+end
+
+-- Stop a repeatedly executed action.
 function StopExecContinuously(timeKey)
   processesExecEvery[timeKey] = nil
+  processesExecEveryQuick[timeKey] = nil
 end
 
 -- Periodic executor for continuous actions.
@@ -596,6 +605,11 @@ if hs.fs.attributes("config/misc.json") ~= nil then
 end
 ContinuousWatcher = hs.timer.new(pollingInterval, function()
   for _, proc in pairs(processesExecEvery) do
+    proc()
+  end
+end, true)
+ContinuousWatcherQuick = hs.timer.new(0.25, function()
+  for _, proc in pairs(processesExecEveryQuick) do
     proc()
   end
 end, true)
@@ -705,6 +719,7 @@ end
 
 -- Start all watchers and background services.
 ContinuousWatcher:start()
+ContinuousWatcherQuick:start()
 ConfigWatcher = hs.pathwatcher.new(os.getenv("HOME") .. "/.hammerspoon/", reloadConfig):start()
 AppWatcher = hs.application.watcher.new(applicationCallback):start()
 MonitorWatcher = hs.screen.watcher.new(monitorChangedCallback):start()
