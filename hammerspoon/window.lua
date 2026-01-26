@@ -974,6 +974,8 @@ if misc["switchWindow"] ~= nil then
   local altTabBundleID = "com.lwouis.alt-tab-macos"
   if find(altTabBundleID) == nil then
     registerWindowSwitcher()
+  else
+    ExecOnSilentQuit(altTabBundleID, registerWindowSwitcher)
   end
   ExecOnSilentLaunch(altTabBundleID, function()
     unregisterWindowSwitcher()
