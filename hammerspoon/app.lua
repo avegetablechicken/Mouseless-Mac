@@ -5940,7 +5940,7 @@ appHotKeyCallbacks = {
         if win == nil then return end
         local wid = win:id()
         local key
-        key = ExecContinuously(function()
+        key = ExecContinuouslyQuick(function()
           local w = hs.window.get(wid)
           if w == nil or win:application():bundleID() ~= app:bundleID() then
             StopExecContinuously(key)
@@ -11396,7 +11396,7 @@ local function watchMenuBarItems(app)
   local appid = app:bundleID() or app:name()
   menuBarItemTitlesString.app[appid], menuBarItemTitlesString.win[appid]
       = getMenuBarItemTitlesString(app, getMenuBarItemsBuffer(app) or false)
-  local watcher = ExecContinuously(function()
+  local watcher = ExecContinuouslyQuick(function()
     local app = find(appid)
     if app == nil then return end
     local mbTitlesStr, mbTitlesStrWin

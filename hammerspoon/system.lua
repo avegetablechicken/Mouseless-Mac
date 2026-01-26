@@ -1957,7 +1957,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       end
     end
     selectNetworkActionFunc()
-    selectNetworkWatcher = ExecContinuously(selectNetworkActionFunc)
+    selectNetworkWatcher = ExecContinuouslyQuick(selectNetworkActionFunc)
   elseif panel == "AirDrop" then
     -- AirDrop panel:
     -- Bind numeric keys to switch AirDrop visibility modes.
@@ -2052,7 +2052,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         end
       end
       registerFocusOptionsFunc()
-      focusOptionWatcher = ExecContinuously(registerFocusOptionsFunc)
+      focusOptionWatcher = ExecContinuouslyQuick(registerFocusOptionsFunc)
     else
       for _, hotkey in ipairs(focusOptionHotkeys or {}) do
         hotkey:delete()
