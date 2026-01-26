@@ -476,11 +476,6 @@ local function getBufferedMenuBarItems(app)
   return appBuf.menuBarItems
 end
 
-local function getBufferedLocale(app)
-  appBuf.locale = appBuf.locale or applicationLocale(getAppId(app))
-  return appBuf.locale
-end
-
 ------------------------------------------------------------
 -- ## localized title generators for hotkey descriptions
 --
@@ -1780,9 +1775,8 @@ WeChat.WF = {
   AppEx = {
     fn = function(win)
       local app = win:application()
-      local appLocale = getBufferedLocale(app)
       local exBundleID = "com.tencent.flue.WeChatAppEx"
-      local params = { locale = appLocale }
+      local params = { locale = A_Locale }
       local menuItemPath = {
         localizedMenuBarItem("Window", exBundleID, params),
         localizedString("Select Previous Tab", exBundleID, params)
@@ -1813,10 +1807,9 @@ WeChat.WF = {
   AppExSingleTab = {
     fn = function(win)
       local exBundleID = "com.tencent.flue.WeChatAppEx"
-      local appLocale = getBufferedLocale(win)
       local menuItemPath = {
-        localizedMenuBarItem('File', exBundleID, { locale = appLocale }),
-        localizedString('Close All Tabs', exBundleID, { locale = appLocale })
+        localizedMenuBarItem('File', exBundleID, { locale = A_Locale }),
+        localizedString('Close All Tabs', exBundleID, { locale = A_Locale })
       }
       if menuItemPath[2] then
         local menuItem = win:application():findMenuItem(menuItemPath)
@@ -1824,7 +1817,7 @@ WeChat.WF = {
       end
       local menuItemPath2 = {
         menuItemPath[1],
-        localizedString('Close Tab', exBundleID, { locale = appLocale })
+        localizedString('Close Tab', exBundleID, { locale = A_Locale })
       }
       if menuItemPath2[2] then
         local menuItem = win:application():findMenuItem(menuItemPath2)
@@ -2065,18 +2058,13 @@ Barrier.localizedMessage = function(message, params)
     local appid = getAppId(app)
     local newParams = params
     if locale == nil and hs.application.frontmostApplication():bundleID() == appid then
-      locale = appBuf.barrierLocale
-      if locale == nil then
-        locale = getBufferedLocale(appid)
-        appBuf.barrierLocale = locale
-      end
       if type(newParams) == 'table' then
         newParams = tcopy(newParams)
-        newParams.locale = locale
+        newParams.locale = A_Locale
       elseif type(newParams) == 'string' then
-        newParams = { localeFile = newParams, locale = locale }
+        newParams = { localeFile = newParams, locale = A_Locale }
       else
-        newParams = { locale = locale }
+        newParams = { locale = A_Locale }
       end
     end
     local str = T(message, app, newParams)
@@ -2102,18 +2090,13 @@ Barrier.localizedString = function(message, app, params)
   local appid = getAppId(app)
   local newParams = params
   if locale == nil and hs.application.frontmostApplication():bundleID() == appid then
-    locale = appBuf.barrierLocale
-    if locale == nil then
-      locale = getBufferedLocale(appid)
-      appBuf.barrierLocale = locale
-    end
     if type(newParams) == 'table' then
       newParams = tcopy(newParams)
-      newParams.locale = locale
+      newParams.locale = A_Locale
     elseif type(newParams) == 'string' then
-      newParams = { localeFile = newParams, locale = locale }
+      newParams = { localeFile = newParams, locale = A_Locale }
     else
-      newParams = { locale = locale }
+      newParams = { locale = A_Locale }
     end
   end
   local str = T(message, app, newParams)
@@ -5601,9 +5584,8 @@ appHotKeyCallbacks = {
           return T("Open in Default Browser", app)
         else
           local exBundleID = "com.tencent.flue.WeChatAppEx"
-          local appLocale = getBufferedLocale(app)
           return localizedString("Open in default browser", exBundleID,
-                                 { locale = appLocale })
+                                 { locale = A_Locale })
         end
       end,
       windowFilter = WeChat.WF.AppExWeb,
@@ -5664,9 +5646,8 @@ appHotKeyCallbacks = {
     },
     ["remapPreviousTab"] = {
       message = function(win)
-        local appLocale = getBufferedLocale(win)
         local exBundleID = "com.tencent.flue.WeChatAppEx"
-        local params = { locale = appLocale }
+        local params = { locale = A_Locale }
         return localizedString("Select Previous Tab", exBundleID, params)
       end,
       bindCondition = Version.GreaterEqual("4"),
@@ -9803,13 +9784,12 @@ end
 local appLocales = {} -- if app locale changes, it may change its menu bar items, so need to rebind
 local function updateAppLocale(appid)
   if type(appid) ~= 'string' then appid = appid:bundleID() or appid:name() end
-  local appLocale = getBufferedLocale(appid)
   local oldAppLocale = appLocales[appid] or SYSTEM_LOCALE
-  appLocales[appid] = appLocale
-  if oldAppLocale ~= appLocale then
-    if matchLocale(oldAppLocale, { appLocale }) ~= appLocale then
+  appLocales[appid] = A_Locale
+  if oldAppLocale ~= A_Locale then
+    if matchLocale(oldAppLocale, { A_Locale }) ~= A_Locale then
       resetLocalizationMap(appid)
-      localizeCommonMenuItemTitles(appLocale, appid)
+      localizeCommonMenuItemTitles(A_Locale, appid)
       unregisterRunningAppHotKeys(appid, true)
       return true
     end
@@ -9940,8 +9920,7 @@ local function registerOpenRecent(app, force)
       menuItemPath = { localizedFile, localizedOpenRecent }
       menuItem = app:findMenuItem(menuItemPath)
       if menuItem == nil then
-        local appLocale = getBufferedLocale(appid)
-        if appLocale ~= SYSTEM_LOCALE and appLocale:sub(1, 2) ~= 'en' then
+        if A_Locale ~= SYSTEM_LOCALE and A_Locale:sub(1, 2) ~= 'en' then
           local localized = TC('Open Recent', app)
           menuItemPath = { localizedFile, localized }
         end
@@ -12270,6 +12249,7 @@ function App_applicationCallback(appname, eventType, app)
     end
     local action = function()
       launchTimer = nil
+      A_Locale = applicationLocale(appid)
       for _, proc in ipairs(Evt.ProcOnLaunched[appid] or {}) do
         proc(app)
       end
@@ -12293,6 +12273,7 @@ function App_applicationCallback(appname, eventType, app)
     end
     FLAGS["NEED_DOUBLE_CHECK"] = nil
   elseif eventType == hs.application.watcher.activated then
+    A_Locale = nil
     for bid, processes in pairs(Evt.ProcOnDeactivated) do
       if bid ~= appid then
         local b = find(bid)
@@ -12310,6 +12291,7 @@ function App_applicationCallback(appname, eventType, app)
     end
 
     appBuf = {}
+    A_Locale = applicationLocale(appid)
     if FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] ~= nil then
       FLAGS["SUSPEND"] = not FLAGS["SUSPEND_IN_REMOTE_DESKTOP"]
       FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] = nil
