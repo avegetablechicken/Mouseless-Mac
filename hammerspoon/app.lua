@@ -240,12 +240,22 @@ local LSUIElements = {}
 local LSUIElementTmpFile = appsTmpDir .. '/lsuielement.json'
 if exists(LSUIElementTmpFile) then
   LSUIElements = hs.json.read(LSUIElementTmpFile)
+  for _, appid in ipairs(LSUIElements) do
+    ExecOnSilentLaunch(appid, bind(ExecOnSilentQuit, appid, nil))
+    if runningAppsOnLoading[appid] then
+      ExecOnSilentQuit(appid)
+    end
+  end
 end
 local function isLSUIElement(appid)
   if tindex(LSUIElements, appid) then return true end
   local info = hs.application.infoForBundleID(appid)
   if info and info.LSUIElement == true then
     tinsert(LSUIElements, appid)
+    ExecOnSilentLaunch(appid, bind(ExecOnSilentQuit, appid, nil))
+    if find(appid) then
+      ExecOnSilentQuit(appid)
+    end
     table.sort(LSUIElements)
     if not exists(appsTmpDir) then
       mkdir(appsTmpDir)
