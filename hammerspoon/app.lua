@@ -12242,7 +12242,7 @@ function App_applicationCallback(appname, eventType, app)
     if FLAGS["APP_LAUNCHING"] and appsLaunchSlow[appid] then
       doublecheck = bind(appsLaunchSlow[appid], app)
     end
-    if FLAGS["MENUBAR_ITEMS_PREPARED"] ~= nil then
+    if FLAGS["NEED_DOUBLE_CHECK"] then
       local oldFn = doublecheck
       doublecheck = function()
         local frontApp = hs.application.frontmostApplication()
@@ -12273,7 +12273,7 @@ function App_applicationCallback(appname, eventType, app)
     else
       action()
     end
-    FLAGS["MENUBAR_ITEMS_PREPARED"] = nil
+    FLAGS["NEED_DOUBLE_CHECK"] = nil
   elseif eventType == hs.application.watcher.activated then
     for bid, processes in pairs(Evt.ProcOnDeactivated) do
       if bid ~= appid then
@@ -12305,10 +12305,9 @@ function App_applicationCallback(appname, eventType, app)
 
     FLAGS["NO_RESHOW_KEYBINDING"] = true
     registerForOpenSavePanel(app)
+    FLAGS["NEED_DOUBLE_CHECK"] = FLAGS["APP_LAUNCHING"]
     if not FLAGS["APP_LAUNCHING"] then
-      FLAGS["MENUBAR_ITEMS_PREPARED"] = onLaunchedAndActivated(app)
-    elseif FLAGS["APP_LAUNCHING"] and appsLaunchSlow[appid] == nil then
-      FLAGS["MENUBAR_ITEMS_PREPARED"] = false
+      onLaunchedAndActivated(app)
     end
   elseif eventType == hs.application.watcher.terminated then
     for _, proc in ipairs(Evt.ProcOnTerminated[appid] or {}) do
