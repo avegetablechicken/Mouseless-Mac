@@ -1681,9 +1681,10 @@ WPS.WF.WPS_WPP = {
     local appid = win:application():bundleID()
     local menuBarItems = getc(toappui(win:application()),
         AX.MenuBar, 1, AX.MenuBarItem)
+    local params = { locale = A_Locale }
     return tfind(menuBarItems, function(item)
-      return item.AXTitle == localizedMenuBarItem("Tables", appid)
-          or item.AXTitle == localizedMenuBarItem("Slide Show", appid)
+      return item.AXTitle == localizedMenuBarItem("Tables", appid, params)
+          or item.AXTitle == localizedMenuBarItem("Slide Show", appid, params)
     end) ~= nil
   end
 }
@@ -1694,10 +1695,11 @@ WPS.WF.WPS_WPP_ET = {
     local appid = win:application():bundleID()
     local menuBarItems = getc(toappui(win:application()),
         AX.MenuBar, 1, AX.MenuBarItem)
+    local params = { locale = A_Locale }
     return tfind(menuBarItems, function(item)
-      return item.AXTitle == localizedMenuBarItem("Tables", appid)
-          or item.AXTitle == localizedMenuBarItem("Slide Show", appid)
-          or item.AXTitle == localizedMenuBarItem("Data", appid)
+      return item.AXTitle == localizedMenuBarItem("Tables", appid, params)
+          or item.AXTitle == localizedMenuBarItem("Slide Show", appid, params)
+          or item.AXTitle == localizedMenuBarItem("Data", appid, params)
     end) ~= nil
   end
 }
@@ -1706,7 +1708,8 @@ WPS.WF.PDF = {
   allowTitles = "",
   fn = function(win)
     local appid = win:application():bundleID()
-    local locTitle = localizedMenuBarItem("Comment", appid)
+    local params = { locale = A_Locale }
+    local locTitle = localizedMenuBarItem("Comment", appid, params)
     local menuBarItem = getc(toappui(win:application()),
         AX.MenuBar, 1, AX.MenuBarItem, locTitle)
     return menuBarItem ~= nil
@@ -1836,9 +1839,10 @@ WeChat.WF = {
   AppExSingleTab = {
     fn = function(win)
       local exBundleID = "com.tencent.flue.WeChatAppEx"
+      local params = { locale = A_Locale }
       local menuItemPath = {
-        localizedMenuBarItem('File', exBundleID, { locale = A_Locale }),
-        localizedString('Close All Tabs', exBundleID, { locale = A_Locale })
+        localizedMenuBarItem('File', exBundleID, params),
+        localizedString('Close All Tabs', exBundleID, params)
       }
       if menuItemPath[2] then
         local menuItem = win:application():findMenuItem(menuItemPath)
@@ -1846,7 +1850,7 @@ WeChat.WF = {
       end
       local menuItemPath2 = {
         menuItemPath[1],
-        localizedString('Close Tab', exBundleID, { locale = A_Locale })
+        localizedString('Close Tab', exBundleID, params)
       }
       if menuItemPath2[2] then
         local menuItem = win:application():findMenuItem(menuItemPath2)
@@ -9903,7 +9907,7 @@ local function registerOpenRecent(app, force)
   local localizedFile
   localizedFile = 'File'
   if app:findMenuItem({ localizedFile }) == nil then
-    localizedFile = localizedMenuBarItem("File", appid)
+    localizedFile = localizedMenuBarItem("File", appid, { locale = A_Locale })
     if localizedFile == nil then return end
     if app:findMenuItem({ localizedFile }) == nil then return end
   end
@@ -9991,7 +9995,8 @@ local function registerZoomHotkeys(app, force)
     local menuItemPath = { 'Window', title }
     local menuItem = app:findMenuItem(menuItemPath)
     if menuItem == nil then
-      local localizedWindow = localizedMenuBarItem('Window', appid)
+      local localizedWindow = localizedMenuBarItem('Window', appid,
+                                                   { locale = A_Locale })
       local localizedTitle = TC(title, app)
       if localizedTitle == title and SYSTEM_LOCALE:sub(1, 2) ~= 'en' then
         localizedTitle = TC(title, app, { locale = SYSTEM_LOCALE })
@@ -10054,7 +10059,8 @@ local function registerResizeHotkeys(app)
   local menu, submenu = "Window", "Move & Resize"
   local menuItem = app:findMenuItem({ menu, submenu })
   if menuItem == nil then
-    local localizedMenu = localizedMenuBarItem('Window', app:bundleID())
+    local localizedMenu = localizedMenuBarItem('Window', app:bundleID(),
+                                               { locale = A_Locale })
     local localizedSubmenu = TC(submenu, app)
     if localizedSubmenu == submenu and SYSTEM_LOCALE:sub(1, 2) ~= 'en' then
       localizedSubmenu = TC(submenu, app, { locale = SYSTEM_LOCALE })
