@@ -2848,7 +2848,7 @@ local function registerSearchMenuBar()
         end
 
         -- Walk backwards to find the nearest enclosing `.app` bundle
-        for i = #parts, 1, -1 do
+        for i = #parts-1, 1, -1 do
           if parts[i]:sub(-4) == ".app" then
             local subPath = {}
             for j = 1, i do

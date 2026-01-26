@@ -10332,13 +10332,13 @@ registerNavigationForSettingsToolbar = function(app)
     local parts = hs.fnutils.split(apath, "/")
     local apps = { app }
     -- Walk backwards to find all the enclosing `.app` bundle
-    for i = #parts, 1, -1 do
+    for i = #parts-1, 1, -1 do
       if parts[i]:sub(-4) == ".app" then
         local subPath = {}
         for j = 1, i do
             table.insert(subPath, parts[j])
         end
-        local appPath = "/" .. table.concat(subPath, "/")
+        local appPath = table.concat(subPath, "/")
         local info = hs.application.infoForBundlePath(appPath)
         if info and info.CFBundleIdentifier then
           local id = info.CFBundleIdentifier
