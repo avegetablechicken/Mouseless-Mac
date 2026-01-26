@@ -1,4 +1,6 @@
 {
+    "pollingInterval": 3,
+
     "pasteboardFilter": [
         "(.*) 作者：.*https://www.bilibili.com/.*出处：bilibili$",
         "(.*)\n\n作者：.*链接：https://.*zhihu.com.*来源：知乎.*$",
