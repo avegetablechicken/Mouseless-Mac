@@ -8415,6 +8415,7 @@ local function getKeybinding(appid, hkID, defaultCommon)
 end
 
 -- hotkeys for background apps
+local unregisterRunningAppHotKeys
 local function registerRunningAppHotKeys(appid, app)
   if appHotKeyCallbacks[appid] == nil then return end
 
@@ -8422,19 +8423,23 @@ local function registerRunningAppHotKeys(appid, app)
     runningAppHotKeys[appid] = {}
   end
 
+  local hasNotPersistentBackgroundHotkey = false
   local running = true
   -- do not support "condition" property currently
   for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
-    if runningAppHotKeys[appid][hkID] ~= nil then
-      runningAppHotKeys[appid][hkID]:enable()
-      goto L_CONTINUE
-    end
     local keybinding = getKeybinding(appid, hkID)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isPersistent = keybinding.persist ~= nil
         and keybinding.persist or cfg.persist
     local isBackground = isPersistent or (keybinding.background ~= nil
         and keybinding.background or cfg.background)
+    if runningAppHotKeys[appid][hkID] ~= nil then
+      runningAppHotKeys[appid][hkID]:enable()
+      if not isPersistent and isBackground then
+        hasNotPersistentBackgroundHotkey = true
+      end
+      goto L_CONTINUE
+    end
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local bindable
     if isPersistent and installed(appid) then
@@ -8499,18 +8504,24 @@ local function registerRunningAppHotKeys(appid, app)
         hotkey.kind = cfg.kind or HK.BACKGROUND
         hotkey.appid = appid
         runningAppHotKeys[appid][hkID] = hotkey
+        hasNotPersistentBackgroundHotkey = hasNotPersistentBackgroundHotkey
+            or (not isPersistent and isBackground)
       end
     end
     ::L_CONTINUE::
   end
+
+  if hasNotPersistentBackgroundHotkey then
+    Evt.OnTerminated(appid, bind(unregisterRunningAppHotKeys, appid))
+  end
 end
 
-local function unregisterRunningAppHotKeys(appid)
+unregisterRunningAppHotKeys = function(appid, force)
   if appHotKeyCallbacks[appid] == nil
       or runningAppHotKeys[appid] == nil then return end
 
   for hkID, hotkey in pairs(runningAppHotKeys[appid]) do
-    if not hotkey.persist then
+    if force or not hotkey.persist then
       hotkey:delete()
       runningAppHotKeys[appid][hkID] = nil
     end
@@ -9753,7 +9764,7 @@ local function updateAppLocale(appid)
     if matchLocale(oldAppLocale, { appLocale }) ~= appLocale then
       resetLocalizationMap(appid)
       localizeCommonMenuItemTitles(appLocale, appid)
-      unregisterRunningAppHotKeys(appid)
+      unregisterRunningAppHotKeys(appid, true)
       return true
     end
   end
@@ -11465,8 +11476,7 @@ local frontWin = hs.window.frontmostWindow()
 -- register hotkeys for background apps
 for appid, appConfig in pairs(appHotKeyCallbacks) do
   registerRunningAppHotKeys(appid)
-  local hasNotPersistentBackgroundHotkey =
-      any(appConfig, function(cfg, hkID)
+  local hasNotPersistentBackgroundHotkey = any(appConfig, function(cfg, hkID)
     local keybinding = getKeybinding(appid, hkID)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isBackground = keybinding.background ~= nil
@@ -11478,7 +11488,6 @@ for appid, appConfig in pairs(appHotKeyCallbacks) do
   end)
   if hasNotPersistentBackgroundHotkey then
     Evt.OnLaunched(appid, bind(registerRunningAppHotKeys, appid))
-    Evt.OnTerminated(appid, bind(unregisterRunningAppHotKeys, appid))
   end
 end
 
