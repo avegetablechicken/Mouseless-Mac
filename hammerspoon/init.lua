@@ -587,7 +587,14 @@ function StopExecContinuously(timeKey)
 end
 
 -- Periodic executor for continuous actions.
-ContinuousWatcher = hs.timer.new(0.25, function()
+local pollingInterval = 0.25
+if hs.fs.attributes("config/misc.json") ~= nil then
+  local json = hs.json.read("config/misc.json")
+  if json.pollingInterval then
+    pollingInterval = json.pollingInterval
+  end
+end
+ContinuousWatcher = hs.timer.new(pollingInterval, function()
   for _, proc in pairs(processesExecEvery) do
     proc()
   end
