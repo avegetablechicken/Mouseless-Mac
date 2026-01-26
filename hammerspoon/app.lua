@@ -1774,6 +1774,7 @@ WeChat.WF = {
     end
   },
   Preview = { },
+  PreviewEditable = { },
   PhotoEditor = { },
   AppEx = {
     fn = function(win)
@@ -1910,8 +1911,20 @@ WeChat.WF = {
 Evt.OnRunning("com.tencent.xinWeChat", function(app)
   if Version.LessThan(app, "4") then
     if WeChat.WF.Preview.fn == nil then
-      local edit = T("Edit", app)
+      local rotate = T("Rotate", app)
       WeChat.WF.Preview.fn = function(win)
+        local buttons = getc(towinui(win), AX.Button)
+        local button = tfind(buttons, function(bt)
+          return bt.AXHelp == rotate
+        end)
+        A_WinBuf.buttons = buttons
+        return button ~= nil
+      end
+    end
+
+    if WeChat.WF.PreviewEditable.fn == nil then
+      local edit = T("Edit", app)
+      WeChat.WF.PreviewEditable.fn = function(win)
         local buttons = getc(towinui(win), AX.Button)
         local button = tfind(buttons, function(bt)
           return bt.AXHelp == edit
@@ -1937,6 +1950,7 @@ Evt.OnRunning("com.tencent.xinWeChat", function(app)
   elseif Version.LessThan(app, "4.0.6") then
     local title = T("Preview", app)
     WeChat.WF.Preview.allowTitles = '^' .. title .. '$'
+    WeChat.WF.PreviewEditable.allowTitles = '^' .. title .. '$'
     title = T("Photo Editor", app)
     WeChat.WF.PhotoEditor.allowTitles = '^' .. title .. '$'
   end
@@ -5357,7 +5371,7 @@ appHotKeyCallbacks = {
     ["previewEdit"] = {
       message = T("Edit"),
       bindCondition = Version.LessThan("4.0.6"),
-      windowFilter = WeChat.WF.Preview,
+      windowFilter = WeChat.WF.PreviewEditable,
       condition = function(win)
         if Version.LessThan(win, "4") then
           local buttons = A_WinBuf.buttons
