@@ -12245,8 +12245,9 @@ function App_applicationCallback(appname, eventType, app)
     if FLAGS["MENUBAR_ITEMS_PREPARED"] ~= nil then
       local oldFn = doublecheck
       doublecheck = function()
-        return hs.application.frontmostApplication():bundleID() == app:bundleID()
-            and (not oldFn or oldFn())
+        local frontApp = hs.application.frontmostApplication()
+        local frontAppId = frontApp:bundleID() or frontApp:name()
+        return frontAppId == appid and (not oldFn or oldFn())
       end
     end
     local action = function()
