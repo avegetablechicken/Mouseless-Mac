@@ -12347,11 +12347,9 @@ function App_applicationCallback(appname, eventType, app)
 end
 
 -- some apps may terminate silently, which is unexpected
-AppsTerminateSilently = {}
-for _, appid in ipairs(ApplicationConfigs["terminateSilently"] or {}) do
-  Evt.OnRunning(appid, function()
-    ExecOnSilentQuit(appid, function() end)
-  end)
+AppsTerminateSilently = ApplicationConfigs["terminateSilently"] or {}
+for _, appid in ipairs(AppsTerminateSilently) do
+  Evt.OnRunning(appid, bind(ExecOnSilentQuit, appid, nil))
 end
 
 function App_applicationInstalledCallback(files, flagTables)
