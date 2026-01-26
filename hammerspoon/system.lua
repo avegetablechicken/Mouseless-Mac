@@ -2842,19 +2842,16 @@ local function registerSearchMenuBar()
       local pathStr, ok = hs.execute(strfmt([[
           lsof -a -d txt -p %s 2>/dev/null | sed -n '2p' | awk '{print $NF}']], app:pid()))
       if ok and pathStr ~= "" then
-        local parts = {}
-        for part in string.gmatch(pathStr, "[^/]+") do
-            table.insert(parts, part)
-        end
+        local parts = hs.fnutils.split(pathStr, "/")
 
         -- Walk backwards to find the nearest enclosing `.app` bundle
         for i = #parts-1, 1, -1 do
           if parts[i]:sub(-4) == ".app" then
             local subPath = {}
             for j = 1, i do
-                table.insert(subPath, parts[j])
+              table.insert(subPath, parts[j])
             end
-            local appPath = "/" .. table.concat(subPath, "/")
+            local appPath = table.concat(subPath, "/")
             local info = hs.application.infoForBundlePath(appPath)
             if info and info.CFBundleIdentifier then
               extraSearchPattern = info.CFBundleIdentifier
