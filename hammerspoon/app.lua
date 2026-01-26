@@ -663,12 +663,41 @@ local function mostFrequent(t)
     return maxValue
 end
 
+local function getBufferedLocale(app)
+  if app.focusedWindow then
+    local frontApp = hs.application.frontmostApplication()
+    if frontApp and frontApp:bundleID() == app:bundleID() then
+      return A_Locale
+    end
+  elseif app.application then
+    local win = app
+    app = win:application()
+    local frontApp = hs.application.frontmostApplication()
+    if frontApp and frontApp:bundleID() == app:bundleID() then
+      return A_Locale
+    end
+    local frontWin = hs.window.frontmostWindow()
+    if frontWin and frontWin:id() == win:id() then
+      if A_WinBuf.locale == nil then
+        A_WinBuf.locale = applicationLocale(getAppId(app))
+      end
+      return A_WinBuf.locale
+    end
+  end
+
+  return applicationLocale(getAppId(app))
+end
+
 -- Unified localization entry:
 --  • string      -> localized string
 --  • table path  -> localized menu path
 local function T(message, params, sep)
   local fn = function(app)
     local appid = getAppId(app)
+    params = params and tcopy(params) or {}
+    if params.locale == nil then
+      params.locale = getBufferedLocale(app)
+    end
     if type(message) == 'string' then
       local str = localizedString(message, appid, params) or message
       return type(str) == 'string' and str or mostFrequent(str)
@@ -2054,20 +2083,7 @@ end)
 local Barrier = {}
 Barrier.localizedMessage = function(message, params)
   return function(app)
-    local locale = type(params) == 'table' and params.locale or nil
-    local appid = getAppId(app)
-    local newParams = params
-    if locale == nil and hs.application.frontmostApplication():bundleID() == appid then
-      if type(newParams) == 'table' then
-        newParams = tcopy(newParams)
-        newParams.locale = A_Locale
-      elseif type(newParams) == 'string' then
-        newParams = { localeFile = newParams, locale = A_Locale }
-      else
-        newParams = { locale = A_Locale }
-      end
-    end
-    local str = T(message, app, newParams)
+    local str = T(message, app, params)
     assert(type(str) == 'string')
     if message:find('&') then
       str = str:gsub("%(&%a%)", ""):gsub('&', '')
@@ -2086,20 +2102,7 @@ Barrier.localizedMessage = function(message, params)
 end
 
 Barrier.localizedString = function(message, app, params)
-  local locale = type(params) == 'table' and params.locale or nil
-  local appid = getAppId(app)
-  local newParams = params
-  if locale == nil and hs.application.frontmostApplication():bundleID() == appid then
-    if type(newParams) == 'table' then
-      newParams = tcopy(newParams)
-      newParams.locale = A_Locale
-    elseif type(newParams) == 'string' then
-      newParams = { localeFile = newParams, locale = A_Locale }
-    else
-      newParams = { locale = A_Locale }
-    end
-  end
-  local str = T(message, app, newParams)
+  local str = T(message, app, params)
   assert(type(str) == 'string')
   if message:find('&') then
     str = str:gsub('&', "")
