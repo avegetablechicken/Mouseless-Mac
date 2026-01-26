@@ -1676,14 +1676,12 @@ local function bindStageManagerWindow(spec, index)
 end
 
 local function isStageManagerEnabled()
-  if FLAGS["LOADING"] then
-    local plistPath = hs.fs.pathToAbsolute(strfmt(
-        "~/Library/Preferences/%s.plist", windowManagerId))
-    if plistPath ~= nil then
-      local defaults = hs.plist.read(plistPath)
-      if defaults then
-        return defaults.GloballyEnabled == true
-      end
+  local plistPath = hs.fs.pathToAbsolute(strfmt(
+      "~/Library/Preferences/%s.plist", windowManagerId))
+  if plistPath ~= nil then
+    local defaults = hs.plist.read(plistPath)
+    if defaults then
+      return defaults.GloballyEnabled == true
     end
   end
 
@@ -1717,7 +1715,12 @@ local function manageStageManagerWindowHotkeys()
   end
 end
 manageStageManagerWindowHotkeys()
-ExecContinuously(manageStageManagerWindowHotkeys)
+local windowManagerPlistPath = hs.fs.pathToAbsolute(os.getenv("HOME")
+    ..strfmt("/Library/Preferences/%s.plist", windowManagerId))
+WindowManagerPlistWatcher = hs.pathwatcher.new(
+  windowManagerPlistPath,
+  manageStageManagerWindowHotkeys
+):start()
 
 -- Register URL handlers for Stage Manager window switching.
 local stageManagerWindowSwitchFuncs = {}
