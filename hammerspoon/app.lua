@@ -10072,6 +10072,53 @@ local function registerResizeHotkeys(app)
   end
 end
 
+local function getSettingsWindow(app)
+  local win = app:focusedWindow()
+  if win == nil then
+    local apath = app:path()
+    if apath == nil then
+      apath = hs.execute(strfmt([[
+          lsof -a -d txt -p %s 2>/dev/null
+          | sed -n '2p' | awk '{print $NF}']], app:pid()))
+      if apath == nil then apath = "" end
+    end
+    local parts = hs.fnutils.split(apath, "/")
+    local apps = { app }
+    -- Walk backwards to find all the enclosing `.app` bundle
+    for i = #parts-1, 1, -1 do
+      if parts[i]:sub(-4) == ".app" then
+        local subPath = {}
+        for j = 1, i do
+            table.insert(subPath, parts[j])
+        end
+        local appPath = table.concat(subPath, "/")
+        local info = hs.application.infoForBundlePath(appPath)
+        if info and info.CFBundleIdentifier then
+          local id = info.CFBundleIdentifier
+          local a = find(id)
+          if a then
+            win = a:focusedWindow()
+            if win then break end
+            tinsert(apps, a)
+          end
+        end
+      end
+    end
+    if win == nil then
+      local totalDelay = 0
+      repeat
+        hs.timer.usleep(10000)
+        totalDelay = totalDelay + 0.01
+        for _, a in ipairs(apps) do
+          win = a:focusedWindow()
+          if win then break end
+        end
+      until totalDelay > 0.1
+    end
+  end
+  return win
+end
+
 -- Fetch toolbar buttons from a window UI hierarchy.
 local function getToolbarButtons(winUI)
   local toolbar = getc(winUI, AX.Toolbar, 1)
@@ -10315,64 +10362,15 @@ local function reactivateValidSettingsToolbarHotkeys(observer)
 end
 
 registerNavigationForSettingsToolbar = function(app)
-  local appid = app:bundleID() or app:name()
   if reactivateValidSettingsToolbarHotkeys() then
     return
   end
 
-  local win = app:focusedWindow()
-  if win == nil then
-    local apath = app:path()
-    if apath == nil then
-      apath = hs.execute(strfmt([[
-          lsof -a -d txt -p %s 2>/dev/null
-          | sed -n '2p' | awk '{print $NF}']], app:pid()))
-      if apath == nil then apath = "" end
-    end
-    local parts = hs.fnutils.split(apath, "/")
-    local apps = { app }
-    -- Walk backwards to find all the enclosing `.app` bundle
-    for i = #parts-1, 1, -1 do
-      if parts[i]:sub(-4) == ".app" then
-        local subPath = {}
-        for j = 1, i do
-            table.insert(subPath, parts[j])
-        end
-        local appPath = table.concat(subPath, "/")
-        local info = hs.application.infoForBundlePath(appPath)
-        if info and info.CFBundleIdentifier then
-          local id = info.CFBundleIdentifier
-          local a = find(id)
-          if a then
-            win = a:focusedWindow()
-            if win then
-              app = a
-              appid = app:bundleID() or app:name()
-              break
-            end
-            tinsert(apps, a)
-          end
-        end
-      end
-    end
-    if win == nil then
-      local totalDelay = 0
-      repeat
-        hs.timer.usleep(10000)
-        totalDelay = totalDelay + 0.01
-        for _, a in ipairs(apps) do
-          win = a:focusedWindow()
-          if win then
-            app = a
-            appid = app:bundleID() or app:name()
-            break
-          end
-        end
-      until totalDelay > 0.1
-    end
-  end
+  local win = getSettingsWindow(app)
   if win == nil then return end
+  app = win:application()
   local winUI = towinui(win)
+  local appid = app:bundleID() or app:name()
   local buttons, toClick
   if specialToolbarButtons[appid] then
     buttons, toClick = specialToolbarButtons[appid](winUI)
