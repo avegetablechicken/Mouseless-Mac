@@ -8645,7 +8645,10 @@ end
 MenuBarMenuSelectedObservers = {}
 local function registerMenuBarObserverForHotkeyValidity(app)
   local appid = app:bundleID() or app:name()
-  if MenuBarMenuSelectedObservers[appid] then return end
+  if MenuBarMenuSelectedObservers[appid] then
+    MenuBarMenuSelectedObservers[appid]:stop()
+    MenuBarMenuSelectedObservers[appid] = nil
+  end
   if hs.window.filter.ignoreAlways[appid]
       or hs.window.filter.ignoreAlways[app:name()]
       or app:kind() < 0 then
@@ -12254,11 +12257,13 @@ function App_applicationCallback(appname, eventType, app)
       FLAGS["NO_RESHOW_KEYBINDING"] = true
       onLaunchedAndActivated(app)
       if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] ~= nil then
-        registerMenuBarObserverForHotkeyValidity(app)
-        local observer = MenuBarMenuSelectedObservers[appid]
-        if observer then
-          registerObserverForRightMenuBarSettingsMenuItem(app, observer)
-        end
+        hs.timer.doAfter(1, function()
+          registerMenuBarObserverForHotkeyValidity(app)
+          local observer = MenuBarMenuSelectedObservers[appid]
+          if observer then
+            registerObserverForRightMenuBarSettingsMenuItem(app, observer)
+          end
+        end)
       end
       FLAGS["APP_LAUNCHING"] = nil
     end
