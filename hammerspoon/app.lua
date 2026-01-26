@@ -1,5 +1,7 @@
 require "utils"
 
+local appsTmpDir = hs.fs.temporaryDirectory()..hs.settings.bundleID..'/application'
+
 hs.application.enableSpotlightForNameSearches(true)
 
 local runningAppsOnLoading = {}
@@ -234,9 +236,24 @@ end
 
 -- check whether an app is a background-only LSUIElement
 -- such apps do not emit normal launch/terminate events
+local LSUIElements = {}
+local LSUIElementTmpFile = appsTmpDir .. '/lsuielement.json'
+if exists(LSUIElementTmpFile) then
+  LSUIElements = hs.json.read(LSUIElementTmpFile)
+end
 local function isLSUIElement(appid)
+  if tindex(LSUIElements, appid) then return true end
   local info = hs.application.infoForBundleID(appid)
-  return info and info.LSUIElement == true
+  if info and info.LSUIElement == true then
+    tinsert(LSUIElements, appid)
+    table.sort(LSUIElements)
+    if not exists(appsTmpDir) then
+      mkdir(appsTmpDir)
+    end
+    hs.json.write(LSUIElements, LSUIElementTmpFile, false, true)
+    return true
+  end
+  return false
 end
 
 ------------------------------------------------------------
@@ -10959,10 +10976,8 @@ local appsMayChangeMenuBar = {
   changing = tcopy(get(ApplicationConfigs, "menuBarItems", 'changing') or {}),
   onWindow = tcopy(get(ApplicationConfigs, "menuBarItems", 'changeOnWindow') or {})
 }
-local appsMayChangeMenuBarTmpDir =
-    hs.fs.temporaryDirectory() .. hs.settings.bundleID .. '/application'
 local appsMayChangeMenuBarTmpFile =
-    appsMayChangeMenuBarTmpDir .. '/variable_menubar.json'
+    appsTmpDir .. '/variable_menubar.json'
 local windowOnBindAltMenu
 
 local onLaunchedAndActivated
@@ -10986,8 +11001,8 @@ local function processInvalidAltMenu(app, reinvokeKey)
   end
   onLaunchedAndActivated(app, reinvokeKey)
 
-  if not exists(appsMayChangeMenuBarTmpDir) then
-    hs.execute(strfmt("mkdir -p '%s'", appsMayChangeMenuBarTmpDir))
+  if not exists(appsTmpDir) then
+    hs.execute(strfmt("mkdir -p '%s'", appsTmpDir))
   end
   local json = {}
   if exists(appsMayChangeMenuBarTmpFile) then
