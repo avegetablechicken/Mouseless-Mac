@@ -10774,7 +10774,7 @@ local function registerForOpenSavePanel(app, retry)
   openSavePanelHotkeys = {}
 
   local appid = app:bundleID() or app:name()
-  if appid == "com.apple.finder" or appid == "com.apple.dock" then return end
+  if appid == "com.apple.finder" then return end
   local appUI = toappui(app)
   if not tcontain(appUI:attributeNames() or {}, "AXFocusedWindow") then
     retry = retry and retry + 1 or 1
@@ -12227,6 +12227,7 @@ end
 local launchTimer
 function App_applicationCallback(appname, eventType, app)
   local appid = app:bundleID() or appname
+  if appid == "com.apple.dock" then return end
   if eventType == hs.application.watcher.launching then
     if tcontain(forbiddenApps, appid) then
       app:kill9()
