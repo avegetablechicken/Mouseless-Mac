@@ -1252,35 +1252,26 @@ local function testAlready(panel, pane, role)
   end) ~= nil
 end
 
-local function getBluetoothConnectedDevices()
+local function getBluetoothDevices()
   local output, status = hs.execute("system_profiler SPBluetoothDataType")
   if not status then
-      hs.alert.show("Failed to run system_profiler for Bluetooth")
-      return {}
+    hs.alert.show("Failed to run system_profiler for Bluetooth")
+    return {}
   end
 
   local devices = {}
-  local inConnected = false
   local currentName = nil
 
   for line in output:gmatch("[^\r\n]+") do
-    if line:match("^%s*Connected:") then
-      inConnected = true
-    elseif line:match("^%s*Not Connected:") then
-      inConnected = false
+    local nameMatch = line:match("^%s+(.+):%s*$")
+    if nameMatch and not line:match("^%s+Address:") then
+      currentName = nameMatch
     end
 
-    if inConnected then
-      local nameMatch = line:match("^%s+(.+):%s*$")
-      if nameMatch and not line:match("^%s+Address:") then
-        currentName = nameMatch
-      end
-
-      local addrMatch = line:match("^%s+Address:%s*([0-9A-F:]+)%s*$")
-      if addrMatch and currentName then
-        devices[addrMatch] = currentName
-        currentName = nil
-      end
+    local addrMatch = line:match("^%s+Address:%s*([0-9A-F:]+)%s*$")
+    if addrMatch and currentName then
+      devices[addrMatch] = currentName
+      currentName = nil
     end
   end
 
@@ -1785,6 +1776,9 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     until #cbs > 0 or totalDelay > 1 or not pane:isValid()
     if #cbs > 0 then
       local deviceIDs
+      if panel == CC.Bluetooth and OS_VERSION >= OS.Tahoe then
+        deviceIDs = getBluetoothDevices()
+      end
       local index = 0
       for _, cb in ipairs(cbs) do
         local enabled = cb.AXValue
@@ -1792,15 +1786,10 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         if OS_VERSION < OS.Ventura then
           name = cb.AXTitle
         elseif panel == CC.Bluetooth and OS_VERSION >= OS.Tahoe then
-          if enabled == 1 then
-            local ident = cb.AXIdentifier
-            local _, identIdx = ident:find("device-", 1, true)
-            ident = ident:sub(identIdx + 1, -1)
-            deviceIDs = deviceIDs or getBluetoothConnectedDevices()
-            name = deviceIDs[ident] or ident
-          else
-            name = cb.AXAttributedDescription:getString()
-          end
+          local ident = cb.AXIdentifier
+          local _, identIdx = ident:find("device-", 1, true)
+          ident = ident:sub(identIdx + 1, -1)
+          name = deviceIDs[ident] or ident
         elseif panel == CC.ScreenMirror and cb.AXAttributedDescription ~= nil then
           name = cb.AXAttributedDescription:getString()
         else
