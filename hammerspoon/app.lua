@@ -10431,6 +10431,7 @@ registerNavigationForSettingsToolbar = function(app)
   until elem.AXRole == AX.Window
   winUI = elem
   win = winUI:asHSWindow()
+  local wid = win:id()
   local callback
   if toClick then
     callback = Callback.Click
@@ -10478,10 +10479,10 @@ registerNavigationForSettingsToolbar = function(app)
           spec = spec, message = msg,
           condition = condition, fn = bind(callback, button)
         })
-        if settingsToolbarHotkeys[win:id()] == nil then
-          settingsToolbarHotkeys[win:id()] = {}
+        if settingsToolbarHotkeys[wid] == nil then
+          settingsToolbarHotkeys[wid] = {}
         end
-        tinsert(settingsToolbarHotkeys[win:id()], hotkey)
+        tinsert(settingsToolbarHotkeys[wid], hotkey)
       end
     end
   end
@@ -10492,10 +10493,10 @@ registerNavigationForSettingsToolbar = function(app)
   closeObserver:callback(function(obs, ele, notification)
     if notification == uinotifications.uIElementDestroyed then
       obs:stop() obs = nil
-      for _, hotkey in ipairs(settingsToolbarHotkeys[win:id()]) do
+      for _, hotkey in ipairs(settingsToolbarHotkeys[wid]) do
         CtxDelete(hotkey)
       end
-      settingsToolbarHotkeys[win:id()] = nil
+      settingsToolbarHotkeys[wid] = nil
     elseif notification == uinotifications.windowMiniaturized then
       closeObserver:addWatcher(ele, uinotifications.windowDeminiaturized)
       closeObserver:removeWatcher(ele, uinotifications.windowMiniaturized)
