@@ -298,7 +298,7 @@ Evt.OnRunning = function(appid, action)
   if FLAGS["LOADING"] then
     app = runningAppsOnLoading[appid]
   else
-    find(appid)
+    app = find(appid)
   end
   if app then action(app) end
 end
