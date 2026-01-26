@@ -587,7 +587,7 @@ function StopExecContinuously(timeKey)
 end
 
 -- Periodic executor for continuous actions.
-local pollingInterval = 0.25
+local pollingInterval = 1
 if hs.fs.attributes("config/misc.json") ~= nil then
   local json = hs.json.read("config/misc.json")
   if json.pollingInterval then
