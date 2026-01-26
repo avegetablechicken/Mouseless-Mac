@@ -339,10 +339,15 @@ function Screen_monitorChangedCallback()
 end
 
 -- Monitor user space count changes and refresh space hotkeys.
-ExecContinuously(function()
-  local user_spaces = getUserSpaces()
-  local nspaces = #user_spaces
-  if nspaces ~= #moveToSpaceHotkeys then
-    registerMoveToSpaceHotkeys()
+local workspacePlistPath = hs.fs.pathToAbsolute(os.getenv("HOME")
+    ..strfmt("/Library/Preferences/com.apple.spaces.plist"))
+WorkspacePlistWatcher = hs.pathwatcher.new(
+  workspacePlistPath,
+  function()
+    local user_spaces = getUserSpaces()
+    local nspaces = #user_spaces
+    if nspaces ~= #moveToSpaceHotkeys then
+      registerMoveToSpaceHotkeys()
+    end
   end
-end)
+):start()
