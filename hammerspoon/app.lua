@@ -476,6 +476,11 @@ local function getBufferedMenuBarItems(app)
   return appBuf.menuBarItems
 end
 
+local function getBufferedLocale(app)
+  appBuf.locale = appBuf.locale or applicationLocale(getAppId(app))
+  return appBuf.locale
+end
+
 ------------------------------------------------------------
 -- ## localized title generators for hotkey descriptions
 --
@@ -1775,7 +1780,7 @@ WeChat.WF = {
   AppEx = {
     fn = function(win)
       local app = win:application()
-      local appLocale = applicationLocale(app:bundleID())
+      local appLocale = getBufferedLocale(app)
       local exBundleID = "com.tencent.flue.WeChatAppEx"
       local params = { locale = appLocale }
       local menuItemPath = {
@@ -1808,7 +1813,7 @@ WeChat.WF = {
   AppExSingleTab = {
     fn = function(win)
       local exBundleID = "com.tencent.flue.WeChatAppEx"
-      local appLocale = applicationLocale(win:application():bundleID())
+      local appLocale = getBufferedLocale(win)
       local menuItemPath = {
         localizedMenuBarItem('File', exBundleID, { locale = appLocale }),
         localizedString('Close All Tabs', exBundleID, { locale = appLocale })
@@ -2062,7 +2067,7 @@ Barrier.localizedMessage = function(message, params)
     if locale == nil and hs.application.frontmostApplication():bundleID() == appid then
       locale = appBuf.barrierLocale
       if locale == nil then
-        locale = applicationLocale(appid)
+        locale = getBufferedLocale(appid)
         appBuf.barrierLocale = locale
       end
       if type(newParams) == 'table' then
@@ -2099,7 +2104,7 @@ Barrier.localizedString = function(message, app, params)
   if locale == nil and hs.application.frontmostApplication():bundleID() == appid then
     locale = appBuf.barrierLocale
     if locale == nil then
-      locale = applicationLocale(appid)
+      locale = getBufferedLocale(appid)
       appBuf.barrierLocale = locale
     end
     if type(newParams) == 'table' then
@@ -5596,7 +5601,7 @@ appHotKeyCallbacks = {
           return T("Open in Default Browser", app)
         else
           local exBundleID = "com.tencent.flue.WeChatAppEx"
-          local appLocale = applicationLocale(app:bundleID())
+          local appLocale = getBufferedLocale(app)
           return localizedString("Open in default browser", exBundleID,
                                  { locale = appLocale })
         end
@@ -5659,7 +5664,7 @@ appHotKeyCallbacks = {
     },
     ["remapPreviousTab"] = {
       message = function(win)
-        local appLocale = applicationLocale(win:application():bundleID())
+        local appLocale = getBufferedLocale(win)
         local exBundleID = "com.tencent.flue.WeChatAppEx"
         local params = { locale = appLocale }
         return localizedString("Select Previous Tab", exBundleID, params)
@@ -9798,7 +9803,7 @@ end
 local appLocales = {} -- if app locale changes, it may change its menu bar items, so need to rebind
 local function updateAppLocale(appid)
   if type(appid) ~= 'string' then appid = appid:bundleID() or appid:name() end
-  local appLocale = applicationLocale(appid)
+  local appLocale = getBufferedLocale(appid)
   local oldAppLocale = appLocales[appid] or SYSTEM_LOCALE
   appLocales[appid] = appLocale
   if oldAppLocale ~= appLocale then
@@ -9935,7 +9940,7 @@ local function registerOpenRecent(app, force)
       menuItemPath = { localizedFile, localizedOpenRecent }
       menuItem = app:findMenuItem(menuItemPath)
       if menuItem == nil then
-        local appLocale = applicationLocale(appid)
+        local appLocale = getBufferedLocale(appid)
         if appLocale ~= SYSTEM_LOCALE and appLocale:sub(1, 2) ~= 'en' then
           local localized = TC('Open Recent', app)
           menuItemPath = { localizedFile, localized }
