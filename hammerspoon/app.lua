@@ -10145,6 +10145,16 @@ local specialToolbarButtons = {
   ["app.remixdesign.LaunchOS"] = function(winUI)
     return getc(winUI, AX.Group, 1, AX.Image) or {}, true
   end,
+  ["cn.better365.BetterAndBetter"] = function(winUI)
+    return getc(winUI, AX.Group, 1, AX.Button) or {}
+  end,
+  ["cn.better365.iShotPro"] = function(winUI)
+    local buttons = getc(winUI, AX.Button) or {}
+    table.sort(buttons, function(a, b)
+      return a.AXPosition.y < b.AXPosition.y
+    end)
+    return buttons
+  end,
   ["com.torusknot.SourceTreeNotMAS"] = function(winUI)
     local fn = getToolbarButtons
     local buttons = fn(winUI)
