@@ -2588,20 +2588,6 @@ local function localizedStringImpl(str, appid, params, force)
       getMatchedLocale(appid, appLocale, resourceDir, framework, appLocaleDir)
   if locale == nil then return end
   assert(framework)
-  if not framework.electron and not framework.java
-      and (not framework.qt or (type(localeDir) ~= 'table' and isdir(localeDir))) then
-    local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
-    for _, dir in ipairs(baseLocaleDirs) do
-      if exists(dir) and hs.fs.attributes(localeDir).ino
-                         == hs.fs.attributes(dir).ino then
-        if appid == "__macos" or appid:match("^com%.apple%.") then
-          return str, appLocale, locale
-        else
-          return true, appLocale, locale
-        end
-      end
-    end
-  end
 
   local setDefaultLocale = function()
     if appid == '__macos' then return false end
@@ -2714,6 +2700,21 @@ local function localizedStringImpl(str, appid, params, force)
         localizedStringImpl(str:sub(1, -4), appid, params)
     if result ~= nil then
       return result .. str:sub(-3), appLocale, locale
+    end
+  end
+
+  if result == nil and not framework.electron and not framework.java
+      and (not framework.qt or (type(localeDir) ~= 'table' and isdir(localeDir))) then
+    local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
+    for _, dir in ipairs(baseLocaleDirs) do
+      if exists(dir) and hs.fs.attributes(localeDir).ino
+                         == hs.fs.attributes(dir).ino then
+        if appid == "__macos" or appid:match("^com%.apple%.") then
+          return str, appLocale, locale
+        else
+          return true, appLocale, locale
+        end
+      end
     end
   end
 
@@ -3754,16 +3755,6 @@ local function delocalizedStringImpl(str, appid, params, force)
       getMatchedLocale(appid, appLocale, resourceDir, framework, appLocaleDir)
   if locale == nil then return end
   assert(framework)
-  if not framework.electron and not framework.java
-      and (not framework.qt or (type(localeDir) ~= 'table' and isdir(localeDir))) then
-    local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
-    for _, dir in ipairs(baseLocaleDirs) do
-      if exists(dir) and hs.fs.attributes(localeDir).ino
-                         == hs.fs.attributes(dir).ino then
-        return true, appLocale, locale
-      end
-    end
-  end
 
   local setDefaultLocale = function()
     local oldLocale = locale
@@ -3876,6 +3867,17 @@ local function delocalizedStringImpl(str, appid, params, force)
         delocalizedStringImpl(str:sub(1, -4), appid, params)
     if result ~= nil then
       return result .. str:sub(-3), appLocale, locale
+    end
+  end
+
+  if result == nil and not framework.electron and not framework.java
+      and (not framework.qt or (type(localeDir) ~= 'table' and isdir(localeDir))) then
+    local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
+    for _, dir in ipairs(baseLocaleDirs) do
+      if exists(dir) and hs.fs.attributes(localeDir).ino
+                         == hs.fs.attributes(dir).ino then
+        return true, appLocale, locale
+      end
     end
   end
 
@@ -4253,7 +4255,7 @@ function delocalizedMenuItem(title, appid, params, system)
     p.localeFile = menuItemLocaleFilePatterns
     newTitle = delocalizedString(title, appid, p)
   end
-  if newTitle == nil then
+  if newTitle == nil or newTitle == title then
     newTitle = delocalizedString(title, appid, params, true)
   end
   if newTitle then
@@ -4387,7 +4389,7 @@ function localizedMenuBarItem(title, appid, params)
     p.localeFile = menuItemLocaleFilePatterns
     locTitle = localizedString(title, appid, p)
   end
-  if locTitle == nil then
+  if locTitle == nil or locTitle == title then
     locTitle = localizedString(title, appid, params, true)
   end
   if locTitle then
