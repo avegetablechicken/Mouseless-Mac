@@ -505,13 +505,9 @@ end
 local function getBufferedValidLocale(appid)
   local frontApp = hs.application.frontmostApplication()
   if frontApp and frontApp:bundleID() == appid then
-    if appBuf.validLocale then
-      return appBuf.validLocale
-    else
-      local locale = applicationValidLocale(appid, appBuf.menuBarItems)
-      appBuf.validLocale = locale
-      return locale
-    end
+    appBuf.validLocale = appBuf.validLocale
+        or applicationValidLocale(appid, appBuf.menuBarItems)
+    return appBuf.validLocale
   else
     return applicationValidLocale(appid)
   end
