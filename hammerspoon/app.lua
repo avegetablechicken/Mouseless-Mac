@@ -3902,7 +3902,8 @@ appHotKeyCallbacks = {
             firstSidebarMenuItem = firstSidebarMenuItem or item
           end
         end
-        return firstSidebarMenuItem ~= nil, firstSidebarMenuItem
+        return firstSidebarMenuItem and firstSidebarMenuItem.AXEnabled,
+            firstSidebarMenuItem
       end,
       fn = Callback.Press
     },
