@@ -1785,40 +1785,50 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     until #cbs > 0 or totalDelay > 1 or not pane:isValid()
     if #cbs > 0 then
       local deviceIDs
-      for i=1, math.min(#cbs, 10) do
-        local enabled = cbs[i].AXValue
+      local index = 0
+      for _, cb in ipairs(cbs) do
+        local enabled = cb.AXValue
         local name
         if OS_VERSION < OS.Ventura then
-          name = cbs[i].AXTitle
+          name = cb.AXTitle
         elseif panel == CC.Bluetooth and OS_VERSION >= OS.Tahoe then
           if enabled == 1 then
-            local ident = cbs[i].AXIdentifier
+            local ident = cb.AXIdentifier
             local _, identIdx = ident:find("device-", 1, true)
             ident = ident:sub(identIdx + 1, -1)
             deviceIDs = deviceIDs or getBluetoothConnectedDevices()
             name = deviceIDs[ident] or ident
           else
-            name = cbs[i].AXAttributedDescription:getString()
+            name = cb.AXAttributedDescription:getString()
           end
-        elseif panel == CC.ScreenMirror and cbs[i].AXAttributedDescription ~= nil then
-          name = cbs[i].AXAttributedDescription:getString()
+        elseif panel == CC.ScreenMirror and cb.AXAttributedDescription ~= nil then
+          name = cb.AXAttributedDescription:getString()
         else
-          name = cbs[i].AXIdentifier
+          name = cb.AXIdentifier
           local _, nameIdx = name:find("device-", 1, true)
           name = name:sub(nameIdx + 1, -1)
+          if panel == CC.Sound then
+            local desc = cb.AXAttributedDescription
+            if desc and desc:find(name) == nil then
+              name = nil
+            end
+          end
         end
-        local msg = "Connect to " .. name
-        if enabled == nil or enabled == 1 then
-          local newName = name:match("(.-), %d+%%$")
-          if newName ~= nil then name = newName end
-          msg = "Disconnect to " .. name
-        end
-        local hotkey = newControlCenter("", tostring(i%10), msg,
-            function()
-              cbs[i]:performAction(AX.Press)
-            end)
-        if not checkAndRegisterControlCenterHotKeys(hotkey) then
-          return
+        if name then
+          index = index + 1
+          local msg = "Connect to " .. name
+          if enabled == nil or enabled == 1 then
+            local newName = name:match("(.-), %d+%%$")
+            if newName ~= nil then name = newName end
+            msg = "Disconnect to " .. name
+          end
+          local hotkey = newControlCenter("", tostring(index%10), msg,
+              function()
+                cb:performAction(AX.Press)
+              end)
+          if not checkAndRegisterControlCenterHotKeys(hotkey) then
+            return
+          end
         end
       end
     end
