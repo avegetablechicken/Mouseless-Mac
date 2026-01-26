@@ -10612,12 +10612,12 @@ local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
         end
       end
     elseif settingsMenu and notification == uinotifications.menuClosed
-        and (elem.AXParent == nil or elem.AXParent.AXRole == AX.Application) then
-      if menuClosedObservedBefore == true then
-        observer:removeWatcher(toappui(app), uinotifications.menuClosed)
-      end
+        and elem and (elem.AXParent == nil or elem.AXParent.AXRole == AX.Application) then
       settingsMenu, menuClosedObservedBefore = nil, nil
       registerNavigationForSettingsToolbar(app)
+      if menuClosedObservedBefore == true and app:isRunning() then
+        observer:removeWatcher(toappui(app), uinotifications.menuClosed)
+      end
     end
     if oldCallback then
       oldCallback(obs, elem, notification)
