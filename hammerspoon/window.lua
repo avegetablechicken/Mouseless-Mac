@@ -1703,9 +1703,10 @@ local function manageStageManagerWindowHotkeys()
           tinsert(stageManagerWindowHotkeys, hotkey)
         end
       end
-    end
-    for _, hotkey in ipairs(stageManagerWindowHotkeys) do
-      hotkey:enable()
+    else
+      for _, hotkey in ipairs(stageManagerWindowHotkeys) do
+        hotkey:enable()
+      end
     end
   else
     for _, hotkey in ipairs(stageManagerWindowHotkeys or {}) do
