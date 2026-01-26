@@ -469,7 +469,7 @@ local function A_WinBufWrapper(fn)
   end
 end
 
-local function getMenuBarItemsBuffer(app)
+local function getBufferedMenuBarItems(app)
   if appBuf.menuBarItems == nil then
     appBuf.menuBarItems = getMenuBarItems(app)
   end
@@ -502,7 +502,7 @@ end
 --   Hide / Quit / Back / Forward / Zoom
 -- where consistent system wording is preferred.
 
-local function getValidLocaleBuffer(appid)
+local function getBufferedValidLocale(appid)
   local frontApp = hs.application.frontmostApplication()
   if frontApp and frontApp:bundleID() == appid then
     if appBuf.validLocale then
@@ -526,7 +526,7 @@ local function TC(message, params, params2)
       local appid = getAppId(app)
       params = params and tcopy(params) or {}
       if params.locale == nil then
-        params.locale = getValidLocaleBuffer(appid)
+        params.locale = getBufferedValidLocale(appid)
       end
       if params.locale ~= nil then
         local result = localizedString(message .. ' App Store',
@@ -544,7 +544,7 @@ local function TC(message, params, params2)
       local appid = getAppId(app)
       params = params and tcopy(params) or {}
       if params.locale == nil then
-        params.locale = getValidLocaleBuffer(appid)
+        params.locale = getBufferedValidLocale(appid)
       end
       if params.locale ~= nil then
         local targetAppId = message == "Zoom" and "com.apple.AppStore"
@@ -561,7 +561,7 @@ local function TC(message, params, params2)
       local appid = getAppId(app)
       params = params and tcopy(params) or {}
       if params.locale == nil then
-        params.locale = getValidLocaleBuffer(appid)
+        params.locale = getBufferedValidLocale(appid)
       end
       if params.locale ~= nil then
         if commonLocalizedStringsCache[params.locale]
@@ -615,7 +615,7 @@ local function TG(message, params, params2)
     local appid = getAppId(app)
     params = params and tcopy(params) or {}
     if params.locale == nil then
-      params.locale = getValidLocaleBuffer(appid)
+      params.locale = getBufferedValidLocale(appid)
     end
     if params.locale ~= nil then
       params.framework = "AccessibilitySharedSupport.framework"
@@ -5870,7 +5870,7 @@ appHotKeyCallbacks = {
       fn = function(app)
         -- in early version of macOS there was a duplicated menu bar item '文件'
         -- which does not have menu items. So we have to manually filter it out
-        local menuBarItems = getMenuBarItemsBuffer(app) or {}
+        local menuBarItems = getBufferedMenuBarItems(app) or {}
         local menuBarItem = tfind(menuBarItems, function(item)
           return #item > 0 and item.AXTitle == '文件'
         end)
@@ -10568,7 +10568,7 @@ local function registerObserverForSettingsMenuItem(app)
     end)
     return settingsMenu
   end
-  local menuBarItems = getMenuBarItemsBuffer(app)
+  local menuBarItems = getBufferedMenuBarItems(app)
   if menuBarItems == nil or #menuBarItems == 0 then return end
   local settingsMenu = getMenuItem(menuBarItems[1])
   if settingsMenu == nil then return end
@@ -11147,7 +11147,7 @@ local function altMenuBarItem(app, force, reinvokeKey)
   end
   local menuBarItemActualIndices = {}
   if menuBarItemTitles == nil then
-    menuBarItems = getMenuBarItemsBuffer(app) or {}
+    menuBarItems = getBufferedMenuBarItems(app) or {}
     if #menuBarItems == 0 then return end
     local itemDict = {}
     menuBarItemTitles = {}
@@ -11410,7 +11410,7 @@ end
 local function watchMenuBarItems(app)
   local appid = app:bundleID() or app:name()
   menuBarItemTitlesString.app[appid], menuBarItemTitlesString.win[appid]
-      = getMenuBarItemTitlesString(app, getMenuBarItemsBuffer(app) or false)
+      = getMenuBarItemTitlesString(app, getBufferedMenuBarItems(app) or false)
   local watcher = ExecContinuouslyQuick(function()
     local app = find(appid)
     if app == nil then return end
@@ -11552,7 +11552,7 @@ if not LAZY_REGISTER_MENUBAR_OBSERVER then
 end
 
 onLaunchedAndActivated = function(app, reinvokeKey)
-  local menuBarItems = getMenuBarItemsBuffer(app)
+  local menuBarItems = getBufferedMenuBarItems(app)
   local localeUpdated = updateAppLocale(app)
   local menuBarChanged = reinvokeKey ~= nil
   altMenuBarItem(app, nil, reinvokeKey)
