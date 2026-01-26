@@ -1441,8 +1441,13 @@ local function popupControlCenterSubPanel(panel, allowReentry)
   end
 
   local locPanel = controlCenterLocalized(panel)
+  local menuBarItems
+  if OS_VERSION >= OS.Tahoe then
+    menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
+  else
+    menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+  end
   local index
-  local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
   for i, elem in ipairs(menuBarItems) do
     if elem.AXDescription and elem.AXDescription:find(locPanel) then
       index = i break
