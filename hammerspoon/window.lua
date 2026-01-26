@@ -1717,13 +1717,16 @@ local function manageStageManagerWindowHotkeys()
     stageManagerWindowHotkeys = nil
   end
 end
-manageStageManagerWindowHotkeys()
-local windowManagerPlistPath = hs.fs.pathToAbsolute(os.getenv("HOME")
-    ..strfmt("/Library/Preferences/%s.plist", windowManagerId))
-WindowManagerPlistWatcher = hs.pathwatcher.new(
-  windowManagerPlistPath,
-  manageStageManagerWindowHotkeys
-):start()
+
+if OS_VERSION >= OS.Ventura then
+  manageStageManagerWindowHotkeys()
+  local windowManagerPlistPath = hs.fs.pathToAbsolute(os.getenv("HOME")
+      ..strfmt("/Library/Preferences/%s.plist", windowManagerId))
+  WindowManagerPlistWatcher = hs.pathwatcher.new(
+    windowManagerPlistPath,
+    manageStageManagerWindowHotkeys
+  ):start()
+end
 
 -- Register URL handlers for Stage Manager window switching.
 local stageManagerWindowSwitchFuncs = {}
