@@ -2669,19 +2669,18 @@ if hs.window.focusedWindow() ~= nil
   controlCenterObserverCallback()
 end
 
-ExecContinuously(function()
-  if not controlCenter:isRunning() then
-    hs.timer.doAfter(2, function()
-      ControlCenterObserver:stop()
-      controlCenter = find("com.apple.controlcenter")
-      ControlCenterObserver = uiobserver.new(controlCenter:pid())
-      ControlCenterObserver:addWatcher(
-        toappui(controlCenter),
-        uinotifications.windowCreated)
-      ControlCenterObserver:callback(controlCenterObserverCallback)
-      ControlCenterObserver:start()
-    end)
-  end
+ExecOnSilentLaunch("com.apple.controlcenter", function(app)
+  ControlCenterObserver:stop()
+  ControlCenterObserver = nil
+  hs.timer.doAfter(2, function()
+    controlCenter = app
+    ControlCenterObserver = uiobserver.new(controlCenter:pid())
+    ControlCenterObserver:addWatcher(
+      toappui(controlCenter),
+      uinotifications.windowCreated)
+    ControlCenterObserver:callback(controlCenterObserverCallback)
+    ControlCenterObserver:start()
+  end)
 end)
 
 
