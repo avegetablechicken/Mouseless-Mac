@@ -10122,7 +10122,7 @@ end
 -- Fetch toolbar buttons from a window UI hierarchy.
 local function getToolbarButtons(winUI)
   local toolbar = getc(winUI, AX.Toolbar, 1)
-  return getc(toolbar, AX.Button) or {}
+  return getc(toolbar, AX.Button)
 end
 
 -- Fetch outline rows for apps that use sidebar to navigate
@@ -10131,7 +10131,7 @@ local function getSidebarRows(winUI)
       or getc(winUI, AX.Group, 1, AX.SplitGroup, 1)
   local scrollarea = getc(splitgroup, AX.Group, 1, AX.ScrollArea, 1)
       or getc(splitgroup, AX.ScrollArea, 1)
-  return getc(scrollarea, AX.Outline, 1, AX.Row) or {}
+  return getc(scrollarea, AX.Outline, 1, AX.Row)
 end
 
 -- Fetch tab-group buttons for apps that implement tabs as radio buttons.
@@ -10154,7 +10154,7 @@ local function waitForSettings(fn, maxWaitTime)
   return function(winUI)
     fn = fn or function()
       local buttons, toClick = getSidebarRows(winUI)
-      if #buttons == 0 then
+      if buttons == nil or #buttons == 0 then
         buttons, toClick = getToolbarButtons(winUI)
       end
       return buttons, toClick
@@ -10190,22 +10190,24 @@ local specialToolbarButtons = {
     return getc(winUI, AX.Group, 2, AX.RadioButton)
   end,
   ["app.remixdesign.LaunchOS"] = function(winUI)
-    return getc(winUI, AX.Group, 1, AX.Image) or {}, true
+    return getc(winUI, AX.Group, 1, AX.Image), true
   end,
   ["cn.better365.BetterAndBetter"] = function(winUI)
-    return getc(winUI, AX.Group, 1, AX.Button) or {}
+    return getc(winUI, AX.Group, 1, AX.Button)
   end,
   ["cn.better365.iShotPro"] = function(winUI)
-    local buttons = getc(winUI, AX.Button) or {}
-    table.sort(buttons, function(a, b)
-      return a.AXPosition.y < b.AXPosition.y
-    end)
-    return buttons
+    local buttons = getc(winUI, AX.Button)
+    if buttons then
+      table.sort(buttons, function(a, b)
+        return a.AXPosition.y < b.AXPosition.y
+      end)
+      return buttons
+    end
   end,
   ["com.torusknot.SourceTreeNotMAS"] = function(winUI)
     local fn = getToolbarButtons
     local buttons = fn(winUI)
-    if #buttons == 0 or tfind(buttons, function(bt)
+    if buttons == nil or #buttons == 0 or tfind(buttons, function(bt)
         return bt.AXTitle == winUI.AXTitle end) == nil then
       local app = getAppFromDescendantElement(winUI)
       local totalDelay = 0
@@ -10217,7 +10219,7 @@ local specialToolbarButtons = {
         if win == nil then return {} end
         winUI = towinui(win)
         buttons = fn(winUI)
-      until (#buttons > 0 and tfind(buttons, function(bt)
+      until (buttons and #buttons > 0 and tfind(buttons, function(bt)
             return bt.AXTitle == winUI.AXTitle end) ~= nil)
           or totalDelay > maxWaitTime
     end
@@ -10266,7 +10268,7 @@ local specialToolbarButtons = {
     if Version.LessThan(winUI, "4") then
       return getToolbarButtons(winUI)
     elseif Version.GreaterEqual(winUI, "4.0.6") then
-      return {}
+      return
     end
     local buttons = {}
     local found = false
@@ -10285,10 +10287,11 @@ local specialToolbarButtons = {
     local groups = getc(winUI, AX.Group, 1, AX.Group, 1,
         AX.Group, 1, AX.Group, 1, AX.WebArea, 1,
         AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group)
-    local buttons = tmap(groups or {}, function(g)
-      return getc(g, AX.Group, 1, AX.StaticText, 1)
-    end)
-    return buttons, true
+    if groups then
+      return tmap(groups, function(g)
+        return getc(g, AX.Group, 1, AX.StaticText, 1)
+      end), true
+    end
   end),
   ["com.tencent.meeting"] = function(winUI)
     return getc(winUI, AX.CheckBox), true
@@ -10299,28 +10302,28 @@ local specialToolbarButtons = {
         function(g) return getc(g, AX.StaticText, 1) end), true
   end),
   ["com.charliemonroe.Permute-3"] = function(winUI)
-    local buttons = {}
     local rows = getc(winUI, AX.ScrollArea, 1, AX.Table, 1, AX.Row)
-    for _, r in ipairs(rows or {}) do
-      tinsert(buttons, getc(r, AX.Cell, 1, AX.StaticText, 1))
+    if rows then
+      return tmap(rows, function(r)
+        return getc(r, AX.Cell, 1, AX.StaticText, 1)
+      end), true
     end
-    return buttons, true
   end,
   ["com.charliemonroe.Downie-4"] = function(winUI)
-    local buttons = {}
     local rows = getc(winUI, AX.ScrollArea, 1, AX.Table, 1, AX.Row)
-    for _, r in ipairs(rows or {}) do
-      tinsert(buttons, getc(r, AX.Cell, 1, AX.StaticText, 1))
+    if rows then
+      return tmap(rows, function(r)
+        return getc(r, AX.Cell, 1, AX.StaticText, 1)
+      end), true
     end
-    return buttons, true
   end,
   ["com.colliderli.iina"] = function(winUI)
-    local buttons = {}
     local rows = getc(winUI, AX.ScrollArea, 1, AX.Table, 1, AX.Row)
-    for _, r in ipairs(rows or {}) do
-      tinsert(buttons, getc(r, AX.Cell, 1, AX.StaticText, 1))
+    if rows then
+      return tmap(rows, function(r)
+        return getc(r, AX.Cell, 1, AX.StaticText, 1)
+      end), true
     end
-    return buttons, true
   end
 }
 
@@ -10376,11 +10379,11 @@ registerNavigationForSettingsToolbar = function(app)
     buttons, toClick = specialToolbarButtons[appid](winUI)
   else
     buttons, toClick = getSidebarRows(winUI)
-    if #buttons == 0 then
+    if buttons == nil or #buttons == 0 then
       buttons, toClick = getToolbarButtons(winUI)
     end
   end
-  if #buttons == 0 then return end
+  if buttons == nil or #buttons == 0 then return end
   local elem = buttons[1]
   repeat
     elem = elem.AXParent
