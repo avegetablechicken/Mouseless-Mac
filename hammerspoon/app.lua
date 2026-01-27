@@ -9314,7 +9314,7 @@ local function normalizeWindowFilter(filter)
 end
 
 local function isWebsiteAllowed(win, allowURLs)
-  if win:subrole() ~= AX.StandardWindow then
+  if not win:isStandard() then
     return false
   end
   local app = win:application()
