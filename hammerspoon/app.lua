@@ -457,8 +457,13 @@ local function A_WinBufWrapper(fn)
       winBuf[wid] = WinBuf.new()
     end
     A_WinBuf = winBuf[wid]
+    local frontApp = hs.application.frontmostApplication()
+    if frontApp:bundleID() == win:application():bundleID() then
+      A_WinBuf.locale = A_AppLocale
+    end
+    A_WinLocale = A_WinBuf.locale
     local results = table.pack(fn(win))
-    A_WinBuf = {}
+    A_WinBuf, A_WinLocale = {}, nil
     if winCloseObservers[wid] == nil and next(winBuf[wid]) then
       winCloseObservers[wid] = Evt.OnDestroy(towinui(win), function()
         winBuf[wid] = nil
@@ -667,22 +672,16 @@ local function getBufferedLocale(app)
   if app.focusedWindow then
     local frontApp = hs.application.frontmostApplication()
     if frontApp and frontApp:bundleID() == app:bundleID() then
-      return A_Locale
+      return A_AppLocale
     end
   elseif app.application then
     local win = app
-    app = win:application()
-    local frontApp = hs.application.frontmostApplication()
-    if frontApp and frontApp:bundleID() == app:bundleID() then
-      return A_Locale
-    end
     local frontWin = hs.window.frontmostWindow()
     if frontWin and frontWin:id() == win:id() then
-      if A_WinBuf.locale == nil then
-        A_WinBuf.locale = applicationLocale(getAppId(app))
-      end
-      return A_WinBuf.locale
+      A_WinLocale = A_WinLocale or A_WinBuf:get("locale",
+          bind(applicationLocale, getAppId(app)))
     end
+    return A_WinLocale
   end
 
   return applicationLocale(getAppId(app))
@@ -1681,7 +1680,7 @@ WPS.WF.WPS_WPP = {
     local appid = win:application():bundleID()
     local menuBarItems = getc(toappui(win:application()),
         AX.MenuBar, 1, AX.MenuBarItem)
-    local params = { locale = A_Locale }
+    local params = { locale = A_AppLocale }
     return tfind(menuBarItems, function(item)
       return item.AXTitle == localizedMenuBarItem("Tables", appid, params)
           or item.AXTitle == localizedMenuBarItem("Slide Show", appid, params)
@@ -1695,7 +1694,7 @@ WPS.WF.WPS_WPP_ET = {
     local appid = win:application():bundleID()
     local menuBarItems = getc(toappui(win:application()),
         AX.MenuBar, 1, AX.MenuBarItem)
-    local params = { locale = A_Locale }
+    local params = { locale = A_AppLocale }
     return tfind(menuBarItems, function(item)
       return item.AXTitle == localizedMenuBarItem("Tables", appid, params)
           or item.AXTitle == localizedMenuBarItem("Slide Show", appid, params)
@@ -1708,7 +1707,7 @@ WPS.WF.PDF = {
   allowTitles = "",
   fn = function(win)
     local appid = win:application():bundleID()
-    local params = { locale = A_Locale }
+    local params = { locale = A_AppLocale }
     local locTitle = localizedMenuBarItem("Comment", appid, params)
     local menuBarItem = getc(toappui(win:application()),
         AX.MenuBar, 1, AX.MenuBarItem, locTitle)
@@ -1808,7 +1807,7 @@ WeChat.WF = {
     fn = function(win)
       local app = win:application()
       local exBundleID = "com.tencent.flue.WeChatAppEx"
-      local params = { locale = A_Locale }
+      local params = { locale = A_AppLocale }
       local menuItemPath = {
         localizedMenuBarItem("Window", exBundleID, params),
         localizedString("Select Previous Tab", exBundleID, params)
@@ -1839,7 +1838,7 @@ WeChat.WF = {
   AppExSingleTab = {
     fn = function(win)
       local exBundleID = "com.tencent.flue.WeChatAppEx"
-      local params = { locale = A_Locale }
+      local params = { locale = A_AppLocale }
       local menuItemPath = {
         localizedMenuBarItem('File', exBundleID, params),
         localizedString('Close All Tabs', exBundleID, params)
@@ -5592,7 +5591,7 @@ appHotKeyCallbacks = {
         else
           local exBundleID = "com.tencent.flue.WeChatAppEx"
           return localizedString("Open in default browser", exBundleID,
-                                 { locale = A_Locale })
+                                 { locale = A_AppLocale })
         end
       end,
       windowFilter = WeChat.WF.AppExWeb,
@@ -5654,7 +5653,7 @@ appHotKeyCallbacks = {
     ["remapPreviousTab"] = {
       message = function(win)
         local exBundleID = "com.tencent.flue.WeChatAppEx"
-        local params = { locale = A_Locale }
+        local params = { locale = A_AppLocale }
         return localizedString("Select Previous Tab", exBundleID, params)
       end,
       bindCondition = Version.GreaterEqual("4"),
@@ -9792,11 +9791,11 @@ local appLocales = {} -- if app locale changes, it may change its menu bar items
 local function updateAppLocale(appid)
   if type(appid) ~= 'string' then appid = appid:bundleID() or appid:name() end
   local oldAppLocale = appLocales[appid] or SYSTEM_LOCALE
-  appLocales[appid] = A_Locale
-  if oldAppLocale ~= A_Locale then
-    if matchLocale(oldAppLocale, { A_Locale }) ~= A_Locale then
+  appLocales[appid] = A_AppLocale
+  if oldAppLocale ~= A_AppLocale then
+    if matchLocale(oldAppLocale, { A_AppLocale }) ~= A_AppLocale then
       resetLocalizationMap(appid)
-      localizeCommonMenuItemTitles(A_Locale, appid)
+      localizeCommonMenuItemTitles(A_AppLocale, appid)
       unregisterRunningAppHotKeys(appid, true)
       return true
     end
@@ -9907,7 +9906,7 @@ local function registerOpenRecent(app, force)
   local localizedFile
   localizedFile = 'File'
   if app:findMenuItem({ localizedFile }) == nil then
-    localizedFile = localizedMenuBarItem("File", appid, { locale = A_Locale })
+    localizedFile = localizedMenuBarItem("File", appid, { locale = A_AppLocale })
     if localizedFile == nil then return end
     if app:findMenuItem({ localizedFile }) == nil then return end
   end
@@ -9927,7 +9926,7 @@ local function registerOpenRecent(app, force)
       menuItemPath = { localizedFile, localizedOpenRecent }
       menuItem = app:findMenuItem(menuItemPath)
       if menuItem == nil then
-        if A_Locale ~= SYSTEM_LOCALE and A_Locale:sub(1, 2) ~= 'en' then
+        if A_AppLocale ~= SYSTEM_LOCALE and A_AppLocale:sub(1, 2) ~= 'en' then
           local localized = TC('Open Recent', app)
           menuItemPath = { localizedFile, localized }
         end
@@ -9996,7 +9995,7 @@ local function registerZoomHotkeys(app, force)
     local menuItem = app:findMenuItem(menuItemPath)
     if menuItem == nil then
       local localizedWindow = localizedMenuBarItem('Window', appid,
-                                                   { locale = A_Locale })
+                                                   { locale = A_AppLocale })
       local localizedTitle = TC(title, app)
       if localizedTitle == title and SYSTEM_LOCALE:sub(1, 2) ~= 'en' then
         localizedTitle = TC(title, app, { locale = SYSTEM_LOCALE })
@@ -10060,7 +10059,7 @@ local function registerResizeHotkeys(app)
   local menuItem = app:findMenuItem({ menu, submenu })
   if menuItem == nil then
     local localizedMenu = localizedMenuBarItem('Window', app:bundleID(),
-                                               { locale = A_Locale })
+                                               { locale = A_AppLocale })
     local localizedSubmenu = TC(submenu, app)
     if localizedSubmenu == submenu and SYSTEM_LOCALE:sub(1, 2) ~= 'en' then
       localizedSubmenu = TC(submenu, app, { locale = SYSTEM_LOCALE })
@@ -12258,7 +12257,7 @@ function App_applicationCallback(appname, eventType, app)
     end
     local action = function()
       launchTimer = nil
-      A_Locale = applicationLocale(appid)
+      A_AppLocale = applicationLocale(appid)
       for _, proc in ipairs(Evt.ProcOnLaunched[appid] or {}) do
         proc(app)
       end
@@ -12282,7 +12281,7 @@ function App_applicationCallback(appname, eventType, app)
     end
     FLAGS["NEED_DOUBLE_CHECK"] = nil
   elseif eventType == hs.application.watcher.activated then
-    A_Locale = nil
+    A_AppLocale = nil
     for bid, processes in pairs(Evt.ProcOnDeactivated) do
       if bid ~= appid then
         local b = find(bid)
@@ -12300,7 +12299,7 @@ function App_applicationCallback(appname, eventType, app)
     end
 
     appBuf = {}
-    A_Locale = applicationLocale(appid)
+    A_AppLocale = applicationLocale(appid)
     if FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] ~= nil then
       FLAGS["SUSPEND"] = not FLAGS["SUSPEND_IN_REMOTE_DESKTOP"]
       FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] = nil
