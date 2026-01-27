@@ -7,6 +7,7 @@
   "hideWithoutWindow": [
     "com.apple.Music",
     "org.hammerspoon.Hammerspoon",
+    "org.pqrs.Karabiner-MultitouchExtension",
     "com.renfei.SnippetsLab",
     "com.surteesstudios.Bartender",
     "com.gaosun.eul",
