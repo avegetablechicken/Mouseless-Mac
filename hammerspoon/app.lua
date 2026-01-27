@@ -676,13 +676,16 @@ local function getBufferedLocale(app)
     local win = app
     local frontWin = hs.window.frontmostWindow()
     if frontWin and frontWin:id() == win:id() then
-      A_WinLocale = A_WinLocale or A_WinBuf:get("locale",
-          bind(applicationLocale, getAppId(app)))
+      A_WinLocale = A_WinLocale or A_WinBuf:get("locale", function()
+        local locale = applicationLocale(getAppId(app))
+        return locale
+      end)
     end
     return A_WinLocale
   end
 
-  return applicationLocale(getAppId(app))
+  local locale = applicationLocale(getAppId(app))
+  return locale
 end
 
 -- Unified localization entry:
