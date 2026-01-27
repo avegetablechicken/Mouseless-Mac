@@ -10444,6 +10444,10 @@ registerNavigationForSettingsToolbar = function(app)
   else
     callback = Callback.Press
   end
+  local frontWin = hs.window.frontmostWindow()
+  if frontWin == nil or frontWin:id() ~= wid then
+    win:focus()
+  end
   local i = 1
   for _, button in ipairs(buttons) do
     local suffix
