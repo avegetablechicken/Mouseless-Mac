@@ -457,8 +457,7 @@ local function A_WinBufWrapper(fn)
       winBuf[wid] = WinBuf.new()
     end
     A_WinBuf = winBuf[wid]
-    local frontApp = hs.application.frontmostApplication()
-    if frontApp:bundleID() == win:application():bundleID() then
+    if win:application():isFrontmost() then
       A_WinBuf.locale = A_AppLocale
     end
     A_WinLocale = A_WinBuf.locale
@@ -670,8 +669,7 @@ end
 
 local function getBufferedLocale(app)
   if app.focusedWindow then
-    local frontApp = hs.application.frontmostApplication()
-    if frontApp and frontApp:bundleID() == app:bundleID() then
+    if app:isFrontmost() then
       return A_AppLocale
     end
   elseif app.application then
@@ -4210,7 +4208,7 @@ appHotKeyCallbacks = {
             local menuItem = getc(elem, AX.Menu, 1, AX.MenuItem, A_Message)
             if menuItem then
               Callback.Press(menuItem)
-              if hs.application.frontmostApplication():bundleID() == app:bundleID() then
+              if app:isFrontmost() then
                 hs.eventtap.keyStroke("", "Escape", nil, app)
               end
               obs:stop()
@@ -11082,7 +11080,7 @@ local function altMenuBarItem(app, force, reinvokeKey)
   if enabled then return end
 
   -- check whether called by window filter (possibly with delay)
-  if appid ~= hs.application.frontmostApplication():bundleID() then
+  if not app:isFrontmost() then
     return
   end
   local modsIndex = get(KeybindingConfigs.hotkeys,
@@ -11455,9 +11453,7 @@ local function appMenuBarChangeCallback(app)
   registerZoomHotkeys(app, true)
   registerResizeHotkeys(app)
   hs.timer.doAfter(1, function()
-    if hs.application.frontmostApplication():bundleID() ~= app:bundleID() then
-      return
-    end
+    if not app:isFrontmost() then return end
     local newMenuBarItemTitlesString = getMenuBarItemTitlesString(app)
     if newMenuBarItemTitlesString ~= menuBarItemStr then
       menuBarItemTitlesString.app[appid] = newMenuBarItemTitlesString
@@ -12250,9 +12246,7 @@ function App_applicationCallback(appname, eventType, app)
     if FLAGS["NEED_DOUBLE_CHECK"] then
       local oldFn = doublecheck
       doublecheck = function()
-        local frontApp = hs.application.frontmostApplication()
-        local frontAppId = frontApp:bundleID() or frontApp:name()
-        return frontAppId == appid and (not oldFn or oldFn())
+        return app:isFrontmost() and (not oldFn or oldFn())
       end
     end
     local action = function()
