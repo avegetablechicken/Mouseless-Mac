@@ -4814,7 +4814,7 @@ appHotKeyCallbacks = {
           observer:addWatcher(toappui(app), uinotifications.windowCreated)
           observer:callback(A_HotkeyWrapper(function(obs, winUI)
             -- false invoke when menubar manager try to show or hide menubar icon
-            -- in earley edition
+            -- in early edition
             if winUI.AXSubrole == AX.StandardWindow then return end
 
             local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
