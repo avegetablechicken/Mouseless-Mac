@@ -674,14 +674,20 @@ local function getBufferedLocale(app)
     end
   elseif app.application then
     local win = app
-    local frontWin = hs.window.frontmostWindow()
-    if frontWin and frontWin:id() == win:id() then
-      A_WinLocale = A_WinLocale or A_WinBuf:get("locale", function()
-        local locale = applicationLocale(getAppId(app))
-        return locale
-      end)
+    if A_WinBuf == nil or A_WinBuf.get == nil then
+      if win:application():isFrontmost() then
+        return A_AppLocale
+      end
+    else
+      local frontWin = hs.window.frontmostWindow()
+      if frontWin and frontWin:id() == win:id() then
+        A_WinLocale = A_WinLocale or A_WinBuf:get("locale", function()
+          local locale = applicationLocale(getAppId(app))
+          return locale
+        end)
+      end
+      return A_WinLocale
     end
-    return A_WinLocale
   end
 
   local locale = applicationLocale(getAppId(app))
