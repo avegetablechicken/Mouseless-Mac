@@ -1540,7 +1540,8 @@ Games.WF.Main = {
 
 --- ### Weather
 local Weather = {}
-Weather.getLocationList = function(win)
+Weather.getLocationList = function(app)
+  local win = app:focusedWindow()
   if win == nil then return end
   local list
   if OS_VERSION >= OS.Tahoe and hs.host.operatingSystemVersion().minor >= 2 then
@@ -1551,7 +1552,7 @@ Weather.getLocationList = function(win)
         AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
     if OS_VERSION >= OS.Tahoe then list = getc(list, AX.Group, 1) end
   end
-  if list and list.AXDescription == T("Location List", win) then
+  if list and list.AXDescription == T("Location List", app) then
     return tifilter(list.AXChildren or {}, function(elem)
       return #elem > 0 and elem[1].AXRole == AX.Button
     end)
@@ -3600,13 +3601,16 @@ appHotKeyCallbacks = {
     ["previousLocation"] = {
       message = "Previous Location",
       condition = function(app)
-        local list = Weather.getLocationList(app:focusedWindow()) or {}
-        for i = 1, #list do
-          local desc = list[i][1].AXDescription
-          if (OS_VERSION < OS.Tahoe and list[i].AXSelected)
-              or (desc:match('^'..app:focusedWindow():title()..', ')
-                  or desc:match('^'..app:focusedWindow():title()..'、')) then
-            return true, list[(i - 2) % #list + 1][1]
+        local list = Weather.getLocationList(app)
+        if list then
+          local winTitle = app:focusedWindow():title()
+          for i = 1, #list do
+            local desc = list[i][1].AXDescription
+            if (OS_VERSION < OS.Tahoe and list[i].AXSelected)
+                or (desc:match('^'..winTitle..', ')
+                    or desc:match('^'..winTitle..'、')) then
+              return true, list[(i - 2) % #list + 1][1]
+            end
           end
         end
         return false
@@ -3616,13 +3620,16 @@ appHotKeyCallbacks = {
     ["nextLocation"] = {
       message = "Next Location",
       condition = function(app)
-        local list = Weather.getLocationList(app:focusedWindow()) or {}
-        for i = 1, #list do
-          local desc = list[i][1].AXDescription
-          if (OS_VERSION < OS.Tahoe and list[i].AXSelected)
-              or (desc:match('^'..app:focusedWindow():title()..', ')
-                  or desc:match('^'..app:focusedWindow():title()..'、')) then
-            return true, list[i % #list + 1][1]
+        local list = Weather.getLocationList(app)
+        if list then
+          local winTitle = app:focusedWindow():title()
+          for i = 1, #list do
+            local desc = list[i][1].AXDescription
+            if (OS_VERSION < OS.Tahoe and list[i].AXSelected)
+                or (desc:match('^'..winTitle..', ')
+                    or desc:match('^'..winTitle..'、')) then
+              return true, list[i % #list + 1][1]
+            end
           end
         end
         return false
@@ -3632,13 +3639,14 @@ appHotKeyCallbacks = {
     ["deleteLocation"] = {
       message = T("Delete"),
       condition = function(app)
-        local list = Weather.getLocationList(app:focusedWindow())
+        local list = Weather.getLocationList(app)
         if list then
+          local winTitle = app:focusedWindow():title()
           local selected = tfind(list, function(item)
             local desc = item[1].AXDescription
             return (OS_VERSION < OS.Tahoe and item.AXSelected)
-                or (desc:match('^'..app:focusedWindow():title()..', ')
-                    or desc:match('^'..app:focusedWindow():title()..'、'))
+                or (desc:match('^'..winTitle..', ')
+                    or desc:match('^'..winTitle..'、'))
           end)
           return selected ~= nil, selected
         end
