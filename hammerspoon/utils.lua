@@ -2123,9 +2123,12 @@ end
 
 local function localizeQt(str, appid, appLocale)
   local appPath = hs.application.pathForBundleID(appid)
-  local resourceDir = appPath .. "/../../share/qt/translations"
+  local resourceDir = appPath .. "/../../translations"
   if not exists(resourceDir) then
     resourceDir = appPath .. "/../Qt/translations"
+  end
+  if not exists(resourceDir) then
+    resourceDir = appPath .. "/../../share/qt/translations"
   end
   if not exists(resourceDir) then return end
   local appname = appPath:match("^.*/([^/]+)%.app$")
@@ -3358,9 +3361,12 @@ end
 
 local function delocalizeQt(str, appid, appLocale)
   local appPath = hs.application.pathForBundleID(appid)
-  local resourceDir = appPath .. "/../../share/qt/translations"
+  local resourceDir = appPath .. "/../../translations"
   if not exists(resourceDir) then
     resourceDir = appPath .. "/../Qt/translations"
+  end
+  if not exists(resourceDir) then
+    resourceDir = appPath .. "/../../share/qt/translations"
   end
   if not exists(resourceDir) then return end
   local appname = appPath:match("^.*/([^/]+)%.app$")
