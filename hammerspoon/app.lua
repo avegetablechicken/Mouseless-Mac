@@ -5600,9 +5600,8 @@ appHotKeyCallbacks = {
     },
     ["openInDefaultBrowser"] = {
       message = function(win)
-        local app = win:application()
-        if Version.LessThan(app, "4") then
-          return T("Open in Default Browser", app)
+        if Version.LessThan(win, "4") then
+          return T("Open in Default Browser", win)
         else
           local exBundleID = "com.tencent.flue.WeChatAppEx"
           return localizedString("Open in default browser", exBundleID,
@@ -8112,7 +8111,7 @@ appHotKeyCallbacks = {
     ["quitFromMB"] = {
       message = function(menu)
         local app = getAppFromDescendantElement(menu)
-        local quit = T("Quit", app)
+        local quit = T("Quit", menu)
         return quit .. ' ' .. app:name()
       end,
       menubarFilter = { allowIndices = 1 },
