@@ -10205,7 +10205,7 @@ local function waitForSettings(fn, maxWaitTime)
       return buttons, toClick
     end
     local buttons, toClick = fn(winUI)
-    if #buttons == 0 then
+    if buttons == nil or #buttons == 0 then
       local app = getAppFromDescendantElement(winUI)
       local totalDelay = 0
       maxWaitTime = maxWaitTime or 0.1
@@ -10216,7 +10216,7 @@ local function waitForSettings(fn, maxWaitTime)
         if win == nil then return {} end
         winUI = towinui(win)
         buttons, toClick = fn(winUI)
-      until #buttons > 0 or totalDelay > maxWaitTime
+      until (buttons and #buttons > 0) or totalDelay > maxWaitTime
     end
     return buttons, toClick
   end
