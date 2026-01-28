@@ -80,7 +80,9 @@ function inFullscreenSpace()
       hs.timer.usleep(0.1 * 1000000)
       spaces = hs.spaces.windowSpaces(focusedWindow)
     end
-    return hs.spaces.spaceType(spaces[1]) ~= "user"
+    if spaces[1] then
+      return hs.spaces.spaceType(spaces[1]) ~= "user"
+    end
   end
   return false
 end
