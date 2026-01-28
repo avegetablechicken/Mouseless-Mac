@@ -5939,7 +5939,7 @@ appHotKeyCallbacks = {
       fn = function(app)
         app:selectMenuItem({ app:name(), A_Message })
         local observer = registerNavigationForSettingsToolbar(app)
-        assert(observer)
+        if observer == nil then return end
         local win = app:focusedWindow()
         if win == nil then return end
         local wid = win:id()
