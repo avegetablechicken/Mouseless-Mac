@@ -10672,7 +10672,7 @@ local specialConfirmFuncs = {
       if not btnName then return end
       local buttons = getc(winUI, AX.Button)
       for _, button in ipairs(buttons) do
-        if button.AXTitle:match('^'..btnName) then
+        if button.AXTitle and button.AXTitle:match('^'..btnName) then
           return button
         end
       end
