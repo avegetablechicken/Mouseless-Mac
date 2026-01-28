@@ -450,7 +450,7 @@ local winBuf = {}
 local winCloseObservers = {}
 
 local A_WinBuf = {}
-local function A_WinBufWrapper(fn)
+local function A_WinHotkeyWrapper(fn)
   return function(win)
     local wid = win:id()
     if winBuf[wid] == nil then
@@ -8915,7 +8915,7 @@ local function wrapCondition(obj, config, mode)
     local condition = config.condition
     if condition == nil then return true end
     if o.application then
-      condition = A_WinBufWrapper(condition)
+      condition = A_WinHotkeyWrapper(condition)
     end
     local satisfied, result = condition(o)
     if not satisfied then result = CF.userConditionFail end
@@ -8960,7 +8960,7 @@ local function wrapCondition(obj, config, mode)
         end
       end
       if o.application then
-        func = A_WinBufWrapper(func)
+        func = A_WinHotkeyWrapper(func)
       end
       func(o)
       return true
@@ -9247,7 +9247,7 @@ registerInWinHotKeys = function(win, filter)
           and sameFilter(windowFilter, filter) then
         local msg, fallback
         if type(cfg.message) == 'string' then msg = cfg.message
-        else msg, fallback = A_WinBufWrapper(cfg.message)(win) end
+        else msg, fallback = A_WinHotkeyWrapper(cfg.message)(win) end
         if msg ~= nil and hotkeys[hkID] == nil then
           -- double check for website-specific hotkeys
           local config = tcopy(cfg)
@@ -9363,7 +9363,8 @@ local function isWindowAllowed(win, filter)
         or hs.window.filter.new(false)
             :setAppFilter(win:application():name(), normal)
             :isWindowAllowed(win))
-      and (extended.condition == nil or A_WinBufWrapper(extended.condition)(win))
+      and (extended.condition == nil
+           or A_WinHotkeyWrapper(extended.condition)(win))
 end
 
 FocusedWindowObservers = {}
@@ -9524,7 +9525,7 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
     if hasKey and isForWindow and isBackground and bindable()
         and sameFilter(windowFilter, filter) then
       local msg = type(cfg.message) == 'string'
-          and cfg.message or A_WinBufWrapper(cfg.message)(win)
+          and cfg.message or A_WinHotkeyWrapper(cfg.message)(win)
       if msg ~= nil then
         local config = tcopy(cfg)
         config.mods = keybinding.mods
