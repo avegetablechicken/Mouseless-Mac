@@ -10161,6 +10161,18 @@ local function getSettingsWindow(app)
       until totalDelay > 0.1
     end
   end
+  if win == nil then
+    local frontWin = hs.window.frontmostWindow()
+    if frontWin then
+      local frontAppId = frontWin:application():bundleID()
+      local frontAppIdParts = strsplit(frontAppId or "", "%.")
+      local appIdParts = strsplit(app:bundleID() or "", "%.")
+      if frontAppIdParts[1] == appIdParts[1]
+          and frontAppIdParts[2] == appIdParts[2] then
+        win = frontWin
+      end
+    end
+  end
   return win
 end
 
