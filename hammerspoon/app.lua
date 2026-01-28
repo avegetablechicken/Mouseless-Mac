@@ -8704,6 +8704,8 @@ local function registerMenuBarObserverForHotkeyValidity(app)
   end
 end
 
+local registerObserverForRightMenuBarSettingsMenuItem
+
 WindowCreatedSinceFilter = hs.window.filter.new(true)
 local windowCreatedSinceTime = {}
 
@@ -8724,6 +8726,12 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
       local apps = hs.application.runningApplications()
       local appMenuBarItems = tmap(apps, function(app)
         return registerMenuBarObserverForHotkeyValidity(app)
+      end)
+      hs.timer.doAfter(2, function()
+        for appid, observer in pairs(MenuBarMenuSelectedObservers) do
+          local app = find(appid)
+          registerObserverForRightMenuBarSettingsMenuItem(app, observer)
+        end
       end)
       FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = any(appMenuBarItems, function(items)
         return any(items, function(item) return item.AXSelected end)
@@ -10617,7 +10625,7 @@ local function registerObserverForSettingsMenuItem(app)
   Evt.StopOnDeactivated(app, observer)
 end
 
-local function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
+registerObserverForRightMenuBarSettingsMenuItem = function(app, observer)
   local oldCallback = observer:callback()
   local settingsMenu, menuClosedObservedBefore
   local callback = function(obs, elem, notification)
