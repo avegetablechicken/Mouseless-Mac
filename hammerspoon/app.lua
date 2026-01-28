@@ -5938,7 +5938,7 @@ appHotKeyCallbacks = {
       message = T("Preferences"),
       fn = function(app)
         app:selectMenuItem({ app:name(), A_Message })
-        local observer = registerNavigationForSettingsToolbar(app)
+        local observer = registerNavigationForSettingsToolbar(app, false)
         if observer == nil then return end
         local win = app:focusedWindow()
         if win == nil then return end
@@ -10409,13 +10409,21 @@ local function reactivateValidSettingsToolbarHotkeys(observer)
   return enabled
 end
 
-registerNavigationForSettingsToolbar = function(app)
-  if reactivateValidSettingsToolbarHotkeys() then
+registerNavigationForSettingsToolbar = function(app, retry)
+  if retry == nil then retry = 0 end
+  if (retry or 0) == 0 and reactivateValidSettingsToolbarHotkeys() then
     return
   end
 
   local win = getSettingsWindow(app)
-  if win == nil then return end
+  if win == nil then
+    if retry and retry < 20 then
+      hs.timer.doAfter(0.25, function()
+        registerNavigationForSettingsToolbar(app, retry + 1)
+      end)
+    end
+    return
+  end
   app = win:application()
   local winUI = towinui(win)
   local appid = app:bundleID() or app:name()
