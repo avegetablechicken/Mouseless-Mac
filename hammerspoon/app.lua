@@ -737,7 +737,8 @@ local function TB(appid, message)
       message = appid
       appid = thisAppId
     end
-    return displayName(appid) .. ' > ' .. T(message)(thisAppId)
+    local msg = localizedString(message, thisAppId) or message
+    return displayName(appid) .. ' > ' .. msg
   end
 end
 
@@ -749,7 +750,8 @@ local function TMB(appid, message)
       message = appid
       appid = thisAppId
     end
-    return displayName(appid) .. ' > ' .. T(message)(thisAppId)
+    local msg = localizedString(message, thisAppId) or message
+    return displayName(appid) .. ' > ' .. msg
   end
 end
 
@@ -1167,17 +1169,18 @@ Messages.deleteSelected = function(app)
     "Delete Conversation…"
   })
   app:selectMenuItem(menuItem)
+  local title = T("Delete", app)
   hs.timer.doAfter(0.2, function()
     if not app:isRunning() then return end
     if app:focusedWindow():role() == AX.Sheet then
       local sheet = towinui(app:focusedWindow())
-      local delete = getc(sheet, AX.Button, T("Delete", app))
+      local delete = getc(sheet, AX.Button, title)
       if delete == nil then
         local totalDelay = 0
         repeat
           hs.timer.usleep(0.05 * 1000000)
           totalDelay = totalDelay + 0.05
-          delete = getc(sheet, AX.Button, T("Delete", app))
+          delete = getc(sheet, AX.Button, title)
         until delete or totalDelay >= 0.5
         if delete == nil then return end
       end
@@ -4314,8 +4317,8 @@ appHotKeyCallbacks = {
       condition = MenuItem.isEnabled({ "View", "Show Build Order" }),
       fn = function(menuItemTitle, app)
         app:selectMenuItem(menuItemTitle)
+        local winTitle = T("Build Order", app)
         hs.timer.doAfter(0.5, function()
-          local winTitle = T("Build Order", app)
           local window = tifilter(app:visibleWindows(), function(win)
             return win:title() == winTitle
           end)
@@ -11958,7 +11961,7 @@ local function connectMountainDuckEntries(app, connection)
         Callback.Press(menuItem)
       end
     end
-    local disconnect = T('Disconnect', app)
+    local disconnect = localizedString('Disconnect', app:bundleID())
     for _, item in ipairs(disconnects) do
       local menuItem = getc(menuBar, AX.MenuItem, item,
           AX.Menu, 1, AX.MenuItem, disconnect)
