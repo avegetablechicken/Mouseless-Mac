@@ -428,7 +428,7 @@ local localeTmpDir = hs.fs.temporaryDirectory()
     .. hs.settings.bundleID .. '/locale/'
 
 local locMap, delocMap = {}, {}
-localizationMapLoaded = { menubar = {}, strings = {} }
+local localizationMapLoaded = { menubar = {}, strings = {} }
 local localizationFrameworks = {}
 if exists("config/localization.json") then
   local json = hs.json.read("config/localization.json")
@@ -534,7 +534,7 @@ function applicationLocale(appid)
       if status and jimage ~= "" then
         local app = find(appid)
         if app then
-          resourceDir = jimage:sub(1, #jimage - #'/bin/jimage')
+          local resourceDir = jimage:sub(1, #jimage - #'/bin/jimage')
           locale = javaLocale(app, resourceDir, localizationFrameworks[appid])
         end
       end
@@ -645,7 +645,7 @@ function getResourceDir(appid, frameworkName)
             end
           end
         else
-          _, status = hs.execute(strfmt([[
+          local _, status = hs.execute(strfmt([[
             find '%s' -type f -path '%s/Resources/%s/*.properties' | tr -d '\n'
           ]], appContentPath, appContentPath, frameworkName))
           if status and _ ~= "" then
@@ -2194,7 +2194,6 @@ local function localizeWPS(str, appLocale, localeFile)
       end
     end
   end
-  if result ~= nil then return result, locale end
 
   local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
   local dirs = appendExtraEnglishLocaleDirs(resourceDir, baseLocaleDirs)
@@ -2224,7 +2223,6 @@ local function localizeWPS(str, appLocale, localeFile)
   if exists(localeDir .. '/' .. matchedFile .. '.qm') then
     return getSTRInQtKso(ctxt, localeDir .. '/' .. matchedFile .. '.qm')
   end
-  if result ~= nil then return result, locale end
 end
 
 local function localizeZotero(str, appLocale)
@@ -2520,7 +2518,7 @@ local function localizedStringImpl(str, appid, params, force)
   if force == nil then force = false end
 
   if locMap[appid] ~= nil then
-    result = locMap[appid][str]
+    local result = locMap[appid][str]
     if result ~= nil then return result end
   end
 
@@ -4043,7 +4041,7 @@ end
 local availableLanguages = {}
 foreach(hs.host.locale.availableLocales(), function(locale)
   local pos = locale:find('_')
-  lang = pos and locale:sub(1, pos - 1) or locale
+  local lang = pos and locale:sub(1, pos - 1) or locale
   availableLanguages[lang] = true
 end)
 qtExecutableLocale = function(app, str, prefix)
@@ -4479,7 +4477,7 @@ function displayName(appid)
   elseif locale then
     local localeDir = resourceDir .. "/" .. locale .. ".lproj"
     if exists(localeDir .. '/InfoPlist.strings') then
-      jsonDict = parseStringsFile(localeDir .. '/InfoPlist.strings')
+      local jsonDict = parseStringsFile(localeDir .. '/InfoPlist.strings')
       appname = jsonDict['CFBundleDisplayName'] or jsonDict['CFBundleyName']
     end
   end
@@ -4615,7 +4613,7 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
   local plistPath = hs.fs.pathToAbsolute(strfmt(
       "~/Library/Preferences/%s.plist", appid))
   if plistPath ~= nil then
-    defaults = hs.plist.read(plistPath)
+    local defaults = hs.plist.read(plistPath)
     if defaults then
       local visiblePrefix = "NSStatusItem VisibleCC "
       local prefix_len = #visiblePrefix
@@ -4633,7 +4631,6 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
       for k, v in pairs(defaults) do
         if k:sub(1, prefix_len) == prefix then
           tinsert(preferredPositions, { k:sub(prefix_len + 1), tonumber(v) })
-          found = true
         end
       end
       if tfind(preferredPositions, function(r) return r[1] == "Clock" end) == nil then
@@ -4757,7 +4754,6 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
         for k, v in pairs(defaults) do
           if k:sub(1, prefix_len) == prefix then
             tinsert(preferredPositions, { k:sub(prefix_len + 1), tonumber(v) })
-            found = true
           end
         end
       else
@@ -5003,7 +4999,7 @@ MENUBAR_MANAGER_SHOW = {
       leftClickAndRestore(icon)
     else
       local oldPos = hs.mouse.absolutePosition()
-      point = hs.geometry.point {
+      local point = hs.geometry.point {
         icon.AXPosition.x + icon.AXSize.w / 2,
         icon.AXPosition.y + icon.AXSize.h / 2
       }
@@ -5132,7 +5128,7 @@ MENUBAR_MANAGER_SHOW = {
       leftClickAndRestore(icon)
     else
       local oldPos = hs.mouse.absolutePosition()
-      point = hs.geometry.point {
+      local point = hs.geometry.point {
         icon.AXPosition.x + icon.AXSize.w / 2,
         icon.AXPosition.y + icon.AXSize.h / 2
       }
