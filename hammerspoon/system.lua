@@ -2593,7 +2593,7 @@ local function controlCenterObserverCallback()
   controlCenterDestroyObserver:callback(function()
     if OS_VERSION >= OS.Tahoe then
       local win = controlCenter:focusedWindow()
-      if win and win:title() == displayName(controlCenter:bundleID()) then
+      if win and win:title() == controlCenter:name() then
         return
       end
     end
