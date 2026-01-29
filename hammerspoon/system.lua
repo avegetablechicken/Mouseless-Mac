@@ -2281,7 +2281,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       local _, nameIdx = cbIdents[i]:find("device-", 1, true)
       local device = cbIdents[i]:sub(nameIdx + 1, -1)
       local msg
-      if result[2][i] == 0 then
+      if enableds[i] == 0 then
         msg = "Connect to " .. device
       else
         msg = "Disconnect to " .. device
