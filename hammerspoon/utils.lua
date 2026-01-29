@@ -4451,9 +4451,7 @@ function applicationValidLocale(appid, menuBarItems)
   return locale
 end
 
-function displayName(app)
-  if app.name ~= nil then return app:name() end
-  local appid = app  -- assume app is installed
+function displayName(appid)
   local basename = hs.application.nameForBundleID(appid)
   local appLocale = applicationLocale(appid)
   local locale = get(appLocaleDir, appid, appLocale)

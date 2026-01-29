@@ -168,7 +168,8 @@ local function registerAppKeys()
       local appname
       if appid ~= nil then
         if FLAGS["LOADING"] then
-          appname = displayName(runningAppsOnLoading[appid] or appid)
+          local app = runningAppsOnLoading[appid]
+          appname = app and app:name() or displayName(appid)
         else
           appname = displayName(appid)
         end
@@ -522,8 +523,14 @@ local function TC(message, params, params2)
   local fn
   if message == "Hide" or message == "Quit" then
     fn = function(app)
-      local appname = displayName(app.application and app:application() or app)
       local appid = getAppId(app)
+      local appname
+      if appid == app then
+        appname = displayName(appid)
+      else
+        if app.application then app = app:application() end
+        appname = app:name()
+      end
       params = params and tcopy(params) or {}
       if params.locale == nil then
         params.locale = getBufferedValidLocale(appid)
