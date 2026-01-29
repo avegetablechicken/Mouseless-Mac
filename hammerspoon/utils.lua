@@ -4455,10 +4455,6 @@ function displayName(app)
   if app.name ~= nil then return app:name() end
   local appid = app  -- assume app is installed
   local basename = hs.application.nameForBundleID(appid)
-  if basename == nil then
-    basename = hs.execute(strfmt(
-      "mdls -name kMDItemDisplayName -raw '%s'", app:path()))
-  end
   local appLocale = applicationLocale(appid)
   local locale = get(appLocaleDir, appid, appLocale)
   local appname
