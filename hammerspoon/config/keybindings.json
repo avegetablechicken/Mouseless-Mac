@@ -590,10 +590,6 @@
         "exclude": [
           "org.blenderfoundation.blender"
         ]
-      },
-      "appMenu": {
-        "mods": "option",
-        "key": "`"
       }
     },
 
