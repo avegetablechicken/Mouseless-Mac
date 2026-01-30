@@ -1291,6 +1291,23 @@ local function PhoneShowViewMenu(winUI)
   return false
 end
 
+Phone.hasCall = function(win)
+  local collection, section
+  if OS_VERSION == OS.Tahoe
+      and hs.host.operatingSystemVersion().minor < 2 then
+    collection = getc(towinui(win), AX.Group, 1, AX.Group, 1,
+        AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+        AX.Group, 1)
+  else
+    collection = getc(towinui(win), AX.Group, 1, AX.Group, 1,
+        AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
+  end
+  if collection and collection.AXDescription == T("Recent Calls", win) then
+    section = getc(collection, AX.Group, 1, AX.Button, 1)
+  end
+  return section ~= nil, section
+end
+
 Phone.selectView = function(index)
   return function(win)
     local winUI  = towinui(win)
@@ -1363,9 +1380,16 @@ end
 FaceTime.hasCall = function(win)
   local section
   if OS_VERSION >= OS.Tahoe then
-    local collection = getc(towinui(win), AX.Group, 1, AX.Group, 1,
-        AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-        AX.Group, 1)
+    local collection
+    if OS_VERSION == OS.Tahoe
+        and hs.host.operatingSystemVersion().minor < 2 then
+      collection = getc(towinui(win), AX.Group, 1, AX.Group, 1,
+          AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+          AX.Group, 1)
+    else
+      collection = getc(towinui(win), AX.Group, 1, AX.Group, 1,
+          AX.Group, 2, AX.Group, 1, AX.Group, 1)
+    end
     if collection and collection.AXDescription == T("Recent Calls", win) then
       section = getc(collection, AX.Group, 1, AX.Button, 1)
     end
@@ -1437,10 +1461,17 @@ FaceTime.deleteAll = function(section, win)
   FaceTime.deleteAll(section, win)
 end
 
-local function FaceTimeShowViewMenu(winUI)
-  local button = getc(winUI, AX.Group, 1, AX.Group, 1,
-      AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-      AX.Button, 1)
+local function FaceTimeShowViewMenu(win)
+  local button
+  if OS_VERSION < OS.Tahoe or (OS_VERSION == OS.Tahoe
+      and hs.host.operatingSystemVersion().minor < 2) then
+    button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
+        AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+        AX.Button, 1)
+  else
+    button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
+        AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 1)
+  end
   if button then
     Callback.Press(button) return true
   end
@@ -1449,8 +1480,8 @@ end
 
 FaceTime.selectView = function(index)
   return function(win)
+    if not FaceTimeShowViewMenu(win) then return end
     local winUI  = towinui(win)
-    if not FaceTimeShowViewMenu(winUI) then return end
     local menu
     repeat
       hs.timer.usleep(0.01 * 1000000)
@@ -3206,7 +3237,7 @@ appHotKeyCallbacks = {
     ["removeAllRecents"] = {
       message = T("Remove All Recents"),
       windowFilter = Phone.WF.Main,
-      condition = FaceTime.hasCall,
+      condition = Phone.hasCall,
       fn = FaceTime.deleteAll
     },
     ["newCall"] = {
@@ -3256,10 +3287,14 @@ appHotKeyCallbacks = {
         if OS_VERSION < OS.Tahoe then
           button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
               AX.Group, 1, AX.Group, 1, AX.Button, 2)
-        else
+        elseif OS_VERSION == OS.Tahoe
+            and hs.host.operatingSystemVersion().minor < 2 then
           button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
               AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
               AX.Button, 2)
+        else
+          button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
+              AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 2)
         end
         return button ~= nil, button
       end,
