@@ -9272,7 +9272,6 @@ registerInWinHotKeys = function(win, filter)
   if app == nil then return end
   local appid = app:bundleID() or app:name()
   if appHotKeyCallbacks[appid] == nil then return end
-  local keybindings = KeybindingConfigs.hotkeys[appid] or {}
 
   if not inWinHotKeys[appid] then
     inWinHotKeys[appid] = {}
