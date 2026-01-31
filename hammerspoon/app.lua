@@ -398,7 +398,7 @@ end
 -- Data in A_AppBuf lives until another application activates
 local A_AppBuf = {}
 
--- winBuf:
+-- A_WinBuf:
 -- Window-scoped runtime cache.
 --
 -- Data is automatically cleaned up when the window is destroyed.
