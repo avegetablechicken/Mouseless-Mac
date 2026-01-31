@@ -392,11 +392,11 @@ Evt.OnDestroy = function(element, callback, stopWhen, callbackOnStop)
   return observer
 end
 
--- appBuf:
+-- A_AppBuf:
 -- Application-scoped runtime cache.
 --
--- Data in appBuf lives until another application activates
-local appBuf = {}
+-- Data in A_AppBuf lives until another application activates
+local A_AppBuf = {}
 
 -- winBuf:
 -- Window-scoped runtime cache.
@@ -475,10 +475,10 @@ local function A_WinHotkeyWrapper(fn)
 end
 
 local function getBufferedMenuBarItems(app)
-  if appBuf.menuBarItems == nil then
-    appBuf.menuBarItems = getMenuBarItems(app)
+  if A_AppBuf.menuBarItems == nil then
+    A_AppBuf.menuBarItems = getMenuBarItems(app)
   end
-  return appBuf.menuBarItems
+  return A_AppBuf.menuBarItems
 end
 
 ------------------------------------------------------------
@@ -510,9 +510,9 @@ end
 local function getBufferedValidLocale(appid)
   local frontApp = hs.application.frontmostApplication()
   if frontApp and frontApp:bundleID() == appid then
-    appBuf.validLocale = appBuf.validLocale
-        or applicationValidLocale(appid, appBuf.menuBarItems)
-    return appBuf.validLocale
+    A_AppBuf.validLocale = A_AppBuf.validLocale
+        or applicationValidLocale(appid, A_AppBuf.menuBarItems)
+    return A_AppBuf.validLocale
   else
     return applicationValidLocale(appid)
   end
@@ -1045,18 +1045,18 @@ Finder.sidebarItemTitle = function(idx)
         cnt = cnt + 1
         if cnt == idx then
           local itemTitle = titleElem.AXValue
-          if appBuf.finderSidebarItemObserver == nil then
+          if A_AppBuf.finderSidebarItemObserver == nil then
             local app = win:application()
             local appid = app:bundleID()
             local observer = uiobserver.new(app:pid())
             observer:addWatcher(outline, uinotifications.rowCountChanged)
             observer:callback(function()
-              if appBuf.lastRowCountChangedTimer then
-                appBuf.lastRowCountChangedTimer:setNextTrigger(0.1)
+              if A_AppBuf.lastRowCountChangedTimer then
+                A_AppBuf.lastRowCountChangedTimer:setNextTrigger(0.1)
                 return
               end
-              appBuf.lastRowCountChangedTimer = hs.timer.doAfter(0.1, function()
-                appBuf.lastRowCountChangedTimer = nil
+              A_AppBuf.lastRowCountChangedTimer = hs.timer.doAfter(0.1, function()
+                A_AppBuf.lastRowCountChangedTimer = nil
                 for _, hotkeys in pairs(inWinHotKeys[appid]) do
                   for hkID, hotkey in pairs(hotkeys) do
                     if hkID:match('^open(.-)SidebarItem$') then
@@ -1074,8 +1074,8 @@ Finder.sidebarItemTitle = function(idx)
               end)
             end)
             observer:start()
-            appBuf.finderSidebarItemObserver = observer
-            Evt.StopOnDeactivated(app, appBuf.finderSidebarItemObserver)
+            A_AppBuf.finderSidebarItemObserver = observer
+            Evt.StopOnDeactivated(app, A_AppBuf.finderSidebarItemObserver)
           end
           return header .. ' > ' .. itemTitle
         end
@@ -1514,18 +1514,18 @@ Music.viewTitle = function(index)
     end)
     local row = rows[index]
     if row then
-      if appBuf.musicSidebarItemObserver == nil then
+      if A_AppBuf.musicSidebarItemObserver == nil then
         local app = win:application()
         local appid = app:bundleID()
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(outline, uinotifications.rowCountChanged)
         observer:callback(function()
-          if appBuf.lastRowCountChangedTimer then
-            appBuf.lastRowCountChangedTimer:setNextTrigger(0.1)
+          if A_AppBuf.lastRowCountChangedTimer then
+            A_AppBuf.lastRowCountChangedTimer:setNextTrigger(0.1)
             return
           end
-          appBuf.lastRowCountChangedTimer = hs.timer.doAfter(0.1, function()
-            appBuf.lastRowCountChangedTimer = nil
+          A_AppBuf.lastRowCountChangedTimer = hs.timer.doAfter(0.1, function()
+            A_AppBuf.lastRowCountChangedTimer = nil
             for _, hotkeys in pairs(inWinHotKeys[appid]) do
               for hkID, hotkey in pairs(hotkeys) do
                 if hkID:match('^view(%d-)$') then
@@ -1543,8 +1543,8 @@ Music.viewTitle = function(index)
           end)
         end)
         observer:start()
-        appBuf.musicSidebarItemObserver = observer
-        Evt.StopOnDeactivated(app, appBuf.musicSidebarItemObserver)
+        A_AppBuf.musicSidebarItemObserver = observer
+        Evt.StopOnDeactivated(app, A_AppBuf.musicSidebarItemObserver)
       end
       return getc(row, AX.Cell, 1, AX.StaticText, 1).AXValue
     end
@@ -1613,8 +1613,8 @@ VSCode.toggleSideBarSection = function(win, sidebar, section)
   if Version.LessThan(win, "1.101") then
     pressfn = Callback.Press
   else
-    if appBuf.VSCodeTabClicked then return end
-    appBuf.VSCodeTabClicked = false
+    if A_AppBuf.VSCodeTabClicked then return end
+    A_AppBuf.VSCodeTabClicked = false
     pressfn = function(button)
       leftClickAndRestore(button, win)
     end
@@ -1654,9 +1654,9 @@ VSCode.toggleSideBarSection = function(win, sidebar, section)
           or t.AXDescription:upper():sub(1, #sidebar) == sidebar
     end)
     if Version.GreaterEqual(win, "1.101") then
-      appBuf.VSCodeTabClicked = true
+      A_AppBuf.VSCodeTabClicked = true
       hs.timer.doAfter(2, function()
-        appBuf.VSCodeTabClicked = nil
+        A_AppBuf.VSCodeTabClicked = nil
       end)
     end
     pressfn(tab)
@@ -10966,12 +10966,12 @@ local function registerForOpenSavePanel(app, retry)
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(outlineRows[1].AXParent, uinotifications.rowCountChanged)
         observer:callback(function()
-          if appBuf.lastRowCountChangedTimer then
-            appBuf.lastRowCountChangedTimer:setNextTrigger(0.3)
+          if A_AppBuf.lastRowCountChangedTimer then
+            A_AppBuf.lastRowCountChangedTimer:setNextTrigger(0.3)
             return
           end
-          appBuf.lastRowCountChangedTimer = hs.timer.doAfter(0.3, function()
-            appBuf.lastRowCountChangedTimer = nil
+          A_AppBuf.lastRowCountChangedTimer = hs.timer.doAfter(0.3, function()
+            A_AppBuf.lastRowCountChangedTimer = nil
             for _, hotkey in ipairs(openSavePanelHotkeys) do
               CtxDelete(hotkey)
             end
@@ -11468,7 +11468,7 @@ local function getMenuBarItemTitlesString(app, menuBarItems)
     return ""
   elseif menuBarItems == nil then
     menuBarItems = getMenuBarItems(app)
-    appBuf.menuBarItems = menuBarItems
+    A_AppBuf.menuBarItems = menuBarItems
   end
   local appMenuBarStr = getMenuBarItemTitlesStringImpl(menuBarItems or {})
   local winMenuBarStr
@@ -12385,7 +12385,7 @@ function App_applicationCallback(appname, eventType, app)
       FLAGS["APP_LAUNCHING_OVERRIDE"] = nil
     end
 
-    appBuf = {}
+    A_AppBuf = {}
     A_AppLocale = applicationLocale(appid)
     if FLAGS["SUSPEND_IN_REMOTE_DESKTOP"] ~= nil then
       FLAGS["SUSPEND"] = not FLAGS["SUSPEND_IN_REMOTE_DESKTOP"]
