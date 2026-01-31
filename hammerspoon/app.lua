@@ -1027,8 +1027,6 @@ local registerDaemonAppInWinHotkeys
 local registerInMenuHotkeys
 local registerNavigationForSettingsToolbar
 
-local WF = {}
-
 -- ### Finder
 local Finder = {}
 Finder.sidebarItemTitle = function(idx)
@@ -12073,19 +12071,21 @@ for _, rules in pairs(remoteDesktopsMappingModifiers) do
   end
 end
 
-WF.MRD = {}
-WF.MRD.Remote = {}
+local MRD = {}
+MRD.WF = {
+  Remote = {}
+}
 if hs.application.nameForBundleID("com.microsoft.rdc.macos") == "Windows App" then
   Evt.OnRunning("com.microsoft.rdc.macos", function(app)
-    WF.MRD.Remote = { rejectTitles = {} }
+    MRD.WF.Remote = { rejectTitles = {} }
     for _, title in ipairs {"Favorites", "Devices", "Apps",
       "Settings", "About", "Device View Options", "App View Options" } do
       local locTitle = "^" .. T(title, app) .. "$"
-      tinsert(WF.MRD.Remote.rejectTitles, locTitle)
+      tinsert(MRD.WF.Remote.rejectTitles, locTitle)
     end
   end)
 else
-  WF.MRD.Remote = {
+  MRD.WF.Remote = {
     rejectTitles = {
       "^Microsoft Remote Desktop$",
       "^Preferences$",
@@ -12101,7 +12101,7 @@ local function isDefaultRemoteDesktopWindow(window)
       function(child) return child.AXHelp == "Session information" end) ~= nil
   elseif appid == "com.microsoft.rdc.macos" then
     local wFilter = hs.window.filter.new(false):setAppFilter(
-        window:application():name(), WF.MRD.Remote)
+        window:application():name(), MRD.WF.Remote)
     local result = wFilter:isWindowAllowed(window)
     if result then
       local winUI = towinui(window)
