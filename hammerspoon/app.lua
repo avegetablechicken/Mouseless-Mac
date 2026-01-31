@@ -12369,7 +12369,6 @@ function App_applicationCallback(appname, eventType, app)
     end
     FLAGS["NEED_DOUBLE_CHECK"] = nil
   elseif eventType == hs.application.watcher.activated then
-    A_AppLocale = nil
     for bid, processes in pairs(Evt.ProcOnDeactivated) do
       if bid ~= appid then
         local b = find(bid)
