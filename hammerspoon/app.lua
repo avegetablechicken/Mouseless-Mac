@@ -8529,9 +8529,10 @@ local function registerRunningAppHotKeys(appid, app)
     end
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local bindable
-    if isPersistent and installed(appid) then
+    if isPersistent then
       bindable = function()
-        return cfg.bindCondition == nil or cfg.bindCondition(appid)
+        return installed(appid) and
+            (cfg.bindCondition == nil or cfg.bindCondition(appid))
       end
     else
       bindable = function()
