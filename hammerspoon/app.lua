@@ -11658,6 +11658,8 @@ onLaunchedAndActivated = function(app, reinvokeKey)
   return menuBarItems ~= nil
 end
 if frontApp then
+  local appid = frontApp:bundleID() or frontApp:name()
+  A_AppLocale = applicationLocale(appid)
   registerForOpenSavePanel(frontApp)
   onLaunchedAndActivated(frontApp)
 end
