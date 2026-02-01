@@ -378,9 +378,10 @@ function A_HotkeyWrapper(fn, tbl)
     tbl = { hotkey = A_Hotkey, message = A_Message }
   end
   return function(...)
+    local lastHotkey, lastMessage = A_Hotkey, A_Message
     A_Hotkey, A_Message = tbl.hotkey, tbl.message
     local ret = fn(...)
-    A_Hotkey, A_Message = nil, nil
+    A_Hotkey, A_Message = lastHotkey, lastMessage
     return ret
   end
 end
