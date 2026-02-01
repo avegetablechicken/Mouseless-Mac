@@ -1514,6 +1514,12 @@ Music.viewTitle = function(index)
     rows = tifilter(rows, function(r)
       return r.AXSize.h > mean and getc(r, AX.Cell, 1, AX.StaticText, 1) ~= nil
     end)
+    if rows[1] then
+      local image = getc(rows[1], AX.Cell, 1, AX.Image, 1)
+      if image.AXDescription == TG("Search", win) then
+        tremove(rows, 1)
+      end
+    end
     local row = rows[index]
     if row then
       if A_AppBuf.musicSidebarItemObserver == nil then
@@ -1563,6 +1569,12 @@ Music.selectView = function(index)
     rows = tifilter(rows, function(r)
       return r.AXSize.h > mean and getc(r, AX.Cell, 1, AX.StaticText, 1) ~= nil
     end)
+    if rows[1] then
+      local image = getc(rows[1], AX.Cell, 1, AX.Image, 1)
+      if image.AXDescription == TG("Search", win) then
+        tremove(rows, 1)
+      end
+    end
     local row = rows[index]
     if row then
       row.AXSelected = true
