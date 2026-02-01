@@ -1517,77 +1517,64 @@ Music.WF.Main = {
 
 Music.viewTitle = function(index)
   return function(win)
-    local outline = getc(towinui(win), AX.SplitGroup, 1,
-        AX.ScrollArea, 1, AX.Outline, 1)
-    if outline == nil then return end
-    local rows, sum = getc(outline, AX.Row), 0
-    for _, r in ipairs(rows) do sum = sum + r.AXSize.h end
-    local mean = sum / #rows
-    rows = tifilter(rows, function(r)
-      return r.AXSize.h > mean and getc(r, AX.Cell, 1, AX.StaticText, 1) ~= nil
-    end)
-    if rows[1] then
-      local image = getc(rows[1], AX.Cell, 1, AX.Image, 1)
-      if image.AXDescription == TG("Search", win) then
-        tremove(rows, 1)
+    local rows = A_WinBuf:get("mainWindowViews", function()
+      local outline = getc(towinui(win), AX.SplitGroup, 1,
+          AX.ScrollArea, 1, AX.Outline, 1)
+      if outline == nil then return end
+      local rows, sum = getc(outline, AX.Row), 0
+      for _, r in ipairs(rows) do sum = sum + r.AXSize.h end
+      local mean = sum / #rows
+      rows = tifilter(rows, function(r)
+        return r.AXSize.h > mean and getc(r, AX.Cell, 1, AX.StaticText, 1) ~= nil
+      end)
+      if rows[1] then
+        local image = getc(rows[1], AX.Cell, 1, AX.Image, 1)
+        if image.AXDescription == TG("Search", win) then
+          tremove(rows, 1)
+        end
       end
-    end
-    local row = rows[index]
-    if row then
-      if A_AppBuf.musicSidebarItemObserver == nil then
-        local app = win:application()
-        local appid = app:bundleID()
-        local observer = uiobserver.new(app:pid())
-        observer:addWatcher(outline, uinotifications.rowCountChanged)
-        observer:callback(function()
-          if A_AppBuf.lastRowCountChangedTimer then
-            A_AppBuf.lastRowCountChangedTimer:setNextTrigger(0.1)
-            return
-          end
-          A_AppBuf.lastRowCountChangedTimer = hs.timer.doAfter(0.1, function()
-            A_AppBuf.lastRowCountChangedTimer = nil
-            for _, hotkeys in pairs(inWinHotKeys[appid]) do
-              for hkID, hotkey in pairs(hotkeys) do
-                if hkID:match('^view(%d-)$') then
-                  CtxDelete(hotkey)
-                  hotkeys[hkID] = nil
-                end
-              end
-            end
-            for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
+      local app = win:application()
+      local appid = app:bundleID()
+      local observer = uiobserver.new(app:pid())
+      observer:addWatcher(outline, uinotifications.rowCountChanged)
+      observer:callback(A_WinHotkeyWrapper(function()
+        if A_WinBuf.lastRowCountChangedTimer then
+          A_WinBuf.lastRowCountChangedTimer:setNextTrigger(0.1)
+          return
+        end
+        A_WinBuf.lastRowCountChangedTimer =
+            hs.timer.doAfter(0.1, A_WinHotkeyWrapper(function()
+          A_WinBuf.mainWindowViews = nil
+          A_WinBuf.lastRowCountChangedTimer = nil
+          for _, hotkeys in pairs(inWinHotKeys[appid]) do
+            for hkID, hotkey in pairs(hotkeys) do
               if hkID:match('^view(%d-)$') then
-                registerInWinHotKeys(app:focusedWindow(), cfg.windowFilter)
-                break
+                CtxDelete(hotkey)
+                hotkeys[hkID] = nil
               end
             end
-          end)
-        end)
-        observer:start()
-        A_AppBuf.musicSidebarItemObserver = observer
-        Evt.StopOnDeactivated(app, A_AppBuf.musicSidebarItemObserver)
-      end
-      return getc(row, AX.Cell, 1, AX.StaticText, 1).AXValue
-    end
+          end
+          for hkID, cfg in pairs(appHotKeyCallbacks[appid]) do
+            if hkID:match('^view(%d-)$') then
+              registerInWinHotKeys(app:focusedWindow(), cfg.windowFilter)
+              break
+            end
+          end
+        end))
+      end))
+      observer:start()
+      A_WinBuf.musicSidebarItemObserver = observer
+      Evt.StopOnDeactivated(app, A_WinBuf.musicSidebarItemObserver)
+      return rows
+    end)
+    local text = getc(rows[index], AX.Cell, 1, AX.StaticText, 1)
+    return text and text.AXValue
   end
 end
 
 Music.selectView = function(index)
-  return function(win)
-    local rows = getc(towinui(win), AX.SplitGroup, 1,
-        AX.ScrollArea, 1, AX.Outline, 1, AX.Row)
-    local sum = 0
-    for _, r in ipairs(rows) do sum = sum + r.AXSize.h end
-    local mean = sum / #rows
-    rows = tifilter(rows, function(r)
-      return r.AXSize.h > mean and getc(r, AX.Cell, 1, AX.StaticText, 1) ~= nil
-    end)
-    if rows[1] then
-      local image = getc(rows[1], AX.Cell, 1, AX.Image, 1)
-      if image.AXDescription == TG("Search", win) then
-        tremove(rows, 1)
-      end
-    end
-    local row = rows[index]
+  return function()
+    local row = A_WinBuf.mainWindowViews[index]
     if row then
       row.AXSelected = true
     end
