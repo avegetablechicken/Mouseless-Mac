@@ -453,7 +453,7 @@ local winCloseObservers = {}
 
 local A_WinBuf = {}
 local A_WinLocale
-local function A_WinHotkeyWrapper(fn)
+local function injectWindowState(fn)
   return function(win)
     local wid = win:id()
     if winBuf[wid] == nil then
@@ -8981,7 +8981,7 @@ local function wrapCondition(obj, config, mode)
     local condition = config.condition
     if condition == nil then return true end
     if o.application then
-      condition = A_WinHotkeyWrapper(condition)
+      condition = injectWindowState(condition)
     end
     local satisfied, result = condition(o)
     if not satisfied then result = CF.userConditionFail end
@@ -9026,7 +9026,7 @@ local function wrapCondition(obj, config, mode)
         end
       end
       if o.application then
-        func = A_WinHotkeyWrapper(func)
+        func = injectWindowState(func)
       end
       func(o)
       return true
@@ -9082,7 +9082,7 @@ local function bindContextual(obj, config, ...)
   end
   local pressedfn, cond = wrapCondition(obj, config, KEY_MODE.PRESS)
   local tbl = { message = config.message }
-  cond = A_HotkeyWrapper(cond, tbl)
+  cond = injectHotkeyState(cond, tbl)
   if config.repeatedfn == nil and config.condition ~= nil then
     -- if hotkey condition is not satisfied, holding event should be passed to the app
     -- so callback for holding event must always be registered
@@ -9312,7 +9312,7 @@ registerInWinHotKeys = function(win, filter)
           and sameFilter(windowFilter, filter) then
         local msg, fallback
         if type(cfg.message) == 'string' then msg = cfg.message
-        else msg, fallback = A_WinHotkeyWrapper(cfg.message)(win) end
+        else msg, fallback = injectWindowState(cfg.message)(win) end
         if msg ~= nil and hotkeys[hkID] == nil then
           -- double check for website-specific hotkeys
           local config = tcopy(cfg)
@@ -9429,7 +9429,7 @@ local function isWindowAllowed(win, filter)
             :setAppFilter(win:application():name(), normal)
             :isWindowAllowed(win))
       and (extended.condition == nil
-           or A_WinHotkeyWrapper(extended.condition)(win))
+           or injectWindowState(extended.condition)(win))
 end
 
 FocusedWindowObservers = {}
@@ -9590,7 +9590,7 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
     if hasKey and isForWindow and isBackground and bindable()
         and sameFilter(windowFilter, filter) then
       local msg = type(cfg.message) == 'string'
-          and cfg.message or A_WinHotkeyWrapper(cfg.message)(win)
+          and cfg.message or injectWindowState(cfg.message)(win)
       if msg ~= nil then
         local config = tcopy(cfg)
         config.mods = keybinding.mods

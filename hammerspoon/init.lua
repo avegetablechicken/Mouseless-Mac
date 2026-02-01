@@ -373,10 +373,18 @@ end
 
 -- Inject hotkey context into callback execution.
 A_Hotkey, A_Message = nil, nil
-function A_HotkeyWrapper(fn, tbl)
-  if tbl == nil then
-    tbl = { hotkey = A_Hotkey, message = A_Message }
+function A_HotkeyWrapper(fn)
+  local validHotkey, validMessage = A_Hotkey, A_Message
+  return function(...)
+    local lastHotkey, lastMessage = A_Hotkey, A_Message
+    A_Hotkey, A_Message = validHotkey, validMessage
+    local ret = fn(...)
+    A_Hotkey, A_Message = lastHotkey, lastMessage
+    return ret
   end
+end
+
+function injectHotkeyState(fn, tbl)
   return function(...)
     local lastHotkey, lastMessage = A_Hotkey, A_Message
     A_Hotkey, A_Message = tbl.hotkey, tbl.message
@@ -401,13 +409,13 @@ function newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
   repeatfn = getFunc(repeatfn)
   local tbl = {}
   if pressedfn then
-    pressedfn = A_HotkeyWrapper(pressedfn, tbl)
+    pressedfn = injectHotkeyState(pressedfn, tbl)
   end
   if releasedfn then
-    releasedfn = A_HotkeyWrapper(releasedfn, tbl)
+    releasedfn = injectHotkeyState(releasedfn, tbl)
   end
   if repeatfn then
-    repeatfn = A_HotkeyWrapper(repeatfn, tbl)
+    repeatfn = injectHotkeyState(repeatfn, tbl)
   end
 
   local hotkey
