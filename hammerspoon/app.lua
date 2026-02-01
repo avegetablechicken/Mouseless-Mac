@@ -397,6 +397,7 @@ end
 --
 -- Data in A_AppBuf lives until another application activates
 local A_AppBuf = {}
+local A_AppLocale
 
 -- A_WinBuf:
 -- Window-scoped runtime cache.
@@ -451,6 +452,7 @@ local winBuf = {}
 local winCloseObservers = {}
 
 local A_WinBuf = {}
+local A_WinLocale
 local function A_WinHotkeyWrapper(fn)
   return function(win)
     local wid = win:id()
