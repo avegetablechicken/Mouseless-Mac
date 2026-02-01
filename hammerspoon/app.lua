@@ -9051,10 +9051,11 @@ end
 -- a workaround is to check if callback function is executing, if so, do nothing
 -- note that this workaround may not work when the callback lasts really too long
 FLAGS["CALLBACK_IS_EXECUTING"] = false
-local function callBackExecutingWrapper(fn)
+local function callBackExecutingWrapper(fn, hasWinBuf)
   return function()
     if FLAGS["CALLBACK_IS_EXECUTING"] then return end
-    hs.timer.doAfter(0, A_WinHotkeyWrapper(function()
+    local wrapper = hasWinBuf and A_WinHotkeyWrapper or A_HotkeyWrapper
+    hs.timer.doAfter(0, wrapper(function()
       FLAGS["CALLBACK_IS_EXECUTING"] = true
       fn()
       FLAGS["CALLBACK_IS_EXECUTING"] = false
@@ -9112,9 +9113,9 @@ local function bindContextual(obj, config, ...)
   end
 
   if config.condition ~= nil then  -- executing condition may take too much time
-    pressedfn = callBackExecutingWrapper(pressedfn)
+    pressedfn = callBackExecutingWrapper(pressedfn, obj.application ~= nil)
     if repeatedfn ~= nil then
-      repeatedfn = callBackExecutingWrapper(repeatedfn)
+      repeatedfn = callBackExecutingWrapper(repeatedfn, obj.application ~= nil)
     end
   end
   local hotkey = bindHotkeySpec(config, config.message,
