@@ -453,6 +453,18 @@ local winCloseObservers = {}
 
 local A_WinBuf = {}
 local A_WinLocale
+local function A_WinHotkeyWrapper(fn)
+  local newFn = A_HotkeyWrapper(fn)
+  local validWinBuf, validWinLocale = A_WinBuf, A_WinLocale
+  return function(...)
+    local lastWinBuf, lastWinLocale = A_WinBuf, A_WinLocale
+    A_WinBuf, A_WinLocale = validWinBuf, validWinLocale
+    local ret = newFn(...)
+    A_WinBuf, A_WinLocale = lastWinBuf, lastWinLocale
+    return ret
+  end
+end
+
 local function injectWindowState(fn)
   return function(win)
     local wid = win:id()
@@ -4277,7 +4289,7 @@ appHotKeyCallbacks = {
         local app = win:application()
         local observer = uiobserver.new(app:pid())
         observer:addWatcher(toappui(app), uinotifications.created)
-        observer:callback(A_HotkeyWrapper(function(obs)
+        observer:callback(A_WinHotkeyWrapper(function(obs)
           for _, elem in ipairs(toappui(app)) do
             local menuItem = getc(elem, AX.Menu, 1, AX.MenuItem, A_Message)
             if menuItem then
@@ -4974,7 +4986,7 @@ appHotKeyCallbacks = {
       end,
       fn = function(tab, win)
         tab:performAction(AX.ShowMenu)
-        hs.timer.doAfter(0.1, A_HotkeyWrapper(function()
+        hs.timer.doAfter(0.1, A_WinHotkeyWrapper(function()
           local app = win:application()
           local item = getc(toappui(app), AX.Menu, 1, AX.MenuItem, A_Message)
           if item then Callback.Press(item) end
@@ -5314,7 +5326,7 @@ appHotKeyCallbacks = {
             if hide then Callback.Press(hide) end
           end
         else
-          hs.timer.doAfter(0.5, A_HotkeyWrapper(function()
+          hs.timer.doAfter(0.5, A_WinHotkeyWrapper(function()
             local app = win:application()
             local menu = toappui(app):elementAtPosition(
                 uioffset(chat.AXPosition, { 1, 1 }))
@@ -9055,7 +9067,7 @@ FLAGS["CALLBACK_IS_EXECUTING"] = false
 local function callBackExecutingWrapper(fn)
   return function()
     if FLAGS["CALLBACK_IS_EXECUTING"] then return end
-    hs.timer.doAfter(0, A_HotkeyWrapper(function()
+    hs.timer.doAfter(0, A_WinHotkeyWrapper(function()
       FLAGS["CALLBACK_IS_EXECUTING"] = true
       fn()
       FLAGS["CALLBACK_IS_EXECUTING"] = false
