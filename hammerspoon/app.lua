@@ -9605,7 +9605,7 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
         end
         config.repeatedfn = config.repeatable and config.fn or nil
         local hotkey = WinBind(win, config)
-        tinsert(daemonAppFocusedWindowHotkeys[wid], hotkey)
+        daemonAppFocusedWindowHotkeys[wid][hkID] = hotkey
 
         if config.nonFrontmost then
           if type(windowFilter) == 'table' and windowFilter.allowRoles then
@@ -9631,13 +9631,13 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
         if not observed then
           Evt.OnDestroy(winUI, function()
             if daemonAppFocusedWindowHotkeys[wid] ~= nil then
-              for i, hotkey in ipairs(daemonAppFocusedWindowHotkeys[wid]) do
+              for hkID, hotkey in pairs(daemonAppFocusedWindowHotkeys[wid]) do
                 if hotkey.idx ~= nil then
                   CtxDelete(hotkey)
-                  daemonAppFocusedWindowHotkeys[wid][i] = nil
+                  daemonAppFocusedWindowHotkeys[wid][hkID] = nil
                 end
               end
-              if #daemonAppFocusedWindowHotkeys[wid] == 0 then
+              if next(daemonAppFocusedWindowHotkeys[wid]) == nil then
                 daemonAppFocusedWindowHotkeys[wid] = nil
               end
             end
