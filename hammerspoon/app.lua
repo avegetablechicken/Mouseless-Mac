@@ -9631,15 +9631,12 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
         if not observed then
           Evt.OnDestroy(winUI, function()
             if daemonAppFocusedWindowHotkeys[wid] ~= nil then
-              for hkID, hotkey in pairs(daemonAppFocusedWindowHotkeys[wid]) do
+              for _, hotkey in pairs(daemonAppFocusedWindowHotkeys[wid]) do
                 if hotkey.idx ~= nil then
                   CtxDelete(hotkey)
-                  daemonAppFocusedWindowHotkeys[wid][hkID] = nil
                 end
               end
-              if next(daemonAppFocusedWindowHotkeys[wid]) == nil then
-                daemonAppFocusedWindowHotkeys[wid] = nil
-              end
+              daemonAppFocusedWindowHotkeys[wid] = nil
             end
             -- WindowCreatedSinceFilter:unsubscribeAll()
             windowCreatedSinceTime[wid] = nil
