@@ -4284,7 +4284,7 @@ function delocalizedMenuItem(title, appid, params, system)
   return newTitle
 end
 
-function delocalizeMenuBarItems(itemTitles, appid, localeFile)
+function delocalizeMenuBarItems(itemTitles, appid, params)
   if delocMap[appid] == nil then
     delocMap[appid] = {}
   end
@@ -4309,15 +4309,16 @@ function delocalizeMenuBarItems(itemTitles, appid, localeFile)
       elseif defaultTitleMap ~= nil and defaultTitleMap[title] ~= nil then
         delocTitle = defaultTitleMap[title]
         titleMap[title] = delocTitle
-      elseif localeFile == nil then
-        delocTitle = delocalizedString(title, appid,
-                                       menuItemLocaleFilePatterns)
+      elseif params == nil or params.localeFile == nil then
+        local paramsCopy = type(params) == 'table' and tcopy(params) or {}
+        paramsCopy.localeFile = menuItemLocaleFilePatterns
+        delocTitle = delocalizedString(title, appid, paramsCopy)
         if delocTitle == nil then
-          delocTitle = delocalizedString(title, appid, nil, true)
+          delocTitle = delocalizedString(title, appid, params, true)
         end
         titleMap[title] = delocTitle
       else
-        delocTitle = delocalizedString(title, appid, localeFile)
+        delocTitle = delocalizedString(title, appid, params)
         titleMap[title] = delocTitle
       end
       if not delocTitle then

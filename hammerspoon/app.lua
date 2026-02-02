@@ -11370,7 +11370,8 @@ local function altMenuBarItem(app, force, reinvokeKey)
     end
 
     -- process localized titles
-    local itemLocTitles = delocalizeMenuBarItems(itemTitles, appid)
+    local localeParams = { locale = A_AppLocale }
+    local itemLocTitles = delocalizeMenuBarItems(itemTitles, appid, localeParams)
     local specialMap = specialLocalizedCommonMenuBarTitle[appid]
     if specialMap then
       for _, title in ipairs(itemLocTitles) do
@@ -11383,7 +11384,8 @@ local function altMenuBarItem(app, force, reinvokeKey)
       if appid == "com.tencent.xinWeChat" then
         local exBundleID = Version.LessThan(app, "4")
             and "com.tencent.xinWeChat.WeChatAppEx" or "com.tencent.flue.WeChatAppEx"
-        local newItemLocTitles = delocalizeMenuBarItems(itemTitles, exBundleID)
+        local newItemLocTitles = delocalizeMenuBarItems(itemTitles, exBundleID,
+                                                        localeParams)
         if #itemTitles == #newItemLocTitles then
           itemLocTitles = newItemLocTitles
         end
