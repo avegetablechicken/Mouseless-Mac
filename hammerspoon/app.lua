@@ -11041,6 +11041,125 @@ local function registerForOpenSavePanel(app, retry)
   Evt.StopOnDeactivated(app, observer)
 end
 
+local function searchHotkeyByNth(itemTitles, alreadySetHotkeys, index)
+  local notSetItems = {}
+  for _, title in pairs(itemTitles) do
+    if index == nil then
+      index = title[2]:find(" ")
+      if index ~= nil then
+        index = index + 1
+      end
+    end
+    local hotkey
+    if index ~= nil then
+      hotkey = title[2]:sub(index, index):upper()
+    end
+
+    if hotkey ~= nil and alreadySetHotkeys[hotkey] == nil then
+        alreadySetHotkeys[hotkey] = title[1]
+    else
+      tinsert(notSetItems, title)
+    end
+  end
+  return notSetItems, alreadySetHotkeys
+end
+
+local appsMayChangeMenuBar = {
+  changing = tcopy(get(ApplicationConfigs,
+      "menuBarItems", 'changing') or {}),
+  focusedWindowChanged = tcopy(get(ApplicationConfigs,
+      "menuBarItems", 'focusedWindowChanged') or {}),
+  titleChanged = tcopy(get(ApplicationConfigs,
+      "menuBarItems", 'titleChanged') or {})
+}
+
+local appsMayChangeMenuBarTmpFile =
+    appsTmpDir .. '/variable_menubar.json'
+if exists(appsMayChangeMenuBarTmpFile) then
+  local tmp = hs.json.read(appsMayChangeMenuBarTmpFile)
+  for _, appid in ipairs(tmp['changing'] or {}) do
+    tinsert(appsMayChangeMenuBar.changing, appid)
+  end
+  for _, appid in ipairs(tmp['focusedWindowChanged'] or {}) do
+    tinsert(appsMayChangeMenuBar.focusedWindowChanged, appid)
+  end
+  for _, appid in ipairs(tmp['titleChanged'] or {}) do
+    tinsert(appsMayChangeMenuBar.titleChanged, appid)
+  end
+end
+
+local windowOnBindAltMenu
+local onLaunchedAndActivated
+local function processInvalidAltMenu(app, reinvokeKey)
+  local appid = app:bundleID() or app:name()
+  local curWin = app:focusedWindow()
+  local isSameWin, hasSameTitle = false, false
+  if curWin and windowOnBindAltMenu then
+    isSameWin = curWin:id() == windowOnBindAltMenu.id
+    if isSameWin then
+      hasSameTitle = curWin:title() == windowOnBindAltMenu.title
+    end
+  end
+  if isSameWin then
+    local _, framework = getResourceDir(appid)
+    if framework.electron then
+      onLaunchedAndActivated(app, reinvokeKey)
+      return
+    end
+  end
+  local type
+  if isSameWin then
+    if hasSameTitle then
+      type = 'changing'
+      local pos = tindex(appsMayChangeMenuBar.titleChanged, appid)
+      if pos then tremove(appsMayChangeMenuBar.titleChanged, pos) end
+    else
+      type = 'titleChanged'
+    end
+    local pos = tindex(appsMayChangeMenuBar.focusedWindowChanged, appid)
+    if pos then tremove(appsMayChangeMenuBar.focusedWindowChanged, pos) end
+  else
+    type = 'focusedWindowChanged'
+  end
+  tinsert(appsMayChangeMenuBar[type], appid)
+  onLaunchedAndActivated(app, reinvokeKey)
+
+  if not exists(appsTmpDir) then
+    hs.execute(strfmt("mkdir -p '%s'", appsTmpDir))
+  end
+  local json = {}
+  if exists(appsMayChangeMenuBarTmpFile) then
+    json = hs.json.read(appsMayChangeMenuBarTmpFile)
+  else
+    json = {}
+  end
+  if json[type] == nil then json[type] = {} end
+  tinsert(json[type], appid)
+  if isSameWin then
+    local pos = tindex(json["focusedWindowChanged"] or {}, appid)
+    if pos then tremove(json["focusedWindowChanged"], pos) end
+    if hasSameTitle then
+      pos = tindex(appsMayChangeMenuBar["titleChanged"] or {}, appid)
+      if pos then tremove(appsMayChangeMenuBar["titleChanged"], pos) end
+    end
+  end
+  hs.json.write(json, appsMayChangeMenuBarTmpFile, false, true)
+end
+
+-- Applications typically use standard menu bar titles (e.g., "File", "Edit",
+-- "View", "Window", "Help"). Because these titles are often localized by the OS,
+-- we intentionally do not attempt to de-localize them through app bundle searches.
+-- Note that some apps may still use uncommon English titles.
+local specialLocalizedCommonMenuBarTitle = {
+  ["com.tencent.yuanbao"] = { View = "Display" },
+}
+Evt.OnRunning("com.tencent.xinWeChat", function(app)
+  local appid = app:bundleID()
+  if applicationVersion(appid) >= 4 then
+    specialLocalizedCommonMenuBarTitle[appid] = { View = "Show" }
+  end
+end)
+
 -- Bind a single Alt-based menu bar navigation hotkey.
 --
 -- This handles:
@@ -11069,91 +11188,6 @@ local function bindAltMenu(app, mods, key, message, fn)
   hotkey.subkind = HK.IN_APP_.MENU
   return hotkey
 end
-
-local function searchHotkeyByNth(itemTitles, alreadySetHotkeys, index)
-  local notSetItems = {}
-  for _, title in pairs(itemTitles) do
-    if index == nil then
-      index = title[2]:find(" ")
-      if index ~= nil then
-        index = index + 1
-      end
-    end
-    local hotkey
-    if index ~= nil then
-      hotkey = title[2]:sub(index, index):upper()
-    end
-
-    if hotkey ~= nil and alreadySetHotkeys[hotkey] == nil then
-        alreadySetHotkeys[hotkey] = title[1]
-    else
-      tinsert(notSetItems, title)
-    end
-  end
-  return notSetItems, alreadySetHotkeys
-end
-
-local appsMayChangeMenuBar = {
-  changing = tcopy(get(ApplicationConfigs, "menuBarItems", 'changing') or {}),
-  onWindow = tcopy(get(ApplicationConfigs, "menuBarItems", 'changeOnWindow') or {})
-}
-local appsMayChangeMenuBarTmpFile =
-    appsTmpDir .. '/variable_menubar.json'
-local windowOnBindAltMenu
-
-local onLaunchedAndActivated
-local function processInvalidAltMenu(app, reinvokeKey)
-  local appid = app:bundleID() or app:name()
-  local curWin = app:focusedWindow() and app:focusedWindow():id() or false
-  local isSameWin = curWin == windowOnBindAltMenu
-  if isSameWin then
-    local _, framework = getResourceDir(appid)
-    if framework.electron then
-      onLaunchedAndActivated(app, reinvokeKey)
-      return
-    end
-  end
-  if isSameWin then
-    tinsert(appsMayChangeMenuBar.changing, appid)
-    local pos = tindex(appsMayChangeMenuBar.onWindow, appid)
-    if pos then tremove(appsMayChangeMenuBar.onWindow, pos) end
-  else
-    tinsert(appsMayChangeMenuBar.onWindow, appid)
-  end
-  onLaunchedAndActivated(app, reinvokeKey)
-
-  if not exists(appsTmpDir) then
-    hs.execute(strfmt("mkdir -p '%s'", appsTmpDir))
-  end
-  local json = {}
-  if exists(appsMayChangeMenuBarTmpFile) then
-    json = hs.json.read(appsMayChangeMenuBarTmpFile)
-  else
-    json = {}
-  end
-  local key = isSameWin and "changing" or "onWindow"
-  if json[key] == nil then json[key] = {} end
-  tinsert(json[key], appid)
-  if isSameWin then
-    local pos = tindex(json["onWindow"] or {}, appid)
-    if pos then tremove(json["onWindow"], pos) end
-  end
-  hs.json.write(json, appsMayChangeMenuBarTmpFile, false, true)
-end
-
--- Applications typically use standard menu bar titles (e.g., "File", "Edit",
--- "View", "Window", "Help"). Because these titles are often localized by the OS,
--- we intentionally do not attempt to de-localize them through app bundle searches.
--- Note that some apps may still use uncommon English titles.
-local specialLocalizedCommonMenuBarTitle = {
-  ["com.tencent.yuanbao"] = { View = "Display" },
-}
-Evt.OnRunning("com.tencent.xinWeChat", function(app)
-  local appid = app:bundleID()
-  if applicationVersion(appid) >= 4 then
-    specialLocalizedCommonMenuBarTitle[appid] = { View = "Show" }
-  end
-end)
 
 -- Dynamically bind Alt-based hotkeys for menu bar items.
 --
@@ -11276,9 +11310,8 @@ local function altMenuBarItem(app, force, reinvokeKey)
   end
   if menuBarItemTitles == nil or #menuBarItemTitles == 0 then return end
   if app:focusedWindow() ~= nil then
-    windowOnBindAltMenu = app:focusedWindow():id()
-  else
-    windowOnBindAltMenu = false
+    local win = app:focusedWindow()
+    windowOnBindAltMenu = { id = win:id(), title = win:title() }
   end
 
   local clickMenuCallback
@@ -11417,9 +11450,8 @@ local function altMenuBarItem(app, force, reinvokeKey)
   -- by index
   if modsIndex then
     if app:focusedWindow() ~= nil then
-      windowOnBindAltMenu = app:focusedWindow():id()
-    else
-      windowOnBindAltMenu = false
+      local win = app:focusedWindow()
+      windowOnBindAltMenu = { id = win:id(), title = win:title() }
     end
 
     local itemTitles = {}
@@ -11499,7 +11531,7 @@ local function getMenuBarItemTitlesString(app, menuBarItems)
   return appMenuBarStr, winMenuBarStr
 end
 
-local function watchMenuBarItems(app)
+local function continouslyWatchMenuBarItems(app)
   local appid = app:bundleID() or app:name()
   menuBarItemTitlesString.app[appid], menuBarItemTitlesString.win[appid]
       = getMenuBarItemTitlesString(app, getBufferedMenuBarItems(app) or false)
@@ -11526,17 +11558,6 @@ local function watchMenuBarItems(app)
     StopExecContinuously(watcher)
     menuBarItemTitlesString.app[appid] = nil
   end)
-end
-
--- some apps may change their menu bar items based on the focused window
-if exists(appsMayChangeMenuBarTmpFile) then
-  local tmp = hs.json.read(appsMayChangeMenuBarTmpFile)
-  for _, appid in ipairs(tmp['changing'] or {}) do
-    tinsert(appsMayChangeMenuBar.changing, appid)
-  end
-  for _, appid in ipairs(tmp['onWindow'] or {}) do
-    tinsert(appsMayChangeMenuBar.onWindow, appid)
-  end
 end
 
 -- Callback invoked when menu bar structure may have changed.
@@ -11572,6 +11593,20 @@ local function appMenuBarChangeCallback(app)
   end)
 end
 
+local function watchMenuBarItemsByNotification(app, notification)
+  local appid = app:bundleID() or app:name()
+  menuBarItemTitlesString.app[appid], menuBarItemTitlesString.win[appid]
+      = getMenuBarItemTitlesString(app)
+
+  local observer
+  observer = uiobserver.new(app:pid())
+  local appUI = toappui(app)
+  observer:addWatcher(appUI, notification)
+  observer:callback(bind(appMenuBarChangeCallback, app))
+  observer:start()
+  Evt.StopOnDeactivated(app, observer)
+end
+
 -- Register observers to detect menu bar changes.
 --
 -- Some apps change menu bars:
@@ -11580,25 +11615,13 @@ end
 --   - asynchronously after launch
 local function registerObserverForMenuBarChange(app)
   local appid = app:bundleID() or app:name()
-
   if tcontain(appsMayChangeMenuBar.changing, appid) then
-    watchMenuBarItems(app)
+    continouslyWatchMenuBarItems(app)
+  elseif tcontain(appsMayChangeMenuBar.focusedWindowChanged, appid) then
+    watchMenuBarItemsByNotification(app, uinotifications.focusedWindowChanged)
+  elseif tcontain(appsMayChangeMenuBar.titleChanged, appid) then
+    watchMenuBarItemsByNotification(app, uinotifications.titleChanged)
   end
-
-  if not tcontain(appsMayChangeMenuBar.onWindow, appid) then
-    return
-  end
-
-  menuBarItemTitlesString.app[appid], menuBarItemTitlesString.win[appid]
-      = getMenuBarItemTitlesString(app)
-
-  local observer
-  observer = uiobserver.new(app:pid())
-  local appUI = toappui(app)
-  observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
-  observer:callback(bind(appMenuBarChangeCallback, app))
-  observer:start()
-  Evt.StopOnDeactivated(app, observer)
 end
 
 
