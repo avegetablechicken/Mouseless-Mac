@@ -3947,21 +3947,29 @@ electronLocale = function(app, localesPath)
   local appid = app:bundleID()
   local menubar = getMenuBarItems(app, true) or {}
   if #menubar == 0 then return end
-  local item = tfind(menubar, function(item)
+  local items = tifilter(menubar, function(item)
     return delocMap.common[item.AXTitle] == nil
         and tindex(delocMap.common, item.AXTitle) == nil
   end)
-  if item == nil then
-    item = menubar[math.min(3, #menubar)]
+  if #items == 0 then
+    for locale, dict in pairs(appLocaleMap['__macos'] or {}) do
+      local allLocalized = all(menubar, function(item)
+        return tindex(dict, item.AXTitle) ~= nil
+      end)
+      if allLocalized then return locale end
+    end
+    return
   end
 
-  local localeInfo = getElectronLocales(appid, localesPath)
+  local localeInfo = getElectronLocales(appid, localesPath.electron)
   if localeInfo == nil then return end
   local locales = localeInfo['locale']
   local localeFiles = localeInfo['file']
   for _, locale in ipairs(locales) do
-    local result = get(deLocaleMap, appid, locale, item.AXTitle)
-    if result ~= nil then return locale end
+    local allLocalized = all(items, function(item)
+      return get(deLocaleMap, appid, locale, item.AXTitle) ~= nil
+    end)
+    if allLocalized then return locale end
   end
   for _, locale in ipairs(locales) do
     local matchedFiles = {}
@@ -3970,9 +3978,10 @@ electronLocale = function(app, localesPath)
         tinsert(matchedFiles, file:sub(#locale + 2))
       end
     end
-    local result = delocalizeByElectron(
-        item.AXTitle, appid, locale, matchedFiles, localesPath)
-    if result ~= nil then
+    local allLocalized = all(items, function(item)
+      local result = delocalizeByElectron(
+        item.AXTitle, appid, locale, matchedFiles, localesPath.electron)
+      if result == nil then return false end
       if deLocaleMap[appid] == nil then
         deLocaleMap[appid] = {}
       end
@@ -3984,8 +3993,9 @@ electronLocale = function(app, localesPath)
         hs.execute(strfmt("mkdir -p '%s'", localeTmpDir))
       end
       hs.json.write(deLocaleMap, menuItemTmpFile, false, true)
-      return locale
-    end
+      return true
+    end)
+    if allLocalized then return locale end
   end
 end
 
