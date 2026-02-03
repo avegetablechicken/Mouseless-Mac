@@ -10662,7 +10662,7 @@ local function registerObserverForSettingsMenuItem(app)
           and item.AXMenuItemCmdModifiers == 0 then
         local title = delocalizedString(item.AXTitle, app)
         if type(title) == 'string' then
-          return title:find("Settings") or title:find("Preferences")
+          return title:find("Setting") or title:find("Preference")
         end
       end
       return false
@@ -10717,7 +10717,7 @@ registerObserverForRightMenuBarSettingsMenuItem = function(app, observer)
             and item.AXMenuItemCmdModifiers == 0 then
           local title = delocalizedString(item.AXTitle, app)
           if type(title) == 'string' then
-            return title:find("Settings") or title:find("Preferences")
+            return title:find("Setting") or title:find("Preference")
           end
         end
         return false
