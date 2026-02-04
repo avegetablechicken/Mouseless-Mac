@@ -606,25 +606,27 @@ function applicationLocale(appid)
   return SYSTEM_LOCALE
 end
 
-function getResourceDir(appid, frameworkName)
-  if frameworkName == nil then
-    frameworkName = localizationFrameworks[appid]
+function getResourceDir(appid, frameworkNames)
+  if frameworkNames == nil then
+    frameworkNames = localizationFrameworks[appid]
   end
-  local resourceDir
-  local framework = {}
+  local resourceDirs = {}
+  local frameworks = {}
   local appContentPath
   if appid ~= '__macos' then
     appContentPath = hs.application.pathForBundleID(appid) .. "/Contents"
   end
   if appContentPath and not exists(appContentPath) then
-    resourceDir = hs.application.pathForBundleID(appid) .. "/WrappedBundle/.."
-  elseif frameworkName ~= nil then
+    resourceDirs = { hs.application.pathForBundleID(appid) .. "/WrappedBundle/.." }
+    frameworks = {{}}
+  elseif frameworkNames ~= nil then
     local frameworkDir
-    local frameworkNames = frameworkName
     if type(frameworkNames) == 'string' or #frameworkNames == 0 then
       frameworkNames = { frameworkNames }
     end
     for _, name in ipairs(frameworkNames) do
+      local resourceDir
+      local framework = {}
       if type(name) == 'string' and exists(name) then
         frameworkDir = name
       elseif appContentPath ~= nil then
@@ -633,7 +635,6 @@ function getResourceDir(appid, frameworkName)
               exists(appContentPath .. "/Resources/app.asar") then
             resourceDir = appContentPath .. "/Resources"
             framework.electron = name.electron
-            goto END_GET_RESOURCE_DIR
           elseif name.java then
             local jimage, status = hs.execute(strfmt([[
               find '%s' -type f -name jimage | tr -d '\n'
@@ -641,7 +642,6 @@ function getResourceDir(appid, frameworkName)
             if status and jimage ~= "" then
               resourceDir = jimage:sub(1, #jimage - #'/bin/jimage')
               framework.java = name.java
-              goto END_GET_RESOURCE_DIR
             end
           end
         else
@@ -668,14 +668,16 @@ function getResourceDir(appid, frameworkName)
             resourceDir = appContentPath .. '/Resources/' .. name
             framework.ftl = true
           end
-          if resourceDir then goto END_GET_RESOURCE_DIR end
 
-          frameworkDir = hs.execute(strfmt([[
-            find '%s' -type d -name '%s' | head -n 1 | tr -d '\n'
-          ]], appContentPath, name))
+          if resourceDir == nil or resourceDir == "" then
+            frameworkDir = hs.execute(strfmt([[
+              find '%s' -type d -name '%s' | head -n 1 | tr -d '\n'
+            ]], appContentPath, name))
+          end
         end
       end
-      if (frameworkDir == nil or frameworkDir == "")
+      if (resourceDir == nil or resourceDir == "")
+          and (frameworkDir == nil or frameworkDir == "")
           and type(name) == 'string' then
         for _, searchDir in ipairs {
           '/System/Library/Frameworks',
@@ -702,11 +704,15 @@ function getResourceDir(appid, frameworkName)
           if status and chromiumDirs:sub(1, -2) ~= "" then
             framework.chromium = true
             framework.user = nil
-            goto END_GET_RESOURCE_DIR
           end
         end
       end
+      if resourceDir ~= nil and resourceDir ~= "" then
+        tinsert(resourceDirs, resourceDir)
+        tinsert(frameworks, framework)
+      end
     end
+    goto END_GET_RESOURCE_DIR
   else
     if exists(appContentPath .. "/Frameworks") then
       local chromiumDirs, status = hs.execute(strfmt([[
@@ -718,8 +724,8 @@ function getResourceDir(appid, frameworkName)
         if #chromiumDirs == 1 then
           local prefix_len = (appContentPath .. "/Frameworks/"):len()
           if not chromiumDirs[1]:sub(prefix_len + 1):find('/') then
-            resourceDir = chromiumDirs[1] .. "/Resources"
-            framework.chromium = true
+            resourceDirs = { chromiumDirs[1] .. "/Resources" }
+            frameworks = {{ chromium = true }}
             goto END_GET_RESOURCE_DIR
           end
         end
@@ -727,8 +733,8 @@ function getResourceDir(appid, frameworkName)
     end
 
     if exists(appContentPath .. "/Resources/qt.conf") then
-      resourceDir = appContentPath .. "/Resources"
-      framework.qt = true
+      resourceDirs = { appContentPath .. "/Resources" }
+      frameworks = {{ qt = true }}
       goto END_GET_RESOURCE_DIR
     end
 
@@ -739,20 +745,26 @@ function getResourceDir(appid, frameworkName)
     if status and monoLocaleDirs:sub(1, -2) ~= "" then
       monoLocaleDirs = strsplit(monoLocaleDirs:sub(1, -2), '\n')
       if #monoLocaleDirs == 1 then
-        resourceDir = monoLocaleDirs[1] .. "/locale"
-        framework.mono = true
+        resourceDirs = { monoLocaleDirs[1] .. "/locale" }
+        frameworks = {{ mono = true }}
         goto END_GET_RESOURCE_DIR
       end
     end
   end
 
-  if resourceDir == nil then
-    resourceDir = appContentPath .. "/Resources"
+  if #resourceDirs == 0 then
+    resourceDirs = { appContentPath .. "/Resources" }
+    frameworks = {{}}
   end
 
   ::END_GET_RESOURCE_DIR::
-  if not exists(resourceDir) then return nil, {} end
-  return resourceDir, framework
+  for i=#resourceDirs,1,-1 do
+    if not exists(resourceDirs[i]) then
+      tremove(resourceDirs, i)
+      tremove(frameworks, i)
+    end
+  end
+  return resourceDirs, frameworks
 end
 
 local function getBestMatchedLocale(appLocale, locales, combineExtras, multiplePerfectMatch)
@@ -2568,9 +2580,9 @@ local function localizedStringImpl(str, appid, params, force)
     return result, appLocale, locale
   end
 
-  local resourceDir, framework = getResourceDir(appid, localeFramework)
-  if resourceDir == nil then return nil end
-  if framework.chromium then
+  local resourceDirs, frameworks = getResourceDir(appid, localeFramework)
+  if resourceDirs == nil then return nil end
+  if tfind(frameworks, function(f) return f.chromium end) then
     if find(appid) then
       local menuBarItems = getMenuBarItems(find(appid), true) or {}
       if #menuBarItems ~= 0 then
@@ -2585,6 +2597,10 @@ local function localizedStringImpl(str, appid, params, force)
       end
     end
   end
+
+  local maybeStrIsInBaseLocale = false
+  for i=1,#resourceDirs do
+  local resourceDir, framework = resourceDirs[i], frameworks[i]
 
   local localeDir
   locale, localeDir, resourceDir, framework =
@@ -2657,7 +2673,6 @@ local function localizedStringImpl(str, appid, params, force)
     return result, appLocale, locale
   end
 
-  local maybeStrIsInBaseLocale = false
   local defaultAction = function(emptyCache)
     if emptyCache or appLocaleAssetBuffer[appid] == nil
         or get(appLocaleDir, appid, appLocale) ~= locale then
@@ -2698,6 +2713,8 @@ local function localizedStringImpl(str, appid, params, force)
   result = defaultAction(framework.user)
   if result ~= nil then return result, appLocale, locale end
 
+  end
+
   if str:sub(-3) == "..." or str:sub(-3) == "…" then
     result, appLocale, locale =
         localizedStringImpl(str:sub(1, -4), appid, params)
@@ -2706,16 +2723,24 @@ local function localizedStringImpl(str, appid, params, force)
     end
   end
 
-  if result == nil and not framework.electron and not framework.java
-      and (not framework.qt or (type(localeDir) ~= 'table' and isdir(localeDir))) then
-    local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
-    for _, dir in ipairs(baseLocaleDirs) do
-      if exists(dir) and hs.fs.attributes(localeDir).ino
-                         == hs.fs.attributes(dir).ino then
-        if appid == "__macos" or appid:match("^com%.apple%.") then
-          return str, appLocale, locale
-        else
-          return true, appLocale, locale
+  if result == nil then
+    for i=1,#resourceDirs do
+      local resourceDir, framework = resourceDirs[i], frameworks[i]
+      local localeDir
+      locale, localeDir, resourceDir, framework =
+          getMatchedLocale(appid, appLocale, resourceDir, framework, appLocaleDir)
+      if not framework.electron and not framework.java
+          and (not framework.qt or (type(localeDir) ~= 'table' and isdir(localeDir))) then
+        local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
+        for _, dir in ipairs(baseLocaleDirs) do
+          if exists(dir) and hs.fs.attributes(localeDir).ino
+                            == hs.fs.attributes(dir).ino then
+            if appid == "__macos" or appid:match("^com%.apple%.") then
+              return str, appLocale, locale
+            else
+              return true, appLocale, locale
+            end
+          end
         end
       end
     end
@@ -3738,9 +3763,9 @@ local function delocalizedStringImpl(str, appid, params, force)
     return result, appLocale, locale
   end
 
-  local resourceDir, framework = getResourceDir(appid, localeFramework)
-  if resourceDir == nil then return nil end
-  if framework.chromium then
+  local resourceDirs, frameworks = getResourceDir(appid, localeFramework)
+  if resourceDirs == nil then return nil end
+  if tfind(frameworks, function(f) return f.chromium end) then
     if find(appid) then
       local menuBarItems = getMenuBarItems(find(appid), true) or {}
       if #menuBarItems ~= 0 then
@@ -3755,6 +3780,9 @@ local function delocalizedStringImpl(str, appid, params, force)
       end
     end
   end
+
+  for i=1,#resourceDirs do
+  local resourceDir, framework = resourceDirs[i], frameworks[i]
 
   local localeDir
   locale, localeDir, resourceDir, framework =
@@ -3868,6 +3896,8 @@ local function delocalizedStringImpl(str, appid, params, force)
   result = defaultAction(framework.user)
   if result ~= nil then return result, appLocale, locale end
 
+  end
+
   if str:sub(-3) == "..." or str:sub(-3) == "…" then
     result, appLocale, locale =
         delocalizedStringImpl(str:sub(1, -4), appid, params)
@@ -3876,13 +3906,21 @@ local function delocalizedStringImpl(str, appid, params, force)
     end
   end
 
-  if result == nil and not framework.electron and not framework.java
-      and (not framework.qt or (type(localeDir) ~= 'table' and isdir(localeDir))) then
-    local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
-    for _, dir in ipairs(baseLocaleDirs) do
-      if exists(dir) and hs.fs.attributes(localeDir).ino
-                         == hs.fs.attributes(dir).ino then
-        return true, appLocale, locale
+  if result == nil then
+    for i=1,#resourceDirs do
+      local resourceDir, framework = resourceDirs[i], frameworks[i]
+      local localeDir
+      locale, localeDir, resourceDir, framework =
+          getMatchedLocale(appid, appLocale, resourceDir, framework, appLocaleDir)
+      if not framework.electron and not framework.java
+          and (not framework.qt or (type(localeDir) ~= 'table' and isdir(localeDir))) then
+        local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
+        for _, dir in ipairs(baseLocaleDirs) do
+          if exists(dir) and hs.fs.attributes(localeDir).ino
+                            == hs.fs.attributes(dir).ino then
+            return true, appLocale, locale
+          end
+        end
       end
     end
   end
@@ -4430,8 +4468,8 @@ end
 function applicationValidLocale(appid, menuBarItems)
   local appLocale, valid = applicationLocale(appid)
   if valid then return appLocale end
-  local resourceDir, framework = getResourceDir(appid)
-  if framework.chromium then
+  local resourceDirs, frameworks = getResourceDir(appid)
+  if tfind(frameworks, function(f) return f.chromium end) then
     if find(appid) then
       if menuBarItems == nil then
         menuBarItems = getMenuBarItems(find(appid)) or {}
@@ -4447,17 +4485,21 @@ function applicationValidLocale(appid, menuBarItems)
       end
     end
   end
-  if resourceDir == nil then return end
-  local locale = getMatchedLocale(appid, appLocale,
-      resourceDir, framework, appLocaleDir)
-  if locale and get(appLocaleDir, appid, appLocale) == nil then
-    if appLocaleDir[appid] == nil then
-      appLocaleDir[appid] = {}
+  if resourceDirs == nil then return end
+  for i=1,#resourceDirs do
+    local locale = getMatchedLocale(appid, appLocale,
+        resourceDirs[i], frameworks[i], appLocaleDir)
+    if locale then
+      if get(appLocaleDir, appid, appLocale) == nil then
+        if appLocaleDir[appid] == nil then
+          appLocaleDir[appid] = {}
+        end
+        appLocaleDir[appid][appLocale] = locale
+        hs.json.write(appLocaleDir, localeMatchTmpFile, false, true)
+      end
+      return locale
     end
-    appLocaleDir[appid][appLocale] = locale
-    hs.json.write(appLocaleDir, localeMatchTmpFile, false, true)
   end
-  return locale
 end
 
 function displayName(appid)

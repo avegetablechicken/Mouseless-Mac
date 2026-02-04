@@ -11121,8 +11121,8 @@ local function processInvalidAltMenu(app, reinvokeKey)
     end
   end
   if isSameWin then
-    local _, framework = getResourceDir(appid)
-    if framework.electron then
+    local _, frameworks = getResourceDir(appid)
+    if tfind(frameworks, function(f) return f.electron ~= nil end) then
       onLaunchedAndActivated(app, reinvokeKey)
       return
     end
