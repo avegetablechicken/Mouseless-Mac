@@ -1331,6 +1331,65 @@ Phone.hasCall = function(win)
   return section ~= nil, section
 end
 
+Phone.deleteAll = function(section, win)
+  local app = win:application()
+  if section.AXDescription == T("Clear All", win) then
+    Callback.Press(section)
+    local title = section.AXDescription
+    hs.timer.doAfter(0.2, function()
+      if not app:isRunning() then return end
+      if app:focusedWindow():role() == AX.Sheet then
+        local sheet = towinui(app:focusedWindow())
+        local delete = getc(sheet, AX.Button, title)
+        if delete == nil then
+          local totalDelay = 0
+          repeat
+            hs.timer.usleep(0.05 * 1000000)
+            totalDelay = totalDelay + 0.05
+            delete = getc(sheet, AX.Button, title)
+          until delete or totalDelay >= 0.5
+          if delete == nil then return end
+        end
+        Callback.Press(delete)
+      end
+    end)
+    return
+  end
+
+  if not rightClick(section, app) then
+    return
+  end
+
+  local winUI = towinui(win)
+  local popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+  local maxTime, time = 0.5, 0
+  while popup == nil and time < maxTime do
+    hs.timer.usleep(0.01 * 1000000)
+    time = time + 0.01
+    popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+  end
+  if popup == nil then
+    if not rightClick(section, app) then
+      return
+    end
+    popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+    time = 0
+    while popup == nil and time < maxTime do
+      hs.timer.usleep(0.01 * 1000000)
+      time = time + 0.01
+      popup = getc(winUI, AX.Group, 1, AX.Menu, 1)
+    end
+    if popup == nil then return end
+  end
+  local locTitle = T("Delete", app)
+  local menuItem = getc(popup, AX.MenuItem, locTitle)
+  if menuItem ~= nil then
+    Callback.Press(menuItem)
+  end
+  hs.timer.usleep(0.1 * 1000000)
+  Phone.deleteAll(section, win)
+end
+
 Phone.selectView = function(index)
   return function(win)
     local winUI  = towinui(win)
@@ -1461,15 +1520,13 @@ FaceTime.deleteAll = function(section, win)
     end
     if popup == nil then return end
   end
-  local title = app:bundleID() == "com.apple.mobilephone"
-      and "Delete" or "Remove from Recents"
-  local locTitle = T(title, app)
+  local locTitle = T("Remove from Recents", app)
   local menuItem = getc(popup, AX.MenuItem, locTitle)
   if menuItem ~= nil then
     Callback.Press(menuItem)
   end
   hs.timer.usleep(0.1 * 1000000)
-  if app:bundleID() == "com.apple.FaceTime" and OS_VERSION >= OS.Tahoe then
+  if OS_VERSION >= OS.Tahoe then
     local sheet = getc(winUI, AX.Sheet, 1)
     time, maxTime = 0, 0.2
     while sheet == nil and time < maxTime do
@@ -3260,7 +3317,7 @@ appHotKeyCallbacks = {
       message = T("Remove All Recents"),
       windowFilter = Phone.WF.Main,
       condition = Phone.hasCall,
-      fn = FaceTime.deleteAll
+      fn = Phone.deleteAll
     },
     ["newCall"] = {
       message = T("New Call"),
