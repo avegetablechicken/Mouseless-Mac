@@ -9947,10 +9947,11 @@ end
 local appLocales = {} -- if app locale changes, it may change its menu bar items, so need to rebind
 local function updateAppLocale(appid)
   if type(appid) ~= 'string' then appid = appid:bundleID() or appid:name() end
-  local oldAppLocale = appLocales[appid] or SYSTEM_LOCALE
+  local oldAppLocale = appLocales[appid]
   appLocales[appid] = A_AppLocale
-  if oldAppLocale ~= A_AppLocale then
-    if matchLocale(oldAppLocale, { A_AppLocale }) ~= A_AppLocale then
+  if oldAppLocale and oldAppLocale ~= A_AppLocale then
+    if matchLocale(oldAppLocale or SYSTEM_LOCALE, { A_AppLocale })
+        ~= A_AppLocale then
       resetLocalizationMap(appid)
       localizeCommonMenuItemTitles(A_AppLocale, appid)
       unregisterRunningAppHotKeys(appid, true)
