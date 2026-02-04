@@ -545,13 +545,13 @@ local function TC(message, params, params2)
         if app.application then app = app:application() end
         appname = app:name()
       end
-      params = params and tcopy(params) or {}
-      if params.locale == nil then
-        params.locale = getBufferedValidLocale(appid)
+      local paramsCopy = params and tcopy(params) or {}
+      if paramsCopy.locale == nil then
+        paramsCopy.locale = getBufferedValidLocale(appid)
       end
-      if params.locale ~= nil then
+      if paramsCopy.locale ~= nil then
         local result = localizedString(message .. ' App Store',
-                                       'com.apple.AppStore', params)
+                                       'com.apple.AppStore', paramsCopy)
         if result then
           result = result:gsub('App Store', appname)
           return result
@@ -563,14 +563,14 @@ local function TC(message, params, params2)
       or (message == "Zoom" and OS_VERSION >= OS.Tahoe) then
     fn = function(app)
       local appid = getAppId(app)
-      params = params and tcopy(params) or {}
-      if params.locale == nil then
-        params.locale = getBufferedValidLocale(appid)
+      local paramsCopy = params and tcopy(params) or {}
+      if paramsCopy.locale == nil then
+        paramsCopy.locale = getBufferedValidLocale(appid)
       end
-      if params.locale ~= nil then
+      if paramsCopy.locale ~= nil then
         local targetAppId = message == "Zoom" and "com.apple.AppStore"
             or "com.apple.systempreferences"
-        local result = localizedString(message, targetAppId, params)
+        local result = localizedString(message, targetAppId, paramsCopy)
         if result then
           return result
         end
@@ -580,38 +580,38 @@ local function TC(message, params, params2)
   else
     fn = function(app)
       local appid = getAppId(app)
-      params = params and tcopy(params) or {}
-      if params.locale == nil then
-        params.locale = getBufferedValidLocale(appid)
+      local paramsCopy = params and tcopy(params) or {}
+      if paramsCopy.locale == nil then
+        paramsCopy.locale = getBufferedValidLocale(appid)
       end
-      if params.locale ~= nil then
-        if commonLocalizedStringsCache[params.locale]
-            and commonLocalizedStringsCache[params.locale][message] then
-          return commonLocalizedStringsCache[params.locale][message]
+      if paramsCopy.locale ~= nil then
+        if commonLocalizedStringsCache[paramsCopy.locale]
+            and commonLocalizedStringsCache[paramsCopy.locale][message] then
+          return commonLocalizedStringsCache[paramsCopy.locale][message]
         end
-        params.framework = "AppKit.framework"
+        paramsCopy.framework = "AppKit.framework"
         for i, stem in ipairs{ 'MenuCommands', 'Menus', 'Common' } do
-          params.localeFile = stem
+          paramsCopy.localeFile = stem
           local retry = i > 1
-          local result = localizedString(message, params, retry)
+          local result = localizedString(message, paramsCopy, retry)
           if result then
             result = result:gsub('“%%@”', ''):gsub('%%@', '')
-            if commonLocalizedStringsCache[params.locale] == nil then
-              commonLocalizedStringsCache[params.locale] = {}
+            if commonLocalizedStringsCache[paramsCopy.locale] == nil then
+              commonLocalizedStringsCache[paramsCopy.locale] = {}
             end
-            commonLocalizedStringsCache[params.locale][message] = result
+            commonLocalizedStringsCache[paramsCopy.locale][message] = result
             return result
           end
         end
-        params.framework = "UIKitMacHelper.framework"
-        params.localeFile = "MainMenu"
-        local result = localizedString(message, params, true)
+        paramsCopy.framework = "UIKitMacHelper.framework"
+        paramsCopy.localeFile = "MainMenu"
+        local result = localizedString(message, paramsCopy, true)
         if result then
           result = result:gsub('“%%@”', ''):gsub('%%@', '')
-          if commonLocalizedStringsCache[params.locale] == nil then
-            commonLocalizedStringsCache[params.locale] = {}
+          if commonLocalizedStringsCache[paramsCopy.locale] == nil then
+            commonLocalizedStringsCache[paramsCopy.locale] = {}
           end
-          commonLocalizedStringsCache[params.locale][message] = result
+          commonLocalizedStringsCache[paramsCopy.locale][message] = result
           return result
         end
       end
@@ -634,14 +634,14 @@ end
 local function TG(message, params, params2)
   local fn = function(app)
     local appid = getAppId(app)
-    params = params and tcopy(params) or {}
-    if params.locale == nil then
-      params.locale = getBufferedValidLocale(appid)
+    local paramsCopy = params and tcopy(params) or {}
+    if paramsCopy.locale == nil then
+      paramsCopy.locale = getBufferedValidLocale(appid)
     end
-    if params.locale ~= nil then
-      params.framework = "AccessibilitySharedSupport.framework"
-      params.localeFile = "SymbolNamesAutoGenerated"
-      local result = localizedString(message, params)
+    if paramsCopy.locale ~= nil then
+      paramsCopy.framework = "AccessibilitySharedSupport.framework"
+      paramsCopy.localeFile = "SymbolNamesAutoGenerated"
+      local result = localizedString(message, paramsCopy)
       if result then return result end
     end
     return message
@@ -721,18 +721,18 @@ end
 local function T(message, params, sep)
   local fn = function(app)
     local appid = getAppId(app)
-    params = params and tcopy(params) or {}
-    if params.locale == nil then
-      params.locale = getBufferedLocale(app)
+    local paramsCopy = params and tcopy(params) or {}
+    if paramsCopy.locale == nil then
+      paramsCopy.locale = getBufferedLocale(app)
     end
     if type(message) == 'string' then
-      local str = localizedString(message, appid, params) or message
+      local str = localizedString(message, appid, paramsCopy) or message
       return type(str) == 'string' and str or mostFrequent(str)
     else
       if sep == nil then sep = ' > ' end
-      local str = localizedMenuBarItem(message[1], appid, params) or message[1]
+      local str = localizedMenuBarItem(message[1], appid, paramsCopy) or message[1]
       for i=2,#message do
-        local itemStr = localizedString(message[i], appid, params) or message[i]
+        local itemStr = localizedString(message[i], appid, paramsCopy) or message[i]
         str = str .. sep .. (type(itemStr) == 'string' and itemStr or mostFrequent(itemStr))
       end
       return str
