@@ -11748,7 +11748,6 @@ onLaunchedAndActivated = function(app, reinvokeKey)
   local menuBarItems = getBufferedMenuBarItems(app)
   local localeUpdated = updateAppLocale(app)
   local menuBarChanged = reinvokeKey ~= nil
-  altMenuBarItem(app, nil, reinvokeKey)
   if localeUpdated or menuBarChanged then
     unregisterInAppHotKeys(app, true)
     local appid = app:bundleID() or app:name()
@@ -11761,6 +11760,7 @@ onLaunchedAndActivated = function(app, reinvokeKey)
     inWinHotKeys[appid] = nil
     ActivatedAppConditionChain[appid] = nil
   end
+  altMenuBarItem(app, nil, reinvokeKey)
   registerInAppHotKeys(app)
   registerWinFiltersForApp(app)
   remapPreviousTab(app)
