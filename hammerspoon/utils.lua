@@ -624,66 +624,66 @@ function getResourceDir(appid, frameworkName)
     if type(frameworkNames) == 'string' or #frameworkNames == 0 then
       frameworkNames = { frameworkNames }
     end
-    for _, frameworkName in ipairs(frameworkNames) do
-      if type(frameworkName) == 'string' and exists(frameworkName) then
-        frameworkDir = frameworkName
+    for _, name in ipairs(frameworkNames) do
+      if type(name) == 'string' and exists(name) then
+        frameworkDir = name
       elseif appContentPath ~= nil then
-        if type(frameworkName) == 'table'then
-          if frameworkName.electron and
+        if type(name) == 'table'then
+          if name.electron and
               exists(appContentPath .. "/Resources/app.asar") then
             resourceDir = appContentPath .. "/Resources"
-            framework.electron = frameworkName.electron
+            framework.electron = name.electron
             goto END_GET_RESOURCE_DIR
-          elseif frameworkName.java then
+          elseif name.java then
             local jimage, status = hs.execute(strfmt([[
               find '%s' -type f -name jimage | tr -d '\n'
             ]], appContentPath))
             if status and jimage ~= "" then
               resourceDir = jimage:sub(1, #jimage - #'/bin/jimage')
-              framework.java = frameworkName.java
+              framework.java = name.java
               goto END_GET_RESOURCE_DIR
             end
           end
         else
           local _, status = hs.execute(strfmt([[
             find '%s' -type f -path '%s/Resources/%s/*.properties' | tr -d '\n'
-          ]], appContentPath, appContentPath, frameworkName))
+          ]], appContentPath, appContentPath, name))
           if status and _ ~= "" then
-            resourceDir = appContentPath .. '/Resources/' .. frameworkName
+            resourceDir = appContentPath .. '/Resources/' .. name
             framework.properties = true
           end
 
           _, status = hs.execute(strfmt([[
             find '%s' -type f -path '%s/Resources/%s/*.dtd' | tr -d '\n'
-          ]], appContentPath, appContentPath, frameworkName))
+          ]], appContentPath, appContentPath, name))
           if status and _ ~= "" then
-            resourceDir = appContentPath .. '/Resources/' .. frameworkName
+            resourceDir = appContentPath .. '/Resources/' .. name
             framework.dtd = true
           end
 
           _, status = hs.execute(strfmt([[
             find '%s' -type f -path '%s/Resources/%s/*.ftl' | tr -d '\n'
-          ]], appContentPath, appContentPath, frameworkName))
+          ]], appContentPath, appContentPath, name))
           if status and _ ~= "" then
-            resourceDir = appContentPath .. '/Resources/' .. frameworkName
+            resourceDir = appContentPath .. '/Resources/' .. name
             framework.ftl = true
           end
           if resourceDir then goto END_GET_RESOURCE_DIR end
 
           frameworkDir = hs.execute(strfmt([[
             find '%s' -type d -name '%s' | head -n 1 | tr -d '\n'
-          ]], appContentPath, frameworkName))
+          ]], appContentPath, name))
         end
       end
       if (frameworkDir == nil or frameworkDir == "")
-          and type(frameworkName) == 'string' then
+          and type(name) == 'string' then
         for _, searchDir in ipairs {
           '/System/Library/Frameworks',
           '/System/Library/PrivateFrameworks',
           '/System/iOSSupport/System/Library/PrivateFrameworks',
         } do
-          if exists(searchDir .. '/' .. frameworkName) then
-            frameworkDir = searchDir .. '/' .. frameworkName
+          if exists(searchDir .. '/' .. name) then
+            frameworkDir = searchDir .. '/' .. name
             break
           end
         end
