@@ -1303,6 +1303,17 @@ local function PhoneShowViewMenu(winUI)
   return false
 end
 
+Phone.hoveringOverCall = function(win)
+  local appUI = towinui(win).AXParent
+  local elemHoveredOver = appUI:elementAtPosition(hs.mouse.absolutePosition())
+  if elemHoveredOver.AXRole ~= AX.Button then return false end
+  local collection = elemHoveredOver.AXParent
+  if OS_VERSION >= OS.Tahoe then
+    collection = collection.AXParent
+  end
+  return collection.AXDescription == T("Recents", win)
+end
+
 Phone.hasCall = function(win)
   local collection, section
   if OS_VERSION == OS.Tahoe
@@ -1314,7 +1325,7 @@ Phone.hasCall = function(win)
     collection = getc(towinui(win), AX.Group, 1, AX.Group, 1,
         AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1)
   end
-  if collection and collection.AXDescription == T("Recent Calls", win) then
+  if collection and collection.AXDescription == T("Recents", win) then
     section = getc(collection, AX.Group, 1, AX.Button, 1)
   end
   return section ~= nil, section
@@ -3242,7 +3253,7 @@ appHotKeyCallbacks = {
     ["removeFromRecents"] = {
       message = T("Remove from Recents"),
       windowFilter = Phone.WF.Main,
-      condition = FaceTime.hoveringOverCall,
+      condition = Phone.hoveringOverCall,
       fn = FaceTime.deleteMousePositionCall
     },
     ["removeAllRecents"] = {
