@@ -9950,8 +9950,8 @@ local function registerObserversForMenuBarMenu(app, appConfig)
 end
 
 local appLocales = {} -- if app locale changes, it may change its menu bar items, so need to rebind
-local function updateAppLocale(appid)
-  if type(appid) ~= 'string' then appid = appid:bundleID() or appid:name() end
+local function updateAppLocale(app)
+  local appid = app:bundleID() or app:name()
   local oldAppLocale = appLocales[appid]
   appLocales[appid] = A_AppLocale
   if oldAppLocale and oldAppLocale ~= A_AppLocale then
