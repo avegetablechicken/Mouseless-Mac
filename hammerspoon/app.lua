@@ -5755,7 +5755,7 @@ appHotKeyCallbacks = {
       end
     },
     ["remapPreviousTab"] = {
-      message = function(win)
+      message = function()
         local exBundleID = "com.tencent.flue.WeChatAppEx"
         local params = { locale = A_AppLocale }
         return localizedString("Select Previous Tab", exBundleID, params)
