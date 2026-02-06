@@ -1164,7 +1164,7 @@ Messages.deleteSelected = function(app)
   local winUI = towinui(app:focusedWindow())
   local button
   if OS_VERSION >= OS.Tahoe then
-    if hs.host.operatingSystemVersion().minor >= 2 then
+    if OS_VERSION > OS.Tahoe or hs.host.operatingSystemVersion().minor >= 2 then
       button = getc(winUI, AX.Group, 1, AX.Group, 1,
           AX.Group, 1, AX.Group, 1, AX.Button, 2)
     else
@@ -1216,7 +1216,7 @@ end
 Messages.messageItems = function(app)
   local appUI = toappui(app)
   if OS_VERSION >= OS.Tahoe then
-    if hs.host.operatingSystemVersion().minor >= 2 then
+    if OS_VERSION > OS.Tahoe or hs.host.operatingSystemVersion().minor >= 2 then
       return getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
           AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
     else
@@ -1669,7 +1669,8 @@ Weather.getLocationList = function(app)
   local win = app:focusedWindow()
   if win == nil then return end
   local list
-  if OS_VERSION >= OS.Tahoe and hs.host.operatingSystemVersion().minor >= 2 then
+  if OS_VERSION > OS.Tahoe or (OS_VERSION == OS.Tahoe
+      and hs.host.operatingSystemVersion().minor >= 2) then
     list = getc(towinui(win), AX.Group, 1,
         AX.Group, 1, AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 1)
   else
@@ -3232,7 +3233,7 @@ appHotKeyCallbacks = {
         local appUI = toappui(app)
         local button
         if OS_VERSION >= OS.Tahoe then
-          if hs.host.operatingSystemVersion().minor >= 2 then
+          if OS_VERSION > OS.Tahoe or hs.host.operatingSystemVersion().minor >= 2 then
             button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
                 AX.Group, 1, AX.Group, 1, AX.Button, 2)
           else
