@@ -1309,8 +1309,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     elseif panel == CC.Display then
       if OS_VERSION >= OS.Ventura and OS_VERSION <= OS.Sequoia then
         role = AX.Group
-      elseif OS_VERSION > OS.Tahoe or
-          (OS_VERSION == OS.Tahoe and hs.host.operatingSystemVersion().minor >= 1) then
+      elseif OS_VERSION >= OS.Tahoe:withMinor(1) then
         role = AX.Button
       else
         role = AX.StaticText
@@ -1318,16 +1317,14 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     elseif panel == CC.KbBrightness then
       if OS_VERSION <= OS.Sequoia then
         role = AX.Button
-      elseif OS_VERSION > OS.Tahoe or
-          (OS_VERSION == OS.Tahoe and hs.host.operatingSystemVersion().minor >= 1) then
+      elseif OS_VERSION >= OS.Tahoe:withMinor(1) then
         role = AX.Button
         locPanel = controlCenterLocalized(panel, "Keyboard")
       else
         role = AX.StaticText
       end
     elseif panel == CC.Sound then
-      if OS_VERSION > OS.Tahoe or
-        (OS_VERSION == OS.Tahoe and hs.host.operatingSystemVersion().minor >= 1) then
+      if OS_VERSION >= OS.Tahoe:withMinor(1) then
         role = AX.Button
       else
         role = AX.StaticText
@@ -1335,8 +1332,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     elseif tcontain({ CC.Battery, CC.Hearing }, panel) then
       role = AX.Button
     elseif tcontain({ CC.AXShortcuts, CC.User }, panel) then
-      if OS_VERSION > OS.Tahoe or
-          (OS_VERSION == OS.Tahoe and hs.host.operatingSystemVersion().minor >= 1) then
+      if OS_VERSION >= OS.Tahoe:withMinor(1) then
         role = AX.CheckBox
         if panel == CC.AXShortcuts then
           locPanel = controlCenterLocalized(panel, "Accessibility")
@@ -1476,16 +1472,15 @@ local controlCenterPanels = {
   CC.AirDrop, CC.Bluetooth, CC.Display, CC.Focus, CC.KbBrightness,
   CC.NowPlaying, CC.ScreenMirror, CC.Sound, CC.WiFi
 }
-local osMinor = hs.host.operatingSystemVersion().minor
 if OS_VERSION >= OS.Ventura then
   tinsert(controlCenterPanels, CC.StageManager)
 end
 if OS_VERSION >= OS.Sonoma then
   tconcat(controlCenterPanels, { CC.AXShortcuts, CC.Battery, CC.User })
-  if OS_VERSION > OS.Sonoma or osMinor >= 2 then
+  if OS_VERSION >= OS.Sonoma:withMinor(2) then
     tinsert(controlCenterPanels, CC.MusicRecognition)
   end
-  if OS_VERSION > OS.Sonoma or osMinor >= 6 then
+  if OS_VERSION >= OS.Sonoma:withMinor(6) then
     tinsert(controlCenterPanels, CC.Hearing)
   end
 end

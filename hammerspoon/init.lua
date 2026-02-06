@@ -23,16 +23,16 @@ FLAGS["LOADING"] = true
 -- Provides a normalized OS_VERSION string for conditional logic
 -- across different macOS releases.
 OS = {
-  Cheetah           = "10.00",
-  Puma              = "10.01",
-  Jaguar            = "10.02",
-  Panther           = "10.03",
-  Tiger             = "10.04",
-  Leopard           = "10.05",
-  ["Snow Leopard"]  = "10.06",
-  Lion              = "10.07",
-  ["Mountain Lion"] = "10.08",
-  Mavericks         = "10.09",
+  Cheetah           = "10.0",
+  Puma              = "10.1",
+  Jaguar            = "10.2",
+  Panther           = "10.3",
+  Tiger             = "10.4",
+  Leopard           = "10.5",
+  ["Snow Leopard"]  = "10.6",
+  Lion              = "10.7",
+  ["Mountain Lion"] = "10.8",
+  Mavericks         = "10.9",
   Yosemite          = "10.10",
   ["El Capitan"]    = "10.11",
   Sierra            = "10.12",
@@ -47,14 +47,12 @@ OS = {
   Tahoe             = "26"
 }
 
-local osVersion = hs.host.operatingSystemVersion()
-local vm = osVersion.major
-if vm < 11 then
-  local vminor = (osVersion.minor < 10 and "0" or "") .. tostring(osVersion.minor)
-  OS_VERSION = tostring(vm) .. "." .. tostring(vminor)
-else
-  OS_VERSION = tostring(vm)
+local Version = require("version")
+for k, v in pairs(OS) do
+  OS[k] = Version.new(v)
 end
+OS_VERSION = Version.new(hs.host.operatingSystemVersion())
+
 
 -- Hotkey kind and subkind definitions.
 HK = {

@@ -1163,14 +1163,12 @@ Messages.deleteSelected = function(app)
   if app:focusedWindow() == nil then return end
   local winUI = towinui(app:focusedWindow())
   local button
-  if OS_VERSION >= OS.Tahoe then
-    if OS_VERSION > OS.Tahoe or hs.host.operatingSystemVersion().minor >= 2 then
-      button = getc(winUI, AX.Group, 1, AX.Group, 1,
-          AX.Group, 1, AX.Group, 1, AX.Button, 2)
-    else
-      button = getc(winUI, AX.Group, 1, AX.Group, 1,
-          AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 2)
-    end
+  if OS_VERSION >= OS.Tahoe:withMinor(2) then
+    button = getc(winUI, AX.Group, 1, AX.Group, 1,
+        AX.Group, 1, AX.Group, 1, AX.Button, 2)
+  elseif OS_VERSION >= OS.Tahoe then
+    button = getc(winUI, AX.Group, 1, AX.Group, 1,
+        AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 2)
   else
     button = getc(winUI, AX.Group, 1, AX.Group, 1,
         AX.Group, 2, AX.Group, 1, AX.Button, 2)
@@ -1215,15 +1213,13 @@ end
 
 Messages.messageItems = function(app)
   local appUI = toappui(app)
-  if OS_VERSION >= OS.Tahoe then
-    if OS_VERSION > OS.Tahoe or hs.host.operatingSystemVersion().minor >= 2 then
-      return getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-          AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
-    else
-      return getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-          AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
-          AX.StaticText)
-    end
+  if OS_VERSION >= OS.Tahoe:withMinor(2) then
+    return getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+        AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
+  elseif OS_VERSION >= OS.Tahoe then
+    return getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+        AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
+        AX.StaticText)
   else
     return getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
         AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
@@ -1321,8 +1317,7 @@ end
 
 Phone.hasCall = function(win)
   local collection, section
-  if OS_VERSION == OS.Tahoe
-      and hs.host.operatingSystemVersion().minor < 2 then
+  if OS_VERSION < OS.Tahoe:withMinor(2) then
     collection = getc(towinui(win), AX.Group, 1, AX.Group, 1,
         AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
         AX.Group, 1)
@@ -1468,14 +1463,13 @@ FaceTime.hasCall = function(win)
   local section
   if OS_VERSION >= OS.Tahoe then
     local collection
-    if OS_VERSION == OS.Tahoe
-        and hs.host.operatingSystemVersion().minor < 2 then
+    if OS_VERSION >= OS.Tahoe:withMinor(2) then
+      collection = getc(towinui(win), AX.Group, 1, AX.Group, 1,
+          AX.Group, 2, AX.Group, 1, AX.Group, 1)
+    else
       collection = getc(towinui(win), AX.Group, 1, AX.Group, 1,
           AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
           AX.Group, 1)
-    else
-      collection = getc(towinui(win), AX.Group, 1, AX.Group, 1,
-          AX.Group, 2, AX.Group, 1, AX.Group, 1)
     end
     if collection and collection.AXDescription == T("Recent Calls", win) then
       section = getc(collection, AX.Group, 1, AX.Button, 1)
@@ -1548,8 +1542,7 @@ end
 
 local function FaceTimeShowViewMenu(win)
   local button
-  if OS_VERSION < OS.Tahoe or (OS_VERSION == OS.Tahoe
-      and hs.host.operatingSystemVersion().minor < 2) then
+  if OS_VERSION < OS.Tahoe:withMinor(2) then
     button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
         AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
         AX.Button, 1)
@@ -1669,8 +1662,7 @@ Weather.getLocationList = function(app)
   local win = app:focusedWindow()
   if win == nil then return end
   local list
-  if OS_VERSION > OS.Tahoe or (OS_VERSION == OS.Tahoe
-      and hs.host.operatingSystemVersion().minor >= 2) then
+  if OS_VERSION >= OS.Tahoe:withMinor(2) then
     list = getc(towinui(win), AX.Group, 1,
         AX.Group, 1, AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 1)
   else
@@ -2677,8 +2669,7 @@ PasswordsMenuBarExtra.recordField = function(fieldTitle)
   return function(win)
     local winUI = towinui(win)
 
-    if OS_VERSION > OS.Tahoe or
-        (OS_VERSION == OS.Tahoe and hs.host.operatingSystemVersion().minor >= 1) then
+    if OS_VERSION >= OS.Tahoe:withMinor(1) then
       local fieldValues = getc(winUI, AX.Group, 1,
           AX.ScrollArea, 1, AX.Group, 1, AX.StaticText)
       if fieldValues == nil then return false end
@@ -3232,14 +3223,12 @@ appHotKeyCallbacks = {
       fn = function(app)
         local appUI = toappui(app)
         local button
-        if OS_VERSION >= OS.Tahoe then
-          if OS_VERSION > OS.Tahoe or hs.host.operatingSystemVersion().minor >= 2 then
-            button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-                AX.Group, 1, AX.Group, 1, AX.Button, 2)
-          else
-            button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-                AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 2)
-          end
+        if OS_VERSION >= OS.Tahoe:withMinor(2) then
+          button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+              AX.Group, 1, AX.Group, 1, AX.Button, 2)
+        elseif OS_VERSION >= OS.Tahoe then
+          button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+              AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 2)
         else
           button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
               AX.Group, 2, AX.Group, 1, AX.Button, 2)
@@ -3372,8 +3361,7 @@ appHotKeyCallbacks = {
         if OS_VERSION < OS.Tahoe then
           button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
               AX.Group, 1, AX.Group, 1, AX.Button, 2)
-        elseif OS_VERSION == OS.Tahoe
-            and hs.host.operatingSystemVersion().minor < 2 then
+        elseif OS_VERSION < OS.Tahoe:withMinor(2) then
           button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
               AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
               AX.Button, 2)
@@ -3706,11 +3694,7 @@ appHotKeyCallbacks = {
   ["com.apple.weather"] = {
     ["toggleSidebar"] = {
       message = TC("Show Sidebar"),
-      bindCondition = function()
-        return OS_VERSION < OS.Tahoe
-            or (OS_VERSION == OS.Tahoe and
-            hs.host.operatingSystemVersion().minor == 0)
-      end,
+      bindCondition = function() return OS_VERSION <= OS.Tahoe:withMinor(0) end,
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
