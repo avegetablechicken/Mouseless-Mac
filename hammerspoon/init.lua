@@ -49,9 +49,9 @@ OS = {
 
 local Version = require("version")
 for k, v in pairs(OS) do
-  OS[k] = Version.new(v)
+  OS[k] = Version.newOS(v)
 end
-OS_VERSION = Version.new(hs.host.operatingSystemVersion())
+OS_VERSION = Version.newOS(hs.host.operatingSystemVersion())
 
 
 -- Hotkey kind and subkind definitions.

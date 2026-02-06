@@ -789,63 +789,37 @@ end
 
 local Version = {}
 
--- Build a version comparison predicate
--- Supported operators: == ~= < <= > >=
-local function versionCompare(comp, versionStr, extra)
-  local fn = function(app)
-    local appid = getAppId(app)
-    local appMajor, appMinor, appPatch = applicationVersion(appid)
-    local version = strsplit(versionStr, "%.")
-    local major, minor, patch
-    major = tonumber(version[1]:match("%d+"))
-    minor = #version > 1 and tonumber(version[2]:match("%d+")) or 0
-    patch = #version > 2 and tonumber(version[3]:match("%d+")) or 0
-    if comp == "==" then
-      return appMajor == major and appMinor == minor and appPatch == patch
-    elseif comp == "~=" then
-      return appMajor ~= major or appMinor ~= minor or appPatch ~= patch
-    elseif comp == "<" or comp == "<=" then
-      return appMajor < major
-          or (appMajor == major and appMinor < minor)
-          or (appMajor == major and appMinor == minor and appPatch < patch)
-          or (comp == "<=" and
-              appMajor == major and appMinor == minor and appPatch == patch)
-    elseif comp == ">" or comp == ">=" then
-      return appMajor > major
-          or (appMajor == major and appMinor > minor)
-          or (appMajor == major and appMinor == minor and appPatch > patch)
-          or (comp == ">=" and
-              appMajor == major and appMinor == minor and appPatch == patch)
-    end
-  end
-
-  if type(versionStr) == 'string' then
-    return fn
-  else
-    local app = versionStr
-    versionStr = extra
-    return fn(app)
-  end
+local makeVer = require("version").new
+local function appVer(obj)
+  return applicationVersion(getAppId(obj))
 end
 
 -- Check if app version is less than target
-Version.LessThan = function(...)
-  return versionCompare("<", ...)
+Version.LessThan = function(version)
+  return function(obj)
+    return appVer(obj) < makeVer(version)
+  end
 end
 
 -- Check if app version is greater than target
-Version.GreaterThan = function(...)
-  return versionCompare(">", ...)
+Version.GreaterThan = function(version)
+  return function(obj)
+    return appVer(obj) > makeVer(version)
+  end
 end
 
 -- Check if app version >= target
-Version.GreaterEqual = function(...)
-  return versionCompare(">=", ...)
+Version.GreaterEqual = function(version)
+  return function(obj)
+    return appVer(obj) >= makeVer(version)
+  end
 end
 
 -- Check if app version <= target
-Version.LessEqual = function(...)
-  return versionCompare("<=", ...)
+Version.LessEqual = function(version)
+  return function(obj)
+    return appVer(obj) <= makeVer(version)
+  end
 end
 
 -- Check whether app version is within a half-open interval.
@@ -853,8 +827,10 @@ end
 -- Version.Between(a, b) means:
 --   a <= version < b
 Version.Between = function(version1, version2)
-  return function(app)
-    return Version.GreaterEqual(app, version1) and Version.LessThan(app, version2)
+  return function(obj)
+    local appVersion = appVer(obj)
+    return appVersion >= makeVer(version1)
+        and appVersion < makeVer(version2)
   end
 end
 
@@ -1689,7 +1665,7 @@ VSCode.WF.Main = {
 
 VSCode.toggleSideBarSection = function(win, sidebar, section)
   local pressfn
-  if Version.LessThan(win, "1.101") then
+  if appVer(win) < "1.101" then
     pressfn = Callback.Press
   else
     if A_AppBuf.VSCodeTabClicked then return end
@@ -1732,7 +1708,7 @@ VSCode.toggleSideBarSection = function(win, sidebar, section)
       return t.AXTitle:upper():sub(1, #sidebar) == sidebar
           or t.AXDescription:upper():sub(1, #sidebar) == sidebar
     end)
-    if Version.GreaterEqual(win, "1.101") then
+    if appVer(win) >= "1.101" then
       A_AppBuf.VSCodeTabClicked = true
       hs.timer.doAfter(2, function()
         A_AppBuf.VSCodeTabClicked = nil
@@ -1897,7 +1873,7 @@ local WeChat = {}
 WeChat.WF = {
   Main = {
     fn = function(win)
-      if Version.GreaterEqual(win, "4") then
+      if appVer(win) >= "4" then
         local view1 = getc(towinui(win), AX.Group, 1, AX.Button, 1)
         return view1 and view1.AXTitle == win:title()
       else
@@ -1911,10 +1887,10 @@ WeChat.WF = {
       local app = win:application()
       local title = win:title()
       if title:find(app:name()) == nil then
-        if Version.GreaterEqual(app, "4.0.6") then
+        if appVer(app) >= "4.0.6" then
           local moments = findMenuItemByKeyBinding(app, "⌘", "4", "Window")
           return moments and title == moments[2]
-        elseif Version.GreaterEqual(app, "4") then
+        elseif appVer(app) >= "4" then
           return title == T("Moments", win)
         else
           local album = T("Album_WindowTitle", win)
@@ -1949,7 +1925,7 @@ WeChat.WF = {
   },
   AppExWeb = {
     fn = function(win)
-      if Version.LessThan(win, "4") then
+      if appVer(win) < "4" then
         local g = getc(towinui(win), AX.Group, 1)
         return g ~= nil and g.AXDOMClassList ~= nil
       else
@@ -2061,7 +2037,7 @@ WeChat.WF = {
   }
 }
 Evt.OnRunning("com.tencent.xinWeChat", function(app)
-  if Version.LessThan(app, "4") then
+  if appVer(app) < "4" then
     if WeChat.WF.Preview.fn == nil then
       local rotate = T("Rotate", app)
       WeChat.WF.Preview.fn = function(win)
@@ -2099,7 +2075,7 @@ Evt.OnRunning("com.tencent.xinWeChat", function(app)
         return button ~= nil
       end
     end
-  elseif Version.LessThan(app, "4.0.6") then
+  elseif appVer(app) < "4.0.6" then
     local title = T("Preview", app)
     WeChat.WF.Preview.allowTitles = '^' .. title .. '$'
     WeChat.WF.PreviewEditable.allowTitles = '^' .. title .. '$'
@@ -2185,7 +2161,7 @@ Yuanbao.WF = {}
 Yuanbao.WF.Main = {}
 Evt.OnRunning("com.tencent.yuanbao", function(app)
   local title
-  title = Version.LessThan(app, "2.48") and "Tencent Yuanbao" or "Yuanbao"
+  title = appVer(app) < "2.48" and "Tencent Yuanbao" or "Yuanbao"
   title = T(title, app)
   Yuanbao.WF.Main.allowTitles = '^' .. title .. '$'
 end)
@@ -2255,7 +2231,7 @@ Bartender.barItemTitle = function(index, rightClick)
       local app = win:application()
 
       local itemNames, itemIDs = {}, {}
-      if Version.LessThan(app, "6") or Version.GreaterEqual(app, "6.1.1") then
+      if appVer(app) < "6" or appVer(app) >= "6.1.1" then
         local appid = app:bundleID()
         local _, items = hs.osascript.applescript(strfmt([[
           tell application id "%s" to list menu bar items
@@ -2267,7 +2243,7 @@ Bartender.barItemTitle = function(index, rightClick)
           splitterIndex = splitterIndex - (#appnames - (barSplitterIndex - 1))
         end
         local missedItemCnt = 0
-        if Version.LessThan(app, "5.5") then
+        if appVer(app) < "5.5" then
           local plistPath = hs.fs.pathToAbsolute(strfmt(
               "~/Library/Preferences/%s.plist", appid))
           if plistPath ~= nil then
@@ -2286,7 +2262,7 @@ Bartender.barItemTitle = function(index, rightClick)
           for i = 1, #appnames do
             local appname = appnames[i]
             local itemID
-            if Version.LessThan(app, "5.5") then
+            if appVer(app) < "5.5" then
               itemID = itemList[splitterIndex + 1 + #appnames - i]
             else
               itemID = itemList[splitterIndex - 1 - #appnames + i]
@@ -2412,7 +2388,7 @@ end
 
 Bartender.WF.Main = {}
 Evt.OnRunning("com.surteesstudios.Bartender", function(app)
-  if Version.LessThan(app, "6") then
+  if appVer(app) < "6" then
     Bartender.WF.Main.allowTitles = app:name()
   else
     Bartender.WF.Main.fn = function(win)
@@ -2425,7 +2401,7 @@ end)
 Bartender.sidebarItemTitle = function(index)
   return function(win)
     local winUI = towinui(win)
-    if Version.LessThan(win, "6") then
+    if appVer(win) < "6" then
       local rows = A_WinBuf:get("sidebarRows", function()
         return getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
             AX.Outline, 1, AX.Row) or {}
@@ -2709,7 +2685,7 @@ local iCopy = {}
 
 iCopy.selectHotkeyRemap = function(idx)
   return function(win)
-    local iCopyMod = Version.LessThan(win, "1.1.1") and "" or "⌃"
+    local iCopyMod = appVer(win) < "1.1.1" and "" or "⌃"
     hs.eventtap.keyStroke(iCopyMod, tostring(idx), nil, win:application())
   end
 end
@@ -4756,7 +4732,7 @@ appHotKeyCallbacks = {
       condition = function(app)
         local win = app:focusedWindow()
         if win == nil then
-          return Version.GreaterEqual(app, "2")
+          return appVer(app) >= "2"
         end
         if win:title() == T("Yuanbao Setting", app)
             or win:title() == T("Tencent Yuanbao Setting", app) then
@@ -4790,7 +4766,7 @@ appHotKeyCallbacks = {
           end
         end
 
-        return Version.GreaterEqual(app, "2")
+        return appVer(app) >= "2"
       end,
       fn = function(button, app)
         if app ~= nil then
@@ -4892,7 +4868,7 @@ appHotKeyCallbacks = {
         local webarea = getc(towinui(win), AX.Group, 1, AX.Group, 1,
             AX.ScrollArea, 1, AX.WebArea, 1)
         if webarea == nil then return false end
-        if Version.LessThan(win, "1.15.0") then
+        if appVer(win) < "1.15.0" then
           local button = tfind(getc(webarea, AX.Group), function(b)
             return tfind(b.AXDOMClassList or {}, function(c)
               return c:find("folder_foldIcon") ~= nil
@@ -4936,7 +4912,7 @@ appHotKeyCallbacks = {
       message = TB("Open Mini Chat"),
       background = true,
       fn = function(app)
-        if Version.LessThan(app, "2") then
+        if appVer(app) < "2" then
           -- false invoke when menubar manager try to show or hide menubar icon
           -- always show the icon to workaround it
           clickRightMenuBarItem(app, {}, "click")
@@ -5279,7 +5255,7 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.Moments,
       condition = function(win)
         local button
-        if Version.LessThan(win, "4") then
+        if appVer(win) < "4" then
           button = tfind(getc(towinui(win), AX.Button) or {},
               function(bt) return bt.AXDescription == A_Message end)
         else
@@ -5291,7 +5267,7 @@ appHotKeyCallbacks = {
     },
     ["hideChat"] = {
       message = function(win)
-        if Version.LessThan(win, "4") then
+        if appVer(win) < "4" then
           local title = T("Chats.Menu.Hide", win)
           local chats = getc(towinui(win), AX.SplitGroup, 1,
               AX.ScrollArea, 1, AX.Table, 1)
@@ -5316,7 +5292,7 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.Main,
       condition = function(win)
         local winUI = towinui(win)
-        if Version.LessThan(win, "4") then
+        if appVer(win) < "4" then
           local chats = getc(winUI, AX.SplitGroup, 1,
               AX.ScrollArea, 1, AX.Table, 1, AX.Row)
           if chats == nil then return end
@@ -5441,7 +5417,7 @@ appHotKeyCallbacks = {
     },
     ["previewImageSize"] = {
       message = function(win)
-        if Version.LessThan(win, "4") then
+        if appVer(win) < "4" then
           return T("Actual size", win) .. ' / ' .. T("Window Size", win)
         else
           return T("Original image size", win) .. ' / ' .. T("Fit to Window", win)
@@ -5451,7 +5427,7 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         local titles = strsplit(A_Message, ' / ')
-        if Version.LessThan(win, "4") then
+        if appVer(win) < "4" then
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == titles[1] or bt.AXHelp == titles[2]
@@ -5472,7 +5448,7 @@ appHotKeyCallbacks = {
       bindCondition = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
-        if Version.LessThan(win, "4") then
+        if appVer(win) < "4" then
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5492,7 +5468,7 @@ appHotKeyCallbacks = {
       bindCondition = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.PreviewEditable,
       condition = function(win)
-        if Version.LessThan(win, "4") then
+        if appVer(win) < "4" then
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5512,7 +5488,7 @@ appHotKeyCallbacks = {
       bindCondition = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
-        if Version.LessThan(win, "4") then
+        if appVer(win) < "4" then
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5532,7 +5508,7 @@ appHotKeyCallbacks = {
       bindCondition = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
-        if Version.LessThan(win, "4") then
+        if appVer(win) < "4" then
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5549,14 +5525,14 @@ appHotKeyCallbacks = {
     },
     ["photoEditorInsertRectangle"] = {
       message = function(win)
-        local title = Version.LessThan(win, "4")
+        local title = appVer(win) < "4"
             and "Rectangle" or "Rectangle Tool"
         return T(title, win)
       end,
       bindCondition = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
-        if Version.LessThan(win, "4") then
+        if appVer(win) < "4" then
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5573,14 +5549,14 @@ appHotKeyCallbacks = {
     },
     ["photoEditorInsertEllipse"] = {
       message = function(win)
-        local title = Version.LessThan(win, "4")
+        local title = appVer(win) < "4"
             and "Circle" or "Ellipse Tool"
         return T(title, win)
       end,
       bindCondition = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
-        if Version.LessThan(win, "4") then
+        if appVer(win) < "4" then
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5597,14 +5573,14 @@ appHotKeyCallbacks = {
     },
     ["photoEditorInsertMosaic"] = {
       message = function(win)
-        local title = Version.LessThan(win, "4")
+        local title = appVer(win) < "4"
             and "Pixelate" or "Mosaic"
         return T(title, win)
       end,
       bindCondition = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
-        if Version.LessThan(win, "4") then
+        if appVer(win) < "4" then
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5632,7 +5608,7 @@ appHotKeyCallbacks = {
       bindCondition = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
-        if Version.LessThan(win, "4") then
+        if appVer(win) < "4" then
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
@@ -5697,7 +5673,7 @@ appHotKeyCallbacks = {
       bindCondition = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
-        if Version.LessThan(win, "4") then
+        if appVer(win) < "4" then
           local buttons = A_WinBuf.buttons
           local button = tfind(buttons, function(bt)
             return bt.AXDescription == A_Message
@@ -5714,7 +5690,7 @@ appHotKeyCallbacks = {
     },
     ["openInDefaultBrowser"] = {
       message = function(win)
-        if Version.LessThan(win, "4") then
+        if appVer(win) < "4" then
           return T("Open in Default Browser", win)
         else
           local exBundleID = "com.tencent.flue.WeChatAppEx"
@@ -5725,7 +5701,7 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.AppExWeb,
       condition = function(win)
         local app = win:application()
-        if Version.LessThan(app, "4") then return true end
+        if appVer(app) < "4" then return true end
         local button = A_WinBuf.closeWebButton
         if button.AXRole == AX.PopUpButton then
           local tabs = getc(towinui(win), AX.Group, 1,
@@ -5865,7 +5841,7 @@ appHotKeyCallbacks = {
             AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.WebArea, 1)
         local image = getc(webarea, AX.Group, 1,
             AX.Group, 2, AX.Group, 1, nil, 1, AX.Image, 1)
-        if Version.GreaterEqual(win, "6.9.83") then
+        if appVer(win) >= "6.9.83" then
           return Callback.Clickable(image)
         else
           return image ~= nil, image
@@ -5885,7 +5861,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local titleBar
-        if Version.LessThan(win, "10.3.0") then
+        if appVer(win) < "10.3.0" then
           local appUI = toappui(win:application())
           local frame = win:frame()
           titleBar = appUI:elementAtPosition(uioffset(frame, { 100, 10 }))
@@ -5911,7 +5887,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local titleBar
-        if Version.LessThan(win, "10.3.0") then
+        if appVer(win) < "10.3.0" then
           local appUI = toappui(win:application())
           local frame = win:frame()
           titleBar = appUI:elementAtPosition(uioffset(frame, { 100, 10 }))
@@ -5937,7 +5913,7 @@ appHotKeyCallbacks = {
       },
       condition = function(win)
         local titleBar
-        if Version.LessThan(win, "10.3.0") then
+        if appVer(win) < "10.3.0" then
           local appUI = toappui(win:application())
           local frame = win:frame()
           titleBar = appUI:elementAtPosition(uioffset(frame, { 100, 10 }))
@@ -6500,7 +6476,7 @@ appHotKeyCallbacks = {
     ["toggleMenuBar"] = {
       message = T("Show menu bar item"),
       bindCondition = function(app)
-        return Version.LessThan(app, "6") or Version.GreaterEqual(app, "6.1.1")
+        return appVer(app) < "6" or appVer(app) >= "6.1.1"
       end,
       kind = HK.MENUBAR,
       background = true,
@@ -6633,7 +6609,7 @@ appHotKeyCallbacks = {
     ["searchMenuBar"] = {
       message = "Search Menu Bar",
       bindCondition = function(app)
-        return Version.LessThan(app, "6") or Version.GreaterEqual(app, "6.1.1")
+        return appVer(app) < "6" or appVer(app) >= "6.1.1"
       end,
       kind = HK.MENUBAR,
       background = true,
@@ -6648,7 +6624,7 @@ appHotKeyCallbacks = {
       kind = HK.MENUBAR,
       background = true,
       bindCondition = function(app)
-        if Version.GreaterEqual(app, "6") then return false end
+        if appVer(app) >= "6" then return false end
         -- the property update in command line is not working
         local _, ok = hs.execute(strfmt(
             "defaults read '%s' hotkeyKeyboardNav", app:bundleID()))
@@ -10469,9 +10445,9 @@ local specialToolbarButtons = {
     end
   end,
   ["com.tencent.xinWeChat"] = function(winUI)
-    if Version.LessThan(winUI, "4") then
+    if appVer(winUI) < "4" then
       return getToolbarButtons(winUI)
-    elseif Version.GreaterEqual(winUI, "4.0.6") then
+    elseif appVer(winUI) >= "4.0.6" then
       return
     end
     local buttons = {}
@@ -11223,7 +11199,7 @@ local specialLocalizedCommonMenuBarTitle = {
 }
 Evt.OnRunning("com.tencent.xinWeChat", function(app)
   local appid = app:bundleID()
-  if applicationVersion(appid) >= 4 then
+  if applicationVersion(appid) >= "4" then
     specialLocalizedCommonMenuBarTitle[appid] = { View = "Show" }
   end
 end)
@@ -11450,7 +11426,7 @@ local function altMenuBarItem(app, force, reinvokeKey)
     end
     if #itemTitles ~= #itemLocTitles then
       if appid == "com.tencent.xinWeChat" then
-        local exBundleID = Version.LessThan(app, "4")
+        local exBundleID = appVer(app) < "4"
             and "com.tencent.xinWeChat.WeChatAppEx" or "com.tencent.flue.WeChatAppEx"
         local newItemLocTitles = delocalizeMenuBarItems(itemTitles, exBundleID,
                                                         localeParams)
@@ -11978,7 +11954,7 @@ end
 
 local specialNoPseudoWindowRules = {
   ["com.app.menubarx"] = function(app, defaultRule)
-    return Version.LessThan(app, "1.6.9") and defaultRule()
+    return appVer(app) < "1.6.9" and defaultRule()
   end
 }
 PseudoWindowDestroyObservers = {}

@@ -342,6 +342,7 @@ function installed(appid)
 end
 
 -- Retrieve application version as (major, minor, patch).
+local Version = require("version")
 function applicationVersion(appid)
   local appPath = hs.application.pathForBundleID(appid)
   if appPath == nil or appPath == "" then return end
@@ -352,12 +353,7 @@ function applicationVersion(appid)
   else
     version = hs.execute(strfmt("mdls -r -name kMDItemVersion '%s'", appPath))
   end
-  version = strsplit(version, "%.")
-  local major, minor, patch
-  major = tonumber(version[1]:match("%d+"))
-  minor = #version > 1 and tonumber(version[2]:match("%d+")) or 0
-  patch = #version > 2 and tonumber(version[3]:match("%d+")) or 0
-  return major, minor, patch
+  return Version.new(version)
 end
 
 -- # mouse event helpers
@@ -494,7 +490,7 @@ function applicationLocale(appid)
   -- locale of `WeChat` and apps whose localization is enabled by Electron or Java
   -- cannot be aquired in preferences files
   if appid == "com.tencent.xinWeChat" then
-    if applicationVersion(appid) >= 4 then
+    if applicationVersion(appid) >= "4" then
       local app = find(appid)
       if app then
         local file = getc(toappui(app),
@@ -2575,7 +2571,7 @@ local function localizedStringImpl(str, appid, params, force)
   elseif appid == "com.kingsoft.wpsoffice.mac" then
     result, locale = localizeWPS(str, appLocale, localeFile)
     return result, appLocale, locale
-  elseif appid == "com.tencent.xinWeChat" and applicationVersion(appid) >= 4 then
+  elseif appid == "com.tencent.xinWeChat" and applicationVersion(appid) >= "4" then
     result, locale = localizeWeChat(str, appLocale)
     return result, appLocale, locale
   end
@@ -3758,7 +3754,7 @@ local function delocalizedStringImpl(str, appid, params, force)
   elseif appid == "com.kingsoft.wpsoffice.mac" then
     result, locale = delocalizeWPS(str, appLocale, localeFile)
     return result, appLocale, locale
-  elseif appid == "com.tencent.xinWeChat" and applicationVersion(appid) >= 4 then
+  elseif appid == "com.tencent.xinWeChat" and applicationVersion(appid) >= "4" then
     result, locale = delocalizeWeChat(str, appLocale)
     return result, appLocale, locale
   end
@@ -4955,8 +4951,8 @@ MENUBAR_MANAGER_SHOW = {
     end
 
     -- Prefer AppleScript for stable Bartender versions (more direct).
-    local major, minor, patch = applicationVersion(manager:bundleID())
-    if not (major == 6 and (minor < 1 or (minor == 1 and patch == 0))) then
+    local version = applicationVersion(manager:bundleID())
+    if version < "6" or version > "6.1.0" then
       local clickMode = click == "right-click" and " with right click" or ""
       hs.osascript.applescript(strfmt([[
         tell application id "%s" to activate "%s-%s"%s
