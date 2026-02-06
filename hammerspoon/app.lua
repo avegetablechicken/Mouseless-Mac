@@ -6476,7 +6476,8 @@ appHotKeyCallbacks = {
     ["toggleMenuBar"] = {
       message = T("Show menu bar item"),
       enabled = function(app)
-        return appVer(app) < "6" or appVer(app) >= "6.1.1"
+        local appVersion = appVer(app)
+        return appVersion < "6" or appVersion >= "6.1.1"
       end,
       kind = HK.MENUBAR,
       background = true,
@@ -6609,7 +6610,8 @@ appHotKeyCallbacks = {
     ["searchMenuBar"] = {
       message = "Search Menu Bar",
       enabled = function(app)
-        return appVer(app) < "6" or appVer(app) >= "6.1.1"
+        local appVersion = appVer(app)
+        return appVersion < "6" or appVersion >= "6.1.1"
       end,
       kind = HK.MENUBAR,
       background = true,
