@@ -3367,31 +3367,31 @@ appHotKeyCallbacks = {
     },
     ["view1"] = {
       message = T("Calls"),
-      bindCondition = function() return OS_VERSION >= OS.Tahoe end,
+      bindCondition = OS_VERSION >= OS.Tahoe,
       windowFilter = FaceTime.WF.Main,
       fn = FaceTime.selectView(1)
     },
     ["view2"] = {
       message = T("Missed"),
-      bindCondition = function() return OS_VERSION >= OS.Tahoe end,
+      bindCondition = OS_VERSION >= OS.Tahoe,
       windowFilter = FaceTime.WF.Main,
       fn = FaceTime.selectView(2)
     },
     ["view3"] = {
       message = T("Video"),
-      bindCondition = function() return OS_VERSION >= OS.Tahoe end,
+      bindCondition = OS_VERSION >= OS.Tahoe,
       windowFilter = FaceTime.WF.Main,
       fn = FaceTime.selectView(3)
     },
     ["view4"] = {
       message = T("Voicemail"),
-      bindCondition = function() return OS_VERSION >= OS.Tahoe end,
+      bindCondition = OS_VERSION >= OS.Tahoe,
       windowFilter = FaceTime.WF.Main,
       fn = FaceTime.selectView(4)
     },
     ["view5"] = {
       message = T("Spam"),
-      bindCondition = function() return OS_VERSION >= OS.Tahoe end,
+      bindCondition = OS_VERSION >= OS.Tahoe,
       windowFilter = FaceTime.WF.Main,
       fn = FaceTime.selectView(5)
     }
@@ -3448,7 +3448,7 @@ appHotKeyCallbacks = {
   ["com.apple.Notes"] = {
     ["toggleFolders"] = {
       message = T("Show Folders"),
-      bindCondition = function() return OS_VERSION < OS.Tahoe end,
+      bindCondition = OS_VERSION < OS.Tahoe,
       condition = MenuItem.isEnabled({ "View", "Show Folders" },
                                      { "View", "Hide Folders" }),
       fn = Callback.Select
@@ -3670,7 +3670,7 @@ appHotKeyCallbacks = {
   ["com.apple.weather"] = {
     ["toggleSidebar"] = {
       message = TC("Show Sidebar"),
-      bindCondition = function() return OS_VERSION <= OS.Tahoe:withMinor(0) end,
+      bindCondition = OS_VERSION <= OS.Tahoe:withMinor(0),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
@@ -3762,7 +3762,7 @@ appHotKeyCallbacks = {
   {
     ["back"] = {
       message = T("Back"),
-      bindCondition = function() return OS_VERSION < OS.Tahoe end,
+      bindCondition = OS_VERSION < OS.Tahoe,
       condition = function(app)
         local menuItem, menuItemTitle = findMenuItem(app, { "Store", "Back" })
         if menuItem ~= nil and menuItem.enabled then
@@ -7201,7 +7201,7 @@ appHotKeyCallbacks = {
   ["com.apple.Passwords"] = {
     ["search"] = {
       message = T("Search"),
-      bindCondition = function() return OS_VERSION >= OS.Tahoe end,
+      bindCondition = OS_VERSION >= OS.Tahoe,
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local searchButton = getc(towinui(app:focusedWindow()),
@@ -7361,7 +7361,7 @@ appHotKeyCallbacks = {
     ["closeWindow"] = {
       mods = "", key = "Escape",
       message = TC("Close Window"),
-      bindCondition = function() return OS_VERSION < OS.Tahoe end,
+      bindCondition = OS_VERSION < OS.Tahoe,
       windowFilter = {
         allowRoles = AX.SystemDialog
       },
@@ -7487,7 +7487,7 @@ appHotKeyCallbacks = {
     ["closeWindow"] = {
       mods = "", key = "Escape",
       message = TC("Close Window"),
-      bindCondition = function() return OS_VERSION >= OS.Tahoe end,
+      bindCondition = OS_VERSION >= OS.Tahoe,
       windowFilter = {
         allowTitles = "^$",
         allowRoles = AX.SystemDialog,
@@ -8548,6 +8548,12 @@ local function getKeybinding(appid, hkID, defaultCommon)
   return keybinding
 end
 
+local function bindable(obj, cond)
+  if cond == nil then return true end
+  if type(cond) == 'boolean' then return cond end
+  return cond(obj)
+end
+
 -- hotkeys for background apps
 local unregisterRunningAppHotKeys
 local function registerRunningAppHotKeys(appid, app)
@@ -8575,14 +8581,13 @@ local function registerRunningAppHotKeys(appid, app)
       goto L_CONTINUE
     end
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
-    local bindable
+    local bindableEx
     if isPersistent then
-      bindable = function()
-        return installed(appid) and
-            (cfg.bindCondition == nil or cfg.bindCondition(appid))
+      bindableEx = function()
+        return installed(appid) and bindable(appid, cfg.bindCondition)
       end
     else
-      bindable = function()
+      bindableEx = function()
         if not running then return false end
         if app == nil then
           if FLAGS["LOADING"] then
@@ -8592,10 +8597,10 @@ local function registerRunningAppHotKeys(appid, app)
           end
         end
         running = app ~= nil
-        return app and (cfg.bindCondition == nil or cfg.bindCondition(app))
+        return app and bindable(app, cfg.bindCondition)
       end
     end
-    if hasKey and isBackground and not isForWindow and bindable() then
+    if hasKey and isBackground and not isForWindow and bindableEx() then
       local fn
       if isPersistent then
         fn = function()
@@ -9226,11 +9231,8 @@ registerInAppHotKeys = function(app)
       local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
       local isMenuBarMenu = keybinding.menubarFilter ~= nil
           or cfg.menubarFilter ~= nil
-      local bindable = function()
-        return cfg.bindCondition == nil or cfg.bindCondition(app)
-      end
       if hasKey and not isBackground and not isForWindow
-          and not isMenuBarMenu and bindable() then
+          and not isMenuBarMenu and bindable(app, cfg.bindCondition) then
         local msg = type(cfg.message) == 'string'
             and cfg.message or cfg.message(app)
         if msg ~= nil then
@@ -9351,10 +9353,8 @@ registerInWinHotKeys = function(win, filter)
       local isForWindow = windowFilter ~= nil
       local isBackground = keybinding.background ~= nil
           and keybinding.background or cfg.background
-      local bindable = function()
-        return cfg.bindCondition == nil or cfg.bindCondition(app)
-      end
-      if hasKey and isForWindow and not isBackground and bindable()
+      if hasKey and isForWindow and not isBackground
+          and bindable(app, cfg.bindCondition)
           and sameFilter(windowFilter, filter) then
         local msg, fallback
         if type(cfg.message) == 'string' then msg = cfg.message
@@ -9594,10 +9594,8 @@ local function registerWinFiltersForApp(app)
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
-    local bindable = function()
-      return cfg.bindCondition == nil or cfg.bindCondition(app)
-    end
-    if hasKey and isForWindow and not isBackground and bindable() then
+    if hasKey and isForWindow and not isBackground
+        and bindable(app, cfg.bindCondition) then
       local windowFilter = keybinding.windowFilter or cfg.windowFilter
       registerSingleWinFilterForApp(app, windowFilter)
     end
@@ -9630,10 +9628,8 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
         and keybinding.background or cfg.background
     local windowFilter = keybinding.windowFilter or cfg.windowFilter
     local isForWindow = windowFilter ~= nil
-    local bindable = function()
-      return cfg.bindCondition == nil or cfg.bindCondition(app)
-    end
-    if hasKey and isForWindow and isBackground and bindable()
+    if hasKey and isForWindow and isBackground
+        and bindable(app, cfg.bindCondition)
         and sameFilter(windowFilter, filter) then
       local msg = type(cfg.message) == 'string'
           and cfg.message or injectWindowState(cfg.message)(win)
@@ -9759,10 +9755,8 @@ local function registerWinFiltersForDaemonApp(app, appConfig)
     local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
-    local bindable = function()
-      return cfg.bindCondition == nil or cfg.bindCondition(app)
-    end
-    if hasKey and isForWindow and isBackground and bindable() then
+    if hasKey and isForWindow and isBackground
+        and bindable(app, cfg.bindCondition) then
       local windowFilter = keybinding.windowFilter or cfg.windowFilter
       registerSingleWinFilterForDaemonApp(app, windowFilter)
     end
@@ -9789,10 +9783,7 @@ registerInMenuHotkeys = function(app)
     local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local menubarFilter = keybinding.menubarFilter or cfg.menubarFilter
-    local bindable = function()
-      return cfg.bindCondition == nil or cfg.bindCondition(app)
-    end
-    if hasKey and menubarFilter ~= nil and bindable() then
+    if hasKey and menubarFilter and bindable(app, cfg.bindCondition) then
       local menu
       if type(menubarFilter) == 'table' then
         if menubarFilter.allowIndices then
@@ -9884,10 +9875,7 @@ local function registerObserversForMenuBarMenu(app, appConfig)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isMenuBarMenu = keybinding.menubarFilter ~= nil
         or cfg.menubarFilter ~= nil
-    local bindable = function()
-      return cfg.bindCondition == nil or cfg.bindCondition(app)
-    end
-    if hasKey and isMenuBarMenu and bindable() then
+    if hasKey and isMenuBarMenu and bindable(app, cfg.bindCondition) then
       local observer = MenuBarMenuObservers[appid]
       if observer == nil then
         local appUI = toappui(app)
