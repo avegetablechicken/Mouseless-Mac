@@ -3238,7 +3238,7 @@ appHotKeyCallbacks = {
                 AX.Group, 1, AX.Group, 1, AX.Button, 2)
           else
             button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
-                AX.Group, 1, AX.Group, 1, AX.Button, 2)
+                AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.Button, 2)
           end
         else
           button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
