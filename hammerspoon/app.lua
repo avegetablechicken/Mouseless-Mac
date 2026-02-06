@@ -3367,31 +3367,31 @@ appHotKeyCallbacks = {
     },
     ["view1"] = {
       message = T("Calls"),
-      bindCondition = OS_VERSION >= OS.Tahoe,
+      enabled = OS_VERSION >= OS.Tahoe,
       windowFilter = FaceTime.WF.Main,
       fn = FaceTime.selectView(1)
     },
     ["view2"] = {
       message = T("Missed"),
-      bindCondition = OS_VERSION >= OS.Tahoe,
+      enabled = OS_VERSION >= OS.Tahoe,
       windowFilter = FaceTime.WF.Main,
       fn = FaceTime.selectView(2)
     },
     ["view3"] = {
       message = T("Video"),
-      bindCondition = OS_VERSION >= OS.Tahoe,
+      enabled = OS_VERSION >= OS.Tahoe,
       windowFilter = FaceTime.WF.Main,
       fn = FaceTime.selectView(3)
     },
     ["view4"] = {
       message = T("Voicemail"),
-      bindCondition = OS_VERSION >= OS.Tahoe,
+      enabled = OS_VERSION >= OS.Tahoe,
       windowFilter = FaceTime.WF.Main,
       fn = FaceTime.selectView(4)
     },
     ["view5"] = {
       message = T("Spam"),
-      bindCondition = OS_VERSION >= OS.Tahoe,
+      enabled = OS_VERSION >= OS.Tahoe,
       windowFilter = FaceTime.WF.Main,
       fn = FaceTime.selectView(5)
     }
@@ -3448,7 +3448,7 @@ appHotKeyCallbacks = {
   ["com.apple.Notes"] = {
     ["toggleFolders"] = {
       message = T("Show Folders"),
-      bindCondition = OS_VERSION < OS.Tahoe,
+      enabled = OS_VERSION < OS.Tahoe,
       condition = MenuItem.isEnabled({ "View", "Show Folders" },
                                      { "View", "Hide Folders" }),
       fn = Callback.Select
@@ -3670,7 +3670,7 @@ appHotKeyCallbacks = {
   ["com.apple.weather"] = {
     ["toggleSidebar"] = {
       message = TC("Show Sidebar"),
-      bindCondition = OS_VERSION <= OS.Tahoe:withMinor(0),
+      enabled = OS_VERSION <= OS.Tahoe:withMinor(0),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
@@ -3762,7 +3762,7 @@ appHotKeyCallbacks = {
   {
     ["back"] = {
       message = T("Back"),
-      bindCondition = OS_VERSION < OS.Tahoe,
+      enabled = OS_VERSION < OS.Tahoe,
       condition = function(app)
         local menuItem, menuItemTitle = findMenuItem(app, { "Store", "Back" })
         if menuItem ~= nil and menuItem.enabled then
@@ -4648,7 +4648,7 @@ appHotKeyCallbacks = {
   {
     ["toggleSidebar"] = {
       message = T("Toggle Sidebar"),
-      bindCondition = Version.LessEqual("1.2024.332"),
+      enabled = Version.LessEqual("1.2024.332"),
       condition = MenuItem.isEnabled({ "View", "Toggle Sidebar" }),
       fn = Callback.Select
     },
@@ -4829,7 +4829,7 @@ appHotKeyCallbacks = {
     },
     ["newChat"] = {
       message = T("New Chat"),
-      bindCondition = Version.LessThan("1.6.0"),
+      enabled = Version.LessThan("1.6.0"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
@@ -4892,7 +4892,7 @@ appHotKeyCallbacks = {
     },
     ["back"] = {
       message = TC("Back"),
-      bindCondition = Version.LessThan("2"),
+      enabled = Version.LessThan("2"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local winUI = towinui(app:focusedWindow())
@@ -5222,7 +5222,7 @@ appHotKeyCallbacks = {
       message = function(win)
         return T("Minimized Groups", win) .. ' > ' .. TC("Back", win)
       end,
-      bindCondition = Version.Between("4", "4.0.6"),
+      enabled = Version.Between("4", "4.0.6"),
       windowFilter = WeChat.WF.Main,
       condition = function(win)
         local title = strsplit(A_Message, ' > ')[2]
@@ -5234,7 +5234,7 @@ appHotKeyCallbacks = {
     },
     ["backInOfficialAccounts"] = {
       message = T({ "Tabbar.OA", "Common.Navigation.Back" }),
-      bindCondition = Version.LessThan("4"),
+      enabled = Version.LessThan("4"),
       windowFilter = WeChat.WF.Main,
       condition = function(win)
         local g = getc(towinui(win), AX.SplitGroup, 1, AX.SplitGroup, 1)
@@ -5251,7 +5251,7 @@ appHotKeyCallbacks = {
     },
     ["backInMoments"] = {
       message = TC("Back"),
-      bindCondition = Version.LessThan("4.0.6"),
+      enabled = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.Moments,
       condition = function(win)
         local button
@@ -5288,7 +5288,7 @@ appHotKeyCallbacks = {
           end
         end
       end,
-      bindCondition = Version.LessThan("4.0.6"),
+      enabled = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.Main,
       condition = function(win)
         local winUI = towinui(win)
@@ -5371,7 +5371,7 @@ appHotKeyCallbacks = {
           return title
         end
       end,
-      bindCondition = Version.LessThan("4"),
+      enabled = Version.LessThan("4"),
       windowFilter = WeChat.WF.Main,
       condition = function(win)
         local winUI = towinui(win)
@@ -5405,7 +5405,7 @@ appHotKeyCallbacks = {
     },
     ["previewPreview"] = {
       message = T("Preview"),
-      bindCondition = Version.Between("4", "4.0.6"),
+      enabled = Version.Between("4", "4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         local button = getc(towinui(win), AX.Button, A_Message)
@@ -5423,7 +5423,7 @@ appHotKeyCallbacks = {
           return T("Original image size", win) .. ' / ' .. T("Fit to Window", win)
         end
       end,
-      bindCondition = Version.LessThan("4.0.6"),
+      enabled = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         local titles = strsplit(A_Message, ' / ')
@@ -5445,7 +5445,7 @@ appHotKeyCallbacks = {
     },
     ["previewRotate"] = {
       message = T("Rotate"),
-      bindCondition = Version.LessThan("4.0.6"),
+      enabled = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         if appVer(win) < "4" then
@@ -5465,7 +5465,7 @@ appHotKeyCallbacks = {
     },
     ["previewEdit"] = {
       message = T("Edit"),
-      bindCondition = Version.LessThan("4.0.6"),
+      enabled = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.PreviewEditable,
       condition = function(win)
         if appVer(win) < "4" then
@@ -5485,7 +5485,7 @@ appHotKeyCallbacks = {
     },
     ["previewTranslate"] = {
       message = T("Translate"),
-      bindCondition = Version.LessThan("4.0.6"),
+      enabled = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         if appVer(win) < "4" then
@@ -5505,7 +5505,7 @@ appHotKeyCallbacks = {
     },
     ["previewExtractText"] = {
       message = T("Extract Text"),
-      bindCondition = Version.LessThan("4.0.6"),
+      enabled = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         if appVer(win) < "4" then
@@ -5529,7 +5529,7 @@ appHotKeyCallbacks = {
             and "Rectangle" or "Rectangle Tool"
         return T(title, win)
       end,
-      bindCondition = Version.LessThan("4.0.6"),
+      enabled = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
         if appVer(win) < "4" then
@@ -5553,7 +5553,7 @@ appHotKeyCallbacks = {
             and "Circle" or "Ellipse Tool"
         return T(title, win)
       end,
-      bindCondition = Version.LessThan("4.0.6"),
+      enabled = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
         if appVer(win) < "4" then
@@ -5577,7 +5577,7 @@ appHotKeyCallbacks = {
             and "Pixelate" or "Mosaic"
         return T(title, win)
       end,
-      bindCondition = Version.LessThan("4.0.6"),
+      enabled = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
         if appVer(win) < "4" then
@@ -5605,7 +5605,7 @@ appHotKeyCallbacks = {
         end)
         if button then return button.AXTitle end
       end,
-      bindCondition = Version.LessThan("4.0.6"),
+      enabled = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
         if appVer(win) < "4" then
@@ -5625,7 +5625,7 @@ appHotKeyCallbacks = {
     },
     ["photoEditorCrop"] = {
       message = T("Crop"),
-      bindCondition = Version.LessThan("4"),
+      enabled = Version.LessThan("4"),
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function()
         local buttons = A_WinBuf.buttons
@@ -5646,7 +5646,7 @@ appHotKeyCallbacks = {
         end)
         if button then return button.AXTitle end
       end,
-      bindCondition = Version.Between("4", "4.0.6"),
+      enabled = Version.Between("4", "4.0.6"),
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
         local button = getc(towinui(win), AX.Button, A_Message)
@@ -5658,7 +5658,7 @@ appHotKeyCallbacks = {
     },
     ["photoEditorSendToChat"] = {
       message = T("Send to Chat"),
-      bindCondition = Version.Between("4", "4.0.6"),
+      enabled = Version.Between("4", "4.0.6"),
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
         local button = getc(towinui(win), AX.Button, A_Message)
@@ -5670,7 +5670,7 @@ appHotKeyCallbacks = {
     },
     ["photoEditorDone"] = {
       message = T("Done"),
-      bindCondition = Version.LessThan("4.0.6"),
+      enabled = Version.LessThan("4.0.6"),
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
         if appVer(win) < "4" then
@@ -5760,7 +5760,7 @@ appHotKeyCallbacks = {
         local params = { locale = A_AppLocale }
         return localizedString("Select Previous Tab", exBundleID, params)
       end,
-      bindCondition = Version.GreaterEqual("4"),
+      enabled = Version.GreaterEqual("4"),
       windowFilter = WeChat.WF.AppEx,
       condition = function(win)
         local menuItemPath = A_WinBuf.selectMenuItemPath
@@ -5774,7 +5774,7 @@ appHotKeyCallbacks = {
     },
     ["closeWindow"] = {
       message = TC('Close Window'),
-      bindCondition = Version.GreaterEqual("4"),
+      enabled = Version.GreaterEqual("4"),
       windowFilter = WeChat.WF.AppExSingleTab,
       condition = function(win)
         local menuItemPath = A_WinBuf.closeWindowMenuItemPath
@@ -5788,7 +5788,7 @@ appHotKeyCallbacks = {
         local bt = A_WinBuf.confirmButton
         return bt.AXTitle ~= "" and bt.AXTitle or bt.AXDescription
       end,
-      bindCondition = Version.Between("4", "4.0.6"),
+      enabled = Version.Between("4", "4.0.6"),
       deleteOnDisable = true,
       windowFilter = WeChat.WF.Confirm,
       condition = function()
@@ -5798,7 +5798,7 @@ appHotKeyCallbacks = {
     },
     ["send"] = {
       message = T("Send"),
-      bindCondition = Version.Between("4", "4.0.6"),
+      enabled = Version.Between("4", "4.0.6"),
       windowFilter = WeChat.WF.SendTo,
       condition = function(win)
         local bt = A_WinBuf.sendButton
@@ -5821,7 +5821,7 @@ appHotKeyCallbacks = {
     },
     ["confirmAll"] = {
       message = TC("Confirm"),
-      bindCondition = Version.GreaterEqual("4.0.6"),
+      enabled = Version.GreaterEqual("4.0.6"),
       windowFilter = WeChat.WF.ConfirmDefault,
       condition = function(win)
         local frame = win:frame()
@@ -5834,7 +5834,7 @@ appHotKeyCallbacks = {
   ["com.tencent.qq"] = {
     ["switchUIMode"] = {
       message = "切换界面模式",
-      bindCondition = Version.GreaterEqual("6.9.82"),
+      enabled = Version.GreaterEqual("6.9.82"),
       windowFilter = { allowTitles = "^QQ$" },
       condition = function(win)
         local webarea = getc(towinui(win), AX.Group, 1,
@@ -6120,7 +6120,7 @@ appHotKeyCallbacks = {
     },
     ["launchApp"] = {
       message = T('Launch App'),
-      bindCondition = Version.GreaterEqual("8.6"),
+      enabled = Version.GreaterEqual("8.6"),
       condition = AppCleanerUninstaller.buttonValid('Launch App'),
       fn = Callback.Press
     },
@@ -6165,7 +6165,7 @@ appHotKeyCallbacks = {
     },
     ["launchApp"] = {
       message = T('LaunchAppButtonTitle'),
-      bindCondition = Version.GreaterEqual("8.6"),
+      enabled = Version.GreaterEqual("8.6"),
       condition = AppCleanerUninstaller.buttonValid('LaunchAppButtonTitle'),
       fn = Callback.Press
     },
@@ -6424,7 +6424,7 @@ appHotKeyCallbacks = {
   {
     ["allowConnection"] = {
       message = "Allow Connection",
-      bindCondition = Version.LessThan("2.9.1"),
+      enabled = Version.LessThan("2.9.1"),
       windowFilter = {
         allowTitles = "^LuLu Alert$"
       },
@@ -6437,7 +6437,7 @@ appHotKeyCallbacks = {
     },
     ["blockConnection"] = {
       message = "Block Connection",
-      bindCondition = Version.LessThan("2.9.1"),
+      enabled = Version.LessThan("2.9.1"),
       windowFilter = {
         allowTitles = "^LuLu Alert$"
       },
@@ -6475,7 +6475,7 @@ appHotKeyCallbacks = {
   {
     ["toggleMenuBar"] = {
       message = T("Show menu bar item"),
-      bindCondition = function(app)
+      enabled = function(app)
         return appVer(app) < "6" or appVer(app) >= "6.1.1"
       end,
       kind = HK.MENUBAR,
@@ -6608,7 +6608,7 @@ appHotKeyCallbacks = {
     },
     ["searchMenuBar"] = {
       message = "Search Menu Bar",
-      bindCondition = function(app)
+      enabled = function(app)
         return appVer(app) < "6" or appVer(app) >= "6.1.1"
       end,
       kind = HK.MENUBAR,
@@ -6623,7 +6623,7 @@ appHotKeyCallbacks = {
       message = "Navigate Menu Bar",
       kind = HK.MENUBAR,
       background = true,
-      bindCondition = function(app)
+      enabled = function(app)
         if appVer(app) >= "6" then return false end
         -- the property update in command line is not working
         local _, ok = hs.execute(strfmt(
@@ -6642,7 +6642,7 @@ appHotKeyCallbacks = {
     },
     ["toggleSidebar"] = {
       message = TC("Show Sidebar"),
-      bindCondition = Version.GreaterEqual("6"),
+      enabled = Version.GreaterEqual("6"),
       condition = function(app)
         return app:focusedWindow() ~= nil, app:focusedWindow()
       end,
@@ -6708,7 +6708,7 @@ appHotKeyCallbacks = {
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
     ["minimize"] = specialCommonHotkeyConfigUpdated("minimize",
-        { bindCondition = Version.LessThan("6") }),
+        { enabled = Version.LessThan("6") }),
     ["quit"] = specialCommonHotkeyConfigs["quit"],
     ["hide"] = specialCommonHotkeyConfigs["hide"],
   },
@@ -7201,7 +7201,7 @@ appHotKeyCallbacks = {
   ["com.apple.Passwords"] = {
     ["search"] = {
       message = T("Search"),
-      bindCondition = OS_VERSION >= OS.Tahoe,
+      enabled = OS_VERSION >= OS.Tahoe,
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local searchButton = getc(towinui(app:focusedWindow()),
@@ -7361,7 +7361,7 @@ appHotKeyCallbacks = {
     ["closeWindow"] = {
       mods = "", key = "Escape",
       message = TC("Close Window"),
-      bindCondition = OS_VERSION < OS.Tahoe,
+      enabled = OS_VERSION < OS.Tahoe,
       windowFilter = {
         allowRoles = AX.SystemDialog
       },
@@ -7429,13 +7429,13 @@ appHotKeyCallbacks = {
       fn = Callback.Press
     },
     ["closeWindow"] = specialCommonHotkeyConfigUpdated("closeWindow",
-      { bindCondition = Version.LessThan("15.4") }
+      { enabled = Version.LessThan("15.4") }
     ),
     ["minimize"] = specialCommonHotkeyConfigUpdated("minimize",
-      { bindCondition = Version.LessThan("15.4") }
+      { enabled = Version.LessThan("15.4") }
     ),
     ["hide"] = specialCommonHotkeyConfigUpdated("hide",
-      { bindCondition = Version.LessThan("15.4") }
+      { enabled = Version.LessThan("15.4") }
     ),
   },
 
@@ -7487,7 +7487,7 @@ appHotKeyCallbacks = {
     ["closeWindow"] = {
       mods = "", key = "Escape",
       message = TC("Close Window"),
-      bindCondition = OS_VERSION >= OS.Tahoe,
+      enabled = OS_VERSION >= OS.Tahoe,
       windowFilter = {
         allowTitles = "^$",
         allowRoles = AX.SystemDialog,
@@ -8233,7 +8233,7 @@ appHotKeyCallbacks = {
     ["OCR"] = {
       message = "OCR",
       background = true,
-      bindCondition = function(appid)
+      enabled = function(appid)
         -- the property update in command line is overridden when app quits
         local _, ok = hs.execute(strfmt(
             "defaults read '%s' dicOfShortCutKey | grep OCRRecorder", appid))
@@ -8284,70 +8284,70 @@ appHotKeyCallbacks = {
     ["select1stItem"] = {
       mods = "⌘", key = "1",
       message = "Select 1st Item",
-      bindCondition = Version.LessThan("1.1.3"),
+      enabled = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(1)
     },
     ["select2ndItem"] = {
       mods = "⌘", key = "2",
       message = "Select 2nd Item",
-      bindCondition = Version.LessThan("1.1.3"),
+      enabled = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(2)
     },
     ["select3rdItem"] = {
       mods = "⌘", key = "3",
       message = "Select 3rd Item",
-      bindCondition = Version.LessThan("1.1.3"),
+      enabled = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(3)
     },
     ["select4thItem"] = {
       mods = "⌘", key = "4",
       message = "Select 4th Item",
-      bindCondition = Version.LessThan("1.1.3"),
+      enabled = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(4)
     },
     ["select5thItem"] = {
       mods = "⌘", key = "5",
       message = "Select 5th Item",
-      bindCondition = Version.LessThan("1.1.3"),
+      enabled = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(5)
     },
     ["select6thItem"] = {
       mods = "⌘", key = "6",
       message = "Select 6th Item",
-      bindCondition = Version.LessThan("1.1.3"),
+      enabled = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(6)
     },
     ["select7thItem"] = {
       mods = "⌘", key = "7",
       message = "Select 7th Item",
-      bindCondition = Version.LessThan("1.1.3"),
+      enabled = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(7)
     },
     ["select8thItem"] = {
       mods = "⌘", key = "8",
       message = "Select 8th Item",
-      bindCondition = Version.LessThan("1.1.3"),
+      enabled = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(8)
     },
     ["select9thItem"] = {
       mods = "⌘", key = "9",
       message = "Select 9th Item",
-      bindCondition = Version.LessThan("1.1.3"),
+      enabled = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(9)
     },
     ["select10thItem"] = {
       mods = "⌘", key = "0",
       message = "Select 10th Item",
-      bindCondition = Version.LessThan("1.1.3"),
+      enabled = Version.LessThan("1.1.3"),
       windowFilter = iCopy.WF.Main,
       fn = iCopy.selectHotkeyRemap(10)
     },
@@ -8584,7 +8584,7 @@ local function registerRunningAppHotKeys(appid, app)
     local bindableEx
     if isPersistent then
       bindableEx = function()
-        return installed(appid) and bindable(appid, cfg.bindCondition)
+        return installed(appid) and bindable(appid, cfg.enabled)
       end
     else
       bindableEx = function()
@@ -8597,7 +8597,7 @@ local function registerRunningAppHotKeys(appid, app)
           end
         end
         running = app ~= nil
-        return app and bindable(app, cfg.bindCondition)
+        return app and bindable(app, cfg.enabled)
       end
     end
     if hasKey and isBackground and not isForWindow and bindableEx() then
@@ -9232,7 +9232,7 @@ registerInAppHotKeys = function(app)
       local isMenuBarMenu = keybinding.menubarFilter ~= nil
           or cfg.menubarFilter ~= nil
       if hasKey and not isBackground and not isForWindow
-          and not isMenuBarMenu and bindable(app, cfg.bindCondition) then
+          and not isMenuBarMenu and bindable(app, cfg.enabled) then
         local msg = type(cfg.message) == 'string'
             and cfg.message or cfg.message(app)
         if msg ~= nil then
@@ -9354,7 +9354,7 @@ registerInWinHotKeys = function(win, filter)
       local isBackground = keybinding.background ~= nil
           and keybinding.background or cfg.background
       if hasKey and isForWindow and not isBackground
-          and bindable(app, cfg.bindCondition)
+          and bindable(app, cfg.enabled)
           and sameFilter(windowFilter, filter) then
         local msg, fallback
         if type(cfg.message) == 'string' then msg = cfg.message
@@ -9595,7 +9595,7 @@ local function registerWinFiltersForApp(app)
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
     if hasKey and isForWindow and not isBackground
-        and bindable(app, cfg.bindCondition) then
+        and bindable(app, cfg.enabled) then
       local windowFilter = keybinding.windowFilter or cfg.windowFilter
       registerSingleWinFilterForApp(app, windowFilter)
     end
@@ -9629,7 +9629,7 @@ registerDaemonAppInWinHotkeys = function(win, appid, filter)
     local windowFilter = keybinding.windowFilter or cfg.windowFilter
     local isForWindow = windowFilter ~= nil
     if hasKey and isForWindow and isBackground
-        and bindable(app, cfg.bindCondition)
+        and bindable(app, cfg.enabled)
         and sameFilter(windowFilter, filter) then
       local msg = type(cfg.message) == 'string'
           and cfg.message or injectWindowState(cfg.message)(win)
@@ -9756,7 +9756,7 @@ local function registerWinFiltersForDaemonApp(app, appConfig)
     local isBackground = keybinding.background ~= nil
         and keybinding.background or cfg.background
     if hasKey and isForWindow and isBackground
-        and bindable(app, cfg.bindCondition) then
+        and bindable(app, cfg.enabled) then
       local windowFilter = keybinding.windowFilter or cfg.windowFilter
       registerSingleWinFilterForDaemonApp(app, windowFilter)
     end
@@ -9783,7 +9783,7 @@ registerInMenuHotkeys = function(app)
     local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local menubarFilter = keybinding.menubarFilter or cfg.menubarFilter
-    if hasKey and menubarFilter and bindable(app, cfg.bindCondition) then
+    if hasKey and menubarFilter and bindable(app, cfg.enabled) then
       local menu
       if type(menubarFilter) == 'table' then
         if menubarFilter.allowIndices then
@@ -9875,7 +9875,7 @@ local function registerObserversForMenuBarMenu(app, appConfig)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isMenuBarMenu = keybinding.menubarFilter ~= nil
         or cfg.menubarFilter ~= nil
-    if hasKey and isMenuBarMenu and bindable(app, cfg.bindCondition) then
+    if hasKey and isMenuBarMenu and bindable(app, cfg.enabled) then
       local observer = MenuBarMenuObservers[appid]
       if observer == nil then
         local appUI = toappui(app)
