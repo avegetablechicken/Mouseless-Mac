@@ -716,6 +716,7 @@ end
 
 -- Handle focus changes of workspace.
 local function spaceChangedCallback()
+  App_spaceChangedCallback()
   Window_spaceChangedCallback()
 end
 

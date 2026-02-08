@@ -10156,19 +10156,8 @@ end
 -- This function dynamically:
 --   - disables conflicting hotkeys in fullscreen spaces
 --   - re-enables them when returning to normal spaces
-FullscreenObserver = nil
-local WINDOWMOVED_DELAY = 0.5
-local windowMovedTimer
 local function registerResizeHotkeys(app)
   if OS_VERSION < OS.Sequoia then return end
-  if FullscreenObserver then
-    FullscreenObserver:stop()
-    FullscreenObserver = nil
-  end
-  if windowMovedTimer then
-    windowMovedTimer:stop()
-    windowMovedTimer = nil
-  end
   local menu, submenu = "Window", "Move & Resize"
   local menuItem = app:findMenuItem({ menu, submenu })
   if menuItem == nil then
@@ -10202,31 +10191,6 @@ local function registerResizeHotkeys(app)
     FLAGS["NO_MOVE_RESIZE"] = toEnable
   else
     FLAGS["NO_MOVE_RESIZE"] = nil
-  end
-  if menuItem == nil and
-      tcontain(toappui(app):attributeNames() or {}, "AXFocusedWindow") then
-    FullscreenObserver = uiobserver.new(app:pid())
-    FullscreenObserver:addWatcher(toappui(app), uinotifications.windowResized)
-    FullscreenObserver:callback(function()
-      -- Delay handling to debounce continuous resize events
-      if windowMovedTimer then
-        windowMovedTimer:setNextTrigger(WINDOWMOVED_DELAY)
-        return
-      end
-      windowMovedTimer = hs.timer.doAfter(WINDOWMOVED_DELAY, function()
-        windowMovedTimer = nil
-        if inFullscreenSpace() then
-          for _, hotkey in ipairs(HotkeysResizeConflictedSinceSequia or {}) do
-            hotkey:disable()
-          end
-        else
-          for _, hotkey in ipairs(HotkeysResizeConflictedSinceSequia or {}) do
-            hotkey:enable()
-          end
-        end
-      end)
-    end)
-    FullscreenObserver:start()
   end
 end
 
@@ -12577,6 +12541,11 @@ function App_monitorChangedCallback()
   elseif builtinMonitorEnable and #screens == 1 then
     quit("me.guillaumeb.MonitorControl")
   end
+end
+
+-- ## workspace callbacks
+function App_spaceChangedCallback()
+  registerResizeHotkeys(hs.application.frontmostApplication())
 end
 
 -- ## usb callbacks
