@@ -10772,13 +10772,9 @@ local specialConfirmFuncs = {
   ["com.kingsoft.wpsoffice.mac"] = function(winUI)
     if winUI.AXSubrole == AX.Dialog then
       local btnName = T("Don't Save", getAppFromDescendantElement(winUI))
-      if not btnName then return end
-      local buttons = getc(winUI, AX.Button)
-      for _, button in ipairs(buttons) do
-        if button.AXTitle and button.AXTitle:match('^'..btnName) then
-          return button
-        end
-      end
+      return btnName and tfind(getc(winUI, AX.Button) or {}, function(button)
+        return button.AXTitle and button.AXTitle:match('^'..btnName)
+      end)
     end
   end,
 
@@ -10786,23 +10782,15 @@ local specialConfirmFuncs = {
     local app = getAppFromDescendantElement(winUI)
     if winUI.AXTitle == T("Save before closing", app) then
       local button = getc(winUI, AX.Unknown, 1, nil, 1, AX.Button, 1)
-      if button ~= nil then
-        local desc = T("Discard changes", app)
-        if button.AXDescription == desc then
-          return button
-        end
+      if button and button.AXDescription == T("Discard changes", app) then
+        return button
       end
     end
   end,
 
   ["re.rizin.cutter"] = function(winUI)
     if winUI.AXSubrole == AX.Dialog then
-      local buttons = getc(winUI, AX.Group, 1, AX.Button) or {}
-      for _, button in ipairs(buttons) do
-        if button.AXTitle == "Don't Save" then
-          return button
-        end
-      end
+      return getc(winUI, AX.Group, 1, AX.Button, "Don't Save")
     end
   end
 }
