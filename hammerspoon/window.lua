@@ -1695,7 +1695,7 @@ end
 
 local stageManagerWindowHotkeys
 local function manageStageManagerWindowHotkeys()
-  if isStageManagerEnabled() then
+  if not inFullscreenSpace() and isStageManagerEnabled() then
     if stageManagerWindowHotkeys == nil then
       stageManagerWindowHotkeys = {}
       for i=1,10 do
@@ -1763,4 +1763,8 @@ local function bindStageManagerWindowURL(index)
   local locWindow = localizedString("Window", windowManagerId)
   registerURLHotkeyMessage("stagemanager", "index", tostring(index),
                            locApp..' > '..locWindow..' '..index)
+end
+
+function Window_spaceChangedCallback()
+  manageStageManagerWindowHotkeys()
 end

@@ -714,6 +714,11 @@ local function monitorChangedCallback()
   Screen_monitorChangedCallback()
 end
 
+-- Handle focus changes of workspace.
+local function spaceChangedCallback()
+  Window_spaceChangedCallback()
+end
+
 -- Handle USB device changes.
 local function usbChangedCallback(device)
   App_usbChangedCallback(device)
@@ -730,6 +735,7 @@ ContinuousWatcherQuick:start()
 ConfigWatcher = hs.pathwatcher.new(os.getenv("HOME") .. "/.hammerspoon/", reloadConfig):start()
 AppWatcher = hs.application.watcher.new(applicationCallback):start()
 MonitorWatcher = hs.screen.watcher.new(monitorChangedCallback):start()
+SpaceWatcher = hs.spaces.watcher.new(spaceChangedCallback):start()
 UsbWatcher = hs.usb.watcher.new(usbChangedCallback):start()
 AppInstalledWatchers = {}
 local appDirs =
