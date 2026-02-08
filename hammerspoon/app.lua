@@ -10763,6 +10763,12 @@ local openSavePanelHotkeys = {}
 
 -- special buttons for no saving in some apps
 local specialConfirmFuncs = {
+  ["com.sublimetext.4"] = function(winUI)
+    if winUI.AXRole == AX.Sheet then
+      return getc(winUI, AX.Button, "Don't Save")
+    end
+  end,
+
   ["com.kingsoft.wpsoffice.mac"] = function(winUI)
     if winUI.AXSubrole == AX.Dialog then
       local btnName = T("Don't Save", getAppFromDescendantElement(winUI))
