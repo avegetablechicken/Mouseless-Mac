@@ -705,8 +705,7 @@ local function getBufferedLocale(app)
         return A_AppLocale
       end
     else
-      local frontWin = hs.window.frontmostWindow()
-      if frontWin and frontWin:id() == win:id() then
+      if hs.window.frontmostWindow() == win then
         A_WinLocale = A_WinLocale or A_WinBuf:get("locale", function()
           local locale = applicationLocale(getAppId(app))
           return locale
@@ -10541,8 +10540,7 @@ registerNavigationForSettingsToolbar = function(app, retry)
   else
     callback = Callback.Press
   end
-  local frontWin = hs.window.frontmostWindow()
-  if frontWin == nil or frontWin:id() ~= wid then
+  if hs.window.frontmostWindow() ~= win then
     win:focus()
   end
   local i = 1
@@ -11163,7 +11161,7 @@ local function bindAltMenu(app, mods, key, message, fn)
       if focusedApp then
         focusedApp = focusedApp:asHSApplication()
       end
-      if focusedApp and (focusedApp:bundleID() ~= app:bundleID()
+      if focusedApp and (focusedApp ~= app
           and focusedApp:bundleID() ~= "com.valvesoftware.steam.helper" ) then
         return false, CF.uIElementNotFocused
       end
