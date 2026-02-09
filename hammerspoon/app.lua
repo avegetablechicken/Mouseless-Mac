@@ -10771,7 +10771,7 @@ local specialConfirmFuncs = {
 
   ["com.kingsoft.wpsoffice.mac"] = function(winUI)
     if winUI.AXSubrole == AX.Dialog then
-      local btnName = T("Don't Save", getAppFromDescendantElement(winUI))
+      local btnName = T("Don't Save", winUI)
       return btnName and tfind(getc(winUI, AX.Button) or {}, function(button)
         return button.AXTitle and button.AXTitle:match('^'..btnName)
       end)
@@ -10779,10 +10779,9 @@ local specialConfirmFuncs = {
   end,
 
   ["JabRef"] = function(winUI)
-    local app = getAppFromDescendantElement(winUI)
-    if winUI.AXTitle == T("Save before closing", app) then
+    if winUI.AXTitle == T("Save before closing", winUI) then
       local button = getc(winUI, AX.Unknown, 1, nil, 1, AX.Button, 1)
-      if button and button.AXDescription == T("Discard changes", app) then
+      if button and button.AXDescription == T("Discard changes", winUI) then
         return button
       end
     end
