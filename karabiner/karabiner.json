@@ -21,6 +21,26 @@
                         ]
                     },
                     {
+                        "description": "Right Shift alone to F18",
+                        "manipulators": [
+                            {
+                                "type": "basic",
+                                "from": {
+                                    "key_code": "right_shift",
+                                    "modifiers": {
+                                        "mandatory": [],
+                                        "optional": []
+                                    }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "f18"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
                         "description": "Quit application by holding ⌘Q or ⌘⌥Q",
                         "manipulators": [
                             {
