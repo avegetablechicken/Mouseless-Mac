@@ -12189,11 +12189,7 @@ function(ev)
       local evFlags =	ev:getFlags()
       local newEvFlags = {}
       for k, _ in pairs(evFlags) do
-        if rule.map[k] == nil then
-          newEvFlags[k] = true
-        else
-          newEvFlags[rule.map[k]] = true
-        end
+        newEvFlags[rule.map[k] or k] = true
       end
       ev:setFlags(newEvFlags)
       ev:post()
