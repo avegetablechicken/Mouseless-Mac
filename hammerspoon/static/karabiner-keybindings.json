@@ -22,17 +22,17 @@
     {
         "mods": "option",
         "key": "F10",
-        "message": "Mute"
+        "message": "Mute (Right Option only)"
     },
     {
         "mods": "option",
         "key": "F11",
-        "message": "Volume Down"
+        "message": "Volume Down (Right Option only)"
     },
     {
         "mods": "option",
         "key": "F12",
-        "message": "Volume Up"
+        "message": "Volume Up (Right Option only)"
     },
     {
         "mods": "trackpad:top-left",
