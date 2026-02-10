@@ -2,20 +2,21 @@ local function focusedWindowExist()
   return hs.window.focusedWindow() ~= nil
 end
 
-local function focusedWindowExistWrapper(fn)
+local function focusedWindowWrapper(fn)
   return function()
-    if focusedWindowExist() then return fn() end
+    local win = hs.window.focusedWindow()
+    if win then return fn(win) end
   end
 end
 
 -- Create a window-operation hotkey for screen/space operations.
 local function newWindow(spec, message, pressedfn, releasedfn, repeatedfn, ...)
-  pressedfn = focusedWindowExistWrapper(pressedfn)
+  pressedfn = focusedWindowWrapper(pressedfn)
   if releasedfn then
-    releasedfn = focusedWindowExistWrapper(releasedfn)
+    releasedfn = focusedWindowWrapper(releasedfn)
   end
   if repeatedfn then
-    repeatedfn = focusedWindowExistWrapper(repeatedfn)
+    repeatedfn = focusedWindowWrapper(repeatedfn)
   end
   local hotkey = newHotkeySpec(spec, message, pressedfn, releasedfn, repeatedfn, ...)
   if hotkey == nil then return nil end
@@ -27,12 +28,12 @@ end
 
 -- Bind a window-operation hotkey for screen/space operations.
 local function bindWindow(spec, message, pressedfn, releasedfn, repeatedfn, ...)
-  pressedfn = focusedWindowExistWrapper(pressedfn)
+  pressedfn = focusedWindowWrapper(pressedfn)
   if releasedfn then
-    releasedfn = focusedWindowExistWrapper(releasedfn)
+    releasedfn = focusedWindowWrapper(releasedfn)
   end
   if repeatedfn then
-    repeatedfn = focusedWindowExistWrapper(repeatedfn)
+    repeatedfn = focusedWindowWrapper(repeatedfn)
   end
   local hotkey = bindHotkeySpec(spec, message, pressedfn, releasedfn, repeatedfn, ...)
   if hotkey == nil then return nil end
@@ -151,9 +152,7 @@ local function moveToScreen(win, screen)
 end
 
 -- Move the focused window to the adjacent screen.
-local function checkAndMoveWindowToMonitor(monitor)
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+local function checkAndMoveWindowToMonitor(win, monitor)
   if #hs.screen.allScreens() > 1 then
     local monitorToMoveTo = monitor == "r" and win:screen():next() or win:screen():previous()
     moveToScreen(win, monitorToMoveTo)
@@ -183,12 +182,12 @@ end
 -- Register hotkeys for moving window to the next screen.
 if ssHK["moveToNextScreen"] then
   tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToNextScreen"], "Move to Next Monitor",
-      bind(checkAndMoveWindowToMonitor, "r")))
+      function(win) checkAndMoveWindowToMonitor(win, "r") end))
 end
 -- Register hotkeys for moving window to the previous screen.
 if ssHK["moveToPrevScreen"] then
   tinsert(adjacentMonitorHotkeys, newWindow(ssHK["moveToPrevScreen"], "Move to Previous Monitor",
-      bind(checkAndMoveWindowToMonitor, "l")))
+      function(win) checkAndMoveWindowToMonitor(win, "l") end))
 end
 
 --  Register hotkeys for focusing or moving windows to indexed screens.
@@ -222,9 +221,7 @@ local function registerMonitorHotkeys()
   for i=1,nscreens do
     local hotkey
     hotkey = bindWindow(ssHK["moveToScreen" .. i], "Move to Monitor " .. i,
-        function()
-          local win = hs.window.focusedWindow()
-          if win == nil then return end
+        function(win)
           if win:screen():id() ~= hs.screen.allScreens()[i]:id() then
             moveToScreen(win, hs.screen.allScreens()[i])
           end
@@ -268,7 +265,7 @@ if OS_VERSION >= OS.Sequoia then
 end
 
 -- Move the focused window to the adjacent user space.
-local function checkAndMoveWindowToSpace(space)
+local function checkAndMoveWindowToSpace(win, space)
   local user_spaces = getUserSpaces()
   local nspaces = #user_spaces
   if nspaces > 1 then
@@ -276,8 +273,6 @@ local function checkAndMoveWindowToSpace(space)
     local index = tindex(user_spaces, curSpaceID)
     local targetIdx = space == "r" and index + 1 or index - 1
     if 1 <= targetIdx and targetIdx <= nspaces then
-      local win = hs.window.focusedWindow()
-      if win == nil then return end
       if Drag then
         Drag:focusedWindowToSpace(user_spaces[targetIdx])
         return
@@ -300,11 +295,11 @@ local adjacentSpaceHotkeys = {}
 
 -- Register hotkeys for moving window to the next space.
 tinsert(adjacentSpaceHotkeys, newWindow(ssHK["moveToNextSpace"], "Move to Next Space",
-    bind(checkAndMoveWindowToSpace, "r")))
+    function(win) checkAndMoveWindowToSpace(win, "r") end))
 
 -- Register hotkeys for moving window to the previous space.
 tinsert(adjacentSpaceHotkeys, newWindow(ssHK["moveToPrevSpace"], "Move to Previous Space",
-    bind(checkAndMoveWindowToSpace, "l")))
+    function(win) checkAndMoveWindowToSpace(win, "l") end))
 
 -- Register hotkeys for moving windows to indexed spaces.
 local moveToSpaceHotkeys = {}
@@ -332,9 +327,7 @@ local function registerMoveToSpaceHotkeys()
   -- move window to space by idx
   for i=1,nspaces do
     local hotkey = bindWindow(ssHK["moveToSpace" .. i], "Move to Space " .. i,
-      function()
-        local win = hs.window.focusedWindow()
-        if win == nil then return end
+      function(win)
         local user_spaces = getUserSpaces()
         if Drag then
           Drag:focusedWindowToSpace(user_spaces[i])

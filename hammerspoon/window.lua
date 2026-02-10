@@ -24,20 +24,21 @@ local function focusedWindowExist()
   return hs.window.focusedWindow() ~= nil
 end
 
-local function focusedWindowExistWrapper(fn)
+local function focusedWindowWrapper(fn)
   return function()
-    if focusedWindowExist() then return fn() end
+    local win = hs.window.focusedWindow()
+    if win then return fn(win) end
   end
 end
 
 -- Create a window-operation hotkey.
 local function newWindow(spec, message, pressedfn, releasedfn, repeatedfn, ...)
-  pressedfn = focusedWindowExistWrapper(pressedfn)
+  pressedfn = focusedWindowWrapper(pressedfn)
   if releasedfn then
-    releasedfn = focusedWindowExistWrapper(releasedfn)
+    releasedfn = focusedWindowWrapper(releasedfn)
   end
   if repeatedfn then
-    repeatedfn = focusedWindowExistWrapper(repeatedfn)
+    repeatedfn = focusedWindowWrapper(repeatedfn)
   end
   local hotkey = newHotkeySpec(spec, message, pressedfn, releasedfn, repeatedfn, ...)
   if hotkey == nil then return nil end
@@ -48,12 +49,12 @@ end
 
 -- Bind a window-operation hotkey.
 local function bindWindow(spec, message, pressedfn, releasedfn, repeatedfn, ...)
-  pressedfn = focusedWindowExistWrapper(pressedfn)
+  pressedfn = focusedWindowWrapper(pressedfn)
   if releasedfn then
-    releasedfn = focusedWindowExistWrapper(releasedfn)
+    releasedfn = focusedWindowWrapper(releasedfn)
   end
   if repeatedfn then
-    repeatedfn = focusedWindowExistWrapper(repeatedfn)
+    repeatedfn = focusedWindowWrapper(repeatedfn)
   end
   local hotkey = bindHotkeySpec(spec, message, pressedfn, releasedfn, repeatedfn, ...)
   if hotkey == nil then return nil end
@@ -66,10 +67,9 @@ end
 local function bindMoveWindow(hkID, message, fn, repeatable)
   local spec = winHK[hkID]
   if spec == nil then return end
-  local newFn = function()
-    fn()
+  local newFn = function(win)
+    fn(win)
     -- Any manual move/resize invalidates the cached maximize frame
-    local win = hs.window.focusedWindow()
     frameCacheMaximize[win:id()] = nil
   end
   local repeatedfn = repeatable and newFn or nil
@@ -89,7 +89,10 @@ local function bindURLEventForWindowMove()
     elseif params["mode"] == "towards" then
       fn = windowMoveTowardsFuncs[params["direction"]]
     end
-    if fn then fn() end
+    if fn then
+      local win = hs.window.focusedWindow()
+      if win then fn(win) end
+    end
   end)
 end
 
@@ -98,10 +101,8 @@ end
 -- This function is used to expose window movement operations
 -- to external programs through hs.urlevent.
 local function bindMoveWindowURL(direction, mode, fn)
-  local newFn = function()
-    fn()
-    local win = hs.window.focusedWindow()
-    if win == nil then return end
+  local newFn = function(win)
+    fn(win)
     frameCacheMaximize[win:id()] = nil
   end
   if mode == 1 then
@@ -116,7 +117,10 @@ local windowResizeFuncs = {}
 local function bindURLEventForWindowResize()
   hs.urlevent.bind("windowresize", function(eventName, params)
     local fn = windowResizeFuncs[params["mode"]]
-    if fn then fn() end
+    if fn then
+      local win = hs.window.focusedWindow()
+      if win then fn(win) end
+    end
   end)
 end
 
@@ -124,10 +128,8 @@ end
 local function bindResizeWindowURL(mode, fn)
   local newFn = fn
   if mode ~= "max" then
-    newFn = function()
-      fn()
-      local win = hs.window.focusedWindow()
-      if win == nil then return end
+    newFn = function(win)
+      fn(win)
       frameCacheMaximize[win:id()] = nil
     end
   end
@@ -140,9 +142,8 @@ local function newResizeWindow(hkID, message, fn, repeatable)
   if spec == nil then return end
   local newFn = fn
   if hkID ~= "fill" then
-    newFn = function()
-      fn()
-      local win = hs.window.focusedWindow()
+    newFn = function(win)
+      fn(win)
       frameCacheMaximize[win:id()] = nil
     end
   end
@@ -158,9 +159,8 @@ local function bindResizeWindow(hkID, message, fn, repeatable)
   if spec == nil then return end
   local newFn = fn
   if hkID ~= "fill" then
-    newFn = function()
-      fn()
-      local win = hs.window.focusedWindow()
+    newFn = function(win)
+      fn(win)
       frameCacheMaximize[win:id()] = nil
     end
   end
@@ -187,9 +187,7 @@ end
 
 -- Move towards top-left
 bindMoveWindow("moveTowardsTopLeft", "Move towards Top-Left",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
 
   f.x = f.x - moveStep
@@ -199,9 +197,7 @@ end)
 
 -- Move towards top
 bindMoveWindow("moveTowardsTop", "Move towards Top",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
 
   f.y = f.y - moveStep
@@ -210,9 +206,7 @@ end)
 
 -- Move towards top-right
 bindMoveWindow("moveTowardsTopRight", "Move towards Top-Right",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
 
   f.x = f.x + moveStep
@@ -222,9 +216,7 @@ end)
 
 -- Move towards left
 bindMoveWindow("moveTowardsLeft", "Move towards Left",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
 
   f.x = f.x - moveStep
@@ -233,9 +225,7 @@ end)
 
 -- Move towards right
 bindMoveWindow("moveTowardsRight", "Move towards Right",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
 
   f.x = f.x + moveStep
@@ -244,9 +234,7 @@ end)
 
 -- Move towards bottom-left
 bindMoveWindow("moveTowardsBottomLeft", "Move towards Bottom-Left",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
 
   f.x = f.x - moveStep
@@ -256,9 +244,7 @@ end)
 
 -- Move towards bottom
 bindMoveWindow("moveTowardsBottom", "Move towards Bottom",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
 
   f.y = f.y + moveStep
@@ -267,9 +253,7 @@ end)
 
 -- Move towards bottom-right
 bindMoveWindow("moveTowardsBottomRight", "Move towards Bottom-Right",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
 
   f.x = f.x + moveStep
@@ -313,9 +297,7 @@ end
 
 -- Move and zoom to left half
 newResizeWindowMayConflict("zoomToLeftHalf", "Zoom To Left Half",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -328,9 +310,7 @@ end)
 
 -- Move and zoom to right half
 newResizeWindowMayConflict("zoomToRightHalf", "Zoom To Right Half",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -343,9 +323,7 @@ end)
 
 -- Move and zoom to top half
 newResizeWindowMayConflict("zoomToTopHalf", "Zoom To Top Half",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -358,9 +336,7 @@ end)
 
 -- Move and zoom to bottom half
 newResizeWindowMayConflict("zoomToBottomHalf", "Zoom To Bottom Half",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -373,9 +349,7 @@ end)
 
 -- Move and zoom to top-left quadrant
 bindResizeWindow("zoomToTopLeft", "Zoom to Top-Left",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -388,9 +362,7 @@ end)
 
 -- Move and zoom to top-right quadrant
 bindResizeWindow("zoomToTopRight", "Zoom to Top-Right",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -403,9 +375,7 @@ end)
 
 -- Move and zoom to bottom-left quadrant
 bindResizeWindow("zoomToBottomLeft", "Zoom to Bottom-Left",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -418,9 +388,7 @@ end)
 
 -- Move and zoom to bottom-right quadrant
 bindResizeWindow("zoomToBottomRight", "Zoom to Bottom-Right",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -433,9 +401,7 @@ end)
 
 -- Move and zoom to left 1/3
 bindResizeWindow("zoomToLeft1/3", "Zoom to Left 1/3",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -448,9 +414,7 @@ end)
 
 -- Move and zoom to right 1/3
 bindResizeWindow("zoomToRight1/3", "Zoom to Right 1/3",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -463,9 +427,7 @@ end)
 
 -- Move and zoom to left 2/3
 bindResizeWindow("zoomToLeft2/3", "Zoom to Left 2/3",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -478,9 +440,7 @@ end)
 
 -- Move and zoom to right 2/3
 bindResizeWindow("zoomToRight2/3", "Zoom to Right 2/3",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -495,9 +455,7 @@ end)
 -- If the window is already maximized via this hotkey, restore
 -- it to its previously cached frame.
 local fillHK = newResizeWindowMayConflict("fill", "Fill",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   if frameCacheMaximize[win:id()] then
     win:setFrame(frameCacheMaximize[win:id()])
     frameCacheMaximize[win:id()] = nil
@@ -520,9 +478,7 @@ end
 
 -- Expand left border
 bindResizeBorderWindow("leftBorderExpand", "Expand Left Border",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -535,9 +491,7 @@ end)
 
 -- Shrink left border
 bindResizeBorderWindow("leftBorderShrink", "Shrink Left Border",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
 
   local r = f.x + f.w
@@ -548,9 +502,7 @@ end)
 
 -- Expand right border
 bindResizeBorderWindow("rightBorderExpand", "Expand Right Border",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -561,9 +513,7 @@ end)
 
 -- Shrink right border
 bindResizeBorderWindow("rightBorderShrink", "Shrink Right Border",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
 
   f.w = math.max(resizeStep, f.w - resizeStep)
@@ -572,9 +522,7 @@ end)
 
 -- Expand top border
 bindResizeBorderWindow("topBorderExpand", "Expand Top Border",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -587,9 +535,7 @@ end)
 
 -- Shrink top border
 bindResizeBorderWindow("topBorderShrink", "Shrink Top Border",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
 
   local b = f.y + f.h
@@ -600,9 +546,7 @@ end)
 
 -- Expand bottom border
 bindResizeBorderWindow("bottomBorderExpand", "Expand Bottom Border",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -613,9 +557,7 @@ end)
 
 -- Shrink bottom border
 bindResizeBorderWindow("bottomBorderShrink", "Shrink Bottom Border",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
 
   f.h = math.max(resizeStep, f.h - resizeStep)
@@ -624,9 +566,7 @@ end)
 
 -- Move to top-left
 bindMoveWindow("moveToTopLeft", "Move to Top-Left",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local max = getScreenFrame(win)
 
@@ -637,9 +577,7 @@ end)
 
 -- Move to top
 bindMoveWindow("moveToTop", "Move to Top",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -650,9 +588,7 @@ end)
 
 -- Move to top-right
 bindMoveWindow("moveToTopRight", "Move to Top-Right",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local max = getScreenFrame(win)
 
@@ -663,9 +599,7 @@ end)
 
 -- Move to left
 bindMoveWindow("moveToLeft", "Move to Left",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local max = getScreenFrame(win)
 
@@ -675,9 +609,7 @@ end)
 
 -- Move to center
 local centerHK = newResizeWindowMayConflict("moveToCenter", "Center",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -691,9 +623,7 @@ if centerHK then centerHK.subkind = HK.PRIVELLEGE end
 
 -- Move to right
 bindMoveWindow("moveToRight", "Move to Right",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local max = getScreenFrame(win)
 
@@ -703,9 +633,7 @@ end)
 
 -- Move to bottom-left
 bindMoveWindow("moveToBottomLeft", "Move to Bottom-Left",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local max = getScreenFrame(win)
 
@@ -716,9 +644,7 @@ end)
 
 -- Move to bottom
 bindMoveWindow("moveToBottom", "Move to Bottom",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
@@ -729,9 +655,7 @@ end)
 
 -- Move to bottom-right
 bindMoveWindow("moveToBottomRight", "Move to Bottom-Right",
-function()
-  local win = hs.window.focusedWindow()
-  if win == nil then return end
+function(win)
   local f = win:frame()
   local max = getScreenFrame(win)
 
