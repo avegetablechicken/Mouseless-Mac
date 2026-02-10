@@ -4575,9 +4575,9 @@ local function clickImpl(leftClick, point, obj)
       appHere = appHere.AXParent
     end
     if appHere then
-      local appid = appHere:asHSApplication():bundleID()
-      local targetApp = obj.application and obj:application() or obj
-      if appid ~= targetApp:bundleID() then return false end
+      appHere = appHere:asHSApplication()
+      local app = obj.application and obj:application() or obj
+      if appHere ~= app then return false end
     else
       return false
     end

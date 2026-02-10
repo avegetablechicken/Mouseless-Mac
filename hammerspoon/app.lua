@@ -979,9 +979,8 @@ Callback.Clickable = function(element, offset)
     while appHere.AXParent do
       appHere = appHere.AXParent
     end
-    local appid = appHere:asHSApplication():bundleID()
-    local targetApp = getAppFromDescendantElement(element)
-    if appid == targetApp:bundleID() then
+    appHere = appHere:asHSApplication()
+    if appHere == getAppFromDescendantElement(element) then
       return true, point
     end
   end
@@ -6048,7 +6047,7 @@ appHotKeyCallbacks = {
         local key
         key = ExecContinuouslyQuick(function()
           local w = hs.window.get(wid)
-          if w == nil or win:application():bundleID() ~= app:bundleID() then
+          if w == nil or win:application() ~= app then
             StopExecContinuously(key)
             local callback = observer:callback()
             callback(observer, towinui(win), uinotifications.uIElementDestroyed)
@@ -8855,10 +8854,10 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
       end
     elseif focusedApp then  -- supposed to be non-null
       local app = obj.application ~= nil and obj:application() or obj
-      local fAppid, appid = focusedApp:asHSApplication():bundleID(), app:bundleID()
-      if fAppid ~= appid then
-        if not (appid == "com.apple.Safari" and
-            fAppid == "com.apple.Safari.SandboxBroker") then
+      if focusedApp:asHSApplication() ~= app then
+        if not (app:bundleID() == "com.apple.Safari" and
+            focusedApp:asHSApplication():bundleID()
+                == "com.apple.Safari.SandboxBroker") then
           return false, CF.uIElementNotFocused
         end
       end

@@ -525,8 +525,7 @@ local function loadAppHotkeys(t, showOrSearch)
       end
       if hotkey.valid then
         local focusedApp = hs.axuielement.systemWideElement().AXFocusedApplication
-        if focusedApp ~= nil
-            and focusedApp:asHSApplication():bundleID() ~= activeApp:bundleID() then
+        if focusedApp and focusedApp:asHSApplication() ~= activeApp then
           hotkey.valid = false
         end
       end
