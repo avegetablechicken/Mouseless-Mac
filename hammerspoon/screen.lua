@@ -1,18 +1,44 @@
+local function focusedWindowExist()
+  return hs.window.focusedWindow() ~= nil
+end
+
+local function focusedWindowExistWrapper(fn)
+  return function()
+    if focusedWindowExist() then return fn() end
+  end
+end
+
 -- Create a window-operation hotkey for screen/space operations.
-local function newWindow(...)
-  local hotkey = newHotkeySpec(...)
+local function newWindow(spec, message, pressedfn, releasedfn, repeatedfn, ...)
+  pressedfn = focusedWindowExistWrapper(pressedfn)
+  if releasedfn then
+    releasedfn = focusedWindowExistWrapper(releasedfn)
+  end
+  if repeatedfn then
+    repeatedfn = focusedWindowExistWrapper(repeatedfn)
+  end
+  local hotkey = newHotkeySpec(spec, message, pressedfn, releasedfn, repeatedfn, ...)
   if hotkey == nil then return nil end
   hotkey.kind = HK.WIN_OP
   hotkey.subkind = HK.WIN_OP_.SPACE_SCREEN
+  hotkey.condition = focusedWindowExist
   return hotkey
 end
 
 -- Bind a window-operation hotkey for screen/space operations.
-local function bindWindow(...)
-  local hotkey = bindHotkeySpec(...)
+local function bindWindow(spec, message, pressedfn, releasedfn, repeatedfn, ...)
+  pressedfn = focusedWindowExistWrapper(pressedfn)
+  if releasedfn then
+    releasedfn = focusedWindowExistWrapper(releasedfn)
+  end
+  if repeatedfn then
+    repeatedfn = focusedWindowExistWrapper(repeatedfn)
+  end
+  local hotkey = bindHotkeySpec(spec, message, pressedfn, releasedfn, repeatedfn, ...)
   if hotkey == nil then return nil end
   hotkey.kind = HK.WIN_OP
   hotkey.subkind = HK.WIN_OP_.SPACE_SCREEN
+  hotkey.condition = focusedWindowExist
   return hotkey
 end
 

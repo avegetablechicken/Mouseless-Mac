@@ -20,19 +20,45 @@ local frameCacheMaximize = {}
 --    - Invoked via hs.urlevent
 --    - Intended for external tools (e.g. Karabiner) to trigger
 
+local function focusedWindowExist()
+  return hs.window.focusedWindow() ~= nil
+end
+
+local function focusedWindowExistWrapper(fn)
+  return function()
+    if focusedWindowExist() then return fn() end
+  end
+end
+
 -- Create a window-operation hotkey.
-local function newWindow(...)
-  local hotkey = newHotkeySpec(...)
+local function newWindow(spec, message, pressedfn, releasedfn, repeatedfn, ...)
+  pressedfn = focusedWindowExistWrapper(pressedfn)
+  if releasedfn then
+    releasedfn = focusedWindowExistWrapper(releasedfn)
+  end
+  if repeatedfn then
+    repeatedfn = focusedWindowExistWrapper(repeatedfn)
+  end
+  local hotkey = newHotkeySpec(spec, message, pressedfn, releasedfn, repeatedfn, ...)
   if hotkey == nil then return nil end
   hotkey.kind = HK.WIN_OP
+  hotkey.condition = focusedWindowExist
   return hotkey
 end
 
 -- Bind a window-operation hotkey.
-local function bindWindow(...)
-  local hotkey = bindHotkeySpec(...)
+local function bindWindow(spec, message, pressedfn, releasedfn, repeatedfn, ...)
+  pressedfn = focusedWindowExistWrapper(pressedfn)
+  if releasedfn then
+    releasedfn = focusedWindowExistWrapper(releasedfn)
+  end
+  if repeatedfn then
+    repeatedfn = focusedWindowExistWrapper(repeatedfn)
+  end
+  local hotkey = bindHotkeySpec(spec, message, pressedfn, releasedfn, repeatedfn, ...)
   if hotkey == nil then return nil end
   hotkey.kind = HK.WIN_OP
+  hotkey.condition = focusedWindowExist
   return hotkey
 end
 
@@ -42,9 +68,8 @@ local function bindMoveWindow(hkID, message, fn, repeatable)
   if spec == nil then return end
   local newFn = function()
     fn()
-    local win = hs.window.focusedWindow()
-    if win == nil then return end
     -- Any manual move/resize invalidates the cached maximize frame
+    local win = hs.window.focusedWindow()
     frameCacheMaximize[win:id()] = nil
   end
   local repeatedfn = repeatable and newFn or nil
@@ -118,7 +143,6 @@ local function newResizeWindow(hkID, message, fn, repeatable)
     newFn = function()
       fn()
       local win = hs.window.focusedWindow()
-      if win == nil then return end
       frameCacheMaximize[win:id()] = nil
     end
   end
@@ -137,7 +161,6 @@ local function bindResizeWindow(hkID, message, fn, repeatable)
     newFn = function()
       fn()
       local win = hs.window.focusedWindow()
-      if win == nil then return end
       frameCacheMaximize[win:id()] = nil
     end
   end
