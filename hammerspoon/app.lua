@@ -2026,8 +2026,8 @@ WeChat.WF = {
 Evt.OnRunning("com.tencent.xinWeChat", function(app)
   if appVer(app) < "4" then
     if WeChat.WF.Preview.fn == nil then
-      local rotate = T("Rotate", app)
       WeChat.WF.Preview.fn = function(win)
+        local rotate = T("Rotate", app)
         local buttons = getc(towinui(win), AX.Button)
         local button = tfind(buttons, function(bt)
           return bt.AXHelp == rotate
@@ -2038,8 +2038,8 @@ Evt.OnRunning("com.tencent.xinWeChat", function(app)
     end
 
     if WeChat.WF.PreviewEditable.fn == nil then
-      local edit = T("Edit", app)
       WeChat.WF.PreviewEditable.fn = function(win)
+        local edit = T("Edit", app)
         local buttons = getc(towinui(win), AX.Button)
         local button = tfind(buttons, function(bt)
           return bt.AXHelp == edit
@@ -2052,8 +2052,8 @@ Evt.OnRunning("com.tencent.xinWeChat", function(app)
     local title = T("Window", app)
     WeChat.WF.PhotoEditor.allowTitles = '^' .. title .. '$'
     if WeChat.WF.PhotoEditor.fn == nil then
-      local crop = T("Crop", app)
       WeChat.WF.PhotoEditor.fn = function(win)
+        local crop = T("Crop", app)
         local buttons = getc(towinui(win), AX.Button)
         local button = tfind(buttons, function(bt)
           return bt.AXHelp == crop
