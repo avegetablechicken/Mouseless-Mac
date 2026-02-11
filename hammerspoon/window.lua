@@ -1246,10 +1246,10 @@ local function browserChooser()
     if windowMenuItem == nil then return end
     hs.timer.doAfter(0.1, function()
       if menuBarVisible() then
-        app:selectMenuItem({ windowMenuItem, result })
+        app:selectMenuItem{ windowMenuItem, result }
       else
         hs.eventtap.keyStroke('fn⌃', 'F2')
-        app:selectMenuItem({ windowMenuItem, result })
+        app:selectMenuItem{ windowMenuItem, result }
       end
     end)
   end)
@@ -1499,7 +1499,7 @@ local function PDFChooser()
               menuBarItem:performAction(AX.Press)
               menuBarItem:performAction(AX.Cancel)
             end
-            app:selectMenuItem({ title, choice.text })
+            app:selectMenuItem{ title, choice.text }
           end
           return
         end
@@ -1511,7 +1511,7 @@ local function PDFChooser()
             menuBarItem:performAction(AX.Press)
             menuBarItem:performAction(AX.Cancel)
           end
-          app:selectMenuItem({ title, choice.text })
+          app:selectMenuItem{ title, choice.text }
         end
       end)
     elseif choice.app == "com.apple.Preview" then
@@ -1560,10 +1560,10 @@ local function PDFChooser()
       if windowMenuItem == nil then return end
       hs.timer.doAfter(0.1, function()
         if menuBarVisible() then
-          app:selectMenuItem({ windowMenuItem, result })
+          app:selectMenuItem{ windowMenuItem, result }
         else
           hs.eventtap.keyStroke('fn⌃', 'F2')
-          app:selectMenuItem({ windowMenuItem, result })
+          app:selectMenuItem{ windowMenuItem, result }
         end
       end)
     end

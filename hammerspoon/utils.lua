@@ -4387,13 +4387,13 @@ function localizedMenuBarItem(title, appid, params)
     if locTitle then
       -- "View" may be localized to different strings in the same app (e.g. WeChat)
       if title == 'View' and find(appid) then
-        if find(appid):findMenuItem({ locTitle }) ~= nil then
+        if find(appid):findMenuItem{ locTitle } ~= nil then
           return locTitle
         end
       elseif type(locTitle) == 'table' then
         local app = find(appid)
         for _, t in ipairs(locTitle) do
-          if app:findMenuItem({ t }) ~= nil then
+          if app:findMenuItem{ t } ~= nil then
             return t
           end
         end
@@ -4413,7 +4413,7 @@ function localizedMenuBarItem(title, appid, params)
   else
     appLocale = applicationLocale(appid)
     -- the app may pretend being localized (e.g. Visual Studio Code)
-    if find(appid) and find(appid):findMenuItem({ title }) ~= nil then
+    if find(appid) and find(appid):findMenuItem{ title } ~= nil then
       return title
     end
   end
@@ -4422,7 +4422,7 @@ function localizedMenuBarItem(title, appid, params)
     local locTitle = locMap.common[title]
     if locTitle then
       if (title == 'View' or title == 'Edit') and find(appid) then
-        if find(appid):findMenuItem({ locTitle }) ~= nil then
+        if find(appid):findMenuItem{ locTitle } ~= nil then
           return locTitle
         end
       else

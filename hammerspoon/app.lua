@@ -1105,8 +1105,8 @@ Finder.openSidebarItem = function(cell, win)
   local app = win:application()
   local go = T("Go", app)
   local itemTitle = getc(cell, AX.StaticText, 1).AXValue
-  if app:findMenuItem({ go, itemTitle }) ~= nil then
-    app:selectMenuItem({ go, itemTitle })
+  if app:findMenuItem{ go, itemTitle } ~= nil then
+    app:selectMenuItem{ go, itemTitle }
   else
     local flags = hs.eventtap.checkKeyboardModifiers()
     if not (flags[Mod.Cmd.Short] or flags[Mod.Alt.Short] or flags[Mod.Ctrl.Short]) then
@@ -1119,7 +1119,7 @@ Finder.openSidebarItem = function(cell, win)
         hs.timer.doAfter(0.01, function()
           local newFlags = hs.eventtap.checkKeyboardModifiers()
           if newFlags[Mod.Cmd.Short] or newFlags[Mod.Alt.Short] or newFlags[Mod.Ctrl.Short] then
-            event:setFlags({}):post()
+            event:setFlags{}:post()
             hs.timer.doAfter(0.01, function()
               cell:performAction(AX.Open)
             end)
@@ -1131,7 +1131,7 @@ Finder.openSidebarItem = function(cell, win)
       end):start()
       local event = hs.eventtap.event.newEvent()
       event:setType(hs.eventtap.event.types.flagsChanged)
-      event:setFlags({}):post()
+      event:setFlags{}:post()
     end
   end
 end
@@ -2984,7 +2984,7 @@ Callback.Select = function(menuItemTitle, app)
     menuItem = getc(menuItem, AX.Menu, 1, AX.MenuItem, menuItemTitle[i])
   end
   if #menuItem ~= 0 and menuBarItem.AXSelected == false then
-    app:selectMenuItem({ menuItemTitle[1] })
+    app:selectMenuItem{ menuItemTitle[1] }
   end
   app:selectMenuItem(menuItemTitle)
 end
@@ -5128,7 +5128,7 @@ appHotKeyCallbacks = {
       message = "Render Clipboard in klatexformula",
       fn = function(app)
         app:mainWindow():focus()
-        app:selectMenuItem({"Shortcuts", "Activate Editor and Select All"})
+        app:selectMenuItem{ "Shortcuts", "Activate Editor and Select All" }
         hs.eventtap.keyStroke("⌘", "V", nil, app)
 
         local winUI = towinui(app:mainWindow())
@@ -5219,7 +5219,7 @@ appHotKeyCallbacks = {
       fn = Callback.Click
     },
     ["backInOfficialAccounts"] = {
-      message = T({ "Tabbar.OA", "Common.Navigation.Back" }),
+      message = T{ "Tabbar.OA", "Common.Navigation.Back" },
       enabled = Version.LessThan("4"),
       windowFilter = WeChat.WF.Main,
       condition = function(win)
@@ -6037,7 +6037,7 @@ appHotKeyCallbacks = {
     ["preferences"] = {
       message = T("Preferences"),
       fn = function(app)
-        app:selectMenuItem({ app:name(), A_Message })
+        app:selectMenuItem{ app:name(), A_Message }
         local observer = registerNavigationForSettingsToolbar(app, false)
         if observer == nil then return end
         local win = app:focusedWindow()
@@ -6061,13 +6061,13 @@ appHotKeyCallbacks = {
     ["settings"] = {
       message = "设置",
       fn = function(app)
-        app:selectMenuItem({ app:name(), A_Message })
+        app:selectMenuItem{ app:name(), A_Message }
       end
     },
     ["showMainWindow"] = {
       message = "抖音窗口",
       fn = function(app)
-        app:selectMenuItem({ "窗口", A_Message })
+        app:selectMenuItem{ "窗口", A_Message }
       end
     }
   },
@@ -10020,10 +10020,10 @@ local function registerOpenRecent(app, force)
   --   - mixed localization environments
   local localizedFile
   localizedFile = 'File'
-  if app:findMenuItem({ localizedFile }) == nil then
+  if app:findMenuItem{ localizedFile } == nil then
     localizedFile = localizedMenuBarItem("File", appid, { locale = A_AppLocale })
     if localizedFile == nil then return end
-    if app:findMenuItem({ localizedFile }) == nil then return end
+    if app:findMenuItem{ localizedFile } == nil then return end
   end
   local appUI = toappui(app)
   local findMenu = getc(appUI, AX.MenuBar, 1,
@@ -10160,7 +10160,7 @@ end
 local function registerResizeHotkeys(app)
   if OS_VERSION < OS.Sequoia then return end
   local menu, submenu = "Window", "Move & Resize"
-  local menuItem = app:findMenuItem({ menu, submenu })
+  local menuItem = app:findMenuItem{ menu, submenu }
   if menuItem == nil then
     local localizedMenu = localizedMenuBarItem('Window', app:bundleID(),
                                                { locale = A_AppLocale })
@@ -10169,14 +10169,14 @@ local function registerResizeHotkeys(app)
       localizedSubmenu = TC(submenu, app, { locale = SYSTEM_LOCALE })
     end
     if localizedSubmenu ~= nil then
-      menuItem = app:findMenuItem({ localizedMenu, localizedSubmenu })
+      menuItem = app:findMenuItem{ localizedMenu, localizedSubmenu }
     end
     if menuItem == nil then
       if localizedSubmenu ~= nil then
-        menuItem = app:findMenuItem({ menu, localizedSubmenu })
+        menuItem = app:findMenuItem{ menu, localizedSubmenu }
       end
       if menuItem == nil then
-        menuItem = app:findMenuItem({ localizedMenu, submenu })
+        menuItem = app:findMenuItem{ localizedMenu, submenu }
       end
     end
   end
@@ -11335,7 +11335,7 @@ local function altMenuBarItem(app, force, reinvokeKey)
           return
         end
       else
-        local ok = app:selectMenuItem({ title })
+        local ok = app:selectMenuItem{ title }
         if ok then return end
       end
       processInvalidAltMenu(app, k)
@@ -11484,7 +11484,7 @@ local function altMenuBarItem(app, force, reinvokeKey)
     end
     local hotkey = bindAltMenu(app, specAppMenu.mods, specAppMenu.key,
         menuBarItemTitles[1],
-        function() app:selectMenuItem({ menuBarItemTitles[1] }) end)
+        function() app:selectMenuItem{ menuBarItemTitles[1] } end)
     inAppHotKeys[appid][prefix..'app'] = hotkey
   end
 end
@@ -12262,7 +12262,7 @@ end
 HoldToQuit = hs.loadSpoon("HoldToQuit")
 HoldToQuit.duration = 0.2
 HoldToQuit:init()
-HoldToQuit:newHotkeys({ quit = { "⌘", "W" } })
+HoldToQuit:newHotkeys{ quit = { "⌘", "W" } }
 local function mayRequireHoldToCloseWindow(app)
   local appid = app:bundleID()
   if appid == nil then return end

@@ -74,7 +74,7 @@ PrependPasteboardTapper = hs.eventtap.new(
 { hs.eventtap.event.types.keyDown, hs.eventtap.event.types.keyUp },
 function(ev)
   if ev:getKeyCode() ~= hs.keycodes.map["c"]
-      or not ev:getFlags():containExactly({Mod.Cmd.Short}) then
+      or not ev:getFlags():containExactly{ Mod.Cmd.Short } then
     return false
   end
   local nowKeyDown = ev:getType() == hs.eventtap.event.types.keyDown
@@ -199,10 +199,10 @@ NewMessageWindowObserver:addWatcher(
 NewMessageWindowObserver:callback(function()
   local code = parseVerificationCodeFromFirstMessage()
   if code then
-    hs.notify.new({
+    hs.notify.new{
       title = strfmt("SMS Code Detected: %s", code),
       informativeText = 'Copied to pasteboard',
-    }):send()
+    }:send()
     hs.pasteboard.writeObjects(code)
   end
 end)
@@ -1270,7 +1270,7 @@ end
 
 -- Show the hotkey cheatsheet in a centered webview.
 function HSKeybindings:show()
-  self.sheetView = hs.webview.new({x=0, y=0, w=0, h=0})
+  self.sheetView = hs.webview.new{x=0, y=0, w=0, h=0}
   self.sheetView:windowTitle("HSKeybindings")
   self.sheetView:windowStyle("utility")
   self.sheetView:allowGestures(true)
@@ -1281,12 +1281,12 @@ function HSKeybindings:show()
   local cres = cscreen:fullFrame()
   local w = math.min(cres.w * 0.8, 1440)
   local h = math.min(cres.h * 0.75, 830)
-  self.sheetView:frame({
+  self.sheetView:frame{
       x = cres.x + (cres.w - w) / 2,
       y = cres.y + (cres.h - h) / 2,
       w = w,
       h = h
-  })
+  }
   if w >= 1320 then
     self.colRatio = 23
   elseif w >= 984 then
@@ -1815,10 +1815,10 @@ function()
       -- since Fn is not a standard modifier in eventtap.
       local event = hs.eventtap.event.newEvent()
       event:setType(hs.eventtap.event.types.flagsChanged)
-      event:setFlags({ fn = true }):post()
+      event:setFlags{ fn = true }:post()
       hs.timer.doAfter(0.1, function()
         hs.eventtap.keyStroke(choice.mods:gsub(Mod.Fn.Symbol, Mod.Fn.Long), key)
-        event:setFlags({}):post()
+        event:setFlags{}:post()
       end)
     elseif choice.modal == HK_MODAL.DOUBLE_TAP then
       -- Case 4: trigger double-tap hotkeys.
@@ -1849,10 +1849,10 @@ function()
         local flag = toshort(key)
         local event = hs.eventtap.event.newEvent()
         event:setType(hs.eventtap.event.types.flagsChanged)
-        event:setFlags({ [flag] = true }):post()
-        event:setFlags({}):post()
-        event:setFlags({ [flag] = true }):post()
-        event:setFlags({}):post()
+        event:setFlags{ [flag] = true }:post()
+        event:setFlags{}:post()
+        event:setFlags{ [flag] = true }:post()
+        event:setFlags{}:post()
       elseif mods == "" then
         -- Case: double-tap on a standalone key.
         -- Emit two consecutive key press sequences.
@@ -1869,7 +1869,7 @@ function()
         key = keySymbolInvMap[key] or key
         local keycode = hs.keycodes.map[key]
         local modsList = {}
-        for _, mod in ipairs({ "⌘", "⌥", "⌃", "⇧" }) do
+        for _, mod in ipairs{ "⌘", "⌥", "⌃", "⇧" } do
           if mods:find(mod) then tinsert(modsList, toshort(mod)) end
         end
         if key:lower():match('^f%d+$') then

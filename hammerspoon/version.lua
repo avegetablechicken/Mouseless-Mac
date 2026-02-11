@@ -124,18 +124,18 @@ function StrictVersion:equals(other)
 end
 
 function PartialVersion:withMinor(minor)
-  return StrictVersion.new({
+  return StrictVersion.new{
     major = self.major,
     minor = tonumber(minor),
-  })
+  }
 end
 
 function PartialVersion:withPatch(patch)
-  return StrictVersion.new({
+  return StrictVersion.new{
     major = self.major,
     minor = self.minor,
     patch = tonumber(patch),
-  })
+  }
 end
 
 local function version_index(self, key)
