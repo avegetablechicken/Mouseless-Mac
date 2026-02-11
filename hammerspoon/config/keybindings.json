@@ -1730,10 +1730,6 @@
         "mods": "command",
         "key": "Return"
       },
-      "finish": {
-        "mods": "command",
-        "key": "Return"
-      },
       "confirmAll": {
         "mods": "command",
         "key": "Return"
