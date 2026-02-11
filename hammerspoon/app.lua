@@ -2010,27 +2010,11 @@ WeChat.WF = {
     end
   },
   ConfirmDefault = { allowSheet = true },
-  SendTo = {
+  SelectContacts = {
     allowSheet = true,
     fn = function(win)
-      local winUI = towinui(win)
-      local title = T("Send", win)
-      local bt = getc(winUI, AX.Button, title)
-      if bt == nil then
-        title = localizedString("Send To (%d)", win)
-        if type(title) ~= 'table' then
-          title = { title }
-        end
-        for _, t in ipairs(title) do
-          t = t:gsub("%(%%d%)", "%%(%%d%%)")
-          bt = tfind(getc(winUI, AX.Button), function(b)
-            return b.AXTitle:match(t)
-          end)
-          if bt then break end
-        end
-      end
-      A_WinBuf.sendButton = bt
-      return bt ~= nil
+      local title = T("Select contacts to add", win)
+      return getc(towinui(win), AX.List, title) ~= nil
     end
   }
 }
@@ -5794,12 +5778,23 @@ appHotKeyCallbacks = {
       end,
       fn = Callback.Click
     },
-    ["send"] = {
-      message = T("Send"),
+    ["confirmSelectingContacts"] = {
+      message = function(win)
+        local winUI = towinui(win)
+        local listFound = false
+        for i=#winUI,1,-1 do
+          if not listFound then
+            listFound = winUI[i].AXRole == AX.List
+          elseif winUI[i].AXRole == AX.Button then
+            A_WinBuf.confirmButton = winUI[i]
+            return winUI[i].AXTitle
+          end
+        end
+      end,
       enabled = Version.Between("4", "4.0.6"),
-      windowFilter = WeChat.WF.SendTo,
+      windowFilter = WeChat.WF.SelectContacts,
       condition = function(win)
-        local bt = A_WinBuf.sendButton
+        local bt = A_WinBuf.confirmButton
         if bt and bt.AXEnabled then
           -- `WeChat` accessibility bug
           local winUI = towinui(win)

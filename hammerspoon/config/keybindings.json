@@ -1726,7 +1726,7 @@
         "mods": "",
         "key": "Return"
       },
-      "send": {
+      "confirmSelectingContacts": {
         "mods": "command",
         "key": "Return"
       },
