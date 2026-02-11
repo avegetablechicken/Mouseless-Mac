@@ -961,6 +961,11 @@ Callback.PressClick = function(target)
   end
 end
 
+-- Check whether an element is enabled
+Callback.Enabled = function(element)
+  return element and (element.enabled or element.AXEnabled), element
+end
+
 -- Check whether an element is safely clickable and return click point
 Callback.Clickable = function(element, offset)
   if element == nil or not element:isValid() then return false end
@@ -1462,7 +1467,7 @@ FaceTime.deleteAll = function(section, win)
   local app = win:application()
   if OS_VERSION < OS.Tahoe then
     local menuItem, menuItemPath = findMenuItem(app, { "FaceTime", "Remove All Recents" })
-    if menuItem and menuItem.enabled then
+    if Callback.Enabled(menuItem) then
       app:selectMenuItem(menuItemPath)
       return
     end
@@ -1945,7 +1950,7 @@ WeChat.WF = {
       }
       if menuItemPath[2] then
         local menuItem = win:application():findMenuItem(menuItemPath)
-        if menuItem == nil or not menuItem.enabled then return false end
+        if not Callback.Enabled(menuItem) then return false end
       end
       local menuItemPath2 = {
         menuItemPath[1],
@@ -2921,7 +2926,7 @@ MenuItem.isEnabled = function(menuItemTitle, params, ...)
     if app.application then app = app:application() end
     for _, title in ipairs(args) do
       local menuItem, locTitle = findMenuItem(app, title, params)
-      if menuItem ~= nil and menuItem.enabled then
+      if Callback.Enabled(menuItem) then
         return true, locTitle
       end
     end
@@ -3459,7 +3464,7 @@ appHotKeyCallbacks = {
         else
           button = getc(toolbar, AX.Group, 2, AX.Group, 1, AX.Button, 1)
         end
-        return button and button.AXEnabled, button
+        return Callback.Enabled(button)
       end,
       fn = Callback.Press
     },
@@ -3474,7 +3479,7 @@ appHotKeyCallbacks = {
         else
           button = getc(toolbar, AX.Group, 2, AX.Group, 1, AX.Button, 2)
         end
-        return button and button.AXEnabled, button
+        return Callback.Enabled(button)
       end,
       fn = Callback.Press
     },
@@ -3493,7 +3498,7 @@ appHotKeyCallbacks = {
         else
           button = getc(toolbar, AX.Button, A_Message)
         end
-        return button and button.AXEnabled, button
+        return Callback.Enabled(button)
       end,
       fn = Callback.Press
     },
@@ -3747,7 +3752,7 @@ appHotKeyCallbacks = {
       enabled = OS_VERSION < OS.Tahoe,
       condition = function(app)
         local menuItem, menuItemTitle = findMenuItem(app, { "Store", "Back" })
-        if menuItem ~= nil and menuItem.enabled then
+        if Callback.Enabled(menuItem) then
           return true, menuItemTitle
         else
           if app:focusedWindow() == nil then return false end
@@ -3988,13 +3993,12 @@ appHotKeyCallbacks = {
           if item.AXTitle == "" then break end
           if #item == 0 then
             if item.AXMenuItemMarkChar then
-              return item.AXEnabled, item
+              return Callback.Enabled(item)
             end
             firstSidebarMenuItem = firstSidebarMenuItem or item
           end
         end
-        return firstSidebarMenuItem and firstSidebarMenuItem.AXEnabled,
-            firstSidebarMenuItem
+        return Callback.Enabled(firstSidebarMenuItem)
       end,
       fn = Callback.Press
     },
@@ -4649,7 +4653,7 @@ appHotKeyCallbacks = {
       fn = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1,
             AX.Button, 1, AX.Button, 1)
-        if button and button.AXEnabled then Callback.Press(button) end
+        if Callback.Enabled(button) then Callback.Press(button) end
       end
     },
     ["openLink"] = {
@@ -5142,7 +5146,7 @@ appHotKeyCallbacks = {
       condition = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.SplitGroup, 1, AX.Button, "COPY")
-        return button ~= nil and button.AXEnabled, button
+        return Callback.Enabled(button)
       end,
       fn = Callback.Press
     },
@@ -5167,7 +5171,7 @@ appHotKeyCallbacks = {
       condition = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.SplitGroup, 1, AX.Button, "SAVE")
-        return button ~= nil and button.AXEnabled, button
+        return Callback.Enabled(button)
       end,
       fn = Callback.Press
     },
@@ -5391,7 +5395,7 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.Preview,
       condition = function(win)
         local button = getc(towinui(win), AX.Button, A_Message)
-        if button and button.AXEnabled then
+        if Callback.Enabled(button) then
           return Callback.Clickable(getc(button, AX.Button, 1))
         end
       end,
@@ -5414,11 +5418,11 @@ appHotKeyCallbacks = {
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == titles[1] or bt.AXHelp == titles[2]
           end)
-          return button and button.AXEnabled, button
+          return Callback.Enabled(button)
         else
           local button = getc(towinui(win), AX.Button, titles[1])
               or getc(towinui(win), AX.Button, titles[2])
-          if button and button.AXEnabled then
+          if Callback.Enabled(button) then
             return Callback.Clickable(getc(button, AX.Button, 1))
           end
         end
@@ -5435,10 +5439,10 @@ appHotKeyCallbacks = {
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
           end)
-          return button and button.AXEnabled, button
+          return Callback.Enabled(button)
         else
           local button = getc(towinui(win), AX.Button, A_Message)
-          if button and button.AXEnabled then
+          if Callback.Enabled(button) then
             return Callback.Clickable(getc(button, AX.Button, 1))
           end
         end
@@ -5455,10 +5459,10 @@ appHotKeyCallbacks = {
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
           end)
-          return button and button.AXEnabled, button
+          return Callback.Enabled(button)
         else
           local button = getc(towinui(win), AX.Button, A_Message)
-          if button and button.AXEnabled then
+          if Callback.Enabled(button) then
             return Callback.Clickable(getc(button, AX.Button, 1))
           end
         end
@@ -5475,10 +5479,10 @@ appHotKeyCallbacks = {
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
           end)
-          return button and button.AXEnabled, button
+          return Callback.Enabled(button)
         else
           local button = getc(towinui(win), AX.Button, A_Message)
-          if button and button.AXEnabled then
+          if Callback.Enabled(button) then
             return Callback.Clickable(getc(button, AX.Button, 1))
           end
         end
@@ -5495,10 +5499,10 @@ appHotKeyCallbacks = {
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
           end)
-          return button and button.AXEnabled, button
+          return Callback.Enabled(button)
         else
           local button = getc(towinui(win), AX.Button, A_Message)
-          if button and button.AXEnabled then
+          if Callback.Enabled(button) then
             return Callback.Clickable(getc(button, AX.Button, 1))
           end
         end
@@ -5519,10 +5523,10 @@ appHotKeyCallbacks = {
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
           end)
-          return button and button.AXEnabled, button
+          return Callback.Enabled(button)
         else
           local button = getc(towinui(win), AX.Button, A_Message)
-          if button and button.AXEnabled then
+          if Callback.Enabled(button) then
             return Callback.Clickable(getc(button, AX.Button, 1))
           end
         end
@@ -5543,10 +5547,10 @@ appHotKeyCallbacks = {
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
           end)
-          return button and button.AXEnabled, button
+          return Callback.Enabled(button)
         else
           local button = getc(towinui(win), AX.Button, A_Message)
-          if button and button.AXEnabled then
+          if Callback.Enabled(button) then
             return Callback.Clickable(getc(button, AX.Button, 1))
           end
         end
@@ -5567,10 +5571,10 @@ appHotKeyCallbacks = {
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
           end)
-          return button and button.AXEnabled, button
+          return Callback.Enabled(button)
         else
           local button = getc(towinui(win), AX.Button, A_Message)
-          if button and button.AXEnabled then
+          if Callback.Enabled(button) then
             return Callback.Clickable(getc(button, AX.Button, 1))
           end
         end
@@ -5595,10 +5599,10 @@ appHotKeyCallbacks = {
           local button = tfind(buttons, function(bt)
             return bt.AXHelp == A_Message
           end)
-          return button and button.AXEnabled, button
+          return Callback.Enabled(button)
         else
           local button = getc(towinui(win), AX.Button, A_Message)
-          if button and button.AXEnabled then
+          if Callback.Enabled(button) then
             return Callback.Clickable(getc(button, AX.Button, 1))
           end
         end
@@ -5614,7 +5618,7 @@ appHotKeyCallbacks = {
         local button = tfind(buttons, function(bt)
           return bt.AXHelp == A_Message
         end)
-        return button and button.AXEnabled, button
+        return Callback.Enabled(button)
       end,
       fn = Callback.Press
     },
@@ -5632,7 +5636,7 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
         local button = getc(towinui(win), AX.Button, A_Message)
-        if button and button.AXEnabled then
+        if Callback.Enabled(button) then
           return Callback.Clickable(getc(button, AX.Button, 1))
         end
       end,
@@ -5644,7 +5648,7 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.PhotoEditor,
       condition = function(win)
         local button = getc(towinui(win), AX.Button, A_Message)
-        if button and button.AXEnabled then
+        if Callback.Enabled(button) then
           return Callback.Clickable(getc(button, AX.Button, 1))
         end
       end,
@@ -5660,10 +5664,10 @@ appHotKeyCallbacks = {
           local button = tfind(buttons, function(bt)
             return bt.AXDescription == A_Message
           end)
-          return button and button.AXEnabled, button
+          return Callback.Enabled(button)
         else
           local button = getc(towinui(win), AX.Button, A_Message)
-          if button and button.AXEnabled then
+          if Callback.Enabled(button) then
             return Callback.Clickable(getc(button, AX.Button, 1))
           end
         end
@@ -5747,7 +5751,7 @@ appHotKeyCallbacks = {
       condition = function(win)
         local menuItemPath = A_WinBuf.selectMenuItemPath
         local menuItem = win:application():findMenuItem(menuItemPath)
-        if menuItem ~= nil and menuItem.enabled then
+        if Callback.Enabled(menuItem) then
           return true, menuItemPath
         end
       end,
@@ -5795,7 +5799,7 @@ appHotKeyCallbacks = {
       windowFilter = WeChat.WF.SelectContacts,
       condition = function(win)
         local bt = A_WinBuf.confirmButton
-        if bt and bt.AXEnabled then
+        if Callback.Enabled(bt) then
           -- `WeChat` accessibility bug
           local winUI = towinui(win)
           local ref = getc(winUI, AX.List, 1)
@@ -6246,7 +6250,7 @@ appHotKeyCallbacks = {
           return item.AXTitle == "Barrier"
         end)
         local menuItem = getc(menuBarItem, AX.Menu, 1, AX.MenuItem, A_Message)
-        return menuItem and menuItem.AXEnabled, menuItem
+        return Callback.Enabled(menuItem)
       end,
       fn = Callback.Press
     },
@@ -6406,7 +6410,7 @@ appHotKeyCallbacks = {
       condition = function(menu)
         local title = strsplit(A_Message, " > ")[2]
         local menuItem = getc(menu, AX.MenuItem, title)
-        return menuItem and menuItem.AXEnabled, menuItem
+        return Callback.Enabled(menuItem)
       end,
       fn = Callback.Press
     },
@@ -6458,7 +6462,7 @@ appHotKeyCallbacks = {
       condition = function(win)
         local winUI = towinui(win)
         local button = getc(winUI, AX.Button, A_Message)
-        return button and button.AXEnabled, button
+        return Callback.Enabled(button)
       end,
       fn = Callback.Press
     }
@@ -7669,7 +7673,7 @@ appHotKeyCallbacks = {
       condition = function(app)
         local menuItem, menuItemTitle =
             findMenuItem(app, { "File", "Close Window" })
-        if menuItem ~= nil and menuItem.enabled then
+        if Callback.Enabled(menuItem) then
           return true, menuItemTitle
         elseif app:focusedWindow() ~= nil then
           return true, app:focusedWindow()
@@ -7695,7 +7699,7 @@ appHotKeyCallbacks = {
       condition = function(app)
         local menuItem, menuItemTitle =
             findMenuItem(app, { "File", "Close" })
-        if menuItem ~= nil and menuItem.enabled then
+        if Callback.Enabled(menuItem) then
           return true, menuItemTitle
         else
           local win = app:focusedWindow()
