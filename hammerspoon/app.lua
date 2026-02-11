@@ -10766,6 +10766,12 @@ local specialConfirmFuncs = {
     end
   end,
 
+  ["com.microsoft.VSCode"] = function(winUI)
+    if winUI.AXRole == AX.Sheet then
+      return getc(winUI, AX.Button, "Don't Save")
+    end
+  end,
+
   ["com.kingsoft.wpsoffice.mac"] = function(winUI)
     if winUI.AXSubrole == AX.Dialog then
       local btnName = T("Don't Save", winUI)
