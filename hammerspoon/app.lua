@@ -9374,6 +9374,10 @@ registerInWinHotKeys = function(win, filter)
             config.fn = bind(config.fn, url)
           end
           config.repeatedfn = config.repeatable and config.fn or nil
+          if config.deleteOnDisable == nil
+              and type(windowFilter) == 'table' and windowFilter.allowSheet then
+            config.deleteOnDisable = true
+          end
           config.deleteOnDisable = config.deleteOnDisable or fallback
           hotkeys[hkID] = AppWinBind(win, config)
         end
