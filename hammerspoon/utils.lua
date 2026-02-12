@@ -4125,9 +4125,7 @@ end
 -- the localized strings of their titles are managed here
 -- should be use when localizing / delocalizing menu bar items
 -- and delocalizing menu items whose keybindings contain 'fn'
-function localizeCommonMenuItemTitles(locale, appid)
-  if locale == SYSTEM_LOCALE and appid ~= nil then return end
-
+function localizeCommonMenuItemTitles(locale, target)
   local key = '__macos'
   local resourceDir = '/System/Library/Frameworks/AppKit.framework/Resources'
   local matchedLocale = get(appLocaleDir, key, locale)
@@ -4147,7 +4145,6 @@ function localizeCommonMenuItemTitles(locale, appid)
   local cachedDelocMap = get(deLocaleMap, key, matchedLocale) or {}
   local cachedLocMap = get(appLocaleMap, key, matchedLocale) or {}
 
-  local target = appid or 'common'
   if delocMap[target] == nil then
     delocMap[target] = {}
   end
@@ -4267,7 +4264,7 @@ function localizeCommonMenuItemTitles(locale, appid)
     hs.json.write(deLocaleMap, menuItemTmpFile, false, true)
   end
 end
-localizeCommonMenuItemTitles(SYSTEM_LOCALE)
+localizeCommonMenuItemTitles(SYSTEM_LOCALE, 'common')
 
 local menuItemLocaleFilePatterns = {
   "(.-)MainMenu(.-)", "Menu", "MenuBar", "MenuItems",
