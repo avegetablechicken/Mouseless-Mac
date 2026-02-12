@@ -12119,6 +12119,49 @@ if installed("com.kapeli.dashdoc") then
   end)
 end
 
+-- MonoProxyMac
+if installed("com.MonoCloud.MonoProxyMac") then
+  Evt.OnLaunched("com.MonoCloud.MonoProxyMac", function(app)
+    local observer = uiobserver.new(app:pid())
+    observer:addWatcher(toappui(app), uinotifications.windowCreated)
+    observer:callback(function(obs, winUI)
+      local text = getc(winUI, AX.StaticText, 1)
+      if text and text.AXValue == "Helper install fail!" then
+        local confirm = getc(winUI, AX.Button, "OK")
+        if confirm then Callback.Press(confirm) end
+        obs:stop() obs = nil
+      end
+    end)
+    observer:start()
+    Evt.StopOnTerminated(app, observer)
+
+    local win = app:focusedWindow()
+    if win and win:subrole() == AX.Dialog then
+      local winUI = towinui(win)
+      local text = getc(winUI, AX.StaticText, 1)
+      if text and text.AXValue == "Chute icon not visible" then
+        local confirm = getc(winUI, AX.Button, "OK")
+        if confirm then Callback.Press(confirm) end
+        return
+      end
+    end
+    local observer = uiobserver.new(app:pid())
+    observer:addWatcher(toappui(app), uinotifications.windowCreated)
+    observer:callback(function(obs, winUI)
+      if winUI.AXSubrole == AX.Dialog then
+        local text = getc(winUI, AX.StaticText, 1)
+        if text and text.AXValue == "Chute icon not visible" then
+          local confirm = getc(winUI, AX.Button, "OK")
+          if confirm then Callback.Press(confirm) end
+          obs:stop() obs = nil
+        end
+      end
+    end)
+    observer:start()
+    Evt.StopOnTerminated(app, observer)
+  end)
+end
+
 -- ## remote desktop apps
 -- remap modifier keys for specified windows of remote desktop apps
 local remoteDesktopsMappingModifiers =
