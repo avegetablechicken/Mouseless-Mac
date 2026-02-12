@@ -12089,6 +12089,36 @@ if installed("barrier") then
   end)
 end
 
+-- ## Dash (version < 7 on macOS Tahoe and later)
+if installed("com.kapeli.dashdoc") then
+  Evt.OnLaunched("com.kapeli.dashdoc", function(app)
+    local win = app:focusedWindow()
+    if win and win:subrole() == AX.Dialog then
+      local winUI = towinui(win)
+      local text = getc(winUI, AX.StaticText, 1)
+      if text and text.AXValue == "Operating system not supported" then
+        local cancel = getc(winUI, AX.Button, "Cancel")
+        if cancel then Callback.Press(cancel) end
+        return
+      end
+    end
+    local observer = uiobserver.new(app:pid())
+    observer:addWatcher(toappui(app), uinotifications.windowCreated)
+    observer:callback(function(obs, winUI)
+      if winUI.AXSubrole == AX.Dialog then
+        local text = getc(winUI, AX.StaticText, 1)
+        if text and text.AXValue == "Operating system not supported" then
+          local cancel = getc(winUI, AX.Button, "Cancel")
+          if cancel then Callback.Press(cancel) end
+          obs:stop() obs = nil
+        end
+      end
+    end)
+    observer:start()
+    Evt.StopOnTerminated(app, observer)
+  end)
+end
+
 -- ## remote desktop apps
 -- remap modifier keys for specified windows of remote desktop apps
 local remoteDesktopsMappingModifiers =
