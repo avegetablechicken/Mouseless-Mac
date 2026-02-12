@@ -4222,7 +4222,7 @@ function localizeCommonMenuItemTitles(locale, target)
       end
     end
   end
-  title = 'Emoji & Symbols'
+  local title = 'Emoji & Symbols'
   local localizedTitle
   if matchedLocale == 'en' then
     localizedTitle = title
