@@ -487,10 +487,10 @@ SYSTEM_LOCALE = systemLocales()
 
 local electronLocale, javaLocale, qtExecutableLocale
 function applicationLocale(appid)
-  -- locale of `WeChat` and apps whose localization is enabled by Electron or Java
+  -- locale of apps whose localization is enabled by Qt, Electron or Java
   -- cannot be aquired in preferences files
   if appid == "com.tencent.xinWeChat" then
-    if applicationVersion(appid) >= "4" then
+    if applicationVersion(appid) >= "4" then  -- Qt
       local app = find(appid)
       if app then
         local file = getc(toappui(app),
