@@ -7080,12 +7080,10 @@ appHotKeyCallbacks = {
   ["whbalzac.Dongtaizhuomian"] =
   {
     ["invokeInAppScreenSaver"] = {
-      message = T("In-app Screensaver",
-                                { localeFile = "HotkeyWindowController" }),
+      message = T("In-app Screensaver", { localeFile = "HotkeyWindowController" }),
       background = true,
       fn = function(app)
-        clickRightMenuBarItem(app, T("In-app Screensaver", app,
-                                   { localeFile = "HotkeyWindowController" }))
+        clickRightMenuBarItem(app, A_Message)
       end
     },
     ["preferencesFromMB"] = {
