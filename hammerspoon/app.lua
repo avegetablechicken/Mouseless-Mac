@@ -3488,16 +3488,19 @@ appHotKeyCallbacks = {
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
-        local button
+        local buttons
         if OS_VERSION >= OS.Tahoe then
           if toolbar and toolbar[1].AXRole == AX.Button then
-            button = getc(toolbar, AX.Group, 2, AX.Group, 1, AX.Button, A_Message)
+            buttons = getc(toolbar, AX.Group, 2, AX.Group, 1, AX.Button)
           else
-            button = getc(toolbar, AX.Group, 3, AX.Group, 1, AX.Button, A_Message)
+            buttons = getc(toolbar, AX.Group, 3, AX.Group, 1, AX.Button)
           end
         else
-          button = getc(toolbar, AX.Button, A_Message)
+          buttons = getc(toolbar, AX.Button)
         end
+        local button = tfind(buttons or {}, function(bt)
+          return bt.AXDescription == A_Message
+        end)
         return Callback.Enabled(button)
       end,
       fn = Callback.Press
