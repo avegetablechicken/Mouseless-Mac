@@ -9199,7 +9199,7 @@ CtxDelete = function(hotkey)
 end
 
 -- Bind a hotkey scoped to the active application.
-function AppBind(app, config, ...)
+local function AppBind(app, config, ...)
   local hotkey = bindContextual(app, config, ...)
   hotkey.kind = HK.IN_APP
   hotkey.subkind = HK.IN_APP_.APP
@@ -9281,7 +9281,7 @@ unregisterInAppHotKeys = function(appid, delete)
 end
 
 -- Bind a hotkey scoped to a specific window of the active application.
-function AppWinBind(win, config, ...)
+local function AppWinBind(win, config, ...)
   local hotkey = bindContextual(win, config, ...)
   hotkey.kind = HK.IN_APP
   hotkey.subkind = HK.IN_APP_.WINDOW
@@ -9606,7 +9606,7 @@ local function registerWinFiltersForApp(app)
 end
 
 -- Bind a hotkey scoped to a focused window.
-function WinBind(win, config, ...)
+local function WinBind(win, config, ...)
   local hotkey = bindContextual(win, config, ...)
   hotkey.kind = HK.IN_WIN
   return hotkey
