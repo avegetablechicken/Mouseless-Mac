@@ -12410,7 +12410,14 @@ local appsLaunchSlow = {
   end,
   ["com.jetbrains.pycharm"] = function(app)
     return getNumberOfMenuBarItems(app) > 2
-  end
+  end,
+  ["com.apple.games"] = function(app)
+    local win = app:focusedWindow()
+    if win == nil then return false end
+    local buttons = getc(towinui(win), AX.Toolbar, 1,
+        AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+    return buttons and #buttons > 0
+  end,
 }
 
 local forbiddenApps = ApplicationConfigs["forbidden"] or {}
