@@ -10331,6 +10331,13 @@ local specialToolbarButtons = {
   ["com.Snipaste"] = function(winUI)
     return getc(winUI, AX.Group, 2, AX.RadioButton)
   end,
+  ["com.lwouis.alt-tab-macos"] = function(winUI)
+    if appVer(winUI) < "10" then
+      return getToolbarButtons(winUI)
+    end
+    return getc(winUI, AX.SplitGroup, 1, AX.ScrollArea, 1,
+        AX.Table, 1, AX.Row)
+  end,
   ["app.remixdesign.LaunchOS"] = function(winUI)
     return getc(winUI, AX.Group, 1, AX.Image), true
   end,
