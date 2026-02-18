@@ -522,6 +522,7 @@
         "mods": "${hyper.hyper}",
         "key": "K",
         "bundleID": [
+          "com.apple.Keynote",
           "com.apple.iWork.Keynote",
           "com.microsoft.Powerpoint"
         ]
@@ -1404,6 +1405,56 @@
         "key": "O"
       }
     },
+    "com.apple.Keynote": {
+      "exportToPDF": {
+        "mods": "command",
+        "key": "E"
+      },
+      "exportToPPT": {
+        "mods": ["shift", "option", "command"],
+        "key": "E"
+      },
+      "pasteAndMatchStyle": {
+        "mods": "command",
+        "key": "V"
+      },
+      "paste": {
+        "mods": ["shift", "option", "command"],
+        "key": "V"
+      },
+      "toggleSlideOnly": {
+        "mods": ["control", "command"],
+        "key": "S"
+      },
+      "showBuildOrder": {
+        "mods": ["option", "command"],
+        "key": "B"
+      },
+      "toggleFormatInspector": {
+        "mods": ["control", "command"],
+        "key": "F"
+      },
+      "play": {
+        "mods": ["shift", "command"],
+        "key": "Return"
+      },
+      "insertTextBox": {
+        "mods": ["control", "command"],
+        "key": "T"
+      },
+      "insertShape": {
+        "mods": ["control", "option", "command"],
+        "key": "S"
+      },
+      "insertLine": {
+        "mods": ["control", "command"],
+        "key": "L"
+      },
+      "showInFinder": {
+        "mods": ["shift", "command"],
+        "key": "O"
+      }
+    },
     "com.apple.iWork.Pages": {
       "exportToPDF": {
         "mods": "command",
@@ -1430,7 +1481,59 @@
         "key": "O"
       }
     },
+    "com.apple.Pages": {
+      "exportToPDF": {
+        "mods": "command",
+        "key": "E"
+      },
+      "exportToWord": {
+        "mods": ["shift", "option", "command"],
+        "key": "E"
+      },
+      "pasteAndMatchStyle": {
+        "mods": "command",
+        "key": "V"
+      },
+      "paste": {
+        "mods": ["shift", "option", "command"],
+        "key": "V"
+      },
+      "toggleFormatInspector": {
+        "mods": ["control", "command"],
+        "key": "F"
+      },
+      "showInFinder": {
+        "mods": ["shift", "command"],
+        "key": "O"
+      }
+    },
     "com.apple.iWork.Numbers": {
+      "exportToPDF": {
+        "mods": "command",
+        "key": "E"
+      },
+      "exportToExcel": {
+        "mods": ["shift", "option", "command"],
+        "key": "E"
+      },
+      "pasteAndMatchStyle": {
+        "mods": "command",
+        "key": "V"
+      },
+      "toggleFormatInspector": {
+        "mods": ["control", "command"],
+        "key": "F"
+      },
+      "paste": {
+        "mods": ["shift", "option", "command"],
+        "key": "V"
+      },
+      "showInFinder": {
+        "mods": ["shift", "command"],
+        "key": "O"
+      }
+    },
+    "com.apple.Numbers": {
       "exportToPDF": {
         "mods": "command",
         "key": "E"

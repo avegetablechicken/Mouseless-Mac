@@ -8390,6 +8390,12 @@ appHotKeyCallbacks = {
   }
 }
 
+for _, iWork in ipairs{ "Keynote", "Pages", "Numbers" } do
+  local oldAppid = "com.apple.iWork." .. iWork
+  local appid = "com.apple." .. iWork
+  appHotKeyCallbacks[appid] = appHotKeyCallbacks[oldAppid]
+end
+
 local browserTabHotKeyCallbacks = {
   ["weiboNavigate1stCommonGroup"] = {
     message = Web.Weibo.sideBarTitle(1, true),
