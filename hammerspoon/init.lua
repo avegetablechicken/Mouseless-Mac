@@ -22,7 +22,9 @@ FLAGS["LOADING"] = true
 --
 -- Provides a normalized OS_VERSION string for conditional logic
 -- across different macOS releases.
-OS = {
+OS = {}
+
+local operatingSystemVersionNumber = {
   Cheetah           = "10.0",
   Puma              = "10.1",
   Jaguar            = "10.2",
@@ -46,9 +48,8 @@ OS = {
   Sequoia           = "15",
   Tahoe             = "26"
 }
-
 local Version = require("version")
-for k, v in pairs(OS) do
+for k, v in pairs(operatingSystemVersionNumber) do
   OS[k] = Version.newOS(v)
 end
 OS_VERSION = Version.newOS(hs.host.operatingSystemVersion())
