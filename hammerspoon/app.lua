@@ -10444,28 +10444,13 @@ local specialToolbarButtons = {
         function(g) return getc(g, AX.StaticText, 1) end), true
   end),
   ["com.charliemonroe.Permute-3"] = function(winUI)
-    local rows = getc(winUI, AX.ScrollArea, 1, AX.Table, 1, AX.Row)
-    if rows then
-      return tmap(rows, function(r)
-        return getc(r, AX.Cell, 1, AX.StaticText, 1)
-      end), true
-    end
+    return getc(winUI, AX.ScrollArea, 1, AX.Table, 1, AX.Row)
   end,
   ["com.charliemonroe.Downie-4"] = function(winUI)
-    local rows = getc(winUI, AX.ScrollArea, 1, AX.Table, 1, AX.Row)
-    if rows then
-      return tmap(rows, function(r)
-        return getc(r, AX.Cell, 1, AX.StaticText, 1)
-      end), true
-    end
+    return getc(winUI, AX.ScrollArea, 1, AX.Table, 1, AX.Row)
   end,
   ["com.colliderli.iina"] = function(winUI)
-    local rows = getc(winUI, AX.ScrollArea, 1, AX.Table, 1, AX.Row)
-    if rows then
-      return tmap(rows, function(r)
-        return getc(r, AX.Cell, 1, AX.StaticText, 1)
-      end), true
-    end
+    return getc(winUI, AX.ScrollArea, 1, AX.Table, 1, AX.Row)
   end
 }
 
@@ -10544,7 +10529,8 @@ registerNavigationForSettingsToolbar = function(app, retry)
   local callback
   if toClick then
     callback = Callback.Click
-  elseif buttons[1].AXSubrole == AX.OutlineRow then
+  elseif buttons[1].AXSubrole == AX.OutlineRow
+      or buttons[1].AXSubrole == AX.TableRow then
     callback = function(row) row.AXSelected = true end
   else
     callback = Callback.Press
@@ -10569,7 +10555,8 @@ registerNavigationForSettingsToolbar = function(app, retry)
       local msg
       if button.AXRole == AX.StaticText then
         msg = button.AXValue
-      elseif button.AXSubrole == AX.OutlineRow then
+      elseif button.AXSubrole == AX.OutlineRow
+          or button.AXSubrole == AX.TableRow then
         local ele = getc(button, AX.Cell, 1, AX.StaticText, 1)
         if ele then
           msg = ele.AXValue
