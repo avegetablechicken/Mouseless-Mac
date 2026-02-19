@@ -9477,15 +9477,19 @@ end
 local function isWindowAllowed(win, filter)
   if win == nil then return false end
   local normal, extended = normalizeWindowFilter(filter)
-  return win and win:application()
-      and (extended.allowURLs == nil or isWebsiteAllowed(win, extended.allowURLs))
-      and ((extended.allowSheet and win:role() == AX.Sheet)
-        or (extended.allowPopover and win:role() == AX.Popover)
-        or hs.window.filter.new(false)
-            :setAppFilter(win:application():name(), normal)
-            :isWindowAllowed(win))
-      and (extended.condition == nil
-           or injectWindowState(extended.condition)(win))
+  if win:role() == AX.Sheet then
+    if not extended.allowSheet then return false end
+  elseif win:role() == AX.Popover then
+    if not extended.allowPopover then return false end
+  elseif win:application() then
+    local windowFilter = hs.window.filter.new(false)
+        :setAppFilter(win:application():name(), normal)
+    if not windowFilter:isWindowAllowed(win) then
+      return false
+    end
+  end
+  return (extended.allowURLs == nil or isWebsiteAllowed(win, extended.allowURLs))
+      and (extended.condition == nil or injectWindowState(extended.condition)(win))
 end
 
 FocusedWindowObservers = {}
