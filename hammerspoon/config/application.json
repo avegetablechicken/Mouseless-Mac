@@ -26,9 +26,11 @@
     "com.apple.finder",
     "com.pigigaldi.pock",
     "io.mountainduck",
-    "com.wiheads.paste-direct",
     "com.eusoft.freeeudic",
     {
+      "com.wiheads.paste-direct": {
+        "allowRoles": "*"
+      },
       "com.macosgame.iwallpaper": {
         "rejectTitles": "^$"
       },
