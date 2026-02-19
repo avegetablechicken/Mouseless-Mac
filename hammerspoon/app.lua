@@ -9917,7 +9917,7 @@ local function updateAppLocale(app)
   local appid = app:bundleID() or app:name()
   local oldAppLocale = appLastLocales[appid]
   appLastLocales[appid] = A_AppLocale
-  if oldAppLocale and oldAppLocale ~= A_AppLocale then
+  if oldAppLocale ~= A_AppLocale then
     if matchLocale(oldAppLocale or SYSTEM_LOCALE, { A_AppLocale })
         ~= A_AppLocale then
       resetLocalizationMap(appid)
