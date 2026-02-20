@@ -1959,7 +1959,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     end
     selectNetworkActionFunc()
     selectNetworkWatcher = ExecContinuouslyQuick(selectNetworkActionFunc)
-  elseif panel == "AirDrop" then
+  elseif panel == CC.AirDrop then
     -- AirDrop panel:
     -- Bind numeric keys to switch AirDrop visibility modes.
     local cb
