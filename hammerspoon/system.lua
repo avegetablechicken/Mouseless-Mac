@@ -2023,6 +2023,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
           return
         end
         local index
+        cbs = tifilter(getc(pane, AX.CheckBox),
+            function(cb) return cb.AXSize.h >= h end)
         for i, cb in ipairs(cbs) do
           if cb.AXValue == 1 then
             index = i break
