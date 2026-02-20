@@ -1908,15 +1908,17 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         local cbs = tifilter(sa.AXChildren, function(ele)
           return ele.AXRole == AX.CheckBox or ele.AXRole == AX.Button
         end)
-        for idx=1,math.min(#cbs, 10) do
-          local cb = cbs[idx]
+        for _, cb in ipairs(cbs) do
           local title
           if OS_VERSION < OS.Ventura then
             title = cb.AXTitle:match("([^,]+)")
-          else
+          elseif cb.AXIdentifier then
             title = cb.AXIdentifier:sub(string.len("wifi-network-") + 1, -1)
           end
-          tinsert(availableNetworks, title)
+          if title then
+            tinsert(availableNetworks, title)
+            if #availableNetworks >= 10 then break end
+          end
         end
         local newAvailableNetworksString = table.concat(availableNetworks, "|")
         if newAvailableNetworksString ~= availableNetworksString then
