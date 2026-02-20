@@ -3682,7 +3682,7 @@ appHotKeyCallbacks = {
       message = "Previous Location",
       condition = function(app)
         local list = Weather.getLocationList(app)
-        if list then
+        if list and #list > 1 then
           local winTitle = app:focusedWindow():title()
           for i = 1, #list do
             local desc = list[i][1].AXDescription
@@ -3701,7 +3701,7 @@ appHotKeyCallbacks = {
       message = "Next Location",
       condition = function(app)
         local list = Weather.getLocationList(app)
-        if list then
+        if list and #list > 1 then
           local winTitle = app:focusedWindow():title()
           for i = 1, #list do
             local desc = list[i][1].AXDescription
