@@ -3504,11 +3504,6 @@ appHotKeyCallbacks = {
         return Callback.Enabled(button)
       end,
       fn = Callback.Press
-    },
-    ["helpSearch"] = {
-      message = T("Help Search"),
-      condition = MenuItem.isEnabled{ "Edit", "Find", "Help Search" },
-      fn = Callback.Select
     }
   },
 

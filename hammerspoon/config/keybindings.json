@@ -1091,10 +1091,6 @@
       "home": {
         "mods": ["shift", "command"],
         "key": "H"
-      },
-      "helpSearch": {
-        "mods": ["shift", "command"],
-        "key": "F"
       }
     },
     "com.apple.iCal": {
