@@ -1640,12 +1640,13 @@ local function isStageManagerEnabled()
   return globallyEnabled == "1"
 end
 
+local maxNumberOfStageManagerButtons = 6
 local stageManagerWindowHotkeys
 local function manageStageManagerWindowHotkeys()
   if not inFullscreenSpace() and isStageManagerEnabled() then
     if stageManagerWindowHotkeys == nil then
       stageManagerWindowHotkeys = {}
-      for i=1,10 do
+      for i=1,maxNumberOfStageManagerButtons do
         local hkID = "focusStageManagerWindow"..tostring(i)
         if winHK[hkID] then
           local hotkey = bindStageManagerWindow(winHK[hkID], i)
