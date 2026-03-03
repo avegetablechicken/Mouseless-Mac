@@ -2088,10 +2088,11 @@ QQLive.channelName = function(index)
     function()
       local list = getc(towinui(win), AX.Group, 2)
       if list == nil or #list == 0 then return end
+      local rowCnt = #list
       local start = A_WinBuf:get("channelStartIndex", function()
         local start = 1
         local verticalOffset, verticalOffsetChangeIdx
-        for i=2,math.min(10, #list) do
+        for i=2,math.min(10, rowCnt) do
           local offset = list[i].AXPosition.y - list[i-1].AXPosition.y
           if offset ~= verticalOffset then
             verticalOffset = offset
@@ -2101,10 +2102,22 @@ QQLive.channelName = function(index)
             break
           end
         end
-        if start == 1 then start = 4 end
+        if start == 1 then
+          for i=2,math.min(10, rowCnt) do
+            if list[i].AXValue == "VIP会员" and i < rowCnt then
+              local offset = list[i].AXPosition.y - list[i-1].AXPosition.y
+              for j=i+1,math.min(rowCnt) do
+                if list[j].AXPosition.y - list[j-1].AXPosition.y == offset then
+                  start = j
+                  break
+                end
+              end
+              break
+            end
+          end
+        end
         return start
       end)
-      local rowCnt = #list
       local channelNames = {}
       for i = 1, 10 do
         if rowCnt - 2 >= start + i - 1 then
