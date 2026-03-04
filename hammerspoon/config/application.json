@@ -28,6 +28,9 @@
     "io.mountainduck",
     "com.eusoft.freeeudic",
     {
+      "com.wiheads.paste": {
+        "allowRoles": "*"
+      },
       "com.wiheads.paste-direct": {
         "allowRoles": "*"
       },
