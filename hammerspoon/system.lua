@@ -125,6 +125,7 @@ end
 local proxyAppBundleIDs = {
   V2RayX = "cenmrev.V2RayX",
   V2rayU = "net.yanue.V2rayU",
+  v2rayN = "2dust.v2rayN",
   MonoCloud = "com.MonoCloud.MonoProxyMac",
 }
 
@@ -254,6 +255,16 @@ local function toggleV2RayU(enable, alert)
   return true
 end
 
+-- Ensure `v2rayN` is running before using its local proxy ports
+local function ensureV2RayNRunning()
+  local appid = proxyAppBundleIDs.v2rayN
+  if find(appid) == nil then
+    hs.application.launchOrFocusByBundleID(appid)
+  end
+
+  return true
+end
+
 -- Toggle connect/disconnect VPN using `MonoCloud`
 local function toggleMonoCloud(enable, alert)
   local appid = proxyAppBundleIDs.MonoCloud
@@ -336,6 +347,14 @@ local proxyActivateFuncs = {
         if clickRightMenuBarItem(proxyAppBundleIDs.V2rayU, "Pac Mode") then
           enable_proxy_PAC("V2rayU")
         end
+      end
+    end
+  },
+
+  v2rayN = {
+    global = function()
+      if ensureV2RayNRunning() then
+        enable_proxy_global("v2rayN")
       end
     end
   },
@@ -521,6 +540,22 @@ local proxyMenuItemCandidates =
       {
         title = "    PAC Mode",
         fn = proxyActivateFuncs.V2rayU.pac
+      }
+    }
+  },
+
+  {
+    appname = "v2rayN",
+    shortcut = 'n',
+    items = {
+      {
+        title = "    Global Mode",
+        fn = proxyActivateFuncs.v2rayN.global
+      },
+
+      {
+        title = "    PAC Mode",
+        fn = proxyActivateFuncs.v2rayN.pac
       }
     }
   },
@@ -2866,6 +2901,7 @@ function System_applicationInstalledCallback(files, flagTables)
   for i=1,#files do
     if files[i]:match("V2RayX")
         or files[i]:match("V2rayU")
+        or files[i]:match("v2rayN")
         or files[i]:match("MonoProxyMac") then
       registerProxyMenu(true)
     end
