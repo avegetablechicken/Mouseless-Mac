@@ -12183,8 +12183,8 @@ for _, rules in pairs(remoteDesktopsMappingModifiers) do
   for _, r in ipairs(rules) do
     local newMap = {}
     for k, v in pairs(r.map) do
-      k = toshort(k)
-      if k ~= nil then newMap[k] = toshort(v) end
+      local shortKey = toshort(k)
+      if shortKey ~= nil then newMap[shortKey] = toshort(v) end
     end
     r.map = newMap
   end
