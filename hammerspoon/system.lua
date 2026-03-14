@@ -551,11 +551,6 @@ local proxyMenuItemCandidates =
       {
         title = "    Global Mode",
         fn = proxyActivateFuncs.v2rayN.global
-      },
-
-      {
-        title = "    PAC Mode",
-        fn = proxyActivateFuncs.v2rayN.pac
       }
     }
   },
