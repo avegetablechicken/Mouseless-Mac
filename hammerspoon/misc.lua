@@ -619,13 +619,7 @@ local function testValid(entry)
     if entry.condition ~= nil then
       valid = entry.condition()
     elseif entry.kind == HK.IN_APP then
-      local app = hs.application.frontmostApplication()
-      local appid = app:bundleID() or app:name()
-      if entry.subkind == HK.IN_APP_.MENU
-          and appid == "com.valvesoftware.steam.helper" then
-        appid = "com.valvesoftware.steam"
-      end
-      local hotkeyInfo = get(ActivatedAppConditionChain, appid, entry.idx)
+      local hotkeyInfo = HotkeyInspector.findConditionHotkeyInfo(entry)
       if hotkeyInfo ~= nil then
         local actualMsg
         valid, actualMsg = getValidMessage(hotkeyInfo)
@@ -634,14 +628,12 @@ local function testValid(entry)
         end
       end
     elseif entry.kind == HK.IN_WIN or entry.kind == HK.MENUBAR then
-      for _, appCfg in pairs(DaemonAppConditionChain) do
-        local hotkeyInfo = appCfg[entry.idx]
-        if hotkeyInfo then
-          local actualMsg
-          valid, actualMsg = getValidMessage(hotkeyInfo)
-          if valid and actualMsg then
-            entry.msg = entry.msg:sub(1, pos - 1) .. ": " .. actualMsg
-          end
+      local hotkeyInfo = HotkeyInspector.findConditionHotkeyInfo(entry)
+      if hotkeyInfo then
+        local actualMsg
+        valid, actualMsg = getValidMessage(hotkeyInfo)
+        if valid and actualMsg then
+          entry.msg = entry.msg:sub(1, pos - 1) .. ": " .. actualMsg
         end
       end
     end
