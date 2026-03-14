@@ -5,7 +5,7 @@
 require "utils"
 
 local function loadSystemPart(part)
-  local path = hs.configdir .. "/system/" .. part .. ".lua"
+  local path = hs.configdir .. "/src/system/" .. part .. ".lua"
   local chunk, err = loadfile(path, "t", _ENV)
   if not chunk then
     error(err)

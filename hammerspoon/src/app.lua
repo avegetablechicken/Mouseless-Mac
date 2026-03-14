@@ -15,7 +15,7 @@ local appEnv = setmetatable({
 }, { __index = _G })
 
 local function loadAppPart(part)
-  local path = hs.configdir .. "/app/" .. part .. ".lua"
+  local path = hs.configdir .. "/src/app/" .. part .. ".lua"
   local chunk, err = loadfile(path, "t", appEnv)
   if not chunk then
     error(err)
@@ -30,20 +30,6 @@ loadAppPart("lifecycle")
 runningAppsOnLoading = nil
 appEnv.runningAppsOnLoading = nil
 
-
--- forward callbacks to respective modules
-
--- monitor callbacks
-function App_monitorChangedCallback()
-  AppBehavior_monitorChangedCallback()
-end
-
--- workspace callbacks
-function App_spaceChangedCallback()
-  AppSharedHotkeys_spaceChangedCallback()
-end
-
--- usb callbacks
-function App_usbChangedCallback(device)
-  AppBehavior_usbChangedCallback(device)
-end
+App_monitorChangedCallback = appEnv.App_monitorChangedCallback
+App_spaceChangedCallback = appEnv.App_spaceChangedCallback
+App_usbChangedCallback = appEnv.App_usbChangedCallback

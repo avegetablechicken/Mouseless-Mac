@@ -18,6 +18,13 @@ local t = hs.timer.absoluteTime()
 FLAGS = {}
 FLAGS["LOADING"] = true
 
+local function prependPackagePath(pathPattern)
+  if not string.find(package.path, pathPattern, 1, true) then
+    package.path = pathPattern .. ";" .. package.path
+  end
+end
+prependPackagePath(hs.configdir .. "/src/?.lua")
+
 -- macOS version mapping and detection.
 --
 -- Provides a normalized OS_VERSION string for conditional logic
@@ -763,23 +770,32 @@ hs.urlevent.bind("alert", function(eventName, params)
   hs.alert.show(params["text"])
 end)
 
+local function loadModule(part)
+  local path = hs.configdir .. "/src/" .. part .. ".lua"
+  local chunk, err = loadfile(path, "t", _ENV)
+  if not chunk then
+    error(err)
+  end
+  chunk()
+end
+
 -- Load application management module.
-require "app"
+loadModule("app")
 
 -- Load system preference management module.
-require "system"
+loadModule("system")
 
 -- Load window management module.
-require "window"
+loadModule("window")
 
 -- Load screen and space management module.
-require "screen"
+loadModule("screen")
 
 -- Load filesystem utilities.
-require "fs"
+loadModule("fs")
 
 -- Load miscellaneous utilities.
-require "misc"
+loadModule("misc")
 
 -- Mark configuration loading as complete.
 FLAGS["LOADING"] = false
