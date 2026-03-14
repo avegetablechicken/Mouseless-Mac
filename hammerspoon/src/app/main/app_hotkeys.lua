@@ -3653,6 +3653,14 @@ AppHotKeyCallbacks = {
     }
   },
 
+  ["com.openai.codex"] = {
+    ["toggleSidebar"] = {
+      message = "Toggle Sidebar",
+      condition = MenuItem.isEnabled{ "View", "Toggle Sidebar" },
+      fn = Callback.Select
+    }
+  },
+
   ["com.openai.chat"] =
   {
     ["toggleSidebar"] = {

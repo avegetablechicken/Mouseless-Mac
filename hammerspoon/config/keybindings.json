@@ -1609,6 +1609,12 @@
         "key": ","
       }
     },
+    "com.openai.codex": {
+      "toggleSidebar": {
+        "mods": ["control", "command"],
+        "key": "S"
+      }
+    },
     "com.openai.chat": {
       "toggleSidebar": {
         "mods": ["control", "command"],
