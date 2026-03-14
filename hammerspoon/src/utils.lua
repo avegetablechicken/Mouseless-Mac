@@ -5303,13 +5303,11 @@ local function getValidMenuBarManager()
 
   -- Pick the first manager that has a visible UI on the menu bar area.
   for appid, fn in pairs(MENUBAR_MANAGER_SHOW) do
-    if type(fn) == 'string' then
-      appid = fn
-    end
-    local app = find(appid)
+    local managerAppId = type(fn) == 'string' and fn or appid
+    local app = find(managerAppId)
     if app then
       local maxX  -- used to avoid false positives if the manager is itself hidden
-      if appid == "net.matthewpalmer.Vanilla" then
+      if managerAppId == "net.matthewpalmer.Vanilla" then
         local icon = tfind(getc(toappui(app), AX.Window), function(win)
           return #win == 1 and win[1].AXRole == AX.Image
         end)
