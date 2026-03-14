@@ -812,9 +812,3 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   menu:performAction(AX.Press)
   return true
 end
-
--- Re-export public menu bar helpers explicitly so callers do not depend on
--- chunk-loading side effects from `utils.lua`.
-_G.getValidControlCenterMenuBarItemsTahoe = getValidControlCenterMenuBarItemsTahoe
-_G.loadStatusItemsAutosaveName = loadStatusItemsAutosaveName
-_G.clickRightMenuBarItem = clickRightMenuBarItem
