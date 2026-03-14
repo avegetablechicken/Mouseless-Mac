@@ -501,6 +501,8 @@ end
 
 -- # other helpers
 
+require("utils.menubar")
+
 -- Load extracted utils parts into the shared global environment.
 local function loadUtilsPart(part, env)
   local path = hs.configdir .. "/src/utils/" .. part .. ".lua"
@@ -509,16 +511,6 @@ local function loadUtilsPart(part, env)
     error(err)
   end
   chunk()
-end
-
-local menubarEnv = setmetatable({}, { __index = _G })
-loadUtilsPart("menubar", menubarEnv)
-for _, name in ipairs({
-  "getValidControlCenterMenuBarItemsTahoe",
-  "loadStatusItemsAutosaveName",
-  "clickRightMenuBarItem",
-}) do
-  _G[name] = menubarEnv[name]
 end
 
 local localizationEnv = setmetatable({}, { __index = _G })
