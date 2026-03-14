@@ -618,18 +618,10 @@ local function testValid(entry)
   if valid then
     if entry.condition ~= nil then
       valid = entry.condition()
-    elseif entry.kind == HK.IN_APP then
+    elseif entry.kind == HK.IN_APP
+        or entry.kind == HK.IN_WIN or entry.kind == HK.MENUBAR then
       local hotkeyInfo = HotkeyInspector.findConditionHotkeyInfo(entry)
       if hotkeyInfo ~= nil then
-        local actualMsg
-        valid, actualMsg = getValidMessage(hotkeyInfo)
-        if valid and actualMsg then
-          entry.msg = entry.msg:sub(1, pos - 1) .. ": " .. actualMsg
-        end
-      end
-    elseif entry.kind == HK.IN_WIN or entry.kind == HK.MENUBAR then
-      local hotkeyInfo = HotkeyInspector.findConditionHotkeyInfo(entry)
-      if hotkeyInfo then
         local actualMsg
         valid, actualMsg = getValidMessage(hotkeyInfo)
         if valid and actualMsg then
