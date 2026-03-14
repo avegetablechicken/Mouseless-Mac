@@ -40,6 +40,7 @@ if not LAZY_REGISTER_MENUBAR_OBSERVER then
   end
 end
 
+---@diagnostic disable-next-line: lowercase-global
 function onLaunchedAndActivated(app, menuBarChanged)
   local menuBarItems = getBufferedMenuBarItems(app)
   if menuBarChanged then

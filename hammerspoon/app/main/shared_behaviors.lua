@@ -401,6 +401,7 @@ HoldToQuit = hs.loadSpoon("HoldToQuit")
 HoldToQuit.duration = 0.2
 HoldToQuit:init()
 HoldToQuit:newHotkeys{ quit = { "⌘", "W" } }
+---@diagnostic disable-next-line: lowercase-global
 function mayRequireHoldToCloseWindow(app)
   local appid = app:bundleID()
   if appid == nil then return end
@@ -417,6 +418,7 @@ if frontApp then
 end
 
 -- ## specify input source for apps
+---@diagnostic disable-next-line: lowercase-global
 function selectInputSourceInApp(app)
   local inputSource = get(ApplicationConfigs, "inputSource",
       app:bundleID() or app:name())

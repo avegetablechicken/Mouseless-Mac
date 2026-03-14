@@ -1,3 +1,5 @@
+---@diagnostic disable: lowercase-global
+
 ------------------------------------------------------------
 -- # AppKeys
 -- Application-level hotkeys (launch / focus / hide)

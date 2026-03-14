@@ -1,3 +1,5 @@
+---@diagnostic disable: lowercase-global
+
 function getKeybinding(appid, hkID, defaultCommon)
   -- prefer properties specified in configuration file than in code
   local userCfgs = KeybindingConfigs.hotkeys[appid] or {}

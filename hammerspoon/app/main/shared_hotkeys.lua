@@ -28,6 +28,7 @@
 --   - skipped if app explicitly defines its own handler
 --   - skipped for excluded apps
 --   - dynamically rebuilt when menu items change
+---@diagnostic disable-next-line: lowercase-global
 function remapPreviousTab(app, force)
   local appid = app:bundleID() or app:name()
   local hkID = "remapPreviousTab"
@@ -73,6 +74,7 @@ end
 --   - is only registered if the menu exists and is enabled
 --   - respects localization and app-specific menu naming
 --   - is skipped if app defines its own implementation
+---@diagnostic disable-next-line: lowercase-global
 function registerOpenRecent(app, force)
   local appid = app:bundleID() or app:name()
   local hkID = "openRecent"
@@ -155,6 +157,7 @@ end
 --   - the corresponding menu items exist
 --   - the app does not override them
 --   - the app is not excluded
+---@diagnostic disable-next-line: lowercase-global
 function registerZoomHotkeys(app, force)
   local appid = app:bundleID() or app:name()
   local allHKIDs = { 'zoom', 'zoomAll' }
@@ -236,6 +239,7 @@ end
 -- This function dynamically:
 --   - disables conflicting hotkeys in fullscreen spaces
 --   - re-enables them when returning to normal spaces
+---@diagnostic disable-next-line: lowercase-global
 function registerResizeHotkeys(app)
   if OS_VERSION < OS.Sequoia then return end
   local menu, submenu = "Window", "Move & Resize"
@@ -544,6 +548,7 @@ local specialToolbarButtons = {
 -- for settings toolbar switching.
 local settingsToolbarHotkeys = {}
 
+---@diagnostic disable-next-line: lowercase-global
 function reactivateValidSettingsToolbarHotkeys(observer)
   local focusedWin = hs.window.frontmostWindow()
   local focusedWinId = focusedWin and focusedWin:id() or nil
@@ -570,6 +575,7 @@ function reactivateValidSettingsToolbarHotkeys(observer)
   return enabled
 end
 
+---@diagnostic disable-next-line: lowercase-global
 function registerNavigationForSettingsToolbar(app, retry)
   if retry == nil then retry = 0 end
   if (retry or 0) == 0 and reactivateValidSettingsToolbarHotkeys() then
@@ -692,6 +698,7 @@ end
 --
 -- When triggered, automatically registers toolbar navigation hotkeys
 -- for the newly opened settings window.
+---@diagnostic disable-next-line: lowercase-global
 function registerObserverForSettingsMenuItem(app)
   local appUI = toappui(app)
 
@@ -753,6 +760,7 @@ function registerObserverForSettingsMenuItem(app)
   Evt.StopOnDeactivated(app, observer)
 end
 
+---@diagnostic disable-next-line: lowercase-global
 function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
   local oldCallback = observer:callback()
   local settingsMenu, menuClosedObservedBefore
@@ -945,6 +953,7 @@ local specialSidebarRowsSelectFuncs = {
 --   - bound per focused window
 --   - rebuilt on panel content changes
 --   - cleaned up on panel close or app deactivation
+---@diagnostic disable-next-line: lowercase-global
 function registerForOpenSavePanel(app, retry)
   for _, hotkey in ipairs(openSavePanelHotkeys) do
     HotkeyRegistry.deleteHotkey(hotkey)
@@ -1183,6 +1192,7 @@ end
 --   - menu bar structure changes
 --   - focused window changes
 --   - localization differs
+---@diagnostic disable-next-line: lowercase-global
 function altMenuBarItem(app, force, reinvokeKey)
   local appid = app:bundleID() or app:name()
   local prefix = '__menubar__'

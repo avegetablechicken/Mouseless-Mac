@@ -176,6 +176,7 @@ if frontApp then
   registerObserverForMenuBarChange(frontApp)
 end
 
+---@diagnostic disable-next-line: lowercase-global
 function processInvalidAltMenu(app, reinvokeKey, windowOnBindAltMenu)
   local appid = app:bundleID() or app:name()
   local curWin = app:focusedWindow()
