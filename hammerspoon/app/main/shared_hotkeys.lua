@@ -1491,3 +1491,11 @@ function altMenuBarItem(app, force, reinvokeKey)
     inAppHotKeys[appid][prefix..'app'] = hotkey
   end
 end
+
+
+-- ## callbacks
+
+-- workspace callbacks
+function AppSharedHotkeys_spaceChangedCallback()
+  registerResizeHotkeys(hs.application.frontmostApplication())
+end

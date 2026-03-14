@@ -18,6 +18,8 @@ loadSystemPart("controlcenter")
 loadSystemPart("menubar")
 loadSystemPart("misc")
 
+-- forward callbacks to respective modules
+
 function System_applicationInstalledCallback(files, flagTables)
   SystemProxy_applicationInstalledCallback(files, flagTables)
 end

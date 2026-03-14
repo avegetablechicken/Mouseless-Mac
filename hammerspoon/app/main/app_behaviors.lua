@@ -152,3 +152,66 @@ if installed("com.MonoCloud.MonoProxyMac") then
   end)
 end
 
+
+-- ## callbacks
+
+-- monitor callbacks
+
+-- launch applications automatically when connected to an external monitor
+function AppBehavior_monitorChangedCallback()
+  local screens = hs.screen.allScreens()
+
+  -- only for built-in monitor
+  local builtinMonitorEnable = any(screens, function(screen)
+    return screen:name() == "Built-in Retina Display"
+  end)
+  if builtinMonitorEnable then
+    -- hs.application.launchOrFocusByBundleID("pl.maketheweb.TopNotch")
+  else
+    quit("pl.maketheweb.TopNotch")
+  end
+
+  -- for external monitors
+  if (builtinMonitorEnable and #screens > 1)
+    or (not builtinMonitorEnable and #screens > 0) then
+    if find("me.guillaumeb.MonitorControl") == nil then
+      hs.execute([[open -g -b "me.guillaumeb.MonitorControl"]])
+    end
+  elseif builtinMonitorEnable and #screens == 1 then
+    quit("me.guillaumeb.MonitorControl")
+  end
+end
+
+-- usb callbacks
+
+-- launch `MacDroid` automatically when connected to android phone
+local phones = ApplicationConfigs.androidDevices or {}
+local phonesManagers = ApplicationConfigs.manageAndroidDevices or {}
+if type(phonesManagers) == 'string' then phonesManagers = { phonesManagers } end
+local attached_android_count = 0
+
+function AppBehavior_usbChangedCallback(device)
+  if device.eventType == "added" then
+    attached_android_count = attached_android_count + 1
+    for _, phone in ipairs(phones) do
+      if device.productName == phone[1] and device.vendorName == phone[2] then
+        for _, appid in ipairs(phonesManagers) do
+          if installed(appid) then
+            hs.execute(strfmt("open -g -b '%s'", appid))
+            return
+          end
+        end
+      end
+    end
+  elseif device.eventType == "removed" then
+    attached_android_count = attached_android_count - 1
+    if attached_android_count == 0 then
+      for _, appid in ipairs(phonesManagers) do
+        quit(appid)
+        if appid == "us.electronic.macdroid" then
+          quit('MacDroid Extension')
+        end
+      end
+    end
+  end
+end
