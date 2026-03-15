@@ -50,7 +50,7 @@ end
 
   - Key remapping for virtual machines and remote desktops.
 
-  - Hotkeys to visualize or search all hotkeys (hold modifiers to highlight).
+  - Hotkeys to visualize or search both customized and built-in hotkeys (hold modifiers to highlight).
 
     ![image-20231102162841696](./assets/show-keybindings.png)
 
