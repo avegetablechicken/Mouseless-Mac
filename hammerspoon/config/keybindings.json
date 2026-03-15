@@ -402,6 +402,11 @@
       },
       {
         "mods": ["option", "command"],
+        "key": "Z",
+        "bundleID": "com.apple.Safari"
+      },
+      {
+        "mods": ["option", "command"],
         "key": "X",
         "bundleID": "com.microsoft.VSCode"
       },
@@ -479,7 +484,10 @@
       {
         "mods": "${hyper.hyper}",
         "key": "S",
-        "bundleID": "com.apple.Safari"
+        "bundleID": [
+          "com.sublimetext.4",
+          "com.apple.TextEdit"
+        ]
       },
       {
         "mods": "${hyper.hyper}",
@@ -518,14 +526,6 @@
           "com.vallettaventures.Texpad",
           "texstudio",
           "TeXShop"
-        ]
-      },
-      {
-        "mods": "${hyper.hyper}",
-        "key": "Z",
-        "bundleID": [
-          "com.sublimetext.4",
-          "com.apple.TextEdit"
         ]
       },
       {
