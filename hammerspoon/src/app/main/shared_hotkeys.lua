@@ -19,6 +19,31 @@
 --   - automatically cleaned up on app deactivation
 ------------------------------------------------------------
 
+local function enableOrDelete(appid, hkID, clear, usePattern)
+  local hotkey = HotkeyRegistry.get(appid, hkID, usePattern)
+  if usePattern then
+    local enabled = false
+    for matchedID, matchedHotkey in pairs(hotkey) do
+      if clear then
+        HotkeyRegistry.clearHotkey(appid, matchedID)
+      else
+        HotkeyRegistry.enableHotkey(matchedHotkey)
+        enabled = true
+      end
+    end
+    return enabled
+  end
+  if hotkey then
+    if clear then
+      HotkeyRegistry.clearHotkey(appid, hkID)
+    else
+      HotkeyRegistry.enableHotkey(hotkey)
+      return true
+    end
+  end
+  return false
+end
+
 -- Remap "previous tab" behavior for apps that support tab switching.
 --
 -- This globally remaps:
@@ -32,16 +57,9 @@
 function remapPreviousTab(app, force)
   local appid = app:bundleID() or app:name()
   local hkID = "remapPreviousTab"
-  local hotkey = get(inAppHotKeys, appid, hkID)
-  if hotkey then
-    if force then
-      HotkeyRegistry.deleteHotkey(hotkey)
-      inAppHotKeys[appid][hkID] = nil
-    else
-      HotkeyRegistry.enableHotkey(hotkey)
-      return
-    end
-  end
+  local enabled = enableOrDelete(appid, hkID, force)
+  if enabled then return end
+
   local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
   local specApp = get(AppHotKeyCallbacks[appid], hkID)
   if specApp ~= nil or spec == nil or tcontain(spec.excluded or {}, appid) then
@@ -58,13 +76,11 @@ function remapPreviousTab(app, force)
       local menuItemCond = app:findMenuItem(menuItemPath)
       return menuItemCond ~= nil and menuItemCond.enabled
     end
-    if inAppHotKeys[appid] == nil then
-      inAppHotKeys[appid] = {}
-    end
-    inAppHotKeys[appid][hkID] = AppBind(app, {
+    local hotkey = AppBind(app, {
       spec = spec, message = menuItemPath[#menuItemPath],
       fn = fn, repeatedfn = fn, condition = cond
     })
+    HotkeyRegistry.register(appid, hkID, hotkey)
   end)
 end
 
@@ -78,16 +94,8 @@ end
 function registerOpenRecent(app, force)
   local appid = app:bundleID() or app:name()
   local hkID = "openRecent"
-  local hotkey = get(inAppHotKeys, appid, hkID)
-  if hotkey then
-    if force then
-      HotkeyRegistry.deleteHotkey(hotkey)
-      inAppHotKeys[appid][hkID] = nil
-    else
-      HotkeyRegistry.enableHotkey(hotkey)
-      return
-    end
-  end
+  local enabled = enableOrDelete(appid, hkID, force)
+  if enabled then return end
 
   local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
   local specApp = get(AppHotKeyCallbacks[appid], hkID)
@@ -141,13 +149,11 @@ function registerOpenRecent(app, force)
       local menuItemCond = app:findMenuItem(menuItemPath)
       return menuItemCond ~= nil and menuItemCond.enabled
     end
-    if inAppHotKeys[appid] == nil then
-      inAppHotKeys[appid] = {}
-    end
-    inAppHotKeys[appid][hkID] = AppBind(app, {
+    local hotkey = AppBind(app, {
       spec = spec, message = menuItemPath[2],
       fn = fn, condition = cond
     })
+    HotkeyRegistry.register(appid, hkID, hotkey)
   end
 end
 
@@ -164,17 +170,8 @@ function registerZoomHotkeys(app, force)
   local allMenuItemTitles = { 'Zoom', 'Zoom All' }
   local hkIDs, menuItemTitles = {}, {}
   for i, hkID in ipairs(allHKIDs) do
-    local hotkey = get(inAppHotKeys, appid, hkID)
-    if hotkey then
-      if force then
-        HotkeyRegistry.deleteHotkey(hotkey)
-        inAppHotKeys[appid][hkID] = nil
-        tinsert(menuItemTitles, allMenuItemTitles[i])
-        tinsert(hkIDs, hkID)
-      else
-        HotkeyRegistry.enableHotkey(hotkey)
-      end
-    else
+    local enabled = enableOrDelete(appid, hkID, force)
+    if not enabled then
       tinsert(menuItemTitles, allMenuItemTitles[i])
       tinsert(hkIDs, hkID)
     end
@@ -218,13 +215,11 @@ function registerZoomHotkeys(app, force)
         local menuItemCond = app:findMenuItem(menuItemPath)
         return menuItemCond ~= nil and menuItemCond.enabled
       end
-      if inAppHotKeys[appid] == nil then
-        inAppHotKeys[appid] = {}
-      end
-      inAppHotKeys[appid][hkID] = AppBind(app, {
+      local hotkey = AppBind(app, {
         spec = spec, message = menuItemPath[2],
         fn = fn, condition = cond
       })
+      HotkeyRegistry.register(appid, hkID, hotkey)
     end
     ::ZOOM_CONTINUE::
   end
@@ -1196,18 +1191,7 @@ end
 function altMenuBarItem(app, force, reinvokeKey)
   local appid = app:bundleID() or app:name()
   local prefix = '__menubar__'
-  local enabled = false
-  for hkID, hotkey in pairs(inAppHotKeys[appid] or {}) do
-    if hkID:sub(1, #prefix) == prefix then
-      if force then
-        HotkeyRegistry.deleteHotkey(hotkey)
-        inAppHotKeys[appid][hkID] = nil
-      else
-        HotkeyRegistry.enableHotkey(hotkey)
-        enabled = true
-      end
-    end
-  end
+  local enabled = enableOrDelete(appid, "^" .. prefix, force, true)
   if enabled then return end
 
   -- check whether called by window filter (possibly with delay)
@@ -1427,16 +1411,13 @@ function altMenuBarItem(app, force, reinvokeKey)
       local msg = type(title) == 'table' and title[2] or title
       invMap[menuBarItem] = {key, msg}
     end
-    if inAppHotKeys[appid] == nil then
-      inAppHotKeys[appid] = {}
-    end
     local prefixL = prefix .. 'letter__'
     for i=2,#menuBarItemTitles do
       local spec = invMap[menuBarItemTitles[i]]
       if spec ~= nil then
         local fn = bind(clickMenuCallback, menuBarItemTitles[i], spec[1])
         local hotkey = bindAltMenu(app, modsLetter, spec[1], spec[2], fn)
-        inAppHotKeys[appid][prefixL..tostring(i-1)] = hotkey
+        HotkeyRegistry.register(appid, prefixL..tostring(i-1), hotkey)
         if reinvokeKey == spec[1] then
           clickMenuCallback(menuBarItemTitles[i])
         end
@@ -1466,14 +1447,11 @@ function altMenuBarItem(app, force, reinvokeKey)
         end
       end
     end
-    if inAppHotKeys[appid] == nil then
-      inAppHotKeys[appid] = {}
-    end
     local prefixI = prefix .. 'index__'
     for i=1,math.min(10, #menuBarItemTitles - 1) do
       local fn = bind(clickMenuCallback, menuBarItemTitles[i + 1], i % 10)
       local hotkey = bindAltMenu(app, modsIndex, tostring(i % 10), itemTitles[i], fn)
-      inAppHotKeys[appid][prefixI..tostring(i)] = hotkey
+      HotkeyRegistry.register(appid, prefixI..tostring(i), hotkey)
       if reinvokeKey == i % 10 then
         clickMenuCallback(menuBarItemTitles[i + 1])
       end
@@ -1482,13 +1460,10 @@ function altMenuBarItem(app, force, reinvokeKey)
 
   -- app menu
   if specAppMenu and specAppMenu.key then
-    if inAppHotKeys[appid] == nil then
-      inAppHotKeys[appid] = {}
-    end
     local hotkey = bindAltMenu(app, specAppMenu.mods, specAppMenu.key,
         menuBarItemTitles[1],
         function() app:selectMenuItem{ menuBarItemTitles[1] } end)
-    inAppHotKeys[appid][prefix..'app'] = hotkey
+    HotkeyRegistry.register(appid, prefix..'app', hotkey)
   end
 end
 

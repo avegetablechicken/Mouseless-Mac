@@ -681,7 +681,6 @@ end
 --   - enabled on activation
 --   - disabled or deleted on deactivation / termination
 local inAppHotKeys = {}
-_G.inAppHotKeys = inAppHotKeys
 
 function registerInAppHotKeys(app)
   local appid = app:bundleID() or app:name()
@@ -1441,6 +1440,21 @@ end
 HotkeyRegistry = {}
 _G.HotkeyRegistry = HotkeyRegistry
 
+function HotkeyRegistry.get(appid, hkID, usePattern)
+  if type(appid) ~= 'string' then appid = appid:bundleID() or appid:name() end
+  if not usePattern then
+    return get(inAppHotKeys, appid, hkID)
+  end
+
+  local matched = {}
+  for id, hotkey in pairs(inAppHotKeys[appid] or {}) do
+    if id:match(hkID) then
+      matched[id] = hotkey
+    end
+  end
+  return matched
+end
+
 function HotkeyRegistry.enableHotkey(hotkey)
   CtxEnable(hotkey)
 end
@@ -1451,6 +1465,19 @@ end
 
 function HotkeyRegistry.deleteHotkey(hotkey)
   CtxDelete(hotkey)
+end
+
+function HotkeyRegistry.clearHotkey(appid, hkID)
+  if type(appid) ~= 'string' then appid = appid:bundleID() or appid:name() end
+  local hotkeys = inAppHotKeys[appid]
+  if hotkeys == nil then return end
+  local hotkey = hotkeys[hkID]
+  if hotkey == nil then return end
+  CtxDelete(hotkey)
+  hotkeys[hkID] = nil
+  if next(hotkeys) == nil then
+    inAppHotKeys[appid] = nil
+  end
 end
 
 function HotkeyRegistry.deleteWindowHotkeys(appid, predicate)
@@ -1483,4 +1510,12 @@ function HotkeyRegistry.clearWindowHotkeys(appid, clearObservers)
         function(observer) observer:stop() end)
     FocusedWindowObservers[appid] = nil
   end
+end
+
+function HotkeyRegistry.register(appid, hkID, hotkey)
+  if inAppHotKeys[appid] == nil then
+    inAppHotKeys[appid] = {}
+  end
+  inAppHotKeys[appid][hkID] = hotkey
+  return hotkey
 end
