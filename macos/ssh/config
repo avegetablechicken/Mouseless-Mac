@@ -1,0 +1,132 @@
+Host github.com
+	HostName ssh.github.com
+	User git
+	IdentitiesOnly yes
+
+Host windows-11
+	HostName 10.211.55.3
+	User xuyiwen
+	IdentitiesOnly yes
+
+Host ubuntu
+	HostName 10.211.55.4
+	User parallels
+	IdentitiesOnly yes
+
+Host aliyun
+	HostName 182.92.106.196
+	User root
+
+Host mbp15
+	User xuyiwen
+    IdentitiesOnly yes
+
+	Match host mbp15 exec "echo -e '\x1dclose\x0d' | telnet 182.92.106.196 6016 > /dev/null 2>&1"
+		HostName 182.92.106.196
+		Port 6016
+
+Host thinkbook
+	User xuyiwen
+
+	Match host thinkbook exec "zsh %d/.ssh/checkinlab.sh"
+		HostName 192.168.31.210
+		Port 22
+
+	Match host thinkbook exec "echo -e '\x1dclose\x0d' | telnet 182.92.106.196 6006 > /dev/null 2>&1"
+		HostName 182.92.106.196
+		Port 6006
+
+Host thinkbook-wsl
+	User xuyiwen
+	IdentitiesOnly yes
+
+	Match host thinkbook-wsl exec "echo -e '\x1dclose\x0d' | telnet 182.92.106.196 6007 > /dev/null 2>&1"
+		HostName 182.92.106.196
+		Port 6007
+
+Host MS
+	User xuyiwen
+	IdentitiesOnly yes
+
+	Match host MS exec "zsh %d/.ssh/checkinlab.sh && echo -e '\x1dclose\x0d' | telnet 10.128.232.35 6011 > /dev/null 2>&1"
+		HostName 10.128.232.35
+		Port 6011
+
+	Match host MS exec "zsh %d/.ssh/checkinlab.sh"
+		HostName 10.128.232.168
+		Port 22
+
+	Match host MS exec "echo -e '\x1dclose\x0d' | telnet 81.70.191.237 6139 > /dev/null 2>&1"
+		HostName 81.70.191.237
+		Port 6139
+
+	Match host MS exec "echo -e '\x1dclose\x0d' | telnet 182.92.106.196 6011 > /dev/null 2>&1"
+		HostName 182.92.106.196
+		Port 6011
+
+	Match host MS
+		HostName 10.128.232.35
+		Port 6011
+		ProxyJump hms22
+
+Host data
+	User humanmotion
+
+	Match host data exec "zsh %d/.ssh/checkinlab.sh"
+		HostName 10.156.232.97
+
+	Match host data
+		HostName 10.156.232.97
+		ProxyJump MS
+
+Host hms22
+	User xuyiwen
+	IdentitiesOnly yes
+
+	Match host hms22 exec "zsh %d/.ssh/checkinlab.sh"
+		HostName 10.208.33.91
+		Port 2262
+
+	Match host hms22 exec "echo -e '\x1dclose\x0d' | telnet 81.70.191.237 2022 > /dev/null 2>&1"
+		HostName 81.70.191.237
+		Port 2022
+
+	Match host hms22
+		HostName 10.208.33.91
+		Port 2262
+		ProxyJump MS
+
+Host hms23
+	User xuyiwen
+	IdentitiesOnly yes
+
+	Match host hms23 exec "zsh %d/.ssh/checkinlab.sh"
+		HostName 10.208.33.92
+		Port 2262
+
+	Match host hms23 exec "echo -e '\x1dclose\x0d' | telnet 81.70.191.237 2223 > /dev/null 2>&1"
+		HostName 81.70.191.237
+		Port 2223
+
+	Match host hms23
+		HostName 10.208.33.92
+		Port 2262
+		ProxyJump MS
+
+Host hms74
+    User xuyiwen
+    IdentitiesOnly yes
+
+	Match host hms74 exec "zsh %d/.ssh/checkinlab.sh"
+		HostName 10.208.33.94
+		Port 2206
+
+	Match host hms74 exec "echo -e '\x1dclose\x0d' | telnet 81.70.191.237 5574 > /dev/null 2>&1"
+		HostName 81.70.191.237
+		Port 5574
+
+	Match host hms74
+		HostName 10.208.33.94
+		Port 2206
+		ProxyJump MS
+

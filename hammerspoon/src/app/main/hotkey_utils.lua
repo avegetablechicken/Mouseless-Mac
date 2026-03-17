@@ -60,7 +60,7 @@ function registerRunningAppHotKeys(appid, app)
         if not running then return false end
         if app == nil then
           if FLAGS["LOADING"] then
-            app = runningAppsOnLoading[appid]
+            app = LoadBuf.runningApplications[appid]
           else
             app = find(appid)
           end
@@ -224,12 +224,12 @@ end
 --
 -- Note:
 --   This process is expensive and is registered per-app only once.
-MenuBarMenuSelectedObservers = {}
+local menuBarMenuSelectedObservers = {}
 function registerMenuBarObserverForHotkeyValidity(app)
   local appid = app:bundleID() or app:name()
-  if MenuBarMenuSelectedObservers[appid] then
-    MenuBarMenuSelectedObservers[appid]:stop()
-    MenuBarMenuSelectedObservers[appid] = nil
+  if menuBarMenuSelectedObservers[appid] then
+    menuBarMenuSelectedObservers[appid]:stop()
+    menuBarMenuSelectedObservers[appid] = nil
   end
   if hs.window.filter.ignoreAlways[appid]
       or hs.window.filter.ignoreAlways[app:name()]
@@ -260,16 +260,24 @@ function registerMenuBarObserverForHotkeyValidity(app)
         end
       end)
       observer:start()
-      MenuBarMenuSelectedObservers[appid] = observer
+      menuBarMenuSelectedObservers[appid] = observer
       Evt.StopOnTerminated(app, observer, function()
-        MenuBarMenuSelectedObservers[appid] = nil
+        menuBarMenuSelectedObservers[appid] = nil
       end)
+
+      if FLAGS["LOADING"] then
+        tinsert(LoadBuf.menubarSelectedObserverStarted, appid)
+      end
       return menuBarItems
     end
   end
 end
+-- Performance hack:
+-- Expose menuBarMenuSelectedObservers for registering right menu bar observers
+-- for settings menu item
+_G.MenuBarMenuSelectedObservers = menuBarMenuSelectedObservers
 
-WindowCreatedSinceFilter = hs.window.filter.new(true)
+local windowCreatedSinceFilter = hs.window.filter.new(true)
 local windowCreatedSinceTime = {}
 
 -- Redirect hotkey execution to the system-focused UI element if needed.
@@ -291,9 +299,9 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
         return registerMenuBarObserverForHotkeyValidity(app)
       end)
       hs.timer.doAfter(2, function()
-        for appid, observer in pairs(MenuBarMenuSelectedObservers) do
+        for appid, _ in pairs(menuBarMenuSelectedObservers) do
           local app = find(appid)
-          registerObserverForRightMenuBarSettingsMenuItem(app, observer)
+          registerObserverForRightMenuBarSettingsMenuItem(app)
         end
       end)
       FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = any(appMenuBarItems, function(items)
@@ -310,7 +318,7 @@ local function resendToFocusedUIElement(cond, nonFrontmostWindow)
         if frontWin:role() == AX.Sheet or frontWin:role() == AX.Popover then
           return false, CF.uIElementNotFocused
         end
-        for wino, _ in pairs(WindowCreatedSinceFilter.windows) do
+        for wino, _ in pairs(windowCreatedSinceFilter.windows) do
           if wino.id == frontWin:id() then
             if wino.timeCreated > windowCreatedSinceTime[obj:id()] then
               return false, CF.uIElementNotFocused
@@ -362,13 +370,13 @@ local function noFocusedNonEmptyTextFieldFunc(fn)
   end
 end
 
-KEY_MODE = {
+local KEY_MODE = {
   PRESS = 1,
   REPEAT = 2,
 }
 
 ActivatedAppConditionChain = {}
-DaemonAppConditionChain = {}
+local daemonAppConditionChain = {}
 
 -- Append a conditional hotkey into a per-app condition chain.
 --
@@ -381,7 +389,7 @@ local function appendConditionChain(app, config, pressedfn, repeatedfn, cond)
   local appid = app:bundleID() or app:name()
   local mods, key = config.mods, config.key
   local message = config.message
-  local chain = config.background and DaemonAppConditionChain
+  local chain = config.background and daemonAppConditionChain
       or ActivatedAppConditionChain
 
   if chain[appid] == nil then
@@ -458,7 +466,7 @@ local function wrapConditionChain(app, fn, mode, config)
     if succ then return end
     local menuItemNotFound = result == CF.noMenuItemMatchKeybinding
     local hkIdx = hotkeyIdx(config.mods, config.key)
-    local chain = config.background and DaemonAppConditionChain
+    local chain = config.background and daemonAppConditionChain
         or ActivatedAppConditionChain
     local cb = chain[app:bundleID() or app:name()][hkIdx]
     while cb do
@@ -979,10 +987,10 @@ function isWindowAllowed(win, filter)
       and (extended.condition == nil or injectWindowState(extended.condition)(win))
 end
 
-FocusedWindowObservers = {}
+local focusedWindowObservers = {}
 local function registerSingleWinFilterForApp(app, filter, retry)
   local appid = app:bundleID() or app:name()
-  for f, _ in pairs(FocusedWindowObservers[appid] or {}) do
+  for f, _ in pairs(focusedWindowObservers[appid] or {}) do
     -- a window filter can be shared by multiple hotkeys
     if sameFilter(f, filter) then
       return
@@ -1078,12 +1086,12 @@ local function registerSingleWinFilterForApp(app, filter, retry)
     end
   end)
   observer:start()
-  if FocusedWindowObservers[appid] == nil then
-    FocusedWindowObservers[appid] = {}
+  if focusedWindowObservers[appid] == nil then
+    focusedWindowObservers[appid] = {}
   end
-  FocusedWindowObservers[appid][filter] = observer
+  focusedWindowObservers[appid][filter] = observer
   Evt.StopOnDeactivated(app, observer, function()
-    FocusedWindowObservers[appid][filter] = nil
+    focusedWindowObservers[appid][filter] = nil
   end)
 end
 
@@ -1112,7 +1120,7 @@ end
 
 -- hotkeys for focused window belonging to daemon app
 -- the window is frontmost unless specified "nonFrontmost"
-DaemonAppFocusedWindowObservers = {}
+local daemonAppFocusedWindowObservers = {}
 daemonAppFocusedWindowHotkeys = {}
 function registerDaemonAppInWinHotkeys(win, appid, filter)
   local winUI = towinui(win)
@@ -1158,7 +1166,7 @@ function registerDaemonAppInWinHotkeys(win, appid, filter)
             local extraRoles = tfilter(allowRoles, function(role)
                 return hs.window.filter.allowedWindowRoles[role] == nil end)
             if #extraRoles > 0 then
-              WindowCreatedSinceFilter:setAppFilter(app:name(), {
+              windowCreatedSinceFilter:setAppFilter(app:name(), {
                 allowRoles = extraRoles,
               })
             end
@@ -1166,7 +1174,7 @@ function registerDaemonAppInWinHotkeys(win, appid, filter)
           if windowCreatedSinceTime[wid] == nil then
             -- tell "hs.window.filter" to record time of windows to be created
             -- if no subscriptions have been made then this is necessary
-            -- WindowCreatedSinceFilter:subscribe(
+            -- windowCreatedSinceFilter:subscribe(
             --     hs.window.filter.windowCreated, function() end)
             windowCreatedSinceTime[wid] = hs.timer.secondsSinceEpoch()
           end
@@ -1182,7 +1190,7 @@ function registerDaemonAppInWinHotkeys(win, appid, filter)
               end
               daemonAppFocusedWindowHotkeys[wid] = nil
             end
-            -- WindowCreatedSinceFilter:unsubscribeAll()
+            -- windowCreatedSinceFilter:unsubscribeAll()
             windowCreatedSinceTime[wid] = nil
           end,
           hs.application.watcher.terminated, true)
@@ -1195,7 +1203,7 @@ end
 
 local function registerSingleWinFilterForDaemonApp(app, filter, retry)
   local appid = app:bundleID() or app:name()
-  for f, _ in pairs(DaemonAppFocusedWindowObservers[appid] or {}) do
+  for f, _ in pairs(daemonAppFocusedWindowObservers[appid] or {}) do
     -- a window filter can be shared by multiple hotkeys
     if sameFilter(f, filter) then
       return
@@ -1240,13 +1248,20 @@ local function registerSingleWinFilterForDaemonApp(app, filter, retry)
     end
   end)
   observer:start()
-  if DaemonAppFocusedWindowObservers[appid] == nil then
-    DaemonAppFocusedWindowObservers[appid] = {}
+  if daemonAppFocusedWindowObservers[appid] == nil then
+    daemonAppFocusedWindowObservers[appid] = {}
   end
-  DaemonAppFocusedWindowObservers[appid][filter] = observer
+  daemonAppFocusedWindowObservers[appid][filter] = observer
   Evt.StopOnTerminated(app, observer, function()
-    DaemonAppFocusedWindowObservers[appid][filter] = nil
+    daemonAppFocusedWindowObservers[appid][filter] = nil
   end)
+
+  if FLAGS["LOADING"] then
+    if LoadBuf.daemonAppFocusedWindowFilters[appid] == nil then
+      LoadBuf.daemonAppFocusedWindowFilters[appid] = {}
+    end
+    tinsert(LoadBuf.daemonAppFocusedWindowFilters[appid], filter)
+  end
 end
 
 function registerWinFiltersForDaemonApp(app, appConfig)
@@ -1369,7 +1384,7 @@ function registerInMenuHotkeys(app)
   end
 end
 
-MenuBarMenuObservers = {}
+local menuBarMenuObservers = {}
 function registerObserversForMenuBarMenu(app, appConfig)
   local appid = app:bundleID() or app:name()
 
@@ -1379,7 +1394,7 @@ function registerObserversForMenuBarMenu(app, appConfig)
     local isMenuBarMenu = keybinding.menubarFilter ~= nil
         or cfg.menubarFilter ~= nil
     if hasKey and isMenuBarMenu and bindable(app, cfg.enabled) then
-      local observer = MenuBarMenuObservers[appid]
+      local observer = menuBarMenuObservers[appid]
       if observer == nil then
         local appUI = toappui(app)
         observer = uiobserver.new(app:pid())
@@ -1391,13 +1406,17 @@ function registerObserversForMenuBarMenu(app, appConfig)
           end
         end)
         observer:start()
-        MenuBarMenuObservers[appid] = observer
+        menuBarMenuObservers[appid] = observer
         Evt.StopOnTerminated(app, observer, function()
-          MenuBarMenuObservers[appid] = nil
+          menuBarMenuObservers[appid] = nil
         end)
       end
       break
     end
+  end
+
+  if FLAGS["LOADING"] and menuBarMenuObservers[appid] then
+    tinsert(LoadBuf.menubarObserverStarted, appid)
   end
 end
 
@@ -1422,7 +1441,7 @@ function HotkeyInspector.findConditionHotkeyInfo(entry)
     end
     return get(ActivatedAppConditionChain, appid, entry.idx)
   elseif entry.kind == HK.IN_WIN or entry.kind == HK.MENUBAR then
-    for _, appCfg in pairs(DaemonAppConditionChain) do
+    for _, appCfg in pairs(daemonAppConditionChain) do
       local hotkeyInfo = appCfg[entry.idx]
       if hotkeyInfo then
         return hotkeyInfo
@@ -1510,9 +1529,9 @@ function HotkeyRegistry.clearWindowHotkeys(appid, clearObservers)
   if type(appid) ~= 'string' then appid = appid:bundleID() or appid:name() end
   HotkeyRegistry.deleteWindowHotkeys(appid)
   if clearObservers then
-    foreach(FocusedWindowObservers[appid] or {},
+    foreach(focusedWindowObservers[appid] or {},
         function(observer) observer:stop() end)
-    FocusedWindowObservers[appid] = nil
+    focusedWindowObservers[appid] = nil
   end
 end
 

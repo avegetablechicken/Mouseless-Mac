@@ -329,10 +329,7 @@ function App_applicationCallback(appname, eventType, app)
       if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] ~= nil then
         hs.timer.doAfter(1, function()
           registerMenuBarObserverForHotkeyValidity(app)
-          local observer = MenuBarMenuSelectedObservers[appid]
-          if observer then
-            registerObserverForRightMenuBarSettingsMenuItem(app, observer)
-          end
+          registerObserverForRightMenuBarSettingsMenuItem(app)
         end)
       end
       FLAGS["APP_LAUNCHING"] = nil

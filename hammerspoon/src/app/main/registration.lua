@@ -1,3 +1,9 @@
+LoadBuf.menubarObserverStarted = {}
+LoadBuf.menubarSelectedObserverStarted = {}
+LoadBuf.daemonAppFocusedWindowFilters = {}
+
+local runningApplications = LoadBuf.runningApplications
+
 -- Register AppKeys
 registerAppKeys()
 
@@ -27,7 +33,7 @@ end
 -- register hotkeys for active app
 LAZY_REGISTER_MENUBAR_OBSERVER = false
 if not LAZY_REGISTER_MENUBAR_OBSERVER then
-  local appMenuBarItems = tmap(runningAppsOnLoading, function(app)
+  local appMenuBarItems = tmap(runningApplications, function(app)
     return registerMenuBarObserverForHotkeyValidity(app)
   end)
   local focusedApp = hs.axuielement.systemWideElement().AXFocusedApplication
@@ -91,18 +97,17 @@ end
 -- register hotkeys for focused window belonging to daemon app
 if frontWin ~= nil then
   local frontWinAppID = frontWin:application():bundleID() or frontWin:application():name()
-  if DaemonAppFocusedWindowObservers[frontWinAppID] ~= nil then
-    for filter, _ in pairs(DaemonAppFocusedWindowObservers[frontWinAppID]) do
-      if isWindowAllowed(frontWin, filter) then
-        registerDaemonAppInWinHotkeys(frontWin, frontWinAppID, filter)
-      end
+  local frontWinAppFilters = LoadBuf.daemonAppFocusedWindowFilters[frontWinAppID] or {}
+  for _, filter in ipairs(frontWinAppFilters) do
+    if isWindowAllowed(frontWin, filter) then
+      registerDaemonAppInWinHotkeys(frontWin, frontWinAppID, filter)
     end
   end
 end
 
 -- register hotkeys for non-frontmost window belonging to daemon app
-for appid, _ in pairs(DaemonAppFocusedWindowObservers) do
-  local app = runningAppsOnLoading[appid]
+for appid, _ in pairs(LoadBuf.daemonAppFocusedWindowFilters) do
+  local app = runningApplications[appid]
   if app then
     local nonFrontmostFilters = {}
     for hkID, cfg in pairs(AppHotKeyCallbacks[appid]) do
@@ -143,8 +148,8 @@ for appid, appConfig in pairs(AppHotKeyCallbacks) do
 end
 
 -- register hotkeys for menu of menubar app
-for appid, _ in pairs(MenuBarMenuObservers) do
-  local app = find(appid)  -- "runningAppsOnLoading" may lead to null menubar item
+for _, appid in ipairs(LoadBuf.menubarObserverStarted) do
+  local app = find(appid)  -- "LoadBuf.runningApplications" may lead to null menubar item
   for _, menuBarItem in ipairs(getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)) do
     if menuBarItem.AXSelected then
       registerInMenuHotkeys(app)
@@ -154,7 +159,11 @@ for appid, _ in pairs(MenuBarMenuObservers) do
 end
 
 -- register watchers for preferences menu item in right menu bar menu
-for appid, observer in pairs(MenuBarMenuSelectedObservers) do
-  local app = runningAppsOnLoading[appid]
-  registerObserverForRightMenuBarSettingsMenuItem(app, observer)
+for _, appid in ipairs(LoadBuf.menubarSelectedObserverStarted) do
+  local app = runningApplications[appid]
+  registerObserverForRightMenuBarSettingsMenuItem(app)
 end
+
+LoadBuf.menubarObserverStarted = nil
+LoadBuf.menubarSelectedObserverStarted = nil
+LoadBuf.daemonAppFocusedWindowFilters = nil

@@ -4,14 +4,15 @@ local appsTmpDir = hs.fs.temporaryDirectory() .. hs.settings.bundleID .. "/appli
 
 hs.application.enableSpotlightForNameSearches(true)
 
-local runningAppsOnLoading = {}
+local LoadBuf = {}
+LoadBuf.runningApplications = {}
 foreach(hs.application.runningApplications(), function(app)
-  runningAppsOnLoading[app:bundleID() or app:name()] = app
+  LoadBuf.runningApplications[app:bundleID() or app:name()] = app
 end)
 
 local appEnv = setmetatable({
   appsTmpDir = appsTmpDir,
-  runningAppsOnLoading = runningAppsOnLoading,
+  LoadBuf = LoadBuf,
 }, { __index = _G })
 
 local function loadAppPart(part)
@@ -27,8 +28,8 @@ loadAppPart("boot")
 loadAppPart("main")
 loadAppPart("lifecycle")
 
-runningAppsOnLoading = nil
-appEnv.runningAppsOnLoading = nil
+LoadBuf.runningApplications = nil
+appEnv.LoadBuf = nil
 
 App_monitorChangedCallback = appEnv.App_monitorChangedCallback
 App_spaceChangedCallback = appEnv.App_spaceChangedCallback
