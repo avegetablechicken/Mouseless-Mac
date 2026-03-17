@@ -158,7 +158,7 @@ function registerAppKeys()
       local appname
       if appid ~= nil then
         if FLAGS["LOADING"] then
-          local app = runningAppsOnLoading[appid]
+          local app = LoadBuf.runningApplications[appid]
           appname = app and app:name() or displayName(appid)
         else
           appname = displayName(appid)
@@ -230,7 +230,7 @@ if exists(LSUIElementTmpFile) then
   LSUIElements = hs.json.read(LSUIElementTmpFile)
   for _, appid in ipairs(LSUIElements) do
     ExecOnSilentLaunch(appid, bind(ExecOnSilentQuit, appid, nil))
-    if FLAGS["LOADING"] and runningAppsOnLoading[appid] then
+    if FLAGS["LOADING"] and LoadBuf.runningApplications[appid] then
       ExecOnSilentQuit(appid)
     end
   end
@@ -284,7 +284,7 @@ Evt.OnRunning = function(appid, action)
   Evt.OnLaunched(appid, action)
   local app
   if FLAGS["LOADING"] then
-    app = runningAppsOnLoading[appid]
+    app = LoadBuf.runningApplications[appid]
   else
     app = find(appid)
   end

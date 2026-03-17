@@ -756,7 +756,14 @@ function registerObserverForSettingsMenuItem(app)
 end
 
 ---@diagnostic disable-next-line: lowercase-global
-function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
+function registerObserverForRightMenuBarSettingsMenuItem(app, force)
+  local appid = app:bundleID() or app:name()
+  local observer = MenuBarMenuSelectedObservers[appid]
+  if observer == nil then
+    if force ~= true then return end
+    observer = uiobserver.new(app:pid())
+  end
+
   local oldCallback = observer:callback()
   local settingsMenu, menuClosedObservedBefore
   local callback = function(obs, elem, notification)
@@ -787,7 +794,6 @@ function registerObserverForRightMenuBarSettingsMenuItem(app, observer)
         end
         return false
       end)
-      local appid = app:bundleID() or app:name()
       local appCfg = AppHotKeyCallbacks[appid] or {}
       for hkID, cfg in pairs(appCfg) do
         local keybinding = getKeybinding(appid, hkID)
