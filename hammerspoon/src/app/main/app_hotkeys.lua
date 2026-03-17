@@ -1653,7 +1653,7 @@ PasswordsMenuBarExtra.WF = {
 
 PasswordsMenuBarExtra.recordPosition = function(index)
   return function(win)
-    local rows = A_ConBuf:get("recordRows", function()
+    local rows = CondBuf:get("recordRows", function()
       local winUI = towinui(win)
       local searchField = getc(winUI, AX.Group, 1, AX.TextField, 1)
       if searchField ~= nil then
@@ -1681,7 +1681,7 @@ PasswordsMenuBarExtra.recordField = function(fieldTitle)
     local winUI = towinui(win)
 
     if OS_VERSION >= OS.Tahoe:withMinor(1) then
-      local fieldValues = A_ConBuf:get("fieldValues", function()
+      local fieldValues = CondBuf:get("fieldValues", function()
         return getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
             AX.Group, 1, AX.StaticText) or {}
       end)
@@ -1696,7 +1696,7 @@ PasswordsMenuBarExtra.recordField = function(fieldTitle)
       return false
     end
 
-    local fieldValues = A_ConBuf:get("fieldValues", function()
+    local fieldValues = CondBuf:get("fieldValues", function()
       if OS_VERSION >= OS.Tahoe then
         return getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
             AX.ScrollArea, 1, AX.Outline, 1, AX.Row) or {}
