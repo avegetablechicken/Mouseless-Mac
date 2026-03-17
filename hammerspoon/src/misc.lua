@@ -555,14 +555,14 @@ local function getValidMessage(hotkeyInfo)
   end
 end
 
--- A_ConBuf:
+-- CondBuf:
 -- Condition evaluation cache.
 --
 -- Used to memoize expensive condition checks during
 -- batch hotkey verification.
-A_ConBuf = {}
+CondBuf = {}
 
-function A_ConBuf:get(...)
+function CondBuf:get(...)
   local n = select("#", ...)
   local fn = select(n, ...)
   local keys = {}
@@ -586,7 +586,7 @@ function A_ConBuf:get(...)
 
     assert(
       #results == #keys,
-      ("A_ConBuf:get key count (%d) != fn return count (%d)")
+      ("CondBuf:get key count (%d) != fn return count (%d)")
         :format(#keys, #results)
     )
 
@@ -604,12 +604,12 @@ end
 
 local function setConditionBuffer()
   FLAGS["BATCH_VERIFY_HOTKEYS"] = true
-  A_ConBuf.map = {}
+  CondBuf.map = {}
 end
 
 local function resetConditionBuffer()
   FLAGS["BATCH_VERIFY_HOTKEYS"] = false
-  A_ConBuf.map = nil
+  CondBuf.map = nil
 end
 
 local function testValid(entry)

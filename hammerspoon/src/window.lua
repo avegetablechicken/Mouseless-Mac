@@ -1596,7 +1596,7 @@ end)
 -- Bind a Stage Manager window-switch hotkey.
 local function bindStageManagerWindow(spec, index)
   local condition = function()
-    local buttons = A_ConBuf:get("stageManagerButtons", function()
+    local buttons = CondBuf:get("stageManagerButtons", function()
       local manager = find(windowManagerId)
       if manager == nil then return {} end
       local frame = hs.screen.mainScreen():frame()
