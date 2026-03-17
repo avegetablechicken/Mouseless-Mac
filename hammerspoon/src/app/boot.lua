@@ -230,7 +230,7 @@ if exists(LSUIElementTmpFile) then
   LSUIElements = hs.json.read(LSUIElementTmpFile)
   for _, appid in ipairs(LSUIElements) do
     ExecOnSilentLaunch(appid, bind(ExecOnSilentQuit, appid, nil))
-    if runningAppsOnLoading[appid] then
+    if FLAGS["LOADING"] and runningAppsOnLoading[appid] then
       ExecOnSilentQuit(appid)
     end
   end
