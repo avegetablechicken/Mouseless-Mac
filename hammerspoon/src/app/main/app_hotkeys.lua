@@ -1653,17 +1653,23 @@ PasswordsMenuBarExtra.WF = {
 
 PasswordsMenuBarExtra.recordPosition = function(index)
   return function(win)
-    local winUI = towinui(win)
-    local searchField = getc(winUI, AX.Group, 1, AX.TextField, 1)
-    if searchField ~= nil then
-      local row
-      if OS_VERSION >= OS.Tahoe then
-        row = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-            AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index)
+    local rows = A_ConBuf:get("recordRows", function()
+      local winUI = towinui(win)
+      local searchField = getc(winUI, AX.Group, 1, AX.TextField, 1)
+      if searchField ~= nil then
+        if OS_VERSION >= OS.Tahoe then
+          return getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+              AX.ScrollArea, 1, AX.Outline, 1, AX.Row) or {}
+        else
+          return getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+              AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row) or {}
+        end
       else
-        row = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-            AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row, index)
+        return {}
       end
+    end)
+    local row = rows[index]
+    if row then
       return Callback.Clickable(row)
     end
     return false
@@ -1675,9 +1681,11 @@ PasswordsMenuBarExtra.recordField = function(fieldTitle)
     local winUI = towinui(win)
 
     if OS_VERSION >= OS.Tahoe:withMinor(1) then
-      local fieldValues = getc(winUI, AX.Group, 1,
-          AX.ScrollArea, 1, AX.Group, 1, AX.StaticText)
-      if fieldValues == nil then return false end
+      local fieldValues = A_ConBuf:get("fieldValues", function()
+        return getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+            AX.Group, 1, AX.StaticText) or {}
+      end)
+      if #fieldValues == 0 then return false end
       local title = T(fieldTitle, win)
       for i=1,#fieldValues,2 do
         local titleElem = fieldValues[i]
@@ -1688,17 +1696,18 @@ PasswordsMenuBarExtra.recordField = function(fieldTitle)
       return false
     end
 
-    local outline
-    if OS_VERSION >= OS.Tahoe then
-      outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-          AX.ScrollArea, 1, AX.Outline, 1)
-    else
-      outline = getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
-          AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1)
-    end
-    if outline == nil then return false end
+    local fieldValues = A_ConBuf:get("fieldValues", function()
+      if OS_VERSION >= OS.Tahoe then
+        return getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+            AX.ScrollArea, 1, AX.Outline, 1, AX.Row) or {}
+      else
+        return getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+            AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row) or {}
+      end
+    end)
+    if #fieldValues == 0 then return false end
     local title = T(fieldTitle, win)
-    for _, row in ipairs(getc(outline, AX.Row)) do
+    for _, row in ipairs(fieldValues) do
       local cell = getc(row, AX.Cell, 1)
       local titleElem = getc(cell, AX.StaticText, 1)
       if titleElem and titleElem.AXValue == title then
