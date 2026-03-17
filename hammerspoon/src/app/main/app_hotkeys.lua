@@ -6721,6 +6721,11 @@ AppHotKeyCallbacks = {
     }
   },
 
+  ["2dust.v2rayN"] = {
+    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
+    ["minimize"] = specialCommonHotkeyConfigs["minimize"]
+  },
+
   ["org.wireshark.Wireshark"] =
   {
     ["closeWindow"] = {
