@@ -2520,16 +2520,16 @@
         "key": "["
       },
       "copyUserName": {
-        "mods": "option",
-        "key": "1"
+        "mods": ["shift", "command"],
+        "key": "C"
       },
       "copyPassword": {
-        "mods": "option",
-        "key": "2"
+        "mods": ["option", "command"],
+        "key": "C"
       },
       "copyVerificationCode": {
-        "mods": "option",
-        "key": "3"
+        "mods": ["control", "command"],
+        "key": "C"
       },
       "record1": {
         "mods": "command",
