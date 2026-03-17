@@ -8,7 +8,7 @@ function getKeybinding(appid, hkID, defaultCommon)
   local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
   if hasKey == false and defaultCommon then
     local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
-        or specialCommonHotkeyConfigs[hkID]
+        or CommonKeybindings[hkID]
     if kbShared ~= nil then
       keybinding.mods = kbShared.mods
       keybinding.key = kbShared.key

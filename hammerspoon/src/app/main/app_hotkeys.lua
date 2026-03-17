@@ -2027,7 +2027,7 @@ end
 -- ## hotkey configs for apps
 
 -- hotkey configs that cound be used in various application
-specialCommonHotkeyConfigs = {
+local specialCommonHotkeyConfigs = {
   ["closeWindow"] = {
     mods = "⌘", key = "W",
     message = TC("Close Window"),
@@ -2073,6 +2073,14 @@ specialCommonHotkeyConfigs = {
     fn = Callback.Select
   },
 }
+
+CommonKeybindings = {}
+for hkID, config in pairs(specialCommonHotkeyConfigs) do
+  CommonKeybindings[hkID] = {
+    mods = config.mods,
+    key = config.key
+  }
+end
 
 local function specialCommonHotkeyConfigUpdated(hkID, newConfig)
   local config = tcopy(specialCommonHotkeyConfigs[hkID])
