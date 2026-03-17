@@ -535,16 +535,20 @@ local function wrapCondition(obj, config, mode)
   cond = function(o)
     o = o or obj or app:focusedWindow()
     if config.background and obj.application then
-      local wid = o:id()
-      if hs.window.get(wid) == nil then
-        for _, hotkey in pairs(daemonAppFocusedWindowHotkeys[wid] or {}) do
-          if hotkey.idx ~= nil then
-            CtxDelete(hotkey)
+      local isWindowAlive = A_ConBuf:get("isAlive", function()
+        local wid = o:id()
+        if hs.window.get(wid) == nil then
+          for _, hotkey in pairs(daemonAppFocusedWindowHotkeys[wid] or {}) do
+            if hotkey.idx ~= nil then
+              CtxDelete(hotkey)
+            end
           end
+          daemonAppFocusedWindowHotkeys[wid] = nil
+          return false
         end
-        daemonAppFocusedWindowHotkeys[wid] = nil
-        return false
-      end
+        return true
+      end)
+      if not isWindowAlive then return false end
     end
     return oldCond(o)
   end
