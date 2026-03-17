@@ -6315,6 +6315,38 @@ AppHotKeyCallbacks = {
         clickRightMenuBarItem(win:application())
       end
     },
+    ["copyWebsite"] = {
+      message = T("Copy Website"),
+      windowFilter = PasswordsMenuBarExtra.WF,
+      background = true,
+      condition = function(win)
+        local fieldTitle = "Website"
+        local winUI = towinui(win)
+
+        if OS_VERSION >= OS.Tahoe:withMinor(1) then
+          local fieldValues = getc(winUI, AX.Group, 1,
+              AX.ScrollArea, 1, AX.Group, 1, AX.Button)
+          if fieldValues == nil or #fieldValues == 0 then return false end
+          local title = T(fieldTitle, win)
+          for _, field in ipairs(fieldValues) do
+            local desc = field.AXAttributedDescription
+                and field.AXAttributedDescription:getString()
+            if desc and desc:sub(1, #title) == title then
+              if desc:sub(#title + 1, #title + 2) == ", " then
+                return true, desc:sub(#title + 3)
+              elseif desc:sub(#title + 1, #title + 3) == "、" then
+                return true, desc:sub(#title + 4)
+              end
+            end
+          end
+          return false
+        end
+      end,
+      fn = function(url, win)
+        hs.pasteboard.setContents(url)
+        clickRightMenuBarItem(win:application())
+      end
+    },
     ["record1"] = {
       message = "Record 1",
       windowFilter = PasswordsMenuBarExtra.WF,

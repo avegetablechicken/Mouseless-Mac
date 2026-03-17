@@ -2531,6 +2531,10 @@
         "mods": ["control", "command"],
         "key": "C"
       },
+      "copyWebsite": {
+        "mods": ["shift", "option", "command"],
+        "key": "C"
+      },
       "record1": {
         "mods": "command",
         "key": "1"
