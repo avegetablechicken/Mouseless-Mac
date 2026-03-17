@@ -1195,7 +1195,7 @@ function altMenuBarItem(app, force, reinvokeKey)
   if enabled then return end
 
   -- check whether called by window filter (possibly with delay)
-  if not app:isFrontmost() then
+  if app ~= hs.application.frontmostApplication() then
     return
   end
   local modsIndex = get(KeybindingConfigs.hotkeys,

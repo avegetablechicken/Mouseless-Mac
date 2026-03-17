@@ -288,7 +288,7 @@ Messages.deleteAll = function(messageItems, app)
       Messages.deleteSelected(app)
 
       hs.timer.doAfter(2, function()
-        if not app:isFrontmost() then return end
+        if app ~= hs.application.frontmostApplication() then return end
         local continue
         continue, messageItems = Messages.deletable(app)
         if continue then
@@ -3324,7 +3324,7 @@ AppHotKeyCallbacks = {
             local menuItem = getc(elem, AX.Menu, 1, AX.MenuItem, A_Message)
             if menuItem then
               Callback.Press(menuItem)
-              if app:isFrontmost() then
+              if app == hs.application.frontmostApplication() then
                 hs.eventtap.keyStroke("", "Escape", nil, app)
               end
               obs:stop()

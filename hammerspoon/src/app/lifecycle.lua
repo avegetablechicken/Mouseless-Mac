@@ -101,7 +101,7 @@ local function appMenuBarChangeCallback(app)
   registerZoomHotkeys(app, true)
   registerResizeHotkeys(app)
   hs.timer.doAfter(1, function()
-    if not app:isFrontmost() then return end
+    if appid ~= hs.application.frontmostApplication():bundleID() then return end
     local newMenuBarItemTitlesString = getMenuBarItemTitlesString(app)
     if newMenuBarItemTitlesString ~= menuBarItemStr then
       menuBarItemTitlesString.app[appid] = newMenuBarItemTitlesString
@@ -311,7 +311,8 @@ function App_applicationCallback(appname, eventType, app)
     if FLAGS["NEED_DOUBLE_CHECK"] then
       local oldFn = doublecheck
       doublecheck = function()
-        return app:isFrontmost() and (not oldFn or oldFn())
+        return app == hs.application.frontmostApplication()
+            and (not oldFn or oldFn())
       end
     end
     local action = function()

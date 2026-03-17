@@ -459,7 +459,7 @@ function injectWindowState(fn)
       winBuf[wid] = WinBuf.new()
     end
     A_WinBuf = winBuf[wid]
-    if win:application():isFrontmost() then
+    if hs.application.frontmostApplication() == win:application() then
       A_WinBuf.locale = A_AppLocale
     end
     A_WinLocale = A_WinBuf.locale
@@ -686,13 +686,13 @@ end
 
 local function getBufferedLocale(app)
   if app.focusedWindow then
-    if app:isFrontmost() then
+    if app == hs.application.frontmostApplication() then
       return A_AppLocale
     end
   elseif app.application then
     local win = app
     if A_WinBuf == nil or A_WinBuf.get == nil then
-      if win:application():isFrontmost() then
+      if win:application() == hs.application.frontmostApplication() then
         return A_AppLocale
       end
     else
