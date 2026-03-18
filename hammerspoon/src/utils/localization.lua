@@ -140,33 +140,41 @@ function applicationLocale(appid)
     end
   end
 
+  local cached = getAppPreferenceCacheEntry(appid)
+  if cached and cached.locale then
+    return cached.locale
+  end
+
   if FLAGS["APP_LAUNCHING"] then
     local locales = hs.execute(
         strfmt("defaults read %s AppleLanguages | tr -d '()\" \\n'", appid))
     if locales ~= "" then
-      return strsplit(locales, ',')[1]
+      local locale = strsplit(locales, ',')[1]
+      return setAppPreferenceCacheField(appid, "locale", locale)
     end
   end
 
   local errorReadingDefaults = false
-  local plistPath = hs.fs.pathToAbsolute(strfmt(
-      "~/Library/Containers/%s/Data/Library/Preferences/%s.plist", appid, appid))
-  if plistPath ~= nil then
-    local defaults = hs.plist.read(plistPath)
+  local containerPlistPath, plistPath = getAppPreferencePaths(appid)
+
+  if containerPlistPath ~= nil then
+    local defaults = hs.plist.read(containerPlistPath)
     if defaults then
       local locales = defaults.AppleLanguages
-      if locales ~= nil then return locales[1] end
+      if locales ~= nil then
+        return setAppPreferenceCacheField(appid, "locale", locales[1])
+      end
     else
       errorReadingDefaults = true
     end
   end
-  plistPath = hs.fs.pathToAbsolute(strfmt(
-      "~/Library/Preferences/%s.plist", appid))
   if plistPath ~= nil then
     local defaults = hs.plist.read(plistPath)
     if defaults then
       local locales = defaults.AppleLanguages
-      if locales ~= nil then return locales[1] end
+      if locales ~= nil then
+        return setAppPreferenceCacheField(appid, "locale", locales[1])
+      end
     else
       errorReadingDefaults = true
     end
@@ -175,10 +183,11 @@ function applicationLocale(appid)
     local locales = hs.execute(
         strfmt("defaults read %s AppleLanguages | tr -d '()\" \\n'", appid))
     if locales ~= "" then
-      return strsplit(locales, ',')[1]
+      local locale = strsplit(locales, ',')[1]
+      return setAppPreferenceCacheField(appid, "locale", locale)
     end
   end
-  return SYSTEM_LOCALE
+  return setAppPreferenceCacheField(appid, "locale", SYSTEM_LOCALE)
 end
 
 function getResourceDir(appid, frameworkNames)
