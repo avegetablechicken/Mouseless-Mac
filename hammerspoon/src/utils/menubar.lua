@@ -134,46 +134,21 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
   end
 
   ----------------------------------------------------------
-  -- Phase 1: read preferred positions from app defaults/plists
-  -- We try container plist first, then normal plist, then `defaults read`.
+  -- Phase 1: read preferred positions from app preference plists
   ----------------------------------------------------------
 
   local preferredPositions = {}
-  local errorReadingDefaults = false
-  local containerPlistPath, plistPath = getAppPreferencePaths(appid)
-  local defaults
+  local defaults, errorReadingDefaults = readAppPreferencesPlist(appid)
   local prefix = "NSStatusItem Preferred Position "
+  local prefix_len = #prefix
 
-  -- First try sandbox container plist (common for sandboxed apps)
-  if containerPlistPath ~= nil then
-    defaults = hs.plist.read(containerPlistPath)
-    if defaults then
-      local prefix_len = #prefix
-      for k, v in pairs(defaults) do
-        if k:sub(1, prefix_len) == prefix then
-          tinsert(preferredPositions, { k:sub(prefix_len + 1), tonumber(v) })
-        end
+  if defaults ~= nil then
+    for k, v in pairs(defaults) do
+      if k:sub(1, prefix_len) == prefix then
+        tinsert(preferredPositions, { k:sub(prefix_len + 1), tonumber(v) })
       end
-    else
-      errorReadingDefaults = true
     end
   end
-
-  -- Fallback: standard preference plist (non-sandboxed apps)
-  if #preferredPositions == 0 and plistPath ~= nil then
-    defaults = hs.plist.read(plistPath)
-    if defaults then
-      local prefix_len = #prefix
-      for k, v in pairs(defaults) do
-        if k:sub(1, prefix_len) == prefix then
-          tinsert(preferredPositions, { k:sub(prefix_len + 1), tonumber(v) })
-        end
-      end
-    else
-      errorReadingDefaults = true
-    end
-  end
-
   -- Last resort: shell `defaults read` text parsing (when plist read fails)
   if #preferredPositions == 0 and errorReadingDefaults then
     local records = hs.execute(strfmt([[
@@ -192,7 +167,7 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
 
   -- Control Center (pre-Tahoe) needs filtering by visibility
   -- because preferences can include items not currently shown.
-  if appid == 'com.apple.controlcenter' then
+  if appid == 'com.apple.controlcenter' and defaults then
     local enabledItems = {}
     local visiblePrefix = OS_VERSION >= OS.Tahoe
         and "NSStatusItem VisibleCC " or "NSStatusItem Visible "
@@ -328,10 +303,8 @@ MENUBAR_MANAGER_SHOW = {
     if icon == nil then return end
 
     -- If not using Bartender Bar, simply toggling icon shows items.
-    local useBartenderBar = hs.execute(strfmt([[
-      defaults read "%s" UseBartenderBar | tr -d '\n'
-    ]], manager:bundleID()))
-    if useBartenderBar ~= "1" then
+    local useBartenderBar = getp(manager:bundleID(), "UseBartenderBar")
+    if useBartenderBar ~= true and useBartenderBar ~= 1 then
       leftClickAndRestore(icon)
       return false
     end
@@ -456,10 +429,8 @@ MENUBAR_MANAGER_SHOW = {
     if icon == nil then return end
 
     -- If Ice Bar is not used, toggling icon reveals hidden items.
-    local useIceBar = hs.execute(strfmt([[
-      defaults read "%s" UseIceBar | tr -d '\n'
-    ]], manager:bundleID()))
-    if useIceBar ~= "1" then
+    local useIceBar = getp(manager:bundleID(), "UseIceBar")
+    if useIceBar ~= true and useIceBar ~= 1 then
       leftClickAndRestore(icon)
       return false
     end
@@ -567,10 +538,8 @@ MENUBAR_MANAGER_SHOW = {
     if not icon then return end
     local app = find(appid)
 
-    local isAdvancedMode = hs.execute(strfmt([[
-      defaults read "%s" advancedMode | tr -d '\n'
-    ]], manager:bundleID()))
-    if isAdvancedMode ~= "1" then
+    local isAdvancedMode = getp(manager:bundleID(), "advancedMode")
+    if isAdvancedMode ~= true and isAdvancedMode ~= 1 then
       if type(index) == 'string' then
         map = map or loadStatusItemsAutosaveName(app)
         index = map and map[index]
