@@ -3820,6 +3820,7 @@ AppHotKeyCallbacks = {
               local webarea = getc(winUI, AX.Group, 1, AX.Group, 1,
                   AX.ScrollArea, 1, AX.WebArea, 1)
               local menu = getc(webarea, AX.Group, 8, AX.Group, 2, AX.Group, 1)
+                  or getc(webarea, AX.Group, 8, AX.Group, 2, AX.Group, 1)
               if menu then
                 menuItem = getc(menu, AX.StaticText, A_Message)
                 return true
