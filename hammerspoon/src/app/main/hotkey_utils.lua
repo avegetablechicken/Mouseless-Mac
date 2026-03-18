@@ -543,6 +543,10 @@ local function wrapCondition(obj, config, mode)
   cond = function(o)
     o = o or obj or app:focusedWindow()
     if config.background and obj.application then
+      -- if the hotkey target is a window of a daemon app,
+      -- check if it's still alive before evaluating condition
+      -- if the window is closed, remove all hotkeys associated
+      -- with this window to avoid memory leak
       local isWindowAlive = CondBuf:get("focusedWindowIsAlive", function()
         local wid = o:id()
         if hs.window.get(wid) == nil then
