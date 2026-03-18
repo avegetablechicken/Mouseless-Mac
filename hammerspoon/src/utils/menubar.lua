@@ -140,14 +140,13 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
 
   local preferredPositions = {}
   local errorReadingDefaults = false
-  local plistPath, defaults
+  local containerPlistPath, plistPath = getAppPreferencePaths(appid)
+  local defaults
   local prefix = "NSStatusItem Preferred Position "
 
   -- First try sandbox container plist (common for sandboxed apps)
-  plistPath = hs.fs.pathToAbsolute(strfmt(
-      "~/Library/Containers/%s/Data/Library/Preferences/%s.plist", appid, appid))
-  if plistPath ~= nil then
-    defaults = hs.plist.read(plistPath)
+  if containerPlistPath ~= nil then
+    defaults = hs.plist.read(containerPlistPath)
     if defaults then
       local prefix_len = #prefix
       for k, v in pairs(defaults) do
@@ -161,21 +160,17 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
   end
 
   -- Fallback: standard preference plist (non-sandboxed apps)
-  if #preferredPositions == 0 then
-    plistPath = hs.fs.pathToAbsolute(strfmt(
-        "~/Library/Preferences/%s.plist", appid))
-    if plistPath ~= nil then
-      defaults = hs.plist.read(plistPath)
-      if defaults then
-        local prefix_len = #prefix
-        for k, v in pairs(defaults) do
-          if k:sub(1, prefix_len) == prefix then
-            tinsert(preferredPositions, { k:sub(prefix_len + 1), tonumber(v) })
-          end
+  if #preferredPositions == 0 and plistPath ~= nil then
+    defaults = hs.plist.read(plistPath)
+    if defaults then
+      local prefix_len = #prefix
+      for k, v in pairs(defaults) do
+        if k:sub(1, prefix_len) == prefix then
+          tinsert(preferredPositions, { k:sub(prefix_len + 1), tonumber(v) })
         end
-      else
-        errorReadingDefaults = true
       end
+    else
+      errorReadingDefaults = true
     end
   end
 
