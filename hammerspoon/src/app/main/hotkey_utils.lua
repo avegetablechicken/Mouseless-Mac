@@ -543,7 +543,7 @@ local function wrapCondition(obj, config, mode)
   cond = function(o)
     o = o or obj or app:focusedWindow()
     if config.background and obj.application then
-      local isWindowAlive = CondBuf:get("isAlive", function()
+      local isWindowAlive = CondBuf:get("focusedWindowIsAlive", function()
         local wid = o:id()
         if hs.window.get(wid) == nil then
           for _, hotkey in pairs(daemonAppFocusedWindowHotkeys[wid] or {}) do
