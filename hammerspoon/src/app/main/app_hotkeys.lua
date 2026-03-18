@@ -3506,6 +3506,17 @@ AppHotKeyCallbacks = {
       repeatable = true,
       fn = Callback.Select
     },
+    ["toggleDocumentOnly"] = {
+      message = T("Document Only"),
+      condition = function(app)
+        local menuItem, menuItemPath = findMenuItem(app, { "View", "Document Only" })
+        if menuItem and menuItem.ticked then
+          menuItem, menuItemPath = findMenuItem(app, { "View", "Page Thumbnails"})
+        end
+        return menuItem and menuItem.enabled, menuItemPath
+      end,
+      fn = Callback.Select
+    },
     ["toggleFormatInspector"] = {  -- View > Inspector > Format
       message = T{"Inspector", "Format"},
       condition = MenuItem.isEnabled{ "View", "Inspector", "Format" },
