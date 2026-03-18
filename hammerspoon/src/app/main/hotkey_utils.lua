@@ -170,33 +170,38 @@ end
 -- menu bar observers for hotkey validity tracking.
 local function hasStatusItems(app)
   local appid = app:bundleID() or app:name()
+  if appid == hs.settings.bundleID then
+    return true
+  end
+  local cache = getAppPreferenceCacheEntry(appid)
+  if cache ~= nil and cache.hasStatusItem ~= nil then
+    return cache.hasStatusItem
+  end
+
   local errorReadingDefaults = false
-  local plistPath, defaults
+  local containerPlistPath, plistPath = getAppPreferencePaths(appid)
+  local defaults
   local prefix = "NSStatusItem Preferred Position "
-  plistPath = hs.fs.pathToAbsolute(strfmt(
-      "~/Library/Containers/%s/Data/Library/Preferences/%s.plist", appid, appid))
-  if plistPath ~= nil then
-    defaults = hs.plist.read(plistPath)
+  if containerPlistPath ~= nil then
+    defaults = hs.plist.read(containerPlistPath)
     if defaults then
       local prefix_len = #prefix
       for k, v in pairs(defaults) do
         if k:sub(1, prefix_len) == prefix then
-          return true
+          return setAppPreferenceCacheField(appid, "hasStatusItem", true)
         end
       end
     else
       errorReadingDefaults = true
     end
   end
-  plistPath = hs.fs.pathToAbsolute(strfmt(
-      "~/Library/Preferences/%s.plist", appid))
   if plistPath ~= nil then
     defaults = hs.plist.read(plistPath)
     if defaults then
       local prefix_len = #prefix
       for k, v in pairs(defaults) do
         if k:sub(1, prefix_len) == prefix then
-          return true
+          return setAppPreferenceCacheField(appid, "hasStatusItem", true)
         end
       end
     else
@@ -207,9 +212,9 @@ local function hasStatusItems(app)
     local records, ok = hs.execute(strfmt([[
       defaults read %s | grep '"%s'
     ]], appid, prefix))
-    return ok == true
+    return setAppPreferenceCacheField(appid, "hasStatusItem", ok == true)
   end
-  return false
+  return setAppPreferenceCacheField(appid, "hasStatusItem", false)
 end
 
 -- Register observers to track menu bar selection state for hotkey validity.

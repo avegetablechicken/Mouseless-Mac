@@ -26,6 +26,45 @@ function getp(appid, key, ...)
   end
 end
 
+local appPreferencesCache = hs.settings.get("_app_preferences_cache") or {}
+
+function getAppPreferencePaths(appid)
+  return
+    hs.fs.pathToAbsolute(strfmt(
+        "~/Library/Containers/%s/Data/Library/Preferences/%s.plist", appid, appid)),
+    hs.fs.pathToAbsolute(strfmt(
+        "~/Library/Preferences/%s.plist", appid))
+end
+
+function getAppPreferenceMtime(path)
+  if path == nil then return end
+  return hs.fs.attributes(path, "modification")
+end
+
+function getAppPreferenceCacheEntry(appid)
+  local cache = appPreferencesCache[appid]
+  if cache == nil then return end
+
+  local containerPlistPath, plistPath = getAppPreferencePaths(appid)
+  local containerMtime = getAppPreferenceMtime(containerPlistPath)
+  local plistMtime = getAppPreferenceMtime(plistPath)
+  if cache.containerMtime == containerMtime and cache.plistMtime == plistMtime then
+    return cache
+  end
+end
+
+function setAppPreferenceCacheField(appid, key, value)
+  local containerPlistPath, plistPath = getAppPreferencePaths(appid)
+  if containerPlistPath or plistPath then
+    appPreferencesCache[appid] = appPreferencesCache[appid] or {}
+    appPreferencesCache[appid].containerMtime = getAppPreferenceMtime(containerPlistPath)
+    appPreferencesCache[appid].plistMtime = getAppPreferenceMtime(plistPath)
+    appPreferencesCache[appid][key] = value
+    hs.settings.set("_app_preferences_cache", appPreferencesCache)
+  end
+  return value
+end
+
 -- Recursively traverse AXUIElement children by role, index or identifier.
 -- Supports numeric index, negative index, AXIdentifier, AXTitle and AXValue.
 function getc(element, role, index, ...)
