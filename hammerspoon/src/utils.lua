@@ -8,6 +8,24 @@ function get(table, key, ...)
   return get(table[key], ...)
 end
 
+-- Recursively query app preferences plist for a key path.
+-- Handle both regular applications and sandboxed applications (which store preferences in a different location).
+function getp(appid, key, ...)
+  local plistPath = hs.fs.pathToAbsolute(strfmt(
+      "~/Library/Containers/%s/Data/Library/Preferences/%s.plist", appid, appid))
+  if plistPath ~= nil then
+    local defaults = hs.plist.read(plistPath)
+    return get(defaults, key, ...)
+  end
+
+  plistPath = hs.fs.pathToAbsolute(strfmt(
+      "~/Library/Preferences/%s.plist", appid))
+  if plistPath ~= nil then
+    local defaults = hs.plist.read(plistPath)
+    return get(defaults, key, ...)
+  end
+end
+
 -- Recursively traverse AXUIElement children by role, index or identifier.
 -- Supports numeric index, negative index, AXIdentifier, AXTitle and AXValue.
 function getc(element, role, index, ...)
