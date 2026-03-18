@@ -1452,6 +1452,10 @@
         "mods": ["shift", "option", "command"],
         "key": "V"
       },
+      "toggleDocumentOnly": {
+        "mods": ["control", "command"],
+        "key": "S"
+      },
       "toggleFormatInspector": {
         "mods": ["control", "command"],
         "key": "F"
@@ -1477,6 +1481,10 @@
       "paste": {
         "mods": ["shift", "option", "command"],
         "key": "V"
+      },
+      "toggleDocumentOnly": {
+        "mods": ["control", "command"],
+        "key": "S"
       },
       "toggleFormatInspector": {
         "mods": ["control", "command"],
