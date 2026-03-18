@@ -11,19 +11,8 @@ end
 -- Recursively query app preferences plist for a key path.
 -- Handle both regular applications and sandboxed applications (which store preferences in a different location).
 function getp(appid, key, ...)
-  local plistPath = hs.fs.pathToAbsolute(strfmt(
-      "~/Library/Containers/%s/Data/Library/Preferences/%s.plist", appid, appid))
-  if plistPath ~= nil then
-    local defaults = hs.plist.read(plistPath)
-    return get(defaults, key, ...)
-  end
-
-  plistPath = hs.fs.pathToAbsolute(strfmt(
-      "~/Library/Preferences/%s.plist", appid))
-  if plistPath ~= nil then
-    local defaults = hs.plist.read(plistPath)
-    return get(defaults, key, ...)
-  end
+  local defaults = readAppPreferencesPlist(appid)
+  return get(defaults, key, ...)
 end
 
 local appPreferencesCache = hs.settings.get("_app_preferences_cache") or {}
@@ -34,6 +23,28 @@ function getAppPreferencePaths(appid)
         "~/Library/Containers/%s/Data/Library/Preferences/%s.plist", appid, appid)),
     hs.fs.pathToAbsolute(strfmt(
         "~/Library/Preferences/%s.plist", appid))
+end
+
+function readAppPreferencesPlist(appid)
+  local containerPlistPath, plistPath = getAppPreferencePaths(appid)
+  local errorReadingDefaults = false
+  if containerPlistPath ~= nil then
+    local defaults = hs.plist.read(containerPlistPath)
+    if defaults ~= nil then
+      return defaults
+    else
+      errorReadingDefaults = true
+    end
+  end
+  if plistPath ~= nil then
+    local defaults = hs.plist.read(plistPath)
+    if defaults ~= nil then
+      return defaults, plistPath
+    else
+      errorReadingDefaults = true
+    end
+  end
+  return nil, errorReadingDefaults
 end
 
 function getAppPreferenceMtime(path)
