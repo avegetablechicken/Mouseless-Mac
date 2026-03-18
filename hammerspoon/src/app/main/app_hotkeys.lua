@@ -1,3 +1,17 @@
+--- Utility function for writing application preferences
+local function dumpAppPreferenceValue(appid, key, value)
+  local plistPath = hs.fs.pathToAbsolute(strfmt(
+      "~/Library/Containers/%s/Data/Library/Preferences/%s.plist", appid, appid))
+  if plistPath == nil then
+    plistPath = hs.fs.pathToAbsolute(strfmt(
+        "~/Library/Preferences/%s.plist", appid))
+  end
+  if plistPath == nil then return false end
+  local defaults = hs.plist.read(plistPath) or {}
+  defaults[key] = value
+  return hs.plist.write(defaults, plistPath)
+end
+
 ------------------------------------------------------------
 -- Parsing and emitting key bindings stored in plist files
 ------------------------------------------------------------
@@ -3744,10 +3758,8 @@ AppHotKeyCallbacks = {
       message = TB("Open Chat Bar"),
       background = true,
       fn = function(app)
-        local output, status = hs.execute(strfmt([[
-          defaults read '%s' KeyboardShortcuts_toggleLauncher | tr -d '\n'
-        ]], app:bundleID()))
-        if status and output ~= "0" then
+        local output = getp(app:bundleID(), "KeyboardShortcuts_toggleLauncher")
+        if type(output) == "string" and output ~= "0" then
           local json = hs.json.decode(output)
           local mods, key = parsePlistKeyBinding(
               json["carbonModifiers"], json["carbonKeyCode"])
@@ -5687,16 +5699,14 @@ AppHotKeyCallbacks = {
       enabled = function(app)
         if appVer(app) >= "6" then return false end
         -- the property update in command line is not working
-        local _, ok = hs.execute(strfmt(
-            "defaults read '%s' hotkeyKeyboardNav", app:bundleID()))
-        return ok
+        local shortcut = getp(app:bundleID(), "hotkeyKeyboardNav")
+        return type(shortcut) == "table"
       end,
       fn = function(app)
-        local output = hs.execute(strfmt(
-            "defaults read '%s' hotkeyKeyboardNav", app:bundleID()))
-        local spec = strsplit(output, "\n")
-        local mods = spec[4]:match("modifierFlags = (%d+)")
-        local key = spec[3]:match("keyCode = (%d+)")
+        local shortcut = getp(app:bundleID(), "hotkeyKeyboardNav")
+        if type(shortcut) ~= "table" then return end
+        local mods = shortcut.modifierFlags
+        local key = shortcut.keyCode
         mods, key = parsePlistKeyBinding(mods, key)
         safeGlobalKeyStroke(mods, key)
       end
@@ -5998,10 +6008,8 @@ AppHotKeyCallbacks = {
       background = true,
       fn = function(app)
         local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
-        local isAdvancedMode = hs.execute(strfmt([[
-          defaults read "%s" advancedMode | tr -d '\n'
-        ]], app:bundleID()))
-        if isAdvancedMode ~= "1" then
+        local isAdvancedMode = getp(app:bundleID(), "advancedMode")
+        if tostring(isAdvancedMode) ~= "1" then
           local position = hs.mouse.absolutePosition()
           mouseMove(uioffset(icon, {-10, 10}))
           hs.timer.doAfter(0.2, function()
@@ -6087,16 +6095,12 @@ AppHotKeyCallbacks = {
       background = true,
       fn = function(app)
         local appid = app:bundleID()
-        local output = hs.execute(strfmt([[
-          defaults read '%s' KeyboardShortcuts_toggleX | tr -d '\n'
-        ]], appid))
-        if output == "0" then
+        local output = getp(appid, "KeyboardShortcuts_toggleX")
+        if output == nil or output == "0" or output == 0 then
           local spec = KeybindingConfigs.hotkeys[appid]["toggleMenuBarX"]
           local mods, key = dumpPlistKeyBinding(1, spec.mods, spec.key)
-          hs.execute(strfmt([[
-            defaults write '%s' KeyboardShortcuts_toggleX -string \
-            '{"carbonKeyCode":%d,"carbonModifiers":%d}'
-          ]], appid, key, mods))
+          dumpAppPreferenceValue(appid, "KeyboardShortcuts_toggleX",
+              strfmt('{"carbonKeyCode":%d,"carbonModifiers":%d}', key, mods))
           app:kill()
           hs.timer.doAfter(1, function()
             hs.execute(strfmt("open -g -b '%s'", appid))
@@ -6203,18 +6207,14 @@ AppHotKeyCallbacks = {
       background = true,
       fn = function(app)
         local appid = app:bundleID()
-        local mods = hs.execute(strfmt(
-            "defaults read '%s' getLatexHotKeyModifiersKey | tr -d '\\n'", appid))
-        local key = hs.execute(strfmt(
-            "defaults read '%s' getLatexHotKeyKey | tr -d '\\n'", appid))
+        local mods = getp(appid, "getLatexHotKeyModifiersKey")
+        local key = getp(appid, "getLatexHotKeyKey")
         mods, key = parsePlistKeyBinding(mods, key)
         -- the property update in command line is overridden when app quits
         if mods == nil or key == nil then return end
-        local enabled = hs.execute(strfmt(
-            "defaults read '%s' getLatexShortcutEnabledKey | tr -d '\\n'", appid))
-        if enabled == "0" then
-          hs.execute(strfmt(
-              "defaults write '%s' getLatexShortcutEnabledKey 1", appid))
+        local enabled = getp(appid, "getLatexShortcutEnabledKey")
+        if tostring(enabled) == "0" then
+          dumpAppPreferenceValue(appid, "getLatexShortcutEnabledKey", "1")
           app:kill()
           hs.timer.doAfter(1, function()
             hs.execute(strfmt("open -g -b '%s'", appid))
@@ -7331,18 +7331,13 @@ AppHotKeyCallbacks = {
       background = true,
       enabled = function(appid)
         -- the property update in command line is overridden when app quits
-        local _, ok = hs.execute(strfmt(
-            "defaults read '%s' dicOfShortCutKey | grep OCRRecorder", appid))
-        return ok
+        return getp(appid, "dicOfShortCutKey", "OCRRecorder") ~= nil
       end,
       fn = function(app)
-        local output = hs.execute(strfmt(
-            "defaults read '%s' dicOfShortCutKey | grep OCRRecorder -A4",
-            app:bundleID()))
-        local spec = strsplit(output, "\n")
-        local mods = spec[5]:match("modifierFlags = (%d+);")
-        local key = spec[4]:match("keyCode = (%d+);")
-        mods, key = parsePlistKeyBinding(mods, key)
+        local shortcut = getp(app:bundleID(), "dicOfShortCutKey", "OCRRecorder")
+        if not shortcut then return end
+        local mods, key = parsePlistKeyBinding(
+            shortcut.modifierFlags, shortcut.keyCode)
         if mods == nil or key == nil then return end
         safeGlobalKeyStroke(mods, key)
       end
