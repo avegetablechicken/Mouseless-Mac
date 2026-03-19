@@ -141,7 +141,10 @@ function applicationLocale(appid)
   end
 
   local cached = getAppPreferenceCacheEntry(appid)
-  if cached and cached.locale then
+  if cached and cached.locale ~= nil then
+    if cached.locale == false then
+      return SYSTEM_LOCALE
+    end
     return cached.locale
   end
 
@@ -187,7 +190,8 @@ function applicationLocale(appid)
       return setAppPreferenceCacheField(appid, "locale", locale)
     end
   end
-  return setAppPreferenceCacheField(appid, "locale", SYSTEM_LOCALE)
+  setAppPreferenceCacheField(appid, "locale", false)
+  return SYSTEM_LOCALE
 end
 
 function getResourceDir(appid, frameworkNames)
