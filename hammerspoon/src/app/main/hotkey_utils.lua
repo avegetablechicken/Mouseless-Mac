@@ -170,6 +170,39 @@ end
 -- menu bar observers for hotkey validity tracking.
 local function hasStatusItems(app)
   local appid = app:bundleID() or app:name()
+
+  if OS_VERSION >= OS.Tahoe then
+    local allowedApps
+    if FLAGS["LOADING"] then
+      if LoadBuf.allowedMenuBarApps == nil then
+        LoadBuf.allowedMenuBarApps = getAllowedMenuBarAppsTahoe()
+      end
+      allowedApps = LoadBuf.allowedMenuBarApps
+    else
+      allowedApps = getAllowedMenuBarAppsTahoe()
+    end
+    local isAllowed = allowedApps[appid]
+    local apath
+    if isAllowed == nil then
+      apath = app:path() or ""
+      local pos = apath:sub(1, -4):find(".app/", 1, true)
+      if pos then
+        local appPath = apath:sub(1, pos + 3)
+        local info = hs.application.infoForBundlePath(appPath)
+        if info and info.CFBundleIdentifier then
+          local id = info.CFBundleIdentifier
+          isAllowed = allowedApps[id]
+          allowedApps[appid] = isAllowed
+        else
+          isAllowed = false
+        end
+      end
+    end
+    if isAllowed ~= nil or apath ~= "" then
+      return isAllowed or false
+    end
+  end
+
   if appid == hs.settings.bundleID then
     return true
   end

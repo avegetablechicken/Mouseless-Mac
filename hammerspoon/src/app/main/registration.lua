@@ -1,3 +1,4 @@
+LoadBuf.allowedMenuBarApps = nil
 LoadBuf.menubarObserverStarted = {}
 LoadBuf.menubarSelectedObserverStarted = {}
 LoadBuf.daemonAppFocusedWindowFilters = {}
@@ -164,6 +165,7 @@ for _, appid in ipairs(LoadBuf.menubarSelectedObserverStarted) do
   registerObserverForRightMenuBarSettingsMenuItem(app)
 end
 
+LoadBuf.allowedMenuBarApps = nil
 LoadBuf.menubarObserverStarted = nil
 LoadBuf.menubarSelectedObserverStarted = nil
 LoadBuf.daemonAppFocusedWindowFilters = nil

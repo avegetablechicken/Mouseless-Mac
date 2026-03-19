@@ -6,6 +6,38 @@
 -- and menu bar managers (Bartender / Ice / iBar / etc.)
 
 ------------------------------------------------------------
+-- Load applications allowed to show in menu bar on macOS Tahoe+.
+------------------------------------------------------------
+local plistPath = os.getenv("HOME") .. "/Library/Group Containers"
+    .. "/group.com.apple.controlcenter/Library/Preferences"
+    .. "/group.com.apple.controlcenter.plist"
+
+function getAllowedMenuBarAppsTahoe()
+  local plist = hs.plist.read(plistPath)
+  if plist == nil then return {} end
+
+  local tracked = plist.trackedApplications
+  -- In many cases this is nested plist data.
+  if tracked and type(tracked) ~= "table" then
+    tracked = hs.plist.readString(tracked, true)
+  end
+
+  local dict = {}
+  for i=2,#tracked,2 do
+    local isAllowed = tracked[i].isAllowed
+    local appid = get(tracked[i-1], 'bundle', '_0')
+    if appid then
+      dict[appid] = isAllowed
+    end
+  end
+
+  dict["com.apple.controlcenter"] = true  -- Control Center items are always allowed
+  dict["com.apple.Spotlight"] = plist.showSpotlight
+  dict["com.apple.weather"] = plist.showWeather
+  return dict
+end
+
+------------------------------------------------------------
 -- Load menu bar autosave names and preferred positions
 -- Used to map menu bar item indices <-> persistent identifiers
 ------------------------------------------------------------
