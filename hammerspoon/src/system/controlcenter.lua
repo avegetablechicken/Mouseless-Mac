@@ -1361,7 +1361,6 @@ end
 
 -- Handle Control Center window creation and register dynamic hotkeys
 local controlCenter = find("com.apple.controlcenter")
-SystemControlCenterApp = controlCenter
 ControlCenterObserver = uiobserver.new(controlCenter:pid())
 ControlCenterObserver:addWatcher(
   toappui(controlCenter),
@@ -1471,7 +1470,6 @@ ExecOnSilentLaunch("com.apple.controlcenter", function(app)
   ControlCenterObserver = nil
   hs.timer.doAfter(2, function()
     controlCenter = app
-    SystemControlCenterApp = controlCenter
     ControlCenterObserver = uiobserver.new(controlCenter:pid())
     ControlCenterObserver:addWatcher(
       toappui(controlCenter),

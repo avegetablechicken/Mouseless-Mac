@@ -76,7 +76,7 @@ local function registerSearchMenuBar()
   -- merged into the global menu bar ordering
   if OS_VERSION >= OS.Tahoe then
     local appMenuBarItems = getValidControlCenterMenuBarItemsTahoe(
-      SystemControlCenterApp
+      find("com.apple.controlcenter")
     )
     local items = {}
     for i, item in ipairs(appMenuBarItems) do
