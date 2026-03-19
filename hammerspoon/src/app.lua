@@ -7,7 +7,10 @@ hs.application.enableSpotlightForNameSearches(true)
 local LoadBuf = {}
 LoadBuf.runningApplications = {}
 foreach(hs.application.runningApplications(), function(app)
-  LoadBuf.runningApplications[app:bundleID() or app:name()] = app
+  local appid = app:bundleID() or app:name()
+  if appid ~= "com.apple.WebKit.WebContent" then
+    LoadBuf.runningApplications[appid] = app
+  end
 end)
 
 local appEnv = setmetatable({
