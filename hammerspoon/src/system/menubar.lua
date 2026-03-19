@@ -9,6 +9,33 @@ local function registerSearchMenuBar()
   -- and map them to accessibility menu bar elements if available.
   local menuBarItems, maps = {}, {}
   local apps = hs.application.runningApplications()
+  if OS_VERSION >= OS.Tahoe then
+    local allowedApps = getAllowedMenuBarAppsTahoe()
+    apps = tifilter(apps, function(app)
+      if app:kind() < 0 then return false end
+      local appid = app:bundleID()
+      local isAllowed = allowedApps[appid]
+      local apath
+      if isAllowed == nil and appid ~= "com.apple.WebKit.WebContent" then
+        apath = app:path() or ""
+        local pos = apath:sub(1, -4):find(".app/", 1, true)
+        if pos then
+          local appPath = apath:sub(1, pos + 3)
+          local info = hs.application.infoForBundlePath(appPath)
+          if info and info.CFBundleIdentifier then
+            local id = info.CFBundleIdentifier
+            isAllowed = allowedApps[id]
+          else
+            isAllowed = false
+          end
+        end
+      end
+      if isAllowed ~= nil or apath ~= "" then
+        return isAllowed or false
+      end
+      return true
+    end)
+  end
   for _, app in ipairs(apps) do
     local appid = app:bundleID() or app:name()
     local map, preferred = loadStatusItemsAutosaveName(app, true)
