@@ -260,12 +260,53 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
 
   -- Build bidirectional map: index -> autosaveName and autosaveName -> index
   local map, preferred = {}, {}
-  for i, r in ipairs(positions) do
-    map[r[1]] = preferredPositions[i][1]
-    map[preferredPositions[i][1]] = r[1]
-    if requirePreferredPosition == true then
-      preferred[r[1]] = preferredPositions[i][2]
-      preferred[preferredPositions[i][1]] = preferredPositions[i][2]
+  -- fix possible incorrect matching mentioned above for Hammerspoon
+  if appid == hs.settings.bundleID and SystemProxyMenubar.autosaveName then
+    local missedIdx
+    for i, r in ipairs(positions) do
+      local name
+      if math.abs(r[2] - SystemCaffeineMenubar:frame().x) < 3 then
+        name = SystemCaffeineMenubar:autosaveName()
+      elseif math.abs(r[2] - SystemProxyMenubar:frame().x) < 3 then
+        name = SystemProxyMenubar:autosaveName()
+      end
+      if name then
+        map[r[1]] = name map[name] = r[1]
+        if requirePreferredPosition == true then
+          for _, rec in ipairs(preferredPositions) do
+            if rec[1] == name then
+              preferred[r[1]] = rec[2]
+              preferred[name] = rec[2]
+              break
+            end
+          end
+        end
+      else
+        missedIdx = i
+      end
+    end
+    if missedIdx then
+      name = "Item-0"
+      map[positions[missedIdx][1]] = name
+      map[name] = positions[missedIdx][1]
+      if requirePreferredPosition == true then
+        for _, rec in ipairs(preferredPositions) do
+          if rec[1] == name then
+            preferred[positions[missedIdx][1]] = rec[2]
+            preferred[name] = rec[2]
+            break
+          end
+        end
+      end
+    end
+  else
+    for i, r in ipairs(positions) do
+      map[r[1]] = preferredPositions[i][1]
+      map[preferredPositions[i][1]] = r[1]
+      if requirePreferredPosition == true then
+        preferred[r[1]] = preferredPositions[i][2]
+        preferred[preferredPositions[i][1]] = preferredPositions[i][2]
+      end
     end
   end
   if requirePreferredPosition == true then
