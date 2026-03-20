@@ -770,9 +770,17 @@ hs.urlevent.bind("alert", function(eventName, params)
   hs.alert.show(params["text"])
 end)
 
+local LoadBuf = {}
+LoadBuf.shellCommands = {}
 local function loadModule(part)
   local path = hs.configdir .. "/src/" .. part .. ".lua"
-  local chunk, err = loadfile(path, "t", _ENV)
+  local moduleEnv = setmetatable({
+    LoadBuf = LoadBuf,
+  }, {
+    __index = _ENV,
+    __newindex = _ENV,
+  })
+  local chunk, err = loadfile(path, "t", moduleEnv)
   if not chunk then
     error(err)
   end
@@ -799,6 +807,8 @@ loadModule("misc")
 
 -- Mark configuration loading as complete.
 FLAGS["LOADING"] = false
+LoadBuf.shellCommands = nil
+LoadBuf = nil
 
 -- Log total loading time.
 print(strfmt("-- Loading time: %d ms", (hs.timer.absoluteTime() - t) // 1000000))

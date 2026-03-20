@@ -4,7 +4,6 @@ local appsTmpDir = hs.fs.temporaryDirectory() .. hs.settings.bundleID .. "/appli
 
 hs.application.enableSpotlightForNameSearches(true)
 
-local LoadBuf = {}
 LoadBuf.runningApplications = {}
 foreach(hs.application.runningApplications(), function(app)
   local appid = app:bundleID() or app:name()
