@@ -34,6 +34,8 @@ local function disable_proxy(networkservice)
   hs.execute('networksetup -setsocksfirewallproxystate "' .. networkservice .. '" off')
 end
 
+local ProxyConfigs
+
 -- Enable system proxy using PAC file for a proxy client
 local function enable_proxy_PAC(client, networkservice, location)
   networkservice = networkservice or getNetworkService()
