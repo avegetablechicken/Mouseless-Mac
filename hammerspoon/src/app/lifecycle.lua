@@ -451,5 +451,5 @@ function App_applicationInstalledCallback(files, flagTables)
   end
 end
 
-_G.App_applicationCallback = App_applicationCallback
-_G.App_applicationInstalledCallback = App_applicationInstalledCallback
+registerApplicationCallback(App_applicationCallback)
+registerApplicationInstalledCallback(App_applicationInstalledCallback)

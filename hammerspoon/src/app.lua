@@ -32,7 +32,3 @@ loadAppPart("lifecycle")
 
 LoadBuf.runningApplications = nil
 appEnv.LoadBuf = nil
-
-App_monitorChangedCallback = appEnv.App_monitorChangedCallback
-App_spaceChangedCallback = appEnv.App_spaceChangedCallback
-App_usbChangedCallback = appEnv.App_usbChangedCallback

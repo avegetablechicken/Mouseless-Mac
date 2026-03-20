@@ -30,20 +30,3 @@ loadMainPart("registration")
 
 loadMainPart("shared_behaviors")
 loadMainPart("app_behaviors")
-
--- forward callbacks to respective modules
-
--- monitor callbacks
-function App_monitorChangedCallback()
-  AppBehavior_monitorChangedCallback()
-end
-
--- workspace callbacks
-function App_spaceChangedCallback()
-  AppSharedHotkeys_spaceChangedCallback()
-end
-
--- usb callbacks
-function App_usbChangedCallback(device)
-  AppBehavior_usbChangedCallback(device)
-end

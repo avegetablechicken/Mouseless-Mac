@@ -352,10 +352,12 @@ registerMoveToSpaceHotkeys()
 
 
 -- Refresh screen-related hotkeys on screen configuration changes.
-function Screen_monitorChangedCallback()
+local function Screen_monitorChangedCallback()
   registerMonitorHotkeys()
   registerMoveToSpaceHotkeys()
 end
+
+registerMonitorChangedCallback(Screen_monitorChangedCallback)
 
 -- Monitor user space count changes and refresh space hotkeys.
 local workspacePlistPath = hs.fs.pathToAbsolute(os.getenv("HOME")

@@ -642,9 +642,53 @@ end
 -- They receive events from Hammerspoon watchers and forward them to
 -- module-specific callback implementations.
 
+local callbackRegistry = {
+  application = {},
+  applicationInstalled = {},
+  monitorChanged = {},
+  spaceChanged = {},
+  usbChanged = {},
+  networkChanged = {},
+}
+
+local function registerCallback(kind, fn)
+  tinsert(callbackRegistry[kind], fn)
+  return fn
+end
+
+function registerApplicationCallback(fn)
+  return registerCallback("application", fn)
+end
+
+function registerApplicationInstalledCallback(fn)
+  return registerCallback("applicationInstalled", fn)
+end
+
+function registerMonitorChangedCallback(fn)
+  return registerCallback("monitorChanged", fn)
+end
+
+function registerSpaceChangedCallback(fn)
+  return registerCallback("spaceChanged", fn)
+end
+
+function registerUsbChangedCallback(fn)
+  return registerCallback("usbChanged", fn)
+end
+
+function registerNetworkChangedCallback(fn)
+  return registerCallback("networkChanged", fn)
+end
+
+local function dispatchCallbacks(kind, ...)
+  for _, fn in ipairs(callbackRegistry[kind]) do
+    fn(...)
+  end
+end
+
 -- Application lifecycle callbacks.
 local function applicationCallback(appname, eventType, app)
-  App_applicationCallback(appname, eventType, app)
+  dispatchCallbacks("application", appname, eventType, app)
 end
 
 -- Handle silently launched applications.
@@ -710,32 +754,28 @@ local function applicationInstalledCallback(files, flagTables)
     end
   end
   if #newFiles ~= 0 then
-    App_applicationInstalledCallback(newFiles, newFlagTables)
-    System_applicationInstalledCallback(newFiles, newFlagTables)
+    dispatchCallbacks("applicationInstalled", newFiles, newFlagTables)
   end
 end
 
 -- Handle monitor configuration changes.
 local function monitorChangedCallback()
-  App_monitorChangedCallback()
-  System_monitorChangedCallback()
-  Screen_monitorChangedCallback()
+  dispatchCallbacks("monitorChanged")
 end
 
 -- Handle focus changes of workspace.
 local function spaceChangedCallback()
-  App_spaceChangedCallback()
-  Window_spaceChangedCallback()
+  dispatchCallbacks("spaceChanged")
 end
 
 -- Handle USB device changes.
 local function usbChangedCallback(device)
-  App_usbChangedCallback(device)
+  dispatchCallbacks("usbChanged", device)
 end
 
 -- Handle network configuration changes.
 local function networkChangedCallback(storeObj, changedKeys)
-  System_networkChangedCallback(storeObj, changedKeys)
+  dispatchCallbacks("networkChanged", storeObj, changedKeys)
 end
 
 -- Start all watchers and background services.

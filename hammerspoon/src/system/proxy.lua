@@ -1053,7 +1053,7 @@ local function toggleSystemProxy(networkservice)
     end
 end
 
-function SystemProxy_applicationInstalledCallback(files, flagTables)
+local function SystemProxy_applicationInstalledCallback(files, flagTables)
   for i = 1, #files do
     if files[i]:match("V2RayX")
         or files[i]:match("V2rayU")
@@ -1064,8 +1064,12 @@ function SystemProxy_applicationInstalledCallback(files, flagTables)
   end
 end
 
-function SystemProxy_networkChangedCallback(storeObj, changedKeys)
+registerApplicationInstalledCallback(SystemProxy_applicationInstalledCallback)
+
+local function SystemProxy_networkChangedCallback(storeObj, changedKeys)
   registerProxyMenuWrapper(storeObj, changedKeys)
 end
+
+registerNetworkChangedCallback(SystemProxy_networkChangedCallback)
 
 SystemProxyMenubar = proxy
