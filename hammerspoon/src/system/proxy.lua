@@ -1062,7 +1062,7 @@ function SystemProxy_applicationInstalledCallback(files, flagTables)
         or files[i]:match("V2rayU")
         or files[i]:match("v2rayN")
         or files[i]:match("MonoProxyMac") then
-      SystemRegisterProxyMenu(true)
+      registerProxyMenu(true)
     end
   end
 end
@@ -1071,5 +1071,4 @@ function SystemProxy_networkChangedCallback(storeObj, changedKeys)
   registerProxyMenuWrapper(storeObj, changedKeys)
 end
 
-SystemRegisterProxyMenu = registerProxyMenu
 SystemProxyMenubar = proxy
