@@ -340,13 +340,12 @@ local proxyActivateFuncs = {
   }
 }
 
-local shellCommandsExecutedOnLoading = {}
 local function executeProxyCondition(condition, returnCode)
   -- Phase 1: evaluate shell command condition (cached during loading)
   if condition.shell_command then
     local status, rc
     if FLAGS["LOADING"] then
-      local cmd = tfind(shellCommandsExecutedOnLoading, function(cmd)
+      local cmd = tfind(LoadBuf.shellCommands, function(cmd)
         return cmd[1] == condition.shell_command
       end)
       if cmd then
@@ -358,8 +357,8 @@ local function executeProxyCondition(condition, returnCode)
     if rc == nil then
       _, status, _, rc = hs.execute(condition.shell_command)
       if FLAGS["LOADING"] then
-        tinsert(shellCommandsExecutedOnLoading,
-          { condition.shell_command, status, rc })
+        tinsert(LoadBuf.shellCommands,
+            { condition.shell_command, status, rc })
       end
     end
     if returnCode then return rc end
@@ -1053,8 +1052,6 @@ local function toggleSystemProxy(networkservice)
     hs.alert("System proxy enabled (auto mode)")
     end
 end
-
-shellCommandsExecutedOnLoading = {}
 
 function SystemProxy_applicationInstalledCallback(files, flagTables)
   for i = 1, #files do
