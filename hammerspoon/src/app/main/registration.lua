@@ -54,6 +54,7 @@ function onLaunchedAndActivated(app, menuBarChanged)
     unregisterInAppHotKeys(app, true)
     HotkeyRegistry.clearWindowHotkeys(app, true)
     local appid = app:bundleID() or app:name()
+---@diagnostic disable-next-line: undefined-global
     ActivatedAppConditionChain[appid] = nil
   end
   if type(menuBarChanged) == 'string' then
