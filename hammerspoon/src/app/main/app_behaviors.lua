@@ -158,7 +158,7 @@ end
 -- monitor callbacks
 
 -- launch applications automatically when connected to an external monitor
-function AppBehavior_monitorChangedCallback()
+local function AppBehavior_monitorChangedCallback()
   local screens = hs.screen.allScreens()
 
   -- only for built-in monitor
@@ -182,6 +182,8 @@ function AppBehavior_monitorChangedCallback()
   end
 end
 
+registerMonitorChangedCallback(AppBehavior_monitorChangedCallback)
+
 -- usb callbacks
 
 -- launch `MacDroid` automatically when connected to android phone
@@ -190,7 +192,7 @@ local phonesManagers = ApplicationConfigs.manageAndroidDevices or {}
 if type(phonesManagers) == 'string' then phonesManagers = { phonesManagers } end
 local attached_android_count = 0
 
-function AppBehavior_usbChangedCallback(device)
+local function AppBehavior_usbChangedCallback(device)
   if device.eventType == "added" then
     attached_android_count = attached_android_count + 1
     for _, phone in ipairs(phones) do
@@ -215,3 +217,5 @@ function AppBehavior_usbChangedCallback(device)
     end
   end
 end
+
+registerUsbChangedCallback(AppBehavior_usbChangedCallback)

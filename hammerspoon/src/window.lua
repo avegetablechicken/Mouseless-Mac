@@ -1713,6 +1713,8 @@ local function bindStageManagerWindowURL(index)
                            locApp..' > '..locWindow..' '..index)
 end
 
-function Window_spaceChangedCallback()
+local function Window_spaceChangedCallback()
   manageStageManagerWindowHotkeys()
 end
+
+registerSpaceChangedCallback(Window_spaceChangedCallback)

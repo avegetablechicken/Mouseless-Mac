@@ -25,7 +25,7 @@ end
 
 local builtinMonitor = "Built-in Retina Display"
 
-function SystemMisc_monitorChangedCallback()
+local function SystemMisc_monitorChangedCallback()
   local screens = hs.screen.allScreens()
   local builtinMonitorEnable = any(screens, function(screen)
     return screen:name() == builtinMonitor
@@ -41,7 +41,9 @@ function SystemMisc_monitorChangedCallback()
   end
 end
 
-function SystemMisc_batteryChangedCallback()
+registerMonitorChangedCallback(SystemMisc_monitorChangedCallback)
+
+local function SystemMisc_batteryChangedCallback()
   local percent = hs.battery.percentage()
   if percent <= 10 then
     if not hs.battery.isCharging() then
