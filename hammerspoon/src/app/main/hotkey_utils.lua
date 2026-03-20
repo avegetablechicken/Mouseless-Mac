@@ -1509,7 +1509,6 @@ end
 --   Creating a new hotkey binding still goes through the bind helpers
 --   such as AppBind / AppWinBind / WinBind / MenuBarBind.
 HotkeyRegistry = {}
-_G.HotkeyRegistry = HotkeyRegistry
 
 function HotkeyRegistry.get(appid, hkID, usePattern)
   if type(appid) ~= 'string' then appid = appid:bundleID() or appid:name() end
