@@ -589,7 +589,7 @@ if consoleHotkey then
 end
 
 -- Register an action to be executed repeatedly
-processesExecEvery = {}
+local processesExecEvery = {}
 function ExecContinuously(action)
   local timeKey = tostring(hs.timer.absoluteTime())
   processesExecEvery[timeKey] = action
@@ -597,7 +597,7 @@ function ExecContinuously(action)
 end
 
 -- Register an action to be executed repeatedly at a small timer interval.
-processesExecEveryQuick = {}
+local processesExecEveryQuick = {}
 function ExecContinuouslyQuick(action)
   local timeKey = tostring(hs.timer.absoluteTime())
   processesExecEveryQuick[timeKey] = action
