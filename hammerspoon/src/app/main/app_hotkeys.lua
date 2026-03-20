@@ -1320,12 +1320,13 @@ Bartender.barItemTitle = function(index, rightClick)
               tinsert(itemIDs, itemID)
             else
               local appByName = find(appname)
-              if appByName == nil or
-                  appByName:bundleID() ~= itemID:sub(1, #appByName:bundleID()) then
+              local thisAppId = appByName and (appByName:bundleID() or appname)
+              if appByName == nil
+                  or thisAppId ~= itemID:sub(1, #thisAppId) then
                 tinsert(itemNames, appname)
                 tinsert(itemIDs, itemID)
               elseif appByName ~= nil then
-                local itemShortName = itemID:sub(#appByName:bundleID() + 2)
+                local itemShortName = itemID:sub(#thisAppId + 2)
                 tinsert(itemNames, strfmt("%s (%s)", appname, itemShortName))
                 tinsert(itemIDs, itemID)
               end
