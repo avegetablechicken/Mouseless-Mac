@@ -349,7 +349,7 @@ end
 --   - or is a string appid meaning "use showHiddenMenuBarItems"
 ------------------------------------------------------------
 
-MENUBAR_MANAGER_SHOW = {
+local MENUBAR_MANAGER_SHOW = {
   ----------------------------------------------------------
   -- Bartender
   -- Strategy:
