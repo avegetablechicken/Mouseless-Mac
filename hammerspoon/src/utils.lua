@@ -344,7 +344,19 @@ local function getModsRepr(mods, likelyToFind)
 end
 
 -- Find a menu item by its keyboard shortcut.
--- Supports synchronous lookup, async callback, and pre-filtered menu trees.
+-- Supports synchronous lookup, coroutine-based async lookup, and pre-filtered menu trees.
+local function awaitMenuItems(app)
+  local thread = coroutine.running()
+  if thread == nil then
+    return app:getMenuItems()
+  end
+
+  app:getMenuItems(function(menuItems)
+    resumeCoroutine(thread, menuItems)
+  end)
+  return coroutine.yield()
+end
+
 function findMenuItemByKeyBinding(app, mods, key, likelyToFind, menuItems)
   local fn = function(menuItems)
     if menuItems == nil then return end
@@ -360,17 +372,6 @@ function findMenuItemByKeyBinding(app, mods, key, likelyToFind, menuItems)
     end
   end
 
-  if type(likelyToFind) == 'function' then
-    local callback = likelyToFind
-    likelyToFind = false
-    return app:getMenuItems(function(...)
-      local menuItemPath = fn(...)
-      if menuItemPath then
-        callback(menuItemPath)
-      end
-    end)
-  end
-
   if menuItems == nil and likelyToFind ~= nil
       and (type(likelyToFind) ~= 'boolean') then
     menuItems = likelyToFind
@@ -380,7 +381,7 @@ function findMenuItemByKeyBinding(app, mods, key, likelyToFind, menuItems)
     if likelyToFind then
       menuItems = getMenuBarItems(app)
     else
-      menuItems = app:getMenuItems()
+      menuItems = awaitMenuItems(app)
     end
     if menuItems == nil then return end
   elseif type(menuItems) == 'string' then

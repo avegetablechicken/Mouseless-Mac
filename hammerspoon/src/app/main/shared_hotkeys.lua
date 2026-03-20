@@ -68,7 +68,9 @@ function remapPreviousTab(app, force)
 
   -- Register a conditional hotkey that selects the resolved menu item
   -- only when the menu item exists and is enabled.
-  findMenuItemByKeyBinding(app, '⇧⌃', '⇥', function(menuItemPath)
+  RunCoroutine(function()
+    local menuItemPath = findMenuItemByKeyBinding(app, '⇧⌃', '⇥')
+    if menuItemPath == nil then return end
     local fn = function()
       app:selectMenuItem(menuItemPath)
     end
