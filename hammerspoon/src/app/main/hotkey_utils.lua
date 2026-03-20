@@ -414,8 +414,11 @@ local KEY_MODE = {
   REPEAT = 2,
 }
 
-ActivatedAppConditionChain = {}
+local activatedAppConditionChain = {}
 local daemonAppConditionChain = {}
+
+---@diagnostic disable-next-line: undefined-global
+exportMainSymbol("ActivatedAppConditionChain", activatedAppConditionChain)
 
 -- Append a conditional hotkey into a per-app condition chain.
 --
@@ -429,7 +432,7 @@ local function appendConditionChain(app, config, pressedfn, repeatedfn, cond)
   local mods, key = config.mods, config.key
   local message = config.message
   local chain = config.background and daemonAppConditionChain
-      or ActivatedAppConditionChain
+      or activatedAppConditionChain
 
   if chain[appid] == nil then
     chain[appid] = {}
@@ -506,7 +509,7 @@ local function wrapConditionChain(app, fn, mode, config)
     local menuItemNotFound = result == CF.noMenuItemMatchKeybinding
     local hkIdx = hotkeyIdx(config.mods, config.key)
     local chain = config.background and daemonAppConditionChain
-        or ActivatedAppConditionChain
+        or activatedAppConditionChain
     local cb = chain[app:bundleID() or app:name()][hkIdx]
     while cb do
       if cb.enabled then
@@ -786,7 +789,7 @@ function registerInAppHotKeys(app)
   end)
   Evt.OnTerminated(app, function()
     unregisterInAppHotKeys(appid, true)
-    ActivatedAppConditionChain[appid] = nil
+    activatedAppConditionChain[appid] = nil
   end)
 end
 
@@ -1488,7 +1491,7 @@ function HotkeyInspector.findConditionHotkeyInfo(entry)
         and appid == "com.valvesoftware.steam.helper" then
       appid = "com.valvesoftware.steam"
     end
-    return get(ActivatedAppConditionChain, appid, entry.idx)
+    return get(activatedAppConditionChain, appid, entry.idx)
   elseif entry.kind == HK.IN_WIN or entry.kind == HK.MENUBAR then
     for _, appCfg in pairs(daemonAppConditionChain) do
       local hotkeyInfo = appCfg[entry.idx]
