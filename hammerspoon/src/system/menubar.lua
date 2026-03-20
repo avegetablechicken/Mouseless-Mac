@@ -167,6 +167,15 @@ local function registerSearchMenuBar()
           function(v) return v:sub(1, 5) == "Item-" end) > 1 then
         title = autosaveName
       end
+      if appid ~= 'com.apple.controlcenter' then
+        local axTitle = item.AXTitle
+        if axTitle and axTitle ~= "" and axTitle ~= title then
+          if title then
+            title = title .. ' - ' .. axTitle
+          end
+          extraSearchPattern = axTitle
+        end
+      end
     end
 
     -- Resolve icon and search metadata for menu bar items.
@@ -251,10 +260,11 @@ local function registerSearchMenuBar()
           -- Special-case handling for Hammerspoon menu bar items
           -- (e.g. caffeine and proxy), which cannot always be triggered
           -- via accessibility actions.
-          if choice.subText == SystemCaffeineMenubar:autosaveName() then
+          local subText = strsplit(choice.subText, ' - ')[1]
+          if subText == SystemCaffeineMenubar:autosaveName() then
             SystemCaffeineClicked()
             return
-          elseif choice.subText == SystemProxyMenubar:autosaveName() then
+          elseif subText == SystemProxyMenubar:autosaveName() then
             local frame = SystemProxyMenubar:_frame()
             local screenFrame = hs.screen.mainScreen():frame()
             SystemProxyMenubar:popupMenu({
@@ -279,11 +289,17 @@ local function registerSearchMenuBar()
   chooser:queryChangedCallback(function(query)
     local newChoices = {}
     local loweredQuery = string.lower(query)
+    local function subTextMatch(subText)
+      for _, part in ipairs(strsplit(subText:lower(), ' %- ')) do
+        if part:find(loweredQuery, 1, true) then
+          return true
+        end
+      end
+    end
     for _, choice in ipairs(choices) do
       if choice.text:lower():find(loweredQuery, 1, true)
           or choice.appid:lower():find(loweredQuery, 1, true)
-          or (choice.subText and choice.subText:lower()
-              :find(loweredQuery, 1, true))
+          or (choice.subText and subTextMatch(choice.subText))
           or (type(choice.extraPattern) == 'string'
               and choice.extraPattern:lower():find(loweredQuery, 1, true))
           or (type(choice.extraPattern) == 'table'
