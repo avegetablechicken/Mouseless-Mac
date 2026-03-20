@@ -1,5 +1,19 @@
 ---@diagnostic disable: lowercase-global
 
+-- coroutine helpers
+local function resumeCoroutine(thread, ...)
+  local ok, err = coroutine.resume(thread, ...)
+  if not ok then
+    error(err)
+  end
+end
+
+function RunCoroutine(fn, ...)
+  local thread = coroutine.create(fn)
+  resumeCoroutine(thread, ...)
+  return thread
+end
+
 -- # table / AX query helpers
 
 -- Recursively access nested table fields with a variadic key path.
