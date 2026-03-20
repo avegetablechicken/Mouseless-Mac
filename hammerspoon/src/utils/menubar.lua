@@ -249,6 +249,8 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
 
   if #preferredPositions ~= #positions then return end
   -- Sort preferred positions (ascending) and actual items (right-to-left)
+  -- fixme: if two icons are arranged on either side of the notch,
+  -- macOS may adjust their positions. Thus incorrect matching may occur.
   table.sort(preferredPositions, function(r1, r2)
     return r1[2] < r2[2]
   end)
