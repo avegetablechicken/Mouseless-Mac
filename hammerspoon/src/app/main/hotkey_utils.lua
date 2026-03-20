@@ -310,10 +310,11 @@ function registerMenuBarObserverForHotkeyValidity(app)
     end
   end
 end
--- Performance hack:
--- Expose menuBarMenuSelectedObservers for registering right menu bar observers
--- for settings menu item
-_G.MenuBarMenuSelectedObservers = menuBarMenuSelectedObservers
+--- Performance hack:
+--- Expose menuBarMenuSelectedObservers for registering right menu bar observers
+--- for settings menu item
+---@diagnostic disable-next-line: undefined-global
+exportMainSymbol("MenuBarMenuSelectedObservers", menuBarMenuSelectedObservers)
 
 local windowCreatedSinceFilter = hs.window.filter.new(true)
 local windowCreatedSinceTime = {}

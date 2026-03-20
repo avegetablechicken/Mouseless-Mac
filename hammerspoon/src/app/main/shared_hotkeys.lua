@@ -758,6 +758,7 @@ end
 ---@diagnostic disable-next-line: lowercase-global
 function registerObserverForRightMenuBarSettingsMenuItem(app, force)
   local appid = app:bundleID() or app:name()
+---@diagnostic disable-next-line: undefined-global
   local observer = MenuBarMenuSelectedObservers[appid]
   if observer == nil then
     if force ~= true then return end
