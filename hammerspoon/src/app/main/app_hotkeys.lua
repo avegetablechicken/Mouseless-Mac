@@ -6373,6 +6373,34 @@ AppHotKeyCallbacks = {
           end
           return false
         end
+
+        local fieldValues = CondBuf:get("PasswordsMenuBarExtraFieldValues",
+        function()
+          if OS_VERSION >= OS.Tahoe then
+            return getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+                AX.ScrollArea, 1, AX.Outline, 1, AX.Row) or {}
+          else
+            return getc(winUI, AX.Group, 1, AX.ScrollArea, 1,
+                AX.Group, 1, AX.ScrollArea, 1, AX.Outline, 1, AX.Row) or {}
+          end
+        end)
+        if #fieldValues == 0 then return false end
+        local title = T(fieldTitle, win)
+        for _, row in ipairs(fieldValues) do
+          local field = getc(row, AX.Cell, 1, AX.Button, 1)
+          if field then
+            local desc = field.AXAttributedDescription
+                and field.AXAttributedDescription:getString()
+            if desc and desc:sub(1, #title) == title then
+              if desc:sub(#title + 1, #title + 2) == ", " then
+                return true, desc:sub(#title + 3)
+              elseif desc:sub(#title + 1, #title + 3) == "、" then
+                return true, desc:sub(#title + 4)
+              end
+            end
+          end
+        end
+        return false
       end,
       fn = function(url, win)
         hs.pasteboard.setContents(url)
