@@ -347,7 +347,7 @@ end
 -- Supports synchronous lookup, coroutine-based async lookup, and pre-filtered menu trees.
 local function awaitMenuItems(app)
   local thread = coroutine.running()
-  if thread == nil then
+  if thread == nil or not coroutine.isyieldable() then
     return app:getMenuItems()
   end
 
