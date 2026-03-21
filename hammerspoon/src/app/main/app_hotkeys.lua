@@ -6790,6 +6790,64 @@ AppHotKeyCallbacks = {
     ["minimize"] = specialCommonHotkeyConfigs["minimize"]
   },
 
+  ["com.alick.copool"] =
+  {
+    ["closeWindow"] = {
+      message = TC("Close Window"),
+      mods = "", key = "Escape",
+      windowFilter = { allowRoles = AX.SystemDialog },
+      background = true,
+      fn = function(win)
+        clickRightMenuBarItem(win:application(), {}, "click")
+      end
+    },
+    ["view1"] = {
+      message = function(win)
+        local button = getc(towinui(win),
+            AX.Group, 1, AX.Group, 1, AX.Button, 1)
+        return button and button.AXAttributedDescription
+            and button.AXAttributedDescription:getString()
+      end,
+      windowFilter = { allowRoles = AX.SystemDialog },
+      background = true,
+      fn = function(win)
+        local button = getc(towinui(win),
+            AX.Group, 1, AX.Group, 1, AX.Button, 1)
+        if button then Callback.Press(button) end
+      end
+    },
+    ["view2"] = {
+      message = function(win)
+        local button = getc(towinui(win),
+            AX.Group, 1, AX.Group, 1, AX.Button, 2)
+        return button and button.AXAttributedDescription
+            and button.AXAttributedDescription:getString()
+      end,
+      windowFilter = { allowRoles = AX.SystemDialog },
+      background = true,
+      fn = function(win)
+        local button = getc(towinui(win),
+            AX.Group, 1, AX.Group, 1, AX.Button, 2)
+        if button then Callback.Press(button) end
+      end
+    },
+    ["view3"] = {
+      message = function(win)
+        local button = getc(towinui(win),
+            AX.Group, 1, AX.Group, 1, AX.Button, 3)
+        return button and button.AXAttributedDescription
+            and button.AXAttributedDescription:getString()
+      end,
+      windowFilter = { allowRoles = AX.SystemDialog },
+      background = true,
+      fn = function(win)
+        local button = getc(towinui(win),
+            AX.Group, 1, AX.Group, 1, AX.Button, 3)
+        if button then Callback.Press(button) end
+      end
+    }
+  },
+
   ["org.wireshark.Wireshark"] =
   {
     ["closeWindow"] = {

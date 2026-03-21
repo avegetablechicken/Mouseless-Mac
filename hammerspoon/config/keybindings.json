@@ -2028,6 +2028,20 @@
         "key": "2"
       }
     },
+    "com.alick.copool": {
+      "view1": {
+        "mods": "command",
+        "key": "1"
+      },
+      "view2": {
+        "mods": "command",
+        "key": "2"
+      },
+      "view3": {
+        "mods": "command",
+        "key": "3"
+      }
+    },
     "com.objective-see.lulu.app": {
       "allowConnection": {
         "mods": "option",
