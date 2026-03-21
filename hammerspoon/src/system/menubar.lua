@@ -157,12 +157,16 @@ local function registerSearchMenuBar()
           end
         elseif item.AXIdentifier:sub(-13) == '.liveActivity' then
           extraSearchPattern = item.AXIdentifier
+          appname = localizedString('Live Activity', appid)
+          title = item.AXDescription
         else
           local parts = strsplit(item.AXIdentifier, "%.")
           extraSearchPattern = parts[#parts]
         end
         extraSearchPattern = { appname, extraSearchPattern }
-        appname = item.AXDescription
+        if item.AXIdentifier:sub(-13) ~= '.liveActivity' then
+          appname = item.AXDescription
+        end
       elseif autosaveName ~= "Item-0" or #tifilter(maps[appid],
           function(v) return v:sub(1, 5) == "Item-" end) > 1 then
         title = autosaveName
