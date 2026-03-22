@@ -353,6 +353,7 @@ function localizeByNIB(str, localeDir, localeFile, appid)
   local locale = localeDir:match("^.*/(.*)%.lproj$")
   local baseLocaleDir = getBaseLocaleDirs(resourceDir)[1]
   local baseLocale = baseLocaleDir:match("^.*/(.*)%.lproj$")
+  if locale == baseLocale then return str end
   local compareNIBs = function(file)
     local NIBPath = localeDir .. '/' .. file .. '.nib'
     local baseNIBPath = baseLocaleDir .. '/' .. file .. '.nib'
@@ -1043,6 +1044,7 @@ function delocalizeByNIB(str, localeDir, localeFile, appid)
   local locale = localeDir:match("^.*/(.*)%.lproj$")
   local baseLocaleDir = getBaseLocaleDirs(resourceDir)[1]
   local baseLocale = baseLocaleDir:match("^.*/(.*)%.lproj$")
+  if locale == baseLocale then return str end
   local compareNIBs = function(file)
     local NIBPath = localeDir .. '/' .. file .. '.nib'
     local baseNIBPath = baseLocaleDir .. '/' .. file .. '.nib'
