@@ -5779,8 +5779,9 @@ AppHotKeyCallbacks = {
       fn = Bartender.clickSidebarItem(9)
     },
     ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"],
-    ["minimize"] = specialCommonHotkeyConfigUpdated("minimize",
-        { enabled = Version.LessThan("6") }),
+    ["minimize"] = specialCommonHotkeyConfigUpdated("minimize", {
+      enabled = Version.LessThan("6")
+    }),
     ["quit"] = specialCommonHotkeyConfigs["quit"],
     ["hide"] = specialCommonHotkeyConfigs["hide"],
   },
@@ -6548,15 +6549,15 @@ AppHotKeyCallbacks = {
       end,
       fn = Callback.Press
     },
-    ["closeWindow"] = specialCommonHotkeyConfigUpdated("closeWindow",
-      { enabled = Version.LessThan("15.4") }
-    ),
-    ["minimize"] = specialCommonHotkeyConfigUpdated("minimize",
-      { enabled = Version.LessThan("15.4") }
-    ),
-    ["hide"] = specialCommonHotkeyConfigUpdated("hide",
-      { enabled = Version.LessThan("15.4") }
-    ),
+    ["closeWindow"] = specialCommonHotkeyConfigUpdated("closeWindow", {
+      enabled = Version.LessThan("15.4")
+    }),
+    ["minimize"] = specialCommonHotkeyConfigUpdated("minimize", {
+      enabled = Version.LessThan("15.4")
+    }),
+    ["hide"] = specialCommonHotkeyConfigUpdated("hide", {
+      enabled = Version.LessThan("15.4")
+    }),
   },
 
   ["me.guillaumeb.MonitorControl"] =
