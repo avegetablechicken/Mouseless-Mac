@@ -6488,11 +6488,7 @@ AppHotKeyCallbacks = {
       },
       background = true,
       fn = function(win)
-        local menuBarItem = getc(toappui(win:application()),
-            AX.MenuBar, -1, AX.MenuBarItem, 1)
-        if menuBarItem then
-          Callback.Press(menuBarItem)
-        end
+        clickRightMenuBarItem(win:application())
       end
     }
   },
