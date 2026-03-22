@@ -188,7 +188,7 @@ function processInvalidAltMenu(app, reinvokeKey, windowOnBindAltMenu)
     end
   end
   if isSameWin then
-    local _, frameworks = getResourceDir(appid)
+    local _, frameworks = getResourceDirs(appid)
     if tfind(frameworks, function(f) return f.electron ~= nil end) then
       updateAppLocale(app)
       onLaunchedAndActivated(app, reinvokeKey)

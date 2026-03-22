@@ -611,7 +611,7 @@ for _, name in ipairs({
   "localizedMenuBarItem",
   "matchLocale",
   "resetLocalizationMap",
-  "getResourceDir",
+  "getResourceDirs",
 }) do
   _G[name] = localizationEnv[name]
 end

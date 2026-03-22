@@ -194,7 +194,7 @@ function applicationLocale(appid)
   return SYSTEM_LOCALE
 end
 
-function getResourceDir(appid, frameworkNames)
+function getResourceDirs(appid, frameworkNames)
   if frameworkNames == nil then
     frameworkNames = localizationFrameworks[appid]
   end
@@ -340,12 +340,19 @@ function getResourceDir(appid, frameworkNames)
     end
   end
 
-  if #resourceDirs == 0 then
-    resourceDirs = { appContentPath .. "/Resources" }
-    frameworks = {{}}
+  ::END_GET_RESOURCE_DIR::
+  if appContentPath then
+    local userPos = #frameworks > 0 and #frameworks or 1
+    for i, fr in ipairs(frameworks) do
+      if fr.user then
+        userPos = i
+        break
+      end
+    end
+    tinsert(resourceDirs, userPos, appContentPath .. "/Resources")
+    tinsert(frameworks, userPos , {})
   end
 
-  ::END_GET_RESOURCE_DIR::
   for i=#resourceDirs,1,-1 do
     if not exists(resourceDirs[i]) then
       tremove(resourceDirs, i)
@@ -956,8 +963,7 @@ local function localizedStringImpl(str, appid, params, force)
     return result, appLocale, locale
   end
 
-  local resourceDirs, frameworks = getResourceDir(appid, localeFramework)
-  if resourceDirs == nil then return nil end
+  local resourceDirs, frameworks = getResourceDirs(appid, localeFramework)
   if tfind(frameworks, function(f) return f.chromium end) then
     if find(appid) then
       local menuBarItems = getMenuBarItems(find(appid), true) or {}
@@ -976,119 +982,85 @@ local function localizedStringImpl(str, appid, params, force)
 
   local maybeStrIsInBaseLocale = false
   for i=1,#resourceDirs do
-  local resourceDir, framework = resourceDirs[i], frameworks[i]
+    local resourceDir, framework = resourceDirs[i], frameworks[i]
 
-  local localeDir
-  locale, localeDir, resourceDir, framework =
-      getMatchedLocale(appid, appLocale, resourceDir, framework, appLocaleDir)
-  if locale == nil then return end
-  assert(framework)
+    local localeDir
+    locale, localeDir, resourceDir, framework =
+        getMatchedLocale(appid, appLocale, resourceDir, framework, appLocaleDir)
+    if locale and framework then
+      if framework.chromium then
+        result = localizeByChromium(str, localeDir, appid)
+        if result ~= nil then
+          return result, appLocale, locale
+        end
+      end
 
-  local setDefaultLocale = function()
-    if appid == '__macos' then return false end
-    local oldLocale = locale
-    resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
-    if not exists(resourceDir) then return false end
-    locale = getDefaultMatchedLocale(appLocale, resourceDir, 'lproj')
-    if locale == nil then
-      locale = oldLocale
-      return false
-    end
-    localeDir = resourceDir .. "/" .. locale .. ".lproj"
-    return true
-  end
+      if framework.ftl then
+        result = localizeByFTL(str, localeDir)
+        if result ~= nil then
+          return result, appLocale, locale
+        end
+      end
 
-  if framework.chromium then
-    result = localizeByChromium(str, localeDir, appid)
-    if result ~= nil or not setDefaultLocale() then
-      return result, appLocale, locale
-    end
-  end
+      if framework.dtd then
+        result = localizeByDTD(str, localeDir)
+        if result ~= nil then
+          return result, appLocale, locale
+        end
+      end
 
-  if framework.ftl then
-    result = localizeByFTL(str, localeDir)
-    if result ~= nil or not setDefaultLocale() then
-      return result, appLocale, locale
-    end
-  end
+      if framework.properties then
+        result = localizeByProperties(str, localeDir)
+        if result ~= nil then
+          return result, appLocale, locale
+        end
+      end
 
-  if framework.dtd then
-    result = localizeByDTD(str, localeDir)
-    if result ~= nil or not setDefaultLocale() then
-      return result, appLocale, locale
-    end
-  end
+      if framework.mono then
+        result = localizeByMono(str, localeDir)
+        if result ~= nil then
+          return result, appLocale, locale
+        end
+      end
 
-  if framework.properties then
-    result = localizeByProperties(str, localeDir)
-    if result ~= nil or not setDefaultLocale() then
-      return result, appLocale, locale
-    end
-  end
+      if framework.qt then
+        result = localizeByQt(str, localeDir)
+        return result, appLocale, locale
+      end
 
-  if framework.mono then
-    result = localizeByMono(str, localeDir)
-    if result ~= nil or not setDefaultLocale() then
-      return result, appLocale, locale
-    end
-  end
+      if framework.electron then
+        result = localizeByElectron(str, appid, locale, localeDir,
+                                    framework.electron)
+        return result, appLocale, locale
+      end
 
-  if framework.qt then
-    result = localizeByQt(str, localeDir)
-    return result, appLocale, locale
-  end
+      if framework.java then
+        result = localizeByJava(str, appid, localeDir, resourceDir)
+        return result, appLocale, locale
+      end
 
-  if framework.electron then
-    result = localizeByElectron(str, appid, locale, localeDir,
-                                framework.electron)
-    return result, appLocale, locale
-  end
+      -- user or default
+      if framework.user or appLocaleAssetBuffer[appid] == nil
+          or get(appLocaleDir, appid, appLocale) ~= locale then
+        appLocaleAssetBuffer[appid] = {}
+      end
+      result = localizeByLoctable(str, resourceDir, localeFile, locale,
+                                  appLocaleAssetBuffer[appid])
+      if result ~= nil then return result, appLocale, locale end
 
-  if framework.java then
-    result = localizeByJava(str, appid, localeDir, resourceDir)
-    return result, appLocale, locale
-  end
+      if framework.user or appLocaleAssetBufferInverse[appid] == nil
+          or get(appLocaleDir, appid, appLocale) ~= locale then
+        appLocaleAssetBufferInverse[appid] = {}
+      end
+      result = localizeByStrings(str, localeDir, localeFile,
+                                appLocaleAssetBuffer[appid],
+                                appLocaleAssetBufferInverse[appid])
+      if result == true then maybeStrIsInBaseLocale = true result = nil end
+      if result ~= nil then return result, appLocale, locale end
 
-  local defaultAction = function(emptyCache)
-    if emptyCache or appLocaleAssetBuffer[appid] == nil
-        or get(appLocaleDir, appid, appLocale) ~= locale then
-      appLocaleAssetBuffer[appid] = {}
-    end
-
-    result = localizeByLoctable(str, resourceDir, localeFile, locale,
-                                appLocaleAssetBuffer[appid])
-    if result ~= nil then return result end
-
-    if emptyCache or appLocaleAssetBufferInverse[appid] == nil
-        or get(appLocaleDir, appid, appLocale) ~= locale then
-      appLocaleAssetBufferInverse[appid] = {}
-    end
-    result = localizeByStrings(str, localeDir, localeFile,
-                               appLocaleAssetBuffer[appid],
-                               appLocaleAssetBufferInverse[appid])
-    if result == true then maybeStrIsInBaseLocale = true result = nil end
-    if result ~= nil then return result end
-
-    result = localizeByNIB(str, localeDir, localeFile, appid)
-    if result ~= nil then return result end
-  end
-
-  if framework.user then
-    local userResourceDir = resourceDir
-    local userLocale = locale
-    local userLocaleDir = localeDir
-    if setDefaultLocale() then
-      result = defaultAction(true)
+      result = localizeByNIB(str, localeDir, localeFile, appid)
       if result ~= nil then return result, appLocale, locale end
     end
-
-    resourceDir = userResourceDir
-    locale = userLocale
-    localeDir = userLocaleDir
-  end
-  result = defaultAction(framework.user)
-  if result ~= nil then return result, appLocale, locale end
-
   end
 
   if str:sub(-3) == "..." or str:sub(-3) == "…" then
@@ -1251,8 +1223,7 @@ local function delocalizedStringImpl(str, appid, params, force)
     return result, appLocale, locale
   end
 
-  local resourceDirs, frameworks = getResourceDir(appid, localeFramework)
-  if resourceDirs == nil then return nil end
+  local resourceDirs, frameworks = getResourceDirs(appid, localeFramework)
   if tfind(frameworks, function(f) return f.chromium end) then
     if find(appid) then
       local menuBarItems = getMenuBarItems(find(appid), true) or {}
@@ -1270,120 +1241,87 @@ local function delocalizedStringImpl(str, appid, params, force)
   end
 
   for i=1,#resourceDirs do
-  local resourceDir, framework = resourceDirs[i], frameworks[i]
+    local resourceDir, framework = resourceDirs[i], frameworks[i]
 
-  local localeDir
-  locale, localeDir, resourceDir, framework =
-      getMatchedLocale(appid, appLocale, resourceDir, framework, appLocaleDir)
-  if locale == nil then return end
-  assert(framework)
-
-  local setDefaultLocale = function()
-    local oldLocale = locale
-    resourceDir = hs.application.pathForBundleID(appid) .. "/Contents/Resources"
-    if not exists(resourceDir) then return false end
-    locale = getDefaultMatchedLocale(appLocale, resourceDir, 'lproj')
-    if locale == nil then
-      locale = oldLocale
-      return false
-    end
-    localeDir = resourceDir .. "/" .. locale .. ".lproj"
-    return true
-  end
-
-  if framework.chromium then
-    result = delocalizeByChromium(str, localeDir, appid)
-    if result ~= nil or not setDefaultLocale() then
-      return result, appLocale, locale
-    end
-  end
-
-  if framework.ftl then
-    result = delocalizeByFTL(str, localeDir)
-    if result ~= nil or not setDefaultLocale() then
-      return result, appLocale, locale
-    end
-  end
-
-  if framework.dtd then
-    result = delocalizeByDTD(str, localeDir)
-    if result ~= nil or not setDefaultLocale() then
-      return result, appLocale, locale
-    end
-  end
-
-  if framework.properties then
-    result = delocalizeByProperties(str, localeDir)
-    if result ~= nil or not setDefaultLocale() then
-      return result, appLocale, locale
-    end
-  end
-
-  if framework.mono then
-    result = delocalizeByMono(str, localeDir)
-    if result ~= nil then
-      if appid == "com.microsoft.visual-studio" then
-        result = result:gsub('_', '')
+    local localeDir
+    locale, localeDir, resourceDir, framework =
+        getMatchedLocale(appid, appLocale, resourceDir, framework, appLocaleDir)
+    if locale and framework then
+      if framework.chromium then
+        result = delocalizeByChromium(str, localeDir, appid)
+        if result ~= nil then
+          return result, appLocale, locale
+        end
       end
-    end
-    if result ~= nil or not setDefaultLocale() then
-      return result, appLocale, locale
-    end
-  end
 
-  if framework.qt then
-    result = delocalizeByQt(str, localeDir)
-    return result, appLocale, locale
-  end
+      if framework.ftl then
+        result = delocalizeByFTL(str, localeDir)
+        if result ~= nil then
+          return result, appLocale, locale
+        end
+      end
 
-  if framework.electron then
-    result = delocalizeByElectron(str, appid, locale, localeDir,
-                                  framework.electron)
-    return result, appLocale, locale
-  end
+      if framework.dtd then
+        result = delocalizeByDTD(str, localeDir)
+        if result ~= nil then
+          return result, appLocale, locale
+        end
+      end
 
-  if framework.java then
-    result = delocalizeByJava(str, appid, localeDir, resourceDir)
-    return result, appLocale, locale
-  end
+      if framework.properties then
+        result = delocalizeByProperties(str, localeDir)
+        if result ~= nil then
+          return result, appLocale, locale
+        end
+      end
 
-  local defaultAction = function(emptyCache)
-    if emptyCache or appLocaleAssetBuffer[appid] == nil
-        or get(appLocaleDir, appid, appLocale) ~= locale then
-      appLocaleAssetBuffer[appid] = {}
-    end
-    result = delocalizeByLoctable(str, resourceDir, localeFile, locale,
-                                  appLocaleAssetBuffer[appid])
-    if result ~= nil then return result end
+      if framework.mono then
+        result = delocalizeByMono(str, localeDir)
+        if result ~= nil then
+          if appid == "com.microsoft.visual-studio" then
+            result = result:gsub('_', '')
+          end
+        end
+        if result ~= nil then
+          return result, appLocale, locale
+        end
+      end
 
-    if emptyCache or deLocaleInversedMap[appid] == nil
-        or get(appLocaleDir, appid, appLocale) ~= locale then
-      deLocaleInversedMap[appid] = {}
-    end
-    result = delocalizeByStrings(str, localeDir, localeFile,
-                                 deLocaleInversedMap[appid])
-    if result ~= nil then return result end
+      if framework.qt then
+        result = delocalizeByQt(str, localeDir)
+        return result, appLocale, locale
+      end
 
-    result = delocalizeByNIB(str, localeDir, localeFile, appid)
-    if result ~= nil then return result end
-  end
+      if framework.electron then
+        result = delocalizeByElectron(str, appid, locale, localeDir,
+                                      framework.electron)
+        return result, appLocale, locale
+      end
 
-  if framework.user then
-    local userResourceDir = resourceDir
-    local userLocale = locale
-    local userLocaleDir = localeDir
-    if setDefaultLocale() then
-      result = defaultAction(true)
+      if framework.java then
+        result = delocalizeByJava(str, appid, localeDir, resourceDir)
+        return result, appLocale, locale
+      end
+
+      if framework.user or appLocaleAssetBuffer[appid] == nil
+          or get(appLocaleDir, appid, appLocale) ~= locale then
+        appLocaleAssetBuffer[appid] = {}
+      end
+      result = delocalizeByLoctable(str, resourceDir, localeFile, locale,
+                                    appLocaleAssetBuffer[appid])
+      if result ~= nil then return result, appLocale, locale end
+
+      if framework.user or deLocaleInversedMap[appid] == nil
+          or get(appLocaleDir, appid, appLocale) ~= locale then
+        deLocaleInversedMap[appid] = {}
+      end
+      result = delocalizeByStrings(str, localeDir, localeFile,
+                                  deLocaleInversedMap[appid])
+      if result ~= nil then return result, appLocale, locale end
+
+      result = delocalizeByNIB(str, localeDir, localeFile, appid)
       if result ~= nil then return result, appLocale, locale end
     end
-
-    resourceDir = userResourceDir
-    locale = userLocale
-    localeDir = userLocaleDir
-  end
-  result = defaultAction(framework.user)
-  if result ~= nil then return result, appLocale, locale end
-
   end
 
   if str:sub(-3) == "..." or str:sub(-3) == "…" then
@@ -1953,7 +1891,7 @@ end
 function applicationValidLocale(appid, menuBarItems)
   local appLocale, valid = applicationLocale(appid)
   if valid then return appLocale end
-  local resourceDirs, frameworks = getResourceDir(appid)
+  local resourceDirs, frameworks = getResourceDirs(appid)
   if tfind(frameworks, function(f) return f.chromium end) then
     if find(appid) then
       if menuBarItems == nil then
