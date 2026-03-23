@@ -6823,7 +6823,7 @@ AppHotKeyCallbacks = {
       windowFilter = { allowRoles = AX.SystemDialog },
       background = true,
       fn = function(win)
-        clickRightMenuBarItem(win:application(), {}, "click")
+        clickRightMenuBarItem(win:application())
       end
     },
     ["view1"] = {
