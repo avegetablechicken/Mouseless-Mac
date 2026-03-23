@@ -342,7 +342,7 @@ function getResourceDirs(appid, frameworkNames)
 
   ::END_GET_RESOURCE_DIR::
   if appContentPath then
-    local userPos = #frameworks > 0 and #frameworks or 1
+    local userPos = #frameworks + 1
     for i, fr in ipairs(frameworks) do
       if fr.user then
         userPos = i
