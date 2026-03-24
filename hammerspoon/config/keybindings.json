@@ -639,6 +639,26 @@
         "mods": ["option", "command"],
         "key": "0"
       },
+      "open11thSidebarItemOnOpenSavePanel": {
+        "mods":  ["option", "command"],
+        "key": "F1"
+      },
+      "open12thSidebarItemOnOpenSavePanel": {
+        "mods": ["option", "command"],
+        "key": "F2"
+      },
+      "open13thSidebarItemOnOpenSavePanel": {
+        "mods": ["option", "command"],
+        "key": "F3"
+      },
+      "open14thSidebarItemOnOpenSavePanel": {
+        "mods": ["option", "command"],
+        "key": "F4"
+      },
+      "open15thSidebarItemOnOpenSavePanel": {
+        "mods": ["option", "command"],
+        "key": "F5"
+      },
       "open1stToolbarItemOnSettingsWindow": {
         "mods": ["option", "command"],
         "key": "1"

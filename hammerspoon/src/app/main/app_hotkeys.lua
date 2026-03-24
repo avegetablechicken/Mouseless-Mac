@@ -2214,6 +2214,56 @@ AppHotKeyCallbacks = {
       windowFilter = true,
       condition = Finder.getSidebarItem(10),
       fn = Finder.openSidebarItem
+    },
+    ["open11thSidebarItem"] = {
+      mods = get(KeybindingConfigs.hotkeys.shared,
+                 "open11thSidebarItemOnOpenSavePanel", "mods"),
+      key = get(KeybindingConfigs.hotkeys.shared,
+                "open11thSidebarItemOnOpenSavePanel", "key"),
+      message = Finder.sidebarItemTitle(11),
+      windowFilter = true,
+      condition = Finder.getSidebarItem(11),
+      fn = Finder.openSidebarItem
+    },
+    ["open12thSidebarItem"] = {
+      mods = get(KeybindingConfigs.hotkeys.shared,
+                 "open12thSidebarItemOnOpenSavePanel", "mods"),
+      key = get(KeybindingConfigs.hotkeys.shared,
+                "open12thSidebarItemOnOpenSavePanel", "key"),
+      message = Finder.sidebarItemTitle(12),
+      windowFilter = true,
+      condition = Finder.getSidebarItem(12),
+      fn = Finder.openSidebarItem
+    },
+    ["open13thSidebarItem"] = {
+      mods = get(KeybindingConfigs.hotkeys.shared,
+                 "open13thSidebarItemOnOpenSavePanel", "mods"),
+      key = get(KeybindingConfigs.hotkeys.shared,
+                "open13thSidebarItemOnOpenSavePanel", "key"),
+      message = Finder.sidebarItemTitle(13),
+      windowFilter = true,
+      condition = Finder.getSidebarItem(13),
+      fn = Finder.openSidebarItem
+    },
+    ["open14thSidebarItem"] = {
+      mods = get(KeybindingConfigs.hotkeys.shared,
+                 "open14thSidebarItemOnOpenSavePanel", "mods"),
+      key = get(KeybindingConfigs.hotkeys.shared,
+                "open14thSidebarItemOnOpenSavePanel", "key"),
+      message = Finder.sidebarItemTitle(14),
+      windowFilter = true,
+      condition = Finder.getSidebarItem(14),
+      fn = Finder.openSidebarItem
+    },
+    ["open15thSidebarItem"] = {
+      mods = get(KeybindingConfigs.hotkeys.shared,
+                 "open15thSidebarItemOnOpenSavePanel", "mods"),
+      key = get(KeybindingConfigs.hotkeys.shared,
+                "open15thSidebarItemOnOpenSavePanel", "key"),
+      message = Finder.sidebarItemTitle(15),
+      windowFilter = true,
+      condition = Finder.getSidebarItem(15),
+      fn = Finder.openSidebarItem
     }
   },
 
