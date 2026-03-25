@@ -181,7 +181,7 @@ local function hasStatusItems(app)
     else
       allowedApps = getAllowedMenuBarAppsTahoe()
     end
-    local isAllowed = allowedApps[appid]
+    local isAllowed = allowedApps and allowedApps[appid] or true
     local apath
     if isAllowed == nil then
       apath = app:path() or ""
@@ -191,7 +191,7 @@ local function hasStatusItems(app)
         local info = hs.application.infoForBundlePath(appPath)
         if info and info.CFBundleIdentifier then
           local id = info.CFBundleIdentifier
-          isAllowed = allowedApps[id]
+          isAllowed = allowedApps and allowedApps[id] or true
         else
           isAllowed = false
         end

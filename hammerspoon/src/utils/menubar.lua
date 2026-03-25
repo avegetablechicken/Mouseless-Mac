@@ -14,7 +14,7 @@ local plistPath = os.getenv("HOME") .. "/Library/Group Containers"
 
 function getAllowedMenuBarAppsTahoe()
   local plist = hs.plist.read(plistPath)
-  if plist == nil then return {} end
+  if plist == nil then return end
 
   local tracked = plist.trackedApplications
   -- In many cases this is nested plist data.

@@ -14,7 +14,7 @@ local function registerSearchMenuBar()
     apps = tifilter(apps, function(app)
       if app:kind() < 0 then return false end
       local appid = app:bundleID()
-      local isAllowed = allowedApps[appid]
+      local isAllowed = allowedApps and allowedApps[appid] or true
       local apath
       if isAllowed == nil and appid ~= "com.apple.WebKit.WebContent" then
         apath = app:path() or ""
@@ -24,7 +24,7 @@ local function registerSearchMenuBar()
           local info = hs.application.infoForBundlePath(appPath)
           if info and info.CFBundleIdentifier then
             local id = info.CFBundleIdentifier
-            isAllowed = allowedApps[id]
+            isAllowed = allowedApps and allowedApps[id] or true
           else
             isAllowed = false
           end
