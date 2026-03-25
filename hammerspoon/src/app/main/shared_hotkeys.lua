@@ -726,9 +726,11 @@ function registerObserverForSettingsMenuItem(app)
     settingsMenu = settingsMenu or tfind(appMenuItems, function(item)
       if item.AXMenuItemCmdChar == ','
           and item.AXMenuItemCmdModifiers == 0 then
+        if item.AXTitle:find("Config") then return true end
         local title = delocalizedString(item.AXTitle, app)
         if type(title) == 'string' then
           return title:find("Setting") or title:find("Preference")
+              or title:find("Config")
         end
       end
       return false
@@ -790,9 +792,11 @@ function registerObserverForRightMenuBarSettingsMenuItem(app, force)
       settingsMenu = settingsMenu or tfind(menuItems, function(item)
         if item.AXMenuItemCmdChar == ','
             and item.AXMenuItemCmdModifiers == 0 then
+          if item.AXTitle:find("Config") then return true end
           local title = delocalizedString(item.AXTitle, app)
           if type(title) == 'string' then
             return title:find("Setting") or title:find("Preference")
+                or title:find("Config")
           end
         end
         return false
