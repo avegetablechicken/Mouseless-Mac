@@ -1340,7 +1340,7 @@ function MenuBarBind(menu, config)
 end
 
 local menuBarMenuHotkeys = {}
-function registerInMenuHotkeys(app)
+function registerInMenuHotkeys(app, menuObj)
   local appid = app:bundleID() or app:name()
   local appUI = toappui(app)
   local appConfig = AppHotKeyCallbacks[appid]
@@ -1363,6 +1363,12 @@ function registerInMenuHotkeys(app)
             local item = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, idx)
             if item.AXSelected then
               menu = getc(item, AX.Menu, 1) break
+            elseif menuObj then
+              local m = getc(item, AX.Menu, 1)
+              if m and m.AXPosition.x == menuObj.AXPosition.x
+                  and m.AXPosition.y == menuObj.AXPosition.y then
+                menu = m break
+              end
             end
           end
           if menu == nil then
@@ -1381,6 +1387,12 @@ function registerInMenuHotkeys(app)
               local item = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, idx)
               if item.AXSelected then
                 menu = getc(item, AX.Menu, 1) break
+              elseif menuObj then
+                local m = getc(item, AX.Menu, 1)
+                if m and m.AXPosition.x == menuObj.AXPosition.x
+                    and m.AXPosition.y == menuObj.AXPosition.y then
+                  menu = m break
+                end
               end
             end
           end
@@ -1454,7 +1466,7 @@ function registerObserversForMenuBarMenu(app, appConfig)
         observer:addWatcher(appUI, uinotifications.menuOpened)
         observer:callback(function(obs, menu)
           if menu.AXParent.AXRole == AX.MenuBar then
-            registerInMenuHotkeys(app)
+            registerInMenuHotkeys(app, menu)
           end
         end)
         observer:start()
