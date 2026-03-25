@@ -124,7 +124,11 @@ Finder.sidebarItemTitle = function(idx)
             A_AppBuf.finderSidebarItemObserver = observer
             Evt.StopOnDeactivated(app, A_AppBuf.finderSidebarItemObserver)
           end
-          return header .. ' > ' .. itemTitle
+          if header then
+            return header .. ' > ' .. itemTitle
+          else
+            return itemTitle
+          end
         end
       end
     end
