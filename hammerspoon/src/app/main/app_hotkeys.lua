@@ -6857,6 +6857,15 @@ AppHotKeyCallbacks = {
           result:close()
         end
       end
+    },
+    ["showControlCenterFromMB"] = {
+      message = TMB("Control Center"),
+      menubarFilter = { allowIndices = 1 },
+      fn = function(menu)
+        local title = strsplit(A_Message, " > ")[2]
+        local menuItem = getc(menu, AX.MenuItem, title)
+        if menuItem then Callback.Press(menuItem) end
+      end
     }
   },
 
