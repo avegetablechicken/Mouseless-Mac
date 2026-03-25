@@ -192,7 +192,6 @@ local function hasStatusItems(app)
         if info and info.CFBundleIdentifier then
           local id = info.CFBundleIdentifier
           isAllowed = allowedApps[id]
-          allowedApps[appid] = isAllowed
         else
           isAllowed = false
         end
