@@ -230,6 +230,14 @@ function findMenuItem(app, menuItemTitle, params)
   local targetMenuItem = {}
   local appid = app:bundleID() or app:name()
   local locStr = localizedMenuBarItem(menuItemTitle[1], appid)
+  if type(locStr) == 'table' then
+    for _, s in ipairs(locStr) do
+      if app:findMenuItem({s}) then
+        locStr = s
+        break
+      end
+    end
+  end
   tinsert(targetMenuItem, locStr or menuItemTitle[1])
   for i=2,#menuItemTitle do
     locStr = localizedString(menuItemTitle[i], appid, params)
@@ -386,7 +394,17 @@ function findMenuItemByKeyBinding(app, mods, key, likelyToFind, menuItems)
     if menuItems == nil then return end
   elseif type(menuItems) == 'string' then
     local title = localizedMenuBarItem(menuItems, app:bundleID() or app:name())
-    menuItems = { getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem, title) }
+    if type(title) == 'string' then
+      menuItems = { getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem, title) }
+    else
+      for _, t in ipairs(title) do
+        local item = getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem, t)
+        if item then
+          menuItems = { item }
+          break
+        end
+      end
+    end
   end
   return fn(menuItems)
 end

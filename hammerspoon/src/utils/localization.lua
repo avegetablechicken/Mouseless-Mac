@@ -1791,6 +1791,7 @@ function delocalizeMenuBarItems(itemTitles, appid, params)
         titleMap[title] = delocTitle
       end
       if delocTitle then
+        if type(delocTitle) == 'table' then delocTitle = delocTitle[1] end
         if not isValid(delocTitle) then
           if titleMap[delocTitle] ~= nil then
             delocTitle = titleMap[delocTitle]
