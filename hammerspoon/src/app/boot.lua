@@ -726,6 +726,7 @@ function T(message, params, sep)
     else
       if sep == nil then sep = ' > ' end
       local str = localizedMenuBarItem(message[1], appid, paramsCopy) or message[1]
+      if type(str) == 'table' then str = mostFrequent(str) end
       for i=2,#message do
         local itemStr = localizedString(message[i], appid, paramsCopy) or message[i]
         str = str .. sep .. (type(itemStr) == 'string' and itemStr or mostFrequent(itemStr))
