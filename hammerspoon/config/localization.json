@@ -40,39 +40,7 @@
     "Open Mini Chat": "打开迷你对话窗",
     "Show Sidebar": "展开侧栏"
   }],
-  "com.kingsoft.wpsoffice.mac": [{
-    "账户": "Account",
-    "账号": "Account",
-    "服务": "Tools",
-    "视图": "View",
-    "插入": "Insert",
-    "格式": "Format",
-    "表格": "Tables",
-    "工具": "Tools",
-    "数据": "Data",
-    "图表": "Chart",
-    "幻灯片放映": "Slide Show",
-    "批注": "Comment",
-    "页面": "Page",
-    "工作区": "Workspace"
-  }, {
-    "Home": "首页",
-    "Recent": "最近",
-    "Share": "共享",
-    "My Cloud Documents": "我的云文档",
-    "My Desktop": "桌面",
-    "Documents": "文稿",
-    "Downloads": "下载",
-    "Properties...": "属性...",
-    "Text Box": "文本框",
-    "Horizontal Text Box": ["横向", "横向文本框"],
-    "Highlight": "高亮",
-    "Underline": "下划线",
-    "Strikethrough": "删除线",
-    "Export to PDF...": ["输出为PDF...", "输出为PDF格式..."],
-    "LaTeXEquation...": "LaTeX公式...",
-    "Zoom": "显示比例",
-    "Open File Location": "打开文件位置",
-    "Don't Save": "不保存"
+  "com.kingsoft.wpsoffice.mac": [{}, {
+    "Horizontal Text Box": ["横向", "横向文本框"]
   }]
 }

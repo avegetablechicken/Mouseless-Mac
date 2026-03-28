@@ -812,8 +812,8 @@ WPS.WF = {}
 WPS.WF.Home = {}
 WPS.WF.NonHome = {}
 Evt.OnRunning("com.kingsoft.wpsoffice.mac", function(app)
-  local title = T("Home", app)
-  WPS.WF.Home.allowTitles = '^'..title..'$'
+  local home = T("Home", { localeFile = 'wpsoffice' })(app)
+  WPS.WF.Home.allowTitles = '^'..home..'$'
   WPS.WF.NonHome.rejectTitles = WPS.WF.Home.allowTitles
 end)
 
@@ -833,9 +833,21 @@ WPS.WF.WPS_WPP = {
     local menuBarItems = getc(toappui(win:application()),
         AX.MenuBar, 1, AX.MenuBarItem)
     local params = { locale = A_AppLocale }
+    local locTitles = {}
+    for _, title in ipairs{ "Tables", "Slide Show" } do
+      local locTitle = localizedMenuBarItem(title, appid, params)
+      if type(locTitle) == 'string' then
+        locTitle = locTitle:gsub("%(&%a%)", "")
+        tinsert(locTitles, locTitle)
+      elseif type(locTitle) == 'table' then
+        for _, t in ipairs(locTitle) do
+          t = t:gsub("%(&%a%)", "")
+          tinsert(locTitles, t)
+        end
+      end
+    end
     return tfind(menuBarItems, function(item)
-      return item.AXTitle == localizedMenuBarItem("Tables", appid, params)
-          or item.AXTitle == localizedMenuBarItem("Slide Show", appid, params)
+      return tindex(locTitles, item.AXTitle)
     end) ~= nil
   end
 }
@@ -847,10 +859,21 @@ WPS.WF.WPS_WPP_ET = {
     local menuBarItems = getc(toappui(win:application()),
         AX.MenuBar, 1, AX.MenuBarItem)
     local params = { locale = A_AppLocale }
+    local locTitles = {}
+    for _, title in ipairs{ "Tables", "Slide Show", "Data" } do
+      local locTitle = localizedMenuBarItem(title, appid, params)
+      if type(locTitle) == 'string' then
+        locTitle = locTitle:gsub("%(&%a%)", "")
+        tinsert(locTitles, locTitle)
+      elseif type(locTitle) == 'table' then
+        for _, t in ipairs(locTitle) do
+          t = t:gsub("%(&%a%)", "")
+          tinsert(locTitles, t)
+        end
+      end
+    end
     return tfind(menuBarItems, function(item)
-      return item.AXTitle == localizedMenuBarItem("Tables", appid, params)
-          or item.AXTitle == localizedMenuBarItem("Slide Show", appid, params)
-          or item.AXTitle == localizedMenuBarItem("Data", appid, params)
+      return tindex(locTitles, item.AXTitle)
     end) ~= nil
   end
 }
@@ -858,12 +881,14 @@ WPS.WF.WPS_WPP_ET = {
 WPS.WF.PDF = {
   allowTitles = "",
   fn = function(win)
-    local appid = win:application():bundleID()
-    local params = { locale = A_AppLocale }
-    local locTitle = localizedMenuBarItem("Comment", appid, params)
-    local menuBarItem = getc(toappui(win:application()),
-        AX.MenuBar, 1, AX.MenuBarItem, locTitle)
-    return menuBarItem ~= nil
+    local params = { locale = A_AppLocale, localeFile = 'wps' }
+    local locTitle = T("Comment", params)(win)
+    if locTitle then
+      locTitle = locTitle:gsub("%(&%a%)", "")
+      local menuBarItem = getc(toappui(win:application()),
+          AX.MenuBar, 1, AX.MenuBarItem, locTitle)
+      return menuBarItem ~= nil
+    end
   end
 }
 
@@ -3178,49 +3203,57 @@ AppHotKeyCallbacks = {
       fn = function(app) hs.eventtap.keyStroke("⇧⌘", "End", nil, app) end
     },
     ["properties"] = {
-      message = T("Properties..."),
+      message = T("Properties...", { localeFile = 'wps' }),
       windowFilter = WPS.WF.NonHome,
-      condition = MenuItem.isEnabled{ "File", "Properties..." },
+      condition = MenuItem.isEnabled({ "File", "Properties..." }),
       fn = Callback.Select
     },
     ["exportToPDF"] = {
-      message = T("Export to PDF..."),
+      message = T("Export to PDF...", { localeFile = {'kso', 'et'} }),
       windowFilter = WPS.WF.WPS_WPP_ET,
       condition = MenuItem.isEnabled{ "File", "Export to PDF..." },
       fn = Callback.Select
     },
     ["insertTextBox"] = {
-      message = T{"Insert", "Text Box"},
+      message = T({"Insert", "Text Box"}, { localeFile = 'wps' }),
       windowFilter = WPS.WF.WPS_WPP,
       condition = MenuItem.isEnabled{ "Insert", "Text Box", "Horizontal Text Box" },
       fn = Callback.Select
     },
     ["insertEquation"] = {
-      message = T{"Insert", "LaTeXEquation..."},
+      message = function(win)
+        local insert = T("Insert", { localeFile = 'wps' })(win)
+        local equation = T("Equation", win)
+        return insert .. ' > ' .. 'LaTeX' .. equation .. '...'
+      end,
       windowFilter = WPS.WF.WPS_WPP_ET,
-      condition = MenuItem.isEnabled{ "Insert", "LaTeXEquation..." },
+      condition = function(win)
+        local menuItemPath = strsplit(A_Message, ' > ')
+        local menuItem = win:application():findMenuItem(menuItemPath)
+        return menuItem and menuItem.enabled, menuItemPath
+      end,
       fn = Callback.Select
     },
     ["pdfHightlight"] = {
-      message = T("Highlight"),
+      message = T("Highlight", { localeFile = 'pdf' }),
       windowFilter = WPS.WF.PDF,
-      condition = MenuItem.isEnabled{ "Comment", "Highlight" },
+      condition = MenuItem.isEnabled({ "Comment", "Highlight" }),
       fn = Callback.Select
     },
     ["pdfUnderline"] = {
       message = T("Underline"),
       windowFilter = WPS.WF.PDF,
-      condition = MenuItem.isEnabled{ "Comment", "Underline" },
+      condition = MenuItem.isEnabled({ "Comment", "Underline" }),
       fn = Callback.Select
     },
     ["pdfStrikethrough"] = {
       message = T("Strikethrough"),
       windowFilter = WPS.WF.PDF,
-      condition = MenuItem.isEnabled{ "Comment", "Strikethrough" },
+      condition = MenuItem.isEnabled({ "Comment", "Strikethrough" }),
       fn = Callback.Select
     },
     ["goToHome"] = {
-      message = T("Home"),
+      message = T("Home", { localeFile = 'wpsoffice' }),
       windowFilter = WPS.WF.NonHome,
       fn = function(win)
         local winUI = towinui(win)
@@ -3232,10 +3265,10 @@ AppHotKeyCallbacks = {
       end
     },
     ["openRecent"] = {
-      message = T("Recent"),
+      message = T("Recent", { localeFile = 'ksomisc'  }),
       fn = function(app)
         if app:focusedWindow() == nil then return end
-        local home = T("Home", app)
+        local home = T("Home", { localeFile = 'wpsoffice' })(app)
         local winUI = towinui(app:focusedWindow())
         if app:focusedWindow():title() ~= home then
           local buttons = getc(winUI, AX.Button)
@@ -3264,7 +3297,9 @@ AppHotKeyCallbacks = {
       end,
     },
     ["goToShare"] = {
-      message = T("Share"),
+      message = function()
+        return localizedString("Share", "com.apple.finder")
+      end,
       windowFilter = WPS.WF.Home,
       condition = function(win)
         local winUI = towinui(win)
@@ -3285,7 +3320,7 @@ AppHotKeyCallbacks = {
       fn = Callback.Click
     },
     ["goToMyCloudDocuments"] = {
-      message = T("My Cloud Documents"),
+      message = T("My Cloud"),
       windowFilter = WPS.WF.Home,
       condition = function(win)
         local winUI = towinui(win)
@@ -3310,7 +3345,9 @@ AppHotKeyCallbacks = {
       fn = Callback.Click
     },
     ["goToMyDesktop"] = {
-      message = T("My Desktop"),
+      message = function()
+        return localizedString("Desktop", "com.apple.finder")
+      end,
       windowFilter = WPS.WF.Home,
       condition = function(win)
         local winUI = towinui(win)
@@ -3337,7 +3374,9 @@ AppHotKeyCallbacks = {
       fn = Callback.Click
     },
     ["goToDocuments"] = {
-      message = T("Documents"),
+      message = function()
+        return localizedString("Documents", "com.apple.finder")
+      end,
       windowFilter = WPS.WF.Home,
       condition = function(win)
         local winUI = towinui(win)
@@ -3364,7 +3403,9 @@ AppHotKeyCallbacks = {
       fn = Callback.Click
     },
     ["goToDownloads"] = {
-      message = T("Downloads"),
+      message = function()
+        return localizedString("Downloads", "com.apple.finder")
+      end,
       windowFilter = WPS.WF.Home,
       condition = function(win)
         local winUI = towinui(win)

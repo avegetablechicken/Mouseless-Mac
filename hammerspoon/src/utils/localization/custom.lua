@@ -33,23 +33,49 @@ function localizeQt(str, appid, appLocale)
   return result, locale
 end
 
-function getSTRInQtKso(str, file)
-  local cmd = hs.execute("which lconvert | tr -d '\\n'", true)
-  if cmd == nil then return end
-  local output, status = hs.execute(strfmt(
-    '%s -i "%s" -of po | %s', cmd, file, poCtxtToStr(str)))
-  if status and output ~= "" then return output end
+local wpsLocCache = {}
+local function ensureWpsCache(resourceDir, locale)
+  local key = resourceDir .. '/' .. locale
+  if wpsLocCache[key] ~= nil then return wpsLocCache[key] end
+  local cacheDir = localeTmpDir .. "com.kingsoft.wpsoffice.mac/" .. locale
+  local enDir = resourceDir .. "/en_US"
+  local tgtDir = resourceDir .. "/" .. locale
+  -- Check if cache already exists by looking for any _loc.json file
+  local cacheExists = false
+  if exists(cacheDir) then
+    for file in hs.fs.dir(cacheDir) do
+      if file:sub(-9) == "_loc.json" then cacheExists = true; break end
+    end
+  end
+  if not cacheExists then
+    mkdir(localeTmpDir .. "com.kingsoft.wpsoffice.mac")
+    mkdir(cacheDir)
+    hs.execute(strfmt(
+      [[/usr/bin/python3 scripts/wps_qm_parse.py cache-wps '%s' '%s' -o '%s']],
+      enDir, tgtDir, cacheDir))
+  end
+  -- Load all cached maps for this locale
+  local maps = { loc = {}, deloc = {} }
+  if exists(cacheDir) then
+    for file in hs.fs.dir(cacheDir) do
+      if file:sub(-9) == "_loc.json" then
+        local name = file:sub(1, -10)
+        maps.loc[name] = hs.json.read(cacheDir .. '/' .. file)
+      elseif file:sub(-11) == "_deloc.json" then
+        local name = file:sub(1, -12)
+        maps.deloc[name] = hs.json.read(cacheDir .. '/' .. file)
+      end
+    end
+  end
+  wpsLocCache[key] = maps
+  return maps
 end
 
-function getCTXTInQtKso(str, file)
-  local cmd = hs.execute("which lconvert | tr -d '\\n'", true)
-  if cmd == nil then return end
-  local output, status = hs.execute(strfmt(
-    '%s -i "%s" -of po | %s', cmd, file, poStrToCtxt(str)))
-  if status and output ~= "" then return output end
-end
 
 function localizeWPS(str, appLocale, localeFile)
+  if appLocale:sub(1, 2) == 'en' then
+    return str, 'en_US'
+  end
   local resourceDir =
       hs.application.pathForBundleID("com.kingsoft.wpsoffice.mac")
       .. '/Contents/Resources/office6/mui'
@@ -57,51 +83,35 @@ function localizeWPS(str, appLocale, localeFile)
   if type(localeFile) == 'string' then
     localeFile = { localeFile }
   end
-  local localeDir = resourceDir .. '/' .. locale
-
-  for file in hs.fs.dir(localeDir) do
-    if file:sub(-3) == ".qm" then
+  local maps = ensureWpsCache(resourceDir, locale)
+  if maps and maps.loc then
+    local results = {}
+    local seen = {}
+    for name, locMap in pairs(maps.loc) do
       local valid = true
       if localeFile then
-        valid = any(localeFile, function(p)
-          return file:sub(1, -4):match('^' .. p .. '$')
-        end)
+        valid = any(localeFile, function(p) return name:match('^' .. p .. '$') end)
       end
       if valid then
-        local result = getSTRInQtKso(str, localeDir .. '/' .. file)
-        if result ~= nil then return result end
-      end
-    end
-  end
-
-  local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
-  local dirs = appendExtraEnglishLocaleDirs(resourceDir, baseLocaleDirs)
-  local ctxt, matchedFile
-  for _, dir in ipairs(dirs) do
-    for file in hs.fs.dir(dir) do
-      if file:sub(-3) == ".qm" then
-        local valid = true
-        if localeFile then
-          valid = any(localeFile, function(p)
-            return file:sub(1, -4):match('^' .. p .. '$')
-          end)
+        local r
+        if locMap[str] then
+          r = locMap[str]
+        elseif str:sub(-3) == '...' and locMap[str:sub(1, -4)] then
+          r = locMap[str:sub(1, -4)] .. '...'
         end
-        if valid then
-          ctxt = getCTXTInQtKso(str, dir .. '/' .. file)
-          if ctxt ~= nil then
-            matchedFile = file:sub(1, -4)
-            goto END_OUTER_FOR_LOOP
-          end
+        if r and not seen[r] then
+          seen[r] = true
+          tinsert(results, r)
         end
       end
     end
+    if #results == 1 then
+      return results[1], locale
+    elseif #results > 1 then
+      return results, locale
+    end
   end
-  ::END_OUTER_FOR_LOOP::
-  if ctxt == nil then return nil, locale end
-
-  if exists(localeDir .. '/' .. matchedFile .. '.qm') then
-    return getSTRInQtKso(ctxt, localeDir .. '/' .. matchedFile .. '.qm')
-  end
+  return nil, locale
 end
 
 function localizeZotero(str, appLocale)
@@ -398,6 +408,9 @@ function delocalizeQt(str, appid, appLocale)
 end
 
 function delocalizeWPS(str, appLocale, localeFile)
+  if appLocale:sub(1, 2) == 'en' then
+    return str, 'en_US'
+  end
   local resourceDir =
       hs.application.pathForBundleID("com.kingsoft.wpsoffice.mac")
       .. '/Contents/Resources/office6/mui'
@@ -406,34 +419,24 @@ function delocalizeWPS(str, appLocale, localeFile)
   if type(localeFile) == 'string' then
     localeFile = { localeFile }
   end
-  local localeDir = resourceDir .. '/' .. locale
-
-  local ctxt, matchedFile
-  for file in hs.fs.dir(localeDir) do
-    if file:sub(-3) == ".qm" then
+  local maps = ensureWpsCache(resourceDir, locale)
+  if maps and maps.deloc then
+    local results = {}
+    local seen = {}
+    for name, delocMap in pairs(maps.deloc) do
       local valid = true
       if localeFile then
-        valid = any(localeFile, function(p)
-          return file:sub(1, -4):match('^' .. p .. '$')
-        end)
+        valid = any(localeFile, function(p) return name:match('^' .. p .. '$') end)
       end
-      if valid then
-        ctxt = getCTXTInQtKso(str, localeDir .. '/' .. file)
-        if ctxt ~= nil then
-          matchedFile = file:sub(1, -4)
-          break
-        end
+      if valid and delocMap[str] and not seen[delocMap[str]] then
+        seen[delocMap[str]] = true
+        tinsert(results, delocMap[str])
       end
     end
-  end
-  if ctxt == nil then return nil, locale end
-
-  local baseLocaleDirs = getBaseLocaleDirs(resourceDir)
-  local dirs = appendExtraEnglishLocaleDirs(resourceDir, baseLocaleDirs)
-  for _, dir in ipairs(dirs) do
-    if exists(dir .. '/' .. matchedFile .. '.qm') then
-      local result = getSTRInQtKso(ctxt, dir .. '/' .. matchedFile .. '.qm')
-      if result ~= nil then return result, locale end
+    if #results == 1 then
+      return results[1], locale
+    elseif #results > 1 then
+      return results, locale
     end
   end
   return nil, locale
