@@ -2047,6 +2047,18 @@
         "mods": "command",
         "key": "2"
       },
+      "prevVM": {
+        "mods": "",
+        "key": "Up"
+      },
+      "nextVM": {
+        "mods": "",
+        "key": "Down"
+      },
+      "activateSelectedVM": {
+        "mods": "",
+        "key": "Return"
+      },
       "showControlCenterFromMB": {
         "mods": ["shift", "command"],
         "key": "K"

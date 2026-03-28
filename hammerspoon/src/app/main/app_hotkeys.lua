@@ -6876,6 +6876,91 @@ AppHotKeyCallbacks = {
       condition = MenuItem.isEnabled{ "View", "Compact View" },
       fn = Callback.Select
     },
+    ["prevVM"] = {
+      message = "Previous VM",
+      windowFilter = Parallels.WF.ControlCenter,
+      condition = function(win)
+        local winUI = towinui(win)
+        local toolbar = getc(winUI, AX.Toolbar, 1)
+        if toolbar == nil then return false end
+        local x = toolbar.AXPosition.x + toolbar.AXSize.w
+        local y = toolbar.AXPosition.y + toolbar.AXSize.h
+        local elem = toappui(win:application()):elementAtPosition(x - 5, y + 5)
+        while elem and elem.AXRole ~= AX.Outline do
+          elem = elem.AXParent
+        end
+        if elem then
+          local vms = getc(elem, AX.Row)
+          if vms == nil or #vms == 0 then return false end
+          for i, vm in ipairs(vms) do
+            if vm.AXSelected then
+              return true, vms[(i - 2) % #vms + 1]
+            end
+          end
+          return true, vms[#vms]
+        end
+        return false
+      end,
+      fn = function(vm)
+        vm.AXSelected = true
+      end
+    },
+    ["nextVM"] = {
+      message = "Next VM",
+      windowFilter = Parallels.WF.ControlCenter,
+      condition = function(win)
+        local winUI = towinui(win)
+        local toolbar = getc(winUI, AX.Toolbar, 1)
+        if toolbar == nil then return false end
+        local x = toolbar.AXPosition.x + toolbar.AXSize.w
+        local y = toolbar.AXPosition.y + toolbar.AXSize.h
+        local elem = toappui(win:application()):elementAtPosition(x - 5, y + 5)
+        while elem and elem.AXRole ~= AX.Outline do
+          elem = elem.AXParent
+        end
+        if elem then
+          local vms = getc(elem, AX.Row)
+          if vms == nil or #vms == 0 then return false end
+          for i, vm in ipairs(vms) do
+            if vm.AXSelected then
+              return true, vms[i % #vms + 1]
+            end
+          end
+          return true, vms[1]
+        end
+        return false
+      end,
+      fn = function(vm)
+        vm.AXSelected = true
+      end
+    },
+    ["activateSelectedVM"] = {
+      message = "Activate",
+      windowFilter = Parallels.WF.ControlCenter,
+      condition = function(win)
+        local winUI = towinui(win)
+        local toolbar = getc(winUI, AX.Toolbar, 1)
+        if toolbar == nil then return false end
+        local x = toolbar.AXPosition.x + toolbar.AXSize.w
+        local y = toolbar.AXPosition.y + toolbar.AXSize.h
+        local elem = toappui(win:application()):elementAtPosition(x - 5, y + 5)
+        while elem and elem.AXRole ~= AX.Outline do
+          elem = elem.AXParent
+        end
+        if elem then
+          local vms = getc(elem, AX.Row)
+          if vms == nil or #vms == 0 then return false end
+          for _, vm in ipairs(vms) do
+            if vm.AXSelected then
+              local button = getc(vm, AX.Cell, 1, AX.Button, 1)
+              return button ~= nil, button
+            end
+          end
+        end
+        return false
+      end,
+      fn = Callback.Press
+    },
     ["minimize"] = {
       message = T("Minimize"),
       condition = MenuItem.isEnabled{ "Window", "Minimize" },
