@@ -3320,7 +3320,14 @@ AppHotKeyCallbacks = {
       fn = Callback.Click
     },
     ["goToMyCloudDocuments"] = {
-      message = T("My Cloud"),
+      message = function(win)
+        local appid = win:application():bundleID()
+        local locStr = localizedString("My Cloud", appid)
+        if not locStr then
+          locStr = localizedString("My Cloud Documents", appid)
+        end
+        return locStr
+      end,
       windowFilter = WPS.WF.Home,
       condition = function(win)
         local winUI = towinui(win)
