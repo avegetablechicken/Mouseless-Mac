@@ -3298,7 +3298,7 @@ AppHotKeyCallbacks = {
     },
     ["goToShare"] = {
       message = function()
-        return localizedString("Share", "com.apple.finder")
+        return localizedString("Share", "com.apple.finder", { locale = A_AppLocale })
       end,
       windowFilter = WPS.WF.Home,
       condition = function(win)
@@ -3353,7 +3353,7 @@ AppHotKeyCallbacks = {
     },
     ["goToMyDesktop"] = {
       message = function()
-        return localizedString("Desktop", "com.apple.finder")
+        return localizedString("Desktop", "com.apple.finder", { locale = A_AppLocale })
       end,
       windowFilter = WPS.WF.Home,
       condition = function(win)
@@ -3382,7 +3382,7 @@ AppHotKeyCallbacks = {
     },
     ["goToDocuments"] = {
       message = function()
-        return localizedString("Documents", "com.apple.finder")
+        return localizedString("Documents", "com.apple.finder", { locale = A_AppLocale })
       end,
       windowFilter = WPS.WF.Home,
       condition = function(win)
@@ -3411,7 +3411,7 @@ AppHotKeyCallbacks = {
     },
     ["goToDownloads"] = {
       message = function()
-        return localizedString("Downloads", "com.apple.finder")
+        return localizedString("Downloads", "com.apple.finder", { locale = A_AppLocale })
       end,
       windowFilter = WPS.WF.Home,
       condition = function(win)
