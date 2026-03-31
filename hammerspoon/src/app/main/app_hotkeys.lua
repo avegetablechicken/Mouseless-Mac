@@ -3503,6 +3503,35 @@ AppHotKeyCallbacks = {
       end,
       fn = Callback.Press
     },
+    ["closeDialog"] = {
+      mods = specialCommonHotkeyConfigs["closeWindow"].mods,
+      key = specialCommonHotkeyConfigs["closeWindow"].key,
+      message = TC("Close Window"),
+      windowFilter = {
+        allowRoles = AX.Dialog,
+        fn = function(win)
+          local buttons = getc(towinui(win), AX.Button)
+          local close = tfind(buttons, function(btn)
+            return btn.AXSubrole == AX.CloseButton
+          end)
+          local zoom = tfind(buttons, function(btn)
+            return btn.AXSubrole == AX.ZoomButton
+          end)
+          local minimize = tfind(buttons, function(btn)
+            return btn.AXSubrole == AX.MinimizeButton
+          end)
+          return close and close.AXEnabled
+              and zoom and not zoom.AXEnabled
+              and minimize and not minimize.AXEnabled
+        end
+      },
+      fn = function(win)
+        local close = tfind(getc(towinui(win), AX.Button) or {}, function(btn)
+          return btn.AXSubrole == AX.CloseButton
+        end)
+        if close then Callback.Press(close) end
+      end
+    }
   },
 
   ["cn.wps.yunboxtool"] = {
