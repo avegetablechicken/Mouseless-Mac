@@ -3373,7 +3373,8 @@ AppHotKeyCallbacks = {
             end
           end
         end
-        if thirdSplitLine ~= nil and thirdSplitLine - secondSplitLine > 2 then
+        if secondSplitLine
+            and (thirdSplitLine == nil or thirdSplitLine - secondSplitLine > 2) then
           return Callback.Clickable(groups[secondSplitLine + 2])
         end
         return false
@@ -3402,7 +3403,8 @@ AppHotKeyCallbacks = {
             end
           end
         end
-        if thirdSplitLine ~= nil and thirdSplitLine - secondSplitLine > 3 then
+        if secondSplitLine
+            and (thirdSplitLine == nil or thirdSplitLine - secondSplitLine > 3) then
           return Callback.Clickable(groups[secondSplitLine + 3])
         end
         return false
@@ -3431,7 +3433,8 @@ AppHotKeyCallbacks = {
             end
           end
         end
-        if thirdSplitLine ~= nil and thirdSplitLine - secondSplitLine > 4 then
+        if secondSplitLine
+            and (thirdSplitLine == nil or thirdSplitLine - secondSplitLine > 4) then
           return Callback.Clickable(groups[secondSplitLine + 4])
         end
         return false
