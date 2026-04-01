@@ -2917,12 +2917,6 @@ AppHotKeyCallbacks = {
 
   ["com.apple.Safari"] =
   {
-    ["toggleSidebar"] = {
-      message = T("Show Sidebar"),
-      condition = MenuItem.isEnabled({ "View", "Show Sidebar" },
-                                     { "View", "Hide Sidebar" }),
-      fn = Callback.Select
-    },
     ["showInFinder"] = {
       message = TC("Show in Finder"),
       windowFilter = { allowURLs = "^file://" },
