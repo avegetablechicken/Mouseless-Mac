@@ -3202,12 +3202,6 @@ AppHotKeyCallbacks = {
       windowFilter = WPS.WF.NonHome,
       fn = function(app) hs.eventtap.keyStroke("⇧⌘", "End", nil, app) end
     },
-    ["properties"] = {
-      message = T("Properties...", { localeFile = 'wps' }),
-      windowFilter = WPS.WF.NonHome,
-      condition = MenuItem.isEnabled({ "File", "Properties..." }),
-      fn = Callback.Select
-    },
     ["exportToPDF"] = {
       message = T("Export to PDF...", { localeFile = {'kso', 'et'} }),
       windowFilter = WPS.WF.WPS_WPP_ET,

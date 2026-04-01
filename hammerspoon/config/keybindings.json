@@ -1286,10 +1286,6 @@
       }
     },
     "com.kingsoft.wpsoffice.mac": {
-      "properties": {
-        "mods": "command",
-        "key": "I"
-      },
       "exportToPDF": {
         "mods": ["shift", "option", "command"],
         "key": "E"
