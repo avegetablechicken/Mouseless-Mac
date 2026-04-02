@@ -195,7 +195,10 @@ Messages.deleteSelected = function(app)
   if app:focusedWindow() == nil then return end
   local winUI = towinui(app:focusedWindow())
   local button
-  if OS_VERSION >= OS.Tahoe:withMinor(2) then
+  if OS_VERSION >= OS.Tahoe:withMinor(4) then
+    button = getc(winUI, AX.Group, 1, AX.Group, 1,
+        AX.Group, 2, AX.Group, 1, AX.Button, 2)
+  elseif OS_VERSION >= OS.Tahoe:withMinor(2) then
     button = getc(winUI, AX.Group, 1, AX.Group, 1,
         AX.Group, 1, AX.Group, 1, AX.Button, 2)
   elseif OS_VERSION >= OS.Tahoe then
@@ -245,7 +248,10 @@ end
 
 Messages.messageItems = function(app)
   local appUI = toappui(app)
-  if OS_VERSION >= OS.Tahoe:withMinor(2) then
+  if OS_VERSION >= OS.Tahoe:withMinor(4) then
+    return getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+        AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
+  elseif OS_VERSION >= OS.Tahoe:withMinor(2) then
     return getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
         AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 1, AX.StaticText)
   elseif OS_VERSION >= OS.Tahoe then
@@ -2324,7 +2330,10 @@ AppHotKeyCallbacks = {
       fn = function(app)
         local appUI = toappui(app)
         local button
-        if OS_VERSION >= OS.Tahoe:withMinor(2) then
+        if OS_VERSION >= OS.Tahoe:withMinor(4) then
+          button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
+              AX.Group, 2, AX.Group, 1, AX.Button, 2)
+        elseif OS_VERSION >= OS.Tahoe:withMinor(2) then
           button = getc(appUI, AX.Window, 1, AX.Group, 1, AX.Group, 1,
               AX.Group, 1, AX.Group, 1, AX.Button, 2)
         elseif OS_VERSION >= OS.Tahoe then
