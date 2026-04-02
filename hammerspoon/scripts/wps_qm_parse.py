@@ -8,16 +8,16 @@ Supports standard Qt QM binary format with sections:
 
 Usage:
   # Dump a single file as JSON
-  python3 qt_qm_parse.py dump <file.qm>
+  python3 wps_qm_parse.py dump <file.qm>
 
   # Compare two locale files side by side
-  python3 qt_qm_parse.py diff <en.qm> <zh.qm>
+  python3 wps_qm_parse.py diff <en.qm> <zh.qm>
 
   # Dump all locales under a mui directory
-  python3 qt_qm_parse.py dump-all <mui_dir> [-o <output_dir>]
+  python3 wps_qm_parse.py dump-all <mui_dir> [-o <output_dir>]
 
   # Search translations by regex
-  python3 qt_qm_parse.py grep <pattern> <file.qm> [<file2.qm> ...]
+  python3 wps_qm_parse.py grep <pattern> <file.qm> [<file2.qm> ...]
 """
 import argparse
 import json
