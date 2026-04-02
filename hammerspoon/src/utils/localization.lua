@@ -961,6 +961,9 @@ local function localizedStringImpl(str, appid, params, force)
   elseif appid == "com.tencent.xinWeChat" and applicationVersion(appid) >= "4" then
     result, locale = localizeWeChat(str, appLocale)
     return result, appLocale, locale
+  elseif appid == "com.tencent.qq" then
+    result, locale = localizeQQ(str, appLocale)
+    return result, appLocale, locale
   end
 
   local resourceDirs, frameworks = getResourceDirs(appid, localeFramework)
@@ -1220,6 +1223,9 @@ local function delocalizedStringImpl(str, appid, params, force)
     return result, appLocale, locale
   elseif appid == "com.tencent.xinWeChat" and applicationVersion(appid) >= "4" then
     result, locale = delocalizeWeChat(str, appLocale)
+    return result, appLocale, locale
+  elseif appid == "com.tencent.qq" then
+    result, locale = delocalizeQQ(str, appLocale)
     return result, appLocale, locale
   end
 

@@ -373,6 +373,49 @@ function localizeWeChat(str, appLocale)
   end
 end
 
+local qqLocCache = nil  -- { loc = {zh→en}, deloc = {en→zh} }
+
+local function ensureQQLocCache()
+  if qqLocCache ~= nil then return qqLocCache end
+  local appid = "com.tencent.qq"
+  local cacheDir = localeTmpDir .. appid
+  local cacheFile = cacheDir .. '/map.json'
+  local appPath = hs.application.pathForBundleID(appid)
+  if appPath == nil then return nil end
+  local majorNode = appPath .. '/Contents/Resources/app/major.node'
+  if not exists(majorNode) then return nil end
+
+  -- rebuild cache if missing or stale
+  if not exists(cacheFile) then
+    mkdir(cacheDir)
+    hs.execute(strfmt(
+        "/usr/bin/python3 scripts/qq_node_parse.py '%s' '%s'",
+        majorNode, cacheFile))
+  end
+
+  local data = hs.json.read(cacheFile)
+  if data == nil or data.locale_map == nil then return nil end
+
+  local loc, deloc = {}, {}
+  for _, entry in ipairs(data.locale_map) do
+    if entry.zh and entry.en then
+      loc[entry.en] = entry.zh
+      deloc[entry.zh] = entry.en
+    end
+  end
+  qqLocCache = { loc = loc, deloc = deloc }
+  return qqLocCache
+end
+
+function localizeQQ(str, appLocale)
+  local locale = matchLocale(appLocale, { "zh-CN", "zh-TW", "zh-HK", "en-US" })
+  if locale == nil then return nil end
+  if locale == "en-US" then return str, locale end
+  local cache = ensureQQLocCache()
+  if cache == nil then return nil, locale end
+  return cache.loc[str], locale
+end
+
 function delocalizeQt(str, appid, appLocale)
   local appPath = hs.application.pathForBundleID(appid)
   local resourceDir = appPath .. "/../../translations"
@@ -652,6 +695,15 @@ function delocalizeWeChat(str, appLocale)
   else
     return delocalized, locale
   end
+end
+
+function delocalizeQQ(str, appLocale)
+  local locale = matchLocale(appLocale, { "zh-CN", "zh-TW", "zh-HK", "en-US" })
+  if locale == nil then return nil end
+  if locale == "en-US" then return str, locale end
+  local cache = ensureQQLocCache()
+  if cache == nil then return nil, locale end
+  return cache.deloc[str], locale
 end
 
 function delocalizeMATLABFigureMenu(str, appLocale)
