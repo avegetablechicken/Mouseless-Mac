@@ -1017,7 +1017,19 @@ registerProxyMenuWrapper()
 local menubarHK = KeybindingConfigs.hotkeys.global or {}
 
 local proxyHotkey = bindHotkeySpec(menubarHK["showProxyMenu"], "Show Proxy Menu",
-    bind(clickRightMenuBarItem, {hs.settings.bundleID, proxy:autosaveName()}))
+function()
+  local hammerspoon = find(hs.settings.bundleID)
+  local menuBarItem = getc(toappui(hammerspoon),
+      AX.MenuBar, -1, AX.MenuBarItem, proxy:title())
+  if not leftClickAndRestore(menuBarItem, hammerspoon) then
+    local frame = proxy:_frame()
+    local screenFrame = hs.screen.mainScreen():frame()
+    proxy:popupMenu({
+      x = frame.x,
+      y = screenFrame.y + screenFrame.h - frame.y
+    })
+  end
+end)
 if proxyHotkey then
   proxyHotkey.kind = HK.MENUBAR
   proxyHotkey.icon = hs.image.imageFromAppBundle("com.apple.systempreferences")
