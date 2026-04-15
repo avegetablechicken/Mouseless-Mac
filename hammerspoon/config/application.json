@@ -5,6 +5,7 @@
   },
 
   "hideWithoutWindow": [
+    "com.apple.mail",
     "com.apple.Music",
     "org.hammerspoon.Hammerspoon",
     "org.pqrs.Karabiner-MultitouchExtension",
@@ -54,7 +55,6 @@
   "quitWithoutWindow": [
     "com.apple.MobileSMS",
     "com.apple.iCal",
-    "com.apple.mail",
     "com.apple.Notes",
     "com.apple.TV",
     "com.apple.podcasts",
