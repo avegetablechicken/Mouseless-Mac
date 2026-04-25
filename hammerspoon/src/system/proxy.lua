@@ -1019,6 +1019,10 @@ local menubarHK = KeybindingConfigs.hotkeys.global or {}
 local proxyHotkey = bindHotkeySpec(menubarHK["showProxyMenu"], "Show Proxy Menu",
 function()
   local hammerspoon = find(hs.settings.bundleID)
+  if hiddenByMenuBarManager(hammerspoon, proxy:autosaveName()) then
+    clickRightMenuBarItem{hammerspoon, proxy:autosaveName()}
+    return
+  end
   local menuBarItem = getc(toappui(hammerspoon),
       AX.MenuBar, -1, AX.MenuBarItem, proxy:title())
   if not leftClickAndRestore(menuBarItem, hammerspoon) then
