@@ -91,7 +91,7 @@ def v8_read_twobyte_backward(data: bytes, before: int,
                              max_scan: int = 300):
     """Search backward from *before* for a V8 TwoByteString containing CJK.
 
-    V8 TwoByteStrings can mix CJK with ASCII/Latin (e.g. "隐藏QQ", "退出QQ").
+    V8 TwoByteStrings can mix CJK with ASCII/Latin.
     The LE32 prefix stores the total character count.
 
     Strategy: find CJK chars, extend the CJK run backward to locate the
