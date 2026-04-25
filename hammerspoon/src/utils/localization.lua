@@ -964,6 +964,9 @@ local function localizedStringImpl(str, appid, params, force)
   elseif appid == "com.tencent.qq" then
     result, locale = localizeQQ(str, appLocale)
     return result, appLocale, locale
+  elseif appid == "com.tencent.yuanbao" then
+    result, locale = localizeYuanbao(str, appLocale)
+    return result, appLocale, locale
   end
 
   local resourceDirs, frameworks = getResourceDirs(appid, localeFramework)
@@ -1226,6 +1229,9 @@ local function delocalizedStringImpl(str, appid, params, force)
     return result, appLocale, locale
   elseif appid == "com.tencent.qq" then
     result, locale = delocalizeQQ(str, appLocale)
+    return result, appLocale, locale
+  elseif appid == "com.tencent.yuanbao" then
+    result, locale = delocalizeYuanbao(str, appLocale)
     return result, appLocale, locale
   end
 

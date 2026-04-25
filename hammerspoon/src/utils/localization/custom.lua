@@ -416,6 +416,104 @@ function localizeQQ(str, appLocale)
   return cache.loc[str], locale
 end
 
+-- ── Yuanbao (com.tencent.yuanbao) ───────────────────────────────────────
+-- Base locale is zh-CN: Next.js chunks ship Chinese source strings as
+-- \u-escaped JS keys, with parallel value tables for English (en) and
+-- Traditional Chinese (zh-HK).  scripts/yuanbao_pkg_parse.py extracts
+-- those plus the .ftl menu strings and InfoPlist.strings into one map.
+
+local yuanbaoLocCache = nil
+
+local function ensureYuanbaoLocCache()
+  if yuanbaoLocCache ~= nil then return yuanbaoLocCache end
+  local appid = "com.tencent.yuanbao"
+  local appPath = hs.application.pathForBundleID(appid)
+  if appPath == nil then return nil end
+  if not exists(appPath .. '/Contents/Resources/content.pkg')
+      and not exists(appPath .. '/Contents/Resources/locales') then
+    return nil
+  end
+
+  local cacheDir = localeTmpDir .. appid
+  local cacheFile = cacheDir .. '/map.json'
+  local pkgPath = appPath .. '/Contents/Resources/content.pkg'
+  local stale = false
+  if exists(cacheFile) and exists(pkgPath) then
+    local pkgM = hs.fs.attributes(pkgPath, 'modification')
+    local cacheM = hs.fs.attributes(cacheFile, 'modification')
+    if pkgM and cacheM and pkgM > cacheM then stale = true end
+  end
+
+  if not exists(cacheFile) or stale then
+    mkdir(cacheDir)
+    hs.execute(strfmt(
+        "/usr/bin/python3 scripts/yuanbao_pkg_parse.py '%s' '%s'",
+        appPath, cacheFile))
+  end
+
+  local data = hs.json.read(cacheFile)
+  if data == nil or data.by_locale == nil then return nil end
+
+  -- loc[locale][zhCN]  = localized      (forward, used by localizeYuanbao)
+  -- deloc[locale][loc] = zhCN           (reverse, used by delocalizeYuanbao)
+  local loc = data.by_locale
+  local deloc = data.by_locale_reverse
+  if deloc == nil then
+    -- Older cache lacking reverse map: build it now (priority undefined
+    -- on collision; rebuild the cache file to refresh).
+    deloc = {}
+    for locale, table_ in pairs(loc) do
+      local inv = {}
+      for zh, v in pairs(table_) do
+        if inv[v] == nil then inv[v] = zh end
+      end
+      deloc[locale] = inv
+    end
+  end
+  yuanbaoLocCache = { loc = loc, deloc = deloc }
+  return yuanbaoLocCache
+end
+
+-- map an arbitrary appLocale ("zh-Hans-CN", "en-US", "zh-TW", ...) to one
+-- of the three buckets the parser produces: 'en', 'zh-cn', 'zh-hk'.
+local function yuanbaoLocaleBucket(appLocale)
+  local matched = matchLocale(appLocale, { "zh-CN", "zh-HK", "zh-TW", "en-US" })
+  if matched == nil then return nil, nil end
+  if matched:sub(1, 2) == 'en' then return 'en', matched end
+  if matched == 'zh-CN' then return 'zh-cn', matched end
+  return 'zh-hk', matched
+end
+
+-- Resolve an input string (in any of the three locales) to its zh-CN
+-- canonical form.  Returns nil when the string isn't found in any map.
+local function yuanbaoToBaseZH(cache, str)
+  if cache.loc['zh-cn'] and cache.loc['zh-cn'][str] ~= nil then
+    return str
+  end
+  for _, fromBucket in ipairs{ 'en', 'zh-hk' } do
+    local rev = cache.deloc[fromBucket]
+    if rev and rev[str] ~= nil then return rev[str] end
+  end
+  return nil
+end
+
+function localizeYuanbao(str, appLocale)
+  local bucket, locale = yuanbaoLocaleBucket(appLocale)
+  if bucket == nil then return nil end
+  local cache = ensureYuanbaoLocCache()
+  if cache == nil then
+    -- Without a cache we can only honor the identity case.
+    if bucket == 'zh-cn' then return str, locale end
+    return nil, locale
+  end
+  local zhCN = yuanbaoToBaseZH(cache, str)
+  if zhCN == nil then return nil, locale end
+  if bucket == 'zh-cn' then return zhCN, locale end
+  local table_ = cache.loc[bucket]
+  if table_ == nil then return nil, locale end
+  return table_[zhCN], locale
+end
+
 function delocalizeQt(str, appid, appLocale)
   local appPath = hs.application.pathForBundleID(appid)
   local resourceDir = appPath .. "/../../translations"
@@ -704,6 +802,21 @@ function delocalizeQQ(str, appLocale)
   local cache = ensureQQLocCache()
   if cache == nil then return nil, locale end
   return cache.deloc[str], locale
+end
+
+function delocalizeYuanbao(str, appLocale)
+  local bucket, locale = yuanbaoLocaleBucket(appLocale)
+  if bucket == nil then return nil end
+  -- The framework's canonical is English: delocalize returns the en form
+  -- of the displayed string.  When the app is already shown in English,
+  -- the input itself is canonical.
+  if bucket == 'en' then return str, locale end
+  local cache = ensureYuanbaoLocCache()
+  if cache == nil then return nil, locale end
+  local zhCN = yuanbaoToBaseZH(cache, str)
+  if zhCN == nil then return nil, locale end
+  if cache.loc['en'] == nil then return nil, locale end
+  return cache.loc['en'][zhCN], locale
 end
 
 function delocalizeMATLABFigureMenu(str, appLocale)
