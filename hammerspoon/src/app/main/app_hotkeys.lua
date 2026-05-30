@@ -944,8 +944,13 @@ AppCleanerUninstaller.confirmButtonValid = function(title)
     end)
     if cancel == nil then return false end
     local locTitle = T(title, app)
-    local button = getc(winUI, AX.StaticText, locTitle)
-    return Callback.Clickable(button)
+    if appVer(app) < "9.2" then
+      local button = getc(winUI, AX.StaticText, locTitle)
+      return Callback.Clickable(button)
+    else
+      local button = getc(winUI, AX.Button, locTitle)
+      return button and button.AXEnabled, button
+    end
   end
 end
 
@@ -5330,17 +5335,35 @@ AppHotKeyCallbacks = {
     ["confirmRemove"] = {
       message = T('Remove'),
       condition = AppCleanerUninstaller.confirmButtonValid('Remove'),
-      fn = Callback.DoubleClick
+      fn = function(button)
+        if button.AXPosition then
+          Callback.Press(button)
+        else
+          Callback.DoubleClick(button)
+        end
+      end
     },
     ["confirmUpdate"] = {
       message = T('Update'),
       condition = AppCleanerUninstaller.confirmButtonValid('Update'),
-      fn = Callback.DoubleClick
+      fn = function(button)
+        if button.AXPosition then
+          Callback.Press(button)
+        else
+          Callback.DoubleClick(button)
+        end
+      end
     },
     ["confirmRetry"] = {
       message = T('Retry'),
       condition = AppCleanerUninstaller.confirmButtonValid('Retry'),
-      fn = Callback.DoubleClick
+      fn = function(button)
+        if button.AXPosition then
+          Callback.Press(button)
+        else
+          Callback.DoubleClick(button)
+        end
+      end
     }
   },
 
@@ -5375,17 +5398,35 @@ AppHotKeyCallbacks = {
     ["confirmRemove"] = {
       message = T('PartialRemove_Remove'),
       condition = AppCleanerUninstaller.confirmButtonValid('PartialRemove_Remove'),
-      fn = Callback.DoubleClick
+      fn = function(button)
+        if button.AXPosition then
+          Callback.Press(button)
+        else
+          Callback.DoubleClick(button)
+        end
+      end
     },
     ["confirmUpdate"] = {
       message = T('UpdateButtonTitle'),
       condition = AppCleanerUninstaller.confirmButtonValid('UpdateButtonTitle'),
-      fn = Callback.DoubleClick
+      fn = function(button)
+        if button.AXPosition then
+          Callback.Press(button)
+        else
+          Callback.DoubleClick(button)
+        end
+      end
     },
     ["confirmRetry"] = {
       message = T('PartialRemove_Retry'),
       condition = AppCleanerUninstaller.confirmButtonValid('PartialRemove_Retry'),
-      fn = Callback.DoubleClick
+      fn = function(button)
+        if button.AXPosition then
+          Callback.Press(button)
+        else
+          Callback.DoubleClick(button)
+        end
+      end
     }
   },
 
