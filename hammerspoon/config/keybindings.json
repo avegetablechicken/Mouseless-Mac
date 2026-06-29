@@ -1283,8 +1283,8 @@
     },
     "com.kingsoft.wpsoffice.mac": {
       "exportToPDF": {
-        "mods": ["shift", "option", "command"],
-        "key": "E"
+        "mods": ["control", "command"],
+        "key": "P"
       },
       "pdfHightlight": {
         "mods": ["control", "command"],
@@ -1349,11 +1349,11 @@
     },
     "com.apple.iWork.Keynote": {
       "exportToPDF": {
-        "mods": "command",
-        "key": "E"
+        "mods": ["control", "command"],
+        "key": "P"
       },
       "exportToPPT": {
-        "mods": ["shift", "option", "command"],
+        "mods": ["control", "command"],
         "key": "E"
       },
       "pasteAndMatchStyle": {
@@ -1399,11 +1399,11 @@
     },
     "com.apple.Keynote": {
       "exportToPDF": {
-        "mods": "command",
-        "key": "E"
+        "mods": ["control", "command"],
+        "key": "P"
       },
       "exportToPPT": {
-        "mods": ["shift", "option", "command"],
+        "mods": ["control", "command"],
         "key": "E"
       },
       "pasteAndMatchStyle": {
@@ -1449,11 +1449,11 @@
     },
     "com.apple.iWork.Pages": {
       "exportToPDF": {
-        "mods": "command",
-        "key": "E"
+        "mods": ["control", "command"],
+        "key": "P"
       },
       "exportToWord": {
-        "mods": ["shift", "option", "command"],
+        "mods": ["control", "command"],
         "key": "E"
       },
       "pasteAndMatchStyle": {
@@ -1479,11 +1479,11 @@
     },
     "com.apple.Pages": {
       "exportToPDF": {
-        "mods": "command",
-        "key": "E"
+        "mods": ["control", "command"],
+        "key": "P"
       },
       "exportToWord": {
-        "mods": ["shift", "option", "command"],
+        "mods": ["control", "command"],
         "key": "E"
       },
       "pasteAndMatchStyle": {
@@ -1509,11 +1509,11 @@
     },
     "com.apple.iWork.Numbers": {
       "exportToPDF": {
-        "mods": "command",
-        "key": "E"
+        "mods": ["control", "command"],
+        "key": "P"
       },
       "exportToExcel": {
-        "mods": ["shift", "option", "command"],
+        "mods": ["control", "command"],
         "key": "E"
       },
       "pasteAndMatchStyle": {
@@ -1535,11 +1535,11 @@
     },
     "com.apple.Numbers": {
       "exportToPDF": {
-        "mods": "command",
-        "key": "E"
+        "mods": ["control", "command"],
+        "key": "P"
       },
       "exportToExcel": {
-        "mods": ["shift", "option", "command"],
+        "mods": ["control", "command"],
         "key": "E"
       },
       "pasteAndMatchStyle": {
@@ -1561,8 +1561,8 @@
     },
     "net.xmind.vana.app": {
       "exportToPDF": {
-        "mods": "command",
-        "key": "E"
+        "mods": ["control", "command"],
+        "key": "P"
       },
       "insertEquation": {
         "mods": ["option", "command"],
