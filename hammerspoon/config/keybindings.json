@@ -436,7 +436,7 @@
         "bundleID": [
           "com.devolutions.remotedesktopmanager",
           "com.devolutions.remotedesktopmanager.free",
-          "com.microsoft.rdc.mac"
+          "com.microsoft.rdc.macos"
         ]
       },
       {
