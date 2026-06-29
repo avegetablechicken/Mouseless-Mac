@@ -531,7 +531,7 @@
       {
         "mods": "${hyper.hyper}",
         "key": "X",
-        "bundleID": "com.apple.dt.Xcode"
+        "bundleID": "com.openai.codex"
       },
       {
         "mods": "${hyper.hyper}",
