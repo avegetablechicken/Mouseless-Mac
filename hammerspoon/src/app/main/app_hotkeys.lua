@@ -3602,9 +3602,15 @@ AppHotKeyCallbacks = {
       condition = MenuItem.isEnabled{ "Play", "Play Slideshow" },
       fn = Callback.Select
     },
-    ["insertTextBox"] = {  -- Insert > Text Box
-      message = T{"Insert", "Text Box"},
-      condition = MenuItem.isEnabled{ "Insert", "Text Box" },
+    ["insertTextBox"] = {  -- Insert > Text (Box)
+      message = function(app)
+        local menuItem = appVer(app) < "15.3" and "Text Box" or "Text"
+        return T{"Insert", menuItem}(app)
+      end,
+      condition = function(app)
+        local menuItem = appVer(app) < "15.3" and "Text Box" or "Text"
+        return MenuItem.isEnabled{ "Insert", menuItem }(app)
+      end,
       fn = Callback.Select
     },
     ["insertShape"] = {  -- Insert > Shape
