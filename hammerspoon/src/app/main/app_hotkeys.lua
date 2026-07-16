@@ -4181,6 +4181,10 @@ AppHotKeyCallbacks = {
     }
   },
 
+  ["com.moonshot.kimichat"] = {
+    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"]
+  },
+
   ["JabRef"] =
   {
     ["preferences"] = {
