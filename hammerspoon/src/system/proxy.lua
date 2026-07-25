@@ -558,7 +558,7 @@ local function updateProxyWrapper(wrapped, appname)
       end
       if _item.title == appname then
         local info = NetworkWatcher:proxies()
-        if item.title:match("PAC") then
+        if item.title:match("PAC") and info.ProxyAutoConfigURLString then
           tinsert(newProxyMenu, {
             title = "PAC File: " .. info.ProxyAutoConfigURLString,
             disabled = true
