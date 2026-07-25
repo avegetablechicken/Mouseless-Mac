@@ -79,6 +79,35 @@ local function enable_proxy_global(client, networkservice, location)
   hs.execute('networksetup -setsocksfirewallproxystate "' .. networkservice .. '" on')
 end
 
+-- Optimized version that chains networksetup commands into a single shell
+-- invocation to reduce process overhead. Used by MonoCloud v1.0+ where the
+-- original enable_proxy_global does 8 separate hs.execute calls.
+local function enable_proxy_global_fast(client, networkservice, location)
+  networkservice = networkservice or getNetworkService()
+  local cmds = {
+    'networksetup -setproxyautodiscovery "' .. networkservice .. '" off',
+    'networksetup -setautoproxystate "' .. networkservice .. '" off',
+  }
+
+  if client ~= nil then
+    local addrs
+    if location == nil then
+      addrs = ProxyConfigs[client].global
+    else
+      addrs = ProxyConfigs[client][location].global
+    end
+    tinsert(cmds, 'networksetup -setwebproxy "' .. networkservice .. '" ' .. addrs[1] .. ' ' .. addrs[2])
+    tinsert(cmds, 'networksetup -setsecurewebproxy "' .. networkservice .. '" ' .. addrs[3] .. ' ' .. addrs[4])
+    tinsert(cmds, 'networksetup -setsocksfirewallproxy "' .. networkservice .. '" ' .. addrs[5] .. ' ' .. addrs[6])
+  end
+
+  tinsert(cmds, 'networksetup -setwebproxystate "' .. networkservice .. '" on')
+  tinsert(cmds, 'networksetup -setsecurewebproxystate "' .. networkservice .. '" on')
+  tinsert(cmds, 'networksetup -setsocksfirewallproxystate "' .. networkservice .. '" on')
+
+  hs.execute(table.concat(cmds, ' && '))
+end
+
 -- Proxy client togglers.
 --
 -- These functions control third-party proxy applications by automating
@@ -238,8 +267,13 @@ local function toggleMonoCloud(enable, alert)
   end
 
   local appUI = toappui(find(appid))
+  local appVer = applicationVersion(appid)
+  local proxyItemTitle = "Set As System Proxy"
+  if appVer and appVer >= "1.0" then
+    proxyItemTitle = "System Proxy"
+  end
   local menuItem = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1,
-      AX.Menu, 1, AX.MenuItem, "Set As System Proxy")
+      AX.Menu, 1, AX.MenuItem, proxyItemTitle)
   if menuItem == nil then
     if alert then
       hs.alert("Error occurred. Please retry")
@@ -328,14 +362,24 @@ local proxyActivateFuncs = {
     global = function()
       if toggleMonoCloud(false) then
         if clickRightMenuBarItem(proxyAppBundleIDs.MonoCloud, { "Outbound Mode", 2 }) then
-          enable_proxy_global("MonoCloud")
+          local appVer = applicationVersion(proxyAppBundleIDs.MonoCloud)
+          if appVer and appVer >= "1.0" then
+            enable_proxy_global_fast("MonoCloud")
+          else
+            enable_proxy_global("MonoCloud")
+          end
         end
       end
     end,
     pac = function()
       if toggleMonoCloud(false) then
         if clickRightMenuBarItem(proxyAppBundleIDs.MonoCloud, { "Outbound Mode", 3 }) then
-          enable_proxy_global("MonoCloud")
+          local appVer = applicationVersion(proxyAppBundleIDs.MonoCloud)
+          if appVer and appVer >= "1.0" then
+            enable_proxy_global_fast("MonoCloud")
+          else
+            enable_proxy_global("MonoCloud")
+          end
         end
       end
     end
@@ -700,19 +744,24 @@ local function parseProxyInfo(info, require_mode)
         if enabledProxy ~= "MonoCloud" then
           mode = "Global"
         elseif require_mode then
-          local appid = proxyAppBundleIDs.MonoCloud
-          if find(appid) ~= nil then
-            local appUI = toappui(find(appid))
-            local outboundModeMenu = getc(appUI, AX.MenuBar, -1,
-                AX.MenuBarItem, 1, AX.Menu, 1,
-                AX.MenuItem, "Outbound Mode", AX.Menu, 1)
-            if outboundModeMenu ~= nil then
-              if getc(outboundModeMenu, AX.MenuItem, 2)
-                  .AXMenuItemMarkChar == "✓" then
-                mode = "Global"
-              elseif getc(outboundModeMenu, AX.MenuItem, 3)
-                  .AXMenuItemMarkChar == "✓" then
-                mode = "PAC"
+          local appVer = applicationVersion(proxyAppBundleIDs.MonoCloud)
+          if appVer and appVer >= "1.0" then
+            mode = "Global"
+          else
+            local appid = proxyAppBundleIDs.MonoCloud
+            if find(appid) ~= nil then
+              local appUI = toappui(find(appid))
+              local outboundModeMenu = getc(appUI, AX.MenuBar, -1,
+                  AX.MenuBarItem, 1, AX.Menu, 1,
+                  AX.MenuItem, "Outbound Mode", AX.Menu, 1)
+              if outboundModeMenu ~= nil then
+                if getc(outboundModeMenu, AX.MenuItem, 2)
+                    .AXMenuItemMarkChar == "✓" then
+                  mode = "Global"
+                elseif getc(outboundModeMenu, AX.MenuItem, 3)
+                    .AXMenuItemMarkChar == "✓" then
+                  mode = "PAC"
+                end
               end
             end
           end
