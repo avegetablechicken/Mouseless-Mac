@@ -513,6 +513,17 @@ if privateProxyConfigs ~= nil then
   parseProxyConfigurations(privateProxyConfigs)
 end
 
+-- Shared styled text for section headers, mimicking macOS standard
+-- section header appearance (smaller system font, secondary label color).
+local SECTION_HEADER_STYLE = {
+  font = { name = ".AppleSystemUIFont", size = 11 },
+  color = { red = 0.55, green = 0.55, blue = 0.56, alpha = 1.0 },
+}
+
+local function styledTitle(text)
+  return hs.styledtext.new(text, SECTION_HEADER_STYLE)
+end
+
 -- Proxy menubar.
 --
 -- Builds and maintains a dynamic menubar menu reflecting
@@ -649,7 +660,7 @@ local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
   end
   if config ~= nil then
     tinsert(proxyMenu, { title = "-" })
-    tinsert(proxyMenu, { title = name, disabled = true })
+    tinsert(proxyMenu, { title = styledTitle(name), disabled = true })
     if enabled and mode ~= nil then
       if mode == "PAC" then
         local PACFile = config.PAC
@@ -899,7 +910,7 @@ local function registerProxyMenuImpl(enabledProxy, mode)
     if ProxyConfigs[candidate.appname] ~= nil and installed(appid) then
       tinsert(proxyMenu, { title = "-" })
       tinsert(proxyMenu, {
-        title = candidate.appname,
+        title = styledTitle(candidate.appname),
         fn = function()
           local actionFunc = function()
             clickRightMenuBarItem(appid)
