@@ -968,7 +968,36 @@ local function registerProxyMenuImpl(enabledProxy, mode)
   proxy:setMenu(proxyMenu)
 end
 
+-- TUN mode detection state. tunActive defaults to false (non-TUN)
+-- and is updated by checkTUNState. Checked on network changes and during startup.
+local tunActive = false
+local tunInfo = nil
+local TUN_SHELL_CMD = "ifconfig 2>/dev/null | awk '/^utun[0-9]/{gsub(/:.*/,\"\",$1); iface=$1} /inet / && iface && $2!=\"127.0.0.1\"{print iface, $2; iface=\"\"}'"
+
+local function checkTUNState()
+  local handle = io.popen(TUN_SHELL_CMD)
+  if not handle then return end
+  local result = handle:read("*a")
+  handle:close()
+  local detected = result and result ~= ""
+  if detected then
+    tunInfo = {}
+    for iface, addr in result:gmatch("(%S+)%s+(%S+)") do
+      tinsert(tunInfo, {interface = iface, address = addr})
+    end
+    if #tunInfo == 0 then tunInfo = nil end
+  else
+    tunInfo = nil
+  end
+  if detected ~= tunActive then
+    tunActive = detected
+    return true
+  end
+  return false
+end
+
 -- Register proxy menubar with retry logic on network availability
+
 local function registerProxyMenu(retry, enabledProxy, mode)
   if not getNetworkService() then
     local menu = {{
@@ -992,6 +1021,25 @@ local function registerProxyMenu(retry, enabledProxy, mode)
       disabled = true
     }}
     proxy:setMenu(menu)
+    return true
+  elseif tunActive then
+    registerProxyMenuImpl(enabledProxy, mode)
+    if tunInfo and #tunInfo > 0 then
+      for i, info in ipairs(tunInfo) do
+        tinsert(proxyMenu, 1 + i, {
+          title = strfmt("TUN: %s (%s)", info.interface, info.address),
+          disabled = true
+        })
+      end
+    else
+      tinsert(proxyMenu, 2, { title = "TUN Mode", disabled = true })
+    end
+    for _, item in ipairs(proxyMenu) do
+      if item.fn and not (item.shortcut and item.shortcut:match("^[a-z]$")) then
+        item.disabled = true
+      end
+    end
+    proxy:setMenu(proxyMenu)
     return true
   else
     registerProxyMenuImpl(enabledProxy, mode)
@@ -1068,6 +1116,7 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
   end
   ::L_PROXY_SET::
   NetworkWatcher:monitorKeys(NetworkMonitorKeys)
+  checkTUNState()
   registerProxyMenu(true, enabledProxy, enabledMode)
   lastIpv4State = Ipv4State
 end
@@ -1149,5 +1198,12 @@ local function SystemProxy_networkChangedCallback(storeObj, changedKeys)
 end
 
 registerNetworkChangedCallback(SystemProxy_networkChangedCallback)
+
+
+-- utun interfaces do not create SCDynamicStore keys, so network callbacks
+-- cannot detect TUN changes. Poll instead, but skip during startup.
+ExecContinuously(function()
+  if not FLAGS["LOADING"] and checkTUNState() then registerProxyMenu(true) end
+end)
 
 SystemProxyMenubar = proxy
