@@ -968,11 +968,21 @@ local function registerProxyMenuImpl(enabledProxy, mode)
   proxy:setMenu(proxyMenu)
 end
 
--- TUN mode detection state. tunActive defaults to false (non-TUN)
--- and is updated by checkTUNState. Checked on network changes and during startup.
+-- TUN mode detection. Finds utun interfaces with IPv4 addresses, then
+-- verifies via netstat that host TCP connections are actually flowing
+-- through them. This excludes idle utun interfaces (e.g. Parallels shared
+-- networking) that have an IP but don't carry host internet traffic.
 local tunActive = false
 local tunInfo = nil
-local TUN_SHELL_CMD = "ifconfig 2>/dev/null | awk '/^utun[0-9]/{gsub(/:.*/,\"\",$1); iface=$1} /inet / && iface && $2!=\"127.0.0.1\"{print iface, $2; iface=\"\"}'"
+local TUN_SHELL_CMD = [[
+  for iface in $(ifconfig 2>/dev/null | awk '/^utun[0-9]/{gsub(/:.*/,"",$1); print $1}'); do
+    addr=$(ifconfig "$iface" 2>/dev/null | awk '/inet / && $2!="127.0.0.1"{print $2}')
+    if [ -n "$addr" ]; then
+      count=$(netstat -an -p tcp 2>/dev/null | grep -c "$addr")
+      if [ "$count" -gt 0 ]; then echo "$iface $addr"; fi
+    fi
+  done
+]]
 
 local function checkTUNState()
   local handle = io.popen(TUN_SHELL_CMD)
