@@ -3,14 +3,15 @@
 -- Provides a simple menubar toggle to control display sleep state
 -- via hs.caffeinate.
 local caffeine = hs.menubar.new(true, "CAFFEINE")
+local caffeineIconPath = hs.configdir .. "/static/menubar/"
 
--- Update caffeine menubar title according to display sleep state
+-- Update caffeine menubar icon according to display sleep state
 local function setCaffeineDisplay(state)
-  if state then
-    caffeine:setTitle("AWAKE")
-  else
-    caffeine:setTitle("SLEEPY")
-  end
+  if caffeine == nil then return end
+  local awake = state == true
+  local icon = awake and "caffeine-awake.pdf" or "caffeine-sleepy.pdf"
+  caffeine:setIcon(caffeineIconPath .. icon, true)
+  caffeine:setTooltip(awake and "Caffeine: Awake" or "Caffeine: Sleepy")
 end
 
 -- Toggle display idle sleep and update caffeine menubar

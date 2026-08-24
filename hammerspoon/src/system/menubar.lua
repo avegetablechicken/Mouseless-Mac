@@ -130,9 +130,9 @@ local function registerSearchMenuBar()
     end
     local appid = app:bundleID() or app:name()
     local appname = app:name()
-    local title, extraSearchPattern
+    local title, extraSearchPattern, autosaveName
     if #maps[appid] > 1 then
-      local autosaveName = maps[appid][idx]
+      autosaveName = maps[appid][idx]
       if appid == 'com.apple.controlcenter' then
         -- Special handling for Control Center items:
         -- - Normalize BentoBox naming
@@ -188,9 +188,18 @@ local function registerSearchMenuBar()
     -- However, some menu bar items are backed by helper processes or
     -- non-bundled executables, in which case `app:bundleID()` is nil.
     local image
-    if app:bundleID() then
+    if appid == hs.settings.bundleID then
+      if SystemCaffeineMenubar
+          and autosaveName == SystemCaffeineMenubar:autosaveName() then
+        image = SystemCaffeineMenubar:icon()
+      elseif SystemProxyMenubar
+          and autosaveName == SystemProxyMenubar:autosaveName() then
+        image = SystemProxyMenubar:icon()
+      end
+    end
+    if image == nil and app:bundleID() then
       image = hs.image.imageFromAppBundle(appid)
-    else
+    elseif image == nil then
       -- Fallback for processes without a bundle ID:
       -- Inspect the executable path via `lsof` to locate the enclosing `.app`
       -- bundle, then infer its bundle identifier manually.

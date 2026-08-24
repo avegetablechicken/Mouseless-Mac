@@ -450,7 +450,32 @@ end
 
 -- menubar for proxy
 local proxy = hs.menubar.new(true, "PROXY")
-proxy:setTitle("PROXY")
+local proxyIconPath = hs.configdir .. "/static/menubar/"
+local proxyIconFiles = {
+  V2RayX = "proxy-v2rayx.pdf",
+  V2rayU = "proxy-v2rayu.pdf",
+  v2rayN = "proxy-v2rayn.pdf",
+  MonoCloud = "proxy-monocloud.pdf",
+}
+
+-- Set the proxy icon, adding a third-party app icon when available.
+local function setProxyIcon(enabledProxy)
+  local icon = "proxy.pdf"
+  if enabledProxy == nil or enabledProxy == "" then
+    icon = "proxy-disabled.pdf"
+  else
+    local appIcon = proxyIconFiles[enabledProxy]
+    if appIcon and hs.fs.attributes(proxyIconPath .. appIcon) then
+      icon = appIcon
+    end
+  end
+  proxy:setIcon(proxyIconPath .. icon, false)
+  local label = enabledProxy
+  if label == nil or label == "" then label = "Off" end
+  proxy:setTooltip("Proxy: " .. label)
+end
+
+setProxyIcon(nil)
 local proxyMenu = {}
 
 -- Proxy configuration loader.
@@ -603,6 +628,7 @@ local proxyMenuItemCandidates =
 local function updateProxyWrapper(wrapped, appname)
   local fn = function(mod, item)
     wrapped.fn(mod, item)
+    setProxyIcon(appname or "")
     local newProxyMenu = {}
     for _, _item in ipairs(proxyMenu) do
       _item.checked = false
@@ -832,6 +858,7 @@ local function registerProxyMenuImpl(enabledProxy, mode)
   if enabledProxy == nil then
     enabledProxy, mode = parseProxyInfo(NetworkWatcher:proxies())
   end
+  setProxyIcon(enabledProxy)
 
   proxyMenu =
   {
@@ -1010,6 +1037,7 @@ end
 
 local function registerProxyMenu(retry, enabledProxy, mode)
   if not getNetworkService() then
+    setProxyIcon("")
     local menu = {{
       title = "No Network Access",
       disabled = true
@@ -1026,6 +1054,7 @@ local function registerProxyMenu(retry, enabledProxy, mode)
       return false
     end
   elseif getNetworkService() == 'iPhone USB' then
+    setProxyIcon("")
     local menu = {{
       title = "Proxy Configured on iPhone",
       disabled = true
@@ -1142,16 +1171,13 @@ function()
     clickRightMenuBarItem{hammerspoon, proxy:autosaveName()}
     return
   end
-  local menuBarItem = getc(toappui(hammerspoon),
-      AX.MenuBar, -1, AX.MenuBarItem, proxy:title())
-  if not leftClickAndRestore(menuBarItem, hammerspoon) then
-    local frame = proxy:_frame()
-    local screenFrame = hs.screen.mainScreen():frame()
-    proxy:popupMenu({
-      x = frame.x,
-      y = screenFrame.y + screenFrame.h - frame.y
-    })
-  end
+  local frame = proxy:_frame()
+  if not frame then return end
+  local screenFrame = hs.screen.mainScreen():frame()
+  proxy:popupMenu({
+    x = frame.x,
+    y = screenFrame.y + screenFrame.h - frame.y
+  })
 end)
 if proxyHotkey then
   proxyHotkey.kind = HK.MENUBAR
