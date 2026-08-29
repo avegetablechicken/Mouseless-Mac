@@ -4,7 +4,7 @@ local log = hs.logger.new('hotkey', 'info')
 
 local module = {}
 
--- Leave Hyper Mode when Hyper is pressed
+-- Leave Hyper Mode when Hyper is released.
 function module:exitHyperMode()
   self.hyperMode:exit()
   self.hyperMode.Entered = false
@@ -12,30 +12,22 @@ function module:exitHyperMode()
     self.hyperTapper:stop()
     self.hyperTapper = nil
   end
-  if self.hyperTimer then
-    self.hyperTimer:stop()
-    self.hyperTimer = nil
-  end
 end
 
 function module:enterHyperMode()
+  if self:isEnabled() then return end
+
   self.hyperMode:enter()
   self.hyperMode.Entered = true
 
-  -- hyper modal exiting callback may be blocked by other time-consuming callbacks
-  -- we need to check if hyper key is still pressed
-  -- fixme: current implementation makes hyper hotkey unrepeatable
-  self.hyperPressed = true
-  self.hyperTapper = hs.eventtap.new({hs.eventtap.event.types.keyDown}, function(e)
+  -- Observe key-up directly because the hotkey release callback can be
+  -- delayed by other synchronous callbacks. Never infer release from missing
+  -- key-repeat events: F18 does not reliably repeat while it is held.
+  self.hyperTapper = hs.eventtap.new({hs.eventtap.event.types.keyUp}, function(e)
     if e:getKeyCode() == hs.keycodes.map[self.hyper] then
-      self.hyperPressed = true
-    end
-  end):start()
-  self.hyperTimer = hs.timer.doEvery(1, function()
-    if not self.hyperPressed then
+      self.hyperKeyDown = false
       self:exitHyperMode()
     end
-    self.hyperPressed = false
   end):start()
 end
 
@@ -78,8 +70,16 @@ function module:_new(hyper)
   o.hyper = hyper
   o.hyperMode = hs.hotkey.modal.new()
   o.hyperMode.Entered = false
+  o.hyperKeyDown = false
   o.trigger = hs.hotkey.new("", o.hyper,
-      function() o:enterHyperMode() end, function() o:exitHyperMode() end)
+      function()
+        if o.hyperKeyDown then return end
+        o.hyperKeyDown = true
+        o:enterHyperMode()
+      end, function()
+        o.hyperKeyDown = false
+        o:exitHyperMode()
+      end)
   if Mod.Hyper and (hyper:upper() == Mod.Hyper.Long:upper()
       or hyper:upper() == Mod.Hyper.Short:upper()) then
     o.trigger.msg = "HYPER"

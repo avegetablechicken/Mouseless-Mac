@@ -290,6 +290,127 @@ end
 -- ## application callbacks
 
 local launchTimer
+-- App activation can synchronously rebuild a large number of hotkeys and may
+-- even wait on Accessibility elements. Defer that work while Hyper is held so
+-- its key-up event can be processed first. Repeated appkeys are coalesced to
+-- the latest frontmost application.
+local pendingHyperAppMaintenance
+local hyperAppMaintenanceTimer
+local deferredHyperActions = {}
+
+local function hyperModeIsActive()
+  for _, modal in ipairs(HyperModalList) do
+    if modal:isEnabled() then return true end
+  end
+  return false
+end
+
+local function isSameApplication(a, b)
+  return a ~= nil and b ~= nil and (a == b or a:pid() == b:pid())
+end
+
+local function mergeAppMaintenance(request)
+  local pending = pendingHyperAppMaintenance
+  if pending == nil or not isSameApplication(pending.app, request.app) then
+    pendingHyperAppMaintenance = request
+    return request
+  end
+  pending.registerOpenSavePanel = pending.registerOpenSavePanel
+      or request.registerOpenSavePanel
+  pending.refreshHotkeys = pending.refreshHotkeys or request.refreshHotkeys
+  pending.menuBarChanged = pending.menuBarChanged or request.menuBarChanged
+  return pending
+end
+
+local function refreshShowingKeybindings()
+  if HSKeybindings == nil or not HSKeybindings.isShowing then return end
+  local validOnly = HSKeybindings.validOnly
+  local showCustom = HSKeybindings.showCustom
+  local showApp = HSKeybindings.showApp
+  HSKeybindings:reset()
+  HSKeybindings:update(validOnly, showCustom, showApp, true)
+end
+
+local function performAppMaintenance(request)
+  local previousNoReshow = FLAGS["NO_RESHOW_KEYBINDING"]
+  FLAGS["NO_RESHOW_KEYBINDING"] = true
+  local ok, err = xpcall(function()
+    if request.registerOpenSavePanel then
+      registerForOpenSavePanel(request.app)
+    end
+    if request.refreshHotkeys then
+      onLaunchedAndActivated(request.app, request.menuBarChanged)
+      registerObserverForMenuBarChange(request.app)
+    end
+  end, debug.traceback)
+  FLAGS["NO_RESHOW_KEYBINDING"] = previousNoReshow
+  if not previousNoReshow then refreshShowingKeybindings() end
+  if not ok then error(err, 0) end
+end
+
+local function performPendingHyperAppMaintenance()
+  hyperAppMaintenanceTimer = nil
+  local actions = deferredHyperActions
+  deferredHyperActions = {}
+  local request = pendingHyperAppMaintenance
+  pendingHyperAppMaintenance = nil
+
+  for _, action in ipairs(actions) do action() end
+  if request ~= nil and isSameApplication(
+      request.app, hs.application.frontmostApplication()) then
+    performAppMaintenance(request)
+  end
+end
+
+local function waitForHyperRelease()
+  if hyperAppMaintenanceTimer == nil then
+    hyperAppMaintenanceTimer = hs.timer.waitUntil(
+        function() return not hyperModeIsActive() end,
+        performPendingHyperAppMaintenance, 0.01)
+  end
+end
+
+local function runAfterHyperReleased(action)
+  if not hyperModeIsActive() then
+    action()
+    return
+  end
+  tinsert(deferredHyperActions, action)
+  waitForHyperRelease()
+end
+
+local function runOrDeferAppMaintenance(app, options)
+  local request = {
+    app = app,
+    registerOpenSavePanel = options.registerOpenSavePanel,
+    refreshHotkeys = options.refreshHotkeys,
+    menuBarChanged = options.menuBarChanged,
+  }
+
+  if not hyperModeIsActive() then
+    if hyperAppMaintenanceTimer ~= nil then
+      hyperAppMaintenanceTimer:stop()
+      hyperAppMaintenanceTimer = nil
+    end
+    local actions = deferredHyperActions
+    deferredHyperActions = {}
+    for _, action in ipairs(actions) do action() end
+    if pendingHyperAppMaintenance ~= nil
+        and isSameApplication(pendingHyperAppMaintenance.app, app) then
+      request = mergeAppMaintenance(request)
+    end
+    pendingHyperAppMaintenance = nil
+    performAppMaintenance(request)
+    return
+  end
+
+  if not isSameApplication(app, hs.application.frontmostApplication()) then
+    return
+  end
+  mergeAppMaintenance(request)
+  waitForHyperRelease()
+end
+
 function App_applicationCallback(appname, eventType, app)
   local appid = app:bundleID() or appname
   if appid == "com.apple.dock" then return end
@@ -318,24 +439,31 @@ function App_applicationCallback(appname, eventType, app)
     local action = function()
       launchTimer = nil
       A_AppLocale = applicationLocale(appid)
-      for _, proc in ipairs(Evt.ProcOnLaunched[appid] or {}) do
-        proc(app)
-      end
-      FLAGS["NO_RESHOW_KEYBINDING"] = true
+      runAfterHyperReleased(function()
+        for _, proc in ipairs(Evt.ProcOnLaunched[appid] or {}) do
+          proc(app)
+        end
+      end)
       local localeUpdated = updateAppLocale(app)
-      onLaunchedAndActivated(app, localeUpdated)
-      registerObserverForMenuBarChange(app)
+      runOrDeferAppMaintenance(app, {
+        refreshHotkeys = true,
+        menuBarChanged = localeUpdated,
+      })
 
       if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] ~= nil then
         hs.timer.doAfter(1, function()
-          registerMenuBarObserverForHotkeyValidity(app)
-          registerObserverForRightMenuBarSettingsMenuItem(app)
+          runAfterHyperReleased(function()
+            registerMenuBarObserverForHotkeyValidity(app)
+            registerObserverForRightMenuBarSettingsMenuItem(app)
+          end)
         end)
       end
       FLAGS["APP_LAUNCHING"] = nil
     end
-    if doublecheck and not doublecheck() then
-      launchTimer = hs.timer.waitUntil(doublecheck, action, 0.01)
+    if doublecheck and (hyperModeIsActive() or not doublecheck()) then
+      launchTimer = hs.timer.waitUntil(function()
+        return not hyperModeIsActive() and doublecheck()
+      end, action, 0.01)
     else
       action()
     end
@@ -370,13 +498,14 @@ function App_applicationCallback(appname, eventType, app)
     selectInputSourceInApp(app)
     reactivateValidSettingsToolbarHotkeys()
 
-    FLAGS["NO_RESHOW_KEYBINDING"] = true
-    registerForOpenSavePanel(app)
+    runOrDeferAppMaintenance(app, { registerOpenSavePanel = true })
     FLAGS["NEED_DOUBLE_CHECK"] = FLAGS["APP_LAUNCHING"]
     if not FLAGS["APP_LAUNCHING"] then
       local localeUpdated = updateAppLocale(app)
-      onLaunchedAndActivated(app, localeUpdated)
-      registerObserverForMenuBarChange(app)
+      runOrDeferAppMaintenance(app, {
+        refreshHotkeys = true,
+        menuBarChanged = localeUpdated,
+      })
     end
   elseif eventType == hs.application.watcher.terminated then
     for _, proc in ipairs(Evt.ProcOnTerminated[appid] or {}) do
@@ -395,13 +524,7 @@ function App_applicationCallback(appname, eventType, app)
   end
   if eventType == hs.application.watcher.deactivated then
     FLAGS["NO_RESHOW_KEYBINDING"] = false
-    if HSKeybindings ~= nil and HSKeybindings.isShowing then
-      local validOnly = HSKeybindings.validOnly
-      local showCustom = HSKeybindings.showCustom
-      local showApp = HSKeybindings.showApp
-      HSKeybindings:reset()
-      HSKeybindings:update(validOnly, showCustom, showApp, true)
-    end
+    refreshShowingKeybindings()
     local frontApp = hs.application.frontmostApplication()
     if frontApp then
       local frontAppID = frontApp:bundleID() or frontApp:name()
