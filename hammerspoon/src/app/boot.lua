@@ -386,6 +386,26 @@ end
 A_AppBuf = {}
 A_AppLocale = nil
 
+-- Keep locale-dependent menu maps in sync before app hotkeys are registered.
+-- This is also needed during reload, where the lifecycle module is loaded
+-- after the initial foreground-app registration.
+local appLastLocales = {}
+function updateAppLocale(app)
+  local appid = app:bundleID() or app:name()
+  local oldAppLocale = appLastLocales[appid]
+  appLastLocales[appid] = A_AppLocale
+  if oldAppLocale ~= A_AppLocale then
+    if matchLocale(oldAppLocale or SYSTEM_LOCALE, { A_AppLocale })
+        ~= A_AppLocale then
+      resetLocalizationMap(appid)
+      localizeCommonMenuItemTitles(A_AppLocale, appid)
+      unregisterRunningAppHotKeys(appid, true)
+      return true
+    end
+  end
+  return false
+end
+
 -- A_WinBuf:
 -- Window-scoped runtime cache.
 --

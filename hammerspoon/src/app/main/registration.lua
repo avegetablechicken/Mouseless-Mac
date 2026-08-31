@@ -75,8 +75,9 @@ end
 if frontApp then
   local appid = frontApp:bundleID() or frontApp:name()
   A_AppLocale = applicationLocale(appid)
+  local localeUpdated = updateAppLocale(frontApp)
   registerForOpenSavePanel(frontApp)
-  onLaunchedAndActivated(frontApp)
+  onLaunchedAndActivated(frontApp, localeUpdated)
 end
 
 -- register watchers for window belonging to daemon app
