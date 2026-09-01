@@ -195,8 +195,10 @@ local function registerSearchMenuBar()
     if image == nil and app:bundleID() then
       image = hs.image.imageFromAppBundle(appid)
     elseif image == nil then
+      -- Use lsof's field output so enclosing app names may contain spaces.
       local pathStr, ok = hs.execute(strfmt([[
-          lsof -a -d txt -p %s 2>/dev/null | sed -n '2p' | awk '{print $NF}']], app:pid()))
+          lsof -a -d txt -Fn -p %s 2>/dev/null | sed -n 's/^n//p' | head -1]],
+          app:pid()))
       if ok and pathStr ~= "" then
         local parts = hs.fnutils.split(pathStr, "/")
 
