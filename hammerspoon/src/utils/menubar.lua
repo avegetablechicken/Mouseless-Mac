@@ -265,7 +265,7 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
     local missedIdx
     for i, r in ipairs(positions) do
       local name
-      if math.abs(r[2] - SystemCaffeineMenubar:frame().x) < 3 then
+      if SystemCaffeineMenubar and math.abs(r[2] - SystemCaffeineMenubar:frame().x) < 3 then
         name = SystemCaffeineMenubar:autosaveName()
       elseif math.abs(r[2] - SystemProxyMenubar:frame().x) < 3 then
         name = SystemProxyMenubar:autosaveName()
