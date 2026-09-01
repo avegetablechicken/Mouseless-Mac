@@ -81,7 +81,7 @@ end
 function setAppPreferenceCacheField(appid, key, value)
   local containerPlistPath, plistPath = getAppPreferencePaths(appid)
   if containerPlistPath or plistPath then
-    appPreferencesCache[appid] = appPreferencesCache[appid] or {}
+    appPreferencesCache[appid] = getAppPreferenceCacheEntry(appid) or {}
     appPreferencesCache[appid].containerMtime = getAppPreferenceMtime(containerPlistPath)
     appPreferencesCache[appid].plistMtime = getAppPreferenceMtime(plistPath)
     appPreferencesCache[appid][key] = value
