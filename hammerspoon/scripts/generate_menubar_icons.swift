@@ -139,8 +139,8 @@ func writeIcon(named name: String, color: CGColor = black,
 
 writeIcon(named: "caffeine-awake.pdf") { drawCaffeine($0, sleepy: false) }
 writeIcon(named: "caffeine-sleepy.pdf") { drawCaffeine($0, sleepy: true) }
-writeIcon(named: "proxy.pdf", color: white) {
-    drawProxy($0, appIcon: nil, color: white)
+writeIcon(named: "proxy.pdf", color: black) {
+    drawProxy($0, appIcon: nil, color: black)
 }
 writeIcon(named: "proxy-disabled.pdf", color: gray) {
     drawProxy($0, appIcon: nil, color: gray)
@@ -167,15 +167,20 @@ for name in ["proxy-system.pdf", "proxy-lab-proxy.pdf"] {
 }
 
 for (name, _, _) in proxyApps {
-    let path = outputDirectory.appendingPathComponent("proxy-\(name).pdf")
-    if FileManager.default.fileExists(atPath: path.path) {
-        try FileManager.default.removeItem(at: path)
+    for suffix in ["", "-white", "-dark"] {
+        let path = outputDirectory.appendingPathComponent("proxy-\(name)\(suffix).pdf")
+        if FileManager.default.fileExists(atPath: path.path) {
+            try FileManager.default.removeItem(at: path)
+        }
     }
 }
 
 for (name, bundleID, resourcePaths) in proxyApps {
     if let icon = installedAppIcon(bundleID: bundleID, resourcePaths: resourcePaths) {
-        writeIcon(named: "proxy-\(name).pdf", color: white) {
+        writeIcon(named: "proxy-\(name).pdf", color: black) {
+            drawProxy($0, appIcon: icon, color: black)
+        }
+        writeIcon(named: "proxy-\(name)-white.pdf", color: white) {
             drawProxy($0, appIcon: icon, color: white)
         }
     }

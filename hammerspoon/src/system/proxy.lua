@@ -451,31 +451,124 @@ end
 -- menubar for proxy
 local proxy = hs.menubar.new(true, "PROXY")
 local proxyIconPath = hs.configdir .. "/static/menubar/"
-local proxyIconFiles = {
-  V2RayX = "proxy-v2rayx.pdf",
-  V2rayU = "proxy-v2rayu.pdf",
-  v2rayN = "proxy-v2rayn.pdf",
-  MonoCloud = "proxy-monocloud.pdf",
+local proxyIconNames = {
+  V2RayX = "v2rayx",
+  V2rayU = "v2rayu",
+  v2rayN = "v2rayn",
+  MonoCloud = "monocloud",
 }
+local proxyForIcon = ""
+local proxyUsesLightForeground
+local proxyIconForcedInactive = false
+local nextProxyThemeCheck = 0
 
--- Set the proxy icon, adding a third-party app icon when available.
-local function setProxyIcon(enabledProxy)
+local function imageLuminanceAt(image, x, y)
+  local color = image:colorAt(hs.geometry.point(x, y))
+  local rgb = color and hs.drawing.color.asRGB(color)
+  if type(rgb) ~= "table" then return end
+  return 0.2126 * rgb.red + 0.7152 * rgb.green + 0.0722 * rgb.blue
+end
+
+-- Read the actual foreground used for a template icon in the menu bar.
+-- This can differ from the global interface style because of the wallpaper.
+local function menuBarUsesLightForeground()
+  local app = hs.application.frontmostApplication()
+  if not app then return end
+  local appleMenu = getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem, 1)
+  if not appleMenu or not appleMenu.AXPosition or not appleMenu.AXSize then
+    return
+  end
+  local frame = hs.geometry.rect(
+      appleMenu.AXPosition.x, appleMenu.AXPosition.y,
+      appleMenu.AXSize.w, appleMenu.AXSize.h)
+  local screen = hs.screen.mainScreen()
+  local screenFrame = screen:fullFrame()
+  if not frame or frame.x < screenFrame.x or frame.y < screenFrame.y
+      or frame.x + frame.w > screenFrame.x + screenFrame.w
+      or frame.y + frame.h > screenFrame.y + screenFrame.h then
+    return
+  end
+
+  local snapshot = screen:snapshot(frame)
+  if not snapshot then return end
+  local size = snapshot:size()
+  if size.w < 4 or size.h < 4 then return end
+
+  local foreground = imageLuminanceAt(snapshot, size.w / 2, size.h / 2)
+  local backgrounds = {
+    imageLuminanceAt(snapshot, 1, 1),
+    imageLuminanceAt(snapshot, size.w - 2, 1),
+    imageLuminanceAt(snapshot, 1, size.h - 2),
+    imageLuminanceAt(snapshot, size.w - 2, size.h - 2),
+  }
+  if not foreground or backgrounds[1] == nil or backgrounds[2] == nil
+      or backgrounds[3] == nil or backgrounds[4] == nil then
+    return
+  end
+  local background = (backgrounds[1] + backgrounds[2]
+      + backgrounds[3] + backgrounds[4]) / 4
+  if math.abs(foreground - background) < 0.15 then return end
+  return foreground > background
+end
+
+local function applyProxyIcon()
   local icon = "proxy.pdf"
-  if enabledProxy == nil or enabledProxy == "" then
+  local template = true
+  if proxyIconForcedInactive or proxyForIcon == "" then
     icon = "proxy-disabled.pdf"
+    template = false
   else
-    local appIcon = proxyIconFiles[enabledProxy]
-    if appIcon and hs.fs.attributes(proxyIconPath .. appIcon) then
-      icon = appIcon
+    local appIconName = proxyIconNames[proxyForIcon]
+    if appIconName then
+      local suffix = proxyUsesLightForeground and "-white" or ""
+      local appIcon = "proxy-" .. appIconName .. suffix .. ".pdf"
+      if hs.fs.attributes(proxyIconPath .. appIcon) then
+        icon = appIcon
+        template = false
+      end
     end
   end
-  proxy:setIcon(proxyIconPath .. icon, false)
-  local label = enabledProxy
-  if label == nil or label == "" then label = "Off" end
+  proxy:setIcon(proxyIconPath .. icon, template)
+  local label = proxyForIcon
+  if label == "" then label = "Off" end
   proxy:setTooltip("Proxy: " .. label)
 end
 
+local function refreshProxyIconTheme(force)
+  if proxyIconForcedInactive or not proxyIconNames[proxyForIcon] then return end
+  local now = hs.timer.secondsSinceEpoch()
+  if not force and now < nextProxyThemeCheck then return end
+
+  local detected = menuBarUsesLightForeground()
+  nextProxyThemeCheck = now + (detected == nil and 1 or 5)
+  if detected ~= nil and detected ~= proxyUsesLightForeground then
+    proxyUsesLightForeground = detected
+    applyProxyIcon()
+  end
+end
+
+-- Set the proxy icon, adding a third-party app icon when available.
+local function setProxyIcon(enabledProxy)
+  proxyForIcon = enabledProxy or ""
+  proxyIconForcedInactive = false
+  if proxyIconNames[proxyForIcon] then
+    local detected = menuBarUsesLightForeground()
+    if detected == nil then detected = hs.host.interfaceStyle() == "Dark" end
+    proxyUsesLightForeground = detected
+  end
+  applyProxyIcon()
+end
+
+local function forceInactiveProxyIcon()
+  proxyIconForcedInactive = true
+  applyProxyIcon()
+  proxy:setTooltip("Proxy: TUN Mode")
+end
+
 setProxyIcon(nil)
+local proxyThemeWatcher = hs.distributednotifications.new(function()
+  hs.timer.doAfter(0.1, function() refreshProxyIconTheme(true) end)
+end, "AppleInterfaceThemeChangedNotification"):start()
 local proxyMenu = {}
 
 -- Proxy configuration loader.
@@ -1063,6 +1156,7 @@ local function registerProxyMenu(retry, enabledProxy, mode)
     return true
   elseif tunActive then
     registerProxyMenuImpl(enabledProxy, mode)
+    forceInactiveProxyIcon()
     if tunInfo and #tunInfo > 0 then
       for i, info in ipairs(tunInfo) do
         tinsert(proxyMenu, 1 + i, {
@@ -1239,7 +1333,10 @@ registerNetworkChangedCallback(SystemProxy_networkChangedCallback)
 -- utun interfaces do not create SCDynamicStore keys, so network callbacks
 -- cannot detect TUN changes. Poll instead, but skip during startup.
 ExecContinuously(function()
-  if not FLAGS["LOADING"] and checkTUNState() then registerProxyMenu(true) end
+  if FLAGS["LOADING"] then return end
+  if checkTUNState() then registerProxyMenu(true) end
+  refreshProxyIconTheme(false)
 end)
 
 SystemProxyMenubar = proxy
+SystemProxyThemeWatcher = proxyThemeWatcher
