@@ -1163,6 +1163,17 @@ local function registerSingleWinFilterForApp(app, filter, retry, appUI,
   local normal, extended = normalizeWindowFilter(filter)
   local observer = uiobserver.new(app:pid())
   local titleWatcherElement
+  local function removeTitleWatcher()
+    local element = titleWatcherElement
+    titleWatcherElement = nil
+    if element == nil then return end
+    local ok, err = pcall(function()
+      observer:removeWatcher(element, uinotifications.titleChanged)
+    end)
+    if not ok and not tostring(err):find("AXUIElementRef is invalid", 1, true) then
+      error(err)
+    end
+  end
   observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
   observer:addWatcher(appUI, uinotifications.windowMiniaturized)
   if extended.allowPopover then
@@ -1188,8 +1199,7 @@ local function registerSingleWinFilterForApp(app, filter, retry, appUI,
     if focusChanged and titleWatcherElement
         and (win == nil or previousWin == nil
             or previousWin:id() ~= win:id()) then
-      observer:removeWatcher(titleWatcherElement, uinotifications.titleChanged)
-      titleWatcherElement = nil
+      removeTitleWatcher()
     end
     if win == nil then return end
     if notification == uinotifications.focusedUIElementChanged
@@ -1204,10 +1214,7 @@ local function registerSingleWinFilterForApp(app, filter, retry, appUI,
       observer:addWatcher(titleWatcherElement, uinotifications.titleChanged)
     end
     if notification == uinotifications.windowMiniaturized then
-      if titleWatcherElement then
-        observer:removeWatcher(titleWatcherElement, uinotifications.titleChanged)
-        titleWatcherElement = nil
-      end
+      removeTitleWatcher()
     end
     if not element:isValid() then return end
 
