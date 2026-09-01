@@ -142,6 +142,8 @@ uinotifications = hs.axuielement.observer.notifications
 -- After this modification, WebKit WebContent processes will be correctly
 -- ignored, significantly reducing window filter initialization latency.
 hs.window.filter.ignoreAlways["com.apple.WebKit.WebContent"] = true
+-- Avoid an AX timeout loop while Karabiner monitors frontmost Hammerspoon.
+hs.window.filter.ignoreAlways["org.pqrs.Karabiner-Core-Service"] = true
 
 -- Modifier key representations.
 --
