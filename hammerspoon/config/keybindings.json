@@ -401,7 +401,7 @@
         ]
       },
       {
-        "mods": ["option", "command"],
+        "mods": "${hyper.hyper}",
         "key": "Z",
         "bundleID": "com.apple.Safari"
       },
