@@ -136,6 +136,31 @@ function applicationLocale(appid)
               end
             end
           end
+        elseif appid == "org.klatexformula.klatexformula" then
+          local file = io.open(os.getenv("HOME")
+              .. "/.klatexformula/klatexformula.conf", "r")
+          if file == nil then return "en", true end
+          local inUISection = false
+          local configLocale
+          for line in file:lines() do
+            local section = line:match("^%s*%[([^%]]+)%]%s*$")
+            if section ~= nil then
+              inUISection = section == "UI"
+            elseif inUISection then
+              configLocale = line:match("^%s*locale%s*=%s*(.-)%s*$")
+              if configLocale ~= nil and configLocale ~= "" then break end
+            end
+          end
+          file:close()
+          if configLocale then configLocale = configLocale:gsub("^['\"]", ""):gsub("['\"]$", "") end
+          local executable = app:path() .. "/Contents/MacOS/"
+              .. hs.application.infoForBundleID(appid).CFBundleExecutable
+          local prefix = localizationFrameworks[appid].qt
+          local locales = tmap(getQtExecutableLocales(appid, executable, prefix) or {},
+              function(name) return name:match("^" .. prefix .. "_(.-)%.qm$") end)
+          locale = configLocale and matchLocale(configLocale, locales)
+          if locale then return locale, true end
+          return "en", true
         end
       end
       if locale then return locale, true

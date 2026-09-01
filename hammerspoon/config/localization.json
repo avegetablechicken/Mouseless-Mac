@@ -14,6 +14,7 @@
     "com.tencent.yuanbao": [{ "electron": "locales" }, "locales"],
     "net.xmind.vana.app": { "electron": "static/locales" },
     "JabRef": { "java": "org.jabref/l10n" },
+    "org.klatexformula.klatexformula": { "qt": "klf" },
     "barrier": { "qt": "gui" }
   },
 
