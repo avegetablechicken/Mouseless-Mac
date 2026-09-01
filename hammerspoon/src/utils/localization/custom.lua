@@ -330,143 +330,408 @@ function localizeSteam(str, appLocale, locale)
 end
 
 local WeChatLocales = { "en", "zh_CN", "zh_TW" }
-function extractWeChatSegments(cacheDir)
+local weChatDictCache = {}
+local weChatReverseDictCache = {}
+
+-- Manual overrides for zh_CN (CN block ordering differs from EN/TW)
+-- These cover critical menu/UI strings used in Hammerspoon automation
+local weChatCNOverrides = {
+  ["Chats"] = "聊天",
+  ["File"] = "文件",
+  ["Edit"] = "编辑",
+  ["View"] = "视图",
+  ["Window"] = "窗口",
+  ["Help"] = "帮助",
+  ["Contacts"] = "通讯录",
+  ["Discover"] = "发现",
+  ["Moments"] = "朋友圈",
+  ["Settings"] = "设置",
+  ["Send"] = "发送",
+  ["Cancel"] = "取消",
+  ["Save"] = "保存",
+  ["Copy"] = "复制",
+  ["Paste"] = "粘贴",
+  ["Delete"] = "删除",
+  ["Close"] = "关闭",
+  ["Add"] = "添加",
+  ["Remove"] = "移除",
+  ["Login"] = "登录",
+  ["Scan"] = "扫一扫",
+  ["Search"] = "搜索",
+  ["Select All"] = "全选",
+  ["Quit"] = "退出",
+  ["Minimize"] = "最小化",
+  ["Zoom"] = "缩放",
+  ["Show All"] = "显示全部",
+  ["Hide"] = "隐藏",
+  ["New"] = "新建",
+  ["Open"] = "打开",
+  ["Print"] = "打印",
+  ["Undo"] = "撤销",
+  ["Redo"] = "重做",
+  ["Cut"] = "剪切",
+  ["Select"] = "选择",
+  ["Back"] = "返回",
+  ["Next"] = "下一步",
+  ["Done"] = "完成",
+  ["OK"] = "确定",
+  ["Yes"] = "是",
+  ["No"] = "否",
+  ["Stop"] = "停止",
+  ["Start"] = "开始",
+  ["Pause"] = "暂停",
+  ["Resume"] = "继续",
+  ["Export"] = "导出",
+  ["Import"] = "导入",
+  ["Refresh"] = "刷新",
+  ["Reload"] = "重新加载",
+  ["Reset"] = "重置",
+  ["Clear"] = "清除",
+  ["Clear All"] = "全部清除",
+  ["More"] = "更多",
+  ["Share"] = "分享",
+  ["Forward"] = "转发",
+  ["Reply"] = "回复",
+  ["Mute"] = "静音",
+  ["Unmute"] = "取消静音",
+  ["Pin"] = "置顶",
+  ["Unpin"] = "取消置顶",
+  ["Block"] = "拉黑",
+  ["Report"] = "举报",
+  ["Preview"] = "预览",
+  ["Edit Profile"] = "编辑资料",
+  ["Sign Out"] = "退出登录",
+  ["About"] = "关于",
+  ["Check for Updates"] = "检查更新",
+  ["Preferences"] = "偏好设置",
+  ["Services"] = "服务",
+  ["Hide Others"] = "隐藏其他",
+  ["Bring All to Front"] = "全部前置",
+  ["Enter Full Screen"] = "进入全屏",
+  ["Exit Full Screen"] = "退出全屏",
+  ["Minimize All"] = "全部最小化",
+  ["Arrange"] = "排列",
+  ["Sort"] = "排序",
+  ["Filter"] = "筛选",
+  ["Download"] = "下载",
+  ["Upload"] = "上传",
+  ["Install"] = "安装",
+  ["Uninstall"] = "卸载",
+  ["Restart"] = "重启",
+  ["Shutdown"] = "关机",
+  ["Lock"] = "锁定",
+  ["Unlock"] = "解锁",
+  ["Verify"] = "验证",
+  ["Authorize"] = "授权",
+  ["Reject"] = "拒绝",
+  ["Accept"] = "接受",
+  ["Ignore"] = "忽略",
+  ["Retry"] = "重试",
+  ["Skip"] = "跳过",
+  ["Dismiss"] = "忽略",
+  ["Subscribe"] = "订阅",
+  ["Unsubscribe"] = "取消订阅",
+  ["Activate"] = "激活",
+  ["Deactivate"] = "停用",
+  ["Enable"] = "启用",
+  ["Disable"] = "禁用",
+  ["Show"] = "显示",
+  ["Hide Sidebar"] = "隐藏侧边栏",
+  ["Show Sidebar"] = "显示侧边栏",
+  ["Show Toolbar"] = "显示工具栏",
+  ["Hide Toolbar"] = "隐藏工具栏",
+  ["Show Tab Bar"] = "显示标签栏",
+  ["Hide Tab Bar"] = "隐藏标签栏",
+  ["Show Status Bar"] = "显示状态栏",
+  ["Hide Status Bar"] = "隐藏状态栏",
+  ["Enter"] = "进入",
+  ["Exit"] = "退出",
+  ["Open Recent"] = "打开最近",
+  ["Clear Menu"] = "清除菜单",
+  ["Today"] = "今天",
+  ["Yesterday"] = "昨天",
+  ["Tomorrow"] = "明天",
+  ["Later"] = "稍后",
+  ["Always"] = "总是",
+  ["Never"] = "从不",
+  ["Daily"] = "每天",
+  ["Weekly"] = "每周",
+  ["Monthly"] = "每月",
+  ["Yearly"] = "每年",
+}
+
+-- Build reverse CN overrides
+local weChatCNReverseOverrides = {}
+for en, cn in pairs(weChatCNOverrides) do
+  weChatCNReverseOverrides[cn] = en
+end
+
+local function loadWeChatDict(locale)
+  if weChatDictCache[locale] ~= nil then
+    if weChatDictCache[locale] == false then return nil end
+    return weChatDictCache[locale]
+  end
   local appid = 'com.tencent.xinWeChat'
-  mkdir(cacheDir)
-  local executable = hs.application.infoForBundleID(appid).CFBundleExecutable
-  executable = hs.application.pathForBundleID(appid)
-      .. '/Contents/MacOS/' .. executable
-  local file = io.open(executable, "rb")
-  if not file then return end
-  local data = file:read("*all")
-  file:close()
-  local pos = 0
-  for _=1,#WeChatLocales do
-    pos = data:find('Copyright © 2011%-2025 Tencent%. All Rights Reserved%.', pos + 1)
-    if pos then
-      local s, e
-      for i=pos-1,2,-1 do
-        if data:sub(i-1,i-1):match('%c') ~= nil and data:sub(i-1,i-1):match('%s') == nil
-            and data:sub(i,i):match('%c') ~= nil and data:sub(i,i):match('%s') == nil then
-          s = i + 1
-          break
-        end
-      end
-      for i=pos+1,data:len()-1 do
-        if data:sub(i,i):match('%c') ~= nil and data:sub(i,i):match('%s') == nil
-            and data:sub(i+1,i+1):match('%c') ~= nil and data:sub(i+1,i+1):match('%s') == nil then
-          e = i - 1
-          break
-        end
-      end
-      if s and e then
-        local chunk = data:sub(s, e):gsub('%z', '\n')
-        local locale
-        if chunk:find('騰訊') then locale = 'zh_TW'
-        elseif chunk:find('腾讯') then locale = 'zh_CN'
-        else locale = 'en' end
-        local localeFile = cacheDir .. '/' .. locale .. '.txt'
-        local f = io.open(localeFile, "w")
-        if f then
-          f:write(chunk)
-          f:close()
-        end
-      end
+  local dictFile = localeTmpDir .. appid .. '/en_' .. locale .. '.json'
+  if exists(dictFile) then
+    local ok, dict = pcall(hs.json.read, dictFile)
+    if ok and type(dict) == 'table' then
+      weChatDictCache[locale] = dict
+      return dict
     end
+  end
+  weChatDictCache[locale] = false
+  return nil
+end
+
+local function loadWeChatReverseDict(locale)
+  if weChatReverseDictCache[locale] ~= nil then
+    if weChatReverseDictCache[locale] == false then return nil end
+    return weChatReverseDictCache[locale]
+  end
+  local appid = 'com.tencent.xinWeChat'
+  local dictFile = localeTmpDir .. appid .. '/' .. locale .. '_en.json'
+  if exists(dictFile) then
+    local ok, dict = pcall(hs.json.read, dictFile)
+    if ok and type(dict) == 'table' then
+      weChatReverseDictCache[locale] = dict
+      return dict
+    end
+  end
+  weChatReverseDictCache[locale] = false
+  return nil
+end
+
+local function weChatExecutablePath()
+  -- WeChat v4.x stores localization strings in wechat.dylib, not the main executable
+  local appid = 'com.tencent.xinWeChat'
+  local appPath = hs.application.pathForBundleID(appid)
+  if appPath == nil or appPath == "" then return end
+  local dylibPath = appPath .. '/Contents/Resources/wechat.dylib'
+  if exists(dylibPath) then return dylibPath end
+  -- Fallback for older versions: use the main executable
+  local info = hs.application.infoForBundleID(appid)
+  local executable = get(info, 'CFBundleExecutable') or 'WeChat'
+  return appPath .. '/Contents/MacOS/' .. executable
+end
+
+local function weChatJSON(value)
+  if hs.json.encode then return hs.json.encode(value) end
+  if type(value) == 'table' then
+    local items = {}
+    for _, v in ipairs(value) do
+      tinsert(items, weChatJSON(v))
+    end
+    return '[' .. table.concat(items, ',') .. ']'
+  end
+  return '"' .. value:gsub("\\", "\\\\")
+      :gsub('"', '\\"')
+      :gsub("\n", "\\n")
+      :gsub("\r", "\\r")
+      :gsub("\t", "\\t") .. '"'
+end
+
+local function weChatICULocale(samples)
+  local script = [[
+ObjC.import("Foundation");
+const samples = ]] .. weChatJSON(samples) .. [[;
+(function() {
+  for (const value of samples) {
+    const s = $(value);
+    const hans = ObjC.unwrap(s.stringByApplyingTransformReverse(
+        $("Traditional-Simplified"), false));
+    const hant = ObjC.unwrap(s.stringByApplyingTransformReverse(
+        $("Simplified-Traditional"), false));
+    if (hans === value && hant !== value) return "zh_CN";
+    if (hant === value && hans !== value) return "zh_TW";
+  }
+  return "";
+})();
+]]
+  local ok, result = hs.osascript.javascript(script)
+  if ok and type(result) == 'string' and result ~= "" then
+    return result
   end
 end
 
--- seems it only works before edition 4.1
+local badControlPattern = "[" .. string.char(1) .. "-" .. string.char(8)
+    .. string.char(11) .. string.char(12)
+    .. string.char(14) .. "-" .. string.char(31)
+    .. string.char(127) .. "]"
+local nonASCIIPattern = "[" .. string.char(128) .. "-" .. string.char(255) .. "]"
+
+-- Classify Chinese script via ICU transforms instead of anchoring on words.
+local function weChatSegmentLocale(chunk, firstString)
+  if firstString == nil then return end
+  if not firstString:find(nonASCIIPattern) then return 'en' end
+
+  local samples = {}
+  for part in chunk:gmatch("[^%z]+") do
+    if part:find(nonASCIIPattern) then
+      tinsert(samples, part)
+      if #samples >= 80 then break end
+    end
+  end
+  return weChatICULocale(samples)
+end
+
+local function weChatSegmentStats(chunk)
+  local parts, bad, long, formatCount = 0, 0, 0, 0
+  local totalBytes = 0
+  local firstString
+  for part in chunk:gmatch("[^%z]+") do
+    firstString = firstString or part
+    parts = parts + 1
+    totalBytes = totalBytes + #part
+    if part:find(badControlPattern) then bad = bad + 1 end
+    if #part > 600 then long = long + 1 end
+    if part:find("%", 1, true) then formatCount = formatCount + 1 end
+  end
+  if parts < 1500 or bad > 3 or long > 20 or formatCount < 80 then return end
+
+  local avgBytes = totalBytes / parts
+  if avgBytes < 3 or avgBytes > 45 then return end
+
+  local locale = weChatSegmentLocale(chunk, firstString)
+  if locale == nil then return end
+
+  local targetAvg = locale == 'en' and 24 or 26
+  local score = parts + formatCount * 2
+      - long * 100 - math.abs(avgBytes - targetAvg) * 10
+  return {
+    locale = locale,
+    parts = parts,
+    score = score,
+  }
+end
+
+local function writeWeChatSegment(cacheDir, locale, chunk)
+  local localeFile = cacheDir .. '/' .. locale .. '.txt'
+  local f = io.open(localeFile, "w")
+  if f then
+    f:write(chunk:gsub('%z', '\n'))
+    f:close()
+    return true
+  end
+end
+
+function extractWeChatSegments(cacheDir)
+  mkdir(cacheDir)
+  local executable = weChatExecutablePath()
+  if executable == nil then return false end
+  local file = io.open(executable, "rb")
+  if not file then return false end
+  local data = file:read("*all")
+  file:close()
+
+  local candidates = {}
+  local pos = 1
+  while true do
+    local s = data:find("\0\0", pos, true)
+    if s == nil then break end
+    local e = data:find("\0\0", s + 2, true)
+    if e == nil then break end
+    local len = e - s - 2
+    if len >= 20000 and len <= 200000 then
+      local chunk = data:sub(s + 2, e - 1)
+      local stats = weChatSegmentStats(chunk)
+      if stats then
+        local prev = candidates[stats.locale]
+        if prev == nil or stats.score > prev.score then
+          candidates[stats.locale] = {
+            chunk = chunk,
+            score = stats.score,
+            parts = stats.parts,
+          }
+        end
+      end
+    end
+    pos = s + 2  -- advance by 2 to handle overlapping \0\0 patterns
+  end
+
+  local count = 0
+  for locale, candidate in pairs(candidates) do
+    if writeWeChatSegment(cacheDir, locale, candidate.chunk) then
+      count = count + 1
+    end
+  end
+  return count == #WeChatLocales
+end
+
+local function ensureWeChatSegments(cacheDir)
+  -- Check if JSON dicts exist (new format, more reliable)
+  local hasDicts = exists(cacheDir .. '/en_zh_TW.json')
+  local hasTxt = true
+  for _, locale in ipairs(WeChatLocales) do
+    hasTxt = hasTxt and exists(cacheDir .. '/' .. locale .. '.txt')
+  end
+  if hasDicts and hasTxt then return true end
+
+  -- Try Python script first (handles both .txt and .json generation)
+  local dylibPath = weChatExecutablePath()
+  if dylibPath and exists(dylibPath) then
+    local scriptPath = hs.configdir .. '/scripts/wechat_extract.py'
+    if exists(scriptPath) then
+      local result, ok = hs.execute(strfmt(
+        "/usr/bin/python3 '%s' '%s' '%s' 2>&1",
+        scriptPath, dylibPath, cacheDir), true)
+      -- Re-check after script
+      hasDicts = exists(cacheDir .. '/en_zh_TW.json')
+      for _, locale in ipairs(WeChatLocales) do
+        hasTxt = hasTxt and exists(cacheDir .. '/' .. locale .. '.txt')
+      end
+      if hasDicts and hasTxt then return true end
+    end
+  end
+
+  -- Fall back to old extraction method
+  return extractWeChatSegments(cacheDir)
+end
+
 function localizeWeChat(str, appLocale)
   local appid = 'com.tencent.xinWeChat'
-  local tmpBaseDir = localeTmpDir .. appid
   local locale = matchLocale(appLocale, WeChatLocales)
   if locale == 'en' then return str, locale end
+
+  -- Check manual CN overrides (most reliable for Simplified Chinese)
+  if locale == 'zh_CN' and weChatCNOverrides[str] then
+    return weChatCNOverrides[str], locale
+  end
+
+  -- Try JSON dict first (works well for TW)
+  local dict = loadWeChatDict(locale)
+  if dict and dict[str] then
+    return dict[str], locale
+  end
+
+  -- Fall back to simple position-based lookup
+  local tmpBaseDir = localeTmpDir .. appid
   local localeFile = tmpBaseDir .. '/' .. locale .. '.txt'
   local enLocaleFile = tmpBaseDir .. '/en.txt'
-  if not exists(localeFile) or not exists(enLocaleFile) then
-    extractWeChatSegments(tmpBaseDir)
+  if not ensureWeChatSegments(tmpBaseDir)
+      and (not exists(localeFile) or not exists(enLocaleFile)) then
+    return nil, locale
   end
   local file = io.open(localeFile, "r")
-  if not file then return end
+  if not file then return nil, locale end
   local data = file:read("*all")
   file:close()
   local strings = strsplit(data, '\n')
-  local indices = {}
-  for i, s in ipairs(strings) do
-    if s:find('%%d') then
-      tinsert(indices, i)
-    end
-  end
   local enFile = io.open(enLocaleFile, "r")
-  if not enFile then return end
+  if not enFile then return nil, locale end
   local enData = enFile:read("*all")
   enFile:close()
   local enStrings = strsplit(enData, '\n')
-  local enIndices = {}
-  for i, s in ipairs(enStrings) do
-    if s:find('%%d') then
-      tinsert(enIndices, i)
-    end
-  end
-  if #indices ~= #enIndices then return end
-  local localized = {}
+  -- Simple position-based lookup
   for i, s in ipairs(enStrings) do
     if s == str then
-      local gIndex = #enIndices
-      for k, ind in ipairs(enIndices) do
-        if ind > i then
-          gIndex = k - 1
-          break
-        end
+      if i <= #strings then
+        return strings[i], locale
       end
-
-      local newIndices = {}
-      for j=indices[gIndex] or 1,indices[gIndex+1] or #strings do
-        if strings[j]:find('%%s') then
-          tinsert(newIndices, j)
-        end
-      end
-      local newEnIndices = {}
-      for j=enIndices[gIndex] or 1,enIndices[gIndex+1] or #enStrings do
-        if enStrings[j]:find('%%s') then
-          tinsert(newEnIndices, j)
-        end
-      end
-      if #newIndices ~= #newEnIndices or #newIndices == 0 then
-        local start = enIndices[gIndex] or 1
-        local end_ = enIndices[gIndex+1] or #enStrings
-        if i*2 > start + end_ then
-          tinsert(localized, strings[(indices[gIndex+1] or #strings) + i - end_])
-        else
-          tinsert(localized, strings[(indices[gIndex] or 1) + i - start])
-        end
-      else
-        local newGIndex = #newEnIndices
-        for k, ind in ipairs(newEnIndices) do
-          if ind > i then
-            newGIndex = k - 1
-            break
-          end
-        end
-
-        local start = newEnIndices[newGIndex] or enIndices[gIndex] or 1
-        local end_ = newEnIndices[newGIndex+1] or enIndices[gIndex+1] or #enStrings
-        if i*2 > start + end_ then
-          tinsert(localized,
-              strings[(newIndices[newGIndex+1] or indices[gIndex+1] or #strings) + i - end_])
-        else
-          tinsert(localized,
-              strings[(newIndices[newGIndex] or indices[gIndex] or 1) + i - start])
-        end
-      end
+      break
     end
   end
-  if #localized <= 1 then
-    return localized[1], locale
-  else
-    return localized, locale
-  end
+  return nil, locale
 end
 
 local qqLocCache = nil  -- { loc = {zh→en}, deloc = {en→zh} }
@@ -798,97 +1063,50 @@ function delocalizeSteam(str, appLocale, locale)
   return nil, locale
 end
 
--- seems it only works before edition 4.1
 function delocalizeWeChat(str, appLocale)
   local appid = 'com.tencent.xinWeChat'
-  local tmpBaseDir = localeTmpDir .. appid
   local locale = matchLocale(appLocale, WeChatLocales)
-  if locale == 'en' then return str end
+  if locale == 'en' then return str, locale end
+
+  -- Check manual CN reverse overrides
+  if locale == 'zh_CN' and weChatCNReverseOverrides[str] then
+    return weChatCNReverseOverrides[str], locale
+  end
+
+  -- Try JSON reverse dict first (works well for TW)
+  local dict = loadWeChatReverseDict(locale)
+  if dict and dict[str] then
+    return dict[str], locale
+  end
+
+  -- Fall back to simple position-based reverse lookup
+  local tmpBaseDir = localeTmpDir .. appid
   local localeFile = tmpBaseDir .. '/' .. locale .. '.txt'
   local enLocaleFile = tmpBaseDir .. '/en.txt'
-  if not exists(localeFile) or not exists(enLocaleFile) then
-    extractWeChatSegments(tmpBaseDir)
+  if not ensureWeChatSegments(tmpBaseDir)
+      and (not exists(localeFile) or not exists(enLocaleFile)) then
+    return nil, locale
   end
   local file = io.open(localeFile, "r")
-  if not file then return end
+  if not file then return nil, locale end
   local data = file:read("*all")
   file:close()
   local strings = strsplit(data, '\n')
-  local indices = {}
-  for i, s in ipairs(strings) do
-    if s:find('%%d') then
-      tinsert(indices, i)
-    end
-  end
   local enFile = io.open(enLocaleFile, "r")
-  if not enFile then return end
+  if not enFile then return nil, locale end
   local enData = enFile:read("*all")
   enFile:close()
   local enStrings = strsplit(enData, '\n')
-  local enIndices = {}
-  for i, s in ipairs(enStrings) do
-    if s:find('%%d') then
-      tinsert(enIndices, i)
-    end
-  end
-  if #indices ~= #enIndices then return end
-  local delocalized = {}
+  -- Simple position-based reverse lookup
   for i, s in ipairs(strings) do
     if s == str then
-      local gIndex = #indices
-      for k, ind in ipairs(indices) do
-        if ind > i then
-          gIndex = k - 1
-          break
-        end
+      if i <= #enStrings then
+        return enStrings[i], locale
       end
-
-      local newIndices = {}
-      for j=indices[gIndex] or 1,indices[gIndex+1] or #strings do
-        if strings[j]:find('%%s') then
-          tinsert(newIndices, j)
-        end
-      end
-      local newEnIndices = {}
-      for j=enIndices[gIndex] or 1,enIndices[gIndex+1] or #enStrings do
-        if enStrings[j]:find('%%s') then
-          tinsert(newEnIndices, j)
-        end
-      end
-      if #newIndices ~= #newEnIndices or #newIndices == 0 then
-        local start = indices[gIndex] or 1
-        local end_ = indices[gIndex+1] or #strings
-        if i*2 > start + end_ then
-          tinsert(delocalized, enStrings[(enIndices[gIndex+1] or #enStrings) + i - end_])
-        else
-          tinsert(delocalized, enStrings[(enIndices[gIndex] or 1) + i - start])
-        end
-      else
-        local newGIndex = #newIndices
-        for k, ind in ipairs(newIndices) do
-          if ind > i then
-            newGIndex = k - 1
-            break
-          end
-        end
-
-        local start = newIndices[newGIndex] or indices[gIndex] or 1
-        local end_ = newIndices[newGIndex+1] or indices[gIndex+1] or #strings
-        if i*2 > start + end_ then
-          tinsert(delocalized,
-              enStrings[(newEnIndices[newGIndex+1] or enIndices[gIndex+1] or #enStrings) + i - end_])
-        else
-          tinsert(delocalized,
-              enStrings[(newEnIndices[newGIndex] or enIndices[gIndex] or 1) + i - start])
-        end
-      end
+      break
     end
   end
-  if #delocalized <= 1 then
-    return delocalized[1], locale
-  else
-    return delocalized, locale
-  end
+  return nil, locale
 end
 
 function delocalizeQQ(str, appLocale)

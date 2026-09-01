@@ -81,13 +81,13 @@ function applicationLocale(appid)
           localeFile = 'MenuCommands',
           framework = "AppKit.framework",
         }) then return "zh-Hans", true
-        else
-          return 'zh-Hant', true
-        end
       else
-        return SYSTEM_LOCALE
+        return 'zh-Hant', true
       end
+    else
+      return SYSTEM_LOCALE
     end
+  end
   elseif appid == "com.openai.codex" and codexAppLocale ~= nil then
     local locale = codexAppLocale()
     if locale ~= nil then return locale, true end
