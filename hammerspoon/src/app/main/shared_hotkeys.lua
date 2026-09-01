@@ -1019,7 +1019,7 @@ function registerForOpenSavePanel(app, retry)
   local appUI = toappui(app)
   if not tcontain(appUI:attributeNames() or {}, "AXFocusedWindow") then
     retry = retry and retry + 1 or 1
-    if not FLAGS["Loading"] and retry <= 3 then
+    if not FLAGS["LOADING"] and retry <= 3 then
       hs.timer.doAfter(0.1, bind(registerForOpenSavePanel, app, retry))
     end
     return

@@ -1148,7 +1148,7 @@ local function registerSingleWinFilterForApp(app, filter, retry, appUI,
   end
   if not hasFocusedWindowAttr then
     retry = retry and retry + 1 or 1
-    if not FLAGS["Loading"] and retry <= 3 then
+    if not FLAGS["LOADING"] and retry <= 3 then
       hs.timer.doAfter(1,
           bind(registerSingleWinFilterForApp, app, filter, retry))
     end
@@ -1408,7 +1408,7 @@ local function registerSingleWinFilterForDaemonApp(app, filter, retry, appUI,
   end
   if not hasFocusedWindowAttr then
     retry = retry and retry + 1 or 1
-    if not FLAGS["Loading"] and retry <= 3 then
+    if not FLAGS["LOADING"] and retry <= 3 then
       hs.timer.doAfter(1,
           bind(registerSingleWinFilterForDaemonApp, app, filter, retry))
     end
