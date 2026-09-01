@@ -593,12 +593,12 @@ function extractQMSegments(input_path, cacheDir, cacheFileNames)
     table.insert(positions, found)
     start = found + #QM_MAGIC_NUMBER
   end
-  if #positions < 2 then return end
+  if #positions == 0 then return end
 
   local count = 0
-  for i = 1, #positions - 1 do
+  for i = 1, #positions do
     local startIdx = positions[i]
-    local endIdx = positions[i + 1] - 1
+    local endIdx = positions[i + 1] and positions[i + 1] - 1 or #data
     local chunk = data:sub(startIdx, endIdx)
 
     if #chunk > 0 then
@@ -622,7 +622,7 @@ function localizeByQtExecutable(str, appid, appLocale, prefix)
   local localeFiles = getQtExecutableLocales(appid, executable, prefix)
   if localeFiles == nil or #localeFiles == 0 then return end
   local tmpBaseDir = localeTmpDir .. appid
-  if not exists(tmpBaseDir .. '/' .. localeFiles[1]:sub(1, -4) .. '.po') then
+  if not exists(tmpBaseDir .. '/' .. localeFiles[#localeFiles]:sub(1, -4) .. '.po') then
     extractQMSegments(executable, tmpBaseDir, localeFiles)
   end
   local locale, extra = getQtMatchedLocale(appLocale, tmpBaseDir)
@@ -1211,7 +1211,7 @@ function delocalizeByQtExecutable(str, appid, appLocale, prefix)
   local localeFiles = getQtExecutableLocales(appid, executable, prefix)
   if localeFiles == nil then return end
   local tmpBaseDir = localeTmpDir .. appid
-  if not exists(tmpBaseDir .. '/' .. localeFiles[1]:sub(1, -4) .. '.po') then
+  if not exists(tmpBaseDir .. '/' .. localeFiles[#localeFiles]:sub(1, -4) .. '.po') then
     extractQMSegments(executable, tmpBaseDir, localeFiles)
   end
   local locale, extra = getQtMatchedLocale(appLocale, tmpBaseDir)
