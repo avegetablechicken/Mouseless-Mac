@@ -153,10 +153,23 @@ function localizeZotero(str, appLocale)
   return result, locale
 end
 
+local function chatGPTCompressedStringsDir()
+  local appPath = hs.application.pathForBundleID("com.openai.chat")
+  if appPath == nil or appPath == "" then return end
+  local assetBundle = appPath .. "/Contents/Frameworks/Assets.framework/Resources"
+      .. "/Assets_Assets.bundle"
+  for _, suffix in ipairs {
+    "/CompressedStrings",
+    "/Contents/Resources/CompressedStrings",
+  } do
+    local resourceDir = assetBundle .. suffix
+    if exists(resourceDir) then return resourceDir end
+  end
+end
+
 function localizeChatGPT(str, appLocale)
-  local resourceDir = hs.application.pathForBundleID("com.openai.chat")
-      .. "/Contents/Frameworks/Assets.framework/Resources"
-      .. "/Assets_Assets.bundle/Contents/Resources/CompressedStrings"
+  local resourceDir = chatGPTCompressedStringsDir()
+  if resourceDir == nil then return nil end
   local localeSources = {}
   for file in hs.fs.dir(resourceDir) do
     if file:sub(-11) == ".json.lzfse" then
@@ -984,9 +997,8 @@ function delocalizeZotero(str, appLocale)
 end
 
 function delocalizeChatGPT(str, appLocale)
-  local resourceDir = hs.application.pathForBundleID("com.openai.chat")
-      .. "/Contents/Frameworks/Assets.framework/Resources"
-      .. "/Assets_Assets.bundle/Contents/Resources/CompressedStrings"
+  local resourceDir = chatGPTCompressedStringsDir()
+  if resourceDir == nil then return nil end
   local localeSources = {}
   for file in hs.fs.dir(resourceDir) do
     if file:sub(-11) == ".json.lzfse" then
