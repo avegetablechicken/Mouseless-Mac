@@ -581,6 +581,7 @@ function getQtExecutableLocales(appid, executable, prefix)
       local localeFiles = strsplit(localesStr, "\n")
       localeFiles[#localeFiles] = nil
       qtExecutableLocales[appid] = localeFiles
+      mkdir(localeTmpDir)
       mkdir(tmpBaseDir)
       hs.json.write(qtExecutableLocales[appid], localesFile)
     end
