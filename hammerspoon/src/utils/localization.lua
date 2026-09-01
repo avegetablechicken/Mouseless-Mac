@@ -88,6 +88,9 @@ function applicationLocale(appid)
         return SYSTEM_LOCALE
       end
     end
+  elseif appid == "com.openai.codex" and codexAppLocale ~= nil then
+    local locale = codexAppLocale()
+    if locale ~= nil then return locale, true end
   elseif localizationFrameworks[appid] ~= nil then
     if localizationFrameworks[appid].electron then
       local locale
@@ -1040,6 +1043,9 @@ local function localizedStringImpl(str, appid, params, force)
       end
 
       if framework.electron then
+        if appid == "com.openai.codex" then
+          str = codexElectronKeys()[str] or str
+        end
         result = localizeByElectron(str, appid, locale, localeDir,
                                     framework.electron)
         return result, appLocale, locale
@@ -1312,6 +1318,9 @@ local function delocalizedStringImpl(str, appid, params, force)
       if framework.electron then
         result = delocalizeByElectron(str, appid, locale, localeDir,
                                       framework.electron)
+        if appid == "com.openai.codex" and result ~= nil then
+          result = tindex(codexElectronKeys(), result)
+        end
         return result, appLocale, locale
       end
 

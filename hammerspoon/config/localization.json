@@ -10,6 +10,7 @@
     "com.charliemonroe.Downie-4": "XUCore.framework",
     "com.charliemonroe.Permute-3": "XUCore.framework",
     "com.tencent.meeting": "WeMeetResource.bundle",
+    "com.openai.codex": { "electron": "native-menu-locales" },
     "com.tencent.yuanbao": [{ "electron": "locales" }, "locales"],
     "net.xmind.vana.app": { "electron": "static/locales" },
     "JabRef": { "java": "org.jabref/l10n" },

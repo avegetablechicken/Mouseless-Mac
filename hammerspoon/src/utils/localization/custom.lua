@@ -179,6 +179,102 @@ function localizeChatGPT(str, appLocale)
   return jsonDict[str], locale
 end
 
+local function normalizeCodexLocale(locale)
+  if type(locale) ~= "string" then return end
+  locale = locale:match("^%s*(.-)%s*$")
+  if locale == "" then return end
+
+  local normalized = locale:lower()
+  if normalized == "auto" or normalized == "null" then return end
+  return locale
+end
+
+local function codexLocaleOverride(configPath)
+  local file = io.open(configPath, "r")
+  if file == nil then return end
+
+  local content = file:read("*a")
+  file:close()
+  if content == nil then return end
+
+  local section = ""
+  local fallback
+  for line in content:gmatch("[^\r\n]+") do
+    local sectionName = line:match("^%s*%[([^%[%]]+)%]%s*$")
+    if sectionName ~= nil then section = sectionName end
+
+    local value = line:match('^%s*localeOverride%s*=%s*"([^"]*)"')
+        or line:match("^%s*localeOverride%s*=%s*'([^']*)'")
+        or line:match("^%s*localeOverride%s*=%s*([^%s#]+)")
+    value = normalizeCodexLocale(value)
+    if value ~= nil then
+      if section == "desktop" then return value end
+      if section == "" and fallback == nil then fallback = value end
+    end
+  end
+  return fallback
+end
+
+local function codexProfileLocale(preferencesPath)
+  if not exists(preferencesPath) then return end
+
+  local preferences = hs.json.read(preferencesPath)
+  local selectedLanguages = get(preferences, "intl", "selected_languages")
+  if type(selectedLanguages) ~= "string" then return end
+
+  return normalizeCodexLocale(strsplit(selectedLanguages, ",")[1])
+end
+
+function codexAppLocale()
+  local homeDir = os.getenv("HOME")
+  if homeDir == nil then return end
+
+  local configPath = homeDir .. "/.codex/config.toml"
+  local preferencesPath = homeDir ..
+      "/Library/Application Support/Codex/Default/Preferences"
+
+  local locale = codexLocaleOverride(configPath)
+  if locale == nil then
+    locale = codexProfileLocale(preferencesPath)
+  end
+  return locale
+end
+
+local codexElectronKeysCache
+function codexElectronKeys()
+  if codexElectronKeysCache == nil then
+    local appPath = hs.application.pathForBundleID("com.openai.codex")
+    if appPath == nil then return {} end
+    local archive = appPath .. "/Contents/Resources/app.asar"
+    local files, ok = hs.execute(strfmt([[
+      npx --prefer-offline @electron/asar list "%s" | grep '^/\.vite/build/src-.*\.js$'
+    ]], archive), true)
+    if not ok then return {} end
+    codexElectronKeysCache = {}
+
+    local tmpdir = localeTmpDir .. "com.openai.codex/electron-keys"
+    mkdir(tmpdir)
+    for archivePath in files:gmatch("[^\r\n]+") do
+      local file = archivePath:gsub("^/", "")
+      local fileName = file:match("[^/]+$")
+      local tmpfile = tmpdir .. "/" .. fileName
+      if not exists(tmpfile) then
+        hs.execute(strfmt([[
+          cd "%s" && npx --prefer-offline @electron/asar extract-file "%s" "%s"
+        ]], tmpdir, archive, file), true)
+      end
+      local handle = io.open(tmpfile, "r")
+      local content = handle and handle:read("*a")
+      if handle then handle:close() end
+      for title, id in (content or ""):gmatch(
+          'menuTitle:`([^`]*)`,menuTitleIntlId:`([^`]*)`') do
+        codexElectronKeysCache[title] = id
+      end
+    end
+  end
+  return codexElectronKeysCache
+end
+
 function localizeSteam(str, appLocale, locale)
   if locale == nil then
     _, locale = hs.osascript.applescript(strfmt([[
