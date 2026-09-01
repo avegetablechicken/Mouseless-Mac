@@ -3,6 +3,11 @@
 -- Used to detect structural changes in menu bars.
 local menuBarItemTitlesString = { app = {}, win = {} }
 
+local function isFrontmostApplication(app)
+  local frontApp = hs.application.frontmostApplication()
+  return frontApp ~= nil and app ~= nil and frontApp:pid() == app:pid()
+end
+
 local function getMenuBarItemTitlesStringImpl(menuBarItems)
   if #menuBarItems == 0 then return "" end
   local menuBarItemTitles = {}
@@ -38,9 +43,16 @@ local function continouslyWatchMenuBarItems(app)
   local appid = app:bundleID() or app:name()
   menuBarItemTitlesString.app[appid], menuBarItemTitlesString.win[appid]
       = getMenuBarItemTitlesString(app, getBufferedMenuBarItems(app) or false)
-  local watcher = ExecContinuouslyQuick(function()
+  local watcher
+  watcher = ExecContinuouslyQuick(function()
     local app = find(appid)
     if app == nil then return end
+    if not isFrontmostApplication(app) then
+      StopExecContinuously(watcher)
+      menuBarItemTitlesString.app[appid] = nil
+      menuBarItemTitlesString.win[appid] = nil
+      return
+    end
     local mbTitlesStr, mbTitlesStrWin
         = getMenuBarItemTitlesString(app)
     -- assume menu mars of app & window don't change at the same time
@@ -66,8 +78,12 @@ end
 -- Callback invoked when menu bar structure may have changed.
 --
 -- This triggers re-registration of shared hotkeys.
-local function appMenuBarChangeCallback(app)
+local function appMenuBarChangeCallback(app, observer)
   local appid = app:bundleID() or app:name()
+  if not isFrontmostApplication(app) then
+    observer:stop()
+    return
+  end
   local menuBarItemStr, winMenuBarItemStr = getMenuBarItemTitlesString(app)
   if menuBarItemStr == menuBarItemTitlesString.app[appid] then
     if winMenuBarItemStr ~= menuBarItemTitlesString.win[appid] then
@@ -143,6 +159,7 @@ end
 
 local function registerObserverForMenuBarChange(app)
   local appid = app:bundleID() or app:name()
+  if not isFrontmostApplication(app) then return end
   if tcontain(appsMayChangeMenuBar.changing, appid) then
     continouslyWatchMenuBarItems(app)
   elseif tcontain(appsMayChangeMenuBar.focusedWindowChanged, appid) then
@@ -371,6 +388,9 @@ local function runAfterHyperReleased(action)
 end
 
 local function runOrDeferAppMaintenance(app, options)
+  if not isSameApplication(app, hs.application.frontmostApplication()) then
+    return
+  end
   local request = {
     app = app,
     registerOpenSavePanel = options.registerOpenSavePanel,
@@ -395,9 +415,6 @@ local function runOrDeferAppMaintenance(app, options)
     return
   end
 
-  if not isSameApplication(app, hs.application.frontmostApplication()) then
-    return
-  end
   mergeAppMaintenance(request)
   waitForHyperRelease()
 end
