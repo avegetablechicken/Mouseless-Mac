@@ -51,6 +51,14 @@ end
 
 function module:bind(...)
   local hotkey = newHotkey(...)
+  local originalDelete = hotkey.delete
+  hotkey.delete = function(hk)
+    local index = tindex(self.hyperMode.keys, hk)
+    if index then
+      tremove(self.hyperMode.keys, index)
+    end
+    originalDelete(hk)
+  end
   local hyper = self.hyper
   if Mod.Hyper and (hyper:upper() == Mod.Hyper.Long:upper()
       or hyper:upper() == Mod.Hyper.Short:upper()) then
