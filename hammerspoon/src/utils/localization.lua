@@ -674,7 +674,7 @@ function getElectronLocales(appid, localesPath)
       local path = hs.application.pathForBundleID(appid)
           .. '/Contents/Resources/app.asar'
       local result, ok = hs.execute(strfmt([[
-        npx @electron/asar list "%s" | grep "^/%s/" | cut -c%d-
+        npx --prefer-offline @electron/asar list "%s" | grep "^/%s/" | cut -c%d-
       ]], path, localesPath, #localesPath + 3), true)
       if ok then
         result = strsplit(result, '\n')
@@ -685,6 +685,9 @@ function getElectronLocales(appid, localesPath)
             if p:sub(-5) == '.json' then
               tinsert(localeFiles, p:sub(1, -6))
             end
+          elseif p:sub(-5) == '.json' then
+            tinsert(locales, p:sub(1, -6))
+            tinsert(localeFiles, p:sub(1, -6))
           else
             tinsert(locales, p)
           end
@@ -710,7 +713,9 @@ function getElectronMatchedLocale(appid, appLocale, localesPath)
 
   local matchedFiles = {}
   for _, file in ipairs(localeFiles) do
-    if file:sub(1, #locale + 1) == locale .. '/' then
+    if file == locale then
+      tinsert(matchedFiles, '')
+    elseif file:sub(1, #locale + 1) == locale .. '/' then
       tinsert(matchedFiles, file:sub(#locale + 2))
     end
   end

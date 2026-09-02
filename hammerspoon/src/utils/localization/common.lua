@@ -814,18 +814,20 @@ function localizeByElectron(str, appid, locale, localeFiles, localesPath)
   local tmpdir = baseDir .. '/' .. locale
   if #localeFiles > 0 then
     for _, file in ipairs(localeFiles) do
-      local tmpfile = tmpdir .. '/' .. file .. '.json'
+      local fileName = file ~= '' and file or locale
+      local tmpfile = tmpdir .. '/' .. fileName .. '.json'
       if not exists(tmpfile) then
         local path = hs.application.pathForBundleID(appid)
             .. '/Contents/Resources/app.asar'
-        local localeFilePath = strfmt("%s/%s/%s.json",
-            localesPath, locale, file)
+        local localeFilePath = file ~= ''
+            and strfmt("%s/%s/%s.json", localesPath, locale, file)
+            or strfmt("%s/%s.json", localesPath, locale)
         hs.execute(strfmt([[
-          npx @electron/asar extract-file "%s" "%s"
+          npx --prefer-offline @electron/asar extract-file "%s" "%s"
         ]], path, localeFilePath), true)
         mkdir(baseDir)
         mkdir(tmpdir)
-        hs.execute(strfmt("mv '%s' '%s'", file .. '.json', tmpdir))
+        hs.execute(strfmt("mv '%s' '%s'", fileName .. '.json', tmpdir))
       end
     end
   end
@@ -1395,18 +1397,20 @@ function delocalizeByElectron(str, appid, locale, localeFiles, localesPath)
   local tmpdir = tmpBaseDir .. '/' .. locale
   if #localeFiles > 0 then
     for _, file in ipairs(localeFiles) do
-      local tmpfile = tmpdir .. '/' .. file .. '.json'
+      local fileName = file ~= '' and file or locale
+      local tmpfile = tmpdir .. '/' .. fileName .. '.json'
       if not exists(tmpfile) then
         local path = hs.application.pathForBundleID(appid)
             .. '/Contents/Resources/app.asar'
-        local localeFilePath = strfmt("%s/%s/%s.json",
-            localesPath, locale, file)
+        local localeFilePath = file ~= ''
+            and strfmt("%s/%s/%s.json", localesPath, locale, file)
+            or strfmt("%s/%s.json", localesPath, locale)
         hs.execute(strfmt([[
-          npx @electron/asar extract-file "%s" "%s"
+          npx --prefer-offline @electron/asar extract-file "%s" "%s"
         ]], path, localeFilePath), true)
         mkdir(tmpBaseDir)
         mkdir(tmpdir)
-        hs.execute(strfmt("mv '%s' '%s'", file .. '.json', tmpdir))
+        hs.execute(strfmt("mv '%s' '%s'", fileName .. '.json', tmpdir))
       end
     end
   end
