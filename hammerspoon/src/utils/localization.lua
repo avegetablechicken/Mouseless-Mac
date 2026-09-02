@@ -122,20 +122,9 @@ function applicationLocale(appid)
       local app, locale = find(appid)
       if app then
         if appid == "barrier" then
-          local menuBarMenuItems = getc(toappui(app),
-              AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1, AX.MenuItem)
-          local baseTitles = { "Start", "Stop", "Show Log", "Hide", "Show", "Quit" }
-          local idx = 0
-          for _, menu in ipairs(menuBarMenuItems or {}) do
-            if menu.AXTitle ~= "" then
-              idx = idx + 1
-              if menu.AXTitle ~= baseTitles[idx] then
-                locale = qtExecutableLocale(app, menu.AXTitle,
-                    localizationFrameworks[appid].qt)
-                break
-              end
-            end
-          end
+          local settings = hs.plist.read(os.getenv("HOME")
+              .. "/Library/Preferences/com.github.Barrier.plist")
+          return get(settings, "language") or SYSTEM_LOCALE, true
         elseif appid == "org.klatexformula.klatexformula" then
           local file = io.open(os.getenv("HOME")
               .. "/.klatexformula/klatexformula.conf", "r")
