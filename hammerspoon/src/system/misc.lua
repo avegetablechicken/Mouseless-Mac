@@ -9,6 +9,7 @@ local caffeineIconPath = hs.configdir .. "/static/menubar/"
 local function setCaffeineDisplay(state)
   if caffeine == nil then return end
   local awake = state == true
+  hs.settings.set("caffeine_display_awake", awake)
   local icon = awake and "caffeine-awake.pdf" or "caffeine-sleepy.pdf"
   caffeine:setIcon(caffeineIconPath .. icon, true)
   caffeine:setTooltip(awake and "Caffeine: Awake" or "Caffeine: Sleepy")
@@ -21,7 +22,12 @@ end
 
 if caffeine then
   caffeine:setClickCallback(caffeineClicked)
-  setCaffeineDisplay(hs.caffeinate.get("displayIdle"))
+  local awake = hs.settings.get("caffeine_display_awake")
+  if awake == nil then
+    awake = hs.caffeinate.get("displayIdle")
+  end
+  hs.caffeinate.set("displayIdle", awake)
+  setCaffeineDisplay(awake)
 end
 
 local builtinMonitor = "Built-in Retina Display"
