@@ -1094,6 +1094,7 @@ end
 -- networking) that have an IP but don't carry host internet traffic.
 local tunActive = false
 local tunInfo = nil
+local tunCheckTask
 local TUN_SHELL_CMD = [[
   for iface in $(ifconfig 2>/dev/null | awk '/^utun[0-9]/{gsub(/:.*/,"",$1); print $1}'); do
     addr=$(ifconfig "$iface" 2>/dev/null | awk '/inet / && $2!="127.0.0.1"{print $2}')
@@ -1104,11 +1105,7 @@ local TUN_SHELL_CMD = [[
   done
 ]]
 
-local function checkTUNState()
-  local handle = io.popen(TUN_SHELL_CMD)
-  if not handle then return end
-  local result = handle:read("*a")
-  handle:close()
+local function updateTUNState(result)
   local detected = result and result ~= ""
   if detected then
     tunInfo = {}
@@ -1124,6 +1121,19 @@ local function checkTUNState()
     return true
   end
   return false
+end
+
+local function checkTUNState(callback)
+  if tunCheckTask ~= nil then return end
+  local task = hs.task.new("/bin/zsh", function(exitCode, stdout)
+    tunCheckTask = nil
+    if exitCode ~= 0 then return end
+    local changed = updateTUNState(stdout)
+    if callback then callback(changed) end
+  end, { "-c", TUN_SHELL_CMD })
+  if task == nil then return end
+  tunCheckTask = task
+  if not task:start() then tunCheckTask = nil end
 end
 
 -- Register proxy menubar with retry logic on network availability
@@ -1249,7 +1259,9 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
   end
   ::L_PROXY_SET::
   NetworkWatcher:monitorKeys(NetworkMonitorKeys)
-  checkTUNState()
+  checkTUNState(function(changed)
+    if changed then registerProxyMenu(true) end
+  end)
   registerProxyMenu(true, enabledProxy, enabledMode)
   lastIpv4State = Ipv4State
 end
@@ -1334,7 +1346,9 @@ registerNetworkChangedCallback(SystemProxy_networkChangedCallback)
 -- cannot detect TUN changes. Poll instead, but skip during startup.
 ExecContinuously(function()
   if FLAGS["LOADING"] then return end
-  if checkTUNState() then registerProxyMenu(true) end
+  checkTUNState(function(changed)
+    if changed then registerProxyMenu(true) end
+  end)
   refreshProxyIconTheme(false)
 end)
 
