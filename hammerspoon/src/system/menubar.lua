@@ -41,7 +41,7 @@ local function registerSearchMenuBar()
     local map, preferred = loadStatusItemsAutosaveName(app, true)
     if map and #map > 0 then
       assert(preferred)
-      maps[appid] = map or {}
+      maps[appid] = map
       if appid ~= 'com.apple.controlcenter' or OS_VERSION < OS.Tahoe then
         local appMenuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
         if appMenuBarItems then
@@ -182,11 +182,6 @@ local function registerSearchMenuBar()
       end
     end
 
-    -- Resolve icon and search metadata for menu bar items.
-    --
-    -- Prefer using the application's bundle ID to fetch its icon directly.
-    -- However, some menu bar items are backed by helper processes or
-    -- non-bundled executables, in which case `app:bundleID()` is nil.
     local image
     if appid == hs.settings.bundleID then
       if SystemCaffeineMenubar
@@ -200,9 +195,6 @@ local function registerSearchMenuBar()
     if image == nil and app:bundleID() then
       image = hs.image.imageFromAppBundle(appid)
     elseif image == nil then
-      -- Fallback for processes without a bundle ID:
-      -- Inspect the executable path via `lsof` to locate the enclosing `.app`
-      -- bundle, then infer its bundle identifier manually.
       local pathStr, ok = hs.execute(strfmt([[
           lsof -a -d txt -p %s 2>/dev/null | sed -n '2p' | awk '{print $NF}']], app:pid()))
       if ok and pathStr ~= "" then
@@ -235,7 +227,6 @@ local function registerSearchMenuBar()
       extraPattern = extraSearchPattern
     }
   end
-
   -- Chooser callback:
   -- Trigger the selected menu bar item using the most reliable method
   -- (accessibility press or simulated mouse click), depending on the item.
@@ -294,36 +285,9 @@ local function registerSearchMenuBar()
       end
     end)
   end)
-  chooser:choices(choices)
 
-  -- Dynamic filtering:
-  -- Match query against app name, bundle ID, item title,
-  -- and additional extracted identifiers.
-  chooser:queryChangedCallback(function(query)
-    local newChoices = {}
-    local loweredQuery = string.lower(query)
-    local function subTextMatch(subText)
-      for _, part in ipairs(strsplit(subText:lower(), ' %- ')) do
-        if part:find(loweredQuery, 1, true) then
-          return true
-        end
-      end
-    end
-    for _, choice in ipairs(choices) do
-      if choice.text:lower():find(loweredQuery, 1, true)
-          or choice.appid:lower():find(loweredQuery, 1, true)
-          or (choice.subText and subTextMatch(choice.subText))
-          or (type(choice.extraPattern) == 'string'
-              and choice.extraPattern:lower():find(loweredQuery, 1, true))
-          or (type(choice.extraPattern) == 'table'
-              and tfind(choice.extraPattern, function(pattern)
-                return pattern:lower():find(loweredQuery, 1, true)
-              end)) then
-        tinsert(newChoices, choice)
-      end
-    end
-    chooser:choices(newChoices)
-  end)
+  chooser:searchSubText(true)
+  chooser:choices(choices)
   hs.keycodes.currentSourceID("com.apple.keylayout.ABC")
   chooser:show()
 end
@@ -369,6 +333,6 @@ if misc ~= nil and misc["searchMenuBar"] ~= nil then
         hotkeySearchMenuBar:disable()
       end
       ExecOnSilentQuit(appid, onQuit)
-    end)
+      end)
   end)
 end
