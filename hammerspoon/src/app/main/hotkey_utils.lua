@@ -744,6 +744,7 @@ end
 --   - enabled on activation
 --   - disabled or deleted on deactivation / termination
 local inAppHotKeys = {}
+local inAppTerminationCancellations = {}
 
 function registerInAppHotKeys(app)
   local appid = app:bundleID() or app:name()
@@ -786,10 +787,13 @@ function registerInAppHotKeys(app)
   Evt.OnDeactivated(app, function()
     unregisterInAppHotKeys(appid)
   end)
-  Evt.OnTerminated(app, function()
-    unregisterInAppHotKeys(appid, true)
-    activatedAppConditionChain[appid] = nil
-  end)
+  if inAppTerminationCancellations[appid] == nil then
+    inAppTerminationCancellations[appid] = Evt.OnTerminated(app, function()
+      inAppTerminationCancellations[appid] = nil
+      unregisterInAppHotKeys(appid, true)
+      activatedAppConditionChain[appid] = nil
+    end)
+  end
 end
 
 function unregisterInAppHotKeys(appid, delete)
@@ -1192,67 +1196,73 @@ function registerDaemonAppInWinHotkeys(win, appid, filter)
     if hasKey and isForWindow and isBackground
         and bindable(app, cfg.enabled)
         and sameFilter(windowFilter, filter) then
-      local msg = type(cfg.message) == 'string'
-          and cfg.message or injectWindowState(cfg.message)(win)
-      if msg ~= nil then
-        local config = tcopy(cfg)
-        config.mods = keybinding.mods
-        config.key = keybinding.key
-        config.message = msg
-        if keybinding.repeatable ~= nil then
-          config.repeatable = keybinding.repeatable
-        end
-        config.background = true
-        if keybinding.nonFrontmost ~= nil then
-          config.nonFrontmost = keybinding.nonFrontmost
-        end
-        config.repeatedfn = config.repeatable and config.fn or nil
-        local hotkey = WinBind(win, config)
-        daemonAppFocusedWindowHotkeys[wid][hkID] = hotkey
-
-        if config.nonFrontmost then
-          if type(windowFilter) == 'table' and windowFilter.allowRoles then
-            local allowRoles = windowFilter.allowRoles
-            if type(allowRoles) == 'string' then allowRoles = { allowRoles } end
-            local extraRoles = tfilter(allowRoles, function(role)
-                return hs.window.filter.allowedWindowRoles[role] == nil end)
-            if #extraRoles > 0 then
-              windowCreatedSinceFilter:setAppFilter(app:name(), {
-                allowRoles = extraRoles,
-              })
-            end
+      local existingHotkey = daemonAppFocusedWindowHotkeys[wid][hkID]
+      if existingHotkey ~= nil then
+        CtxEnable(existingHotkey)
+      else
+        local msg = type(cfg.message) == 'string'
+            and cfg.message or injectWindowState(cfg.message)(win)
+        if msg ~= nil then
+          local config = tcopy(cfg)
+          config.mods = keybinding.mods
+          config.key = keybinding.key
+          config.message = msg
+          if keybinding.repeatable ~= nil then
+            config.repeatable = keybinding.repeatable
           end
-          if windowCreatedSinceTime[wid] == nil then
-            -- tell "hs.window.filter" to record time of windows to be created
-            -- if no subscriptions have been made then this is necessary
-            -- windowCreatedSinceFilter:subscribe(
-            --     hs.window.filter.windowCreated, function() end)
-            windowCreatedSinceTime[wid] = hs.timer.secondsSinceEpoch()
+          config.background = true
+          if keybinding.nonFrontmost ~= nil then
+            config.nonFrontmost = keybinding.nonFrontmost
           end
-        end
+          config.repeatedfn = config.repeatable and config.fn or nil
+          local hotkey = WinBind(win, config)
+          daemonAppFocusedWindowHotkeys[wid][hkID] = hotkey
 
-        if not observed then
-          Evt.OnDestroy(winUI, function()
-            if daemonAppFocusedWindowHotkeys[wid] ~= nil then
-              for _, hotkey in pairs(daemonAppFocusedWindowHotkeys[wid]) do
-                if hotkey.idx ~= nil then
-                  CtxDelete(hotkey)
-                end
+          if config.nonFrontmost then
+            if type(windowFilter) == 'table' and windowFilter.allowRoles then
+              local allowRoles = windowFilter.allowRoles
+              if type(allowRoles) == 'string' then allowRoles = { allowRoles } end
+              local extraRoles = tfilter(allowRoles, function(role)
+                  return hs.window.filter.allowedWindowRoles[role] == nil end)
+              if #extraRoles > 0 then
+                windowCreatedSinceFilter:setAppFilter(app:name(), {
+                  allowRoles = extraRoles,
+                })
               end
-              daemonAppFocusedWindowHotkeys[wid] = nil
             end
-            -- windowCreatedSinceFilter:unsubscribeAll()
-            windowCreatedSinceTime[wid] = nil
-          end,
-          hs.application.watcher.terminated, true)
-          observed = true
+            if windowCreatedSinceTime[wid] == nil then
+              -- tell "hs.window.filter" to record time of windows to be created
+              -- if no subscriptions have been made then this is necessary
+              -- windowCreatedSinceFilter:subscribe(
+              --     hs.window.filter.windowCreated, function() end)
+              windowCreatedSinceTime[wid] = hs.timer.secondsSinceEpoch()
+            end
+          end
+
+          if not observed then
+            Evt.OnDestroy(winUI, function()
+              if daemonAppFocusedWindowHotkeys[wid] ~= nil then
+                for _, hotkey in pairs(daemonAppFocusedWindowHotkeys[wid]) do
+                  if hotkey.idx ~= nil then
+                    CtxDelete(hotkey)
+                  end
+                end
+                daemonAppFocusedWindowHotkeys[wid] = nil
+              end
+              windowCreatedSinceFilter:unsubscribeAll()
+              windowCreatedSinceTime[wid] = nil
+            end,
+            hs.application.watcher.terminated, true)
+            observed = true
+          end
         end
       end
     end
   end
 end
 
-local function registerSingleWinFilterForDaemonApp(app, filter, retry)
+local function registerSingleWinFilterForDaemonApp(app, filter, retry, appUI,
+                                                  hasFocusedWindowAttr)
   local appid = app:bundleID() or app:name()
   for f, _ in pairs(daemonAppFocusedWindowObservers[appid] or {}) do
     -- a window filter can be shared by multiple hotkeys
