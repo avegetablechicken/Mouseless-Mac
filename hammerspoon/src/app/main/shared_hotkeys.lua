@@ -109,12 +109,13 @@ function registerOpenRecent(app, force)
   --   - Apple apps
   --   - third-party apps
   --   - mixed localization environments
-  local localizedFile
-  localizedFile = 'File'
-  if app:findMenuItem{ localizedFile } == nil then
+  local localizedFile = 'File'
+  local fileMenuItem = app:findMenuItem{ localizedFile }
+  if fileMenuItem == nil then
     localizedFile = localizedMenuBarItem("File", appid, { locale = A_AppLocale })
     if localizedFile == nil then return end
-    if app:findMenuItem{ localizedFile } == nil then return end
+    fileMenuItem = app:findMenuItem{ localizedFile }
+    if fileMenuItem == nil then return end
   end
   local appUI = toappui(app)
   local findMenu = getc(appUI, AX.MenuBar, 1,
@@ -695,6 +696,48 @@ end
 --
 -- When triggered, automatically registers toolbar navigation hotkeys
 -- for the newly opened settings window.
+local settingsMenuItemCacheKey = "_settings_menu_item_cache"
+local settingsMenuItemCache = hs.settings.get(settingsMenuItemCacheKey) or {}
+
+local function settingsMenuItemFingerprint(app)
+  local appid = app:bundleID() or app:name()
+  local appPath = app:path() or hs.application.pathForBundleID(appid)
+  local containerPlistPath, plistPath = getAppPreferencePaths(appid)
+  local containerMtime, plistMtime
+  if appid ~= hs.settings.bundleID then
+    containerMtime = getAppPreferenceMtime(containerPlistPath)
+    plistMtime = getAppPreferenceMtime(plistPath)
+  end
+  return appid, {
+    appPath = appPath,
+    infoMtime = appPath and getAppPreferenceMtime(
+        appPath .. "/Contents/Info.plist") or nil,
+    containerMtime = containerMtime,
+    plistMtime = plistMtime,
+    systemLocale = SYSTEM_LOCALE,
+  }
+end
+
+local function cachedSettingsMenuItemTitle(app)
+  local appid, fingerprint = settingsMenuItemFingerprint(app)
+  local cached = settingsMenuItemCache[appid]
+  if cached ~= nil
+      and cached.appPath == fingerprint.appPath
+      and cached.infoMtime == fingerprint.infoMtime
+      and cached.containerMtime == fingerprint.containerMtime
+      and cached.plistMtime == fingerprint.plistMtime
+      and cached.systemLocale == fingerprint.systemLocale then
+    return cached.title, appid, fingerprint
+  end
+  return nil, appid, fingerprint
+end
+
+local function cacheSettingsMenuItemTitle(appid, fingerprint, title)
+  fingerprint.title = title or false
+  settingsMenuItemCache[appid] = fingerprint
+  hs.settings.set(settingsMenuItemCacheKey, settingsMenuItemCache)
+end
+
 ---@diagnostic disable-next-line: lowercase-global
 function registerObserverForSettingsMenuItem(app)
   local appUI = toappui(app)
@@ -737,21 +780,24 @@ function registerObserverForSettingsMenuItem(app)
     end)
     return settingsMenu
   end
-  local menuBarItems = getBufferedMenuBarItems(app)
-  if menuBarItems == nil or #menuBarItems == 0 then return end
-  local settingsMenu = getMenuItem(menuBarItems[1])
-  if settingsMenu == nil then return end
+  local settingsMenuTitle, cacheAppid, cacheFingerprint =
+      cachedSettingsMenuItemTitle(app)
+  if settingsMenuTitle == false then return end
+  if settingsMenuTitle == nil then
+    local menuBarItems = getBufferedMenuBarItems(app)
+    if menuBarItems == nil or #menuBarItems == 0 then return end
+    local settingsMenu = getMenuItem(menuBarItems[1])
+    if settingsMenu == nil then
+      cacheSettingsMenuItemTitle(cacheAppid, cacheFingerprint, false)
+      return
+    end
+    settingsMenuTitle = settingsMenu.AXTitle
+    cacheSettingsMenuItemTitle(cacheAppid, cacheFingerprint, settingsMenuTitle)
+  end
   local observer = uiobserver.new(app:pid())
   observer:addWatcher(appUI, uinotifications.menuItemSelected)
   observer:callback(function(obs, elem)
-    if settingsMenu.AXTitle == nil then
-      settingsMenu = getMenuItem()
-      if settingsMenu == nil then
-        obs:stop() obs = nil
-        return
-      end
-    end
-    if elem.AXTitle == settingsMenu.AXTitle then
+    if elem.AXTitle == settingsMenuTitle then
       registerNavigationForSettingsToolbar(app)
     end
   end)

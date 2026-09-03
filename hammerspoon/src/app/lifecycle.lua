@@ -542,11 +542,13 @@ function App_applicationInstalledCallback(files, flagTables)
     if flagTables[i].itemRemoved then
       for _, appkey in ipairs(AppKeys) do
         if appkey.appid == appid or appkey.appPath == file then
+          clearAppKeyCache()
           registerAppKeys()
           return
         end
       end
     elseif flagTables[i].itemCreated then
+      clearAppKeyCache()
       registerAppKeys()
       if appid then
         registerRunningAppHotKeys(appid)

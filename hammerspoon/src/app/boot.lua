@@ -100,6 +100,72 @@ end
 -- Registered application hotkeys
 AppKeys = {}
 
+local appKeyPathCacheKey = "_app_key_path_cache"
+local appKeyPathCache = hs.settings.get(appKeyPathCacheKey) or {}
+local appKeyPathCacheDirty = false
+local appKeyDisplayNameCacheKey = "_app_key_display_name_cache"
+local appKeyDisplayNameCache = hs.settings.get(appKeyDisplayNameCacheKey) or {}
+local appKeyDisplayNameCacheDirty = false
+
+function clearAppKeyCache()
+  appKeyPathCache = {}
+  appKeyPathCacheDirty = false
+  appKeyDisplayNameCache = {}
+  appKeyDisplayNameCacheDirty = false
+  hs.settings.set(appKeyPathCacheKey, nil)
+  hs.settings.set(appKeyDisplayNameCacheKey, nil)
+end
+
+local function pathForAppKeyBundleID(appid)
+  local cached = appKeyPathCache[appid]
+  if cached ~= nil then
+    if exists(cached) then
+      return cached
+    end
+    appKeyPathCache[appid] = nil
+    appKeyPathCacheDirty = true
+  end
+
+  local appPath = hs.application.pathForBundleID(appid)
+  if appPath == "" then appPath = nil end
+  if appPath ~= nil then
+    appKeyPathCache[appid] = appPath
+    appKeyPathCacheDirty = true
+  end
+  return appPath
+end
+
+local function appKeyDisplayNameFingerprint(appid, appPath)
+  local containerPlistPath, plistPath = getAppPreferencePaths(appid)
+  return {
+    appPath = appPath,
+    infoMtime = getAppPreferenceMtime(appPath .. "/Contents/Info.plist"),
+    containerMtime = getAppPreferenceMtime(containerPlistPath),
+    plistMtime = getAppPreferenceMtime(plistPath),
+    systemLocale = SYSTEM_LOCALE,
+  }
+end
+
+local function cachedDisplayNameForAppKey(appid, appPath)
+  local fingerprint = appKeyDisplayNameFingerprint(appid, appPath)
+  local cached = appKeyDisplayNameCache[appid]
+  if cached ~= nil
+      and cached.appPath == fingerprint.appPath
+      and cached.infoMtime == fingerprint.infoMtime
+      and cached.containerMtime == fingerprint.containerMtime
+      and cached.plistMtime == fingerprint.plistMtime
+      and cached.systemLocale == fingerprint.systemLocale
+      and cached.name ~= nil then
+    return cached.name
+  end
+
+  local appname = displayName(appid)
+  fingerprint.name = appname
+  appKeyDisplayNameCache[appid] = fingerprint
+  appKeyDisplayNameCacheDirty = true
+  return appname
+end
+
 -- Register all application-level hotkeys
 --
 -- Hotkeys are rebuilt every time this function runs to ensure
@@ -114,13 +180,11 @@ function registerAppKeys()
     local appPath, appid
     if config.bundleID then
       if type(config.bundleID) == "string" then
-        appPath = hs.application.pathForBundleID(config.bundleID)
-        if appPath == "" then appPath = nil end
+        appPath = pathForAppKeyBundleID(config.bundleID)
         if appPath ~= nil then appid = config.bundleID end
       elseif type(config.bundleID) == "table" then
         for _, id in ipairs(config.bundleID) do
-          appPath = hs.application.pathForBundleID(id)
-          if appPath == "" then appPath = nil end
+          appPath = pathForAppKeyBundleID(id)
           if appPath ~= nil then
             appid = id
             break
@@ -159,9 +223,10 @@ function registerAppKeys()
       if appid ~= nil then
         if FLAGS["LOADING"] then
           local app = LoadBuf.runningApplications[appid]
-          appname = app and app:name() or displayName(appid)
+          appname = app and app:name()
+              or cachedDisplayNameForAppKey(appid, appPath)
         else
-          appname = displayName(appid)
+          appname = cachedDisplayNameForAppKey(appid, appPath)
         end
       else
         appname = hs.execute(strfmt(
@@ -178,6 +243,14 @@ function registerAppKeys()
       end
       tinsert(AppKeys, hotkey)
     end
+  end
+  if appKeyPathCacheDirty then
+    hs.settings.set(appKeyPathCacheKey, appKeyPathCache)
+    appKeyPathCacheDirty = false
+  end
+  if appKeyDisplayNameCacheDirty then
+    hs.settings.set(appKeyDisplayNameCacheKey, appKeyDisplayNameCache)
+    appKeyDisplayNameCacheDirty = false
   end
 end
 
