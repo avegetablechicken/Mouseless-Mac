@@ -24,15 +24,17 @@ local function bindable(obj, cond)
 end
 
 local runningAppHotKeys = {}
+local runningAppTerminationCancellations = {}
 -- hotkeys for background apps
 function registerRunningAppHotKeys(appid, app)
-  if AppHotKeyCallbacks[appid] == nil then return end
+  if AppHotKeyCallbacks[appid] == nil then return false end
 
   if runningAppHotKeys[appid] == nil then
     runningAppHotKeys[appid] = {}
   end
 
   local hasNotPersistentBackgroundHotkey = false
+  local hasConfiguredNotPersistentBackgroundHotkey = false
   local running = true
   -- do not support "condition" property currently
   for hkID, cfg in pairs(AppHotKeyCallbacks[appid]) do
@@ -42,6 +44,10 @@ function registerRunningAppHotKeys(appid, app)
         and keybinding.persist or cfg.persist
     local isBackground = isPersistent or (keybinding.background ~= nil
         and keybinding.background or cfg.background)
+    local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
+    if hasKey and not isForWindow and isBackground and not isPersistent then
+      hasConfiguredNotPersistentBackgroundHotkey = true
+    end
     if runningAppHotKeys[appid][hkID] ~= nil then
       runningAppHotKeys[appid][hkID]:enable()
       if not isPersistent and isBackground then
@@ -49,7 +55,6 @@ function registerRunningAppHotKeys(appid, app)
       end
       goto L_CONTINUE
     end
-    local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
     local bindableEx
     if isPersistent then
       bindableEx = function()
@@ -120,9 +125,15 @@ function registerRunningAppHotKeys(appid, app)
     ::L_CONTINUE::
   end
 
-  if hasNotPersistentBackgroundHotkey then
-    Evt.OnTerminated(appid, bind(unregisterRunningAppHotKeys, appid))
+  if hasNotPersistentBackgroundHotkey
+      and runningAppTerminationCancellations[appid] == nil then
+    runningAppTerminationCancellations[appid] = Evt.OnTerminated(appid,
+      function()
+        runningAppTerminationCancellations[appid] = nil
+        unregisterRunningAppHotKeys(appid)
+      end)
   end
+  return hasConfiguredNotPersistentBackgroundHotkey
 end
 
 function unregisterRunningAppHotKeys(appid, force)
@@ -171,40 +182,10 @@ end
 local function hasStatusItems(app)
   local appid = app:bundleID() or app:name()
 
-  if OS_VERSION >= OS.Tahoe then
-    local allowedApps
-    if FLAGS["LOADING"] then
-      if LoadBuf.allowedMenuBarApps == nil then
-        LoadBuf.allowedMenuBarApps = getAllowedMenuBarAppsTahoe()
-      end
-      allowedApps = LoadBuf.allowedMenuBarApps
-    else
-      allowedApps = getAllowedMenuBarAppsTahoe()
-    end
-    local isAllowed = allowedApps and allowedApps[appid] or true
-    local apath
-    if isAllowed == nil then
-      apath = app:path() or ""
-      local pos = apath:sub(1, -4):find(".app/", 1, true)
-      if pos then
-        local appPath = apath:sub(1, pos + 3)
-        local info = hs.application.infoForBundlePath(appPath)
-        if info and info.CFBundleIdentifier then
-          local id = info.CFBundleIdentifier
-          isAllowed = allowedApps and allowedApps[id] or true
-        else
-          isAllowed = false
-        end
-      end
-    end
-    if isAllowed ~= nil or apath ~= "" then
-      return isAllowed or false
-    end
-  end
-
   if appid == hs.settings.bundleID then
     return true
   end
+
   local cache = getAppPreferenceCacheEntry(appid)
   if cache ~= nil and cache.hasStatusItem ~= nil then
     return cache.hasStatusItem
@@ -213,15 +194,32 @@ local function hasStatusItems(app)
   local errorReadingDefaults = false
   local containerPlistPath, plistPath = getAppPreferencePaths(appid)
   local defaults
-  local prefix = "NSStatusItem Preferred Position "
+  local preferredPositionPrefix = "NSStatusItem Preferred Position "
+  local visiblePrefixes = {
+    "NSStatusItem Visible ",
+    "NSStatusItem VisibleCC ",
+  }
+  local function defaultsHaveStatusItem(defaults)
+    local prefix_len = #preferredPositionPrefix
+    for k, v in pairs(defaults) do
+      if k:sub(1, prefix_len) == preferredPositionPrefix then
+        return true
+      end
+      if v == true then
+        for _, prefix in ipairs(visiblePrefixes) do
+          if k:sub(1, #prefix) == prefix then
+            return true
+          end
+        end
+      end
+    end
+    return false
+  end
   if containerPlistPath ~= nil then
     defaults = hs.plist.read(containerPlistPath)
     if defaults then
-      local prefix_len = #prefix
-      for k, v in pairs(defaults) do
-        if k:sub(1, prefix_len) == prefix then
-          return setAppPreferenceCacheField(appid, "hasStatusItem", true)
-        end
+      if defaultsHaveStatusItem(defaults) then
+        return setAppPreferenceCacheField(appid, "hasStatusItem", true)
       end
     else
       errorReadingDefaults = true
@@ -230,11 +228,8 @@ local function hasStatusItems(app)
   if plistPath ~= nil then
     defaults = hs.plist.read(plistPath)
     if defaults then
-      local prefix_len = #prefix
-      for k, v in pairs(defaults) do
-        if k:sub(1, prefix_len) == prefix then
-          return setAppPreferenceCacheField(appid, "hasStatusItem", true)
-        end
+      if defaultsHaveStatusItem(defaults) then
+        return setAppPreferenceCacheField(appid, "hasStatusItem", true)
       end
     else
       errorReadingDefaults = true
@@ -243,7 +238,7 @@ local function hasStatusItems(app)
   if errorReadingDefaults then
     local records, ok = hs.execute(strfmt([[
       defaults read %s | grep '"%s'
-    ]], appid, prefix))
+    ]], appid, preferredPositionPrefix))
     return setAppPreferenceCacheField(appid, "hasStatusItem", ok == true)
   end
   return setAppPreferenceCacheField(appid, "hasStatusItem", false)
@@ -262,7 +257,30 @@ end
 -- Note:
 --   This process is expensive and is registered per-app only once.
 local menuBarMenuSelectedObservers = {}
-function registerMenuBarObserverForHotkeyValidity(app)
+
+function flushMenuBarObserverSupportCache()
+end
+
+function getMenuBarItemsForValidity(appUI, collectItems)
+  if collectItems == nil then collectItems = true end
+  local ok, menuBar = pcall(function() return appUI.AXExtrasMenuBar end)
+  if not ok then menuBar = nil end
+  if menuBar == nil and OS_VERSION < OS.Tahoe then
+    local menuBars = appUI:childrenWithRole(AX.MenuBar)
+    menuBar = menuBars and menuBars[#menuBars]
+  end
+  if menuBar == nil then
+    return collectItems and {} or false
+  end
+  if collectItems then
+    return menuBar:childrenWithRole(AX.MenuBarItem) or {}
+  end
+  local firstChild = menuBar[1]
+  return firstChild ~= nil and firstChild.AXRole == AX.MenuBarItem
+end
+
+function registerMenuBarObserverForHotkeyValidity(app, collectItems)
+  if collectItems == nil then collectItems = true end
   local appid = app:bundleID() or app:name()
   if menuBarMenuSelectedObservers[appid] then
     menuBarMenuSelectedObservers[appid]:stop()
@@ -273,38 +291,53 @@ function registerMenuBarObserverForHotkeyValidity(app)
       or app:kind() < 0 then
     return
   end
-  if hasStatusItems(app) then
-    local appUI = toappui(app)
-    local menuBarItems = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem) or {}
-    if #menuBarItems > 0 then
-      local observer = uiobserver.new(app:pid())
+  local appUI, menuBarItems, hasMenuBarItems
+  if OS_VERSION >= OS.Tahoe then
+    appUI = toappui(app)
+    menuBarItems = getMenuBarItemsForValidity(appUI, collectItems)
+    hasMenuBarItems = collectItems and #menuBarItems > 0 or menuBarItems
+  elseif hasStatusItems(app) then
+    appUI = toappui(app)
+    menuBarItems = getMenuBarItemsForValidity(appUI, collectItems)
+    hasMenuBarItems = collectItems and #menuBarItems > 0 or menuBarItems
+  end
+  if hasMenuBarItems then
+    local observer = uiobserver.new(app:pid())
+    local ok = pcall(function()
       observer:addWatcher(appUI, uinotifications.menuOpened)
       observer:addWatcher(appUI, uinotifications.menuClosed)
-      observer:callback(function(_, menu, notification)
-        if notification == uinotifications.menuClosed then
-          -- When a menu is closed, assume no menu bar item is selected
-          FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = false
-        else
-          -- Determine whether the opened menu belongs to the right side
-          -- of the menu bar (i.e. status items instead of app menus)
-          local elem = menu.AXParent
-          while elem and elem.AXRole ~= AX.MenuBar do
-            elem = elem.AXParent
-          end
-          if elem and elem.AXPosition.x ~= hs.screen.mainScreen():fullFrame().x then
-            FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = true
-          end
+    end)
+    if not ok then
+      observer:stop()
+      if collectItems then return menuBarItems end
+      return
+    end
+    observer:callback(function(_, menu, notification)
+      if notification == uinotifications.menuClosed then
+        -- When a menu is closed, assume no menu bar item is selected
+        FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = false
+      else
+        -- Determine whether the opened menu belongs to the right side
+        -- of the menu bar (i.e. status items instead of app menus)
+        local elem = menu.AXParent
+        while elem and elem.AXRole ~= AX.MenuBar do
+          elem = elem.AXParent
         end
-      end)
-      observer:start()
-      menuBarMenuSelectedObservers[appid] = observer
-      Evt.StopOnTerminated(app, observer, function()
-        menuBarMenuSelectedObservers[appid] = nil
-      end)
-
-      if FLAGS["LOADING"] then
-        tinsert(LoadBuf.menubarSelectedObserverStarted, appid)
+        if elem and elem.AXPosition.x ~= hs.screen.mainScreen():fullFrame().x then
+          FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] = true
+        end
       end
+    end)
+    observer:start()
+    menuBarMenuSelectedObservers[appid] = observer
+    Evt.StopOnTerminated(app, observer, function()
+      menuBarMenuSelectedObservers[appid] = nil
+    end)
+
+    if FLAGS["LOADING"] then
+      tinsert(LoadBuf.menubarSelectedObserverStarted, appid)
+    end
+    if collectItems then
       return menuBarItems
     end
   end
