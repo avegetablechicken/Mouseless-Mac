@@ -272,6 +272,15 @@ end
 -- ## application callbacks
 
 local launchTimer
+local launchWaitInterval = 0.2
+local launchWaitTimeout = 10
+
+local function runOneShotCallbacks(registry, appid, ...)
+  local processes = registry[appid]
+  registry[appid] = nil
+  for _, proc in ipairs(processes or {}) do proc(...) end
+end
+
 -- App activation can synchronously rebuild a large number of hotkeys and may
 -- even wait on Accessibility elements. Defer that work while Hyper is held so
 -- its key-up event can be processed first. Repeated appkeys are coalesced to
@@ -407,6 +416,10 @@ function App_applicationCallback(appname, eventType, app)
     end
     FLAGS["APP_LAUNCHING"] = true
   elseif eventType == hs.application.watcher.launched then
+    if launchTimer then
+      launchTimer:stop()
+      launchTimer = nil
+    end
     local doublecheck
     if FLAGS["APP_LAUNCHING"] and appsLaunchSlow[appid] then
       doublecheck = bind(appsLaunchSlow[appid], app)
@@ -443,22 +456,24 @@ function App_applicationCallback(appname, eventType, app)
       FLAGS["APP_LAUNCHING"] = nil
     end
     if doublecheck and (hyperModeIsActive() or not doublecheck()) then
+      local deadline = hs.timer.secondsSinceEpoch() + launchWaitTimeout
       launchTimer = hs.timer.waitUntil(function()
-        return not hyperModeIsActive() and doublecheck()
-      end, action, 0.01)
+        return not hyperModeIsActive()
+            and (doublecheck() or hs.timer.secondsSinceEpoch() >= deadline)
+      end, action, launchWaitInterval)
     else
       action()
     end
     FLAGS["NEED_DOUBLE_CHECK"] = nil
   elseif eventType == hs.application.watcher.activated then
-    for bid, processes in pairs(Evt.ProcOnDeactivated) do
+    local deactivatedAppids = {}
+    for bid, _ in pairs(Evt.ProcOnDeactivated) do
       if bid ~= appid then
-        local b = find(bid)
-        for _, proc in ipairs(processes) do
-          proc(b)
-        end
-        Evt.ProcOnDeactivated[bid] = nil
+        tinsert(deactivatedAppids, bid)
       end
+    end
+    for _, bid in ipairs(deactivatedAppids) do
+      runOneShotCallbacks(Evt.ProcOnDeactivated, bid, find(bid))
     end
 
     if launchTimer then
@@ -490,18 +505,16 @@ function App_applicationCallback(appname, eventType, app)
       })
     end
   elseif eventType == hs.application.watcher.terminated then
-    for _, proc in ipairs(Evt.ProcOnTerminated[appid] or {}) do
-      proc()
-    end
-    Evt.ProcOnTerminated[appid] = nil
+    runOneShotCallbacks(Evt.ProcOnTerminated, appid)
   elseif eventType == hs.application.watcher.deactivated and appname == nil then
-    for id, processes in pairs(Evt.ProcOnTerminated) do
+    local terminatedAppids = {}
+    for id, _ in pairs(Evt.ProcOnTerminated) do
       if find(id) == nil then
-        for _, proc in ipairs(processes) do
-          proc()
-        end
-        Evt.ProcOnTerminated[id] = nil
+        tinsert(terminatedAppids, id)
       end
+    end
+    for _, id in ipairs(terminatedAppids) do
+      runOneShotCallbacks(Evt.ProcOnTerminated, id)
     end
   end
   if eventType == hs.application.watcher.deactivated then

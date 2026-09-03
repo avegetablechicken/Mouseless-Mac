@@ -709,8 +709,27 @@ function ExecOnSilentQuit(appid, action)
   if processesOnSilentQuit[appid] == nil then
     processesOnSilentQuit[appid] = {}
   end
-  tinsert(processesOnSilentQuit[appid], action)
+  local cancelled = false
+  local process
+  if action ~= nil then
+    process = function(...)
+      if cancelled then return end
+      cancelled = true
+      return action(...)
+    end
+    tinsert(processesOnSilentQuit[appid], process)
+  end
   launchedApps[appid] = find(appid)
+
+  return function()
+    if cancelled or action == nil then return end
+    cancelled = true
+    local processes = processesOnSilentQuit[appid]
+    if processes == nil then return end
+    local pos = tindex(processes, process)
+    if pos then tremove(processes, pos) end
+    if #processes == 0 then processesOnSilentQuit[appid] = nil end
+  end
 end
 
 ExecContinuously(function()
@@ -730,12 +749,13 @@ ExecContinuously(function()
   for appid, processes in pairs(processesOnSilentQuit) do
     local app = find(appid)
     if launchedApps[appid] and app == nil then
+      -- Detach first so callbacks can safely register or cancel callbacks.
+      processesOnSilentQuit[appid] = nil
       for _, proc in ipairs(processes) do
         proc(appid)
       end
       applicationCallback(launchedApps[appid]:name(),
           hs.application.watcher.terminated, launchedApps[appid])
-      processesOnSilentQuit[appid] = nil
     end
     launchedAppsTmp[appid] = app
   end

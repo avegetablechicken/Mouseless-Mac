@@ -376,13 +376,34 @@ end
 
 -- callbacks executed when application loses focus
 Evt.ProcOnDeactivated = {}
+
+local function registerOneShotCallback(registry, appid, action)
+  if registry[appid] == nil then registry[appid] = {} end
+
+  local cancelled = false
+  local callback
+  callback = function(...)
+    if cancelled then return end
+    cancelled = true
+    return action(...)
+  end
+  tinsert(registry[appid], callback)
+
+  return function()
+    if cancelled then return end
+    cancelled = true
+    local callbacks = registry[appid]
+    if callbacks == nil then return end
+    local pos = tindex(callbacks, callback)
+    if pos then tremove(callbacks, pos) end
+    if #callbacks == 0 then registry[appid] = nil end
+  end
+end
+
 -- Register a callback for app deactivation
 Evt.OnDeactivated = function(app, action)
   local appid = getAppId(app)
-  if Evt.ProcOnDeactivated[appid] == nil then
-    Evt.ProcOnDeactivated[appid] = {}
-  end
-  tinsert(Evt.ProcOnDeactivated[appid], action)
+  return registerOneShotCallback(Evt.ProcOnDeactivated, appid, action)
 end
 
 -- callbacks executed when application terminates
@@ -392,34 +413,41 @@ Evt.ProcOnTerminated = {}
 Evt.OnTerminated = function(app, action)
   local appid = getAppId(app)
   if isLSUIElement(appid) then
-    ExecOnSilentQuit(appid, action)
-    return
+    return ExecOnSilentQuit(appid, action)
   end
 
-  if Evt.ProcOnTerminated[appid] == nil then
-    Evt.ProcOnTerminated[appid] = {}
-  end
-  tinsert(Evt.ProcOnTerminated[appid], action)
+  return registerOneShotCallback(Evt.ProcOnTerminated, appid, action)
+end
+
+-- An observer may have both deactivation and termination fallbacks. Whichever
+-- event happens first must cancel the other callback so stopped observers do
+-- not remain retained for the rest of a long-lived application process.
+local lifecycleStops = setmetatable({}, { __mode = "k" })
+
+local function stopOnLifecycleEvent(app, object, action, register)
+  local appid = getAppId(app)
+  local cancel = register(appid, function()
+    local cancellations = lifecycleStops[object]
+    lifecycleStops[object] = nil
+    for _, cancelOther in ipairs(cancellations or {}) do
+      cancelOther()
+    end
+    object:stop()
+    if action then action(object, appid) end
+  end)
+  if lifecycleStops[object] == nil then lifecycleStops[object] = {} end
+  tinsert(lifecycleStops[object], cancel)
+  return cancel
 end
 
 -- Stop a UI observer when the app is deactivated
 Evt.StopOnDeactivated = function(app, observer, action)
-  local appid = getAppId(app)
-  Evt.OnDeactivated(appid, function()
-    observer:stop()
-    if action then action(observer, appid) end
-    observer = nil
-  end)
+  return stopOnLifecycleEvent(app, observer, action, Evt.OnDeactivated)
 end
 
 -- Stop a UI observer when the app terminates
 Evt.StopOnTerminated = function(app, observer, action)
-  local appid = getAppId(app)
-  Evt.OnTerminated(appid, function()
-    observer:stop()
-    if action then action(observer, appid) end
-    observer = nil
-  end)
+  return stopOnLifecycleEvent(app, observer, action, Evt.OnTerminated)
 end
 
 -- Register a one-shot observer that fires when a UI element is destroyed
@@ -428,24 +456,59 @@ Evt.OnDestroy = function(element, callback, stopWhen, callbackOnStop)
   if not element:isValid() then return end
   local app = getAppFromDescendantElement(element)
   local observer = uiobserver.new(app:pid())
-  if element.AXRole == AX.Menu then
-    observer:addWatcher(element, uinotifications.menuClosed)
-  else
-    observer:addWatcher(element, uinotifications.uIElementDestroyed)
+  local lifecycleCancellations = {}
+  local completed = false
+
+  local function finish(invokeCallback, ...)
+    if completed then return end
+    completed = true
+    local obs = observer
+    local args = table.pack(...)
+    local ok, err = true, nil
+    if invokeCallback then
+      ok, err = xpcall(function()
+        callback(obs, table.unpack(args, 1, args.n))
+      end, debug.traceback)
+    end
+    if obs then obs:stop() end
+    observer = nil
+    for _, cancel in ipairs(lifecycleCancellations) do cancel() end
+    lifecycleCancellations = {}
+    if not ok then error(err, 0) end
   end
-  observer:callback(function(obs, ...)
-    callback(obs, ...) obs:stop() obs = nil
+
+  local notification = element.AXRole == AX.Menu
+      and uinotifications.menuClosed
+      or uinotifications.uIElementDestroyed
+  local ok, err = pcall(function()
+    observer:addWatcher(element, notification)
   end)
-  observer:start()
+  if ok then
+    observer:callback(function(_, ...) finish(true, ...) end)
+    observer:start()
+  else
+    observer:stop()
+    observer = nil
+    if not tostring(err):find("Notification is not supported", 1, true) then
+      error(err)
+    end
+  end
 
   if type(stopWhen) == 'number' then
     stopWhen = { stopWhen }
   end
+  local appid = getAppId(app)
   for _, ev in ipairs(stopWhen or {}) do
     if ev == hs.application.watcher.deactivated then
-      Evt.StopOnDeactivated(app, observer, callbackOnStop and callback)
+      if observer or callbackOnStop then
+        tinsert(lifecycleCancellations, Evt.OnDeactivated(appid,
+            function() finish(callbackOnStop, appid) end))
+      end
     elseif ev == hs.application.watcher.terminated then
-      Evt.StopOnTerminated(app, observer, callbackOnStop and callback)
+      if observer or callbackOnStop then
+        tinsert(lifecycleCancellations, Evt.OnTerminated(appid,
+            function() finish(callbackOnStop, appid) end))
+      end
     end
   end
 
