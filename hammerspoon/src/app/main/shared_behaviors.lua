@@ -93,7 +93,10 @@ local function processAppWithoutWindow(app)
           or appsWithoutWindow.hide
       local windowFilter = hs.window.filter.new(false):setAppFilter(
           app:name(), windowFilterRules[appid])
-      return tfind(app:visibleWindows(), function(win)
+      -- Native tab groups expose only the selected tab as visible. Check all
+      -- windows so closing that tab does not hide the app while another tab,
+      -- minimized window, or temporarily non-visible window still exists.
+      return tfind(app:allWindows(), function(win)
         return win:application() and windowFilter:isWindowAllowed(win)
       end) == nil
     end
@@ -126,10 +129,14 @@ PseudoWindowDestroyObservers = {}
 local function registerPseudoWindowDestroyObserver(app, roles)
   local appid = app:bundleID() or app:name()
   local observer = PseudoWindowDestroyObservers[appid]
-  local appUI = toappui(app)
   if observer ~= nil then observer:start() return end
+  local appUI = toappui(app)
   observer = uiobserver.new(app:pid())
-  observer:addWatcher(appUI, uinotifications.focusedUIElementChanged)
+  local ok, err = pcall(observer.addWatcher, observer, appUI, uinotifications.focusedUIElementChanged)
+  if not ok then
+    observer:stop()
+    return
+  end
   local quit = appsWithNoPseudoWindow.quit[appid] ~= nil
   local windowFilterRules = quit and appsWithoutWindow.quit
       or appsWithoutWindow.hide
@@ -150,7 +157,7 @@ local function registerPseudoWindowDestroyObserver(app, roles)
           appUI:elementSearch(function(newMsg, newResults, newCount)
               if newCount == 0 then
                 local defaultRule = function()
-                  local noWindow = tfind(app:visibleWindows(), function(win)
+                  local noWindow = tfind(app:allWindows(), function(win)
                     return windowFilter:isWindowAllowed(win)
                   end) == nil
                   local noMenuFromPopover = true

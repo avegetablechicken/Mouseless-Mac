@@ -901,8 +901,34 @@ end
 --   - window focus
 --   - window title / role / URL
 local inWinHotKeys = {}
+local startupTabUrlCache = {}
 
-local function getTabUrl(app)
+local function getTabUrl(app, axDocumentOnly)
+  local win = app:focusedWindow()
+  local cacheKey
+  if FLAGS["LOADING"] and win ~= nil then
+    cacheKey = (app:bundleID() or app:name()) .. ":" .. tostring(win:id())
+        .. (axDocumentOnly and ":axdoc" or ":url")
+    local cached = startupTabUrlCache[cacheKey]
+    if cached ~= nil then
+      if cached == false then return nil end
+      return cached
+    end
+  end
+  if win ~= nil then
+    local doc = towinui(win).AXDocument
+    if type(doc) == 'string' and doc:match("^[%a][%w+.-]*://") then
+      if doc:sub(-2) == '//' then doc = doc:sub(1, -2) end
+      if cacheKey then startupTabUrlCache[cacheKey] = doc end
+      return doc
+    end
+  end
+
+  if axDocumentOnly then
+    if cacheKey then startupTabUrlCache[cacheKey] = false end
+    return
+  end
+
   local ok, url
   if app:bundleID() == "com.apple.Safari" then
     ok, url = hs.osascript.applescript([[
@@ -915,8 +941,10 @@ local function getTabUrl(app)
   end
   if ok and url then
     if url:sub(-2) == '//' then url = url:sub(1, -2) end
+    if cacheKey then startupTabUrlCache[cacheKey] = url end
     return url
   end
+  if cacheKey then startupTabUrlCache[cacheKey] = false end
 end
 
 function registerInWinHotKeys(win, filter)
@@ -1038,23 +1066,51 @@ local function isWebsiteAllowed(win, allowURLs)
     return false
   end
   local app = win:application()
-  if app:bundleID() == "com.apple.Safari" then
-    if not MenuItem.isEnabled({ "View", "Show Sidebar" },
-                              { "View", "Hide Sidebar" })(app) then
-    return false end
+  if type(allowURLs) == 'string' then
+    allowURLs = { allowURLs }
   end
-  local url = getTabUrl(app)
-  if url ~= nil then
-    if type(allowURLs) == 'string' then
-      allowURLs = { allowURLs }
+  local axDocumentOnly = true
+  for _, v in ipairs(allowURLs) do
+    if v ~= "^file://" then
+      axDocumentOnly = false
+      break
     end
+  end
+  local url = getTabUrl(app, axDocumentOnly)
+  if url ~= nil then
     for _, v in ipairs(allowURLs) do
       if url:match(v) ~= nil then
+        if app:bundleID() == "com.apple.Safari" then
+          if not MenuItem.isEnabled({ "View", "Show Sidebar" },
+                                    { "View", "Hide Sidebar" })(app) then
+            return false
+          end
+        end
         return true
       end
     end
   end
   return false
+end
+
+local startupWindowFilterCache = {}
+
+local function windowFilterForNormal(app, normal, filter)
+  if FLAGS["LOADING"] then
+    local appid = app:bundleID() or app:name()
+    local appCache = startupWindowFilterCache[appid]
+    if appCache == nil then
+      appCache = {}
+      startupWindowFilterCache[appid] = appCache
+    end
+    local key = type(filter) == 'table' and filter or tostring(normal)
+    local cached = appCache[key]
+    if cached ~= nil then return cached end
+    cached = hs.window.filter.new(false):setAppFilter(app:name(), normal)
+    appCache[key] = cached
+    return cached
+  end
+  return hs.window.filter.new(false):setAppFilter(app:name(), normal)
 end
 
 function isWindowAllowed(win, filter)
@@ -1064,9 +1120,8 @@ function isWindowAllowed(win, filter)
     if not extended.allowSheet then return false end
   elseif win:role() == AX.Popover then
     if not extended.allowPopover then return false end
-  elseif win:application() then
-    local windowFilter = hs.window.filter.new(false)
-        :setAppFilter(win:application():name(), normal)
+  elseif win:application() and normal ~= nil then
+    local windowFilter = windowFilterForNormal(win:application(), normal, filter)
     if not windowFilter:isWindowAllowed(win) then
       return false
     end
@@ -1076,7 +1131,8 @@ function isWindowAllowed(win, filter)
 end
 
 local focusedWindowObservers = {}
-local function registerSingleWinFilterForApp(app, filter, retry)
+local function registerSingleWinFilterForApp(app, filter, retry, appUI,
+                                            hasFocusedWindowAttr)
   local appid = app:bundleID() or app:name()
   for f, _ in pairs(focusedWindowObservers[appid] or {}) do
     -- a window filter can be shared by multiple hotkeys
@@ -1085,8 +1141,12 @@ local function registerSingleWinFilterForApp(app, filter, retry)
     end
   end
 
-  local appUI = toappui(app)
-  if not tcontain(appUI:attributeNames() or {}, "AXFocusedWindow") then
+  appUI = appUI or toappui(app)
+  if hasFocusedWindowAttr == nil then
+    hasFocusedWindowAttr = tcontain(appUI:attributeNames() or {},
+        "AXFocusedWindow")
+  end
+  if not hasFocusedWindowAttr then
     retry = retry and retry + 1 or 1
     if not FLAGS["Loading"] and retry <= 3 then
       hs.timer.doAfter(1,
@@ -1102,6 +1162,7 @@ local function registerSingleWinFilterForApp(app, filter, retry)
 
   local normal, extended = normalizeWindowFilter(filter)
   local observer = uiobserver.new(app:pid())
+  local titleWatcherElement
   observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
   observer:addWatcher(appUI, uinotifications.windowMiniaturized)
   if extended.allowPopover then
@@ -1109,22 +1170,44 @@ local function registerSingleWinFilterForApp(app, filter, retry)
   end
   if win and (extended.allowURLs or
       (normal and (normal.allowTitles or normal.rejectTitles))) then
-    observer:addWatcher(towinui(win), uinotifications.titleChanged)
+    titleWatcherElement = towinui(win)
+    observer:addWatcher(titleWatcherElement, uinotifications.titleChanged)
   end
   observer:callback(function(_, element, notification)
-    win = app:focusedWindow()
+    local titleChanged = notification == uinotifications.titleChanged
+    local previousWin = win
+    if titleChanged then
+      local changedWin = element and element:asHSWindow()
+      if changedWin == nil then return end
+      if win and changedWin:id() ~= win:id() then return end
+      win = changedWin
+    else
+      win = app:focusedWindow()
+    end
+    local focusChanged = notification == uinotifications.focusedWindowChanged
+    if focusChanged and titleWatcherElement
+        and (win == nil or previousWin == nil
+            or previousWin:id() ~= win:id()) then
+      observer:removeWatcher(titleWatcherElement, uinotifications.titleChanged)
+      titleWatcherElement = nil
+    end
     if win == nil then return end
     if notification == uinotifications.focusedUIElementChanged
         and win:role() ~= AX.Popover then
       return
     end
-    if notification == uinotifications.focusedWindowChanged
+    if focusChanged
         and win and (extended.allowURLs
-            or (normal and (normal.allowTitles or normal.rejectTitles))) then
-      observer:addWatcher(towinui(win), uinotifications.titleChanged)
+            or (normal and (normal.allowTitles or normal.rejectTitles)))
+        and titleWatcherElement == nil then
+      titleWatcherElement = towinui(win)
+      observer:addWatcher(titleWatcherElement, uinotifications.titleChanged)
     end
     if notification == uinotifications.windowMiniaturized then
-      observer:removeWatcher(element, uinotifications.titleChanged)
+      if titleWatcherElement then
+        observer:removeWatcher(titleWatcherElement, uinotifications.titleChanged)
+        titleWatcherElement = nil
+      end
     end
     if not element:isValid() then return end
 
@@ -1132,7 +1215,7 @@ local function registerSingleWinFilterForApp(app, filter, retry)
     -- affecting the return of "hs.window.filter.isWindowAllowed"
     -- we have to workaround it
     local ignoreTitleChange = false
-    if notification == uinotifications.titleChanged
+    if titleChanged
         and normal and (normal.allowTitles or normal.rejectTitles) then
       local function matchTitles(titles, t)
         if type(titles) == 'string' then
@@ -1185,6 +1268,7 @@ end
 
 function registerWinFiltersForApp(app)
   local appid = app:bundleID() or app:name()
+  local appUI, hasFocusedWindowAttr
   for hkID, cfg in pairs(AppHotKeyCallbacks[appid] or {}) do
     local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
@@ -1194,7 +1278,13 @@ function registerWinFiltersForApp(app)
     if hasKey and isForWindow and not isBackground
         and bindable(app, cfg.enabled) then
       local windowFilter = keybinding.windowFilter or cfg.windowFilter
-      registerSingleWinFilterForApp(app, windowFilter)
+      if appUI == nil then
+        appUI = toappui(app)
+        hasFocusedWindowAttr = tcontain(appUI:attributeNames() or {},
+            "AXFocusedWindow")
+      end
+      registerSingleWinFilterForApp(app, windowFilter, nil, appUI,
+          hasFocusedWindowAttr)
     end
   end
 end
@@ -1304,8 +1394,12 @@ local function registerSingleWinFilterForDaemonApp(app, filter, retry, appUI,
     end
   end
 
-  local appUI = toappui(app)
-  if not tcontain(appUI:attributeNames() or {}, "AXFocusedWindow") then
+  appUI = appUI or toappui(app)
+  if hasFocusedWindowAttr == nil then
+    hasFocusedWindowAttr = tcontain(appUI:attributeNames() or {},
+        "AXFocusedWindow")
+  end
+  if not hasFocusedWindowAttr then
     retry = retry and retry + 1 or 1
     if not FLAGS["Loading"] and retry <= 3 then
       hs.timer.doAfter(1,
@@ -1360,6 +1454,7 @@ end
 
 function registerWinFiltersForDaemonApp(app, appConfig)
   local appid = app:bundleID() or app:name()
+  local appUI, hasFocusedWindowAttr
   for hkID, cfg in pairs(appConfig) do
     local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
@@ -1369,7 +1464,13 @@ function registerWinFiltersForDaemonApp(app, appConfig)
     if hasKey and isForWindow and isBackground
         and bindable(app, cfg.enabled) then
       local windowFilter = keybinding.windowFilter or cfg.windowFilter
-      registerSingleWinFilterForDaemonApp(app, windowFilter)
+      if appUI == nil then
+        appUI = toappui(app)
+        hasFocusedWindowAttr = tcontain(appUI:attributeNames() or {},
+            "AXFocusedWindow")
+      end
+      registerSingleWinFilterForDaemonApp(app, windowFilter, nil, appUI,
+          hasFocusedWindowAttr)
     end
   end
 end
