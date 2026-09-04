@@ -66,8 +66,7 @@ end
 SYSTEM_LOCALE = systemLocales()
 
 function applicationLocale(appid)
-  -- locale of apps whose localization is enabled by Qt, Electron or Java
-  -- cannot be aquired in preferences files
+  -- Locale of apps whose localization is not driven by AppleLanguages.
   if appid == "com.tencent.xinWeChat" then
     if applicationVersion(appid) >= "4" then  -- Qt
       local app = find(appid)
@@ -971,6 +970,10 @@ local function localizedStringImpl(str, appid, params, force)
   elseif appid == "org.zotero.zotero" then
     result, locale = localizeZotero(str, appLocale)
     return result, appLocale, locale
+  elseif localizationFrameworks[appid]
+      and localizationFrameworks[appid].rust_i18n then
+    result, locale = localizeRustI18n(str, appid, appLocale)
+    return result, appLocale, locale
   elseif appid:find("org.qt%-project") ~= nil then
     result, locale = localizeQt(str, appid, appLocale)
     return result, appLocale, locale
@@ -1239,6 +1242,10 @@ local function delocalizedStringImpl(str, appid, params, force)
     return result, appLocale, locale
   elseif appid == "com.mathworks.matlab" then
     result, locale = delocalizeMATLABFigureMenu(str, appLocale)
+    return result, appLocale, locale
+  elseif localizationFrameworks[appid]
+      and localizationFrameworks[appid].rust_i18n then
+    result, locale = delocalizeRustI18n(str, appid, appLocale)
     return result, appLocale, locale
   elseif appid:find("org.qt%-project") ~= nil then
     result, locale = delocalizeQt(str, appid, appLocale)

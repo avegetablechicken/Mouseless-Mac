@@ -33,6 +33,44 @@ function localizeQt(str, appid, appLocale)
   return result, locale
 end
 
+local rustI18nTranslations = {}
+
+local function loadRustI18nTranslations(appid)
+  if rustI18nTranslations[appid] ~= nil then return rustI18nTranslations[appid] end
+  local appPath = hs.application.pathForBundleID(appid)
+  local info = hs.application.infoForBundleID(appid)
+  if appPath == nil or info == nil or info.CFBundleExecutable == nil then return end
+  local executable = appPath .. "/Contents/MacOS/" .. info.CFBundleExecutable
+  local script = hs.configdir .. "/scripts/rust_i18n_macho.py"
+  local output, ok = hs.execute(strfmt("/usr/bin/python3 %q %q", script, executable))
+  if not ok then return end
+  rustI18nTranslations[appid] = hs.json.decode(output)
+  return rustI18nTranslations[appid]
+end
+
+local function rustI18nLocaleMap(appid, appLocale)
+  local translations = loadRustI18nTranslations(appid)
+  if translations == nil then return end
+  local locales = {}
+  for locale in pairs(translations) do tinsert(locales, locale) end
+  local locale = matchLocale(appLocale, locales)
+  return translations, locale
+end
+
+function localizeRustI18n(str, appid, appLocale)
+  local translations, locale = rustI18nLocaleMap(appid, appLocale)
+  if translations == nil or locale == nil or translations.en == nil then return end
+  local key = tindex(translations.en, str)
+  return key and translations[locale][key], locale
+end
+
+function delocalizeRustI18n(str, appid, appLocale)
+  local translations, locale = rustI18nLocaleMap(appid, appLocale)
+  if translations == nil or locale == nil or translations.en == nil then return end
+  local key = tindex(translations[locale], str)
+  return key and translations.en[key], locale
+end
+
 local wpsLocCache = {}
 local function ensureWpsCache(resourceDir, locale)
   local key = resourceDir .. '/' .. locale
