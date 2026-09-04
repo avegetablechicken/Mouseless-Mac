@@ -71,6 +71,21 @@ function delocalizeRustI18n(str, appid, appLocale)
   return key and translations.en[key], locale
 end
 
+function clashVergeAppLocale(appid)
+  local file = io.open(os.getenv("HOME") .. "/Library/Application Support/"
+      .. appid .. "/verge.yaml", "r")
+  if file == nil then return SYSTEM_LOCALE end
+  for line in file:lines() do
+    local locale = line:match("^language:%s*['\"]?([^'\"%s]+)")
+    if locale ~= nil then
+      file:close()
+      return locale ~= "null" and locale or SYSTEM_LOCALE, true
+    end
+  end
+  file:close()
+  return SYSTEM_LOCALE, true
+end
+
 local wpsLocCache = {}
 local function ensureWpsCache(resourceDir, locale)
   local key = resourceDir .. '/' .. locale

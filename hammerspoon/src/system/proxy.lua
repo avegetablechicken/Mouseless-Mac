@@ -260,6 +260,32 @@ local function ensureProxyAppRunning(appname)
   return true
 end
 
+local function clashVergeModeMenu(appid)
+  local app = find(appid)
+  if app == nil then return end
+  local menu = getc(toappui(app), AX.MenuBar, -1,
+      AX.MenuBarItem, 1, AX.Menu, 1)
+  local outboundTitle = localizedString("Outbound Modes", appid)
+  local outboundItem = outboundTitle and tfind(
+      getc(menu, AX.MenuItem) or {}, function(item)
+        local title = item.AXTitle
+        return title == outboundTitle
+            or title and title:sub(1, #outboundTitle + 2)
+              == outboundTitle .. " ("
+      end)
+  return getc(outboundItem, AX.Menu, 1) or menu
+end
+
+local function clickClashVergeMode(title)
+  local appid = proxyAppBundleIDs["Clash Verge Rev"]
+  local menu = clashVergeModeMenu(appid)
+  title = localizedString(title, appid)
+  local item = getc(menu, AX.MenuItem, title)
+  if item == nil then return false end
+  item:performAction(AX.Press)
+  return true
+end
+
 -- Toggle connect/disconnect VPN using `MonoCloud`
 local function toggleMonoCloud(enable, alert)
   local appid = proxyAppBundleIDs.MonoCloud
@@ -362,15 +388,13 @@ local proxyActivateFuncs = {
   ["Clash Verge Rev"] = {
     global = function()
       if ensureProxyAppRunning("Clash Verge Rev")
-          and clickRightMenuBarItem(
-            proxyAppBundleIDs["Clash Verge Rev"], { 3, 2 }) then
+          and clickClashVergeMode("Global Mode") then
         enable_proxy_global("Clash Verge Rev")
       end
     end,
     pac = function()
       if ensureProxyAppRunning("Clash Verge Rev")
-          and clickRightMenuBarItem(
-            proxyAppBundleIDs["Clash Verge Rev"], { 3, 1 }) then
+          and clickClashVergeMode("Rule Mode") then
         enable_proxy_global("Clash Verge Rev")
       end
     end
@@ -910,12 +934,15 @@ local function parseProxyInfo(info, require_mode)
         if enabledProxy == "Clash Verge Rev" and require_mode then
           local appid = proxyAppBundleIDs[enabledProxy]
           if find(appid) ~= nil then
-            local outboundModeMenu = getc(toappui(find(appid)), AX.MenuBar, -1,
-                AX.MenuBarItem, 1, AX.Menu, 1, AX.MenuItem, 3, AX.Menu, 1)
+            local outboundModeMenu = clashVergeModeMenu(appid)
             if outboundModeMenu ~= nil then
-              if getc(outboundModeMenu, AX.MenuItem, 1).AXMenuItemMarkChar == "✓" then
+              local ruleMode = getc(outboundModeMenu, AX.MenuItem,
+                  localizedString("Rule Mode", appid))
+              local globalMode = getc(outboundModeMenu, AX.MenuItem,
+                  localizedString("Global Mode", appid))
+              if ruleMode and ruleMode.AXMenuItemMarkChar == "✓" then
                 mode = "PAC"
-              elseif getc(outboundModeMenu, AX.MenuItem, 2).AXMenuItemMarkChar == "✓" then
+              elseif globalMode and globalMode.AXMenuItemMarkChar == "✓" then
                 mode = "Global"
               end
             end
