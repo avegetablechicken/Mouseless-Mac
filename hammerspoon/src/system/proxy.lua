@@ -250,19 +250,9 @@ local function toggleV2RayU(enable, alert)
   return true
 end
 
--- Ensure `v2rayN` is running before using its local proxy ports
-local function ensureV2RayNRunning()
-  local appid = proxyAppBundleIDs.v2rayN
-  if find(appid) == nil then
-    hs.application.launchOrFocusByBundleID(appid)
-  end
-
-  return true
-end
-
--- Ensure `Clash Verge Rev` is running before using its local proxy ports
-local function ensureClashVergeRevRunning()
-  local appid = proxyAppBundleIDs["Clash Verge Rev"]
+-- Ensure a proxy client is running before using its local proxy ports
+local function ensureProxyAppRunning(appname)
+  local appid = proxyAppBundleIDs[appname]
   if find(appid) == nil then
     hs.application.launchOrFocusByBundleID(appid)
   end
@@ -363,7 +353,7 @@ local proxyActivateFuncs = {
 
   v2rayN = {
     global = function()
-      if ensureV2RayNRunning() then
+      if ensureProxyAppRunning("v2rayN") then
         enable_proxy_global("v2rayN")
       end
     end
@@ -371,14 +361,14 @@ local proxyActivateFuncs = {
 
   ["Clash Verge Rev"] = {
     global = function()
-      if ensureClashVergeRevRunning()
+      if ensureProxyAppRunning("Clash Verge Rev")
           and clickRightMenuBarItem(
             proxyAppBundleIDs["Clash Verge Rev"], { 3, 2 }) then
         enable_proxy_global("Clash Verge Rev")
       end
     end,
     pac = function()
-      if ensureClashVergeRevRunning()
+      if ensureProxyAppRunning("Clash Verge Rev")
           and clickRightMenuBarItem(
             proxyAppBundleIDs["Clash Verge Rev"], { 3, 1 }) then
         enable_proxy_global("Clash Verge Rev")
