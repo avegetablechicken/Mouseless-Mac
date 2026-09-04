@@ -121,6 +121,7 @@ local proxyAppBundleIDs = {
   V2rayU = "net.yanue.V2rayU",
   v2rayN = "2dust.v2rayN",
   MonoCloud = "com.MonoCloud.MonoProxyMac",
+  ["Clash Verge Rev"] = "io.github.clash-verge-rev.clash-verge-rev",
 }
 
 -- Toggle connect/disconnect VPN using `V2RayX`
@@ -259,6 +260,16 @@ local function ensureV2RayNRunning()
   return true
 end
 
+-- Ensure `Clash Verge Rev` is running before using its local proxy ports
+local function ensureClashVergeRevRunning()
+  local appid = proxyAppBundleIDs["Clash Verge Rev"]
+  if find(appid) == nil then
+    hs.application.launchOrFocusByBundleID(appid)
+  end
+
+  return true
+end
+
 -- Toggle connect/disconnect VPN using `MonoCloud`
 local function toggleMonoCloud(enable, alert)
   local appid = proxyAppBundleIDs.MonoCloud
@@ -354,6 +365,23 @@ local proxyActivateFuncs = {
     global = function()
       if ensureV2RayNRunning() then
         enable_proxy_global("v2rayN")
+      end
+    end
+  },
+
+  ["Clash Verge Rev"] = {
+    global = function()
+      if ensureClashVergeRevRunning()
+          and clickRightMenuBarItem(
+            proxyAppBundleIDs["Clash Verge Rev"], { 3, 2 }) then
+        enable_proxy_global("Clash Verge Rev")
+      end
+    end,
+    pac = function()
+      if ensureClashVergeRevRunning()
+          and clickRightMenuBarItem(
+            proxyAppBundleIDs["Clash Verge Rev"], { 3, 1 }) then
+        enable_proxy_global("Clash Verge Rev")
       end
     end
   },
@@ -456,6 +484,7 @@ local proxyIconNames = {
   V2rayU = "v2rayu",
   v2rayN = "v2rayn",
   MonoCloud = "monocloud",
+  ["Clash Verge Rev"] = "clash-verge-rev",
 }
 local proxyForIcon = ""
 local proxyUsesLightForeground
@@ -693,6 +722,22 @@ local proxyMenuItemCandidates =
   },
 
   {
+    appname = "Clash Verge Rev",
+    shortcut = 'c',
+    items = {
+      {
+        title = "    Global Mode",
+        fn = proxyActivateFuncs["Clash Verge Rev"].global
+      },
+
+      {
+        title = "    PAC Mode",
+        fn = proxyActivateFuncs["Clash Verge Rev"].pac
+      }
+    }
+  },
+
+  {
     appname = "MonoCloud",
     shortcut = 'm',
     items = {
@@ -730,7 +775,8 @@ local function updateProxyWrapper(wrapped, appname)
           and not _item.title:find("PAC File:")then
         tinsert(newProxyMenu, _item)
       end
-      if _item.title == appname then
+      if _item.title == appname
+          or (_item.title.getString and _item.title:getString() == appname) then
         local info = NetworkWatcher:proxies()
         if item.title:match("PAC") and info.ProxyAutoConfigURLString then
           tinsert(newProxyMenu, {
@@ -871,7 +917,20 @@ local function parseProxyInfo(info, require_mode)
         end
       end
       if enabledProxy ~= "" then
-        if enabledProxy ~= "MonoCloud" then
+        if enabledProxy == "Clash Verge Rev" and require_mode then
+          local appid = proxyAppBundleIDs[enabledProxy]
+          if find(appid) ~= nil then
+            local outboundModeMenu = getc(toappui(find(appid)), AX.MenuBar, -1,
+                AX.MenuBarItem, 1, AX.Menu, 1, AX.MenuItem, 3, AX.Menu, 1)
+            if outboundModeMenu ~= nil then
+              if getc(outboundModeMenu, AX.MenuItem, 1).AXMenuItemMarkChar == "✓" then
+                mode = "PAC"
+              elseif getc(outboundModeMenu, AX.MenuItem, 2).AXMenuItemMarkChar == "✓" then
+                mode = "Global"
+              end
+            end
+          end
+        elseif enabledProxy ~= "MonoCloud" then
           mode = "Global"
         elseif require_mode then
           local appVer = applicationVersion(proxyAppBundleIDs.MonoCloud)
@@ -1327,6 +1386,7 @@ local function SystemProxy_applicationInstalledCallback(files, flagTables)
     if files[i]:match("V2RayX")
         or files[i]:match("V2rayU")
         or files[i]:match("v2rayN")
+        or files[i]:match("Clash Verge")
         or files[i]:match("MonoProxyMac") then
       registerProxyMenu(true)
     end

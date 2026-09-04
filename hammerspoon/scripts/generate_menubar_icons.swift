@@ -156,6 +156,9 @@ let proxyApps = [
         sourceIconDirectory.appendingPathComponent("v2rayu.png").path,
     ]),
     ("v2rayn", "2dust.v2rayN", ["/Applications/v2rayN.app/Contents/Resources/AppIcon.icns"]),
+    ("clash-verge-rev", "io.github.clash-verge-rev.clash-verge-rev", [
+        "/Applications/Clash Verge.app/Contents/Resources/icon.icns",
+    ]),
     ("monocloud", "com.MonoCloud.MonoProxyMac", ["/Applications/MonoProxyMac.app/Contents/Resources/AppIcon.icns"]),
 ]
 
