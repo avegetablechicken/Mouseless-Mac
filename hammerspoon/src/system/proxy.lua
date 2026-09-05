@@ -1358,7 +1358,7 @@ function()
   local screenFrame = hs.screen.mainScreen():frame()
   proxy:popupMenu({
     x = frame.x,
-    y = screenFrame.y + screenFrame.h - frame.y
+    y = screenFrame.y + screenFrame.h - frame.y + 1
   })
 end)
 if proxyHotkey then

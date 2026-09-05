@@ -275,7 +275,7 @@ local function registerSearchMenuBar()
             local screenFrame = hs.screen.mainScreen():frame()
             SystemProxyMenubar:popupMenu({
               x = frame.x,
-              y = screenFrame.y + screenFrame.h - frame.y
+              y = screenFrame.y + screenFrame.h - frame.y + 1
             })
             return
           end
