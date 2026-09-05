@@ -1980,6 +1980,11 @@ end
 
 function displayName(appid)
   local basename = hs.application.nameForBundleID(appid)
+  if basename == nil then
+    local info = hs.plist.read(hs.application.pathForBundleID(appid)
+        .. "/Contents/Info.plist") or {}
+    basename = info.CFBundleDisplayName or info.CFBundleName or appid
+  end
   local appLocale = applicationLocale(appid)
   local locale = get(appLocaleDir, appid, appLocale)
   local appname

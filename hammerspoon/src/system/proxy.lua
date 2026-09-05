@@ -515,7 +515,7 @@ end
 -- Read the actual foreground used for a template icon in the menu bar.
 -- This can differ from the global interface style because of the wallpaper.
 local function menuBarUsesLightForeground()
-  local app = hs.application.frontmostApplication()
+  local app = hs.application.get("com.apple.finder")
   if not app then return end
   local appleMenu = getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem, 1)
   if not appleMenu or not appleMenu.AXPosition or not appleMenu.AXSize then

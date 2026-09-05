@@ -552,8 +552,8 @@ function reactivateValidSettingsToolbarHotkeys(observer)
   local focusedWinId = focusedWin and focusedWin:id() or nil
   local enabled = false
   for wid, hotkeys in pairs(settingsToolbarHotkeys) do
-    local win = hs.window.get(wid)
-    if win == nil then
+    local winUI = hotkeys.windowUI
+    if winUI == nil or winUI:isValid() == false then
       for _, hotkey in ipairs(settingsToolbarHotkeys[wid]) do
         HotkeyRegistry.deleteHotkey(hotkey)
       end
@@ -662,7 +662,7 @@ function registerNavigationForSettingsToolbar(app, retry)
           condition = condition, fn = bind(callback, button)
         })
         if settingsToolbarHotkeys[wid] == nil then
-          settingsToolbarHotkeys[wid] = {}
+          settingsToolbarHotkeys[wid] = { windowUI = winUI }
         end
         tinsert(settingsToolbarHotkeys[wid], hotkey)
       end
