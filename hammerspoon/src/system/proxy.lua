@@ -347,16 +347,18 @@ local proxyActivateFuncs = {
     global = function()
       if toggleV2RayX(true) then
         if clickRightMenuBarItem(proxyAppBundleIDs.V2RayX, "Global Mode") then
-          enable_proxy_global("V2RayX")
+          return enable_proxy_global("V2RayX")
         end
       end
+      return false
     end,
     pac = function()
       if toggleV2RayX(true) then
         if clickRightMenuBarItem(proxyAppBundleIDs.V2RayX, "PAC Mode") then
-          enable_proxy_PAC("V2RayX")
+          return enable_proxy_PAC("V2RayX")
         end
       end
+      return false
     end
   },
 
@@ -364,24 +366,27 @@ local proxyActivateFuncs = {
     global = function()
       if toggleV2RayU(true) then
         if clickRightMenuBarItem(proxyAppBundleIDs.V2rayU, "Global Mode") then
-          enable_proxy_global("V2rayU")
+          return enable_proxy_global("V2rayU")
         end
       end
+      return false
     end,
     pac = function()
       if toggleV2RayU(true) then
         if clickRightMenuBarItem(proxyAppBundleIDs.V2rayU, "Pac Mode") then
-          enable_proxy_PAC("V2rayU")
+          return enable_proxy_PAC("V2rayU")
         end
       end
+      return false
     end
   },
 
   v2rayN = {
     global = function()
       if ensureProxyAppRunning("v2rayN") then
-        enable_proxy_global("v2rayN")
+        return enable_proxy_global("v2rayN")
       end
+      return false
     end
   },
 
@@ -389,14 +394,16 @@ local proxyActivateFuncs = {
     global = function()
       if ensureProxyAppRunning("Clash Verge Rev")
           and clickClashVergeMode("Global Mode") then
-        enable_proxy_global("Clash Verge Rev")
+        return enable_proxy_global("Clash Verge Rev")
       end
+      return false
     end,
     pac = function()
       if ensureProxyAppRunning("Clash Verge Rev")
           and clickClashVergeMode("Rule Mode") then
-        enable_proxy_global("Clash Verge Rev")
+        return enable_proxy_global("Clash Verge Rev")
       end
+      return false
     end
   },
 
@@ -406,24 +413,26 @@ local proxyActivateFuncs = {
         if clickRightMenuBarItem(proxyAppBundleIDs.MonoCloud, { "Outbound Mode", 2 }) then
           local appVer = applicationVersion(proxyAppBundleIDs.MonoCloud)
           if appVer and appVer >= "1.0" then
-            enable_proxy_global_fast("MonoCloud")
+            return enable_proxy_global_fast("MonoCloud")
           else
-            enable_proxy_global("MonoCloud")
+            return enable_proxy_global("MonoCloud")
           end
         end
       end
+      return false
     end,
     pac = function()
       if toggleMonoCloud(false) then
         if clickRightMenuBarItem(proxyAppBundleIDs.MonoCloud, { "Outbound Mode", 3 }) then
           local appVer = applicationVersion(proxyAppBundleIDs.MonoCloud)
           if appVer and appVer >= "1.0" then
-            enable_proxy_global_fast("MonoCloud")
+            return enable_proxy_global_fast("MonoCloud")
           else
-            enable_proxy_global("MonoCloud")
+            return enable_proxy_global("MonoCloud")
           end
         end
       end
+      return false
     end
   }
 }
@@ -777,40 +786,61 @@ local proxyMenuItemCandidates =
 -- - Reacts to network changes and service switches
 
 -- Wrap proxy menu item to update checked state and extra info dynamically
+local registerProxyMenu
+local parseProxyInfo
+local proxyActivationTimer
 local function updateProxyWrapper(wrapped, appname)
   local fn = function(mod, item)
-    wrapped.fn(mod, item)
-    setProxyIcon(appname or "")
-    local newProxyMenu = {}
-    for _, _item in ipairs(proxyMenu) do
-      _item.checked = false
-      item.checked = true
-      if not _item.title:find("Proxy:")
-          and not _item.title:find("PAC File:")then
-        tinsert(newProxyMenu, _item)
-      end
-      if _item.title == appname
-          or (_item.title.getString and _item.title:getString() == appname) then
-        local info = NetworkWatcher:proxies()
-        if item.title:match("PAC") and info.ProxyAutoConfigURLString then
-          tinsert(newProxyMenu, {
-            title = "PAC File: " .. info.ProxyAutoConfigURLString,
-            disabled = true
-          })
-        else
-          tinsert(newProxyMenu, {
-            title = "HTTP Proxy: " .. info.HTTPProxy .. ":" .. info.HTTPPort,
-            disabled = true
-          })
-          tinsert(newProxyMenu, {
-            title = "SOCKS5 Proxy: " .. info.SOCKSProxy .. ":" .. info.SOCKSPort,
-            disabled = true,
-          })
-        end
-      end
+    if proxyActivationTimer then
+      proxyActivationTimer:stop()
+      proxyActivationTimer = nil
     end
-    proxyMenu = newProxyMenu
-    proxy:setMenu(proxyMenu)
+    local appid = proxyAppBundleIDs[appname]
+    local activate = function()
+      local activated = wrapped.fn(mod, item) ~= false
+      local deadline = hs.timer.secondsSinceEpoch() + 10
+      proxyActivationTimer = hs.timer.waitUntil(function()
+        if not activated and (appid == nil or find(appid) ~= nil) then
+          activated = wrapped.fn(mod, item) ~= false
+        end
+        local enabledProxy, mode = parseProxyInfo(NetworkWatcher:proxies())
+        return activated and enabledProxy == (appname or "")
+            and (appname == nil or mode == wrapped.title:match("%S+"))
+            or hs.timer.secondsSinceEpoch() >= deadline
+      end, function()
+        proxyActivationTimer = nil
+        registerProxyMenu(false)
+        if not activated then hs.alert("Unable to activate " .. (appname or "proxy")) end
+      end, 0.1)
+    end
+    if appid == nil then
+      activate()
+      return
+    end
+    local ready = function()
+      local app = find(appid)
+      if app == nil then return false end
+      if appname == "v2rayN" then return true end
+      local menu = getc(toappui(app), AX.MenuBar, -1,
+          AX.MenuBarItem, 1, AX.Menu, 1)
+      return #(getc(menu, AX.MenuItem) or {}) > 0
+    end
+    if ready() then
+      activate()
+      return
+    end
+    ensureProxyAppRunning(appname)
+    local deadline = hs.timer.secondsSinceEpoch() + 10
+    proxyActivationTimer = hs.timer.waitUntil(function()
+      return ready() or hs.timer.secondsSinceEpoch() >= deadline
+    end, function()
+      proxyActivationTimer = nil
+      if ready() then
+        activate()
+      else
+        hs.alert("Error occurred while starting " .. appname .. ". Please retry")
+      end
+    end, 0.1)
   end
 
   return {
@@ -882,7 +912,7 @@ local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
 end
 
 -- Parse current system proxy state and detect enabled proxy and mode
-local function parseProxyInfo(info, require_mode)
+parseProxyInfo = function(info, require_mode)
   if require_mode == nil then require_mode = true end
   local enabledProxy = ""
   local mode = nil
@@ -1214,7 +1244,7 @@ end
 
 -- Register proxy menubar with retry logic on network availability
 
-local function registerProxyMenu(retry, enabledProxy, mode)
+registerProxyMenu = function(retry, enabledProxy, mode)
   if not getNetworkService() then
     setProxyIcon("")
     local menu = {{
