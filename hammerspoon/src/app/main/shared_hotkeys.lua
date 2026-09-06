@@ -420,11 +420,13 @@ local specialToolbarButtons = {
   end,
   ["cn.better365.iShotPro"] = function(winUI)
     local buttons = getc(winUI, AX.Button)
-    if buttons then
+    if buttons and #buttons > 3 then
       table.sort(buttons, function(a, b)
         return a.AXPosition.y < b.AXPosition.y
       end)
       return buttons
+    else
+      return getc(winUI, AX.ScrollArea, 1, AX.Table, 1, AX.Row)
     end
   end,
   ["com.torusknot.SourceTreeNotMAS"] = function(winUI)
