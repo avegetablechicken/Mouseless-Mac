@@ -789,8 +789,13 @@ local proxyMenuItemCandidates =
 local registerProxyMenu
 local parseProxyInfo
 local proxyActivationTimer
+local proxyLaunchTimer
 local function updateProxyWrapper(wrapped, appname)
   local fn = function(mod, item)
+    if proxyLaunchTimer then
+      proxyLaunchTimer:stop()
+      proxyLaunchTimer = nil
+    end
     if proxyActivationTimer then
       proxyActivationTimer:stop()
       proxyActivationTimer = nil
@@ -1142,7 +1147,28 @@ local function registerProxyMenuImpl(enabledProxy, mode)
             clickRightMenuBarItem(appid)
           end
           if find(appid) == nil then
+            local previous = tfind(proxyMenu, function(entry) return entry.checked and entry.fn end)
+            local service = getNetworkService()
+            local originalProxy, originalMode = parseProxyInfo(NetworkWatcher:proxies())
+            local lastProxy, lastMode = originalProxy, originalMode
+            local changedAt
+            local deadline = hs.timer.secondsSinceEpoch() + 10
+            if proxyLaunchTimer then proxyLaunchTimer:stop() end
             hs.application.launchOrFocusByBundleID(appid)
+            proxyLaunchTimer = hs.timer.waitUntil(function()
+              local currentProxy, currentMode = parseProxyInfo(NetworkWatcher:proxies())
+              local now = hs.timer.secondsSinceEpoch()
+              if currentProxy ~= lastProxy or currentMode ~= lastMode then
+                lastProxy, lastMode, changedAt = currentProxy, currentMode, now
+              end
+              return changedAt ~= nil and now - changedAt >= 0.5 or now >= deadline
+            end, function()
+              proxyLaunchTimer = nil
+              if previous and service == getNetworkService()
+                  and (lastProxy ~= originalProxy or lastMode ~= originalMode) then
+                previous.fn({})
+              end
+            end, 0.1)
             hs.timer.waitUntil(
               function() return find(appid) ~= nil end,
               actionFunc)
