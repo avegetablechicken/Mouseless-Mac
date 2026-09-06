@@ -1383,13 +1383,7 @@ function()
     clickRightMenuBarItem{hammerspoon, proxy:autosaveName()}
     return
   end
-  local frame = proxy:_frame()
-  if not frame then return end
-  local screenFrame = hs.screen.mainScreen():frame()
-  proxy:popupMenu({
-    x = frame.x,
-    y = screenFrame.y + screenFrame.h - frame.y + 1
-  })
+  popupRightMenuBarItem(proxy)
 end)
 if proxyHotkey then
   proxyHotkey.kind = HK.MENUBAR

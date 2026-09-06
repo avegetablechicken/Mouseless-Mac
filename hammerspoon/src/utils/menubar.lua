@@ -758,6 +758,35 @@ function hiddenByMenuBarManager(app, index, map)
   return menuBarItem.AXPosition.x < leftmostHorizontal, manager, map
 end
 
+-- Align a Hammerspoon popup with its status item; icon is an optional AX element.
+function popupRightMenuBarItem(item, icon)
+  local frame = item:_frame()
+  if not frame then return false end
+  if not icon then
+    local app = hs.application.get(hs.settings.bundleID)
+    local map = loadStatusItemsAutosaveName(app)
+    local index = map and map[item:autosaveName()]
+    if not index then return false end
+    icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, index)
+  end
+  if not icon then return false end
+  local offset = 4
+  for _, entry in ipairs(getc(icon, AX.Menu, 1, AX.MenuItem) or {}) do
+    local mark = entry.AXMenuItemMarkChar
+    if mark and mark ~= "" then
+      -- Proxy uses the standard menu font/checkmark, whose measured width is its point size.
+      offset = offset + math.floor(hs.styledtext.defaultFonts.menu.size - 2 + 0.5)
+      break
+    end
+  end
+  local screen = hs.screen.mainScreen():frame()
+  item:popupMenu({
+    x = math.max(screen.x, math.min(frame.x - offset, screen.x + screen.w - frame.w)),
+    y = screen.y + 1,
+  })
+  return true
+end
+
 -- Open a menu bar item, then navigate submenus and finally press the leaf menu item.
 function clickRightMenuBarItem(appid, menuItemPath, show)
   local menuBarId, app

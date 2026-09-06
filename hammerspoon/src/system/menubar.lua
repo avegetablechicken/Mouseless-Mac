@@ -271,12 +271,7 @@ local function registerSearchMenuBar()
             SystemCaffeineClicked()
             return
           elseif subText == SystemProxyMenubar:autosaveName() then
-            local frame = SystemProxyMenubar:_frame()
-            local screenFrame = hs.screen.mainScreen():frame()
-            SystemProxyMenubar:popupMenu({
-              x = frame.x,
-              y = screenFrame.y + screenFrame.h - frame.y + 1
-            })
+            popupRightMenuBarItem(SystemProxyMenubar, item)
             return
           end
           -- fixme: hanging issue
