@@ -1,4 +1,39 @@
-# Vendored Python Dependencies
+# Vendored Dependencies
+
+## Chromium PAK Tool
+
+Source: [myfreeer/chrome-pak-customizer](https://github.com/myfreeer/chrome-pak-customizer),
+as credited in the `mlmac` branch's root `README.md`.
+Upstream licenses non-Windows builds under MIT; the full copyright and
+permission notice is retained in `licenses/pak.LICENSE`.
+
+`pak` is a prebuilt macOS Mach-O universal executable for `x86_64` and
+`arm64`. `src/utils/localization/common.lua` invokes it with
+`scripts/vendor/pak -u <pak_file> <destination_path>` to unpack Chromium
+localization resources. No compiler or network access is needed at runtime.
+
+| Binary | Architecture | License | SHA-256 |
+| --- | --- | --- | --- |
+| pak | macOS x86_64 + arm64 | MIT | `df30379319b162786ee2bdeaf4706b70a4f3b1d95ca5675a0b7d9eb6d09a81ad` |
+
+Local commit `f8d824ce2a5fd3ef458e721c9c059265dd3636d8` (2024-01-06),
+`macos: build "pak" as universal binary`, introduced this binary. Moving it
+into `vendor` does not change its contents or executable permissions.
+The exact upstream version/commit, build commands, and any local source
+changes are not recorded, so a byte-for-byte rebuild cannot currently be
+documented. In particular, this binary is not identified as upstream 2.0.
+
+To recover the known binary from this repository, run from its root:
+
+```sh
+git show f8d824ce2a5fd3ef458e721c9c059265dd3636d8:macos/.hammerspoon/scripts/pak > /tmp/pak-restored
+chmod +x /tmp/pak-restored
+shasum -a 256 /tmp/pak-restored
+```
+
+Compare the checksum with the table before replacing `scripts/vendor/pak`.
+For a new build, follow the upstream README's CMake instructions and record
+the selected source commit, macOS architectures, build options, and new hash.
 
 ## NIB Archive Parser
 

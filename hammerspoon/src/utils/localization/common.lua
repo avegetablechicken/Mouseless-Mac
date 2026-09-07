@@ -777,7 +777,7 @@ function localizeByChromium(str, localeDir, appid)
           local enTmpdir = enTmpBaseDir .. '/' .. fileStem
           if not exists(enTmpdir) then
             mkdir(enTmpBaseDir)
-            hs.execute(strfmt("scripts/pak -u '%s' '%s'",
+            hs.execute(strfmt("scripts/vendor/pak -u '%s' '%s'",
                               fullPath, enTmpdir))
           end
           local output, status = hs.execute(strfmt([[
@@ -789,7 +789,7 @@ function localizeByChromium(str, localeDir, appid)
             local tmpdir = tmpBaseDir .. '/' .. fileStem
             if not exists(tmpdir) then
               mkdir(tmpBaseDir)
-              hs.execute(strfmt("scripts/pak -u '%s' '%s'",
+              hs.execute(strfmt("scripts/vendor/pak -u '%s' '%s'",
                                 localeDir .. '/' .. file, tmpdir))
             end
             local matchFullPath = tmpdir .. '/' .. matchFile
@@ -1358,7 +1358,7 @@ function delocalizeByChromium(str, localeDir, appid)
       local tmpdir = tmpBaseDir .. '/' .. fileStem
       if not exists(tmpdir) then
         mkdir(tmpBaseDir)
-        hs.execute(strfmt("scripts/pak  -u '%s' '%s'",
+        hs.execute(strfmt("scripts/vendor/pak  -u '%s' '%s'",
                           localeDir .. '/' .. file, tmpdir))
       end
       local pattern = '^' .. str .. '$'
@@ -1374,7 +1374,7 @@ function delocalizeByChromium(str, localeDir, appid)
             local enTmpdir = enTmpBaseDir .. '/' .. fileStem
             if not exists(enTmpdir) then
               mkdir(enTmpBaseDir)
-              hs.execute(strfmt("scripts/pak  -u '%s' '%s'", fullPath, enTmpdir))
+              hs.execute(strfmt("scripts/vendor/pak  -u '%s' '%s'", fullPath, enTmpdir))
             end
             local matchFullPath = enTmpdir .. '/' .. matchFile
             if exists(matchFullPath) then
