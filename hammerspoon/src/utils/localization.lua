@@ -71,6 +71,17 @@ function applicationLocale(appid)
   -- Locale of apps whose localization is not driven by AppleLanguages.
   if appid == CLASH_VERGE_REV_BUNDLE_ID then
     return clashVergeAppLocale(appid)
+  elseif appid == "2dust.v2rayN" then
+    local path = os.getenv("HOME")
+        .. "/Library/Application Support/v2rayN/guiConfigs/guiNConfig.json"
+    local ok, config = pcall(hs.json.read, path)
+    local locale = ok and type(config) == "table"
+        and type(config.UiItem) == "table" and config.UiItem.CurrentLanguage
+    if type(locale) == "string" and locale:find("%S") then
+      return locale, true
+    end
+    -- Match v2rayN's first-run default based on the system culture.
+    return hs.host.locale.details().languageCode == "zh" and "zh-Hans" or "en", true
   elseif appid == "com.tencent.xinWeChat" then
     if applicationVersion(appid) >= "4" then  -- Qt
       local app = find(appid)
@@ -967,6 +978,9 @@ local function localizedStringImpl(str, appid, params, force)
     if result ~= nil then
       return result, appLocale, locale
     end
+  elseif appid == "2dust.v2rayN" then
+    result, locale = localizeV2rayN(str, appLocale)
+    return result, appLocale, locale
   elseif appid:find("com.valvesoftware.steam") then
     locale = get(appLocaleDir, appid, appLocale)
     result, locale = localizeSteam(str, appLocale, locale)
@@ -1237,6 +1251,9 @@ local function delocalizedStringImpl(str, appid, params, force)
     if result ~= nil then
       return result, appLocale, locale
     end
+  elseif appid == "2dust.v2rayN" then
+    result, locale = delocalizeV2rayN(str, appLocale)
+    return result, appLocale, locale
   elseif appid:find("com.valvesoftware.steam") then
     locale = get(appLocaleDir, appid, appLocale)
     result, locale = delocalizeSteam(str, appLocale, locale)

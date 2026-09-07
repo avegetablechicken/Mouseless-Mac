@@ -86,6 +86,74 @@ function clashVergeAppLocale(appid)
   return SYSTEM_LOCALE, true
 end
 
+local v2rayNTranslationsCache
+
+local function addV2rayNTranslation(map, source, target)
+  if map[source] == nil then
+    map[source] = target
+  elseif map[source] ~= target then
+    map[source] = false -- Ambiguous text requires the resource key for localization.
+  end
+end
+
+local function v2rayNTranslations()
+  local appid = "2dust.v2rayN"
+  local appPath = hs.application.pathForBundleID(appid)
+  local info = hs.application.infoForBundleID(appid)
+  if appPath == nil or info == nil or info.CFBundleExecutable == nil then return end
+  local binary = appPath .. "/Contents/MacOS/" .. info.CFBundleExecutable
+  local attributes = hs.fs.attributes(binary)
+  if attributes == nil then return end
+  local identity = table.concat({binary, tostring(attributes.modification),
+      tostring(attributes.change), tostring(attributes.size), tostring(attributes.ino)}, "|")
+  if v2rayNTranslationsCache and v2rayNTranslationsCache.identity == identity then
+    return v2rayNTranslationsCache
+  end
+
+  local script = hs.configdir .. "/scripts/dotnet_resources.py"
+  local function quote(value) return "'" .. value:gsub("'", "'\\''") .. "'" end
+  local output, ok = hs.execute("/usr/bin/python3 " .. quote(script) .. " " .. quote(binary))
+  if not ok then return end
+  local decoded, translations = pcall(hs.json.decode, output)
+  if not decoded or type(translations) ~= "table" or type(translations.en) ~= "table" then
+    return
+  end
+  local cache = {identity = identity, translations = translations, locales = {}, maps = {}}
+  for locale, dictionary in pairs(translations) do
+    local forward, reverse = {}, {}
+    for key, english in pairs(translations.en) do
+      local translated = dictionary[key] or english
+      addV2rayNTranslation(forward, english, translated)
+      addV2rayNTranslation(reverse, translated, english)
+    end
+    tinsert(cache.locales, locale)
+    cache.maps[locale] = {forward = forward, reverse = reverse}
+  end
+  table.sort(cache.locales)
+  v2rayNTranslationsCache = cache
+  return cache
+end
+
+function localizeV2rayN(str, appLocale)
+  local cache = v2rayNTranslations()
+  if cache == nil then return end
+  local locale = matchLocale(appLocale, cache.locales) or "en"
+  local result
+  if cache.translations.en[str] ~= nil then
+    result = cache.translations[locale][str] or cache.translations.en[str]
+  else
+    result = cache.maps[locale].forward[str]
+  end
+  return result or nil, locale
+end
+
+function delocalizeV2rayN(str, appLocale)
+  local cache = v2rayNTranslations()
+  if cache == nil then return end
+  local locale = matchLocale(appLocale, cache.locales) or "en"
+  return cache.maps[locale].reverse[str] or nil, locale
+end
+
 local wpsLocCache = {}
 local function ensureWpsCache(resourceDir, locale)
   local key = resourceDir .. '/' .. locale

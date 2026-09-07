@@ -301,10 +301,8 @@ local function clickV2rayNMode(mode)
   if matchesV2rayNRoute(v2rayNRoutingName(), mode) then return true end
   local appUI = toappui(app)
   if not app:isFrontmost() or #app:visibleWindows() == 0 then
-    -- The first tray command is Display GUI (not the show/hide toggle).
-    local menu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1)
-    if #(getc(menu, AX.MenuItem) or {}) > 0 then
-      clickRightMenuBarItem(appid, 1)
+    if getc(appUI, AX.MenuBar, -1) ~= nil then
+      clickRightMenuBarItem(appid, "Display GUI")
     end
     return false
   end
