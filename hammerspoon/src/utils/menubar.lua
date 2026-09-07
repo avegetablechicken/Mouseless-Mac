@@ -782,7 +782,7 @@ function popupRightMenuBarItem(item, icon)
   local screen = hs.screen.mainScreen():frame()
   item:popupMenu({
     x = math.max(screen.x, math.min(frame.x - offset, screen.x + screen.w - frame.w)),
-    y = screen.y + 1,
+    y = screen.y + 1 + 5, -- 1pt below menu bar + AppKit's 5pt first-item inset (macOS 26).
   })
   return true
 end
