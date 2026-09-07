@@ -260,6 +260,73 @@ local function ensureProxyAppRunning(appname)
   return true
 end
 
+local function findV2rayNElement(element, predicate, depth)
+  if element == nil or (depth or 0) > 40 then return end
+  if predicate(element) then return element end
+  for _, child in ipairs(element.AXChildren or {}) do
+    local found = findV2rayNElement(child, predicate, (depth or 0) + 1)
+    if found then return found end
+  end
+end
+
+local function v2rayNRoutingName()
+  local path = os.getenv("HOME")
+      .. "/Library/Application Support/v2rayN/guiConfigs/guiNDB.db"
+  if not exists(path) then return end
+  local db = hs.sqlite3.open(path, hs.sqlite3.OPEN_READONLY)
+  if db == nil then return end
+  local name
+  local ok = pcall(function()
+    for row in db:nrows("SELECT Remarks FROM RoutingItem WHERE IsActive = 1 LIMIT 1") do
+      name = row.Remarks
+    end
+  end)
+  db:close()
+  if ok then return name end
+end
+
+local function matchesV2rayNRoute(name, mode)
+  if type(name) ~= "string" then return false end
+  local title = (ProxyConfigs.v2rayN.routing or {})[mode]
+  if title ~= nil then return name == title end
+  local keyword = mode == "global" and "Global" or "Whitelist"
+  return name:find(keyword, 1, true) ~= nil
+end
+
+local function clickV2rayNMode(mode)
+  ensureProxyAppRunning("v2rayN")
+  local appid = proxyAppBundleIDs.v2rayN
+  local app = find(appid)
+  if app == nil then return false end
+  if matchesV2rayNRoute(v2rayNRoutingName(), mode) then return true end
+  local appUI = toappui(app)
+  if not app:isFrontmost() or #app:visibleWindows() == 0 then
+    -- The first tray command is Display GUI (not the show/hide toggle).
+    local menu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1)
+    if #(getc(menu, AX.MenuItem) or {}) > 0 then
+      clickRightMenuBarItem(appid, 1)
+    end
+    return false
+  end
+  local routing = findV2rayNElement(appUI, function(element)
+    return element.AXIdentifier == "cmbRoutings2"
+  end)
+  if routing == nil then return false end
+  if routing.AXExpanded ~= true then
+    routing:performAction("AXShowMenu")
+    return false
+  end
+  local item = findV2rayNElement(routing, function(element)
+    return element.AXRole == AX.MenuItem and element.AXEnabled ~= false
+        and matchesV2rayNRoute(element.AXTitle, mode)
+  end)
+  if item and item.AXEnabled ~= false then
+    -- Avalonia routing items expose neither AXPress nor writable AXSelected.
+    leftClickAndRestore(item, app)
+  end
+  return false -- The existing activation timer retries until the route is saved.
+end
+
 local function clashVergeModeMenu(appid)
   local app = find(appid)
   if app == nil then return end
@@ -383,7 +450,13 @@ local proxyActivateFuncs = {
 
   v2rayN = {
     global = function()
-      if ensureProxyAppRunning("v2rayN") then
+      if clickV2rayNMode("global") then
+        return enable_proxy_global("v2rayN")
+      end
+      return false
+    end,
+    pac = function()
+      if clickV2rayNMode("pac") then
         return enable_proxy_global("v2rayN")
       end
       return false
@@ -633,6 +706,7 @@ ProxyConfigs = {}
 local function parseProxyConfigurations(configs)
   for name, config in pairs(configs) do
     ProxyConfigs[name] = {}
+    ProxyConfigs[name].routing = config.routing
     if config.condition ~= nil then
       ProxyConfigs[name].condition = config.condition
       if config.locations ~= nil then
@@ -740,6 +814,10 @@ local proxyMenuItemCandidates =
       {
         title = "    Global Mode",
         fn = proxyActivateFuncs.v2rayN.global
+      },
+      {
+        title = "    PAC Mode",
+        fn = proxyActivateFuncs.v2rayN.pac
       }
     }
   },
@@ -801,6 +879,9 @@ local function updateProxyWrapper(wrapped, appname)
       proxyActivationTimer = nil
     end
     local appid = proxyAppBundleIDs[appname]
+    local previousApp = appid and find(appid)
+    local restoreV2rayN = appname == "v2rayN"
+        and (previousApp == nil or #previousApp:visibleWindows() == 0)
     local activate = function()
       local activated = wrapped.fn(mod, item) ~= false
       local deadline = hs.timer.secondsSinceEpoch() + 10
@@ -814,6 +895,11 @@ local function updateProxyWrapper(wrapped, appname)
             or hs.timer.secondsSinceEpoch() >= deadline
       end, function()
         proxyActivationTimer = nil
+        if restoreV2rayN then
+          local app = find(appid)
+          local window = app and app:mainWindow()
+          if window then window:close() end
+        end
         registerProxyMenu(false)
         if not activated then hs.alert("Unable to activate " .. (appname or "proxy")) end
       end, 0.1)
@@ -981,6 +1067,13 @@ parseProxyInfo = function(info, require_mode)
                 mode = "Global"
               end
             end
+          end
+        elseif enabledProxy == "v2rayN" and require_mode then
+          local name = v2rayNRoutingName()
+          if matchesV2rayNRoute(name, "global") then
+            mode = "Global"
+          elseif matchesV2rayNRoute(name, "pac") then
+            mode = "PAC"
           end
         elseif enabledProxy ~= "MonoCloud" then
           mode = "Global"
