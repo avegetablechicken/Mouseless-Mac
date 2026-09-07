@@ -88,6 +88,8 @@ access is needed when running the extractor.
 
 Upstream licenses are retained in `licenses/dnfile.LICENSE` and
 `licenses/pefile.LICENSE`. Unused `.dist-info` installation metadata is omitted.
+`ordlookup/` is bundled with pefile 2024.8.26 and maps DLL export ordinals
+to symbol names; it is covered by the MIT license in `licenses/pefile.LICENSE`.
 Package source files are not modified locally.
 
 The extractor adapts dnfile 0.18.0's resource string length decoding to
