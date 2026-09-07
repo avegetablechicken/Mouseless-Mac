@@ -76,7 +76,7 @@ end
 function parseNIBArchive(file, keepOrder, keepAll)
   if keepOrder == nil then keepOrder = true end
   local jsonStr = hs.execute([[
-    /usr/bin/python3 scripts/nib_parse.py \
+    /usr/bin/python3 scripts/vendor/nib_parse.py \
         dump-json ']]..file..[[' -o /dev/stdout | \
     grep '"data": "' | sed 's/^.*"data": "//;s/"$//' | \
     awk 'BEGIN { printf("{"); first = 1 } /\.(title|label)$/ {
@@ -423,7 +423,7 @@ function localizeByNIB(str, localeDir, localeFile, appid)
     if not exists(baseJsonPath) then
       mkdir(baseJsonDir)
       local _, status = hs.execute(strfmt([[
-        /usr/bin/python3 scripts/nib_parse.py dump-json '%s' -o '%s'
+        /usr/bin/python3 scripts/vendor/nib_parse.py dump-json '%s' -o '%s'
       ]], baseNIBPath, baseJsonPath))
       if not status then return end
     end
@@ -432,7 +432,7 @@ function localizeByNIB(str, localeDir, localeFile, appid)
     if not exists(jsonPath) then
       mkdir(jsonDir)
       local _, status = hs.execute(strfmt([[
-        /usr/bin/python3 scripts/nib_parse.py dump-json '%s' -o '%s'
+        /usr/bin/python3 scripts/vendor/nib_parse.py dump-json '%s' -o '%s'
       ]], NIBPath, jsonPath))
       if not status then return end
     end
@@ -1115,7 +1115,7 @@ function delocalizeByNIB(str, localeDir, localeFile, appid)
     if not exists(jsonPath) then
       mkdir(jsonDir)
       local _, status = hs.execute(strfmt(
-          "/usr/bin/python3 scripts/nib_parse.py dump-json '%s' -o '%s'",
+          "/usr/bin/python3 scripts/vendor/nib_parse.py dump-json '%s' -o '%s'",
           NIBPath, jsonPath))
       if not status then return end
     end
@@ -1124,7 +1124,7 @@ function delocalizeByNIB(str, localeDir, localeFile, appid)
     if not exists(baseJsonPath) then
       mkdir(baseJsonDir)
       local _, status = hs.execute(strfmt(
-          "/usr/bin/python3 scripts/nib_parse.py dump-json '%s' -o '%s'",
+          "/usr/bin/python3 scripts/vendor/nib_parse.py dump-json '%s' -o '%s'",
           baseLocaleDir .. '/' .. file .. '.nib', baseJsonPath))
       if not status then return end
     end

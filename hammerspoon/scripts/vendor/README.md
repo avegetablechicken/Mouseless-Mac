@@ -1,4 +1,46 @@
-# Vendored .NET Resource Dependencies
+# Vendored Python Dependencies
+
+## NIB Archive Parser
+
+Source: [MatrixEditor/nibarchive](https://github.com/MatrixEditor/nibarchive),
+version 1.0.0, pinned to commit
+[`e393750572bfa8c4d31b9016b9b642677e880b9b`](https://github.com/MatrixEditor/nibarchive/tree/e393750572bfa8c4d31b9016b9b642677e880b9b)
+(2023-12-10). The vendored package files match this commit byte for byte;
+the original import commit was not recorded locally.
+
+Copyright (C) 2023 MatrixEditor. The source headers specify
+**GPL-3.0-or-later**; the upstream license text is retained in
+`licenses/nibarchive.LICENSE` and covers both the package and CLI.
+
+`nibarchive/` contains the unmodified `__init__.py`, `model.py`, and
+`parse.py`. `nib_parse.py` is upstream `nibarchive/__main__.py`, relocated
+next to the package so its imports resolve when invoked directly.
+`src/utils/localization/common.lua` runs it with `/usr/bin/python3` to
+extract localized strings from binary NIB archives. It uses only the Python
+standard library and needs no pip installation or network access at runtime.
+
+Local CLI changes, applied to all three JSON output paths:
+
+- Serialize `dataclasses.asdict(archive)['values']` instead of the entire
+  archive to reduce `hs.json` loading time.
+- Pass `ensure_ascii=False` to `json.dump` to preserve Unicode characters.
+
+To restore the upstream baseline, run from the Hammerspoon directory
+(use a fresh temporary clone directory):
+
+```sh
+git clone https://github.com/MatrixEditor/nibarchive.git /tmp/nibarchive-source
+git -C /tmp/nibarchive-source checkout --detach e393750572bfa8c4d31b9016b9b642677e880b9b
+mkdir -p scripts/vendor/nibarchive scripts/vendor/licenses
+cp /tmp/nibarchive-source/nibarchive/{__init__,model,parse}.py scripts/vendor/nibarchive/
+cp /tmp/nibarchive-source/nibarchive/__main__.py scripts/vendor/nib_parse.py
+cp /tmp/nibarchive-source/LICENSE scripts/vendor/licenses/nibarchive.LICENSE
+```
+
+Then reapply both local CLI changes above before using the extractor.
+Documentation and packaging metadata are omitted.
+
+## .NET Resource Dependencies
 
 Unmodified pure Python packages from PyPI wheels, loaded directly by
 `scripts/dotnet_resources.py`. No pip installation, .NET runtime, or network
