@@ -87,3 +87,5 @@ Some codes are taken from the following repositories:
 - [chrome-pak-customizer](https://github.com/myfreeer/chrome-pak-customizer)
 
 - [NIBArchive-Parser](https://github.com/MatrixEditor/nibarchive)
+
+- [dnfile](https://github.com/malwarefrank/dnfile)
