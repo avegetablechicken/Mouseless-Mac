@@ -7,11 +7,14 @@
 -- Disable all system proxy settings for the given network service
 local function disable_proxy(networkservice)
   networkservice = networkservice or getNetworkService()
-  hs.execute('networksetup -setproxyautodiscovery "' .. networkservice .. '" off')
-  hs.execute('networksetup -setautoproxystate "' .. networkservice .. '" off')
-  hs.execute('networksetup -setwebproxystate "' .. networkservice .. '" off')
-  hs.execute('networksetup -setsecurewebproxystate "' .. networkservice .. '" off')
-  hs.execute('networksetup -setsocksfirewallproxystate "' .. networkservice .. '" off')
+  local cmds = {
+    'networksetup -setproxyautodiscovery "' .. networkservice .. '" off',
+    'networksetup -setautoproxystate "' .. networkservice .. '" off',
+    'networksetup -setwebproxystate "' .. networkservice .. '" off',
+    'networksetup -setsecurewebproxystate "' .. networkservice .. '" off',
+    'networksetup -setsocksfirewallproxystate "' .. networkservice .. '" off',
+  }
+  hs.execute(table.concat(cmds, ' && '))
 end
 
 local ProxyConfigs
@@ -19,10 +22,12 @@ local ProxyConfigs
 -- Enable system proxy using PAC file for a proxy client
 local function enable_proxy_PAC(client, location)
   local networkservice = getNetworkService()
-  hs.execute('networksetup -setproxyautodiscovery "' .. networkservice .. '" off')
-  hs.execute('networksetup -setwebproxystate "' .. networkservice .. '" off')
-  hs.execute('networksetup -setsecurewebproxystate "' .. networkservice .. '" off')
-  hs.execute('networksetup -setsocksfirewallproxystate "' .. networkservice .. '" off')
+  local cmds = {
+    'networksetup -setproxyautodiscovery "' .. networkservice .. '" off',
+    'networksetup -setwebproxystate "' .. networkservice .. '" off',
+    'networksetup -setsecurewebproxystate "' .. networkservice .. '" off',
+    'networksetup -setsocksfirewallproxystate "' .. networkservice .. '" off',
+  }
 
   if client ~= nil then
     local config = ProxyConfigs[client]
@@ -30,37 +35,14 @@ local function enable_proxy_PAC(client, location)
       config = config[location]
     end
     local PACFile = config.PAC
-    hs.execute('networksetup -setautoproxyurl "' .. networkservice .. '" ' .. PACFile)
+    tinsert(cmds, 'networksetup -setautoproxyurl "' .. networkservice .. '" ' .. PACFile)
   end
-  hs.execute('networksetup -setautoproxystate "' .. networkservice .. '" on')
+  tinsert(cmds, 'networksetup -setautoproxystate "' .. networkservice .. '" on')
+  hs.execute(table.concat(cmds, ' && '))
 end
 
 -- Enable system proxy using global (HTTP / HTTPS / SOCKS) mode
 local function enable_proxy_global(client, location, mode)
-  local networkservice = getNetworkService()
-  hs.execute('networksetup -setproxyautodiscovery "' .. networkservice .. '" off')
-  hs.execute('networksetup -setautoproxystate "' .. networkservice .. '" off')
-
-  if client ~= nil then
-    local config = ProxyConfigs[client]
-    if location then
-      config = ProxyConfigs[client][location]
-    end
-    local addrs = config[mode or "global"]
-    hs.execute('networksetup -setwebproxy "' .. networkservice .. '" ' .. addrs[1] .. ' ' .. addrs[2])
-    hs.execute('networksetup -setsecurewebproxy "' .. networkservice .. '" ' .. addrs[3] .. ' ' .. addrs[4])
-    hs.execute('networksetup -setsocksfirewallproxy "' .. networkservice .. '" ' .. addrs[5] .. ' ' .. addrs[6])
-  end
-
-  hs.execute('networksetup -setwebproxystate "' .. networkservice .. '" on')
-  hs.execute('networksetup -setsecurewebproxystate "' .. networkservice .. '" on')
-  hs.execute('networksetup -setsocksfirewallproxystate "' .. networkservice .. '" on')
-end
-
--- Optimized version that chains networksetup commands into a single shell
--- invocation to reduce process overhead. Used by MonoCloud v1.0+ where the
--- original enable_proxy_global does 8 separate hs.execute calls.
-local function enable_proxy_global_fast(client, location)
   local networkservice = getNetworkService()
   local cmds = {
     'networksetup -setproxyautodiscovery "' .. networkservice .. '" off',
@@ -72,7 +54,7 @@ local function enable_proxy_global_fast(client, location)
     if location then
       config = config[location]
     end
-    local addrs = config.global
+    local addrs = config[mode or "global"]
     tinsert(cmds, 'networksetup -setwebproxy "' .. networkservice .. '" ' .. addrs[1] .. ' ' .. addrs[2])
     tinsert(cmds, 'networksetup -setsecurewebproxy "' .. networkservice .. '" ' .. addrs[3] .. ' ' .. addrs[4])
     tinsert(cmds, 'networksetup -setsocksfirewallproxy "' .. networkservice .. '" ' .. addrs[5] .. ' ' .. addrs[6])
@@ -451,12 +433,7 @@ local proxyActivateFuncs = {
     global = function()
       if toggleMonoCloud(false) then
         if clickRightMenuBarItem(proxyAppBundleIDs.MonoCloud, { "Outbound Mode", 2 }) then
-          local appVer = applicationVersion(proxyAppBundleIDs.MonoCloud)
-          if appVer and appVer >= "1.0" then
-            return enable_proxy_global_fast("MonoCloud")
-          else
-            return enable_proxy_global("MonoCloud")
-          end
+          return enable_proxy_global("MonoCloud")
         end
       end
       return false
@@ -464,12 +441,7 @@ local proxyActivateFuncs = {
     pac = function()
       if toggleMonoCloud(false) then
         if clickRightMenuBarItem(proxyAppBundleIDs.MonoCloud, { "Outbound Mode", 3 }) then
-          local appVer = applicationVersion(proxyAppBundleIDs.MonoCloud)
-          if appVer and appVer >= "1.0" then
-            return enable_proxy_global_fast("MonoCloud")
-          else
-            return enable_proxy_global("MonoCloud")
-          end
+          return enable_proxy_global("MonoCloud")
         end
       end
       return false
