@@ -1109,8 +1109,171 @@ parseProxyInfo = function(info, require_mode)
   end
 end
 
+local proxyExitItem
+local proxyExitMenu
+local proxyExitCheckedAt = 0
+local proxyExitRequest = 0
+local proxyExitTask
+local proxyExitTimer
+
+local function awaitProxyExitTask(path, args, input, timeout, request)
+  local thread = coroutine.running()
+  local task
+  local outputPath
+  if not input then
+    outputPath = os.tmpname()
+    tinsert(args, "--output")
+    tinsert(args, outputPath)
+  end
+  local function cleanup()
+    if outputPath then os.remove(outputPath); outputPath = nil end
+  end
+  local function finish(status, body)
+    if outputPath then
+      if status == 0 then
+        local file = io.open(outputPath, "rb")
+        if file then
+          body = file:read("*a")
+          file:close()
+        else
+          status, body = -1, ""
+        end
+      end
+      cleanup()
+    end
+    if not task or proxyExitTask ~= task then return end
+    proxyExitTask = nil
+    if proxyExitTimer then proxyExitTimer:stop(); proxyExitTimer = nil end
+    if request == proxyExitRequest then
+      assert(coroutine.resume(thread, status, body))
+    end
+  end
+  -- File output avoids pipe limits and menu-tracking delays in stream callbacks.
+  task = hs.task.new(path, finish, args)
+  if not task then cleanup(); return -1, "" end
+  proxyExitTask = task
+  if input then task:setInput(input) end
+  if not task:start() then
+    proxyExitTask = nil
+    cleanup()
+    return -1, ""
+  end
+  proxyExitTimer = hs.timer.doAfter(timeout, function()
+    task:terminate()
+    finish(-1, "")
+  end)
+  return coroutine.yield()
+end
+
+local function queryProxyExit(request, deadline)
+  local function curl(url, address, timeout)
+    return awaitProxyExitTask("/usr/bin/curl", {
+      "-q", "--silent", "--show-error", "--fail", "--connect-timeout", "5",
+      "--max-time", tostring(timeout), "--proxy", address,
+      "--noproxy", address == "" and "*" or "",
+      "--header", "Cache-Control: no-cache", "--url", url,
+    }, nil, timeout + 1, request)
+  end
+  local routes = { "DIRECT" }
+  local settings = NetworkWatcher:proxies()
+  if settings.ProxyAutoConfigEnable == 1 then
+    local tester
+    for _, path in ipairs({ "/opt/homebrew/bin/pactester", "/usr/local/bin/pactester" }) do
+      if hs.fs.attributes(path, "mode") == "file" then tester = path; break end
+    end
+    if not tester then return end
+    local status, body = curl(settings.ProxyAutoConfigURLString, "", 10)
+    if status ~= 0 then return end
+    local code, result = awaitProxyExitTask(tester,
+        { "-p", "-", "-u", "https://www.google.com/" }, body, 5, request)
+    if code ~= 0 then return end
+    routes = {}
+    for entry in result:gmatch("[^;]+") do
+      local route = entry:match("^%s*(.-)%s*$")
+      if route ~= "" then tinsert(routes, route) end
+    end
+  else
+    for _, kind in ipairs({ "HTTPS", "HTTP", "SOCKS" }) do
+      if settings[kind .. "Enable"] == 1 then
+        local host = settings[kind .. "Proxy"]
+        if host:find(":", 1, true) and host:sub(1, 1) ~= "[" then host = "[" .. host .. "]" end
+        routes = { (kind == "SOCKS" and "SOCKS5 " or "PROXY ")
+            .. host .. ":" .. settings[kind .. "Port"] }
+        break
+      end
+    end
+  end
+  local schemes = { PROXY = "http", HTTP = "http", HTTPS = "https",
+    SOCKS = "socks4a", SOCKS4 = "socks4a", SOCKS5 = "socks5h" }
+  -- Only use fallbacks explicitly selected by the PAC.
+  for _, route in ipairs(routes) do
+    local remaining = math.floor(deadline - hs.timer.secondsSinceEpoch())
+    if remaining <= 0 then return end
+    local kind, address = route:match("^(%S+)%s+(%S+)$")
+    if route == "DIRECT" then
+      address = ""
+    elseif schemes[kind] then
+      address = schemes[kind] .. "://" .. address
+    else
+      return
+    end
+    local status, body = curl("https://ipinfo.io/json", address, math.min(12, remaining))
+    if status == 0 then
+      local ok, info = pcall(hs.json.decode, body or "")
+      if ok and type(info) == "table" and type(info.ip) == "string"
+          and info.ip:match("^[%x%.:]+$") then return info end
+    end
+  end
+end
+
+local function refreshProxyExit(force)
+  if not proxyExitItem then return end
+  local now = hs.timer.secondsSinceEpoch()
+  if not force and now - proxyExitCheckedAt < 60 then return end
+  proxyExitCheckedAt = now
+  proxyExitRequest = proxyExitRequest + 1
+  local request = proxyExitRequest
+  local item, menu = proxyExitItem, proxyExitMenu
+  if proxyExitTimer then proxyExitTimer:stop(); proxyExitTimer = nil end
+  if proxyExitTask then
+    local task = proxyExitTask
+    proxyExitTask = nil
+    task:terminate()
+  end
+  if not getNetworkService() then
+    item.title = "Exit IP: No Network Access"
+    return
+  end
+  if force then item.title = "Exit IP: Loading..." end
+  RunCoroutine(function()
+    local info = queryProxyExit(request, now + 45)
+    if request ~= proxyExitRequest then return end
+    item.title = "Exit IP: Unavailable"
+    if info then
+      local country = type(info.country) == "string" and info.country:upper() or ""
+      local flag = ""
+      if country:match("^[A-Z][A-Z]$") then
+        flag = utf8.char(0x1F1E6 + country:byte(1) - 65,
+            0x1F1E6 + country:byte(2) - 65) .. " "
+      end
+      item.title = "Exit IP: " .. flag .. info.ip
+    end
+    proxy:setMenu(menu)
+  end)
+end
+
 local function registerProxySettingsEntry(menu)
   tinsert(menu, { title = "-" })
+  proxyExitItem = { title = "Exit IP: Loading...", disabled = true }
+  proxyExitMenu = menu
+  for i, entry in ipairs(menu) do
+    if type(entry.title) == "string" and
+        (entry.title:match("^PAC File:") or entry.title:match("^HTTP Proxy:")) then
+      tinsert(menu, i, proxyExitItem)
+      break
+    end
+  end
+  refreshProxyExit(true)
   tinsert(menu, {
     title = "Proxy Settings",
     fn = function()
@@ -1380,6 +1543,8 @@ registerProxyMenu = function(retry, enabledProxy, mode)
       return false
     end
   elseif getNetworkService() == 'iPhone USB' then
+    proxyExitRequest = proxyExitRequest + 1
+    proxyExitItem = nil
     setProxyIcon("")
     local menu = {{
       title = "Proxy Configured on iPhone",
@@ -1568,6 +1733,7 @@ ExecContinuously(function()
     if changed then registerProxyMenu(true) end
   end)
   refreshProxyIconTheme(false)
+  refreshProxyExit(false)
 end)
 
 SystemProxyMenubar = proxy
