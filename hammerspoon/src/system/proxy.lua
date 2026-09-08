@@ -1117,14 +1117,14 @@ local function refreshProxyExit(force)
     task:terminate()
   end
   if not getNetworkService() then
-    item.title = "Exit IP: No Network Access"
+    item.title = "Server Node: No Network Access"
     return
   end
-  if force then item.title = "Exit IP: Loading..." end
+  if force then item.title = "Server Node: Loading..." end
   RunCoroutine(function()
     local info = queryProxyExit(request, now + 45)
     if request ~= proxyExitRequest then return end
-    item.title = "Exit IP: Unavailable"
+    item.title = "Server Node: Unavailable"
     if info then
       local country = type(info.country) == "string" and info.country:upper() or ""
       local flag = ""
@@ -1132,7 +1132,7 @@ local function refreshProxyExit(force)
         flag = utf8.char(0x1F1E6 + country:byte(1) - 65,
             0x1F1E6 + country:byte(2) - 65) .. " "
       end
-      item.title = "Exit IP: " .. flag .. info.ip
+      item.title = "Server Node: " .. flag .. info.ip
     end
     proxy:setMenu(menu)
   end)
@@ -1140,7 +1140,7 @@ end
 
 local function registerProxySettingsEntry(menu)
   tinsert(menu, { title = "-" })
-  proxyExitItem = { title = "Exit IP: Loading...", disabled = true }
+  proxyExitItem = { title = "Server Node: Loading...", disabled = true }
   proxyExitMenu = menu
   for i, entry in ipairs(menu) do
     if type(entry.title) == "string" and
