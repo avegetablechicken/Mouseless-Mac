@@ -53,7 +53,8 @@ local operatingSystemVersionNumber = {
   Ventura           = "13",
   Sonoma            = "14",
   Sequoia           = "15",
-  Tahoe             = "26"
+  Tahoe             = "26",
+  ["Golden Gate"]   = "27"
 }
 local Version = require("version")
 for k, v in pairs(operatingSystemVersionNumber) do
