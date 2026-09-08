@@ -496,6 +496,89 @@ end
 
 -- # network / Wi-Fi helpers
 
+-- Get current primary network service name or service ID.
+function getNetworkService(userDefinedName)
+  if userDefinedName == nil then
+    userDefinedName = true
+  end
+  local Ipv4State = NetworkWatcher
+      :contents("State:/Network/Global/IPv4")["State:/Network/Global/IPv4"]
+  if Ipv4State then
+    local serviceID = Ipv4State["PrimaryService"]
+    if userDefinedName then
+      local service = NetworkWatcher
+          :contents("Setup:/Network/Service/" .. serviceID)
+          ["Setup:/Network/Service/" .. serviceID]
+      return service and service.UserDefinedName
+    else
+      return serviceID
+    end
+  end
+end
+
+-- Match configuration conditions, or return the shell command exit code.
+function executeCondition(condition, returnCode)
+  -- Phase 1: evaluate shell command condition (cached during loading)
+  if condition.shell_command then
+    local status, rc
+    if FLAGS["LOADING"] then
+      local cmd = tfind(LoadBuf.shellCommands, function(cmd)
+        return cmd[1] == condition.shell_command
+      end)
+      if cmd then
+        status, rc = cmd[2], cmd[3]
+        if returnCode then return rc end
+        if status then return true end
+      end
+    end
+    if rc == nil then
+      _, status, _, rc = hs.execute(condition.shell_command)
+      if FLAGS["LOADING"] then
+        tinsert(LoadBuf.shellCommands,
+            { condition.shell_command, status, rc })
+      end
+    end
+    if returnCode then return rc end
+    if status then return true end
+  end
+
+  if returnCode then return -1 end
+
+  -- Phase 2: evaluate Wi-Fi SSID based condition
+  local interface = hs.network.primaryInterfaces()
+  local interfaceName = getNetworkService(true)
+  if condition.ssid then
+    if interfaceName == 'Wi-Fi' then
+      local ssid = getSSID(interface)
+      if ssid and ssid ~= "" then
+        local ssidPatterns = type(condition.ssid) == 'string'
+            and { condition.ssid } or condition.ssid
+        if tfind(ssidPatterns, function(id) return ssid:match(id) end) then
+          return true
+        end
+      end
+    end
+  end
+
+  -- Phase 3: evaluate Ethernet IP based condition
+  if condition.etherNet then
+    if interfaceName:match('^USB (.-) LAN$') then
+      local ip = NetworkWatcher
+        :contents("State:/Network/Interface/"..interface.."/IPv4")
+        ["State:/Network/Interface/" .. interface .. "/IPv4"]
+      if ip and ip.Addresses and ip.Addresses[1] then
+        local addrPatterns = type(condition.etherNet) == 'string'
+            and { condition.etherNet } or condition.etherNet
+        if tfind(addrPatterns, function(addr)
+            return ip.Addresses[1]:match(addr) end) then
+          return true
+        end
+      end
+    end
+  end
+  return false
+end
+
 -- Get current Wi-Fi SSID with multiple fallbacks across macOS versions.
 function getSSID(interface)
   local ssid = hs.wifi.currentNetwork()

@@ -39,10 +39,11 @@ do
   if mountainDuckConfig ~= nil and mountainDuckConfig.connections ~= nil then
     for _, connection in ipairs(mountainDuckConfig.connections) do
       if type(connection) == 'table' then
-        local shell_command = get(connection, "condition", "shell_command")
-        if shell_command ~= nil then
+        local condition = connection.condition
+        if condition ~= nil then
           connection.condition = function()
-            local _, _, _, rc = hs.execute(shell_command)
+            if condition.shell_command == nil then return executeCondition(condition) end
+            local rc = executeCondition(condition, true)
             if rc == 0 then
               return true
             elseif rc == 1 then

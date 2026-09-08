@@ -832,7 +832,7 @@ hs.urlevent.bind("alert", function(eventName, params)
   hs.alert.show(params["text"])
 end)
 
-local LoadBuf = {}
+LoadBuf = {}
 LoadBuf.shellCommands = {}
 local function loadModule(part)
   local path = hs.configdir .. "/src/" .. part .. ".lua"
