@@ -17,8 +17,8 @@ end
 local ProxyConfigs
 
 -- Enable system proxy using PAC file for a proxy client
-local function enable_proxy_PAC(client, networkservice, location)
-  networkservice = networkservice or getNetworkService()
+local function enable_proxy_PAC(client, location)
+  local networkservice = getNetworkService()
   hs.execute('networksetup -setproxyautodiscovery "' .. networkservice .. '" off')
   hs.execute('networksetup -setwebproxystate "' .. networkservice .. '" off')
   hs.execute('networksetup -setsecurewebproxystate "' .. networkservice .. '" off')
@@ -37,8 +37,8 @@ local function enable_proxy_PAC(client, networkservice, location)
 end
 
 -- Enable system proxy using global (HTTP / HTTPS / SOCKS) mode
-local function enable_proxy_global(client, networkservice, location)
-  networkservice = networkservice or getNetworkService()
+local function enable_proxy_global(client, location)
+  local networkservice = getNetworkService()
   hs.execute('networksetup -setproxyautodiscovery "' .. networkservice .. '" off')
   hs.execute('networksetup -setautoproxystate "' .. networkservice .. '" off')
 
@@ -62,8 +62,8 @@ end
 -- Optimized version that chains networksetup commands into a single shell
 -- invocation to reduce process overhead. Used by MonoCloud v1.0+ where the
 -- original enable_proxy_global does 8 separate hs.execute calls.
-local function enable_proxy_global_fast(client, networkservice, location)
-  networkservice = networkservice or getNetworkService()
+local function enable_proxy_global_fast(client, location)
+  local networkservice = getNetworkService()
   local cmds = {
     'networksetup -setproxyautodiscovery "' .. networkservice .. '" off',
     'networksetup -setautoproxystate "' .. networkservice .. '" off',
@@ -87,14 +87,6 @@ local function enable_proxy_global_fast(client, networkservice, location)
 
   hs.execute(table.concat(cmds, ' && '))
 end
-
--- Proxy client togglers.
---
--- These functions control third-party proxy applications by automating
--- their menu bar UI via Accessibility APIs.
---
--- They are responsible only for toggling the proxy client state
--- (connect / disconnect), not for configuring system proxy settings.
 
 local proxyAppBundleIDs = {
   V2RayX = "cenmrev.V2RayX",
@@ -899,7 +891,7 @@ local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
     if config.global ~= nil then
       tinsert(proxyMenu, updateProxyWrapper({
         title = "    Global Mode",
-        fn = function() enable_proxy_global(name, nil, loc) end,
+        fn = function() enable_proxy_global(name, loc) end,
         shortcut = tostring(proxyMenuIdx),
         checked = enabled and mode == "Global"
       }, name))
@@ -908,7 +900,7 @@ local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
     if config.PAC ~= nil then
       tinsert(proxyMenu, updateProxyWrapper({
         title = "    PAC Mode",
-        fn = function() enable_proxy_PAC(name, nil, loc) end,
+        fn = function() enable_proxy_PAC(name, loc) end,
         shortcut = tostring(proxyMenuIdx),
         checked = enabled and mode == "PAC"
       }, name))
@@ -1552,9 +1544,9 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
                 if actFunc ~= nil then
                   actFunc()
                 elseif mode == "global" then
-                  enable_proxy_global(name, nil, loc)
+                  enable_proxy_global(name, loc)
                 elseif mode == "pac" then
-                  enable_proxy_PAC(name, nil, loc)
+                  enable_proxy_PAC(name, loc)
                 end
                 goto L_PROXY_SET
               end
@@ -1603,25 +1595,6 @@ for appname, appid in pairs(proxyAppBundleIDs) do
       end
     end)
   end)
-end
-
--- toggle system proxy
-local function toggleSystemProxy(networkservice)
-  local info = NetworkWatcher:proxies()
-
-  if info.ProxyAutoDiscoveryEnable == 1
-    or info.HTTPEnable == 1
-    or info.HTTPSEnable == 1
-    or info.SOCKSEnable == 1 then
-    disable_proxy(networkservice)
-    hs.alert("System proxy disabled")
-  elseif info.ProxyAutoConfigEnable == 1 then
-    enable_proxy_global(nil, networkservice)
-    hs.alert("System proxy enabled (global mode)")
-  else
-    enable_proxy_PAC(nil, networkservice)
-    hs.alert("System proxy enabled (auto mode)")
-    end
 end
 
 local function SystemProxy_applicationInstalledCallback(files, flagTables)
