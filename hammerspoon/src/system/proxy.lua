@@ -813,6 +813,25 @@ local function updateProxyWrapper(wrapped, appname)
 end
 
 -- Register proxy menu entries for a specific proxy configuration
+local function registerHTTPProxyEntries(menu, addr)
+  local function endpoint(host, port)
+    if host == nil or host == "" or port == nil or port == "" then return nil end
+    return host .. ":" .. port
+  end
+  local http = endpoint(addr[1], addr[2])
+  local https = endpoint(addr[3], addr[4])
+  if http and http == https then
+    tinsert(menu, { title = "HTTP(S)  " .. http, disabled = true })
+  else
+    if http then
+      tinsert(menu, { title = "HTTP  " .. http, disabled = true })
+    end
+    if https then
+      tinsert(menu, { title = "HTTPS  " .. https, disabled = true })
+    end
+  end
+end
+
 local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
   local config, loc
   if ProxyConfigs[name].locations then
@@ -835,17 +854,14 @@ local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
       if mode == "PAC" then
         local PACFile = config.PAC
         tinsert(proxyMenu, {
-          title = "PAC File: " .. PACFile,
+          title = "PAC URL  " .. PACFile,
           disabled = true
         })
       else
         local addr = config.global
+        registerHTTPProxyEntries(proxyMenu, addr)
         tinsert(proxyMenu, {
-          title = "HTTP Proxy: " .. addr[1] .. ":" .. addr[2],
-          disabled = true
-        })
-        tinsert(proxyMenu, {
-          title = "SOCKS5 Proxy: " .. addr[5] .. ":" .. addr[6],
+          title = "SOCKS5  " .. addr[5] .. ":" .. addr[6],
           disabled = true
         })
       end
@@ -1117,14 +1133,14 @@ local function refreshProxyExit(force)
     task:terminate()
   end
   if not getNetworkService() then
-    item.title = "Server Node: No Network Access"
+    item.title = "No Network Access"
     return
   end
-  if force then item.title = "Server Node: Loading..." end
+  if force then item.title = "Loading Server..." end
   RunCoroutine(function()
     local info = queryProxyExit(request, now + 45)
     if request ~= proxyExitRequest then return end
-    item.title = "Server Node: Unavailable"
+    item.title = "Server inaccessible"
     if info then
       local country = type(info.country) == "string" and info.country:upper() or ""
       local flag = ""
@@ -1132,7 +1148,7 @@ local function refreshProxyExit(force)
         flag = utf8.char(0x1F1E6 + country:byte(1) - 65,
             0x1F1E6 + country:byte(2) - 65) .. " "
       end
-      item.title = "Server Node: " .. flag .. info.ip
+      item.title = "Server  " .. info.ip .. " " .. flag
     end
     proxy:setMenu(menu)
   end)
@@ -1140,18 +1156,18 @@ end
 
 local function registerProxySettingsEntry(menu)
   tinsert(menu, { title = "-" })
-  proxyExitItem = { title = "Server Node: Loading...", disabled = true }
+  proxyExitItem = { title = "Loading Server...", disabled = true }
   proxyExitMenu = menu
   for i, entry in ipairs(menu) do
     if type(entry.title) == "string" and
-        (entry.title:match("^PAC File:") or entry.title:match("^HTTP Proxy:")) then
+        (entry.title:match("^PAC URL%s+") or entry.title:match("^HTTP[S()]*%s+")) then
       tinsert(menu, i, proxyExitItem)
       break
     end
   end
   refreshProxyExit(true)
   tinsert(menu, {
-    title = "Proxy Settings",
+    title = "Show in " .. hs.application.nameForBundleID("com.apple.systempreferences"),
     fn = function()
       local app = hs.application.open("com.apple.systempreferences", 2, true)
       local action = function()
@@ -1313,18 +1329,15 @@ local function registerProxyMenuImpl(enabledProxy, mode)
             ProxyConfigs[candidate.appname]["PAC"] ~= nil then
           local PACFile = ProxyConfigs[candidate.appname]["PAC"]
           tinsert(proxyMenu, {
-            title = "PAC File: " .. PACFile,
+            title = "PAC URL  " .. PACFile,
             disabled = true,
           })
         elseif ProxyConfigs[candidate.appname]["global"] ~= nil then
           local addr = ProxyConfigs[candidate.appname][mode:lower()]
               or ProxyConfigs[candidate.appname].global
+          registerHTTPProxyEntries(proxyMenu, addr)
           tinsert(proxyMenu, {
-            title = "HTTP Proxy: " .. addr[1] .. ":" .. addr[2],
-            disabled = true,
-          })
-          tinsert(proxyMenu, {
-            title = "SOCKS5 Proxy: " .. addr[5] .. ":" .. addr[6],
+            title = "SOCKS5  " .. addr[5] .. ":" .. addr[6],
             disabled = true,
           })
         end
