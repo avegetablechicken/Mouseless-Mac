@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract a rust-i18n 4.x translation backend from an arm64 Mach-O binary."""
+"""Extract a rust-i18n 4.x translation backend from a Mach-O binary."""
 
 import json
 import re
@@ -13,23 +13,31 @@ def output(*args):
     return subprocess.check_output(args, text=True, errors="replace")
 
 
-def symbol_info(binary):
+def architecture(binary):
+    archs = output("lipo", "-archs", binary).split()
+    for arch in ("arm64", "x86_64"):
+        if arch in archs:
+            return arch
+    raise RuntimeError(f"unsupported Mach-O architecture: {', '.join(archs)}")
+
+
+def symbol_info(binary, arch):
     symbols = []
-    for line in output("nm", "-nm", binary).splitlines():
+    for line in output("nm", "-arch", arch, "-nm", binary).splitlines():
         match = re.match(r"([0-9a-f]+).*\s(\S+)$", line)
         if match:
             symbols.append((int(match.group(1), 16), match.group(2)))
     for index, (address, name) in enumerate(symbols):
         if "_RUST_I18N_BACKEND" in name:
             stop = next(value for value, _ in symbols[index + 1:] if value > address)
-            return address, stop, name
+            return address, stop, name, dict((name, address) for address, name in symbols)
     raise RuntimeError("rust-i18n backend initializer symbol not found; binary may be stripped")
 
 
-def segment_info(binary):
+def segment_info(binary, arch):
     segments = []
     current = {}
-    for line in output("otool", "-l", binary).splitlines():
+    for line in output("otool", "-arch", arch, "-l", binary).splitlines():
         match = re.match(r"\s*(vmaddr|vmsize|fileoff|filesize) (0x[0-9a-f]+|\d+)$", line)
         if match:
             current[match.group(1)] = int(match.group(2), 0)
@@ -39,9 +47,9 @@ def segment_info(binary):
     return segments
 
 
-def disassemble(binary, symbol, stop):
+def disassemble(binary, arch, symbol, stop):
     process = subprocess.Popen(
-        ["otool", "-arch", "arm64", "-tvV", "-p", symbol, binary],
+        ["otool", "-arch", arch, "-tvV", "-p", symbol, binary],
         stdout=subprocess.PIPE, text=True, errors="replace")
     instructions = []
     try:
@@ -147,7 +155,7 @@ class Emulator:
         except UnicodeDecodeError:
             return None
 
-    def execute(self, mnemonic, operands):
+    def execute(self, mnemonic, operands, next_address=None):
         args = [part.strip() for part in operands.split(",")]
 
         if mnemonic == "adrp":
@@ -213,16 +221,81 @@ class Emulator:
                 self.current_pairs = []
 
 
+class X86Emulator(Emulator):
+    def __init__(self, binary, segments, symbols):
+        super().__init__(binary, segments)
+        self.registers = {"rbp": STACK_BASE, "rsp": STACK_BASE}
+        self.symbols = symbols
+
+    def reg(self, name):
+        return self.registers.get(name.lstrip("%"))
+
+    def set_reg(self, name, value):
+        self.registers[name.lstrip("%")] = value
+
+    def address(self, expression, next_address=None):
+        expression = expression.split("##", 1)[0].strip()
+        match = re.fullmatch(r"(.+)?\(%(\w+)\)", expression)
+        if not match:
+            return None, None
+        offset, base_name = match.groups()
+        if base_name == "rip":
+            if re.fullmatch(r"-?0x[0-9a-f]+|-?\d+", offset or ""):
+                return next_address + int(offset, 0), base_name
+            return self.symbols.get(offset), base_name
+        base = self.reg(base_name)
+        offset = int(offset, 0) if offset else 0
+        return (None if base is None else base + offset), base_name
+
+    def value(self, operand, next_address):
+        operand = operand.split("##", 1)[0].strip()
+        if operand.startswith("$"):
+            return int(operand[1:], 0) & 0xFFFFFFFFFFFFFFFF
+        if operand.startswith("%"):
+            return self.reg(operand)
+        address, _ = self.address(operand, next_address)
+        raw = self.read(address, 8)
+        return None if raw is None else int.from_bytes(raw, "little")
+
+    def execute(self, mnemonic, operands, next_address=None):
+        operands = operands.split("##", 1)[0].strip()
+        args = [part.strip() for part in operands.split(", ")]
+        if mnemonic in ("movq", "movabsq") and len(args) == 2:
+            value = self.value(args[0], next_address)
+            if args[1].startswith("%"):
+                self.set_reg(args[1], value)
+            elif value is not None:
+                address, _ = self.address(args[1], next_address)
+                self.write(address, value.to_bytes(8, "little"))
+        elif mnemonic == "leaq" and len(args) == 2:
+            address, _ = self.address(args[0], next_address)
+            self.set_reg(args[1], address)
+        elif mnemonic == "callq":
+            if "HashMap" in operands and "insert" in operands:
+                key, value = self.cow(self.reg("rdx")), self.cow(self.reg("rcx"))
+                if key is not None and value is not None:
+                    self.current_pairs.append((key, value))
+            elif "SimpleBackend" in operands and "add_translations" in operands:
+                locale = self.cow(self.reg("rsi"))
+                if locale is not None:
+                    self.translations[locale] = dict(self.current_pairs)
+                self.current_pairs = []
+
+
 def main(binary):
-    _, stop, symbol = symbol_info(binary)
-    instructions = disassemble(binary, symbol, stop)
+    arch = architecture(binary)
+    _, stop, symbol, symbols = symbol_info(binary, arch)
+    instructions = disassemble(binary, arch, symbol, stop)
     index_by_address = {address: index for index, (address, _, _) in enumerate(instructions)}
-    emulator = Emulator(binary, segment_info(binary))
+    segments = segment_info(binary, arch)
+    emulator = (X86Emulator(binary, segments, symbols) if arch == "x86_64"
+                else Emulator(binary, segments))
     index = 0
     while index < len(instructions):
         _, mnemonic, operands = instructions[index]
-        emulator.execute(mnemonic, operands)
-        if mnemonic == "ret":
+        next_address = instructions[index + 1][0] if index + 1 < len(instructions) else None
+        emulator.execute(mnemonic, operands, next_address)
+        if mnemonic.startswith("ret"):
             break
         if mnemonic == "b":
             target = re.fullmatch(r"0x[0-9a-f]+", operands)
