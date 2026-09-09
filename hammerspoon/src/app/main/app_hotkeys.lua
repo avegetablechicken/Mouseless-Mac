@@ -191,6 +191,9 @@ end
 
 -- ### Messages
 local Messages = {}
+Evt.OnActivated("com.apple.MobileSMS", function(app)
+  Messages.deleteTitle = T("Delete", app)
+end)
 Messages.deleteSelected = function(app)
   if app:focusedWindow() == nil then return end
   local winUI = towinui(app:focusedWindow())
@@ -225,8 +228,8 @@ Messages.deleteSelected = function(app)
     OS_VERSION < OS.Ventura and "File" or "Conversation",
     "Delete Conversation…"
   })
+  local title = Messages.deleteTitle or T("Delete", app)
   app:selectMenuItem(menuItem)
-  local title = T("Delete", app)
   hs.timer.doAfter(0.2, function()
     if not app:isRunning() then return end
     if app:focusedWindow():role() == AX.Sheet then
