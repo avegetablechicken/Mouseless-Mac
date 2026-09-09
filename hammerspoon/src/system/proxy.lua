@@ -1014,6 +1014,22 @@ local proxyExitRequest = 0
 local proxyExitTask
 local proxyExitTimer
 
+local PROXY_EXIT_HELP = {
+  pactester_missing = "pactester is not installed, so the PAC route cannot be resolved. Install it with: brew install pacparser",
+  pac_unreachable = "The configured PAC URL did not respond. Check the PAC URL and its local web server.",
+  pac_invalid = "pactester could not evaluate the configured PAC file. Check the PAC file syntax.",
+  pac_no_route = "The PAC file returned no route for the exit IP request. Check its FindProxyForURL result.",
+  route_unsupported = "The PAC file returned an unsupported route. Use DIRECT, PROXY, HTTP, HTTPS, or SOCKS.",
+  request_timeout = "The exit IP lookup timed out. Check the network and selected proxy, then retry.",
+  request_failed = "The selected proxy route could not reach the exit IP service. Check that the proxy server is running.",
+  response_invalid = "The exit IP service returned invalid data. Retry or check access to ipinfo.io.",
+}
+
+local function setProxyExitFailure(failure)
+  proxyExitItem.tooltip = failure and
+      (PROXY_EXIT_HELP[failure] or PROXY_EXIT_HELP.request_failed) or nil
+end
+
 local function awaitProxyExitTask(path, args, input, timeout, request)
   local thread = coroutine.running()
   local task
@@ -1079,17 +1095,18 @@ local function queryProxyExit(request, deadline)
     for _, path in ipairs({ "/opt/homebrew/bin/pactester", "/usr/local/bin/pactester" }) do
       if hs.fs.attributes(path, "mode") == "file" then tester = path; break end
     end
-    if not tester then return end
+    if not tester then return nil, "pactester_missing" end
     local status, body = curl(settings.ProxyAutoConfigURLString, "", 10)
-    if status ~= 0 then return end
+    if status ~= 0 then return nil, status == 28 and "request_timeout" or "pac_unreachable" end
     local code, result = awaitProxyExitTask(tester,
         { "-p", "-", "-u", "https://www.google.com/" }, body, 5, request)
-    if code ~= 0 then return end
+    if code ~= 0 then return nil, "pac_invalid" end
     routes = {}
     for entry in result:gmatch("[^;]+") do
       local route = entry:match("^%s*(.-)%s*$")
       if route ~= "" then tinsert(routes, route) end
     end
+    if #routes == 0 then return nil, "pac_no_route" end
   else
     for _, kind in ipairs({ "HTTPS", "HTTP", "SOCKS" }) do
       if settings[kind .. "Enable"] == 1 then
@@ -1104,24 +1121,29 @@ local function queryProxyExit(request, deadline)
   local schemes = { PROXY = "http", HTTP = "http", HTTPS = "https",
     SOCKS = "socks4a", SOCKS4 = "socks4a", SOCKS5 = "socks5h" }
   -- Only use fallbacks explicitly selected by the PAC.
+  local failure = "request_failed"
   for _, route in ipairs(routes) do
     local remaining = math.floor(deadline - hs.timer.secondsSinceEpoch())
-    if remaining <= 0 then return end
+    if remaining <= 0 then return nil, "request_timeout" end
     local kind, address = route:match("^(%S+)%s+(%S+)$")
     if route == "DIRECT" then
       address = ""
     elseif schemes[kind] then
       address = schemes[kind] .. "://" .. address
     else
-      return
+      return nil, "route_unsupported"
     end
     local status, body = curl("https://ipinfo.io/json", address, math.min(12, remaining))
     if status == 0 then
       local ok, info = pcall(hs.json.decode, body or "")
       if ok and type(info) == "table" and type(info.ip) == "string"
           and info.ip:match("^[%x%.:]+$") then return info end
+      failure = "response_invalid"
+    elseif status == 28 then
+      failure = "request_timeout"
     end
   end
+  return nil, failure
 end
 
 local function refreshProxyExit(force)
@@ -1140,13 +1162,19 @@ local function refreshProxyExit(force)
   end
   if not getNetworkService() then
     item.title = "No Network Access"
+    setProxyExitFailure()
+    proxy:setMenu(menu)
     return
   end
-  if force then item.title = "Loading Server..." end
+  if force then
+    item.title = "Loading Server..."
+    setProxyExitFailure()
+  end
   RunCoroutine(function()
-    local info = queryProxyExit(request, now + 45)
+    local info, failure = queryProxyExit(request, now + 45)
     if request ~= proxyExitRequest then return end
     item.title = "Server inaccessible"
+    setProxyExitFailure(failure)
     if info then
       local country = type(info.country) == "string" and info.country:upper() or ""
       local flag = ""
@@ -1155,6 +1183,7 @@ local function refreshProxyExit(force)
             0x1F1E6 + country:byte(2) - 65) .. " "
       end
       item.title = "Server  " .. info.ip .. " " .. flag
+      setProxyExitFailure()
     end
     proxy:setMenu(menu)
   end)
