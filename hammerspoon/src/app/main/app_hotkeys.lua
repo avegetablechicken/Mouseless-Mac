@@ -304,25 +304,24 @@ Messages.deleteAll = function(messageItems, app)
     return
   end
 
-  hs.timer.doAfter(0.5, function()
+  RunCoroutine(function()
+    CoroutineSleep(0.5)
     for i=2,#messageItems do
       messageItems[i].AXSelected = false
     end
     hs.eventtap.event.newKeyEvent(hs.keycodes.map.shift, true):post()
-    hs.timer.doAfter(1, function()
-      Callback.Press(lastMsg)
-      hs.eventtap.event.newKeyEvent(hs.keycodes.map.shift, false):post()
-      Messages.deleteSelected(app)
+    CoroutineSleep(1)
+    Callback.Press(lastMsg)
+    hs.eventtap.event.newKeyEvent(hs.keycodes.map.shift, false):post()
+    Messages.deleteSelected(app)
 
-      hs.timer.doAfter(2, function()
-        if app ~= hs.application.frontmostApplication() then return end
-        local continue
-        continue, messageItems = Messages.deletable(app)
-        if continue then
-          Messages.deleteAll(messageItems, app)
-        end
-      end)
-    end)
+    CoroutineSleep(2)
+    if app ~= hs.application.frontmostApplication() then return end
+    local continue
+    continue, messageItems = Messages.deletable(app)
+    if continue then
+      Messages.deleteAll(messageItems, app)
+    end
   end)
 end
 

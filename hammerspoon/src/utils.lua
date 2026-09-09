@@ -14,6 +14,14 @@ function RunCoroutine(fn, ...)
   return thread
 end
 
+-- Yield until a timer fires, including the next timer turn for zero delay.
+function CoroutineSleep(delay)
+  assert(coroutine.isyieldable(), "CoroutineSleep requires a yieldable coroutine")
+  local thread = coroutine.running()
+  hs.timer.doAfter(delay, function() resumeCoroutine(thread) end)
+  coroutine.yield()
+end
+
 -- # table / AX query helpers
 
 -- Recursively access nested table fields with a variadic key path.
