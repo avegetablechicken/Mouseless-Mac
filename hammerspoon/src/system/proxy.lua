@@ -54,7 +54,7 @@ local function enable_proxy_global(client, location, mode)
     if location then
       config = config[location]
     end
-    local addrs = config[mode or "global"]
+    local addrs = config[mode or "global"] or config.global
     tinsert(cmds, 'networksetup -setwebproxy "' .. networkservice .. '" ' .. addrs[1] .. ' ' .. addrs[2])
     tinsert(cmds, 'networksetup -setsecurewebproxy "' .. networkservice .. '" ' .. addrs[3] .. ' ' .. addrs[4])
     tinsert(cmds, 'networksetup -setsocksfirewallproxy "' .. networkservice .. '" ' .. addrs[5] .. ' ' .. addrs[6])
@@ -252,8 +252,10 @@ local function clickV2rayNMode(mode)
   if matchesV2rayNRoute(v2rayNRoutingName(), mode) then return true end
   local appUI = toappui(app)
   if not app:isFrontmost() or #app:visibleWindows() == 0 then
-    if getc(appUI, AX.MenuBar, -1) ~= nil then
+    if #app:visibleWindows() == 0 and getc(appUI, AX.MenuBar, -1) ~= nil then
       clickRightMenuBarItem(appid, "Display GUI")
+    else
+      app:activate(true)
     end
     return false
   end
@@ -774,7 +776,7 @@ local function updateProxyWrapper(wrapped, appname)
         if restoreV2rayN then
           local app = find(appid)
           local window = app and app:mainWindow()
-          if window then window:close() end
+          if window then window:close(); app:hide() end
         end
         registerProxyMenu(false)
         if not activated then hs.alert("Unable to activate " .. (appname or "proxy")) end
