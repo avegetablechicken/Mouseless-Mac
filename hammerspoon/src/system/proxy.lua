@@ -845,6 +845,10 @@ local function updateProxyWrapper(wrapped, appname)
 end
 
 -- Register proxy menu entries for a specific proxy configuration
+local function proxyMenuShortcut(index)
+  return index < 10 and tostring(index) or index < 36 and string.char(index + 55) or nil
+end
+
 local function registerHTTPProxyEntries(menu, addr)
   local function endpoint(host, port)
     if host == nil or host == "" or port == nil or port == "" then return nil end
@@ -902,7 +906,7 @@ local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
       tinsert(proxyMenu, updateProxyWrapper({
         title = "    Global Mode",
         fn = function() enable_proxy_global(name, loc) end,
-        shortcut = tostring(proxyMenuIdx),
+        shortcut = proxyMenuShortcut(proxyMenuIdx),
         checked = enabled and mode == "Global"
       }, name))
       proxyMenuIdx = proxyMenuIdx + 1
@@ -911,7 +915,7 @@ local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
       tinsert(proxyMenu, updateProxyWrapper({
         title = "    PAC Mode",
         fn = function() enable_proxy_PAC(name, loc) end,
-        shortcut = tostring(proxyMenuIdx),
+        shortcut = proxyMenuShortcut(proxyMenuIdx),
         checked = enabled and mode == "PAC"
       }, name))
       proxyMenuIdx = proxyMenuIdx + 1
@@ -1405,7 +1409,7 @@ local function registerProxyMenuImpl(enabledProxy, mode)
       end
 
       for _, menuItem in ipairs(candidate.items) do
-        menuItem.shortcut = tostring(proxyMenuIdx)
+        menuItem.shortcut = proxyMenuShortcut(proxyMenuIdx)
         local checked = (candidate.appname == enabledProxy)
             and mode and menuItem.title:match(mode) ~= nil
         menuItem.checked = checked
