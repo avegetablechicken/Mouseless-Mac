@@ -1,17 +1,13 @@
 import CoreGraphics
 import Foundation
-import AppKit
 
 let outputDirectory = URL(fileURLWithPath: CommandLine.arguments.dropFirst().first
     ?? "static/menubar", isDirectory: true)
-let sourceIconDirectory = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-    .appendingPathComponent("static/menubar/source")
 
 try FileManager.default.createDirectory(at: outputDirectory,
                                         withIntermediateDirectories: true)
 
 let black = CGColor(gray: 0, alpha: 1)
-let white = CGColor(gray: 1, alpha: 1)
 let gray = CGColor(gray: 0.55, alpha: 1)
 
 func makeContext(at url: URL, color: CGColor = black) -> CGContext {
@@ -91,7 +87,7 @@ func drawNode(_ context: CGContext, at point: CGPoint, radius: CGFloat = 1.6) {
                                    width: radius * 2, height: radius * 2))
 }
 
-func drawProxy(_ context: CGContext, appIcon: NSImage?, color: CGColor = black) {
+func drawProxy(_ context: CGContext, color: CGColor = black) {
     context.setFillColor(color)
     context.setStrokeColor(color)
     context.setLineWidth(1.4)
@@ -107,26 +103,6 @@ func drawProxy(_ context: CGContext, appIcon: NSImage?, color: CGColor = black) 
     }
     drawNode(context, at: center, radius: 2.0)
     for node in nodes { drawNode(context, at: node) }
-
-    guard let appIcon else { return }
-    let appIconFrame = CGRect(x: 8.8, y: 0.2, width: 9.0, height: 9.0)
-
-    NSGraphicsContext.saveGraphicsState()
-    NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
-    appIcon.draw(in: appIconFrame,
-                 from: .zero, operation: .sourceOver, fraction: 1)
-    NSGraphicsContext.restoreGraphicsState()
-}
-
-func installedAppIcon(bundleID: String, resourcePaths: [String]) -> NSImage? {
-    if !bundleID.isEmpty, let appURL = NSWorkspace.shared.urlForApplication(
-        withBundleIdentifier: bundleID) {
-        return NSWorkspace.shared.icon(forFile: appURL.path)
-    }
-    for path in resourcePaths {
-        if let icon = NSImage(contentsOfFile: path) { return icon }
-    }
-    return nil
 }
 
 func writeIcon(named name: String, color: CGColor = black,
@@ -140,54 +116,15 @@ func writeIcon(named name: String, color: CGColor = black,
 writeIcon(named: "caffeine-awake.pdf") { drawCaffeine($0, sleepy: false) }
 writeIcon(named: "caffeine-sleepy.pdf") { drawCaffeine($0, sleepy: true) }
 writeIcon(named: "proxy.pdf", color: black) {
-    drawProxy($0, appIcon: nil, color: black)
+    drawProxy($0, color: black)
 }
 writeIcon(named: "proxy-disabled.pdf", color: gray) {
-    drawProxy($0, appIcon: nil, color: gray)
+    drawProxy($0, color: gray)
 }
-
-let proxyApps = [
-    ("v2rayx", "cenmrev.V2RayX", [
-        "/Applications/V2RayX.app/Contents/Resources/AppIcon.icns",
-        sourceIconDirectory.appendingPathComponent("v2rayx.png").path,
-    ]),
-    ("v2rayu", "net.yanue.V2rayU", [
-        "/Applications/V2rayU.app/Contents/Resources/AppIcon.icns",
-        sourceIconDirectory.appendingPathComponent("v2rayu.png").path,
-    ]),
-    ("v2rayn", "2dust.v2rayN", ["/Applications/v2rayN.app/Contents/Resources/AppIcon.icns"]),
-    ("clash-verge-rev", "io.github.clash-verge-rev.clash-verge-rev", [
-        "/Applications/Clash Verge.app/Contents/Resources/icon.icns",
-    ]),
-    ("monocloud", "com.MonoCloud.MonoProxyMac", ["/Applications/MonoProxyMac.app/Contents/Resources/AppIcon.icns"]),
-    ("monocloud-legacy", "", [
-        sourceIconDirectory.appendingPathComponent("monocloud-legacy.png").path,
-    ]),
-]
 
 for name in ["proxy-system.pdf", "proxy-lab-proxy.pdf"] {
     let path = outputDirectory.appendingPathComponent(name)
     if FileManager.default.fileExists(atPath: path.path) {
         try FileManager.default.removeItem(at: path)
-    }
-}
-
-for (name, _, _) in proxyApps {
-    for suffix in ["", "-white", "-dark"] {
-        let path = outputDirectory.appendingPathComponent("proxy-\(name)\(suffix).pdf")
-        if FileManager.default.fileExists(atPath: path.path) {
-            try FileManager.default.removeItem(at: path)
-        }
-    }
-}
-
-for (name, bundleID, resourcePaths) in proxyApps {
-    if let icon = installedAppIcon(bundleID: bundleID, resourcePaths: resourcePaths) {
-        writeIcon(named: "proxy-\(name).pdf", color: black) {
-            drawProxy($0, appIcon: icon, color: black)
-        }
-        writeIcon(named: "proxy-\(name)-white.pdf", color: white) {
-            drawProxy($0, appIcon: icon, color: white)
-        }
     }
 }

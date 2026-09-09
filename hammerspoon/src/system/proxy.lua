@@ -454,15 +454,11 @@ local proxyActivateFuncs = {
 -- menubar for proxy
 local proxy = hs.menubar.new(true, "PROXY")
 local proxyIconPath = hs.configdir .. "/static/menubar/"
-local proxyIconNames = {
-  V2RayX = "v2rayx",
-  V2rayU = "v2rayu",
-  v2rayN = "v2rayn",
-  MonoCloud = "monocloud",
-  ["Clash Verge Rev"] = "clash-verge-rev",
-}
+local proxyIconCacheDir = hs.fs.temporaryDirectory()
+    .. hs.settings.bundleID .. "/images/"
 local proxyForIcon = ""
-local proxyAppIconName
+local proxyAppIconBundleID
+local composedProxyIcons = {}
 local proxyUsesLightForeground
 local proxyIconForcedInactive = false
 local nextProxyThemeCheck = 0
@@ -516,28 +512,63 @@ local function menuBarUsesLightForeground()
   return foreground > background
 end
 
+local function composeProxyIcon(bundleID, lightForeground)
+  local appVer = tostring(applicationVersion(bundleID) or "unknown")
+  local cacheKey = bundleID .. "-" .. appVer
+      .. (lightForeground and "-white" or "-black")
+  local cacheFile = proxyIconCacheDir .. "proxy-" .. cacheKey .. ".png"
+  if composedProxyIcons[cacheKey] then return composedProxyIcons[cacheKey] end
+  if exists(cacheFile) then
+    composedProxyIcons[cacheKey] = hs.image.imageFromPath(cacheFile)
+    if composedProxyIcons[cacheKey] then return composedProxyIcons[cacheKey] end
+  end
+
+  local appIcon = hs.image.imageFromAppBundle(bundleID)
+  if not appIcon then return end
+
+  local color = { white = lightForeground and 1 or 0 }
+  local canvas = hs.canvas.new({ x = 0, y = 0, w = 18, h = 18 })
+  local center, nodes = { x = 8, y = 8.8 }, {{ x = 4.2, y = 4.7 }, { x = 12, y = 4.7 }, { x = 8, y = 13.6 }}
+  for _, node in ipairs(nodes) do
+    canvas:appendElements({ type = "segments", action = "stroke", coordinates = { center, node }, strokeColor = color, strokeWidth = 1.4 },
+      { type = "circle", action = "fill", center = node, radius = 1.6, fillColor = color })
+  end
+  canvas:appendElements(
+    { type = "circle", action = "fill", center = center, radius = 2, fillColor = color },
+    { type = "image", image = appIcon, imageAlpha = 1,
+      frame = { x = 8.8, y = 8.8, w = 9.0, h = 9.0 },
+      imageScaling = "scaleProportionally" })
+
+  local icon = canvas:imageFromCanvas()
+  canvas:delete()
+  composedProxyIcons[cacheKey] = icon
+  if icon then
+    mkdir(proxyIconCacheDir)
+    icon:saveToFile(cacheFile, false, "PNG")
+  end
+  return icon
+end
+
 local function applyProxyIcon()
   local icon = "proxy.pdf"
   local template = true
   if proxyIconForcedInactive or proxyForIcon == "" then
     icon = "proxy-disabled.pdf"
     template = false
-  elseif proxyAppIconName then
-    local suffix = proxyUsesLightForeground and "-white" or ""
-    local appIcon = "proxy-" .. proxyAppIconName .. suffix .. ".pdf"
-    if hs.fs.attributes(proxyIconPath .. appIcon) then
-      icon = appIcon
-      template = false
-    end
+  elseif proxyAppIconBundleID then
+    local composed = composeProxyIcon(
+        proxyAppIconBundleID, proxyUsesLightForeground)
+    if composed then icon, template = composed, false end
   end
-  proxy:setIcon(proxyIconPath .. icon, template)
+  if type(icon) == "string" then icon = proxyIconPath .. icon end
+  proxy:setIcon(icon, template)
   local label = proxyForIcon
   if label == "" then label = "Off" end
   proxy:setTooltip("Proxy: " .. label)
 end
 
 local function refreshProxyIconTheme(force)
-  if proxyIconForcedInactive or not proxyAppIconName then return end
+  if proxyIconForcedInactive or not proxyAppIconBundleID then return end
   local now = hs.timer.secondsSinceEpoch()
   if not force and now < nextProxyThemeCheck then return end
 
@@ -549,19 +580,12 @@ local function refreshProxyIconTheme(force)
   end
 end
 
--- Set the proxy icon, adding a third-party app icon when available.
+-- Set the proxy icon, composing a third-party app icon when available.
 local function setProxyIcon(enabledProxy)
   proxyForIcon = enabledProxy or ""
-  proxyAppIconName = proxyIconNames[proxyForIcon]
-  -- MonoCloud replaced its application icon in version 1.0.
-  if proxyForIcon == "MonoCloud" then
-    local appVer = applicationVersion(proxyAppBundleIDs.MonoCloud)
-    if appVer and appVer < "1.0" then
-      proxyAppIconName = "monocloud-legacy"
-    end
-  end
+  proxyAppIconBundleID = proxyAppBundleIDs[proxyForIcon]
   proxyIconForcedInactive = false
-  if proxyAppIconName then
+  if proxyAppIconBundleID then
     local detected = menuBarUsesLightForeground()
     if detected == nil then detected = hs.host.interfaceStyle() == "Dark" end
     proxyUsesLightForeground = detected
