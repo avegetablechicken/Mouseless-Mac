@@ -460,6 +460,7 @@ local proxyIconNames = {
   ["Clash Verge Rev"] = "clash-verge-rev",
 }
 local proxyForIcon = ""
+local proxyAppIconName
 local proxyUsesLightForeground
 local proxyIconForcedInactive = false
 local nextProxyThemeCheck = 0
@@ -519,15 +520,12 @@ local function applyProxyIcon()
   if proxyIconForcedInactive or proxyForIcon == "" then
     icon = "proxy-disabled.pdf"
     template = false
-  else
-    local appIconName = proxyIconNames[proxyForIcon]
-    if appIconName then
-      local suffix = proxyUsesLightForeground and "-white" or ""
-      local appIcon = "proxy-" .. appIconName .. suffix .. ".pdf"
-      if hs.fs.attributes(proxyIconPath .. appIcon) then
-        icon = appIcon
-        template = false
-      end
+  elseif proxyAppIconName then
+    local suffix = proxyUsesLightForeground and "-white" or ""
+    local appIcon = "proxy-" .. proxyAppIconName .. suffix .. ".pdf"
+    if hs.fs.attributes(proxyIconPath .. appIcon) then
+      icon = appIcon
+      template = false
     end
   end
   proxy:setIcon(proxyIconPath .. icon, template)
@@ -537,7 +535,7 @@ local function applyProxyIcon()
 end
 
 local function refreshProxyIconTheme(force)
-  if proxyIconForcedInactive or not proxyIconNames[proxyForIcon] then return end
+  if proxyIconForcedInactive or not proxyAppIconName then return end
   local now = hs.timer.secondsSinceEpoch()
   if not force and now < nextProxyThemeCheck then return end
 
@@ -552,8 +550,16 @@ end
 -- Set the proxy icon, adding a third-party app icon when available.
 local function setProxyIcon(enabledProxy)
   proxyForIcon = enabledProxy or ""
+  proxyAppIconName = proxyIconNames[proxyForIcon]
+  -- MonoCloud replaced its application icon in version 1.0.
+  if proxyForIcon == "MonoCloud" then
+    local appVer = applicationVersion(proxyAppBundleIDs.MonoCloud)
+    if appVer and appVer < "1.0" then
+      proxyAppIconName = "monocloud-legacy"
+    end
+  end
   proxyIconForcedInactive = false
-  if proxyIconNames[proxyForIcon] then
+  if proxyAppIconName then
     local detected = menuBarUsesLightForeground()
     if detected == nil then detected = hs.host.interfaceStyle() == "Dark" end
     proxyUsesLightForeground = detected

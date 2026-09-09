@@ -119,7 +119,7 @@ func drawProxy(_ context: CGContext, appIcon: NSImage?, color: CGColor = black) 
 }
 
 func installedAppIcon(bundleID: String, resourcePaths: [String]) -> NSImage? {
-    if let appURL = NSWorkspace.shared.urlForApplication(
+    if !bundleID.isEmpty, let appURL = NSWorkspace.shared.urlForApplication(
         withBundleIdentifier: bundleID) {
         return NSWorkspace.shared.icon(forFile: appURL.path)
     }
@@ -160,6 +160,9 @@ let proxyApps = [
         "/Applications/Clash Verge.app/Contents/Resources/icon.icns",
     ]),
     ("monocloud", "com.MonoCloud.MonoProxyMac", ["/Applications/MonoProxyMac.app/Contents/Resources/AppIcon.icns"]),
+    ("monocloud-legacy", "", [
+        sourceIconDirectory.appendingPathComponent("monocloud-legacy.png").path,
+    ]),
 ]
 
 for name in ["proxy-system.pdf", "proxy-lab-proxy.pdf"] {
