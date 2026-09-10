@@ -1051,6 +1051,7 @@ local PROXY_EXIT_HELP = {
   pac_no_route = "The PAC file returned no route for the exit IP request. Check its FindProxyForURL result.",
   route_unsupported = "The PAC file returned an unsupported route. Use DIRECT, PROXY, HTTP, HTTPS, or SOCKS.",
   request_timeout = "The exit IP lookup timed out. Check the network and selected proxy, then retry.",
+  proxy_auth_required = "The proxy server requires a username and password for the exit IP lookup.",
   request_failed = "The selected proxy route could not reach the exit IP service. Check that the proxy server is running.",
   response_invalid = "The exit IP service returned invalid data. Retry or check access to ipinfo.io.",
 }
@@ -1114,6 +1115,7 @@ local function queryProxyExit(request, deadline)
     return awaitProxyExitTask("/usr/bin/curl", {
       "-q", "--silent", "--show-error", "--fail", "--connect-timeout", "5",
       "--max-time", tostring(timeout), "--proxy", address,
+      "--write-out", "%{http_connect}",
       "--noproxy", address == "" and "*" or "",
       "--header", "Cache-Control: no-cache", "--url", url,
     }, nil, timeout + 1, request)
@@ -1169,6 +1171,8 @@ local function queryProxyExit(request, deadline)
       if ok and type(info) == "table" and type(info.ip) == "string"
           and info.ip:match("^[%x%.:]+$") then return info end
       failure = "response_invalid"
+    elseif body == "407" then
+      failure = "proxy_auth_required"
     elseif status == 28 then
       failure = "request_timeout"
     end
