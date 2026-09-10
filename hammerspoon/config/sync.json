@@ -18,6 +18,12 @@
         "post_process": "sed 's/token = \\(.*\\)/token = ******/'"
       }
     ],
+    "/opt/homebrew/etc/frp/frpc.toml": [
+      "${MACOS_CONFIG_DIR}/frp",
+      {
+        "post_process": "sed 's/auth\\.token = \\(.*\\)/auth\\.token = ******/'"
+      }
+    ],
     "~/.bab": "${MACOS_CONFIG_DIR}/bab",
     "~/.bash_profile": "${MACOS_CONFIG_DIR}/shell",
     "~/.config/barrier/barrier.conf": "${MACOS_CONFIG_DIR}/barrier",
