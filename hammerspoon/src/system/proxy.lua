@@ -553,7 +553,16 @@ local function applyProxyIcon()
   local icon = "proxy.pdf"
   local template = true
   if proxyIconForcedInactive or proxyForIcon == "" then
-    icon = "proxy-disabled.pdf"
+    if not composedProxyIcons.disabled then
+      local canvas = hs.canvas.new({ x = 0, y = 0, w = 18, h = 18 })
+      canvas:appendElements(
+        { type = "image", image = hs.image.imageFromPath(proxyIconPath .. "proxy.pdf") },
+        { type = "rectangle", action = "fill", fillColor = { white = 0.55 },
+          compositeRule = "sourceIn" })
+      composedProxyIcons.disabled = canvas:imageFromCanvas()
+      canvas:delete()
+    end
+    icon = composedProxyIcons.disabled
     template = false
   elseif proxyAppIconBundleID then
     local composed = composeProxyIcon(
