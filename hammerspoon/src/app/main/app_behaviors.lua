@@ -111,7 +111,7 @@ if installed("com.kapeli.dashdoc") then
 end
 
 -- MonoProxyMac
-if installed("com.MonoCloud.MonoProxyMac") then
+if installed("com.MonoCloud.MonoProxyMac") and applicationVersion("com.MonoCloud.MonoProxyMac") < "1.0.9" then
   Evt.OnLaunched("com.MonoCloud.MonoProxyMac", function(app)
     local observer = uiobserver.new(app:pid())
     observer:addWatcher(toappui(app), uinotifications.windowCreated)
