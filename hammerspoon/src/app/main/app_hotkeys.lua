@@ -2212,6 +2212,29 @@ local function specialCommonHotkeyConfigUpdated(hkID, newConfig)
 end
 
 AppHotKeyCallbacks = {
+  ["org.hammerspoon.Hammerspoon"] = {
+    openConfiguration = {
+      mods = { "alt", "cmd" }, key = ",",
+      message = "Open Configuration",
+      fn = function() Configuration.show() end,
+    },
+    openConfigurationInWindow = {
+      mods = { "alt", "cmd" }, key = ",",
+      message = "Open Configuration",
+      background = true,
+      windowFilter = { allowRoles = "*", allowSheet = true, allowPopover = true },
+      fn = function() Configuration.show() end,
+    },
+    openConfigurationInMenu = {
+      mods = { "alt", "cmd" }, key = ",",
+      message = "Open Configuration",
+      menubarFilter = true,
+      fn = function(menu)
+        menu:performAction(AX.Cancel)
+        hs.timer.doAfter(0, function() Configuration.show() end)
+      end,
+    },
+  },
   ["com.apple.finder"] =
   {
     ["openRecent"] = {

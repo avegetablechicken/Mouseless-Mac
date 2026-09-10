@@ -238,7 +238,7 @@ local function loadKeybindings(filePath)
     end
   end
   if KeybindingConfigs.hyper ~= nil then
-    local HYPER = KeybindingConfigs.hyper.hyper
+    local HYPER = KeybindingConfigs.hyper[KeybindingConfigs.hyperKeyName or "hyper"]
     Mod.Hyper = {
       Long = HYPER:lower(),
       Short = HYPER:lower(),
@@ -871,6 +871,9 @@ loadModule("fs")
 
 -- Load miscellaneous utilities.
 loadModule("misc")
+
+-- Local configuration GUI (hammerspoon://configuration).
+Configuration = require("configuration").start()
 
 -- Mark configuration loading as complete.
 FLAGS["LOADING"] = false

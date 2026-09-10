@@ -49,20 +49,21 @@ local function enable_proxy_global(client, location, mode)
     'networksetup -setautoproxystate "' .. networkservice .. '" off',
   }
 
+  local addrs
   if client ~= nil then
     local config = ProxyConfigs[client]
-    if location then
-      config = config[location]
-    end
-    local addrs = config[mode or "global"] or config.global
-    tinsert(cmds, 'networksetup -setwebproxy "' .. networkservice .. '" ' .. addrs[1] .. ' ' .. addrs[2])
-    tinsert(cmds, 'networksetup -setsecurewebproxy "' .. networkservice .. '" ' .. addrs[3] .. ' ' .. addrs[4])
-    tinsert(cmds, 'networksetup -setsocksfirewallproxy "' .. networkservice .. '" ' .. addrs[5] .. ' ' .. addrs[6])
+    if location and config then config = config[location] end
+    addrs = config and (config[mode or "global"] or config.global) or {}
   end
-
-  tinsert(cmds, 'networksetup -setwebproxystate "' .. networkservice .. '" on')
-  tinsert(cmds, 'networksetup -setsecurewebproxystate "' .. networkservice .. '" on')
-  tinsert(cmds, 'networksetup -setsocksfirewallproxystate "' .. networkservice .. '" on')
+  for index, protocol in ipairs({ "webproxy", "securewebproxy", "socksfirewallproxy" }) do
+    local host = addrs and addrs[index * 2 - 1]
+    local port = addrs and addrs[index * 2]
+    local enabled = client == nil or (host ~= nil and port ~= nil)
+    if host and port then
+      tinsert(cmds, 'networksetup -set' .. protocol .. ' "' .. networkservice .. '" ' .. host .. ' ' .. port)
+    end
+    tinsert(cmds, 'networksetup -set' .. protocol .. 'state "' .. networkservice .. '" ' .. (enabled and "on" or "off"))
+  end
 
   hs.execute(table.concat(cmds, ' && '))
 end
@@ -74,6 +75,23 @@ local proxyAppBundleIDs = {
   MonoCloud = "com.MonoCloud.MonoProxyMac",
   ["Clash Verge Rev"] = "io.github.clash-verge-rev.clash-verge-rev",
 }
+
+-- Preserve the configuration names used by proxy-specific integrations.
+function ProxyAppConfigurationName(bundleID)
+  for name, appID in pairs(proxyAppBundleIDs) do
+    if appID == bundleID then return name end
+  end
+end
+
+-- Read-only installation metadata for the Configuration GUI.
+function ProxyAppInstallationStatus()
+  local result = {}
+  for name, appid in pairs(proxyAppBundleIDs) do
+    local path = hs.application.pathForBundleID(appid)
+    result[name] = path ~= nil and path ~= "" and hs.fs.attributes(path, "mode") == "directory"
+  end
+  return result
+end
 
 -- Toggle connect/disconnect VPN using `V2RayX`
 local function toggleV2RayX(enable, alert)
@@ -239,7 +257,7 @@ end
 local function matchesV2rayNRoute(name, mode)
   if type(name) ~= "string" then return false end
   local title = (ProxyConfigs.v2rayN.routing or {})[mode]
-  if title ~= nil then return name == title end
+  if title ~= nil and title ~= "" then return name == title end
   local keyword = mode == "global" and "Global" or "Whitelist"
   return name:find(keyword, 1, true) ~= nil
 end
@@ -620,15 +638,17 @@ local proxyMenu = {}
 -- supporting optional conditions and multiple locations.
 ProxyConfigs = {}
 
-local function parseProxyModes(spec)
+local function parseProxyModes(spec, client)
   local config = { routing = {} }
   if type(spec.pac) == "string" then config.PAC = spec.pac end
   for _, mode in ipairs({ "global", "pac" }) do
     local settings = spec[mode]
     if type(settings) == "table" then
-      local httpIp, httpPort = settings.http:match("(.+):(%d+)")
-      local httpsIp, httpsPort = settings.https:match("(.+):(%d+)")
-      local socksIp, socksPort = settings.socks5:match("(.+):(%d+)")
+      local addresses = settings
+      if client == "v2rayN" and mode == "pac" then addresses = type(spec.global) == "table" and spec.global or {} end
+      local httpIp, httpPort = (type(addresses.http) == "string" and addresses.http or ""):match("(.+):(%d+)")
+      local httpsIp, httpsPort = (type(addresses.https) == "string" and addresses.https or ""):match("(.+):(%d+)")
+      local socksIp, socksPort = (type(addresses.socks5) == "string" and addresses.socks5 or ""):match("(.+):(%d+)")
       config[mode] = { httpIp, httpPort, httpsIp, httpsPort, socksIp, socksPort }
       config.routing[mode] = settings.routing
     end
@@ -639,13 +659,13 @@ end
 -- Parse proxy configuration definitions into normalized runtime structure
 local function parseProxyConfigurations(configs)
   for name, config in pairs(configs) do
-    ProxyConfigs[name] = config.locations == nil and parseProxyModes(config) or {}
+    ProxyConfigs[name] = config.locations == nil and parseProxyModes(config, name) or {}
     if config.condition ~= nil then
       ProxyConfigs[name].condition = config.condition
       if config.locations ~= nil then
         ProxyConfigs[name].locations = config.locations
         for _, loc in ipairs(config.locations) do
-          ProxyConfigs[name][loc] = parseProxyModes(config[loc])
+          ProxyConfigs[name][loc] = parseProxyModes(config[loc], name)
         end
       end
     end
@@ -859,6 +879,7 @@ local function proxyMenuShortcut(index)
 end
 
 local function registerHTTPProxyEntries(menu, addr)
+  addr = addr or {}
   local function endpoint(host, port)
     if host == nil or host == "" or port == nil or port == "" then return nil end
     return host .. ":" .. port
@@ -905,10 +926,9 @@ local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
       else
         local addr = config.global
         registerHTTPProxyEntries(proxyMenu, addr)
-        tinsert(proxyMenu, {
-          title = "SOCKS5  " .. addr[5] .. ":" .. addr[6],
-          disabled = true
-        })
+        if addr and addr[5] and addr[6] then
+          tinsert(proxyMenu, { title = "SOCKS5  " .. addr[5] .. ":" .. addr[6], disabled = true })
+        end
       end
     end
     if config.global ~= nil then
@@ -934,6 +954,20 @@ local function registerProxyMenuEntry(name, enabled, mode, proxyMenuIdx)
 end
 
 -- Parse current system proxy state and detect enabled proxy and mode
+local function proxyAddressesMatch(info, addrs)
+  if not addrs then return false end
+  local active = false
+  for index, protocol in ipairs({ "HTTP", "HTTPS", "SOCKS" }) do
+    local host, port = addrs[index * 2 - 1], addrs[index * 2]
+    local enabled = info[protocol .. "Enable"] == 1
+    if host and port then
+      if not enabled or host ~= info[protocol .. "Proxy"] or port ~= tostring(info[protocol .. "Port"]) then return false end
+      active = true
+    elseif enabled then return false end
+  end
+  return active
+end
+
 parseProxyInfo = function(info, require_mode)
   if require_mode == nil then require_mode = true end
   local enabledProxy = ""
@@ -959,16 +993,12 @@ parseProxyInfo = function(info, require_mode)
       end
       if mode ~= nil then break end
     end
-  elseif info.HTTPEnable == 1 and info.HTTPSEnable == 1 then
+  elseif info.HTTPEnable == 1 or info.HTTPSEnable == 1 or info.SOCKSEnable == 1 then
     for appname, config in pairs(ProxyConfigs) do
       if config.locations == nil then
         for _, proxyMode in ipairs({ "global", "pac" }) do
           local addrs = config[proxyMode]
-          if addrs ~= nil
-              and addrs[1] == info.HTTPProxy
-              and addrs[2] == tostring(info.HTTPPort)
-              and addrs[3] == info.HTTPSProxy
-              and addrs[4] == tostring(info.HTTPSPort) then
+          if proxyAddressesMatch(info, addrs) then
             enabledProxy = appname
             break
           end
@@ -976,11 +1006,7 @@ parseProxyInfo = function(info, require_mode)
       else
         for _, loc in pairs(config.locations) do
           local spec = config[loc]
-          if spec.global ~= nil
-              and spec.global[1] == info.HTTPProxy
-              and spec.global[2] == tostring(info.HTTPPort)
-              and spec.global[3] == info.HTTPSProxy
-              and spec.global[4] == tostring(info.HTTPSPort) then
+          if proxyAddressesMatch(info, spec.global) then
             enabledProxy = appname
             break
           end
@@ -1523,10 +1549,9 @@ local function registerProxyMenuImpl(enabledProxy, mode)
           local addr = ProxyConfigs[candidate.appname][mode:lower()]
               or ProxyConfigs[candidate.appname].global
           registerHTTPProxyEntries(proxyMenu, addr)
-          tinsert(proxyMenu, {
-            title = "SOCKS5  " .. addr[5] .. ":" .. addr[6],
-            disabled = true,
-          })
+          if addr and addr[5] and addr[6] then
+            tinsert(proxyMenu, { title = "SOCKS5  " .. addr[5] .. ":" .. addr[6], disabled = true })
+          end
         end
       end
 

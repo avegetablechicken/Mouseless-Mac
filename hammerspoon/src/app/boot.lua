@@ -99,6 +99,20 @@ end
 
 -- Registered application hotkeys
 AppKeys = {}
+local sourceConfigs = (hs.json.read(hs.configdir .. "/config/keybindings.json") or {}).hotkeys or {}
+AppKeyInspector = {}
+_G.AppKeyInspector = AppKeyInspector
+function AppKeyInspector.snapshot()
+  local result = {}
+  for _, hotkey in ipairs(AppKeys) do
+    if hotkey.configIndex then
+      result[tostring(hotkey.configIndex - 1)] = {
+        appid = hotkey.appid, appPath = hotkey.appPath, source = hotkey.sourceConfig,
+      }
+    end
+  end
+  return result
+end
 
 local appKeyPathCacheKey = "_app_key_path_cache"
 local appKeyPathCache = hs.settings.get(appKeyPathCacheKey) or {}
@@ -176,7 +190,7 @@ function registerAppKeys()
   end
   AppKeys = {}
 
-  for _, config in ipairs(KeybindingConfigs.hotkeys.appkeys or {}) do
+  for configIndex, config in ipairs(KeybindingConfigs.hotkeys.appkeys or {}) do
     local appPath, appid
     if config.bundleID then
       if type(config.bundleID) == "string" then
@@ -236,6 +250,8 @@ function registerAppKeys()
       local hotkey = bindHotkeySpec(config, appname,
           bind(config.fn or focusOrHide, appid or appname))
       hotkey.kind = HK.APPKEY
+      hotkey.configIndex = configIndex
+      hotkey.sourceConfig = (sourceConfigs.appkeys or {})[configIndex]
       if appid then
         hotkey.appid = appid
       else
