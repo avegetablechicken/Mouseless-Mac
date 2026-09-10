@@ -1318,8 +1318,10 @@ local EuDic = {}
 EuDic.WF = {}
 EuDic.WF.Main = { allowRoles = AX.StandardWindow }
 Evt.OnRunning("com.eusoft.freeeudic", function(app)
-  local title = T("欧路词典", app)
-  EuDic.WF.Main.allowTitles = '^' .. title .. '$'
+  if appVer(app) < "26.9" then
+    local title = T("欧路词典", app)
+    EuDic.WF.Main.allowTitles = '^' .. title .. '$'
+  end
 end)
 
 --- ### Parallels Desktop
@@ -3825,6 +3827,7 @@ AppHotKeyCallbacks = {
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 1)
         if button then return button.AXTitle end
       end,
+      enabled = Version.LessThan("26.9"),
       windowFilter = EuDic.WF.Main,
       condition = MenuItem.isEnabled{ "功能", "返回首页" },
       fn = Callback.Select
@@ -3834,6 +3837,7 @@ AppHotKeyCallbacks = {
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 2)
         if button then return button.AXTitle end
       end,
+      enabled = Version.LessThan("26.9"),
       windowFilter = EuDic.WF.Main,
       condition = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 2)
@@ -3846,6 +3850,7 @@ AppHotKeyCallbacks = {
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 3)
         if button then return button.AXTitle end
       end,
+      enabled = Version.LessThan("26.9"),
       windowFilter = EuDic.WF.Main,
       condition = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 3)
@@ -3858,6 +3863,7 @@ AppHotKeyCallbacks = {
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 4)
         if button then return button.AXTitle end
       end,
+      enabled = Version.LessThan("26.9"),
       windowFilter = EuDic.WF.Main,
       condition = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 4)
@@ -3870,6 +3876,7 @@ AppHotKeyCallbacks = {
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 5)
         if button then return button.AXTitle end
       end,
+      enabled = Version.LessThan("26.9"),
       windowFilter = EuDic.WF.Main,
       condition = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 5)
@@ -3882,6 +3889,7 @@ AppHotKeyCallbacks = {
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 6)
         if button then return button.AXTitle end
       end,
+      enabled = Version.LessThan("26.9"),
       windowFilter = EuDic.WF.Main,
       condition = function(win)
         local button = getc(towinui(win), AX.Toolbar, 1, AX.Button, 6)
