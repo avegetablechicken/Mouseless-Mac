@@ -1013,10 +1013,7 @@ parseProxyInfo = function(info, require_mode)
         elseif enabledProxy ~= "MonoCloud" then
           mode = "Global"
         elseif require_mode then
-          local appVer = applicationVersion(proxyAppBundleIDs.MonoCloud)
-          if appVer and appVer >= "1.0" then
-            mode = "Global"
-          else
+          do
             local appid = proxyAppBundleIDs.MonoCloud
             if find(appid) ~= nil then
               local appUI = toappui(find(appid))
