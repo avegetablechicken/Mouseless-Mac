@@ -570,7 +570,7 @@ function executeCondition(condition, returnCode)
 
   -- Phase 3: evaluate Ethernet IP based condition
   if condition.etherNet then
-    if interfaceName:match('^USB (.-) LAN$') then
+    if interfaceName and interfaceName:match('^USB (.-) LAN$') then
       local ip = NetworkWatcher
         :contents("State:/Network/Interface/"..interface.."/IPv4")
         ["State:/Network/Interface/" .. interface .. "/IPv4"]
