@@ -149,7 +149,7 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
   end)
 
   if requirePreferredPosition == true then
-    return map, preferred
+    return map, preferred, menuBarItems
   else
     return map
   end
@@ -310,7 +310,7 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
     end
   end
   if requirePreferredPosition == true then
-    return map, preferred
+    return map, preferred, menuBarItems
   else
     return map
   end

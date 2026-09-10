@@ -8,6 +8,7 @@ local function registerSearchMenuBar()
   -- For each app, try to load autosaved status item identifiers
   -- and map them to accessibility menu bar elements if available.
   local menuBarItems, maps = {}, {}
+  local controlCenterMenuBarItems
   local apps = hs.application.runningApplications()
   if OS_VERSION >= OS.Tahoe then
     local allowedApps = getAllowedMenuBarAppsTahoe()
@@ -38,12 +39,14 @@ local function registerSearchMenuBar()
   end
   for _, app in ipairs(apps) do
     local appid = app:bundleID() or app:name()
-    local map, preferred = loadStatusItemsAutosaveName(app, true)
+    local map, preferred, appMenuBarItems = loadStatusItemsAutosaveName(app, true)
+    if appid == 'com.apple.controlcenter' then
+      controlCenterMenuBarItems = appMenuBarItems
+    end
     if map and #map > 0 then
       assert(preferred)
       maps[appid] = map
       if appid ~= 'com.apple.controlcenter' or OS_VERSION < OS.Tahoe then
-        local appMenuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
         if appMenuBarItems then
           for i, item in ipairs(appMenuBarItems) do
             tinsert(menuBarItems, { item, i, preferred[i] })
@@ -76,7 +79,7 @@ local function registerSearchMenuBar()
   -- (e.g. empty entries and Live Activities) that need to be excluded or
   -- merged into the global menu bar ordering
   if OS_VERSION >= OS.Tahoe then
-    local appMenuBarItems = getValidControlCenterMenuBarItemsTahoe(
+    local appMenuBarItems = controlCenterMenuBarItems or getValidControlCenterMenuBarItemsTahoe(
       find("com.apple.controlcenter")
     )
     local items = {}
