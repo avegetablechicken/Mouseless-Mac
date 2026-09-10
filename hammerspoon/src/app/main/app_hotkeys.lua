@@ -193,6 +193,7 @@ end
 local Messages = {}
 Evt.OnActivated("com.apple.MobileSMS", function(app)
   Messages.deleteTitle = T("Delete", app)
+  Messages.deleteFormats = localizedString("DELETE_MESSAGES", app, { locale = A_AppLocale })
 end)
 Messages.deleteSelected = function(app)
   if app:focusedWindow() == nil then return end
@@ -212,13 +213,17 @@ Messages.deleteSelected = function(app)
         AX.Group, 2, AX.Group, 1, AX.Button, 2)
   end
   if button ~= nil then
+    local formats = Messages.deleteFormats or localizedString("DELETE_MESSAGES", app)
     Callback.Press(button)
     hs.timer.doAfter(0.2, function()
       if not app:isRunning() then return end
       if app:focusedWindow():role() == AX.Sheet then
         local sheet = towinui(app:focusedWindow())
-        local delete = getc(sheet, AX.Button, 2)
-        Callback.Press(delete)
+        local delete = OS_VERSION < OS.Tahoe:withMinor(5) and getc(sheet, AX.Button, 2)
+            or tfind(getc(sheet, AX.Button), function(bt)
+              return tcontain(get(formats, "DELETE_MESSAGE") or {}, (bt.AXTitle or ""):gsub("\u{200E}", ""):gsub("%d+", "%%tu"))
+            end)
+        if delete then Callback.Press(delete) end
       end
     end)
     return
