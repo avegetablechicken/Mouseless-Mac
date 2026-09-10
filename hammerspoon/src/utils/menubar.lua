@@ -155,6 +155,19 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
   end
 end
 
+-- Read Hammerspoon's status item preferences directly, without caching file contents.
+local function readStatusItemPreferences(appid)
+  if appid ~= hs.settings.bundleID then return readAppPreferencesPlist(appid) end
+  local defaults = {}
+  local prefix = "NSStatusItem Preferred Position "
+  for _, key in ipairs(hs.settings.getKeys()) do
+    if key:sub(1, #prefix) == prefix then
+      defaults[key] = hs.settings.get(key)
+    end
+  end
+  return defaults
+end
+
 -- Build a stable mapping between "visual index" and "autosave name"
 -- so we can address menu bar items reliably across reorders.
 function loadStatusItemsAutosaveName(app, requirePreferredPosition)
@@ -170,7 +183,7 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
   ----------------------------------------------------------
 
   local preferredPositions = {}
-  local defaults, errorReadingDefaults = readAppPreferencesPlist(appid)
+  local defaults, errorReadingDefaults = readStatusItemPreferences(appid)
   local prefix = "NSStatusItem Preferred Position "
   local prefix_len = #prefix
 
