@@ -330,7 +330,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       local actions = ele:actionNames()
       local ret = ele:performAction(actions[#actions])
       if ret and panel == CC.StageManager then
-        local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+        local menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
         local menuBarItem = tfind(menuBarItems,
           function(item)
             return item.AXIdentifier == "com.apple.menuextra.controlcenter"
@@ -368,7 +368,7 @@ local function popupControlCenterSubPanel(panel, allowReentry)
   if OS_VERSION >= OS.Tahoe then
     menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
   else
-    menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+    menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
   end
   local index
   for i, elem in ipairs(menuBarItems) do
@@ -550,7 +550,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         backgroundSoundsHotkeys = nil
       end
 
-      local menuBarItem = tfind(getc(appUI, AX.MenuBar, -1, AX.MenuBarItem),
+      local menuBarItem = tfind(getc(appUI.AXExtrasMenuBar, AX.MenuBarItem),
         function(item)
           return item.AXIdentifier == "com.apple.menuextra.controlcenter"
         end)

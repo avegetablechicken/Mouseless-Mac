@@ -182,7 +182,7 @@ for _, appid in ipairs(LoadBuf.menubarObserverStarted) do
     end
   else
     local app = find(appid)  -- "LoadBuf.runningApplications" may lead to null menubar item
-    for _, menuBarItem in ipairs(getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)) do
+    for _, menuBarItem in ipairs(getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)) do
       if menuBarItem.AXSelected then
         registerInMenuHotkeys(app)
         break

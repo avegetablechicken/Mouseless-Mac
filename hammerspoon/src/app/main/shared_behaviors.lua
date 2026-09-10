@@ -162,7 +162,7 @@ local function registerPseudoWindowDestroyObserver(app, roles)
                   end) == nil
                   local noMenuFromPopover = true
                   if role == AX.Popover then
-                    local menuBarMenu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1)
+                    local menuBarMenu = getc(appUI.AXExtrasMenuBar, AX.MenuBarItem, 1)
                     noMenuFromPopover = menuBarMenu.AXSelected == false
                   end
                   return noWindow and noMenuFromPopover

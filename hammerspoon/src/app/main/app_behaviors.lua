@@ -4,7 +4,7 @@
 -- connect to servers on launch
 local function connectMountainDuckEntries(app, connection)
   local appUI = toappui(app)
-  local menuBar = getc(appUI, AX.MenuBar, -1, AX.Menu, 1)
+  local menuBar = getc(appUI.AXExtrasMenuBar, AX.Menu, 1)
 
   if type(connection) == 'string' then
     local menuItem = getc(menuBar, AX.MenuItem, connection,

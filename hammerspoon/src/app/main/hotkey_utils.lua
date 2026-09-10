@@ -1510,7 +1510,7 @@ function registerInMenuHotkeys(app, menuObj)
           local t = menubarFilter.allowIndices
           if type(t) ~= 'table' then t = { t } end
           for _, idx in ipairs(t) do
-            local item = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, idx)
+            local item = getc(appUI.AXExtrasMenuBar, AX.MenuBarItem, idx)
             if item.AXSelected then
               menu = getc(item, AX.Menu, 1) break
             elseif menuObj then
@@ -1523,7 +1523,7 @@ function registerInMenuHotkeys(app, menuObj)
           end
           if menu == nil then
             for _, idx in ipairs(t) do
-              menu = getc(appUI, AX.MenuBar, -1, AX.Menu, idx)
+              menu = getc(appUI.AXExtrasMenuBar, AX.Menu, idx)
               if menu then break end
             end
           end
@@ -1534,7 +1534,7 @@ function registerInMenuHotkeys(app, menuObj)
           for _, title in ipairs(t) do
             local idx = tindex(map, title)
             if idx then
-              local item = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, idx)
+              local item = getc(appUI.AXExtrasMenuBar, AX.MenuBarItem, idx)
               if item.AXSelected then
                 menu = getc(item, AX.Menu, 1) break
               elseif menuObj then
@@ -1550,14 +1550,14 @@ function registerInMenuHotkeys(app, menuObj)
             for _, title in ipairs(t) do
               local idx = tindex(map, title)
               if idx then
-                menu = getc(appUI, AX.MenuBar, -1, AX.Menu, idx)
+                menu = getc(appUI.AXExtrasMenuBar, AX.Menu, idx)
                 if menu then break end
               end
             end
           end
         end
       elseif menubarFilter == true then
-        local mbItem = tfind(getc(appUI, AX.MenuBar, -1, AX.MenuBarItem),
+        local mbItem = tfind(getc(appUI.AXExtrasMenuBar, AX.MenuBarItem),
             function(item) return item.AXSelected end)
         if mbItem then
           menu = getc(mbItem, AX.Menu, 1)

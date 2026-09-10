@@ -83,7 +83,7 @@ local function toggleV2RayX(enable, alert)
   end
 
   local appUI = toappui(find(appid))
-  local menu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1)
+  local menu = getc(appUI.AXExtrasMenuBar, AX.MenuBarItem, 1, AX.Menu, 1)
   if menu == nil then
     if alert then
       hs.alert("Error occurred while loading/unloading V2ray core in \"V2RayX\"")
@@ -145,7 +145,7 @@ local function toggleV2RayU(enable, alert)
   end
 
   local appUI = toappui(find(appid))
-  local menu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1)
+  local menu = getc(appUI.AXExtrasMenuBar, AX.MenuBarItem, 1, AX.Menu, 1)
   if menu == nil then
     if alert then
       hs.alert("Error occurred while loading/unloading V2ray core in \"V2rayU\"")
@@ -252,7 +252,7 @@ local function clickV2rayNMode(mode)
   if matchesV2rayNRoute(v2rayNRoutingName(), mode) then return true end
   local appUI = toappui(app)
   if not app:isFrontmost() or #app:visibleWindows() == 0 then
-    if #app:visibleWindows() == 0 and getc(appUI, AX.MenuBar, -1) ~= nil then
+    if #app:visibleWindows() == 0 and appUI.AXExtrasMenuBar ~= nil then
       clickRightMenuBarItem(appid, "Display GUI")
     else
       app:activate(true)
@@ -281,7 +281,7 @@ end
 local function clashVergeModeMenu(appid)
   local app = find(appid)
   if app == nil then return end
-  local menu = getc(toappui(app), AX.MenuBar, -1,
+  local menu = getc(toappui(app).AXExtrasMenuBar,
       AX.MenuBarItem, 1, AX.Menu, 1)
   local outboundTitle = localizedString("Outbound Modes", appid)
   local outboundItem = outboundTitle and tfind(
@@ -317,7 +317,7 @@ local function toggleMonoCloud(enable, alert)
   if appVer and appVer >= "1.0" then
     proxyItemTitle = "System Proxy"
   end
-  local menuItem = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1,
+  local menuItem = getc(appUI.AXExtrasMenuBar, AX.MenuBarItem, 1,
       AX.Menu, 1, AX.MenuItem, proxyItemTitle)
   if menuItem == nil then
     if alert then
@@ -823,7 +823,7 @@ local function updateProxyWrapper(wrapped, appname)
       local app = find(appid)
       if app == nil then return false end
       if appname == "v2rayN" then return true end
-      local menu = getc(toappui(app), AX.MenuBar, -1,
+      local menu = getc(toappui(app).AXExtrasMenuBar,
           AX.MenuBarItem, 1, AX.Menu, 1)
       return #(getc(menu, AX.MenuItem) or {}) > 0
     end
@@ -1017,7 +1017,7 @@ parseProxyInfo = function(info, require_mode)
             local appid = proxyAppBundleIDs.MonoCloud
             if find(appid) ~= nil then
               local appUI = toappui(find(appid))
-              local outboundModeMenu = getc(appUI, AX.MenuBar, -1,
+              local outboundModeMenu = getc(appUI.AXExtrasMenuBar,
                   AX.MenuBarItem, 1, AX.Menu, 1,
                   AX.MenuItem, "Outbound Mode", AX.Menu, 1)
               if outboundModeMenu ~= nil then

@@ -1453,7 +1453,7 @@ Bartender.barItemTitle = function(index, rightClick)
           end
           local app = find(hint, true)
           if app then
-            local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+            local menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
             local iconAlwaysHiddenPosition = -7000
             local alWaysHiddenMenuBarItems = tifilter(menuBarItems, function(item)
               return item.AXPosition.x < iconAlwaysHiddenPosition
@@ -1483,7 +1483,7 @@ Bartender.barItemTitle = function(index, rightClick)
             local map = loadStatusItemsAutosaveName(app)
             if map then
               local iconAlwaysHiddenPosition = -7000
-              local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+              local menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
               if not alwaysHiddenBar then
                 local alWaysHiddenMenuBarItems = tifilter(menuBarItems, function(item)
                   return item.AXPosition.x < iconAlwaysHiddenPosition
@@ -1637,10 +1637,9 @@ Ice.barItemTitle = function(index)
         end
         local app = find(hint, true)
         if app then
-          local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+          local menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
           local alWaysHiddenMenuBarItems = {}
-          local iconAlwaysHidden = getc(toappui(win:application()),
-              AX.MenuBar, -1, AX.MenuBarItem, 3)
+          local iconAlwaysHidden = getc(toappui(win:application()).AXExtrasMenuBar, AX.MenuBarItem, 3)
           if iconAlwaysHidden then
             alWaysHiddenMenuBarItems = tifilter(menuBarItems, function(item)
               return item.AXPosition.x < iconAlwaysHidden.AXPosition.x
@@ -1671,9 +1670,8 @@ Ice.barItemTitle = function(index)
           local thisIndex = tindex(indicesForHidden, i)
           local map = loadStatusItemsAutosaveName(app)
           if map then
-            local iconAlwaysHidden = getc(toappui(win:application()),
-                AX.MenuBar, -1, AX.MenuBarItem, 3)
-            local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+            local iconAlwaysHidden = getc(toappui(win:application()).AXExtrasMenuBar, AX.MenuBarItem, 3)
+            local menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
             if iconAlwaysHidden and not alwaysHiddenBar then
               local alWaysHiddenMenuBarItems = tifilter(menuBarItems, function(item)
                 return item.AXPosition.x < iconAlwaysHidden.AXPosition.x
@@ -5528,11 +5526,11 @@ AppHotKeyCallbacks = {
       background = true,
       fn = function(app)
         local appUI = toappui(app)
-        local menu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1)
+        local menu = getc(appUI.AXExtrasMenuBar, AX.MenuBarItem, 1, AX.Menu, 1)
         if menu == nil then
           local invoked = clickRightMenuBarItem(app)
           if not invoked then return end
-          menu = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1, AX.Menu, 1)
+          menu = getc(appUI.AXExtrasMenuBar, AX.MenuBarItem, 1, AX.Menu, 1)
         end
         local locale = applicationLocale(app:bundleID())
         local title = T("&Start", app, { locale = locale })
@@ -6263,7 +6261,7 @@ AppHotKeyCallbacks = {
       kind = HK.MENUBAR,
       background = true,
       fn = function(app)
-        local icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, 1)
+        local icon = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem, 1)
         local isAdvancedMode = getp(app:bundleID(), "advancedMode")
         if tostring(isAdvancedMode) ~= "1" then
           local position = hs.mouse.absolutePosition()
@@ -6426,11 +6424,11 @@ AppHotKeyCallbacks = {
         if not invoked then return end
         local appUI = toappui(app)
         hs.timer.doAfter(1, function()
-          local switch = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1,
+          local switch = getc(appUI.AXExtrasMenuBar, AX.MenuBarItem, 1,
               AX.Popover, 1, AX.Group, 3, AX.Button, 1)
           if switch == nil then
             hs.timer.usleep(0.1 * 1000000)
-            switch = getc(appUI, AX.MenuBar, -1, AX.MenuBarItem, 1,
+            switch = getc(appUI.AXExtrasMenuBar, AX.MenuBarItem, 1,
                 AX.Popover, 1, AX.Group, 3, AX.Button, 2)
           end
           local state = switch.AXValue
@@ -6879,8 +6877,7 @@ AppHotKeyCallbacks = {
         local s, e = ident:find('.liveActivity')
         if s == nil then return false end
         local prefix = ident:sub(1, e)
-        local menuBarItems = getc(toappui(win:application()),
-            AX.MenuBar, -1, AX.MenuBarItem)
+        local menuBarItems = getc(toappui(win:application()).AXExtrasMenuBar, AX.MenuBarItem)
         local menuBarItem = tfind(menuBarItems, function(item)
           return item.AXIdentifier and item.AXIdentifier:sub(1, e) == prefix
         end)

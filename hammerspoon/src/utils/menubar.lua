@@ -43,7 +43,7 @@ end
 ------------------------------------------------------------
 
 function getValidControlCenterMenuBarItemsTahoe(app)
-  local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+  local menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
   menuBarItems = tifilter(menuBarItems, function(item)
     return item.AXIdentifier
         and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
@@ -237,7 +237,7 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
   -- We require counts to match to avoid bad mappings.
   ----------------------------------------------------------
 
-  local menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+  local menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
   if menuBarItems == nil then
     -- Special case: Little Snitch exposes no AX menubar item list,
     -- but the defaults still contain one persistent status item.
@@ -335,7 +335,7 @@ end
 
 -- Show hidden items panel for managers that expose a single "reveal" icon.
 local function showHiddenMenuBarItems(manager)
-  local icon = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 1)
+  local icon = getc(toappui(manager).AXExtrasMenuBar, AX.MenuBarItem, 1)
   if icon then
     leftClickAndRestore(icon)
   end
@@ -387,7 +387,7 @@ local MENUBAR_MANAGER_SHOW = {
     end
 
     -- Early Bartener 6 releases: open Bartender menu bar item (must exist).
-    local icon = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, "Bartender")
+    local icon = getc(toappui(manager).AXExtrasMenuBar, AX.MenuBarItem, "Bartender")
     if icon == nil then return end
 
     -- If not using Bartender Bar, simply toggling icon shows items.
@@ -410,7 +410,7 @@ local MENUBAR_MANAGER_SHOW = {
     if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
       menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
     else
-      menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+      menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
     end
     local menuBarItem = menuBarItems[index]
     local indicesForHidden = {}
@@ -513,7 +513,7 @@ local MENUBAR_MANAGER_SHOW = {
   --     for the target app (supports right-click).
   ----------------------------------------------------------
   ["com.jordanbaird.Ice"] = function(manager, appid, index, map, click)
-    local icon = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 1)
+    local icon = getc(toappui(manager).AXExtrasMenuBar, AX.MenuBarItem, 1)
     if icon == nil then return end
 
     -- If Ice Bar is not used, toggling icon reveals hidden items.
@@ -535,10 +535,10 @@ local MENUBAR_MANAGER_SHOW = {
     if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
       menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
     else
-      menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+      menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
     end
     local menuBarItem = menuBarItems[index]
-    local iconAllwaysHidden = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 3)
+    local iconAllwaysHidden = getc(toappui(manager).AXExtrasMenuBar, AX.MenuBarItem, 3)
     local indicesForHidden = {}
     for i=1,#menuBarItems do
       if i ~= index then
@@ -622,7 +622,7 @@ local MENUBAR_MANAGER_SHOW = {
   --   - If advancedMode: open iBarmenu window and click entry by identifier.
   ----------------------------------------------------------
   ["cn.better365.iBar"] = function(manager, appid, index, map, click)
-    local icon = getc(toappui(manager), AX.MenuBar, -1, AX.MenuBarItem, 1)
+    local icon = getc(toappui(manager).AXExtrasMenuBar, AX.MenuBarItem, 1)
     if not icon then return end
     local app = find(appid)
 
@@ -643,7 +643,7 @@ local MENUBAR_MANAGER_SHOW = {
           if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
             menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
           else
-            menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+            menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
           end
           local menuBarItem = menuBarItems[index or 1]
           if menuBarItem then
@@ -737,7 +737,7 @@ local function getValidMenuBarManager()
         maxX = icon.AXPosition.x
       else
         maxX = leftmostHorizontal - 1
-        foreach(getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem),
+        foreach(getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem),
             function(item) maxX = math.max(maxX, item.AXPosition.x) end)
       end
       if maxX > leftmostHorizontal then
@@ -760,7 +760,7 @@ function hiddenByMenuBarManager(app, index, map)
   if app:bundleID() == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
     menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
   else
-    menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+    menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
   end
   local menuBarItem = menuBarItems[index or 1]
   -- Any item with x < leftmost screen x is considered "off-screen hidden".
@@ -780,7 +780,7 @@ function popupRightMenuBarItem(item, icon)
     local map = loadStatusItemsAutosaveName(app)
     local index = map and map[item:autosaveName()]
     if not index then return false end
-    icon = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem, index)
+    icon = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem, index)
   end
   if not icon then return false end
   local offset = 4
@@ -837,7 +837,7 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   if appid == 'com.apple.controlcenter' and OS_VERSION >= OS.Tahoe then
     menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
   else
-    menuBarItems = getc(toappui(app), AX.MenuBar, -1, AX.MenuBarItem)
+    menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
   end
   local menuBarItem = menuBarItems[menuBarIdx or 1]
   if menuBarItem == nil then return false end
