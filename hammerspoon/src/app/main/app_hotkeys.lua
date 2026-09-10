@@ -297,7 +297,9 @@ Messages.deleteAll = function(messageItems, app)
 
   local firstSelected = firstMsg.AXSelected
   if not firstSelected then
-    hs.timer.doAfter(0.1, bind(Callback.Press, firstMsg))
+    hs.timer.doAfter(0.1, function()
+      if app:isRunning() and firstMsg:isValid() then Callback.Press(firstMsg) end
+    end)
   end
   if #messageItems == 1
       or (#messageItems == 2 and lastMsg.AXSelected) then
@@ -311,11 +313,17 @@ Messages.deleteAll = function(messageItems, app)
 
   RunCoroutine(function()
     CoroutineSleep(0.5)
+    if not app:isRunning() or app:focusedWindow() == nil then return end
     for i=2,#messageItems do
+      if not messageItems[i]:isValid() then return end
       messageItems[i].AXSelected = false
     end
     hs.eventtap.event.newKeyEvent(hs.keycodes.map.shift, true):post()
     CoroutineSleep(1)
+    if not app:isRunning() or not lastMsg:isValid() then
+      hs.eventtap.event.newKeyEvent(hs.keycodes.map.shift, false):post()
+      return
+    end
     Callback.Press(lastMsg)
     hs.eventtap.event.newKeyEvent(hs.keycodes.map.shift, false):post()
     Messages.deleteSelected(app)
