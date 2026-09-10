@@ -702,7 +702,7 @@ local MENUBAR_MANAGER_SHOW = {
   -- Strategy: find its icon-like window and click it to reveal.
   ----------------------------------------------------------
   ["net.matthewpalmer.Vanilla"] = function(manager)
-    local icon = tfind(getc(toappui(manager), AX.Window), function(win)
+    local icon = tfind(toappui(manager).AXWindows, function(win)
       return #win == 1 and win[1].AXRole == AX.Image
     end)
     if icon then
@@ -731,7 +731,7 @@ local function getValidMenuBarManager()
     if app then
       local maxX  -- used to avoid false positives if the manager is itself hidden
       if managerAppId == "net.matthewpalmer.Vanilla" then
-        local icon = tfind(getc(toappui(app), AX.Window), function(win)
+        local icon = tfind(toappui(app).AXWindows, function(win)
           return #win == 1 and win[1].AXRole == AX.Image
         end)
         maxX = icon.AXPosition.x

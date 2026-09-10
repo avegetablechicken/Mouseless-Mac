@@ -5009,7 +5009,7 @@ AppHotKeyCallbacks = {
         if button and button.AXRole == AX.PopUpButton then
           local menuWin, totalDelay = nil, 0
           repeat
-            menuWin = tfind(getc(toappui(win:application()), AX.Window), function(win)
+            menuWin = tfind(toappui(win:application()).AXWindows, function(win)
               return #win ==  1 and #win[1] == 1 and win[1][1].AXRole == AX.Menu
             end)
             if menuWin == nil then
@@ -6046,7 +6046,7 @@ AppHotKeyCallbacks = {
       background = true,
       fn = function(app)
         local barShown = false
-        for _, e in ipairs(getc(toappui(app), AX.Window)) do
+        for _, e in ipairs(toappui(app).AXWindows) do
           if #e == 1 and e[1].AXRole == AX.Group
               and #e[1] == #(getc(e[1], AX.Button) or {}) then
             barShown = true
