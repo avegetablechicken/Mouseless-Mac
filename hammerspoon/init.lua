@@ -703,7 +703,9 @@ function ExecOnSilentLaunch(appid, action)
   end
 
   tinsert(processesOnSilentLaunch[appid], action)
-  launchedApps[appid] = find(appid)
+  local running = FLAGS["LOADING"] and LoadBuf.runningApplications
+  if running then launchedApps[appid] = running[appid]
+  else launchedApps[appid] = find(appid) end
 end
 
 -- Handle silently terminated applications.
@@ -722,7 +724,9 @@ function ExecOnSilentQuit(appid, action)
     end
     tinsert(processesOnSilentQuit[appid], process)
   end
-  launchedApps[appid] = find(appid)
+  local running = FLAGS["LOADING"] and LoadBuf.runningApplications
+  if running then launchedApps[appid] = running[appid]
+  else launchedApps[appid] = find(appid) end
 
   return function()
     if cancelled or action == nil then return end
