@@ -1172,50 +1172,94 @@ end)
 --- ### QQLive
 local QQLive = {}
 QQLive.WF = {}
+-- Current GUI exposes only the sidebar rectangle; count from its fourth row.
+function QQLive.sidebarPoints(win)
+  local ui, frame = towinui(win), win:frame()
+  for _, child in ipairs(ui and ui.AXChildren or {}) do
+    local pos, size = child.AXPosition, child.AXSize
+    if pos and size and math.abs(pos.x - frame.x) <= 4
+        and pos.y >= frame.y + 60 and size.w >= 120 and size.w <= 240
+        and size.h >= frame.h * 0.6 then
+      local points = {}
+      for i = 1, 10 do
+        local y = pos.y + 24 + (i + 2) * 44.5
+        if y < pos.y + size.h - 6 then
+          points[i] = hs.geometry.point { pos.x + size.w / 2, y }
+        end
+      end
+      if #points >= 4 then return points end
+    end
+  end
+end
+
+-- Group by the main labels' alignment and height, not their text or badges.
+function QQLive.channelRows(list)
+  local groups, best, header = {}, nil, nil
+  for i = 1, #list - 2 do
+    local row = list[i]
+    local pos, size = row.AXPosition, row.AXSize
+    if row.AXValue == "频道" then header = row end
+    if type(row.AXValue) == "string" and row.AXValue ~= "" and row.AXValue ~= "频道"
+        and pos and size and size.h > 0 then
+      local group
+      for _, candidate in ipairs(groups) do
+        if row.AXRole == candidate.role
+            and math.abs(pos.x - candidate.x) <= 1
+            and math.abs(size.h - candidate.h) <= 1 then
+          group = candidate
+          break
+        end
+      end
+      if group == nil then
+        group = { role = row.AXRole, x = pos.x, h = size.h }
+        tinsert(groups, group)
+      end
+      tinsert(group, row)
+    end
+  end
+  for _, group in ipairs(groups) do
+    if #group >= 4 and (best == nil or group.h > best.h
+        or (group.h == best.h and #group > #best)) then best = group end
+  end
+  if best == nil then return end
+  table.sort(best, function(a, b) return a.AXPosition.y < b.AXPosition.y end)
+  best.AXPosition = list.AXPosition
+  best.start = header == nil and 4 or nil
+  if header then
+    for i, row in ipairs(best) do
+      if row.AXPosition.y > header.AXPosition.y then best.start = i; break end
+    end
+  end
+  -- Preserve the existing footer and viewport handling after filtering labels.
+  tinsert(best, list[#list - 1])
+  tinsert(best, list[#list])
+  return best
+end
+
 QQLive.WF.Main = {
   fn = function(win)
     local winUI = towinui(win)
     local text = getc(winUI, AX.Group, 2, nil, -1)
     A_WinBuf.lastRow = text
-    return text and text.AXValue == "全部频道"
+    A_WinBuf.qqliveFallbackPoints = text == nil and QQLive.sidebarPoints(win) or nil
+    return (text and text.AXValue == "全部频道")
+        or A_WinBuf.qqliveFallbackPoints ~= nil
   end
 }
 QQLive.channelName = function(index)
   return function(win)
+    if A_WinBuf.qqliveFallbackPoints then
+      return A_WinBuf.qqliveFallbackPoints[index] and strfmt("频道 %d", index)
+    end
     local _, _, channelNames = A_WinBuf:get("channelList", "rowCount", "channelNames",
     function()
       local list = getc(towinui(win), AX.Group, 2)
       if list == nil or #list == 0 then return end
+      list = QQLive.channelRows(list)
+      if list == nil then return end
       local rowCnt = #list
-      local start = A_WinBuf:get("channelStartIndex", function()
-        local start = 1
-        local verticalOffset, verticalOffsetChangeIdx
-        for i=2,math.min(10, rowCnt) do
-          local offset = list[i].AXPosition.y - list[i-1].AXPosition.y
-          if offset ~= verticalOffset then
-            verticalOffset = offset
-            verticalOffsetChangeIdx = i - 1
-          elseif i - verticalOffsetChangeIdx >= 3 then
-            start = verticalOffsetChangeIdx
-            break
-          end
-        end
-        if start == 1 then
-          for i=2,math.min(10, rowCnt) do
-            if list[i].AXValue == "VIP会员" and i < rowCnt then
-              local offset = list[i].AXPosition.y - list[i-1].AXPosition.y
-              for j=i+1,math.min(rowCnt) do
-                if list[j].AXPosition.y - list[j-1].AXPosition.y == offset then
-                  start = j
-                  break
-                end
-              end
-              break
-            end
-          end
-        end
-        return start
-      end)
+      local start = list.start
+      if start == nil then return end
       local channelNames = {}
       for i = 1, 10 do
         if rowCnt - 2 >= start + i - 1 then
@@ -1225,16 +1269,21 @@ QQLive.channelName = function(index)
       end
       return list, rowCnt, channelNames
     end)
-    return channelNames[index]
+    return channelNames and channelNames[index]
   end
 end
 
 QQLive.getChannel = function(index)
   return function()
-    local start = A_WinBuf.channelStartIndex
+    if A_WinBuf.qqliveFallbackPoints then
+      local point = A_WinBuf.qqliveFallbackPoints[index]
+      return point ~= nil, point
+    end
     local list = A_WinBuf.channelList
+    local start = list and list.start
     local rowCnt = A_WinBuf.rowCount
     local lastRow = A_WinBuf.lastRow
+    if list == nil or start == nil or rowCnt == nil then return false end
     if rowCnt - 2 >= start + index - 1 then
       local row = list[start + index - 1]
       lastRow = lastRow or list[rowCnt]
