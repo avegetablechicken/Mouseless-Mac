@@ -68,6 +68,11 @@ SYSTEM_LOCALE = systemLocales()
 local CLASH_VERGE_REV_BUNDLE_ID = "io.github.clash-verge-rev.clash-verge-rev"
 
 function applicationLocale(appid)
+  if appid == hs.settings.bundleID then
+    local locales = hs.settings.getKeys().AppleLanguages
+        and hs.settings.get("AppleLanguages")
+    return locales and locales[1] or SYSTEM_LOCALE
+  end
   -- Locale of apps whose localization is not driven by AppleLanguages.
   if appid == CLASH_VERGE_REV_BUNDLE_ID then
     return clashVergeAppLocale(appid)
