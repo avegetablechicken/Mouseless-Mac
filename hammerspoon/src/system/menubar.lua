@@ -63,9 +63,10 @@ local function registerSearchMenuBar()
   -- Sort menu bar items by their on-screen position (right to left),
   -- falling back to autosave name order when accessibility position
   -- is unavailable.
+  for _, item in ipairs(menuBarItems) do item._position = item[1].AXPosition end
   table.sort(menuBarItems, function(a, b)
-    if a[1].AXPosition and b[1].AXPosition then
-      return a[1].AXPosition.x > b[1].AXPosition.x
+    if a._position and b._position then
+      return a._position.x > b._position.x
     else
       return a[3] < b[3]
     end

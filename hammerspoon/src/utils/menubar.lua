@@ -182,7 +182,7 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
     end
   end
   -- Last resort: shell `defaults read` text parsing (when plist read fails)
-  if #preferredPositions == 0 and errorReadingDefaults then
+  if #preferredPositions == 0 and errorReadingDefaults == true then
     local records = hs.execute(strfmt([[
       defaults read %s | grep '"%s'
     ]], appid, prefix))
