@@ -1052,6 +1052,72 @@ local proxyExitCheckedAt = 0
 local proxyExitRequest = 0
 local proxyExitTask
 local proxyExitTimer
+local proxyExitCredentials = {}
+local proxyExitAuthCancel
+
+local function promptProxyExitCredentials(address, request)
+  local thread = coroutine.running()
+  local view, finished
+  local function finish(username, password)
+    if finished then return end
+    finished = true
+    proxyExitAuthCancel = nil
+    hs.timer.doAfter(0, function()
+      view:windowCallback(nil):delete()
+      if request == proxyExitRequest then
+        assert(coroutine.resume(thread, username, password))
+      end
+    end)
+  end
+  local controller = hs.webview.usercontent.new("proxyExitAuth")
+  controller:setCallback(function(message)
+    local body = message.body
+    if type(body) ~= "table" then return end
+    if body.cancel then
+      finish()
+    elseif type(body.username) == "string" and type(body.password) == "string" then
+      finish(body.username, body.password)
+    end
+  end)
+  local frame = hs.screen.mainScreen():frame()
+  view = hs.webview.new({ x = frame.x + (frame.w - 400) / 2,
+    y = frame.y + (frame.h - 300) / 2, w = 400, h = 300 },
+    { privateBrowsing = true, javaScriptCanOpenWindowsAutomatically = false }, controller)
+      :windowStyle({ "titled", "closable" }):windowTitle("Proxy Authentication Required")
+      :allowTextEntry(true):windowCallback(function(action)
+        if action == "closing" then finish() end
+      end)
+  local escapedAddress = address:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;")
+  view:html([=[<!doctype html><html lang="en"><meta charset="utf-8">
+    <meta name="color-scheme" content="light dark">
+    <style>
+      body { font: 13px -apple-system, sans-serif; margin: 24px; }
+      p { margin: 0 0 18px; overflow-wrap: anywhere; opacity: .7; }
+      label { display: block; margin: 12px 0 5px; }
+      input { box-sizing: border-box; width: 100%; padding: 7px; font: inherit; }
+      footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+      button { padding: 6px 18px; font: inherit; }
+    </style><p>]=] .. escapedAddress .. [=[</p>
+    <form id="auth" autocomplete="off">
+      <label for="username">Username</label><input id="username" autofocus spellcheck="false" autocapitalize="none">
+      <label for="password">Password</label><input id="password" type="password" autocomplete="off">
+      <footer><button type="button" id="cancel">Cancel</button><button type="submit">Connect</button></footer>
+    </form><script>
+      const send = body => window.webkit.messageHandlers.proxyExitAuth.postMessage(body);
+      document.getElementById('auth').onsubmit = event => {
+        event.preventDefault();
+        send({username: document.getElementById('username').value,
+              password: document.getElementById('password').value});
+      };
+      document.getElementById('cancel').onclick = () => send({cancel: true});
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') { event.preventDefault(); send({cancel: true}); }
+      });
+    </script></html>]=]):show()
+  proxyExitAuthCancel = function() finish() end
+  view:hswindow():focus()
+  return coroutine.yield()
+end
 
 local PROXY_EXIT_HELP = {
   pactester_missing = "pactester is not installed, so the PAC route cannot be resolved. Install it with: brew install pacparser",
@@ -1070,11 +1136,11 @@ local function setProxyExitFailure(failure)
       (PROXY_EXIT_HELP[failure] or PROXY_EXIT_HELP.request_failed) or nil
 end
 
-local function awaitProxyExitTask(path, args, input, timeout, request)
+local function awaitProxyExitTask(path, args, input, timeout, request, outputToFile)
   local thread = coroutine.running()
   local task
   local outputPath
-  if not input then
+  if (not input and outputToFile ~= false) or outputToFile then
     outputPath = os.tmpname()
     tinsert(args, "--output")
     tinsert(args, outputPath)
@@ -1121,13 +1187,24 @@ end
 
 local function queryProxyExit(request, deadline)
   local function curl(url, address, timeout)
-    return awaitProxyExitTask("/usr/bin/curl", {
+    local credentials = proxyExitCredentials[address]
+    local input
+    if credentials then
+      local escaped = credentials:gsub("\\", "\\\\"):gsub('"', '\\"')
+          :gsub("\r", "\\r"):gsub("\n", "\\n"):gsub("\t", "\\t"):gsub("\v", "\\v")
+      input = 'proxy-user = "' .. escaped .. '"\n'
+    end
+    local args = {
       "-q", "--silent", "--show-error", "--fail", "--connect-timeout", "5",
       "--max-time", tostring(timeout), "--proxy", address,
       "--write-out", "%{http_connect}",
       "--noproxy", address == "" and "*" or "",
       "--header", "Cache-Control: no-cache", "--url", url,
-    }, nil, timeout + 1, request)
+    }
+    if input then
+      tinsert(args, "--config"); tinsert(args, "-"); tinsert(args, "--proxy-basic")
+    end
+    return awaitProxyExitTask("/usr/bin/curl", args, input, timeout + 1, request, true)
   end
   local routes = { "DIRECT" }
   local settings = NetworkWatcher:proxies()
@@ -1174,11 +1251,45 @@ local function queryProxyExit(request, deadline)
     else
       return nil, "route_unsupported"
     end
+    if address ~= "" and proxyExitCredentials[address] == nil then
+      local code, saved = awaitProxyExitTask("/usr/bin/security",
+          { "find-generic-password", "-s", "Hammerspoon Proxy Exit", "-a", address, "-w" },
+          nil, 15, request, false)
+      proxyExitCredentials[address] = code == 0 and saved:gsub("\n$", "") or false
+      remaining = math.floor(deadline - hs.timer.secondsSinceEpoch())
+      if remaining <= 0 then return nil, "request_timeout" end
+    end
+    local enteredCredentials
     local status, body = curl("https://ipinfo.io/json", address, math.min(12, remaining))
+    if body == "407" and address ~= "" then
+      local promptedAt = hs.timer.secondsSinceEpoch()
+      proxyExitCredentials[address] = nil
+      local username, password = promptProxyExitCredentials(address, request)
+      if username == nil or request ~= proxyExitRequest then
+        return nil, "proxy_auth_required"
+      end
+      deadline = deadline + hs.timer.secondsSinceEpoch() - promptedAt
+      proxyExitCredentials[address] = username .. ":" .. password
+      enteredCredentials = proxyExitCredentials[address]
+      remaining = math.floor(deadline - hs.timer.secondsSinceEpoch())
+      if remaining <= 0 then return nil, "request_timeout" end
+      status, body = curl("https://ipinfo.io/json", address, math.min(12, remaining))
+      if status ~= 0 then proxyExitCredentials[address] = nil end
+    end
     if status == 0 then
       local ok, info = pcall(hs.json.decode, body or "")
       if ok and type(info) == "table" and type(info.ip) == "string"
-          and info.ip:match("^[%x%.:]+$") then return info end
+          and info.ip:match("^[%x%.:]+$") then
+        if enteredCredentials then
+          local code = awaitProxyExitTask("/usr/bin/security",
+              { "add-generic-password", "-U", "-s", "Hammerspoon Proxy Exit",
+                "-a", address, "-w", enteredCredentials }, nil, 15, request, false)
+          if code ~= 0 then
+            hs.alert.show("Proxy connected, but credentials could not be saved to Keychain. Please enter them again after reloading.")
+          end
+        end
+        return info
+      end
       failure = "response_invalid"
     elseif body == "407" then
       failure = "proxy_auth_required"
@@ -1195,6 +1306,7 @@ local function refreshProxyExit(force)
   if not force and now - proxyExitCheckedAt < 60 then return end
   proxyExitCheckedAt = now
   proxyExitRequest = proxyExitRequest + 1
+  if proxyExitAuthCancel then proxyExitAuthCancel() end
   local request = proxyExitRequest
   local item, menu = proxyExitItem, proxyExitMenu
   if proxyExitTimer then proxyExitTimer:stop(); proxyExitTimer = nil end
