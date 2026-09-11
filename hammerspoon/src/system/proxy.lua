@@ -1179,7 +1179,7 @@ local PROXY_EXIT_HELP = {
 
 local function setProxyExitFailure(failure)
   proxyExitItem.tooltip = failure and
-      (PROXY_EXIT_HELP[failure] or PROXY_EXIT_HELP.request_failed) or nil
+      (PROXY_EXIT_HELP[failure] or failure:match("^HTTP .+") or PROXY_EXIT_HELP.request_failed) or nil
 end
 
 local function awaitProxyExitTask(path, args, input, timeout, request, outputToFile)
@@ -1243,7 +1243,7 @@ local function queryProxyExit(request, deadline)
     local args = {
       "-q", "--silent", "--show-error", "--fail", "--connect-timeout", "5",
       "--max-time", tostring(timeout), "--proxy", address,
-      "--write-out", "%{http_connect}",
+      "--write-out", "%{http_connect} %{http_code}",
       "--noproxy", address == "" and "*" or "",
       "--header", "Cache-Control: no-cache", "--url", url,
     }
@@ -1307,7 +1307,7 @@ local function queryProxyExit(request, deadline)
     end
     local enteredCredentials
     local status, body = curl("https://ipinfo.io/json", address, math.min(12, remaining))
-    if body == "407" and address ~= "" then
+    if body:match("^407 ") and address ~= "" then
       local promptedAt = hs.timer.secondsSinceEpoch()
       proxyExitCredentials[address] = nil
       local username, password = promptProxyExitCredentials(address, request)
@@ -1337,10 +1337,12 @@ local function queryProxyExit(request, deadline)
         return info
       end
       failure = "response_invalid"
-    elseif body == "407" then
+    elseif body:match("^407 ") then
       failure = "proxy_auth_required"
     elseif status == 28 then
       failure = "request_timeout"
+    elseif body:match(" [45]%d%d$") then
+      failure = "HTTP " .. body:sub(-3) .. (body:sub(-3) == "429" and ": Too many requests to the exit IP service. Please retry later." or ": The exit IP service returned an HTTP error.")
     end
   end
   return nil, failure
