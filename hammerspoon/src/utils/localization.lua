@@ -66,6 +66,7 @@ end
 SYSTEM_LOCALE = systemLocales()
 
 local CLASH_VERGE_REV_BUNDLE_ID = "io.github.clash-verge-rev.clash-verge-rev"
+local V2RAYU_BUNDLE_ID = "net.yanue.V2rayU"
 
 function applicationLocale(appid)
   if appid == hs.settings.bundleID then
@@ -76,6 +77,12 @@ function applicationLocale(appid)
   -- Locale of apps whose localization is not driven by AppleLanguages.
   if appid == CLASH_VERGE_REV_BUNDLE_ID then
     return clashVergeAppLocale(appid)
+  elseif appid == V2RAYU_BUNDLE_ID then
+    local appVer = applicationVersion(appid)
+    if appVer and appVer >= "5" then
+      local locales = getp(appid, "AppleLanguages")
+      return locales and locales[1] or "en", true
+    end
   elseif appid == "2dust.v2rayN" then
     local path = os.getenv("HOME")
         .. "/Library/Application Support/v2rayN/guiConfigs/guiNConfig.json"
