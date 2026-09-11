@@ -35,7 +35,7 @@
 @media(max-width:780px){.shortcut-heading{grid-template-columns:minmax(0,1fr) minmax(130px,240px);gap:6px}}
 #optionsEditor{width:680px;max-height:85vh;overflow:auto}#optionsContent>.node+.node,#optionsContent>.row+.row{border-top:1px solid var(--line)}
 button.app-launch-title{text-align:left;border:0;background:transparent;padding:0;color:var(--text)}button.app-launch-title:hover{color:var(--accent);text-decoration:underline}
-.app-section{border:0}.app-list-section{margin-bottom:2px}.app-section-title{padding:8px 2px;font-size:13px;font-weight:600}.app-section[open]{margin-bottom:14px}.app-section-title:hover{color:var(--accent)}
+.app-section{border:0}.app-list-section{margin-bottom:2px}.app-section-title{padding:8px 2px;font-size:13px;font-weight:600}.app-section[open]{margin-bottom:14px}.app-section-title:hover{color:var(--accent)}.app-section-title>.remove{float:right;width:24px;height:24px;padding:0;margin-top:-4px}
 .app-launch-title .unbound-app,.app-launch-title .app-separator{color:var(--muted)}.app-launch-title:hover .unbound-app{color:var(--accent)}
 .shortcut-name{display:flex;align-items:center;gap:8px;min-width:0}.shortcut-name>.shortcut-title{min-width:0}.remove-shortcut{flex:0 0 24px;width:24px;height:26px;padding:0}
 .browser-shortcuts{background:var(--soft);border-left:3px solid var(--accent);border-radius:9px;padding:6px 12px;margin-bottom:16px}.browser-shortcuts .badge{background:var(--card)}.browser-note{display:block;margin:6px 0 0 18px;font-size:11px;font-weight:400;color:var(--muted)}
@@ -50,17 +50,29 @@ button.app-launch-title{text-align:left;border:0;background:transparent;padding:
 @media(prefers-color-scheme:dark){.json-key{color:#c6a1f0}.json-string{color:#9ed6ae}.json-number{color:#efb47b}.json-literal{color:#96b8ff}}
 .input-source-row{display:grid;grid-template-columns:minmax(100px,1fr) minmax(120px,1.4fr) auto;gap:12px}.input-source-row input[type=text]{width:100%;max-width:none}.input-source-row>.tools{padding:0}.input-source-row>.tools button{white-space:nowrap}
 .file-mapping-row{display:grid;width:100%;grid-template-columns:minmax(0,1fr) 20px minmax(0,1fr);gap:12px;align-items:start;padding:12px 16px}.file-mapping-row input.file-map-source{width:100%;max-width:none}.file-mapping-target{min-width:0}.file-mapping-target>.node>.row{padding:0}.file-mapping-target>.node>.row>.label{display:none}.file-mapping-target input[type=text]{width:100%;max-width:none}.file-mapping-row>.mapping-arrow{padding-top:7px}
+.file-mapping-row.removable-mapping{grid-template-columns:minmax(0,1fr) 20px minmax(0,1fr) 28px}.mapping-delete{width:28px;height:30px;padding:0}
 .file-mapping-target>.row{padding:0;border:0}.file-mapping-target>.row>.label{display:none}.file-mapping-target .shortcut-control{max-width:none;width:100%}
 .resource-add{float:right;font-size:11px;padding:5px 9px;color:var(--muted);margin:-4px 0 0 12px}
 .translation-blocks{padding:14px}.translation-block+.translation-block{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}.translation-block-title{font-size:12px;font-weight:600;margin:0 0 6px}.translation-note{font-size:11px;color:var(--muted);line-height:1.6;margin:0 0 12px}.translation-blocks>.tools{padding:6px 0}
 .translation-entry{display:grid;grid-template-columns:minmax(120px,1fr) minmax(0,1.5fr);gap:16px;padding:12px 16px;align-items:start}.translation-entry+.translation-entry{border-top:1px solid var(--line)}.translation-source{padding-top:7px;overflow-wrap:anywhere}.translation-entry>.node>.row{padding:0}.translation-entry>.node>.row>.label{display:none}.translation-entry input[type=text]{width:100%;max-width:none}.translation-add{margin-top:8px;font-size:11px;padding:5px 9px}
 .locked-macro-name{display:flex;align-items:center;gap:8px;min-width:0;padding-right:9px;border:1px dashed var(--line);border-radius:6px;background:var(--side)}.locked-macro-name input.file-map-source{flex:1;width:0;min-width:0;border:0;background:transparent;color:var(--muted);cursor:default}.locked-macro-badge{color:var(--muted);font-size:10px;white-space:nowrap}
 .proxy-mode{display:flex;align-items:flex-start}.proxy-mode>.remove{flex:0 0 24px;margin:12px 0 0 8px}.proxy-mode>.node{flex:1;min-width:0}
-.proxy-app-section>h2{color:var(--text)}.proxy-app-uninstalled>h2{color:var(--muted);opacity:.65}
+.proxy-app-section>h2,.proxy-client-title{color:var(--text)}.proxy-app-uninstalled>h2,.proxy-app-uninstalled .proxy-client-title{color:var(--muted);opacity:.65}
+.proxy-client{border:0}.proxy-client-title{padding:8px 2px;font-size:13px;font-weight:600}.proxy-client[open]>.proxy-client-title{margin-bottom:10px}.proxy-client-title:hover{color:var(--accent)}.proxy-client-title>.remove{float:right;width:24px;height:24px;padding:0;margin-top:-4px}
+.proxy-candidate+.proxy-candidate{border-top:4px solid var(--bg)}.proxy-candidate-title,.proxy-condition-title{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.proxy-candidate-name{width:0!important;max-width:none!important;flex:1;border-color:transparent;background:transparent;font-weight:600}.proxy-candidate-name:hover,.proxy-candidate-name:focus{border-color:var(--line);background:var(--input)}
+.proxy-candidate-title>.remove,.proxy-condition-title>.remove{width:28px;height:28px;padding:0;flex-shrink:0}.proxy-condition-editor{border-top:1px solid var(--line)}.proxy-condition-title{font-size:11px;font-weight:600;color:var(--muted)}
+.condition-values{display:flex;align-items:center;gap:6px;width:52%;max-width:390px;min-width:0}.condition-value{display:flex;align-items:center;gap:2px;min-width:0;flex:1}.condition-value input{width:100%;max-width:none;min-width:80px}
 .window-filter-rule{display:flex;align-items:flex-start}.window-filter-rule>.remove{flex:0 0 24px;margin:10px 0 0 6px}.window-filter-rule>.node{flex:1;min-width:0}
 .v2ray-pac{padding:14px 16px;margin:10px 14px 12px 6px}.v2ray-pac>.node{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
 .path-control{display:flex;align-items:center;gap:6px;min-width:0;flex:1;max-width:100%}.path-control input[type=text]{width:0;flex:1;min-width:0;max-width:none}.browse-path{flex-shrink:0;padding:7px 9px;font-size:11px}.file-mapping-row>.path-control{width:100%}.input-source-row>.path-control{width:100%}
 .app-entry-menu{position:fixed;margin:0;padding:5px;min-width:210px;width:max-content;border:1px solid var(--line);border-radius:9px;background:var(--bg);box-shadow:0 8px 26px #0002}.app-entry-menu::backdrop{background:transparent}.app-entry-menu button{display:block;width:100%;border:0;text-align:left;padding:9px 12px;background:transparent}.app-entry-menu button:hover{background:var(--side);color:var(--accent)}
+.verification-code-entry{box-shadow:inset 3px 0 var(--accent)}.verification-code-entry+.verification-code-entry{border-top:4px solid var(--bg)}.verification-codes>.tools{border-top:1px solid var(--line)}
+.verification-code-entry>.row{display:grid;grid-template-columns:minmax(130px,1fr) minmax(260px,390px) 28px}.verification-code-entry input[type=text]{width:100%;max-width:none}
+.verification-filter-values{display:flex;align-items:center;gap:6px;min-width:0}.verification-filter-value{display:flex;align-items:center;gap:2px;min-width:0;flex:1}.verification-filter-value input{min-width:80px}.verification-field-button{width:28px;height:30px;padding:0;flex-shrink:0}.verification-code-spacer{width:28px}
+@media(max-width:780px){.verification-code-entry>.row{grid-template-columns:minmax(95px,.6fr) minmax(0,1.4fr) 28px;flex-wrap:nowrap}.verification-filter-values{overflow-x:auto}.verification-filter-value{flex:1 0 110px}}
+.flat-object-title{padding:12px 18px;font-size:12px;font-weight:600;border-bottom:1px solid var(--line)}
+.section-title{display:flex;align-items:center;justify-content:space-between;gap:12px}.section-title>.remove{width:24px;height:24px;padding:0}
 </style>
 </head>
 <body><div class="app"><aside><div class="brand"><div class="logo">H</div><div><b>Hammerspoon</b><small>Make your Mac your own</small></div></div><p class="nav-label">Configuration</p><nav id="nav" aria-label="Configuration categories"></nav><div class="aside-bottom"><span>●</span> Local configuration<br>Your Mac. Your workflow.</div></aside><main><header><div class="heading"><div><h1 id="title">Configuration</h1><p class="subtitle" id="subtitle">Loading configuration…</p></div></div><div id="tabs" class="tabs" role="tablist" aria-label="Configuration tabs"></div></header><div id="content" role="tabpanel"></div><footer><div class="status" id="status" role="status" aria-live="polite">Connecting to Hammerspoon…</div><button id="discard" disabled>Discard changes</button><button id="reload">Reload</button><button id="save" class="primary" disabled>Save changes</button></footer></main></div>
@@ -153,14 +165,25 @@ function updateButtons(){const name=tab()[1];$('save').disabled=!changed(name)||
 function renderNav(){$('nav').replaceChildren(...groups.map((g,i)=>{const b=button('',()=>{category=i;tabIndex=0;render()});b.setAttribute('aria-current',i===category?'true':'false');const icon=element('span','icon',g.icon);if(g.id==='proxy')icon.innerHTML='<svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true"><path d="M8 8.8L4.2 4.7M8 8.8L12 4.7M8 8.8V13.6" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8.8" r="2"/><circle cx="4.2" cy="4.7" r="1.6"/><circle cx="12" cy="4.7" r="1.6"/><circle cx="8" cy="13.6" r="1.6"/></svg>';b.append(icon,element('span','',g.name));if(g.tabs.some(t=>changed(t[1])))b.append(element('span','dot','•'));return b}))}
 function sections(t){const [title,name,keys]=t,root=drafts[name];if(!root)return [];const entries=[];for(const key of keys){let paths;if(key==='@all')paths=Object.keys(root).sort((a,b)=>['proxy','private-proxy'].includes(name)?Number(proxyApps[a]===false)-Number(proxyApps[b]===false):0).map(k=>[k]);else if(key==='@apps')paths=Object.keys(isRecord(root.hotkeys)?root.hotkeys:{}).filter(k=>!['global','appkeys','menubar','shared'].includes(k)).sort((a,b)=>Number(b==='browsers')-Number(a==='browsers')).map(k=>['hotkeys',k]);else if(key==='@other'){const known=group().tabs.flatMap(t=>t[2]).filter(k=>!k.startsWith('@'));if(name==='misc')known.push('proxy');paths=Object.keys(root).filter(k=>!known.includes(k)).map(k=>[k])}else paths=[key.split('.')];for(const path of paths){entries.push({name,path,value:at(root,path),missing:at(root,path)===undefined})}}return entries}
 const sectionObserver = new IntersectionObserver(entries => { for (const {target,isIntersecting} of entries) if(isIntersecting&&target.populate){sectionObserver.unobserve(target);target.populate();target.populate=null;target.style.minHeight=''} }, {root:$('content'),rootMargin:'300px 0px'});
-function deferSection(card,s,key,query){card.style.minHeight='120px';card.populate=()=>card.append(renderNode(s.name,s.path,s.value,key,0,query));sectionObserver.observe(card)}
-const expandedApps = new Set();
+function deferSection(card,s,key,query){card.style.minHeight='120px';card.populate=()=>card.append(s.name==='localization'&&s.path.length===1&&s.path[0]==='resources'?renderLocalizationResources(s.name,s.path,s.value,query):s.name==='misc'&&s.path.length===1&&s.path[0]==='proxy'&&Array.isArray(s.value)?renderAutomaticSwitchingRules(s.name,s.path,s.value,query):renderNode(s.name,s.path,s.value,key,0,query));sectionObserver.observe(card)}
+const expandedApps = new Set(), collapsedProxyClients = new Set();
 function renderSection(s,query) {
   const section=element('section','section'), key=s.path.at(-1), card=element('div','card');
   if(['proxy','private-proxy'].includes(s.name)&&s.path.length===1)section.className+=' proxy-app-section'+(proxyApps[key]===false?' proxy-app-uninstalled':'');
   if (s.missing) {
     section.append(element('h2','',displayTitle(s.name,s.path,undefined,key)));
     card.append(element('div','empty','Not configured'),button('Configure',()=>configureMissingSection(s)));section.append(card);
+  } else if (['proxy','private-proxy'].includes(s.name)&&s.path.length===1) {
+    const details=element('details','proxy-client'), expansionKey=JSON.stringify([s.name,...s.path]);
+    details.open=!collapsedProxyClients.has(expansionKey);
+    const summary=element('summary','proxy-client-title'), remove=button('−',event=>{
+      event.preventDefault();event.stopPropagation();collapsedProxyClients.delete(expansionKey);deleteShortcut(s.name,s.path);
+    },'remove');
+    remove.title='Delete '+displayTitle(s.name,s.path,s.value,key);remove.setAttribute('aria-label',remove.title);
+    summary.append(element('span','',displayTitle(s.name,s.path,s.value,key)),remove);details.append(summary);
+    let populated=false;const populate=()=>{if(!populated){populated=true;card.append(renderProxyClient(s.name,s.path,s.value,key,query))}};
+    details.addEventListener('toggle',()=>{details.open?collapsedProxyClients.delete(expansionKey):collapsedProxyClients.add(expansionKey);if(details.open)populate()});
+    if(details.open)populate();details.append(card);section.append(details);
   } else if (tab()[2].includes('@apps')) {
     section.className='section app-list-section';
     const details=element('details','app-section');
@@ -171,6 +194,9 @@ function renderSection(s,query) {
       section.className+=' browser-shortcuts';
       summary.append(element('span','badge','Shared across browsers'));
       summary.append(element('span','browser-note','Applies to Safari, Chrome, Edge, and Edge Dev.'));
+    } else {
+      const remove=button('−',event=>{event.preventDefault();event.stopPropagation();expandedApps.delete(expansionKey);deleteShortcut(s.name,s.path)},'remove');
+      remove.title='Delete '+displayTitle(s.name,s.path,s.value,key);remove.setAttribute('aria-label',remove.title);summary.append(remove);
     }
     details.append(summary);
     let populated=false;
@@ -178,7 +204,10 @@ function renderSection(s,query) {
     if(details.open){populated=true;card.append(renderNode(s.name,s.path,s.value,key,0,query))}
     details.append(card);section.append(details);
   } else {
-    if(!(s.name==='localization'&&s.path.length===1&&s.path[0]==='resources')&&!(s.name==='sync'&&s.path.length===1&&['file','variable'].includes(s.path[0]))&&!(s.name==='misc'&&s.path.length===1&&s.path[0]==='pollingInterval')&&!(s.name==='keybindings'&&((s.path.length===1&&s.path[0]==='hyper')||(s.path.length===2&&s.path[0]==='hotkeys'&&['appkeys','global','shared'].includes(s.path[1])))))section.append(element('h2','',displayTitle(s.name,s.path,s.value,key)));
+    if(s.path.length===1&&((s.name==='localization'&&s.path[0]!=='resources')||(s.name==='application'&&tab()[2].includes('@other')))) {
+      const heading=element('h2','section-title'), remove=button('−',()=>deleteShortcut(s.name,s.path),'remove');
+      remove.title='Delete '+applicationTitle(key);remove.setAttribute('aria-label',remove.title);heading.append(element('span','',displayTitle(s.name,s.path,s.value,key)),remove);section.append(heading);
+    } else if(!(s.name==='localization'&&s.path.length===1&&s.path[0]==='resources')&&!(s.name==='sync'&&s.path.length===1&&['file','variable'].includes(s.path[0]))&&!(s.name==='misc'&&s.path.length===1&&s.path[0]==='pollingInterval')&&!(s.name==='keybindings'&&((s.path.length===1&&s.path[0]==='hyper')||(s.path.length===2&&s.path[0]==='hotkeys'&&['appkeys','global','shared'].includes(s.path[1])))))section.append(element('h2','',displayTitle(s.name,s.path,s.value,key)));
     deferSection(card,s,key,query);section.append(card);
   }
   return section;
@@ -298,7 +327,7 @@ const propertyDefaults = {persist:true,background:true,repeatable:true,nonFrontm
 let propertyTarget;
 function entryDescription(name,path) {
   if(name==='keybindings'&&path.length===1&&path[0]==='hyper')return 'Macro name';
-  if(name==='application'&&(path.length===0||path[0]==='inputSource'))return 'Application bundle ID';
+  if(name==='application'&&(path.length===0||path[0]==='inputSource'||isWindowBehaviorMapping(name,path,{})))return 'Application bundle ID';
   if(name==='keybindings'&&path[0]==='hotkeys')return path.length===1?'Application bundle ID':'Shortcut action ID';
   if(name==='keybindings'&&path[0]==='remoteDesktopModifiers'&&path.length===1)return 'Application bundle ID';
   if(name==='localization'&&(path.length===0||path[0]==='resources'))return 'Application bundle ID';
@@ -641,7 +670,12 @@ function renderNamedMapping(name,path,value,query) {
   const target=element('div','file-mapping-target');
   target.append(renderNode(name,path,value,path.at(-1),0,query,true));
   let nameControl=!variable&&!macro?pathControl(source,{parentDirectory:true}):source;if(source.readOnly){nameControl=element('div','locked-macro-name');nameControl.append(source,element('span','locked-macro-badge','🔒 Read-only'))}
-  row.append(nameControl,element('span','mapping-arrow','→'),target);return row;
+  row.append(nameControl,element('span','mapping-arrow','→'),target);
+  if(name==='sync'&&(!variable||!pathVariableReferenced(path.at(-1)))) {
+    row.className+=' removable-mapping';const remove=button('−',()=>deleteShortcut(name,path),'remove mapping-delete');
+    remove.title='Delete '+path.at(-1);remove.setAttribute('aria-label',remove.title);row.append(remove);
+  }
+  return row;
 }
 
 const translationBlockNames={forward:'Forward localization',reverse:'Reverse localization'};
@@ -733,6 +767,21 @@ function appendObjectEntryButtons(tools,name,path,value,title) {
   if(!(name==='localization'&&path[0]==='resources'&&path.length===2))tools.append(button('＋ Add entry',()=>openEntryEditor(name,path,title)));
 }
 
+function renderProxyClient(name,path,value,key,query) {
+  if(!isRecord(value))return renderNode(name,path,value,key,0,query);
+  if((globalOnlyProxy(name,path)||(path[0]==='v2rayN'))&&!Array.isArray(value.locations)&&!Object.hasOwn(value,'global'))value={...value,global:{}};
+  const root=element('div','node'), title=displayTitle(name,path,value,key);
+  for(const childKey of Object.keys(value)) {
+    const childPath=path.concat(childKey), entry=element('div','entry');
+    if(childKey==='condition') {
+      entry.append(renderProxyConditionEditor(name,childPath,value[childKey],query));
+    } else entry.append(renderNode(name,childPath,value[childKey],childKey,1,query));
+    root.append(entry);
+  }
+  const tools=element('div','tools');appendObjectEntryButtons(tools,name,path,value,title);
+  tools.append(button('Edit JSON',()=>editJSON(title,at(drafts[name],path)??value,v=>{assign(drafts[name],path,v);mark();render()})));root.append(tools);return root;
+}
+
 function renderProxyMode(name,path,value,key,depth,query,skipNamedMapping) {
   if(globalOnlyProxy(name,path)||(path[0]==='v2rayN'&&key==='global'))return renderNode(name,path,value,key,depth,query,skipNamedMapping,true);
   const row=element('div','node proxy-mode');
@@ -748,7 +797,124 @@ function renderWindowFilterRule(name,path,value,key,depth,query) {
   remove.title='Delete '+key;remove.setAttribute('aria-label',remove.title);
   row.append(remove,renderNode(name,path,value,key,depth,query,false,false,true));return row;
 }
-function renderNode(name,path,value,key,depth,query,skipNamedMapping=false,skipProxyMode=false,skipWindowRule=false){if(!skipWindowRule&&name==='application'&&['hideWithoutWindow','quitWithoutWindow','windowSwitcherIgnore'].includes(path[0])&&path.length===4&&typeof path[1]==='number')return renderWindowFilterRule(name,path,value,key,depth,query);if((globalOnlyProxy(name,path)||(['proxy','private-proxy'].includes(name)&&path[0]==='v2rayN'))&&path.length===1&&isRecord(value)&&!Array.isArray(value.locations)&&!Object.hasOwn(value,'global'))value={...value,global:{}};if(!skipProxyMode&&['proxy','private-proxy'].includes(name)&&path.length>=2&&['pac','global'].includes(path.at(-1)))return renderProxyMode(name,path,value,key,depth,query,skipNamedMapping);if(name==='localization'&&path.length===1&&path[0]!=='resources')return renderMenuTranslations(name,path,value,query);if(!skipNamedMapping&&path.length===2&&((name==='sync'&&['file','variable'].includes(path[0]))||(name==='keybindings'&&path[0]==='hyper')))return renderNamedMapping(name,path,value,query);if(name==='keybindings'&&path[0]==='remoteDesktopModifiers'&&path.length===5&&path[3]==='map')return renderModifierMapping(name,path,value);if(name==='keybindings'&&path[0]==='remoteDesktopModifiers'&&path.length===4&&path.at(-1)==='type')return renderRestoreSwitch(name,path,value);const title=displayTitle(name,path,value,key);if(isShortcutValue(name,path,value))return renderShortcut(name,path,value,title,query);const kind=keyFieldKind(name,path);if(kind&&(typeof value==='string'||value===false||Array.isArray(value)))return renderKeyField(name,path,value,title,kind);const root=element('div','node');if(value!==null&&typeof value==='object'){const array=Array.isArray(value),keys=Object.keys(value);if(['proxy','private-proxy'].includes(name)&&path.at(-1)==='global'&&path[0]!=='v2rayN'&&!array)for(const protocol of ['http','https','socks5'])if(!keys.includes(protocol))keys.push(protocol);if(name==='keybindings'&&path[0]==='remoteDesktopModifiers'&&path.length===3&&!array&&!keys.includes('type'))keys.unshift('type');let holder=root;if(depth>0){const details=element('details');details.open=!(name==='keybindings'&&path[0]==='remoteDesktopModifiers'&&path.length===3)&&(!!query||['proxy','private-proxy'].includes(name)||(name==='misc'&&path[0]==='proxy')||(name==='keybindings'&&path[0]==='hotkeys'&&path[1]==='menubar'&&path[2]==='index')||configurationRows(value)<=3);const summary=element('summary','',title);summary.append(element('small','',keys.length+(array?' items':' options')));if(name==='localization'&&path[0]==='resources'&&path.length===2&&!array)summary.append(button('＋ Add entry',event=>{event.preventDefault();event.stopPropagation();addLocalizationResource(name,path)},'resource-add'));details.append(summary);holder=element('div','nested');details.append(holder);root.append(details)}if(isCompactList(value)&&!(name==='application'&&path.length===1&&path[0]==='defaultMusicAppForControlCenter'))holder.className+=' inline-list';const paired=name==='keybindings'&&path[0]==='hotkeys'&&!array&&keys.includes('mods')&&keys.includes('key');if(paired)holder.className+=' shortcut-fields';for(const k of keys){const p=path.concat(array?Number(k):k);const entry=element('div','entry'+(paired&&(k==='mods'||k==='key')?' '+k+'-entry':''));entry.append(renderNode(name,p,value[k],array?String(Number(k)+1):k,depth+1,query));if(array&&!isShortcutValue(name,p,value[k]))entry.append(button('−',()=>{at(drafts[name],path).splice(Number(k),1);mark();render()},'remove'));holder.append(entry)}if(keys.length===0)holder.append(element('div','row',array?'No entries':'No options'));const tools=element('div','tools');if(array)tools.append(button('＋ Add entry',()=>openArrayEntry(name,path)));else appendObjectEntryButtons(tools,name,path,value,title);tools.append(button('Edit JSON',()=>editJSON(title,at(drafts[name],path)??value,v=>{assign(drafts[name],path,v);mark();render()})));holder.append(tools)}else{const row=element('div','row'),label=element('label','label',title),id='field-'+name+'-'+path.map(k=>encodeURIComponent(k)).join('/');label.htmlFor=id;const help=labels[key]?.[1];if(help)label.append(element('small','',help));let input;if(value===null){input=button('null · Edit',()=>editJSON(title,value,v=>{assign(drafts[name],path,v);mark();render()}))}else{input=element('input');input.type=typeof value==='boolean'?'checkbox':typeof value==='number'?'number':'text';if(input.type==='checkbox')input.checked=value;else input.value=value??'';input.placeholder='Not set';input.spellcheck=false;if(['proxy','private-proxy'].includes(name)&&path[0]==='v2rayN'&&path.at(-2)==='pac'&&key==='routing'){input.required=true;input.title='Required in v2rayN PAC mode'}if(input.type==='number'){input.step='any';if(key==='pollingInterval')input.min='0.01'}input.oninput=()=>{if(input.type==='number'&&(!input.value||!input.checkValidity())){invalid[name+'/'+path.join('/')]=true;input.setCustomValidity('Enter a valid number');setStatus('Enter a valid number before saving.',true);$('save').disabled=true;return}delete invalid[name+'/'+path.join('/')];input.setCustomValidity('');const v=input.type==='checkbox'?input.checked:input.type==='number'?Number(input.value):input.value;assign(drafts[name],path,v);mark()};if(input.type==='number')input.addEventListener('input',()=>input.setCustomValidity(''),{capture:true})}input.id=id;const pathContext=typeof value==='string'||value===undefined?pathFieldContext(name,path):null;const control=pathContext?pathControl(input,pathContext):input;if(Array.isArray(at(drafts[name],path.slice(0,-1)))){row.className='row list-value';input.setAttribute('aria-label',title);row.append(control)}else row.append(label,control);root.append(row);if(typeof value==='string'&&((name==='keybindings'&&path[0]==='hotkeys'&&path[1]==='appkeys'&&path.at(-1)==='bundleID')||(name==='application'&&path[0]==='inputSource'&&path.length===2)||(name==='localization'&&path[0]==='resources'&&path.length===2))){const tools=element('div','tools');tools.append(button('＋ Add entry',()=>name==='localization'?addLocalizationResource(name,path):editJSON(name==='application'?'Add input source':'Add app identifier','',v=>{if(typeof v!=='string'||!v.trim())throw Error(name==='application'?'Enter a non-empty input source identifier.':'Enter a non-empty app identifier.');assign(drafts[name],path,[at(drafts[name],path),v]);mark();render()})));if(path.length===2&&((name==='application'&&path[0]==='inputSource')||(name==='localization'&&path[0]==='resources'))){row.className+=' input-source-row';row.append(tools)}else root.append(tools)}}return root}
+function isWindowBehaviorMapping(name,path,value) {
+  return name==='application'&&path.length===2&&typeof path[1]==='number'
+    &&['hideWithoutWindow','quitWithoutWindow','windowSwitcherIgnore'].includes(path[0])&&isRecord(value);
+}
+function renderWindowBehaviorMapping(name,path,value,depth,query) {
+  const root=element('div','node window-behavior-mapping'), title=displayTitle(name,path,value,path.at(-1));
+  for(const key of Object.keys(value)) {
+    const entryPath=path.concat(key), entry=element('div','entry'), remove=button('−',()=>deleteShortcut(name,entryPath),'remove');
+    remove.title='Delete '+applicationTitle(key);remove.setAttribute('aria-label',remove.title);
+    entry.append(renderNode(name,entryPath,value[key],key,depth+1,query),remove);root.append(entry);
+  }
+  const tools=element('div','tools');tools.append(button('＋ Add configured app',()=>openEntryEditor(name,path,title)),
+    button('Edit configured apps JSON',()=>editJSON(title,at(drafts[name],path),v=>{assign(drafts[name],path,v);mark();render()})));root.append(tools);return root;
+}
+function verificationTextInput(name,path,value,label) {
+  if(typeof value!=='string')return button('Edit JSON',()=>editJSON(label,value,v=>{assign(drafts[name],path,v);mark();render()}));
+  const input=element('input'), id='field-'+name+'-'+path.map(k=>encodeURIComponent(k)).join('/');
+  input.type='text';input.id=id;input.value=value;input.placeholder='Not set';input.spellcheck=false;input.setAttribute('aria-label',label);
+  input.oninput=()=>{assign(drafts[name],path,input.value);mark()};return input;
+}
+function renderVerificationCodes(name,path,value) {
+  const root=element('div','node verification-codes');
+  value.forEach((rule,index)=>{
+    const rulePath=path.concat(index), entry=element('div','verification-code-entry'), filterRow=element('div','row');
+    const filterLabel=element('label','label','Match text'), filters=element('div','verification-filter-values');
+    if(Array.isArray(rule?.filter))rule.filter.forEach((text,index)=>{
+      const filterPath=rulePath.concat('filter',index), field=element('div','verification-filter-value');
+      const remove=button('−',()=>{at(drafts[name],rulePath.concat('filter')).splice(index,1);mark();render()},'remove verification-field-button');
+      remove.title='Delete match text';remove.setAttribute('aria-label','Delete match text '+(index+1));
+      field.append(verificationTextInput(name,filterPath,text,'Match text '+(index+1)),remove);filters.append(field);
+    });
+    const add=button('＋',()=>openArrayEntry(name,rulePath.concat('filter')),'verification-field-button');
+    add.title='Add match text';add.setAttribute('aria-label',add.title);filters.append(add);
+    const remove=button('−',()=>deleteShortcut(name,rulePath),'remove verification-field-button');
+    remove.title='Delete verification code rule';remove.setAttribute('aria-label',remove.title);filterRow.append(filterLabel,filters,remove);
+    const extractRow=element('div','row'), extractLabel=element('label','label','Extraction pattern');
+    const extractPath=rulePath.concat('extract'), extract=verificationTextInput(name,extractPath,rule?.extract,'Extraction pattern');
+    extractLabel.htmlFor=extract.id||'';extractRow.append(extractLabel,extract,element('span','verification-code-spacer'));entry.append(filterRow,extractRow);root.append(entry);
+  });
+  if(!value.length)root.append(element('div','row','No entries'));
+  const tools=element('div','tools');tools.append(button('＋ Add entry',()=>openArrayEntry(name,path)),button('Edit JSON',()=>editJSON('Verification codes',at(drafts[name],path),v=>{assign(drafts[name],path,v);mark();render()})));root.append(tools);return root;
+}
+function alwaysExpandObject(name,path) {
+  return ['proxy','private-proxy'].includes(name)&&path.at(-1)==='global'
+    ||name==='localization'&&path[0]==='resources'&&path.length>=2;
+}
+function pathVariableReferenced(key) {
+  const reference='${'+key+'}', variables={...(drafts.sync?.variable||{})};delete variables[key];
+  const scan=value=>typeof value==='string'?value.includes(reference):Array.isArray(value)?value.some(scan):isRecord(value)&&Object.entries(value).some(([name,child])=>name.includes(reference)||scan(child));
+  return scan({...drafts.sync,variable:variables});
+}
+function renderLocalizationResources(name,path,value,query) {
+  const root=element('div','node'), title=displayTitle(name,path,value,path.at(-1));
+  for(const key of Object.keys(value)) {
+    const entryPath=path.concat(key), entry=element('div','entry'), remove=button('−',()=>deleteShortcut(name,entryPath),'remove');
+    remove.title='Delete '+applicationTitle(key);remove.setAttribute('aria-label',remove.title);
+    entry.append(renderNode(name,entryPath,value[key],key,1,query),remove);root.append(entry);
+  }
+  if(!Object.keys(value).length)root.append(element('div','row','No entries'));
+  const tools=element('div','tools');tools.append(button('＋ Add entry',()=>openEntryEditor(name,path,title)),button('Edit JSON',()=>editJSON(title,at(drafts[name],path),v=>{assign(drafts[name],path,v);mark();render()})));root.append(tools);return root;
+}
+const proxyConditionFields={shell_command:['Shell command',''],ssid:['Wi-Fi SSID',[]],etherNet:['Ethernet IP',[]]};
+function renderTextSetting(name,path,value,title) {
+  const row=element('div','row'), label=element('label','label',title), input=verificationTextInput(name,path,value,title);
+  label.htmlFor=input.id||'';row.append(label,input);return row;
+}
+function renderProxyConditionField(name,path,value,key,query) {
+  const title=proxyConditionFields[key]?.[0]||key;
+  if(typeof value==='string')return renderTextSetting(name,path,value,title);
+  if(!Array.isArray(value))return renderNode(name,path,value,key,0,query);
+  const row=element('div','row'), label=element('label','label',title), values=element('div','condition-values');
+  value.forEach((item,index)=>{
+    const itemPath=path.concat(index), field=element('div','condition-value'), remove=button('−',()=>deleteShortcut(name,itemPath),'remove verification-field-button');
+    remove.title='Delete '+title;remove.setAttribute('aria-label',remove.title+' '+(index+1));field.append(verificationTextInput(name,itemPath,item,title+' '+(index+1)),remove);values.append(field);
+  });
+  const add=button('＋',()=>openArrayEntry(name,path),'verification-field-button');add.title='Add '+title;add.setAttribute('aria-label',add.title);values.append(add);row.append(label,values);return row;
+}
+function renderProxyConditionEditor(name,path,value,query) {
+  const root=element('div','node proxy-condition-editor'), heading=element('div','proxy-condition-title'), remove=button('−',()=>deleteShortcut(name,path),'remove');
+  remove.title='Delete condition';remove.setAttribute('aria-label',remove.title);heading.append(element('span','','Condition'),remove);root.append(heading);
+  if(isRecord(value))for(const key of Object.keys(value))root.append(renderProxyConditionField(name,path.concat(key),value[key],key,query));
+  else root.append(renderNode(name,path,value,'condition',0,query));
+  const tools=element('div','tools');if(isRecord(value))for(const [key,[title,initial]] of Object.entries(proxyConditionFields))if(!Object.hasOwn(value,key))tools.append(button('Add '+title,()=>{assign(drafts[name],path.concat(key),Array.isArray(initial)?[]:initial);mark();render()}));
+  tools.append(button('Edit JSON',()=>editJSON('Condition',at(drafts[name],path),updated=>{assign(drafts[name],path,updated);mark();render()})));root.append(tools);return root;
+}
+function renderProxyCandidates(name,path,value,query) {
+  const root=element('div','node proxy-candidates');
+  value.forEach((candidate,index)=>{
+    const candidatePath=path.concat(index), group=element('div','proxy-candidate');
+    if(isRecord(candidate)) {
+      const heading=element('div','proxy-candidate-title'), nameInput=verificationTextInput(name,candidatePath.concat('name'),candidate.name,'Candidate name');
+      nameInput.className+=' proxy-candidate-name';const remove=button('−',()=>deleteShortcut(name,candidatePath),'remove');remove.title='Delete '+(candidate.name||'candidate');remove.setAttribute('aria-label',remove.title);heading.append(nameInput,remove);group.append(heading);
+      for(const key of Object.keys(candidate).filter(key=>!['name','condition'].includes(key)))group.append(key==='mode'&&typeof candidate[key]==='string'?renderTextSetting(name,candidatePath.concat(key),candidate[key],'Mode'):renderNode(name,candidatePath.concat(key),candidate[key],key,0,query));
+      if(Object.hasOwn(candidate,'condition'))group.append(renderProxyConditionEditor(name,candidatePath.concat('condition'),candidate.condition,query));
+      const tools=element('div','tools');if(!Object.hasOwn(candidate,'condition'))tools.append(button('＋ Add condition',()=>{assign(drafts[name],candidatePath.concat('condition'),{});mark();render()}));
+      tools.append(button('Edit JSON',()=>editJSON(candidate.name||'Candidate',at(drafts[name],candidatePath),updated=>{assign(drafts[name],candidatePath,updated);mark();render()})));group.append(tools);
+    } else group.append(renderNode(name,candidatePath,candidate,String(index+1),0,query));
+    root.append(group);
+  });
+  if(!value.length)root.append(element('div','row','No entries'));
+  const tools=element('div','tools');tools.append(button('＋ Add candidate',()=>openArrayEntry(name,path)),button('Edit JSON',()=>editJSON('Candidates',at(drafts[name],path),updated=>{assign(drafts[name],path,updated);mark();render()})));root.append(tools);return root;
+}
+function renderAutomaticSwitchingRules(name,path,value,query) {
+  const root=element('div','node'), title=displayTitle(name,path,value,path.at(-1));
+  value.forEach((rule,index)=>{
+    const rulePath=path.concat(index), entry=element('div','entry'), body=element('div','node');
+    if(isRecord(rule)) {
+      for(const key of Object.keys(rule))body.append(key==='candidates'&&Array.isArray(rule[key])?renderProxyCandidates(name,rulePath.concat(key),rule[key],query):key==='condition'?renderProxyConditionEditor(name,rulePath.concat(key),rule[key],query):renderNode(name,rulePath.concat(key),rule[key],key,1,query));
+      if(!Object.hasOwn(rule,'condition')){const tools=element('div','tools');tools.append(button('＋ Add rule condition',()=>{assign(drafts[name],rulePath.concat('condition'),{});mark();render()}));body.append(tools)}
+    }
+    else body.append(renderNode(name,rulePath,rule,String(index+1),1,query));
+    const remove=button('−',()=>deleteShortcut(name,rulePath),'remove');remove.title='Delete switching rule';remove.setAttribute('aria-label',remove.title);
+    entry.append(body,remove);root.append(entry);
+  });
+  if(!value.length)root.append(element('div','row','No entries'));
+  const tools=element('div','tools');tools.append(button('＋ Add entry',()=>openArrayEntry(name,path)),button('Edit JSON',()=>editJSON(title,at(drafts[name],path),v=>{assign(drafts[name],path,v);mark();render()})));root.append(tools);return root;
+}
+function renderNode(name,path,value,key,depth,query,skipNamedMapping=false,skipProxyMode=false,skipWindowRule=false){if(name==='misc'&&path.length===1&&path[0]==='verificationFilter'&&Array.isArray(value))return renderVerificationCodes(name,path,value);if(isWindowBehaviorMapping(name,path,value))return renderWindowBehaviorMapping(name,path,value,depth,query);if(!skipWindowRule&&name==='application'&&['hideWithoutWindow','quitWithoutWindow','windowSwitcherIgnore'].includes(path[0])&&path.length===4&&typeof path[1]==='number')return renderWindowFilterRule(name,path,value,key,depth,query);if((globalOnlyProxy(name,path)||(['proxy','private-proxy'].includes(name)&&path[0]==='v2rayN'))&&path.length===1&&isRecord(value)&&!Array.isArray(value.locations)&&!Object.hasOwn(value,'global'))value={...value,global:{}};if(!skipProxyMode&&['proxy','private-proxy'].includes(name)&&path.length>=2&&['pac','global'].includes(path.at(-1)))return renderProxyMode(name,path,value,key,depth,query,skipNamedMapping);if(name==='localization'&&path.length===1&&path[0]!=='resources')return renderMenuTranslations(name,path,value,query);if(!skipNamedMapping&&path.length===2&&((name==='sync'&&['file','variable'].includes(path[0]))||(name==='keybindings'&&path[0]==='hyper')))return renderNamedMapping(name,path,value,query);if(name==='keybindings'&&path[0]==='remoteDesktopModifiers'&&path.length===5&&path[3]==='map')return renderModifierMapping(name,path,value);if(name==='keybindings'&&path[0]==='remoteDesktopModifiers'&&path.length===4&&path.at(-1)==='type')return renderRestoreSwitch(name,path,value);const title=displayTitle(name,path,value,key);if(isShortcutValue(name,path,value))return renderShortcut(name,path,value,title,query);const kind=keyFieldKind(name,path);if(kind&&(typeof value==='string'||value===false||Array.isArray(value)))return renderKeyField(name,path,value,title,kind);const root=element('div','node');if(value!==null&&typeof value==='object'){const array=Array.isArray(value),keys=Object.keys(value);if(['proxy','private-proxy'].includes(name)&&path.at(-1)==='global'&&path[0]!=='v2rayN'&&!array)for(const protocol of ['http','https','socks5'])if(!keys.includes(protocol))keys.push(protocol);if(name==='keybindings'&&path[0]==='remoteDesktopModifiers'&&path.length===3&&!array&&!keys.includes('type'))keys.unshift('type');let holder=root;if(depth>0&&!alwaysExpandObject(name,path)){const details=element('details');details.open=!(name==='keybindings'&&path[0]==='remoteDesktopModifiers'&&path.length===3)&&(!!query||['proxy','private-proxy'].includes(name)||(name==='misc'&&path[0]==='proxy')||(name==='keybindings'&&path[0]==='hotkeys'&&path[1]==='menubar'&&path[2]==='index')||configurationRows(value)<=3);const summary=element('summary','',title);summary.append(element('small','',keys.length+(array?' items':' options')));if(name==='localization'&&path[0]==='resources'&&path.length===2&&!array)summary.append(button('＋ Add entry',event=>{event.preventDefault();event.stopPropagation();addLocalizationResource(name,path)},'resource-add'));details.append(summary);holder=element('div','nested');details.append(holder);root.append(details)}else if(depth>0){root.className+=' flat-object';if(path.at(-1)==='global'||path.length===2)root.append(element('div','flat-object-title',title))}if(isCompactList(value)&&!alwaysExpandObject(name,path)&&!(name==='application'&&path.length===1&&path[0]==='defaultMusicAppForControlCenter'))holder.className+=' inline-list';const paired=name==='keybindings'&&path[0]==='hotkeys'&&!array&&keys.includes('mods')&&keys.includes('key');if(paired)holder.className+=' shortcut-fields';for(const k of keys){const p=path.concat(array?Number(k):k);const entry=element('div','entry'+(paired&&(k==='mods'||k==='key')?' '+k+'-entry':''));entry.append(renderNode(name,p,value[k],array?String(Number(k)+1):k,depth+1,query));if(array&&!isShortcutValue(name,p,value[k])&&!isWindowBehaviorMapping(name,p,value[k]))entry.append(button('−',()=>{at(drafts[name],path).splice(Number(k),1);mark();render()},'remove'));else if(name==='application'&&path.length===1&&path[0]==='inputSource'){const remove=button('−',()=>deleteShortcut(name,p),'remove');remove.title='Delete '+applicationTitle(k);remove.setAttribute('aria-label',remove.title);entry.append(remove)}holder.append(entry)}if(keys.length===0)holder.append(element('div','row',array?'No entries':'No options'));const tools=element('div','tools');if(array)tools.append(button('＋ Add entry',()=>openArrayEntry(name,path)));else appendObjectEntryButtons(tools,name,path,value,title);tools.append(button('Edit JSON',()=>editJSON(title,at(drafts[name],path)??value,v=>{assign(drafts[name],path,v);mark();render()})));holder.append(tools)}else{const row=element('div','row'),label=element('label','label',title),id='field-'+name+'-'+path.map(k=>encodeURIComponent(k)).join('/');label.htmlFor=id;const help=labels[key]?.[1];if(help)label.append(element('small','',help));let input;if(value===null){input=button('null · Edit',()=>editJSON(title,value,v=>{assign(drafts[name],path,v);mark();render()}))}else{input=element('input');input.type=typeof value==='boolean'?'checkbox':typeof value==='number'?'number':'text';if(input.type==='checkbox')input.checked=value;else input.value=value??'';input.placeholder='Not set';input.spellcheck=false;if(['proxy','private-proxy'].includes(name)&&path[0]==='v2rayN'&&path.at(-2)==='pac'&&key==='routing'){input.required=true;input.title='Required in v2rayN PAC mode'}if(input.type==='number'){input.step='any';if(key==='pollingInterval')input.min='0.01'}input.oninput=()=>{if(input.type==='number'&&(!input.value||!input.checkValidity())){invalid[name+'/'+path.join('/')]=true;input.setCustomValidity('Enter a valid number');setStatus('Enter a valid number before saving.',true);$('save').disabled=true;return}delete invalid[name+'/'+path.join('/')];input.setCustomValidity('');const v=input.type==='checkbox'?input.checked:input.type==='number'?Number(input.value):input.value;assign(drafts[name],path,v);mark()};if(input.type==='number')input.addEventListener('input',()=>input.setCustomValidity(''),{capture:true})}input.id=id;const pathContext=typeof value==='string'||value===undefined?pathFieldContext(name,path):null;const control=pathContext?pathControl(input,pathContext):input;if(Array.isArray(at(drafts[name],path.slice(0,-1)))){row.className='row list-value';input.setAttribute('aria-label',title);row.append(control)}else row.append(label,control);root.append(row);if(typeof value==='string'&&((name==='keybindings'&&path[0]==='hotkeys'&&path[1]==='appkeys'&&path.at(-1)==='bundleID')||(name==='application'&&path[0]==='inputSource'&&path.length===2)||(name==='localization'&&path[0]==='resources'&&path.length===2))){const tools=element('div','tools');tools.append(button('＋ Add entry',()=>name==='localization'?addLocalizationResource(name,path):editJSON(name==='application'?'Add input source':'Add app identifier','',v=>{if(typeof v!=='string'||!v.trim())throw Error(name==='application'?'Enter a non-empty input source identifier.':'Enter a non-empty app identifier.');assign(drafts[name],path,[at(drafts[name],path),v]);mark();render()})));if(path.length===2&&((name==='application'&&path[0]==='inputSource')||(name==='localization'&&path[0]==='resources'))){row.className+=' input-source-row';row.append(tools)}else root.append(tools)}}return root}
 function editJSON(title,value,apply,applicationChosen=false){if(title==='Add app identifier'&&!applicationChosen){chooseApplicationEntry(id=>editJSON(title,id,apply,true));return}$('dialogTitle').textContent=title;$('dialogHelp').textContent='Accepts strings, arrays, and objects. Click Save changes after applying edits.';$('jsonEditor').value=JSON.stringify(value,null,2);$('dialogError').textContent='';dialogApply=apply;$('editor').showModal();syncJSONHighlight('jsonEditor');$('jsonEditor').focus()}
 $('cancelEdit').onclick=()=>$('editor').close();$('applyEdit').onclick=()=>{try{dialogApply(JSON.parse($('jsonEditor').value));$('editor').close()}catch(e){$('dialogError').textContent='Not applied: '+e.message}};
 function confirmAction(title,message,fn){$('dialogTitle').textContent=title;$('dialogHelp').textContent=message;$('jsonEditorShell').hidden=true;$('dialogError').textContent='';dialogApply=()=>fn();$('editor').showModal();$('applyEdit').onclick=()=>{fn();$('editor').close()}}
