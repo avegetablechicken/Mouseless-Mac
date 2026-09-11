@@ -1652,14 +1652,16 @@ function()
         if entry.subkind == HK.PRIVELLEGE or entry.subkind == HK.WIN_OP_.MOVE
             or entry.subkind == HK.WIN_OP_.MOVE_RESIZE
             or entry.subkind == HK.WIN_OP_.INPLACE_RESIZE then
-          image = hs.image.imageFromPath("static/rectangle.png")
+          image = hs.image.imageFromPath("static/hotkeys/window.svg")
         elseif entry.subkind == HK.WIN_OP_.SPACE_SCREEN then
-          image = hs.image.imageFromPath("static/display.tiff")
+          image = hs.image.imageFromPath("static/hotkeys/display.svg")
         end
       elseif entry.subkind == HK.WIN_OP_.SPACE_SCREEN then
-        image = hs.image.imageFromPath("static/display.tiff")
+        image = hs.image.imageFromPath("static/hotkeys/display.svg")
       end
     end
+
+    image = require("hotkey_icons")(entry, image)
 
     if entry.kind ~= kind then
       kind = entry.kind

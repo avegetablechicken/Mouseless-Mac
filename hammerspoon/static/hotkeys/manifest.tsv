@@ -1,0 +1,106 @@
+move-to-top-left	Move to Top-Left
+move-towards-top-left	Move towards Top-Left
+move-to-top	Move to Top
+move-towards-top	Move towards Top
+move-to-top-right	Move to Top-Right
+move-towards-top-right	Move towards Top-Right
+move-to-left	Move to Left
+move-towards-left	Move towards Left
+move-to-right	Move to Right
+move-towards-right	Move towards Right
+move-to-bottom-left	Move to Bottom-Left
+move-towards-bottom-left	Move towards Bottom-Left
+move-to-bottom	Move to Bottom
+move-towards-bottom	Move towards Bottom
+move-to-bottom-right	Move to Bottom-Right
+move-towards-bottom-right	Move towards Bottom-Right
+zoom-to-left-half	Zoom to Left Half
+zoom-to-right-half	Zoom to Right Half
+zoom-to-top-half	Zoom to Top Half
+zoom-to-bottom-half	Zoom to Bottom Half
+zoom-to-top-left	Zoom to Top-Left
+zoom-to-top-right	Zoom to Top-Right
+zoom-to-bottom-left	Zoom to Bottom-Left
+zoom-to-bottom-right	Zoom to Bottom-Right
+zoom-to-left-1-3	Zoom to Left 1/3
+zoom-to-right-1-3	Zoom to Right 1/3
+zoom-to-left-2-3	Zoom to Left 2/3
+zoom-to-right-2-3	Zoom to Right 2/3
+center	Center
+fill	Fill
+expand-left-border	Expand Left Border
+shrink-left-border	Shrink Left Border
+expand-right-border	Expand Right Border
+shrink-right-border	Shrink Right Border
+expand-top-border	Expand Top Border
+shrink-top-border	Shrink Top Border
+expand-bottom-border	Expand Bottom Border
+shrink-bottom-border	Shrink Bottom Border
+move-to-previous-monitor	Move to Previous Monitor
+move-to-next-monitor	Move to Next Monitor
+move-to-monitor-1	Move to Monitor 1
+move-to-monitor-2	Move to Monitor 2
+move-to-monitor-3	Move to Monitor 3
+move-to-monitor-4	Move to Monitor 4
+move-to-monitor-5	Move to Monitor 5
+move-to-monitor-6	Move to Monitor 6
+move-to-monitor-7	Move to Monitor 7
+move-to-monitor-8	Move to Monitor 8
+move-to-monitor-9	Move to Monitor 9
+move-to-previous-space	Move to Previous Space
+move-to-next-space	Move to Next Space
+move-to-space-1	Move to Space 1
+move-to-space-2	Move to Space 2
+move-to-space-3	Move to Space 3
+move-to-space-4	Move to Space 4
+move-to-space-5	Move to Space 5
+move-to-space-6	Move to Space 6
+move-to-space-7	Move to Space 7
+move-to-space-8	Move to Space 8
+move-to-space-9	Move to Space 9
+focus-on-monitor-1	Focus on Monitor 1
+focus-on-monitor-2	Focus on Monitor 2
+focus-on-monitor-3	Focus on Monitor 3
+focus-on-monitor-4	Focus on Monitor 4
+focus-on-monitor-5	Focus on Monitor 5
+focus-on-monitor-6	Focus on Monitor 6
+focus-on-monitor-7	Focus on Monitor 7
+focus-on-monitor-8	Focus on Monitor 8
+focus-on-monitor-9	Focus on Monitor 9
+focus-on-previous-screen	Focus on Previous Screen
+focus-on-next-screen	Focus on Next Screen
+move-to-main-screen	Move to Main Screen
+move-to-full-screen-on-this-display	Move to Full Screen on This Display
+shrink-window-border	Shrink Window Border
+expand-window-border	Expand Window Border
+previous-window	Previous Window
+next-window	Next Window
+previous-browser-window	Previous Browser Window
+next-browser-window	Next Browser Window
+switch-to-window	Switch to Window
+switch-to-tab	Switch to Tab
+show-info-of-current-window	Show Info of Current Window
+search-menu-bar	Search Menu Bar
+show-proxy-menu	Show Proxy Menu
+stage-manager	Stage Manager
+stage-manager-window-1	Stage Manager Window 1
+stage-manager-window-2	Stage Manager Window 2
+stage-manager-window-3	Stage Manager Window 3
+stage-manager-window-4	Stage Manager Window 4
+stage-manager-window-5	Stage Manager Window 5
+stage-manager-window-6	Stage Manager Window 6
+stage-manager-window-7	Stage Manager Window 7
+stage-manager-window-8	Stage Manager Window 8
+stage-manager-window-9	Stage Manager Window 9
+window	Window
+display	Display
+menu-bar	Menu Bar
+navigation	Navigation
+application	Application
+background-action	Background Action
+hotkey	Hotkey
+toggle-hotkeys	Toggle Hotkeys
+reload-hammerspoon	Reload Hammerspoon
+toggle-hammerspoon-console	Toggle Hammerspoon Console
+show-keybindings	Show Keybindings
+search-hotkey	Search Hotkey

@@ -1798,7 +1798,7 @@ function()
 end)
 if proxyHotkey then
   proxyHotkey.kind = HK.MENUBAR
-  proxyHotkey.icon = hs.image.imageFromAppBundle("com.apple.systempreferences")
+  proxyHotkey.icon = require("hotkey_icons")({msg = "Show Proxy Menu"})
 end
 
 for appname, appid in pairs(proxyAppBundleIDs) do
