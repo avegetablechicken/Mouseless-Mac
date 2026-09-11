@@ -155,6 +155,20 @@ local function toggleV2RayX(enable, alert)
   return true
 end
 
+local function v2rayUTitle(appid, legacyTitle, modernTitle)
+  local appVer = applicationVersion(appid)
+  local title = appVer and appVer >= "5" and modernTitle or legacyTitle
+  return localizedString(title, appid) or title
+end
+
+local function findV2rayUMenuItem(menu, title, allowSuffix)
+  return tfind(getc(menu, AX.MenuItem) or {}, function(item)
+    local actual = item.AXTitle
+    return actual == title or allowSuffix and actual
+        and actual:sub(1, #title + 1) == title .. " "
+  end)
+end
+
 -- Toggle connect/disconnect VPN using `V2rayU`
 local function toggleV2RayU(enable, alert)
   local appid = proxyAppBundleIDs.V2rayU
@@ -172,34 +186,37 @@ local function toggleV2RayU(enable, alert)
   end
 
   local set
-  local turnOnTitle = localizedString("Turn v2ray-core On", appid)
-  local turnOffTitle = localizedString("Turn v2ray-core Off", appid)
+  local appVer = applicationVersion(appid)
+  local modern = appVer and appVer >= "5"
+  local turnOnTitle = v2rayUTitle(appid, "Turn v2ray-core On", "Start Core")
+  local turnOffTitle = v2rayUTitle(appid, "Turn v2ray-core Off", "Stop Core")
   if enable == true then
-    local turnOn = getc(menu, AX.MenuItem, turnOnTitle)
+    local turnOn = findV2rayUMenuItem(menu, turnOnTitle, modern)
     if turnOn ~= nil then
       turnOn:performAction(AX.Press)
       set = true
     end
   elseif enable == false then
-    local turnOff = getc(menu, AX.MenuItem, turnOffTitle)
+    local turnOff = findV2rayUMenuItem(menu, turnOffTitle, modern)
     if turnOff ~= nil then
       turnOff:performAction(AX.Press)
       set = false
     end
   else
-    local turnOff = getc(menu, AX.MenuItem, turnOffTitle)
+    local turnOff = findV2rayUMenuItem(menu, turnOffTitle, modern)
     if turnOff ~= nil then
       turnOff:performAction(AX.Press)
       set = false
     else
-      local turnOn = getc(menu, AX.MenuItem, turnOnTitle)
+      local turnOn = findV2rayUMenuItem(menu, turnOnTitle, modern)
+      if turnOn == nil then return false end
       turnOn:performAction(AX.Press)
       set = true
     end
   end
 
   if enable == true or set then
-    local turnOff = getc(menu, AX.MenuItem, turnOffTitle)
+    local turnOff = findV2rayUMenuItem(menu, turnOffTitle, modern)
     if turnOff == nil then
       if alert then
         hs.alert("Error occurred while loading V2ray core in \"V2rayU\"")
@@ -400,16 +417,22 @@ local proxyActivateFuncs = {
 
   V2rayU = {
     global = function()
+      local appid = proxyAppBundleIDs.V2rayU
       if toggleV2RayU(true) then
-        if clickRightMenuBarItem(proxyAppBundleIDs.V2rayU, "Global Mode") then
+        local title = v2rayUTitle(appid, "Global Mode",
+            "Global Mode (set system proxies)")
+        if clickRightMenuBarItem(appid, title) then
           return enable_proxy_global("V2rayU")
         end
       end
       return false
     end,
     pac = function()
+      local appid = proxyAppBundleIDs.V2rayU
       if toggleV2RayU(true) then
-        if clickRightMenuBarItem(proxyAppBundleIDs.V2rayU, "Pac Mode") then
+        local title = v2rayUTitle(appid, "Pac Mode",
+            "PAC Mode (pac rule Proxy)")
+        if clickRightMenuBarItem(appid, title) then
           return enable_proxy_PAC("V2rayU")
         end
       end
