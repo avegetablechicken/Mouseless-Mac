@@ -7185,6 +7185,83 @@ AppHotKeyCallbacks = {
 
   ["com.alick.copool"] =
   {
+    ["importAccount"] = {
+      message = T("Import account"),
+      windowFilter = { allowRoles = AX.SystemDialog },
+      background = true,
+      condition = function(win)
+        local winUI = towinui(win)
+        local accountsTitle = T("Accounts", win)
+        local tab = tfind(getc(winUI, AX.Group, 1, AX.Group, 1, AX.Button) or {},
+          function(bt)
+            local label = bt.AXAttributedDescription
+            return (label and label:getString() == accountsTitle)
+          end)
+        if tab == nil or not tab.AXSelected then return false end
+        local title = T("Import account", win)
+        local actions = getc(winUI, AX.Group, 1, AX.ScrollArea, 1)
+        local button = tfind(actions and actions.AXChildren or {},
+          function(bt)
+            local label = bt.AXAttributedDescription
+            return (bt.AXRole == AX.MenuButton or bt.AXRole == AX.Button)
+                and (label and label:getString() == title)
+          end)
+        return Callback.Enabled(button)
+      end,
+      fn = function(button)
+        if button.AXRole == AX.Button then
+          Callback.Press(button)
+        else
+          button:performAction(AX.ShowMenu)
+        end
+      end
+    },
+    ["addAccount"] = {
+      message = T("Add account"),
+      windowFilter = { allowRoles = AX.SystemDialog },
+      background = true,
+      condition = function(win)
+        local winUI = towinui(win)
+        local accountsTitle = T("Accounts", win)
+        local tab = tfind(getc(winUI, AX.Group, 1, AX.Group, 1, AX.Button) or {},
+          function(bt)
+            local label = bt.AXAttributedDescription
+            return (label and label:getString() == accountsTitle)
+          end)
+        if tab == nil or not tab.AXSelected then return false end
+        local title = T("Add account", win)
+        local button = tfind(getc(winUI, AX.Group, 1, AX.ScrollArea, 1, AX.Button) or {},
+          function(bt)
+            local label = bt.AXAttributedDescription
+            return (label and label:getString() == title) or bt.AXTitle == title
+          end)
+        return Callback.Enabled(button)
+      end,
+      fn = Callback.Press
+    },
+    ["refreshAll"] = {
+      message = T("Refresh usage"),
+      windowFilter = { allowRoles = AX.SystemDialog },
+      background = true,
+      condition = function(win)
+        local winUI = towinui(win)
+        local accountsTitle = T("Accounts", win)
+        local tab = tfind(getc(winUI, AX.Group, 1, AX.Group, 1, AX.Button) or {},
+          function(bt)
+            local label = bt.AXAttributedDescription
+            return label and label:getString() == accountsTitle
+          end)
+        if tab == nil or not tab.AXSelected then return false end
+        local title = T("Refresh usage", win)
+        local button = tfind(getc(winUI, AX.Group, 1, AX.ScrollArea, 1, AX.Button) or {},
+          function(bt)
+            local label = bt.AXAttributedDescription
+            return label and label:getString() == title
+          end)
+        return Callback.Enabled(button)
+      end,
+      fn = Callback.Press
+    },
     ["closeWindow"] = {
       message = TC("Close Window"),
       mods = "", key = "Escape",

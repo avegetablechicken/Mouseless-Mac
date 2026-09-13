@@ -2057,6 +2057,18 @@
       }
     },
     "com.alick.copool": {
+      "importAccount": {
+        "mods": "command",
+        "key": "I"
+      },
+      "addAccount": {
+        "mods": "command",
+        "key": "N"
+      },
+      "refreshAll": {
+        "mods": "command",
+        "key": "R"
+      },
       "view1": {
         "mods": "command",
         "key": "1"
