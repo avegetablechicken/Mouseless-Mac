@@ -7264,7 +7264,6 @@ AppHotKeyCallbacks = {
     },
     ["closeWindow"] = {
       message = TC("Close Window"),
-      mods = "", key = "Escape",
       windowFilter = { allowRoles = AX.SystemDialog },
       background = true,
       fn = function(win)
