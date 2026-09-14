@@ -270,11 +270,11 @@ local function registerSearchMenuBar()
           -- Special-case handling for Hammerspoon menu bar items
           -- (e.g. caffeine and proxy), which cannot always be triggered
           -- via accessibility actions.
-          local subText = strsplit(choice.subText, ' - ')[1]
-          if subText == SystemCaffeineMenubar:autosaveName() then
+          local subText = choice.subText and strsplit(choice.subText, ' - ')[1]
+          if SystemCaffeineMenubar and subText == SystemCaffeineMenubar:autosaveName() then
             SystemCaffeineClicked()
             return
-          elseif subText == SystemProxyMenubar:autosaveName() then
+          elseif SystemProxyMenubar and subText == SystemProxyMenubar:autosaveName() then
             popupRightMenuBarItem(SystemProxyMenubar, item)
             return
           end
