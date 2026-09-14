@@ -555,7 +555,7 @@ function reactivateValidSettingsToolbarHotkeys(observer)
   local enabled = false
   for wid, hotkeys in pairs(settingsToolbarHotkeys) do
     local winUI = hotkeys.windowUI
-    if winUI == nil or winUI:isValid() == false then
+    if winUI == nil or not winUI:isValid() then
       for _, hotkey in ipairs(settingsToolbarHotkeys[wid]) do
         HotkeyRegistry.deleteHotkey(hotkey)
       end
