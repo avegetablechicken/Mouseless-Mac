@@ -280,7 +280,8 @@ local function registerSearchMenuBar()
             popupRightMenuBarItem(SystemProxyMenubar, item)
             return
           end
-          -- fixme: hanging issue
+          -- Avoid AX.Press on Hammerspoon's own menu; use the native click instead.
+          if menuBarReveal.show(item) then return end
           hs.alert.show("Cannot trigger Hammerspoon menu bar item", 2)
           return
         end
