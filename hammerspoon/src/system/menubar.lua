@@ -16,7 +16,8 @@ local function registerSearchMenuBar()
     local allowedApps = getAllowedMenuBarAppsTahoe()
     apps = tifilter(apps, function(app)
       local appid = app:bundleID()
-      if app:kind() < 0 and appid ~= "barrier" then return false end
+      if app:kind() < 0 and appid ~= "barrier"
+          and appid ~= "cn.better365.iShotProHelper" then return false end
       local isAllowed = allowedApps and allowedApps[appid] or true
       local apath
       if isAllowed == nil and appid ~= "com.apple.WebKit.WebContent" then
