@@ -1,5 +1,19 @@
 ---@diagnostic disable: lowercase-global
 
+local M = {}
+local registeredItems = setmetatable({}, { __mode = "k" })
+
+function M.register(item)
+  if item and item.autosaveName then registeredItems[item] = true end
+end
+
+function M.getIcon(autosaveName)
+  if autosaveName == nil then return end
+  for item in pairs(registeredItems) do
+    if item:autosaveName() == autosaveName then return item:icon() end
+  end
+end
+
 -- helpers for clicking menu bar items on the right side
 -- these utilities simulate mouse interactions on menu bar items,
 -- and are mainly used to work around limitations of AX.Press
@@ -274,14 +288,16 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
   -- Build bidirectional map: index -> autosaveName and autosaveName -> index
   local map, preferred = {}, {}
   -- fix possible incorrect matching mentioned above for Hammerspoon
-  if appid == hs.settings.bundleID and SystemProxyMenubar.autosaveName then
+  if appid == hs.settings.bundleID and next(registeredItems) then
     local missedIdx
     for i, r in ipairs(positions) do
       local name
-      if SystemCaffeineMenubar and math.abs(r[2] - SystemCaffeineMenubar:frame().x) < 3 then
-        name = SystemCaffeineMenubar:autosaveName()
-      elseif math.abs(r[2] - SystemProxyMenubar:frame().x) < 3 then
-        name = SystemProxyMenubar:autosaveName()
+      for item in pairs(registeredItems) do
+        local frame = item:frame()
+        if frame and math.abs(r[2] - frame.x) < 3 then
+          name = item:autosaveName()
+          break
+        end
       end
       if name then
         map[r[1]] = name map[name] = r[1]
@@ -299,7 +315,7 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
       end
     end
     if missedIdx then
-      name = "Item-0"
+      local name = "Item-0"
       map[positions[missedIdx][1]] = name
       map[name] = positions[missedIdx][1]
       if requirePreferredPosition == true then
@@ -893,3 +909,5 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   menu:performAction(AX.Press)
   return true
 end
+
+return M

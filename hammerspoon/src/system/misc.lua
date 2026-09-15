@@ -21,6 +21,7 @@ local function caffeineClicked()
 end
 
 if caffeine then
+  require("utils.menubar").register(caffeine)
   caffeine:setClickCallback(caffeineClicked)
   local awake = hs.settings.get("caffeine_display_awake")
   if awake == nil then
@@ -66,5 +67,3 @@ local function SystemMisc_batteryChangedCallback()
     end
   end
 end
-
-SystemCaffeineMenubar = caffeine

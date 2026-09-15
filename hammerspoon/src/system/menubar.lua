@@ -191,13 +191,7 @@ local function registerSearchMenuBar()
 
     local image
     if appid == hs.settings.bundleID then
-      if SystemCaffeineMenubar
-          and autosaveName == SystemCaffeineMenubar:autosaveName() then
-        image = SystemCaffeineMenubar:icon()
-      elseif SystemProxyMenubar
-          and autosaveName == SystemProxyMenubar:autosaveName() then
-        image = SystemProxyMenubar:icon()
-      end
+      image = require("utils.menubar").getIcon(autosaveName)
     end
     if image == nil and app:bundleID() then
       image = hs.image.imageFromAppBundle(appid)

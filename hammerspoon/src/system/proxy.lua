@@ -494,6 +494,7 @@ local proxyActivateFuncs = {
 
 -- menubar for proxy
 local proxy = hs.menubar.new(true, "PROXY")
+require("utils.menubar").register(proxy)
 local proxyIconPath = hs.configdir .. "/static/menubar/"
 local proxyIconCacheDir = hs.fs.temporaryDirectory()
     .. hs.settings.bundleID .. "/images/"
@@ -1846,5 +1847,4 @@ ExecContinuously(function()
   refreshProxyExit(false)
 end)
 
-SystemProxyMenubar = proxy
 SystemProxyThemeWatcher = proxyThemeWatcher
