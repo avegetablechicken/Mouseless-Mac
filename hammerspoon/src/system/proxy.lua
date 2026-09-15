@@ -651,7 +651,7 @@ local function forceInactiveProxyIcon()
 end
 
 setProxyIcon(nil)
-local proxyThemeWatcher = hs.distributednotifications.new(function()
+SystemProxyThemeWatcher = hs.distributednotifications.new(function()
   hs.timer.doAfter(0.1, function() refreshProxyIconTheme(true) end)
 end, "AppleInterfaceThemeChangedNotification"):start()
 local proxyMenu = {}
@@ -1846,5 +1846,3 @@ ExecContinuously(function()
   refreshProxyIconTheme(false)
   refreshProxyExit(false)
 end)
-
-SystemProxyThemeWatcher = proxyThemeWatcher
