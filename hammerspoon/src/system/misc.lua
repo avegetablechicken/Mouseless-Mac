@@ -68,4 +68,3 @@ local function SystemMisc_batteryChangedCallback()
 end
 
 SystemCaffeineMenubar = caffeine
-SystemCaffeineClicked = caffeineClicked

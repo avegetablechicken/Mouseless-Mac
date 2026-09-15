@@ -270,17 +270,6 @@ local function registerSearchMenuBar()
       end
       if not leftClickAndRestore(item, find(choice.appid)) then
         if choice.appid == hs.settings.bundleID then
-          -- Special-case handling for Hammerspoon menu bar items
-          -- (e.g. caffeine and proxy), which cannot always be triggered
-          -- via accessibility actions.
-          local subText = choice.subText and strsplit(choice.subText, ' - ')[1]
-          if SystemCaffeineMenubar and subText == SystemCaffeineMenubar:autosaveName() then
-            SystemCaffeineClicked()
-            return
-          elseif SystemProxyMenubar and subText == SystemProxyMenubar:autosaveName() then
-            popupRightMenuBarItem(SystemProxyMenubar, item)
-            return
-          end
           -- Avoid AX.Press on Hammerspoon's own menu; use the native click instead.
           if menuBarReveal.show(item) then return end
           hs.alert.show("Cannot trigger Hammerspoon menu bar item", 2)
