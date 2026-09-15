@@ -3,6 +3,8 @@
 -- Provides a chooser-based interface to search and trigger
 -- menu bar items across running applications.
 
+local menuBarReveal = require("utils.menubar_reveal")
+
 local function registerSearchMenuBar()
   -- Collect menu bar items from all running applications.
   -- For each app, try to load autosaved status item identifiers
@@ -282,6 +284,7 @@ local function registerSearchMenuBar()
           hs.alert.show("Cannot trigger Hammerspoon menu bar item", 2)
           return
         end
+        if menuBarReveal.show(item) then return end
         menuBarItems[choice.id][1]:performAction(AX.Press)
       end
     end)
