@@ -1323,10 +1323,19 @@ local function queryProxyExit(request, deadline)
       status, body = curl("https://ipinfo.io/json", address, math.min(12, remaining))
       if status ~= 0 then proxyExitCredentials[address] = nil end
     end
+    if status ~= 0 and body:match(" 429$") then
+      remaining = math.floor(deadline - hs.timer.secondsSinceEpoch())
+      if remaining <= 0 then return nil, "request_timeout" end
+      status, body = curl("https://1.1.1.1/cdn-cgi/trace", address, math.min(12, remaining))
+      if status == 0 then
+        body = hs.json.encode({ ip = body:match("\nip=([^\r\n]+)"),
+          country = body:match("\nloc=([^\r\n]+)") })
+      end
+    end
     if status == 0 then
       local ok, info = pcall(hs.json.decode, body or "")
       if ok and type(info) == "table" and type(info.ip) == "string"
-          and info.ip:match("^[%x%.:]+$") then
+          and info.ip:match("^%d+%.%d+%.%d+%.%d+$") then
         if enteredCredentials then
           local code = awaitProxyExitTask("/usr/bin/security",
               { "add-generic-password", "-U", "-s", "Hammerspoon Proxy Exit",
