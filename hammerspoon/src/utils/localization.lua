@@ -83,6 +83,14 @@ function applicationLocale(appid)
       local locales = getp(appid, "AppleLanguages")
       return locales and locales[1] or "en", true
     end
+  elseif appid == "com.alick.copool" then
+    local path = os.getenv("HOME")
+        .. "/Library/Application Support/CodexToolsSwift/settings.json"
+    local ok, config = pcall(hs.json.read, path)
+    local locale = ok and type(config) == "table" and config.locale
+    if type(locale) == "string" and locale:find("%S") then
+      return locale, true
+    end
   elseif appid == "2dust.v2rayN" then
     local path = os.getenv("HOME")
         .. "/Library/Application Support/v2rayN/guiConfigs/guiNConfig.json"
