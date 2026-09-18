@@ -753,9 +753,11 @@ function TC(message, params, params2)
           return commonLocalizedStringsCache[paramsCopy.locale][message]
         end
         paramsCopy.framework = "AppKit.framework"
-        for i, stem in ipairs{ 'MenuCommands', 'Menus', 'Common' } do
+        local localeFiles = paramsCopy.localeFile and { paramsCopy.localeFile }
+            or { 'MenuCommands', 'Menus', 'Common' }
+        for i, stem in ipairs(localeFiles) do
           paramsCopy.localeFile = stem
-          local retry = i > 1
+          local retry = i > 1 or #localeFiles == 1
           local result = localizedString(message, paramsCopy, retry)
           if result then
             result = result:gsub('“%%@”', ''):gsub('%%@', '')
