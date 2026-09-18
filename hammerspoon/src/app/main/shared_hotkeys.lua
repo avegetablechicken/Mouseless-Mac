@@ -1039,6 +1039,10 @@ function registerForOpenSavePanel(app, retry)
         local elem = winUI
         if OS_VERSION >= OS.Tahoe then elem = getc(winUI, AX.SplitGroup, 1) end
         dontSaveButton = getc(elem, AX.Button, "DontSaveButton")
+      elseif winUI.AXRole == AX.Sheet and winUI.AXDescription
+          == TC("alert", winUI, { localeFile = "Accessibility" }) then
+        dontSaveButton = getc(winUI, AX.Button,
+            TC("Revert Changes", winUI, { localeFile = "Document" }))
       end
     end
 
