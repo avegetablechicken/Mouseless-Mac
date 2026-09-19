@@ -2,3 +2,4 @@
 **/cache.file/
 **/*.dump
 /hammerspoon/config/private-proxy.json
+/hammerspoon/config/misc-local.json

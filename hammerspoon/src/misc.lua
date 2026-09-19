@@ -14,6 +14,14 @@ if exists("config/misc.json") then
   miscConfig = hs.json.read("config/misc.json")
 end
 
+-- Local snippets override shared entries without publishing personal text.
+local miscLocalConfig = {}
+if exists("config/misc-local.json") then
+  miscLocalConfig = hs.json.read("config/misc-local.json") or {}
+end
+SnippetTapper = require("src.snippets").start(
+    miscConfig.snippets, miscLocalConfig.snippets)
+
 -- Copy selected content and forward it to another device via Shortcuts.
 --
 -- This triggers a predefined Shortcuts workflow ("Paste to PC"),
