@@ -1,6 +1,6 @@
 -- Local configuration editor. JSON stays in its original files; no web server.
 local M = {}
-local files = { "misc", "keybindings", "application", "proxy", "private-proxy", "sync", "localization" }
+local files = { "misc", "keybindings", "application", "proxy", "proxy-local", "sync", "localization" }
 local allowed = {}
 for _, name in ipairs(files) do allowed[name] = true end
 local snapshots = {}
@@ -72,7 +72,7 @@ function M.save(name, raw)
       and (type(decoded.pollingInterval) ~= "number" or decoded.pollingInterval <= 0) then
     return nil, "Polling interval must be greater than 0"
   end
-  if (name == "proxy" or name == "private-proxy") and type(decoded.v2rayN) == "table" then
+  if (name == "proxy" or name == "proxy-local") and type(decoded.v2rayN) == "table" then
     local client = decoded.v2rayN
     local function validPAC(spec)
       return type(spec) ~= "table" or spec.pac == nil or (type(spec.pac) == "table"
