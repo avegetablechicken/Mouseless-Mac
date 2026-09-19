@@ -2,11 +2,15 @@
     "pollingInterval": 3,
 
     "snippets": {
-        "prefix": "!!",
         "sound": "Pop",
-        "entries": {
-            "msd": "马上到"
-        }
+        "rules": [
+            {
+                "prefix": "!!",
+                "entries": {
+                    "msd": "马上到"
+                }
+            }
+        ]
     },
 
     "pasteboardFilter": [
