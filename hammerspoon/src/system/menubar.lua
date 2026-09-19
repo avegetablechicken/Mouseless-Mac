@@ -9,8 +9,8 @@ local function registerSearchMenuBar()
   -- Collect menu bar items from all running applications.
   -- For each app, try to load autosaved status item identifiers
   -- and map them to accessibility menu bar elements if available.
-  local menuBarItems, maps = {}, {}
-  local controlCenterMenuBarItems
+  local menuBarItems, maps, unpositioned = {}, {}, {}
+  local controlCenterMenuBarItems, controlCenterPreferred
   local apps = hs.application.runningApplications()
   if OS_VERSION >= OS.Tahoe then
     local allowedApps = getAllowedMenuBarAppsTahoe()
@@ -45,6 +45,7 @@ local function registerSearchMenuBar()
     local map, preferred, appMenuBarItems = loadStatusItemsAutosaveName(app, true)
     if appid == 'com.apple.controlcenter' then
       controlCenterMenuBarItems = appMenuBarItems
+      controlCenterPreferred = preferred
     end
     if map and #map > 0 then
       assert(preferred)
@@ -56,13 +57,13 @@ local function registerSearchMenuBar()
           end
         else
           for i, item in ipairs(preferred) do
-            tinsert(menuBarItems, { app, i, item })
+            tinsert(unpositioned, { app, i, item })
           end
         end
       end
     end
   end
-  if #menuBarItems == 0 then
+  if #menuBarItems == 0 and #unpositioned == 0 then
     return
   end
 
@@ -87,7 +88,7 @@ local function registerSearchMenuBar()
     )
     local items = {}
     for i, item in ipairs(appMenuBarItems) do
-      tinsert(items, { item, i })
+      tinsert(items, { item, i, controlCenterPreferred and controlCenterPreferred[i] })
     end
     table.sort(items, function(a, b)
       return a[1].AXPosition.x > b[1].AXPosition.x
@@ -120,6 +121,16 @@ local function registerSearchMenuBar()
       end
       break
     end
+  end
+
+  -- Insert items without AX coordinates after sorting and trimming real icons.
+  -- Their saved positions must not affect the order of the real icons.
+  for _, pair in ipairs(unpositioned) do
+    local index = #menuBarItems + 1
+    for i, item in ipairs(menuBarItems) do
+      if item[3] and item[3] > pair[3] then index = i break end
+    end
+    tinsert(menuBarItems, index, pair)
   end
 
   -- Build chooser entries from collected menu bar items.
@@ -239,7 +250,9 @@ local function registerSearchMenuBar()
     hs.timer.doAfter(0, function()
       local item = menuBarItems[choice.id][1]
       if item.AXPosition == nil then
-        local left, right = menuBarItems[choice.id+1][1], menuBarItems[choice.id-1][1]
+        local left, right = menuBarItems[choice.id+1], menuBarItems[choice.id-1]
+        if not left or not right then return end
+        left, right = left[1], right[1]
         if left.AXPosition and right.AXPosition then
           local position = hs.geometry.point(
             (left.AXPosition.x + left.AXSize.w + right.AXPosition.x) / 2,
