@@ -705,8 +705,8 @@ if proxyConfigs ~= nil then
 end
 
 local privateProxyConfigs
-if exists("config/private-proxy.json") then
-  privateProxyConfigs = hs.json.read("config/private-proxy.json")
+if exists("config/proxy-local.json") then
+  privateProxyConfigs = hs.json.read("config/proxy-local.json")
 end
 if privateProxyConfigs ~= nil then
   parseProxyConfigurations(privateProxyConfigs)
