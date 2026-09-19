@@ -483,6 +483,14 @@ function App_applicationCallback(appname, eventType, app)
     end
     FLAGS["NEED_DOUBLE_CHECK"] = nil
   elseif eventType == hs.application.watcher.activated then
+    if hyperModeIsActive() then
+      runAfterHyperReleased(function()
+        if isSameApplication(app, hs.application.frontmostApplication()) then
+          App_applicationCallback(appname, eventType, app)
+        end
+      end)
+      return
+    end
     local deactivatedAppids = {}
     for bid, _ in pairs(Evt.ProcOnDeactivated) do
       if bid ~= appid then
