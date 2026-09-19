@@ -6,24 +6,48 @@ function M.start(shared, overrides)
   local enabled = overrides.enabled
   if enabled == nil then enabled = shared.enabled end
   if enabled == false then return end
-  local prefix = overrides.prefix or shared.prefix or "!!"
-  assert(type(prefix) == "string" and prefix:match("^[!-~]+$"),
-      "snippets.prefix must contain printable ASCII characters without spaces")
-  local entries = {}
-  for name, value in pairs(shared.entries or {}) do entries[name] = value end
-  for name, value in pairs(overrides.entries or {}) do entries[name] = value end
-  local replacements, prefixes = {}, {}
+  local rules, orderedRules = {}, {}
+  for _, config in ipairs({shared, overrides}) do
+    assert(config.prefix == nil and config.entries == nil,
+        "snippet prefixes and entries must be configured in snippets.rules")
+    local sourceRules = config.rules or {}
+    assert(type(sourceRules) == "table", "snippets.rules must be a list")
+    for index in pairs(sourceRules) do
+      assert(type(index) == "number" and index % 1 == 0
+          and index >= 1 and index <= #sourceRules, "snippets.rules must be a list")
+    end
+    for _, source in ipairs(sourceRules) do
+      assert(type(source) == "table", "each snippet rule must be an object")
+      local prefix = source.prefix
+      assert(type(prefix) == "string" and prefix:match("^[!-~]+$"),
+          "snippet rule prefixes must contain printable ASCII characters without spaces")
+      assert(source.sound == nil, "snippet sound must be configured globally in snippets.sound")
+      local rule = rules[prefix]
+      if not rule then
+        rule = {prefix = prefix, entries = {}}
+        rules[prefix] = rule
+        orderedRules[#orderedRules + 1] = rule
+      end
+      if source.enabled ~= nil then rule.enabled = source.enabled end
+      for name, value in pairs(source.entries or {}) do rule.entries[name] = value end
+    end
+  end
+  local replacements = {}
   local bufferLimit = 64
-  for name, value in pairs(entries) do
-    assert(type(name) == "string" and name:match("^[!-~]+$"),
-        "snippet names must contain printable ASCII characters without spaces")
-    assert(value == false or (type(value) == "string" and utf8.len(value)),
-        "snippet values must be UTF-8 strings or false")
-    if value ~= false then
-      local trigger = prefix .. name
-      bufferLimit = math.max(bufferLimit, #trigger + 64)
-      replacements[trigger] = value
-      for i = 1, #trigger do prefixes[trigger:sub(1, i)] = true end
+  for _, rule in ipairs(orderedRules) do
+    if rule.enabled ~= false then
+      for name, value in pairs(rule.entries) do
+        assert(type(name) == "string" and name:match("^[!-~]+$"),
+            "snippet names must contain printable ASCII characters without spaces")
+        assert(value == false or (type(value) == "string" and utf8.len(value)),
+            "snippet values must be UTF-8 strings or false")
+        if value ~= false then
+          local trigger = rule.prefix .. name
+          assert(replacements[trigger] == nil, "snippet rules produce duplicate triggers")
+          bufferLimit = math.max(bufferLimit, #trigger + 64)
+          replacements[trigger] = value
+        end
+      end
     end
   end
   if next(replacements) == nil then return end
@@ -78,7 +102,7 @@ function M.start(shared, overrides)
     end
     buffer = (buffer .. char):sub(-bufferLimit)
     local candidate = buffer
-    while candidate ~= "" and not prefixes[candidate] do candidate = candidate:sub(2) end
+    while candidate ~= "" and replacements[candidate] == nil do candidate = candidate:sub(2) end
     local replacement = replacements[candidate]
     if replacement == nil then return false end
 
