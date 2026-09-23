@@ -64,7 +64,8 @@ static bool deliver(CGEventRef event, pid_t pid) {
         return false;
     }
     CFRunLoopRef loop = CFRunLoopGetCurrent();
-    CFStringRef mode = CFSTR("HammerspoonMenuBarDelivery");
+    // Service existing event taps while waiting; starving them causes false timeouts and duplicate fallback clicks.
+    CFStringRef mode = kCFRunLoopDefaultMode;
     CFRunLoopSourceRef ownerSource = CFMachPortCreateRunLoopSource(NULL, d.ownerTap, 0);
     CFRunLoopSourceRef sessionSource = CFMachPortCreateRunLoopSource(NULL, d.sessionTap, 0);
     CFRunLoopAddSource(loop, ownerSource, mode);
