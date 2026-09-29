@@ -7,7 +7,7 @@ hs.application.enableSpotlightForNameSearches(true)
 LoadBuf.runningApplications = {}
 foreach(hs.application.runningApplications(), function(app)
   local appid = app:bundleID() or app:name()
-  if appid ~= "com.apple.WebKit.WebContent" then
+  if appid and appid ~= "com.apple.WebKit.WebContent" then
     LoadBuf.runningApplications[appid] = app
   end
 end)
