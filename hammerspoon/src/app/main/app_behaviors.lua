@@ -73,7 +73,11 @@ end
 if installed("barrier") then
   Evt.OnRunning("barrier", function(app)
     local observer = uiobserver.new(app:pid())
-    observer:addWatcher(toappui(app), uinotifications.windowCreated)
+    local ok = pcall(observer.addWatcher, observer, toappui(app), uinotifications.windowCreated)
+    if not ok then
+      observer:stop()
+      return
+    end
     observer:callback(function(_, winUI) winUI:asHSWindow():focus() end)
     observer:start()
     Evt.StopOnTerminated(app, observer)
