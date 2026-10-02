@@ -8009,6 +8009,19 @@ AppHotKeyCallbacks = {
   }
 }
 
+for _, config in pairs(AppHotKeyCallbacks["com.apple.Terminal"]) do
+  local fn = config.fn
+  config.fn = function(win)
+    local source = hs.keycodes.currentSourceID()
+    if source:match("^com%.apple%.inputmethod%.[ST]CIM%.")
+        or source:match("^com%.apple%.inputmethod%.Kotoeri%.%w+%.Japanese")
+        or source:match("^com%.apple%.inputmethod%.Korean%.") then
+      if not hs.keycodes.currentSourceID("com.apple.keylayout.ABC") then return end
+      hs.timer.usleep(50000)
+    end
+    return fn(win)
+  end
+end
 for _, iWork in ipairs{ "Keynote", "Pages", "Numbers" } do
   local oldAppid = "com.apple.iWork." .. iWork
   local appid = "com.apple." .. iWork
