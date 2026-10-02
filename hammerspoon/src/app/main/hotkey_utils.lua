@@ -1175,6 +1175,7 @@ local function registerSingleWinFilterForApp(app, filter, retry, appUI,
     end
   end
   observer:addWatcher(appUI, uinotifications.focusedWindowChanged)
+  observer:addWatcher(appUI, uinotifications.mainWindowChanged)
   observer:addWatcher(appUI, uinotifications.windowMiniaturized)
   if extended.allowPopover then
     observer:addWatcher(appUI, uinotifications.focusedUIElementChanged)
@@ -1196,12 +1197,16 @@ local function registerSingleWinFilterForApp(app, filter, retry, appUI,
       win = app:focusedWindow()
     end
     local focusChanged = notification == uinotifications.focusedWindowChanged
+        or notification == uinotifications.mainWindowChanged
     if focusChanged and titleWatcherElement
         and (win == nil or previousWin == nil
             or previousWin:id() ~= win:id()) then
       removeTitleWatcher()
     end
-    if win == nil then return end
+    if win == nil then
+      unregisterInWinHotKeys(appid, false, filter)
+      return
+    end
     if notification == uinotifications.focusedUIElementChanged
         and win:role() ~= AX.Popover then
       return
