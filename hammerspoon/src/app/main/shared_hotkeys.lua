@@ -1189,7 +1189,7 @@ local function searchHotkeyByNth(itemTitles, alreadySetHotkeys, index)
       hotkey = title[2]:sub(index, index):upper()
     end
 
-    if hotkey ~= nil and alreadySetHotkeys[hotkey] == nil then
+    if hotkey ~= nil and hotkey:match('^[A-Z]$') and alreadySetHotkeys[hotkey] == nil then
         alreadySetHotkeys[hotkey] = title[1]
     else
       tinsert(notSetItems, title)
@@ -1399,7 +1399,7 @@ function altMenuBarItem(app, force, reinvokeKey)
   if modsLetter then
     local itemTitles = {}
     for i=2,#menuBarItemTitles do
-      local title, letter = menuBarItemTitles[i]:match("(.-)%s*%((.-)%)")
+      local title, letter = menuBarItemTitles[i]:match("(.-)%s*%((%a)%)")
       if letter then
         alreadySetHotkeys[letter:upper()] = {menuBarItemTitles[i], title}
       else
