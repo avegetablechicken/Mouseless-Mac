@@ -778,182 +778,182 @@
         "mods": ["shift", "command"],
         "key": "[",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxNextPane": {
         "mods": ["shift", "command"],
         "key": "]",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxAbovePane": {
         "mods": ["shift", "command"],
         "key": "up",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxBelowPane": {
         "mods": ["shift", "command"],
         "key": "down",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxLeftPane": {
         "mods": ["shift", "command"],
         "key": "left",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxRightPane": {
         "mods": ["shift", "command"],
         "key": "right",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxNewHorizontalPane": {
         "mods": "command",
         "key": "T",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxNewVerticalPane": {
         "mods": ["shift", "command"],
         "key": "T",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxClosePane": {
         "mods": "command",
         "key": "W",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxPreviousWindow": {
         "mods": ["shift", "option", "command"],
         "key": "`",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxNextWindow": {
         "mods": ["option", "command"],
         "key": "`",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxWindow0": {
         "mods": "command",
         "key": "0",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxWindow1": {
         "mods": "command",
         "key": "1",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxWindow2": {
         "mods": "command",
         "key": "2",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxWindow3": {
         "mods": "command",
         "key": "3",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxWindow4": {
         "mods": "command",
         "key": "4",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxWindow5": {
         "mods": "command",
         "key": "5",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxWindow6": {
         "mods": "command",
         "key": "6",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxWindow7": {
         "mods": "command",
         "key": "7",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxWindow8": {
         "mods": "command",
         "key": "8",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxWindow9": {
         "mods": "command",
         "key": "9",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxNewWindow": {
         "mods": ["shift", "command"],
         "key": "N",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxCloseWindow": {
         "mods": ["shift", "command"],
         "key": "W",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxDetachSession": {
         "mods": "command",
         "key": "D",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxEnterCopyMode": {
         "mods": "command",
         "key": "B",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       },
       "tmuxSearch": {
         "mods": "command",
         "key": "F",
         "windowFilter": {
-          "allowTitles": "tmux"
+          "allowTitles": "%stmux%s"
         }
       }
     },
