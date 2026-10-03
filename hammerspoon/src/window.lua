@@ -444,7 +444,7 @@ function(win)
   local f = win:frame()
   local screen = win:screen()
   local max = screen:frame()
-  f.x = max.x + max.w * 2 / 3
+  f.x = max.x + max.w / 3
   f.y = max.y
   f.w = max.w * 2 / 3
   f.h = max.h
