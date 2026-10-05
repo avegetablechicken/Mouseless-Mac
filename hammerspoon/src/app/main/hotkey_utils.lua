@@ -996,7 +996,13 @@ function registerInWinHotKeys(win, filter)
             config.deleteOnDisable = true
           end
           config.deleteOnDisable = config.deleteOnDisable or fallback
-          hotkeys[hkID] = AppWinBind(win, config)
+          local hotkey = AppWinBind(win, config)
+          if get(inWinHotKeys, appid, filter) ~= hotkeys
+              or hotkeys[hkID] ~= nil then
+            CtxDelete(hotkey)
+          else
+            hotkeys[hkID] = hotkey
+          end
         end
       end
     else
