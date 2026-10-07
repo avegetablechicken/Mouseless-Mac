@@ -54,20 +54,3 @@ Missing optional files are shown as empty configurations and created only when
 saved. Missing sections offer **Configure** or **Add entry**, and omitted shortcut
 fields show **Not set**. Browsing alone never inserts default values. Read errors
 and malformed JSON are reported rather than treated as empty files.
-
-## Validation
-
-Run from the project directory:
-
-```sh
-node tests/configuration_spec.js
-lua tests/configuration_spec.lua
-lua tests/configuration_macros_spec.lua
-luac -p src/configuration.lua init.lua
-```
-
-Frontend tests use a lightweight DOM simulation to exercise tab rendering,
-drafts, editing, and serialization. Backend tests use isolated temporary files to
-check saving, backups, conflicts, and rejected inputs. Macro tests exercise the
-startup loader with renamed primary Hyper macros. Actual WebKit appearance and
-interaction require verification inside Hammerspoon.
