@@ -1026,7 +1026,7 @@ function registerForOpenSavePanel(app, retry)
     return
   end
 
-  local getUIElements = function(winUI)
+  local getUIElements = function(winUI, allowIncomplete)
     local windowIdent = winUI.AXIdentifier
 
     local dontSaveButton
@@ -1051,8 +1051,11 @@ function registerForOpenSavePanel(app, retry)
       if outline ~= nil then
         outlineRows = {}
         for _, row in ipairs(getc(outline, AX.Row)) do
-          if #row == 0 then hs.timer.usleep(0.3 * 1000000) end
-          tinsert(outlineRows, row)
+          if not row:isValid() or #row == 0 then
+            if not allowIncomplete then return dontSaveButton, nil, true end
+          else
+            tinsert(outlineRows, row)
+          end
         end
       end
     elseif specialSidebarRowsFuncs[appid] then
@@ -1062,15 +1065,34 @@ function registerForOpenSavePanel(app, retry)
     return dontSaveButton, outlineRows
   end
 
-  local actionFunc
-  actionFunc = function(winUI, callByObserver)
+  local actionFunc, retryTimer
+  local active = true
+  Evt.OnDeactivated(app, function()
+    active = false
+    if retryTimer then retryTimer:stop(); retryTimer = nil end
+  end)
+  local function retryPanel(winUI, callByObserver, attempt)
+    if retryTimer then retryTimer:stop(); retryTimer = nil end
+    attempt = (attempt or 0) + 1
+    if attempt > 3 then return end
+    retryTimer = hs.timer.doAfter(0.3, function()
+      retryTimer = nil
+      actionFunc(winUI, callByObserver, attempt)
+    end)
+  end
+  actionFunc = function(winUI, callByObserver, attempt)
+    local focused = app:focusedWindow()
+    if not active or not winUI:isValid() or not focused
+        or hs.application.frontmostApplication() ~= app or towinui(focused) ~= winUI then return end
+    if retryTimer then retryTimer:stop(); retryTimer = nil end
     for _, hotkey in ipairs(openSavePanelHotkeys) do
       HotkeyRegistry.deleteHotkey(hotkey)
     end
     openSavePanelHotkeys = {}
 
     local windowIdent = winUI.AXIdentifier
-    local dontSaveButton, outlineRows = getUIElements(winUI)
+    local dontSaveButton, outlineRows, pending = getUIElements(winUI, (attempt or 0) >= 3)
+    if pending then retryPanel(winUI, callByObserver, attempt); return end
     local header
     local i = 1
     if windowIdent == "open-panel" or windowIdent == "save-panel" then
@@ -1089,7 +1111,8 @@ function registerForOpenSavePanel(app, retry)
           local spec = get(KeybindingConfigs.hotkeys.shared, hkID)
           if spec ~= nil then
             if not titleElem:isValid() then
-              actionFunc(winUI)
+              retryPanel(winUI, callByObserver, attempt)
+              return
             end
             local folder = titleElem.AXValue
             local msg = folder
@@ -1103,11 +1126,11 @@ function registerForOpenSavePanel(app, retry)
           end
         end
       end
-      if outlineRows and callByObserver ~= true
+      if outlineRows and #outlineRows > 0 and callByObserver ~= true
           and not (appid == "com.apple.Safari"
                    and windowIdent == "save-panel") then
         if outlineRows[1] and not outlineRows[1]:isValid() then
-          actionFunc(winUI)
+          retryPanel(winUI, callByObserver, attempt)
           return
         end
         local observer = uiobserver.new(app:pid())
