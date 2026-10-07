@@ -164,7 +164,6 @@ end
 --- Handle incoming HTTP requests for clipboard synchronization.
 local function handleRequest(method, path, headers, body)
   print("[LOG] Received " .. method .. " request for " .. path)
-  print("[LOG] Headers: " .. hs.inspect.inspect(headers))
 
   if method == "GET" then
     local contentType, contentDisposition, content
@@ -266,4 +265,8 @@ local function handleRequest(method, path, headers, body)
 end
 
 -- Start the local HTTP server for clipboard sharing.
-HTTPServer = hs.httpserver.new():setPort(8086):setCallback(handleRequest):start()
+local clipboardServerPassword = hs.settings.get("clipboardServerPassword")
+if type(clipboardServerPassword) == "string" and clipboardServerPassword:match("%S") then
+  HTTPServer = hs.httpserver.new():setPort(8086):setPassword(clipboardServerPassword)
+      :setCallback(handleRequest):start()
+end
