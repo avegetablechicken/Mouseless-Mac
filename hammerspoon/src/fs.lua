@@ -239,8 +239,9 @@ local function handleRequest(method, path, headers, body)
       path = dir .. filename
       -- if file already exists, append a number to the filename
       local i = 1
+      local stem, extension = filename:match("^(.*)(%.[^.]*)$")
       while hs.fs.attributes(path) ~= nil do
-        path = dir .. filename:gsub("^(.-)(%..-)$", "%1_" .. i .. "%2")
+        path = dir .. (stem or filename) .. "_" .. i .. (extension or "")
         i = i + 1
       end
     else
