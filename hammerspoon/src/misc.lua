@@ -199,22 +199,38 @@ end
 --
 -- When a new message arrives, attempt to extract a verification code
 -- and notify the user.
-local notificationCenterApp = find("com.apple.notificationcenterui")
-NewMessageWindowObserver = uiobserver.new(notificationCenterApp:pid())
-NewMessageWindowObserver:addWatcher(
-  toappui(notificationCenterApp),
-  uinotifications.windowCreated)
-NewMessageWindowObserver:callback(function()
-  local code = parseVerificationCodeFromFirstMessage()
-  if code then
-    hs.notify.new{
-      title = strfmt("SMS Code Detected: %s", code),
-      informativeText = 'Copied to pasteboard',
-    }:send()
-    hs.pasteboard.writeObjects(code)
+local notificationCenterPID
+local function watchNotificationCenter(notificationCenterApp)
+  if not notificationCenterApp or notificationCenterPID == notificationCenterApp:pid() then return end
+  if NewMessageWindowObserver then NewMessageWindowObserver:stop() end
+  NewMessageWindowObserver = uiobserver.new(notificationCenterApp:pid())
+  NewMessageWindowObserver:addWatcher(
+    toappui(notificationCenterApp),
+    uinotifications.windowCreated)
+  NewMessageWindowObserver:callback(function()
+    local code = parseVerificationCodeFromFirstMessage()
+    if code then
+      hs.notify.new{
+        title = strfmt("SMS Code Detected: %s", code),
+        informativeText = 'Copied to pasteboard',
+      }:send()
+      hs.pasteboard.writeObjects(code)
+    end
+  end)
+  NewMessageWindowObserver:start()
+  notificationCenterPID = notificationCenterApp:pid()
+end
+watchNotificationCenter(find("com.apple.notificationcenterui"))
+ExecOnSilentLaunch("com.apple.notificationcenterui", watchNotificationCenter)
+registerApplicationCallback(function(_, event, app)
+  if not app or app:bundleID() ~= "com.apple.notificationcenterui" then return end
+  if event == hs.application.watcher.launched then
+    watchNotificationCenter(app)
+  elseif event == hs.application.watcher.terminated and notificationCenterPID == app:pid() then
+    if NewMessageWindowObserver then NewMessageWindowObserver:stop() end
+    NewMessageWindowObserver, notificationCenterPID = nil, nil
   end
 end)
-NewMessageWindowObserver:start()
 
 
 -- Hotkey cheatsheet and search infrastructure.
