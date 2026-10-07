@@ -195,29 +195,42 @@ registerMonitorChangedCallback(AppBehavior_monitorChangedCallback)
 local phones = ApplicationConfigs.androidDevices or {}
 local phonesManagers = ApplicationConfigs.manageAndroidDevices or {}
 if type(phonesManagers) == 'string' then phonesManagers = { phonesManagers } end
-local attached_android_count = 0
+local function isConfiguredPhone(device)
+  return any(phones, function(phone)
+    return device.productName == phone[1] and device.vendorName == phone[2]
+  end)
+end
+local attachedPhones = {}
+local function phoneKey(device)
+  return table.concat({ tostring(device.vendorID), tostring(device.productID),
+    device.vendorName or "", device.productName or "" }, "\0")
+end
+for _, device in ipairs(hs.usb.attachedDevices() or {}) do
+  if isConfiguredPhone(device) then
+    local key = phoneKey(device)
+    attachedPhones[key] = (attachedPhones[key] or 0) + 1
+  end
+end
 
 local function AppBehavior_usbChangedCallback(device)
+  if not isConfiguredPhone(device) then return end
+  local key = phoneKey(device)
   if device.eventType == "added" then
-    attached_android_count = attached_android_count + 1
-    for _, phone in ipairs(phones) do
-      if device.productName == phone[1] and device.vendorName == phone[2] then
-        for _, appid in ipairs(phonesManagers) do
-          if installed(appid) then
-            hs.execute(strfmt("open -g -b '%s'", appid))
-            return
-          end
-        end
+    attachedPhones[key] = (attachedPhones[key] or 0) + 1
+    for _, appid in ipairs(phonesManagers) do
+      if installed(appid) then
+        hs.execute(strfmt("open -g -b '%s'", appid))
+        return
       end
     end
   elseif device.eventType == "removed" then
-    attached_android_count = attached_android_count - 1
-    if attached_android_count == 0 then
+    local count = attachedPhones[key]
+    if count == nil then return end
+    attachedPhones[key] = count > 1 and count - 1 or nil
+    if next(attachedPhones) == nil then
       for _, appid in ipairs(phonesManagers) do
         quit(appid)
-        if appid == "us.electronic.macdroid" then
-          quit('MacDroid Extension')
-        end
+        if appid == "us.electronic.macdroid" then quit('MacDroid Extension') end
       end
     end
   end
