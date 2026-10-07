@@ -854,7 +854,6 @@ function registerObserverForRightMenuBarSettingsMenuItem(app, force)
         local keybinding = getKeybinding(appid, hkID)
         local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
         local isMenuBarMenu = keybinding.menubarFilter ~= nil
-            or cfg.menubarFilter ~= nil
         if hasKey and isMenuBarMenu
             and hotkeyIdx(keybinding.mods, keybinding.key) == '⌘,' then
           settingsMenu = true
