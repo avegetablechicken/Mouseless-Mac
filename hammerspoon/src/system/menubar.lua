@@ -338,3 +338,79 @@ if misc ~= nil and misc["searchMenuBar"] ~= nil then
       end)
   end)
 end
+
+-- Keyboard selection of currently visible status icons, without revealing overflow.
+local items, selected, screen, overlay, watcher
+local mode = hs.hotkey.modal.new()
+
+function mode:exited()
+  if watcher then watcher:stop() watcher = nil end
+  if overlay then overlay:delete() overlay = nil end
+  items, selected, screen = nil, nil, nil
+end
+
+local function refresh()
+  local id = items and items[selected] and items[selected].id
+  local ok, current = pcall(menuBarReveal.visibleItems, screen)
+  if not ok then mode:exit() return false end
+  for i, item in ipairs(current) do
+    if item.id == id then
+      items, selected = current, i
+      overlay:frame({ x = item.x, y = item.y, w = item.w, h = item.h })
+      return true
+    end
+  end
+  mode:exit()
+  return false
+end
+
+local function move(delta)
+  if not refresh() then return end
+  selected = (selected - 1 + delta) % #items + 1
+  local item = items[selected]
+  overlay:frame({ x = item.x, y = item.y, w = item.w, h = item.h })
+end
+
+mode:bind({}, "left", function() move(-1) end, nil, function() move(-1) end)
+mode:bind({}, "right", function() move(1) end, nil, function() move(1) end)
+mode:bind({}, "escape", function() mode:exit() end)
+mode:bind({}, "return", function()
+  if not refresh() then return end
+  local item = items[selected]
+  mode:exit()
+  leftClickAndRestore({ x = item.x + item.w / 2, y = item.y + item.h / 2 })
+end)
+
+local function moveFocusToStatusMenus()
+  if overlay then mode:exit() return end
+  screen = hs.mouse.getCurrentScreen()
+  local ok, current = pcall(menuBarReveal.visibleItems, screen)
+  if not ok or #current == 0 then
+    screen = nil
+    hs.alert.show("No visible menu bar items")
+    return
+  end
+  items, selected = current, 1
+  local item = items[1]
+  overlay = hs.canvas.new({ x = item.x, y = item.y, w = item.w, h = item.h })
+  overlay:appendElements({
+    type = "rectangle", action = "fill",
+    fillColor = { red = 0, green = 0.45, blue = 1, alpha = 0.4 },
+  })
+  overlay:level(hs.canvas.windowLevels.status + 1)
+  overlay:behavior({ "canJoinAllSpaces", "fullScreenAuxiliary" })
+  overlay:show()
+  mode:enter()
+  local types = hs.eventtap.event.types
+  watcher = hs.eventtap.new({ types.leftMouseDown, types.rightMouseDown,
+    types.otherMouseDown }, function()
+    mode:exit()
+    return false
+  end):start()
+end
+
+local spec = (KeybindingConfigs.hotkeys.global or {}).moveFocusToStatusMenus
+if spec then
+  local hotkey = bindHotkeySpec(spec, "Move Focus to Status Menus", moveFocusToStatusMenus)
+  if hotkey then hotkey.kind = HK.MENUBAR end
+end
