@@ -235,7 +235,7 @@ function localizeWPS(str, appLocale, localeFile)
   return nil, locale
 end
 
-function localizeZotero(str, appLocale)
+local function zoteroLocaleDirectory(appLocale)
   local resourceDir = hs.application.pathForBundleID("org.zotero.zotero")
                       .. "/Contents/Resources"
   local resourceFile = resourceDir .. '/zotero.jar'
@@ -266,6 +266,12 @@ function localizeZotero(str, appLocale)
         resourceFile, localePath, baseLocale, tmpdir))
   end
   local localeDir = tmpdir .. '/' .. localePath .. '/' .. locale
+  return localeDir, locale, baseLocale
+end
+
+function localizeZotero(str, appLocale)
+  local localeDir, locale, baseLocale = zoteroLocaleDirectory(appLocale)
+  if localeDir == nil then return end
   local result = localizeByDTD(str, localeDir, baseLocale)
   if result then return result, locale end
   result = localizeByFTL(str, localeDir, baseLocale)
@@ -288,7 +294,7 @@ local function chatGPTCompressedStringsDir()
   end
 end
 
-function localizeChatGPT(str, appLocale)
+local function chatGPTTranslations(appLocale)
   local resourceDir = chatGPTCompressedStringsDir()
   if resourceDir == nil then return nil end
   local localeSources = {}
@@ -310,6 +316,12 @@ function localizeChatGPT(str, appLocale)
       strfmt("lzfse -decode -i '%s' -o /dev/stdout", tmp), true)
   os.remove(tmp)
   local jsonDict = hs.json.decode(jsonStr)
+  return jsonDict, locale
+end
+
+function localizeChatGPT(str, appLocale)
+  local jsonDict, locale = chatGPTTranslations(appLocale)
+  if jsonDict == nil then return nil, locale end
   return jsonDict[str], locale
 end
 
@@ -1079,36 +1091,8 @@ function delocalizeWPS(str, appLocale, localeFile)
 end
 
 function delocalizeZotero(str, appLocale)
-  local resourceDir = hs.application.pathForBundleID("org.zotero.zotero")
-                      .. "/Contents/Resources"
-  local resourceFile = resourceDir .. '/zotero.jar'
-  if not exists(resourceFile) then
-    resourceDir = resourceDir .. '/app'
-    resourceFile = resourceDir .. '/omni.ja'
-  end
-  local localePath = 'chrome/locale'
-  local locales, status = hs.execute(strfmt([[
-    unzip -l '%s' '%s/*' \
-    | grep -Eo 'chrome/locale/[^/]*' \
-    | grep -Eo '[a-zA-Z-]*$' \
-    | uniq
-  ]], resourceFile, localePath))
-  if status ~= true then return end
-  local locale = matchLocale(appLocale, strsplit(locales, '\n'))
-  if locale == nil then return end
-  local baseLocale = matchLocale('en_US', strsplit(locales, '\n'))
-  if baseLocale == nil then return end
-  local tmpdir = localeTmpDir .. "org.zotero.zotero"
-  mkdir(tmpdir)
-  if not exists(tmpdir .. '/' .. localePath .. '/' .. locale) then
-    hs.execute(strfmt([[unzip '%s' %s/%s/* -d '%s']],
-        resourceFile, localePath, locale, tmpdir))
-  end
-  if not exists(tmpdir .. '/' .. localePath .. '/' .. baseLocale) then
-    hs.execute(strfmt([[unzip '%s' %s/%s/* -d '%s']],
-        resourceFile, localePath, baseLocale, tmpdir))
-  end
-  local localeDir = tmpdir .. '/' .. localePath .. '/' .. locale
+  local localeDir, locale, baseLocale = zoteroLocaleDirectory(appLocale)
+  if localeDir == nil then return end
   local result = delocalizeByDTD(str, localeDir, baseLocale)
   if result then return result, locale end
   result = delocalizeByFTL(str, localeDir, baseLocale)
@@ -1118,27 +1102,8 @@ function delocalizeZotero(str, appLocale)
 end
 
 function delocalizeChatGPT(str, appLocale)
-  local resourceDir = chatGPTCompressedStringsDir()
-  if resourceDir == nil then return nil end
-  local localeSources = {}
-  for file in hs.fs.dir(resourceDir) do
-    if file:sub(-11) == ".json.lzfse" then
-      local fileStem = file:sub(1, -12)
-      tinsert(localeSources, fileStem)
-    end
-  end
-  local locale = matchLocale(appLocale, localeSources)
-  if locale == nil then return nil end
-  local localeFile = resourceDir .. '/' .. locale .. '.json.lzfse'
-  -- remove first 8 bytes of the file
-  local tmp = os:tmpname()
-  local _, status = hs.execute(
-      strfmt("tail -c +9 '%s' > '%s'", localeFile, tmp))
-  if not status then return nil, locale end
-  local jsonStr = hs.execute(
-      strfmt("lzfse -decode -i '%s' -o /dev/stdout", tmp), true)
-  os.remove(tmp)
-  local jsonDict = hs.json.decode(jsonStr)
+  local jsonDict, locale = chatGPTTranslations(appLocale)
+  if jsonDict == nil then return nil, locale end
   return tindex(jsonDict, str), locale
 end
 
