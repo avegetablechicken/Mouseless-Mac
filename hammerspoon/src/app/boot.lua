@@ -87,6 +87,7 @@ local function getParallelsVMPath(osname)
   local path = strfmt(PVMDir .. "/%s.pvm/%s.app", osname, osname)
   if exists(path) then return path end
 
+  if not isdir(PVMDir) then return end
   for filename in hs.fs.dir(PVMDir) do
     if filename:sub(-4) == '.pvm'
         and filename:sub(1, osname:len()) == osname then
@@ -209,8 +210,9 @@ function registerAppKeys()
     if appPath == nil and config.vm ~= nil then
       if config.vm == "com.parallels.desktop.console" then
         appPath = getParallelsVMPath(config.name)
-        appid = hs.application.infoForBundlePath(appPath).CFBundleIdentifier
-        if not installed(appid) then
+        local info = appPath and hs.application.infoForBundlePath(appPath)
+        if info == nil then appPath = nil else appid = info.CFBundleIdentifier end
+        if appid and not installed(appid) then
           appid = nil
         end
       else
@@ -228,7 +230,8 @@ function registerAppKeys()
           end
         end
       end
-      appid = hs.application.infoForBundlePath(appPath).CFBundleIdentifier
+      local info = appPath and hs.application.infoForBundlePath(appPath)
+      if info == nil then appPath = nil else appid = info.CFBundleIdentifier end
     end
 
     -- Register hotkey if application is resolvable
