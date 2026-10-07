@@ -309,9 +309,9 @@ def cmd_to_po(args):
         src = msg.get("source", "")
         trans = msg.get("translation", "")
         if ctx:
-            print(f'msgctxt "{ctx}"')
-        print(f'msgid "{src}"')
-        print(f'msgstr "{trans}"')
+            print("msgctxt " + json.dumps(ctx, ensure_ascii=False))
+        print("msgid " + json.dumps(src, ensure_ascii=False))
+        print("msgstr " + json.dumps(trans, ensure_ascii=False))
         print()
 
 
