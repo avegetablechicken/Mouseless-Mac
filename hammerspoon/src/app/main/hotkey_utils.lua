@@ -690,8 +690,9 @@ local function callBackExecutingWrapper(fn, hasWinBuf)
     local wrapper = hasWinBuf and A_WinHotkeyWrapper or A_HotkeyWrapper
     hs.timer.doAfter(0, wrapper(function()
       FLAGS["CALLBACK_IS_EXECUTING"] = true
-      fn()
+      local ok, err = xpcall(fn, debug.traceback)
       FLAGS["CALLBACK_IS_EXECUTING"] = false
+      if not ok then error(err, 0) end
     end))
   end
 end
