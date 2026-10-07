@@ -220,7 +220,7 @@ local function handleRequest(method, path, headers, body)
   if not contentType then return "Content-Type required", 400, {} end
   if contentType:find("^text/") then
     hs.pasteboard.setContents(body)
-    print("[LOG] Copied text to clipboard: " .. body)
+    print("[LOG] Copied text to clipboard (bytes): " .. #body)
   elseif contentType:find("^image/") then
     local file, tmpname
     while file == nil do
@@ -286,6 +286,13 @@ end
 -- Start the local HTTP server for clipboard sharing.
 local clipboardServerPassword = hs.settings.get("clipboardServerPassword")
 if type(clipboardServerPassword) == "string" and clipboardServerPassword:match("%S") then
-  HTTPServer = hs.httpserver.new():setPort(8086):setPassword(clipboardServerPassword)
-      :setCallback(handleRequest):start()
+  -- HTTPS uses Hammerspoon's self-signed certificate; clients must trust it.
+  local useHTTPS = hs.settings.get("clipboardServerHTTPS") == true
+  local interface = hs.settings.get("clipboardServerInterface")
+  if type(interface) ~= "string" or interface == "" then interface = nil end
+  if not useHTTPS then
+    hs.alert.show("Clipboard sharing uses unencrypted HTTP; use a trusted network or enable clipboardServerHTTPS.")
+  end
+  HTTPServer = hs.httpserver.new(useHTTPS):setPort(8086):setPassword(clipboardServerPassword)
+      :setInterface(interface):setCallback(handleRequest):start()
 end
