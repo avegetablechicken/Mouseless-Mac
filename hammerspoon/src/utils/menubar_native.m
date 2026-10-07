@@ -135,6 +135,21 @@ static int list(lua_State *L) {
         NSDictionary *record=@{@"id":w[(id)kCGWindowNumber],@"pid":w[(id)kCGWindowOwnerPID],@"x":b[@"X"],@"y":b[@"Y"],@"w":b[@"Width"],@"h":b[@"Height"]};
         for(NSString *key in record) { lua_pushnumber(L,[record[key] doubleValue]); lua_setfield(L,-2,key.UTF8String); }
         lua_pushboolean(L,[w[(id)kCGWindowIsOnscreen] boolValue]); lua_setfield(L,-2,"visible");
+        bool notch = false;
+        if (@available(macOS 12.0, *)) {
+            CGFloat top = CGDisplayBounds(CGMainDisplayID()).size.height;
+            NSRect rect = NSMakeRect([b[@"X"] doubleValue],
+                top - [b[@"Y"] doubleValue] - [b[@"Height"] doubleValue],
+                [b[@"Width"] doubleValue], [b[@"Height"] doubleValue]);
+            for (NSScreen *screen in NSScreen.screens) {
+                if (screen.safeAreaInsets.top <= 0) continue;
+                NSRect left = screen.auxiliaryTopLeftArea, right = screen.auxiliaryTopRightArea;
+                NSRect gap = NSMakeRect(NSMaxX(left), NSMinY(right),
+                    NSMinX(right) - NSMaxX(left), NSHeight(right));
+                if (NSIntersectsRect(rect, gap)) notch = true;
+            }
+        }
+        lua_pushboolean(L,notch); lua_setfield(L,-2,"notch");
         lua_rawseti(L,-2,++idx);
     }
     return 1;

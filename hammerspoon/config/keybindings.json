@@ -41,6 +41,10 @@
         "mods": "${hyper.daemon}",
         "key": "space"
       },
+      "moveFocusToStatusMenus": {
+        "mods": "control",
+        "key": "F1"
+      },
       "showCurrentWindowInfo": {
         "mods": "${hyper.daemon}",
         "key": "G"
