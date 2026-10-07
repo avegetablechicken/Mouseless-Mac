@@ -274,12 +274,23 @@ local appsLaunchSlow = {
   end,
 }
 
+local function removeForbiddenApplication(path, privileged)
+  if type(path) ~= "string" or path:sub(1, 1) ~= "/" or path:sub(-4) ~= ".app" then return end
+  local quoted = "'" .. path:gsub("'", "'\\''") .. "'"
+  local command = (privileged and "/usr/bin/sudo -n -- " or "") .. "/bin/rm -rf -- " .. quoted
+  local output, ok = hs.execute(command .. " 2>&1")
+  if not ok then
+    hs.printf("Unable to remove blocked application %s: %s", path, output)
+    hs.alert.show("Unable to remove blocked application: " .. path)
+  end
+end
+
 local forbiddenApps = ApplicationConfigs["forbidden"] or {}
 for _, appid in ipairs(forbiddenApps) do
   if isLSUIElement(appid) then
     ExecOnSilentLaunch(appid, function(app)
       app:kill9()
-      hs.execute(strfmt("sudo rm -rf \"%s\"", app:path()))
+      removeForbiddenApplication(app:path(), true)
     end)
   end
 end
@@ -344,7 +355,7 @@ function App_applicationCallback(appname, eventType, app)
   if eventType == hs.application.watcher.launching then
     if tcontain(forbiddenApps, appid) then
       app:kill9()
-      hs.execute(strfmt("sudo rm -rf \"%s\"", app:path()))
+      removeForbiddenApplication(app:path(), true)
       return
     end
     if FLAGS["APP_LAUNCHING"] then
@@ -501,7 +512,7 @@ function App_applicationInstalledCallback(files, flagTables)
       local appid = hs.application.infoForBundlePath(files[i]).CFBundleIdentifier
       if tcontain(forbiddenApps, appid)
           or tcontain(forbiddenApps, files[i]:sub(1, -5)) then
-        hs.execute(strfmt("rm -rf \"%s\"", files[i]))
+        removeForbiddenApplication(files[i], false)
         tremove(files, i) tremove(flagTables, i)
       end
     end
