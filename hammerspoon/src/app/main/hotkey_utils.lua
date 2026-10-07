@@ -1505,7 +1505,7 @@ function registerInMenuHotkeys(app, menuObj)
           if type(t) ~= 'table' then t = { t } end
           for _, idx in ipairs(t) do
             local item = getc(appUI.AXExtrasMenuBar, AX.MenuBarItem, idx)
-            if item.AXSelected then
+            if item and item.AXSelected then
               menu = getc(item, AX.Menu, 1) break
             elseif menuObj then
               local m = getc(item, AX.Menu, 1)
@@ -1529,7 +1529,7 @@ function registerInMenuHotkeys(app, menuObj)
             local idx = tindex(map, title)
             if idx then
               local item = getc(appUI.AXExtrasMenuBar, AX.MenuBarItem, idx)
-              if item.AXSelected then
+              if item and item.AXSelected then
                 menu = getc(item, AX.Menu, 1) break
               elseif menuObj then
                 local m = getc(item, AX.Menu, 1)
