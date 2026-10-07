@@ -257,6 +257,7 @@ local function loadKeybindings(filePath)
             local pos = 0
             local buf = KeybindingConfigs
             while true do
+              assert(type(buf) == "table", "Invalid keybinding macro: ${" .. key .. "}")
               local newPos = key:find("%.", pos + 1)
               if newPos then
                 buf = buf[key:sub(pos + 1, newPos - 1)]
@@ -266,6 +267,7 @@ local function loadKeybindings(filePath)
               end
               pos = newPos
             end
+            assert(type(buf) == "string", "Unknown or non-string keybinding macro: ${" .. key .. "}")
             return buf
           end)
         end
