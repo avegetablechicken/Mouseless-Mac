@@ -53,7 +53,7 @@ registerMonitorChangedCallback(SystemMisc_monitorChangedCallback)
 
 local function SystemMisc_batteryChangedCallback()
   local percent = hs.battery.percentage()
-  if percent <= 10 then
+  if percent and percent >= 0 and percent <= 10 then
     if not hs.battery.isCharging() then
       hs.alert.show("Battery is low, please charge your laptop!", 3)
     end
@@ -67,3 +67,6 @@ local function SystemMisc_batteryChangedCallback()
     end
   end
 end
+
+BatteryWatcher = hs.battery.watcher.new(SystemMisc_batteryChangedCallback):start()
+SystemMisc_batteryChangedCallback()
