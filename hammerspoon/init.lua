@@ -775,7 +775,7 @@ local function applicationInstalledCallback(files, flagTables)
   local newFiles, newFlagTables = {}, {}
   for i, file in ipairs(files) do
     if file:sub(-4) == ".app"
-        and (flagTables[i].itemCreated or flagTables.itemRemoved) then
+        and (flagTables[i].itemCreated or flagTables[i].itemRemoved) then
       tinsert(newFiles, file)
       tinsert(newFlagTables, flagTables[i])
     end

@@ -507,10 +507,10 @@ function App_applicationInstalledCallback(files, flagTables)
     end
   end
   for i, file in ipairs(files) do
-    local appid = hs.application.infoForBundlePath(file).CFBundleIdentifier
+    local appid = (hs.application.infoForBundlePath(file) or {}).CFBundleIdentifier
     if flagTables[i].itemRemoved then
       for _, appkey in ipairs(AppKeys) do
-        if appkey.appid == appid or appkey.appPath == file then
+        if (appid ~= nil and appkey.appid == appid) or appkey.appPath == file then
           clearAppKeyCache()
           registerAppKeys()
           return
