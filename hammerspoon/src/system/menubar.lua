@@ -5,7 +5,7 @@
 
 local menuBarReveal = require("utils.menubar_reveal")
 
-local function registerSearchMenuBar()
+local function collectSearchMenuBarItems()
   -- Collect menu bar items from all running applications.
   -- For each app, try to load autosaved status item identifiers
   -- and map them to accessibility menu bar elements if available.
@@ -133,6 +133,24 @@ local function registerSearchMenuBar()
     tinsert(menuBarItems, index, pair)
   end
 
+  return menuBarItems, maps
+end
+
+local function unpositionedMenuBarItemPosition(menuBarItems, index)
+  local left, right = menuBarItems[index+1], menuBarItems[index-1]
+  if not left or not right then return end
+  left, right = left[1], right[1]
+  if left.AXPosition and right.AXPosition then
+    return hs.geometry.point(
+      (left.AXPosition.x + left.AXSize.w + right.AXPosition.x) / 2,
+      left.AXPosition.y + left.AXSize.h / 2
+    )
+  end
+end
+
+local function registerSearchMenuBar()
+  local menuBarItems, maps = collectSearchMenuBarItems()
+  if not menuBarItems then return end
   -- Build chooser entries from collected menu bar items.
   -- Each entry includes display text, optional subtitle,
   -- application icon, and extra search patterns.
@@ -250,14 +268,8 @@ local function registerSearchMenuBar()
     hs.timer.doAfter(0, function()
       local item = menuBarItems[choice.id][1]
       if item.AXPosition == nil then
-        local left, right = menuBarItems[choice.id+1], menuBarItems[choice.id-1]
-        if not left or not right then return end
-        left, right = left[1], right[1]
-        if left.AXPosition and right.AXPosition then
-          local position = hs.geometry.point(
-            (left.AXPosition.x + left.AXSize.w + right.AXPosition.x) / 2,
-            left.AXPosition.y + left.AXSize.h / 2
-          )
+        local position = unpositionedMenuBarItemPosition(menuBarItems, choice.id)
+        if position then
           if choice.appid == "at.obdev.littlesnitch.agent" then
             rightClickAndRestore(position)
           else
@@ -340,7 +352,7 @@ if misc ~= nil and misc["searchMenuBar"] ~= nil then
 end
 
 -- Keyboard selection of currently visible status icons, without revealing overflow.
-local items, selected, screen, overlay, watcher
+local items, selected, screen, overlay, watcher, clickTimer
 local mode = hs.hotkey.modal.new()
 
 function mode:exited()
@@ -374,11 +386,47 @@ end
 mode:bind({}, "left", function() move(-1) end, nil, function() move(-1) end)
 mode:bind({}, "right", function() move(1) end, nil, function() move(1) end)
 mode:bind({}, "escape", function() mode:exit() end)
+-- Use the search menu's saved-order/neighbor mapping: Tahoe's window PID
+-- belongs to Control Center and Little Snitch exposes no AX status item.
+local function littleSnitchMenuBarItemPosition(item)
+  if not find("at.obdev.littlesnitch.agent") then return false end
+  local element = hs.axuielement.systemElementAtPosition(
+    { x = item.x + item.w / 2, y = item.y + item.h / 2 })
+  -- Ordinary icons expose AXMenuBarItem; Little Snitch hits the host menu bar.
+  if not element or element.AXRole ~= AX.MenuBar then return false end
+  local menuBarItems = collectSearchMenuBarItems() or {}
+  for index, pair in ipairs(menuBarItems) do
+    local app = pair[1]
+    if app.AXPosition == nil and app:bundleID() == "at.obdev.littlesnitch.agent" then
+      local position = unpositionedMenuBarItemPosition(menuBarItems, index)
+      return position ~= nil
+          and position.x >= item.x and position.x < item.x + item.w
+          and position.y >= item.y and position.y < item.y + item.h and position
+    end
+  end
+  return false
+end
+
 mode:bind({}, "return", function()
   if not refresh() then return end
   local item = items[selected]
   mode:exit()
-  leftClickAndRestore({ x = item.x + item.w / 2, y = item.y + item.h / 2 })
+  hs.timer.doAfter(0, function()
+    local position = littleSnitchMenuBarItemPosition(item)
+    if position then
+      -- Keep the run loop servicing event taps between mouse down and up.
+      local mouse = hs.mouse.absolutePosition()
+      local event, types = hs.eventtap.event, hs.eventtap.event.types
+      event.newMouseEvent(types.rightMouseDown, position, {}):post()
+      clickTimer = hs.timer.doAfter(0.05, function()
+        event.newMouseEvent(types.rightMouseUp, position, {}):post()
+        hs.mouse.absolutePosition(mouse)
+        clickTimer = nil
+      end)
+    else
+      leftClickAndRestore({ x = item.x + item.w / 2, y = item.y + item.h / 2 })
+    end
+  end)
 end)
 
 local function moveFocusToStatusMenus()
