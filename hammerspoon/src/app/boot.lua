@@ -1066,7 +1066,7 @@ end
 -- Perform a system-level double click
 Callback.DoubleClick = function(position)
   local cmd = hs.execute("which cliclick | tr -d '\\n'", true)
-  if cmd == nil then
+  if cmd == nil or cmd == "" then
     hs.alert([[
       Cliclick NOT INSTALLED.
       You can install it by `brew install cliclick`.]])
@@ -1074,7 +1074,7 @@ Callback.DoubleClick = function(position)
   end
   local task = hs.task.new(cmd, nil,
       { strfmt([[dc:%d,%d]], math.floor(position.x), math.floor(position.y)) })
-  task:start()
+  if not task or not task:start() then hs.alert("Unable to start cliclick") end
 end
 
 Callback.PressClick = function(target)
