@@ -1557,7 +1557,7 @@ function registerInMenuHotkeys(app, menuObj)
           menu = getc(mbItem, AX.Menu, 1)
         end
       end
-      if menu == nil then return end
+      if menu == nil then goto L_NEXT_MENU_HOTKEY end
       local msg = type(cfg.message) == 'string'
           and cfg.message or cfg.message(menu)
       if msg ~= nil then
@@ -1582,6 +1582,7 @@ function registerInMenuHotkeys(app, menuObj)
         end
       end
     end
+    ::L_NEXT_MENU_HOTKEY::
   end
 end
 
