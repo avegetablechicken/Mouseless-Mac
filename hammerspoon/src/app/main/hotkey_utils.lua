@@ -1,20 +1,34 @@
 ---@diagnostic disable: lowercase-global
 
+local keybindingFields = {
+  "mods", "key", "persist", "background", "windowFilter", "menubarFilter",
+  "repeatable", "nonFrontmost",
+}
+
 function getKeybinding(appid, hkID, defaultCommon)
-  -- prefer properties specified in configuration file than in code
   local userCfgs = KeybindingConfigs.hotkeys[appid] or {}
-  local config = AppHotKeyCallbacks[appid][hkID]
-  local keybinding = userCfgs[hkID] or { mods = config.mods, key = config.key }
-  local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-  if hasKey == false and defaultCommon then
-    local kbShared = get(KeybindingConfigs.hotkeys.shared, hkID)
-        or CommonKeybindings[hkID]
-    if kbShared ~= nil then
-      keybinding.mods = kbShared.mods
-      keybinding.key = kbShared.key
+  local defaults = AppHotKeyCallbacks[appid][hkID]
+  local keybinding = tcopy(userCfgs[hkID] or {})
+  for _, field in ipairs(keybindingFields) do
+    if keybinding[field] == nil then keybinding[field] = defaults[field] end
+  end
+  if defaultCommon and (keybinding.mods == nil or keybinding.key == nil) then
+    local shared = get(KeybindingConfigs.hotkeys.shared, hkID) or CommonKeybindings[hkID]
+    if shared then
+      if keybinding.mods == nil then keybinding.mods = shared.mods end
+      if keybinding.key == nil then keybinding.key = shared.key end
     end
   end
   return keybinding
+end
+
+-- Keep behavior callbacks in code; only supported binding fields are overridden.
+local function contextualHotkeyConfig(defaults, keybinding, message)
+  local config = tcopy(defaults)
+  for _, field in ipairs(keybindingFields) do config[field] = keybinding[field] end
+  config.message = message
+  config.repeatedfn = config.repeatable and config.fn or nil
+  return config
 end
 
 local function bindable(obj, cond)
@@ -40,11 +54,9 @@ function registerRunningAppHotKeys(appid, app)
   for hkID, cfg in pairs(AppHotKeyCallbacks[appid]) do
     local keybinding = getKeybinding(appid, hkID)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    local isPersistent = keybinding.persist ~= nil
-        and keybinding.persist or cfg.persist
-    local isBackground = isPersistent or (keybinding.background ~= nil
-        and keybinding.background or cfg.background)
-    local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
+    local isPersistent = keybinding.persist
+    local isBackground = isPersistent or keybinding.background
+    local isForWindow = keybinding.windowFilter ~= nil
     if hasKey and not isForWindow and isBackground and not isPersistent then
       hasConfiguredNotPersistentBackgroundHotkey = true
     end
@@ -99,8 +111,7 @@ function registerRunningAppHotKeys(appid, app)
       else
         fn = bind(cfg.fn, app)
       end
-      local repeatable = keybinding.repeatable ~= nil
-          and keybinding.repeatable or cfg.repeatable
+      local repeatable = keybinding.repeatable
       local repeatedFn = repeatable and fn or nil
       local msg
       if type(cfg.message) == 'string' then
@@ -794,24 +805,15 @@ function registerInAppHotKeys(app)
     else
       local keybinding = getKeybinding(appid, hkID, true)
       local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-      local isBackground = keybinding.background ~= nil
-          and keybinding.background or cfg.background
-      local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
+      local isBackground = keybinding.background
+      local isForWindow = keybinding.windowFilter ~= nil
       local isMenuBarMenu = keybinding.menubarFilter ~= nil
-          or cfg.menubarFilter ~= nil
       if hasKey and not isBackground and not isForWindow
           and not isMenuBarMenu and bindable(app, cfg.enabled) then
         local msg = type(cfg.message) == 'string'
             and cfg.message or cfg.message(app)
         if msg ~= nil then
-          local config = tcopy(cfg)
-          config.mods = keybinding.mods
-          config.key = keybinding.key
-          config.message = msg
-          if keybinding.repeatable ~= nil then
-            config.repeatable = keybinding.repeatable
-          end
-          config.repeatedfn = config.repeatable and config.fn or nil
+          local config = contextualHotkeyConfig(cfg, keybinding, msg)
           inAppHotKeys[appid][hkID] = AppBind(app, config)
         end
       end
@@ -967,10 +969,9 @@ function registerInWinHotKeys(win, filter)
     if hotkeys[hkID] == nil then
       local keybinding = getKeybinding(appid, hkID, true)
       local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-      local windowFilter = keybinding.windowFilter or cfg.windowFilter
+      local windowFilter = keybinding.windowFilter
       local isForWindow = windowFilter ~= nil
-      local isBackground = keybinding.background ~= nil
-          and keybinding.background or cfg.background
+      local isBackground = keybinding.background
       if hasKey and isForWindow and not isBackground
           and bindable(app, cfg.enabled)
           and sameFilter(windowFilter, filter) then
@@ -979,13 +980,7 @@ function registerInWinHotKeys(win, filter)
         else msg, fallback = injectWindowState(cfg.message)(win) end
         if msg ~= nil and hotkeys[hkID] == nil then
           -- double check for website-specific hotkeys
-          local config = tcopy(cfg)
-          config.mods = keybinding.mods
-          config.key = keybinding.key
-          config.message = msg
-          if keybinding.repeatable ~= nil then
-            config.repeatable = keybinding.repeatable
-          end
+          local config = contextualHotkeyConfig(cfg, keybinding, msg)
           config.background = false
           if type(windowFilter) == 'table' and windowFilter.allowURLs then
             url = url or getTabUrl(app)
@@ -1291,12 +1286,11 @@ function registerWinFiltersForApp(app)
   for hkID, cfg in pairs(AppHotKeyCallbacks[appid] or {}) do
     local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
-    local isBackground = keybinding.background ~= nil
-        and keybinding.background or cfg.background
+    local isForWindow = keybinding.windowFilter ~= nil
+    local isBackground = keybinding.background
     if hasKey and isForWindow and not isBackground
         and bindable(app, cfg.enabled) then
-      local windowFilter = keybinding.windowFilter or cfg.windowFilter
+      local windowFilter = keybinding.windowFilter
       if appUI == nil then
         appUI = toappui(app)
         hasFocusedWindowAttr = tcontain(appUI:attributeNames() or {},
@@ -1331,9 +1325,8 @@ function registerDaemonAppInWinHotkeys(win, appid, filter)
     local app = find(appid)
     local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    local isBackground = keybinding.background ~= nil
-        and keybinding.background or cfg.background
-    local windowFilter = keybinding.windowFilter or cfg.windowFilter
+    local isBackground = keybinding.background
+    local windowFilter = keybinding.windowFilter
     local isForWindow = windowFilter ~= nil
     if hasKey and isForWindow and isBackground
         and bindable(app, cfg.enabled)
@@ -1345,18 +1338,8 @@ function registerDaemonAppInWinHotkeys(win, appid, filter)
         local msg = type(cfg.message) == 'string'
             and cfg.message or injectWindowState(cfg.message)(win)
         if msg ~= nil then
-          local config = tcopy(cfg)
-          config.mods = keybinding.mods
-          config.key = keybinding.key
-          config.message = msg
-          if keybinding.repeatable ~= nil then
-            config.repeatable = keybinding.repeatable
-          end
+          local config = contextualHotkeyConfig(cfg, keybinding, msg)
           config.background = true
-          if keybinding.nonFrontmost ~= nil then
-            config.nonFrontmost = keybinding.nonFrontmost
-          end
-          config.repeatedfn = config.repeatable and config.fn or nil
           local hotkey = WinBind(win, config)
           daemonAppFocusedWindowHotkeys[wid][hkID] = hotkey
 
@@ -1477,12 +1460,11 @@ function registerWinFiltersForDaemonApp(app, appConfig)
   for hkID, cfg in pairs(appConfig) do
     local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
-    local isBackground = keybinding.background ~= nil
-        and keybinding.background or cfg.background
+    local isForWindow = keybinding.windowFilter ~= nil
+    local isBackground = keybinding.background
     if hasKey and isForWindow and isBackground
         and bindable(app, cfg.enabled) then
-      local windowFilter = keybinding.windowFilter or cfg.windowFilter
+      local windowFilter = keybinding.windowFilter
       if appUI == nil then
         appUI = toappui(app)
         hasFocusedWindowAttr = tcontain(appUI:attributeNames() or {},
@@ -1514,7 +1496,7 @@ function registerInMenuHotkeys(app, menuObj)
   for hkID, cfg in pairs(appConfig) do
     local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    local menubarFilter = keybinding.menubarFilter or cfg.menubarFilter
+    local menubarFilter = keybinding.menubarFilter
     if hasKey and menubarFilter and bindable(app, cfg.enabled) then
       local menu
       if type(menubarFilter) == 'table' then
@@ -1579,15 +1561,8 @@ function registerInMenuHotkeys(app, menuObj)
       local msg = type(cfg.message) == 'string'
           and cfg.message or cfg.message(menu)
       if msg ~= nil then
-        local config = tcopy(cfg)
-        config.mods = keybinding.mods
-        config.key = keybinding.key
-        config.message = msg
+        local config = contextualHotkeyConfig(cfg, keybinding, msg)
         config.background = true
-        if keybinding.repeatable ~= nil then
-          config.repeatable = keybinding.repeatable
-        end
-        config.repeatedfn = config.repeatable and config.fn or nil
         tinsert(menuBarMenuHotkeys[appid], MenuBarBind(menu, config))
         if not observed then
           Evt.OnDestroy(menu, function()
@@ -1618,7 +1593,6 @@ function registerObserversForMenuBarMenu(app, appConfig)
     local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isMenuBarMenu = keybinding.menubarFilter ~= nil
-        or cfg.menubarFilter ~= nil
     if hasKey and isMenuBarMenu and bindable(app, cfg.enabled) then
       local observer = menuBarMenuObservers[appid]
       if observer == nil then

@@ -108,9 +108,8 @@ for appid, appConfig in pairs(AppHotKeyCallbacks) do
   local hasDaemonAppWindowHotkey = any(appConfig, function(cfg, hkID)
     local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
-    local isForWindow = keybinding.windowFilter ~= nil or cfg.windowFilter ~= nil
-    local isBackground = keybinding.background ~= nil
-        and keybinding.background or cfg.background
+    local isForWindow = keybinding.windowFilter ~= nil
+    local isBackground = keybinding.background
     return hasKey and isForWindow and isBackground
   end)
   if hasDaemonAppWindowHotkey then
@@ -138,10 +137,10 @@ for appid, _ in pairs(LoadBuf.daemonAppFocusedWindowFilters) do
     local nonFrontmostFilters = {}
     for hkID, cfg in pairs(AppHotKeyCallbacks[appid]) do
       local keybinding = getKeybinding(appid, hkID, true)
-      if keybinding.nonFrontmost or cfg.nonFrontmost then
+      if keybinding.nonFrontmost then
         local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
         if hasKey then
-          tinsert(nonFrontmostFilters, keybinding.windowFilter or cfg.windowFilter)
+          tinsert(nonFrontmostFilters, keybinding.windowFilter)
         end
       end
     end
@@ -163,7 +162,6 @@ for appid, appConfig in pairs(AppHotKeyCallbacks) do
     local keybinding = getKeybinding(appid, hkID, true)
     local hasKey = keybinding.mods ~= nil and keybinding.key ~= nil
     local isMenuBarMenu = keybinding.menubarFilter ~= nil
-        or cfg.menubarFilter ~= nil
     return hasKey and isMenuBarMenu
   end)
   if hasMenuBarMenuHotkey then
