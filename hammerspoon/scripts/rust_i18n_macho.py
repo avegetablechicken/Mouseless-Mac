@@ -29,7 +29,9 @@ def symbol_info(binary, arch):
             symbols.append((int(match.group(1), 16), match.group(2)))
     for index, (address, name) in enumerate(symbols):
         if "_RUST_I18N_BACKEND" in name:
-            stop = next(value for value, _ in symbols[index + 1:] if value > address)
+            stop = next((value for value, _ in symbols[index + 1:] if value > address), None)
+            if stop is None:
+                raise RuntimeError("cannot determine rust-i18n backend symbol end")
             return address, stop, name, dict((name, address) for address, name in symbols)
     raise RuntimeError("rust-i18n backend initializer symbol not found; binary may be stripped")
 
@@ -291,7 +293,11 @@ def main(binary):
     emulator = (X86Emulator(binary, segments, symbols) if arch == "x86_64"
                 else Emulator(binary, segments))
     index = 0
+    remaining_steps = max(10000, len(instructions) * 100)
     while index < len(instructions):
+        remaining_steps -= 1
+        if remaining_steps < 0:
+            raise RuntimeError("rust-i18n emulation exceeded its instruction limit")
         _, mnemonic, operands = instructions[index]
         next_address = instructions[index + 1][0] if index + 1 < len(instructions) else None
         emulator.execute(mnemonic, operands, next_address)
