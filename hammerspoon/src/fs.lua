@@ -232,6 +232,10 @@ local function handleRequest(method, path, headers, body)
     local path
     local dir = os.getenv("HOME") .. "/Downloads/"
     if filename ~= nil then
+      if filename == "" or filename == "." or filename == ".."
+          or filename:find("[/\\%z]") then
+        return "Invalid filename", 400, {}
+      end
       path = dir .. filename
       -- if file already exists, append a number to the filename
       local i = 1
