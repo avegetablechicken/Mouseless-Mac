@@ -171,12 +171,19 @@ local function handleRequest(method, path, headers, body)
 
     if tcontain(types, "public.file-url") then
       contentType = "application/octet-stream"
-      local filePath = hs.pasteboard.readURL().filePath
-      contentDisposition = "attachment; filename=\"" .. hs.pasteboard.readString() .. "\""
+      local url = hs.pasteboard.readURL()
+      local parts = type(url) == "string" and hs.http.urlParts(url)
+      local filePath = parts and parts.isFileURL and parts.fileSystemRepresentation
+      if not filePath or hs.fs.attributes(filePath, "mode") ~= "file" then
+        return "Clipboard file unavailable", 404, {}
+      end
+      local filename = (parts.lastPathComponent or "download"):gsub('[\r\n"\\]', "_")
+      contentDisposition = "attachment; filename=\"" .. filename .. "\""
       local file = io.open(filePath, "rb")
-      assert(file)
+      if not file then return "Clipboard file unreadable", 404, {} end
       content = file:read("*all")
       file:close()
+      if content == nil then return "Unable to read clipboard file", 500, {} end
     elseif tcontain(types, "public.utf8-plain-text") then
       contentType = "text/plain"
       content = hs.pasteboard.readString()
@@ -190,7 +197,7 @@ local function handleRequest(method, path, headers, body)
       contentType = "image/tiff"
       content = hs.pasteboard.readImage():encodeAsURLString()
     else
-      return hs.httpserver.response.new(204)
+      return "", 204, {}
     end
 
     local response = {
@@ -206,10 +213,15 @@ local function handleRequest(method, path, headers, body)
     return response.body, response.status, response.headers
   end
 
-  if headers["Content-Type"]:find("text/") then
+  local contentType
+  for name, value in pairs(headers) do
+    if name:lower() == "content-type" then contentType = value:lower() break end
+  end
+  if not contentType then return "Content-Type required", 400, {} end
+  if contentType:find("^text/") then
     hs.pasteboard.setContents(body)
     print("[LOG] Copied text to clipboard: " .. body)
-  elseif headers["Content-Type"]:find("image/") then
+  elseif contentType:find("^image/") then
     local file, tmpname
     while file == nil do
       tmpname = os.tmpname()
@@ -220,7 +232,7 @@ local function handleRequest(method, path, headers, body)
     os.remove(tmpname)
     hs.pasteboard.writeObjects(image)
     print("[LOG] Copied image to clipboard: " .. path)
-  elseif headers["Content-Type"]:find("application/") then
+  elseif contentType:find("^application/") then
     local filename
     if headers["Content-Disposition"] ~= nil then
       local disposition = headers["Content-Disposition"]
@@ -257,6 +269,8 @@ local function handleRequest(method, path, headers, body)
     file:close()
     hs.pasteboard.writeObjects(path)
     print("[LOG] Copied file to clipboard: " .. path)
+  else
+    return "Unsupported Content-Type", 415, {}
   end
 
   local response = {
