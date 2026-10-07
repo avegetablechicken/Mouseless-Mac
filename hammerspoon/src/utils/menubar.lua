@@ -216,11 +216,9 @@ function loadStatusItemsAutosaveName(app, requirePreferredPosition)
     records = strsplit(records, '\n')
     records[#records] = nil
     for _, r in ipairs(records) do
-      r = r:sub(r:find('"') + 1)
-      local items = strsplit(r, ' ')
-      local name = items[4]:sub(1, #items[4] - 1)
-      local position = tonumber(items[6]:sub(1, #items[6] - 1))
-      tinsert(preferredPositions, { name, position })
+      local name, position = r:match('"NSStatusItem Preferred Position (.-)"%s*=%s*"?([%d%.%-]+)"?%s*;')
+      position = tonumber(position)
+      if name and position then tinsert(preferredPositions, { name, position }) end
     end
   end
 
