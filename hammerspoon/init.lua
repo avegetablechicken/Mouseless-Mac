@@ -382,24 +382,25 @@ end
 
 -- Inject hotkey context into callback execution.
 A_Hotkey, A_Message = nil, nil
+local function withHotkeyState(fn, hotkey, message, ...)
+  local lastHotkey, lastMessage = A_Hotkey, A_Message
+  A_Hotkey, A_Message = hotkey, message
+  local results = table.pack(xpcall(fn, debug.traceback, ...))
+  A_Hotkey, A_Message = lastHotkey, lastMessage
+  if not results[1] then error(results[2], 0) end
+  return table.unpack(results, 2, results.n)
+end
+
 function A_HotkeyWrapper(fn)
   local validHotkey, validMessage = A_Hotkey, A_Message
   return function(...)
-    local lastHotkey, lastMessage = A_Hotkey, A_Message
-    A_Hotkey, A_Message = validHotkey, validMessage
-    local ret = fn(...)
-    A_Hotkey, A_Message = lastHotkey, lastMessage
-    return ret
+    return withHotkeyState(fn, validHotkey, validMessage, ...)
   end
 end
 
 function injectHotkeyState(fn, tbl)
   return function(...)
-    local lastHotkey, lastMessage = A_Hotkey, A_Message
-    A_Hotkey, A_Message = tbl.hotkey, tbl.message
-    local ret = fn(...)
-    A_Hotkey, A_Message = lastHotkey, lastMessage
-    return ret
+    return withHotkeyState(fn, tbl.hotkey, tbl.message, ...)
   end
 end
 

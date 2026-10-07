@@ -612,15 +612,20 @@ local winCloseObservers = {}
 
 A_WinBuf = {}
 A_WinLocale = nil
+local function withWindowState(fn, buffer, locale, ...)
+  local lastWinBuf, lastWinLocale = A_WinBuf, A_WinLocale
+  A_WinBuf, A_WinLocale = buffer, locale
+  local results = table.pack(xpcall(fn, debug.traceback, ...))
+  A_WinBuf, A_WinLocale = lastWinBuf, lastWinLocale
+  if not results[1] then error(results[2], 0) end
+  return table.unpack(results, 2, results.n)
+end
+
 function A_WinHotkeyWrapper(fn)
   local newFn = A_HotkeyWrapper(fn)
   local validWinBuf, validWinLocale = A_WinBuf, A_WinLocale
   return function(...)
-    local lastWinBuf, lastWinLocale = A_WinBuf, A_WinLocale
-    A_WinBuf, A_WinLocale = validWinBuf, validWinLocale
-    local ret = newFn(...)
-    A_WinBuf, A_WinLocale = lastWinBuf, lastWinLocale
-    return ret
+    return withWindowState(newFn, validWinBuf, validWinLocale, ...)
   end
 end
 
@@ -630,13 +635,11 @@ function injectWindowState(fn)
     if winBuf[wid] == nil then
       winBuf[wid] = WinBuf.new()
     end
-    A_WinBuf = winBuf[wid]
+    local buffer = winBuf[wid]
     if hs.application.frontmostApplication() == win:application() then
-      A_WinBuf.locale = A_AppLocale
+      buffer.locale = A_AppLocale
     end
-    A_WinLocale = A_WinBuf.locale
-    local results = table.pack(fn(win))
-    A_WinBuf, A_WinLocale = {}, nil
+    local results = table.pack(withWindowState(fn, buffer, buffer.locale, win))
     if winCloseObservers[wid] == nil and next(winBuf[wid]) then
       winCloseObservers[wid] = Evt.OnDestroy(towinui(win), function()
         winBuf[wid] = nil
