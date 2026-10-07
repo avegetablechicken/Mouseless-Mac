@@ -2536,7 +2536,7 @@
         "mods": "option",
         "key": "C"
       },
-      "showMainWindowF rom MB": {
+      "showMainWindowFromMB": {
         "mods": "command",
         "key": "O"
       }
