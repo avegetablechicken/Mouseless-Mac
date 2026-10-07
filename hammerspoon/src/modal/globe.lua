@@ -101,6 +101,7 @@ end
 
 function hotkey:delete()
   self:disable()
+  module.bindings[self] = nil
   self._delete = true
   module.allKeys[self.idx] = tifilter(module.allKeys[self.idx],
       function(hk) return hk._delete ~= true end)
