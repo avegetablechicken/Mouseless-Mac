@@ -45,6 +45,10 @@
         "mods": "control",
         "key": "F1"
       },
+      "showHiddenStatusItems": {
+        "mods": "${hyper.daemon}",
+        "key": "E"
+      },
       "showCurrentWindowInfo": {
         "mods": "${hyper.daemon}",
         "key": "G"

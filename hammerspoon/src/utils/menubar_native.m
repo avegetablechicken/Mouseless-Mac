@@ -13,6 +13,8 @@ extern int luaL_error(lua_State *, const char *, ...);
 extern void lua_createtable(lua_State *, int, int);
 extern void lua_pushnumber(lua_State *, double);
 extern void lua_pushboolean(lua_State *, int);
+extern void lua_pushnil(lua_State *);
+extern const char *lua_pushstring(lua_State *, const char *);
 extern void lua_pushcclosure(lua_State *, lua_CFunction, int);
 extern void lua_setfield(lua_State *, int, const char *);
 extern void lua_rawseti(lua_State *, int, lua_Integer);
@@ -90,13 +92,14 @@ static bool deliver(CGEventRef event, pid_t pid) {
 }
 static int sendEvent(lua_State *L) {
     CGEventType type = (CGEventType)luaL_checkinteger(L, 1);
-    if(type != kCGEventLeftMouseDown && type != kCGEventLeftMouseUp) return luaL_error(L, "Invalid menu bar event type");
+    bool right = type == kCGEventRightMouseDown || type == kCGEventRightMouseUp;
+    if(!right && type != kCGEventLeftMouseDown && type != kCGEventLeftMouseUp) return luaL_error(L, "Invalid menu bar event type");
     CGPoint point = CGPointMake(luaL_checknumber(L, 2), luaL_checknumber(L, 3));
     int64_t wid = luaL_checkinteger(L, 4);
     pid_t pid = (pid_t)luaL_checkinteger(L, 5);
     CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
     if(!source) return luaL_error(L, "Cannot create event source");
-    CGEventRef event = CGEventCreateMouseEvent(source, type, point, kCGMouseButtonLeft);
+    CGEventRef event = CGEventCreateMouseEvent(source, type, point, right ? kCGMouseButtonRight : kCGMouseButtonLeft);
     if(!event) { CFRelease(source); return luaL_error(L, "Cannot create mouse event"); }
     CGEventSetFlags(event, 0);
     CGEventSetIntegerValueField(event, kCGMouseEventClickState, 1);
@@ -154,9 +157,33 @@ static int list(lua_State *L) {
     }
     return 1;
 }
+// Capture explicit window IDs, including offscreen status items. The on-screen
+// snapshot API returns nil for these windows. Resolve dynamically on newer SDKs.
+static int snapshot(lua_State *L) {
+    CGWindowID wid = (CGWindowID)luaL_checkinteger(L, 1);
+    CGImageRef (*capture)(CGRect, CFArrayRef, CGWindowImageOption) =
+        dlsym(RTLD_DEFAULT, "CGWindowListCreateImageFromArray");
+    if(!capture) { lua_pushnil(L); return 1; }
+    const void *value = (const void *)(uintptr_t)wid;
+    CFArrayRef array = CFArrayCreate(NULL, &value, 1, NULL);
+    CGImageRef image = capture(CGRectNull, array,
+        kCGWindowImageBoundsIgnoreFraming | kCGWindowImageBestResolution);
+    CFRelease(array);
+    if(!image) { lua_pushnil(L); return 1; }
+    NSBitmapImageRep *rep = [[NSBitmapImageRep alloc] initWithCGImage:image];
+    CGImageRelease(image);
+    NSData *png = [rep representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
+    if(!png) { lua_pushnil(L); return 1; }
+    NSString *url = [@"data:image/png;base64," stringByAppendingString:
+        [png base64EncodedStringWithOptions:0]];
+    lua_pushstring(L, url.UTF8String);
+    return 1;
+}
+
 int luaopen_menubar_native(lua_State *L) {
     lua_newtable(L);
     lua_pushcfunction(L,sendEvent); lua_setfield(L,-2,"send");
     lua_pushcfunction(L,list); lua_setfield(L,-2,"list");
+    lua_pushcfunction(L,snapshot); lua_setfield(L,-2,"snapshot");
     return 1;
 }

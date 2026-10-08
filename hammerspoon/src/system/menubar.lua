@@ -148,6 +148,50 @@ local function unpositionedMenuBarItemPosition(menuBarItems, index)
   end
 end
 
+local function activateSearchMenuBarChoice(menuBarItems, choice, right)
+  if choice == nil then return end
+  hs.timer.doAfter(0, function()
+    local item = menuBarItems[choice.id][1]
+    if item.AXPosition == nil then
+      local position = unpositionedMenuBarItemPosition(menuBarItems, choice.id)
+      if position then
+        if right or choice.appid == "at.obdev.littlesnitch.agent" then
+          rightClickAndRestore(position)
+        else
+          leftClickAndRestore(position)
+        end
+      end
+      return
+    end
+    if right then
+      if not rightClickAndRestore(item, find(choice.appid))
+          and not menuBarReveal.show(item, true) then
+        hs.alert.show("Cannot right-click this status item")
+      end
+      return
+    end
+    if choice.appid:sub(1, 10) == 'com.apple.' then
+      if type(choice.extraPattern) ~= 'table'
+          or tfind(choice.extraPattern, function(pattern)
+                return pattern:sub(-13) == '.liveActivity'
+              end) == nil then
+        menuBarItems[choice.id][1]:performAction(AX.Press)
+        return
+      end
+    end
+    if not leftClickAndRestore(item, find(choice.appid)) then
+      if choice.appid == hs.settings.bundleID then
+        -- Avoid AX.Press on Hammerspoon's own menu; use the native click instead.
+        if menuBarReveal.show(item) then return end
+        hs.alert.show("Cannot trigger Hammerspoon menu bar item", 2)
+        return
+      end
+      if menuBarReveal.show(item) then return end
+      menuBarItems[choice.id][1]:performAction(AX.Press)
+    end
+  end)
+end
+
 local function registerSearchMenuBar()
   local menuBarItems, maps = collectSearchMenuBarItems()
   if not menuBarItems then return end
@@ -265,39 +309,7 @@ local function registerSearchMenuBar()
   local chooser
   chooser = hs.chooser.new(function(choice)
     if choice == nil then return end
-    hs.timer.doAfter(0, function()
-      local item = menuBarItems[choice.id][1]
-      if item.AXPosition == nil then
-        local position = unpositionedMenuBarItemPosition(menuBarItems, choice.id)
-        if position then
-          if choice.appid == "at.obdev.littlesnitch.agent" then
-            rightClickAndRestore(position)
-          else
-            leftClickAndRestore(position)
-          end
-        end
-        return
-      end
-      if choice.appid:sub(1, 10) == 'com.apple.' then
-        if type(choice.extraPattern) ~= 'table'
-            or tfind(choice.extraPattern, function(pattern)
-                  return pattern:sub(-13) == '.liveActivity'
-                end) == nil then
-          menuBarItems[choice.id][1]:performAction(AX.Press)
-          return
-        end
-      end
-      if not leftClickAndRestore(item, find(choice.appid)) then
-        if choice.appid == hs.settings.bundleID then
-          -- Avoid AX.Press on Hammerspoon's own menu; use the native click instead.
-          if menuBarReveal.show(item) then return end
-          hs.alert.show("Cannot trigger Hammerspoon menu bar item", 2)
-          return
-        end
-        if menuBarReveal.show(item) then return end
-        menuBarItems[choice.id][1]:performAction(AX.Press)
-      end
-    end)
+    activateSearchMenuBarChoice(menuBarItems, choice)
   end)
 
   chooser:searchSubText(true)
@@ -306,34 +318,29 @@ local function registerSearchMenuBar()
   chooser:show()
 end
 
-local hotkeySearchMenuBar
-local misc = KeybindingConfigs.hotkeys.global
-if misc ~= nil and misc["searchMenuBar"] ~= nil then
-  local menuBarManagers = {
-    "com.surteesstudios.Bartender",
-    "com.jordanbaird.Ice",
-  }
+local function registerWithoutMenuBarManagers(spec, message, callback, onSuspend)
+  if spec == nil then return end
+  local hotkey
+  local menuBarManagers = require("utils.menubar").getManagerBundleIDs()
   local onQuit = function()
     local anyRunning = tfind(menuBarManagers, function(appid)
       return find(appid) ~= nil
     end)
     if not anyRunning then
-      if hotkeySearchMenuBar == nil then
-        hotkeySearchMenuBar = bindHotkeySpec(misc["searchMenuBar"],
-            'Search Menu Bar', registerSearchMenuBar)
-        if hotkeySearchMenuBar == nil then return end
-        hotkeySearchMenuBar.kind = HK.MENUBAR
+      if hotkey == nil then
+        hotkey = bindHotkeySpec(spec, message, callback)
+        if hotkey == nil then return end
+        hotkey.kind = HK.MENUBAR
       end
-      hotkeySearchMenuBar:enable()
+      hotkey:enable()
     end
   end
   local anyRunning = tfind(menuBarManagers, function(appid)
     return find(appid) ~= nil
   end)
   if not anyRunning then
-    hotkeySearchMenuBar = bindHotkeySpec(misc["searchMenuBar"],
-        'Search Menu Bar', registerSearchMenuBar)
-    hotkeySearchMenuBar.kind = HK.MENUBAR
+    hotkey = bindHotkeySpec(spec, message, callback)
+    if hotkey then hotkey.kind = HK.MENUBAR end
   else
     foreach(menuBarManagers, function(appid)
       if find(appid) then
@@ -343,13 +350,17 @@ if misc ~= nil and misc["searchMenuBar"] ~= nil then
   end
   foreach(menuBarManagers, function(appid)
     ExecOnSilentLaunch(appid, function()
-      if hotkeySearchMenuBar then
-        hotkeySearchMenuBar:disable()
+      if hotkey then
+        hotkey:disable()
       end
+      if onSuspend then onSuspend() end
       ExecOnSilentQuit(appid, onQuit)
-      end)
+    end)
   end)
 end
+
+local misc = KeybindingConfigs.hotkeys.global or {}
+registerWithoutMenuBarManagers(misc.searchMenuBar, "Search Menu Bar", registerSearchMenuBar)
 
 -- Keyboard selection of currently visible status icons, without revealing overflow.
 local items, selected, screen, overlay, watcher, clickTimer
@@ -462,3 +473,227 @@ if spec then
   local hotkey = bindHotkeySpec(spec, "Move Focus to Status Menus", moveFocusToStatusMenus)
   if hotkey then hotkey.kind = HK.MENUBAR end
 end
+
+-- A mirror of overflow status items. Capture explicit window IDs without moving
+-- their real windows or changing their saved order in the system menu bar.
+local hiddenBar, hiddenEntries, hiddenSelected, hiddenScreen
+local resolveHiddenReceiver
+local hiddenMouseWatcher, hiddenScreenWatcher, hiddenSpaceWatcher
+local hiddenAppWatcher, hiddenUpdateTimer
+local hiddenMode = hs.hotkey.modal.new()
+
+function hiddenMode:exited()
+  for _, observer in pairs({ hiddenMouseWatcher,
+      hiddenScreenWatcher, hiddenSpaceWatcher, hiddenAppWatcher, hiddenUpdateTimer }) do
+    observer:stop()
+  end
+  hiddenMouseWatcher, hiddenScreenWatcher, hiddenSpaceWatcher = nil, nil, nil
+  hiddenAppWatcher, hiddenUpdateTimer = nil, nil
+  if hiddenBar then hiddenBar:delete() hiddenBar = nil end
+  hiddenEntries, hiddenSelected, hiddenScreen = nil, nil, nil
+end
+
+local function selectHiddenItem(index)
+  if not hiddenBar or #hiddenEntries == 0 then return end
+  hiddenSelected = (index - 1) % #hiddenEntries + 1
+  hiddenBar[2].frame = hiddenEntries[hiddenSelected].cell
+end
+
+local function activateHiddenItem(right)
+  local entry = hiddenEntries and hiddenEntries[hiddenSelected]
+  if not entry then return end
+  hiddenMode:exit()
+  hs.timer.doAfter(0, function()
+    local ok, activated = pcall(function()
+      local receiver = resolveHiddenReceiver(entry.window)
+      if not receiver then return false end
+      activateSearchMenuBarChoice(receiver.items, receiver.choice, right)
+      return true
+    end)
+    if not ok or not activated then hs.alert.show("Cannot activate this status item") end
+  end)
+end
+
+hiddenMode:bind({}, "escape", function() hiddenMode:exit() end)
+hiddenMode:bind({}, "left", function() selectHiddenItem(hiddenSelected - 1) end,
+    nil, function() selectHiddenItem(hiddenSelected - 1) end)
+hiddenMode:bind({}, "right", function() selectHiddenItem(hiddenSelected + 1) end,
+    nil, function() selectHiddenItem(hiddenSelected + 1) end)
+hiddenMode:bind({}, "return", function() activateHiddenItem(false) end)
+hiddenMode:bind({ "alt" }, "return", function() activateHiddenItem(true) end)
+
+-- Resolve through the same inventory as Search Menu Bar, only after activation.
+resolveHiddenReceiver = function(window)
+  local menuItems = collectSearchMenuBarItems() or {}
+  local current = menuBarReveal.windowForID(window.id, window.pid)
+  if not current then return end
+  window = current
+  for index, pair in ipairs(menuItems) do
+    local item, position, app = pair[1]
+    local p, size = item.AXPosition, item.AXSize
+    if p and size and size.w > 0 and size.h > 0 then
+      position = { x = p.x + size.w / 2, y = p.y + size.h / 2 }
+      local parent = item.AXParent and item.AXParent.AXParent
+      app = parent and parent:asHSApplication()
+    elseif p == nil then
+      app = item
+      position = unpositionedMenuBarItemPosition(menuItems, index)
+    end
+    if app and position and position.x >= window.x and position.x < window.x + window.w
+        and position.y >= window.y and position.y < window.y + window.h then
+      return { items = menuItems, choice = { id = index, appid = app:bundleID() or app:name(),
+        extraPattern = { item.AXIdentifier or "" } } }
+    end
+  end
+end
+
+local function renderHiddenBar(windows)
+  windows = windows or menuBarReveal.hiddenItems(hiddenScreen)
+  if #windows == 0 then hiddenMode:exit() return false end
+  local previous = hiddenEntries and hiddenEntries[hiddenSelected].window.id
+  local entries, cached = {}, {}
+  for _, entry in ipairs(hiddenEntries or {}) do cached[entry.window.id] = entry end
+  for _, window in ipairs(windows) do
+    local old = cached[window.id]
+    local image = old and old.window.pid == window.pid
+        and old.window.w == window.w and old.window.h == window.h and old.image
+    entries[#entries + 1] = { window = window, image = image or nil }
+  end
+  local display = hiddenScreen:fullFrame()
+  local maxWidth, padding = display.w - 20, 5
+  local rowHeight = windows[1].h
+  local x, y, width = padding, 0, 0
+  for _, entry in ipairs(entries) do
+    local w = entry.window
+    local cellWidth = math.min(w.w, maxWidth - padding * 2)
+    if x + cellWidth + padding > maxWidth and x > padding then
+      x, y = padding, y + rowHeight
+    end
+    entry.cell = { x = x, y = y, w = cellWidth, h = rowHeight }
+    entry.image = entry.image or menuBarReveal.snapshot(w)
+    x, width = x + cellWidth, math.max(width, x + cellWidth + padding)
+  end
+  local height = y + rowHeight
+  -- Ice centers on its control item; our equivalent anchor is the overflow edge.
+  local edge = windows[#windows]
+  local anchor = edge.x + edge.w
+  local originX = math.max(display.x, math.min(anchor - width / 2,
+      display.x + display.w - width))
+  local frame = { x = originX,
+    y = display.y + windows[1].h + 1, w = width, h = height }
+  hiddenEntries, hiddenSelected = entries, 1
+  local elements = {
+    { type = "rectangle", action = "fill", roundedRectRadii = { xRadius = rowHeight / 5, yRadius = rowHeight / 5 },
+      fillColor = { white = 0.1, alpha = 0.96 } },
+    { type = "rectangle", action = "fill", frame = entries[1].cell,
+      roundedRectRadii = { xRadius = 5, yRadius = 5 },
+      fillColor = { red = 0, green = 0.45, blue = 1, alpha = 0.6 } },
+  }
+  for index, entry in ipairs(entries) do
+    if entry.window.id == previous then hiddenSelected = index end
+    local cell = entry.cell
+    if entry.image then
+      elements[#elements + 1] = { type = "image", image = entry.image,
+        imageScaling = "scaleProportionally", frame = cell }
+    else
+      elements[#elements + 1] = { type = "text", text = "?", textSize = 18,
+        textColor = { white = 1 }, textAlignment = "center", frame = cell }
+    end
+    elements[#elements + 1] = { type = "rectangle", action = "fill", frame = cell,
+      fillColor = { alpha = 0 }, id = tostring(index),
+      trackMouseUp = true, trackMouseEnterExit = true }
+  end
+  if not hiddenBar then
+    hiddenBar = hs.canvas.new(frame):level(hs.canvas.windowLevels.popUpMenu)
+        :behavior({ "canJoinAllSpaces", "fullScreenAuxiliary" })
+    hiddenBar:mouseCallback(function(_, message, id)
+      local index = tonumber(id)
+      if not index then return end
+      if message == "mouseEnter" then selectHiddenItem(index) end
+      if message == "mouseUp" then
+        selectHiddenItem(index)
+        activateHiddenItem(false)
+      end
+    end)
+  else
+    hiddenBar:frame(frame)
+  end
+  hiddenBar:replaceElements(table.unpack(elements))
+  selectHiddenItem(hiddenSelected)
+  hiddenBar:show()
+  return true
+end
+
+-- Coalesce launch/exit bursts. A few bounded checks allow delayed status item
+-- creation without polling or scanning application accessibility trees.
+local function scheduleHiddenBarUpdate(_, event, app)
+  local events = hs.application.watcher
+  if event ~= events.launched and event ~= events.terminated then return end
+  if not hiddenBar then return end
+  if hiddenUpdateTimer then hiddenUpdateTimer:stop() end
+  local delays, attempt = { 0.3, 1, 2 }, 0
+  local function check()
+    hiddenUpdateTimer = nil
+    if not hiddenBar then return end
+    local ok, err = pcall(function()
+      local windows = menuBarReveal.hiddenItems(hiddenScreen)
+      local changed = #windows ~= #hiddenEntries
+      for index, window in ipairs(windows) do
+        local old = hiddenEntries[index] and hiddenEntries[index].window
+        if not old or window.id ~= old.id or window.pid ~= old.pid
+            or window.x ~= old.x or window.y ~= old.y
+            or window.w ~= old.w or window.h ~= old.h then changed = true break end
+      end
+      if changed then renderHiddenBar(windows) end
+    end)
+    if not ok then
+      hs.printf("Hidden status items update: %s", err)
+      return
+    end
+    attempt = attempt + 1
+    if hiddenBar and delays[attempt] then
+      hiddenUpdateTimer = hs.timer.doAfter(delays[attempt], check)
+    end
+  end
+  attempt = 1
+  hiddenUpdateTimer = hs.timer.doAfter(delays[attempt], check)
+end
+
+local function showHiddenStatusItems()
+  if hiddenBar then hiddenMode:exit() return end
+  if overlay then mode:exit() end
+  hiddenScreen = hs.mouse.getCurrentScreen()
+  local ok, shown = pcall(renderHiddenBar)
+  if not ok or not shown then
+    hiddenMode:exit()
+    hs.alert.show(ok and "No hidden status items" or "Cannot show hidden status items")
+    if not ok then hs.printf("Hidden status items: %s", shown) end
+    return
+  end
+  hiddenMode:enter()
+  local types = hs.eventtap.event.types
+  hiddenMouseWatcher = hs.eventtap.new({ types.leftMouseDown, types.rightMouseDown }, function(event)
+    local p, f = event:location(), hiddenBar:frame()
+    if p.x < f.x or p.x >= f.x + f.w or p.y < f.y or p.y >= f.y + f.h then
+      hiddenMode:exit()
+    elseif event:getType() == types.rightMouseDown then
+      for index, entry in ipairs(hiddenEntries) do
+        local cell = entry.cell
+        if p.x >= f.x + cell.x and p.x < f.x + cell.x + cell.w
+            and p.y >= f.y + cell.y and p.y < f.y + cell.y + cell.h then
+          selectHiddenItem(index)
+          activateHiddenItem(true)
+          return true
+        end
+      end
+    end
+    return false
+  end):start()
+  hiddenScreenWatcher = hs.screen.watcher.new(function() hiddenMode:exit() end):start()
+  hiddenSpaceWatcher = hs.spaces.watcher.new(function() hiddenMode:exit() end):start()
+  hiddenAppWatcher = hs.application.watcher.new(scheduleHiddenBarUpdate):start()
+end
+
+registerWithoutMenuBarManagers(misc.showHiddenStatusItems,
+    "Show Hidden Status Items", showHiddenStatusItems,
+    function() if hiddenBar then hiddenMode:exit() end end)
