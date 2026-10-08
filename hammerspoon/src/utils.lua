@@ -431,7 +431,19 @@ end
 -- Find an application by name or bundle id, excluding Parallels helpers.
 function find(hint, exact)
   if exact == nil then exact = true end
-  return filterParallels{hs.application.find(hint, exact)}
+  local apps = {hs.application.find(hint, exact)}
+  -- A name-like hint may also match a bundle ID shared by helper processes.
+  if type(hint) == 'string' and not hint:find('.', 1, true) then
+    apps = tifilter(apps, function(app)
+      local path = app:path()
+      local info = path and hs.application.infoForBundlePath(path)
+      if not info or not info.CFBundleExecutable then return false end
+      local command, ok = hs.execute(strfmt('/bin/ps -p %d -o comm=', app:pid()))
+      return ok and command:gsub("%s+$", "")
+          == path .. '/Contents/MacOS/' .. info.CFBundleExecutable
+    end)
+  end
+  return filterParallels(apps)
 end
 
 -- Quit an application by name or bundle id.
