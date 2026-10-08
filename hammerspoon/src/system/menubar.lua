@@ -438,7 +438,7 @@ registerWithoutMenuBarManagers(misc.searchMenuBar, "Search Menu Bar", registerSe
 local items, selected, screen, overlay, watcher, clickTimer
 local mode = hs.hotkey.modal.new()
 
-function mode:exited()
+local function clearVisibleFocus()
   if watcher then watcher:stop() watcher = nil end
   if overlay then overlay:delete() overlay = nil end
   items, selected, screen = nil, nil, nil
@@ -466,9 +466,6 @@ local function move(delta)
   overlay:frame({ x = item.x, y = item.y, w = item.w, h = item.h })
 end
 
-mode:bind({}, "left", function() move(-1) end, nil, function() move(-1) end)
-mode:bind({}, "right", function() move(1) end, nil, function() move(1) end)
-mode:bind({}, "escape", function() mode:exit() end)
 -- Use the search menu's saved-order/neighbor mapping: Tahoe's window PID
 -- belongs to Control Center and Little Snitch exposes no AX status item.
 local function littleSnitchMenuBarItemPosition(item)
@@ -490,7 +487,7 @@ local function littleSnitchMenuBarItemPosition(item)
   return false
 end
 
-mode:bind({}, "return", function()
+local function activateVisibleItem()
   if not refresh() then return end
   local item = items[selected]
   mode:exit()
@@ -510,11 +507,11 @@ mode:bind({}, "return", function()
       leftClickAndRestore({ x = item.x + item.w / 2, y = item.y + item.h / 2 })
     end
   end)
-end)
+end
 
-local function moveFocusToStatusMenus()
+local function moveFocusToStatusMenus(targetScreen)
   if overlay then mode:exit() return end
-  screen = hs.mouse.getCurrentScreen()
+  screen = targetScreen or hs.mouse.getCurrentScreen()
   local ok, current = pcall(menuBarReveal.visibleItems, screen)
   if not ok or #current == 0 then
     screen = nil
@@ -552,9 +549,14 @@ local hiddenBar, hiddenEntries, hiddenSelected, hiddenScreen
 local validateHiddenReceiver
 local hiddenMouseWatcher, hiddenScreenWatcher, hiddenSpaceWatcher
 local hiddenAppWatcher, hiddenUpdateTimer
-local hiddenMode = hs.hotkey.modal.new()
+local hiddenMode = mode
+
+function mode:entered()
+  if hiddenBar then hiddenBar[2].action = overlay and "skip" or "fill" end
+end
 
 function hiddenMode:exited()
+  clearVisibleFocus()
   for _, observer in pairs({ hiddenMouseWatcher,
       hiddenScreenWatcher, hiddenSpaceWatcher, hiddenAppWatcher, hiddenUpdateTimer }) do
     observer:stop()
@@ -569,6 +571,7 @@ local function selectHiddenItem(index)
   if not hiddenBar or #hiddenEntries == 0 then return end
   hiddenSelected = (index - 1) % #hiddenEntries + 1
   hiddenBar[2].frame = hiddenEntries[hiddenSelected].cell
+  hiddenBar[2].action = overlay and "skip" or "fill"
 end
 
 local function activateHiddenItem(right)
@@ -587,12 +590,19 @@ local function activateHiddenItem(right)
 end
 
 hiddenMode:bind({}, "escape", function() hiddenMode:exit() end)
-hiddenMode:bind({}, "left", function() selectHiddenItem(hiddenSelected - 1) end,
-    nil, function() selectHiddenItem(hiddenSelected - 1) end)
-hiddenMode:bind({}, "right", function() selectHiddenItem(hiddenSelected + 1) end,
-    nil, function() selectHiddenItem(hiddenSelected + 1) end)
-hiddenMode:bind({}, "return", function() activateHiddenItem(false) end)
-hiddenMode:bind({ "alt" }, "return", function() activateHiddenItem(true) end)
+local function moveFocusedItem(delta)
+  if overlay then move(delta) else selectHiddenItem(hiddenSelected + delta) end
+end
+mode:bind({}, "left", function() moveFocusedItem(-1) end,
+    nil, function() moveFocusedItem(-1) end)
+mode:bind({}, "right", function() moveFocusedItem(1) end,
+    nil, function() moveFocusedItem(1) end)
+mode:bind({}, "return", function()
+  if overlay then activateVisibleItem() else activateHiddenItem(false) end
+end)
+mode:bind({ "alt" }, "return", function()
+  if not overlay then activateHiddenItem(true) end
+end)
 
 -- Validate just the displayed target, retaining its identity if the bar moved.
 validateHiddenReceiver = function(entry)
@@ -735,10 +745,11 @@ local function scheduleHiddenBarUpdate(_, event, app)
   hiddenUpdateTimer = hs.timer.doAfter(delays[attempt], check)
 end
 
-local function showHiddenStatusItems()
-  if hiddenBar then hiddenMode:exit() return end
-  if overlay then mode:exit() end
-  hiddenScreen = hs.mouse.getCurrentScreen()
+local function showHiddenStatusItems(targetScreen)
+  if hiddenBar and not targetScreen then hiddenMode:exit() return end
+  clearVisibleFocus()
+  if hiddenBar then selectHiddenItem(#hiddenEntries) return end
+  hiddenScreen = targetScreen or hs.mouse.getCurrentScreen()
   local ok, shown = pcall(renderHiddenBar)
   if not ok or not shown then
     hiddenMode:exit()
@@ -769,6 +780,17 @@ local function showHiddenStatusItems()
   hiddenSpaceWatcher = hs.spaces.watcher.new(function() hiddenMode:exit() end):start()
   hiddenAppWatcher = hs.application.watcher.new(scheduleHiddenBarUpdate):start()
 end
+
+hiddenMode:bind({}, "up", function()
+  if hiddenBar and not overlay then moveFocusToStatusMenus(hiddenScreen) end
+end)
+
+mode:bind({}, "down", function()
+  if not overlay then return end
+  local targetScreen = screen
+  showHiddenStatusItems(targetScreen)
+  if hiddenBar then selectHiddenItem(#hiddenEntries) end
+end)
 
 registerWithoutMenuBarManagers(misc.showHiddenStatusItems,
     "Show Hidden Status Items", showHiddenStatusItems,
