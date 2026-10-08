@@ -285,14 +285,15 @@ end
 
 -- Start the local HTTP server for clipboard sharing.
 local clipboardServerPassword = hs.settings.get("clipboardServerPassword")
-if type(clipboardServerPassword) == "string" and clipboardServerPassword:match("%S") then
+if hs.settings.get("clipboardServerEnabled") == true
+    and type(clipboardServerPassword) == "string" and clipboardServerPassword:match("%S") then
   -- HTTPS uses Hammerspoon's self-signed certificate; clients must trust it.
-  local useHTTPS = hs.settings.get("clipboardServerHTTPS") == true
+  local useHTTPS = hs.settings.get("clipboardServerHTTPS") ~= false
   local interface = hs.settings.get("clipboardServerInterface")
-  if type(interface) ~= "string" or interface == "" then interface = nil end
+  if type(interface) ~= "string" or not interface:match("%S") then interface = "loopback" end
   if not useHTTPS then
     hs.alert.show("Clipboard sharing uses unencrypted HTTP; use a trusted network or enable clipboardServerHTTPS.")
   end
-  HTTPServer = hs.httpserver.new(useHTTPS):setPort(8086):setPassword(clipboardServerPassword)
+  HTTPServer = hs.httpserver.new(useHTTPS, false):setPort(8086):setPassword(clipboardServerPassword)
       :setInterface(interface):setCallback(handleRequest):start()
 end
