@@ -14,6 +14,15 @@ function M.getIcon(autosaveName)
   end
 end
 
+function M.popupProxyMenu(icon)
+  for item in pairs(registeredItems) do
+    local frame, position = item:frame(), icon.AXPosition
+    if item:autosaveName() == "PROXY" and position and frame and math.abs(position.x - frame.x) < 3 then
+      return popupRightMenuBarItem(item, icon)
+    end
+  end
+end
+
 -- helpers for clicking menu bar items on the right side
 -- these utilities simulate mouse interactions on menu bar items,
 -- and are mainly used to work around limitations of AX.Press

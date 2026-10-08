@@ -5,7 +5,7 @@
 
 local menuBarReveal = require("utils.menubar_reveal")
 
-local function collectSearchMenuBarItems()
+local function scanSearchMenuBarItems()
   -- Collect menu bar items from all running applications.
   -- For each app, try to load autosaved status item identifiers
   -- and map them to accessibility menu bar elements if available.
@@ -148,6 +148,77 @@ local function unpositionedMenuBarItemPosition(menuBarItems, index)
   end
 end
 
+-- Shared by Search Menu Bar and the overflow bar. Only opening/refreshing a
+-- view may rebuild this inventory; activation never scans running applications.
+local menuBarInventory
+local function invalidateMenuBarInventory()
+  menuBarInventory = nil
+end
+registerApplicationCallback(function(_, event)
+  if event == hs.application.watcher.launched or event == hs.application.watcher.terminated then
+    invalidateMenuBarInventory()
+  end
+end)
+registerMonitorChangedCallback(invalidateMenuBarInventory)
+registerSpaceChangedCallback(invalidateMenuBarInventory)
+
+local function menuBarSignature(windows)
+  local records = {}
+  for _, w in ipairs(windows) do
+    records[#records + 1] = table.concat({ w.id, w.pid, w.x, w.y, w.w, w.h,
+      tostring(w.visible), tostring(w.notch) }, ":")
+  end
+  table.sort(records)
+  return table.concat(records, "|")
+end
+
+local function collectSearchMenuBarItems()
+  local windows = menuBarReveal.items()
+  local signature = menuBarSignature(windows)
+  if menuBarInventory and menuBarInventory.signature == signature then
+    return menuBarInventory.items, menuBarInventory.maps, menuBarInventory
+  end
+  local items, maps = scanSearchMenuBarItems()
+  if not items then invalidateMenuBarInventory() return end
+  -- AX collection may service events, so associate against fresh window geometry.
+  windows = menuBarReveal.items()
+  local inventory = { items = items, maps = maps, windows = windows,
+    signature = menuBarSignature(windows), targets = {} }
+  for index, pair in ipairs(items) do
+    local element, position, app = pair[1]
+    local p, size = element.AXPosition, element.AXSize
+    if p and size and size.w > 0 and size.h > 0 then
+      position = { x = p.x + size.w / 2, y = p.y + size.h / 2 }
+      local parent = element.AXParent and element.AXParent.AXParent
+      app = parent and parent:asHSApplication()
+    elseif not p then
+      app = element
+      position = unpositionedMenuBarItemPosition(items, index)
+    end
+    if app and position then
+      for _, w in ipairs(windows) do
+        if position.x >= w.x and position.x < w.x + w.w
+            and position.y >= w.y and position.y < w.y + w.h then
+          local old = inventory.targets[w.id]
+          if old then
+            old.ambiguous = true
+          else
+            inventory.targets[w.id] = { items = items, element = element,
+              hasAXPosition = p ~= nil, pid = app:pid(), hostPID = w.pid,
+              choice = { id = index, appid = app:bundleID() or app:name(),
+                extraPattern = { element.AXIdentifier or "" } } }
+          end
+        end
+      end
+    end
+  end
+  for id, target in pairs(inventory.targets) do
+    if target.ambiguous then inventory.targets[id] = nil end
+  end
+  menuBarInventory = inventory
+  return items, maps, inventory
+end
+
 local function activateSearchMenuBarChoice(menuBarItems, choice, right)
   if choice == nil then return end
   hs.timer.doAfter(0, function()
@@ -181,6 +252,7 @@ local function activateSearchMenuBarChoice(menuBarItems, choice, right)
     end
     if not leftClickAndRestore(item, find(choice.appid)) then
       if choice.appid == hs.settings.bundleID then
+        if require("utils.menubar").popupProxyMenu(item) then return end
         -- Avoid AX.Press on Hammerspoon's own menu; use the native click instead.
         if menuBarReveal.show(item) then return end
         hs.alert.show("Cannot trigger Hammerspoon menu bar item", 2)
@@ -477,7 +549,7 @@ end
 -- A mirror of overflow status items. Capture explicit window IDs without moving
 -- their real windows or changing their saved order in the system menu bar.
 local hiddenBar, hiddenEntries, hiddenSelected, hiddenScreen
-local resolveHiddenReceiver
+local validateHiddenReceiver
 local hiddenMouseWatcher, hiddenScreenWatcher, hiddenSpaceWatcher
 local hiddenAppWatcher, hiddenUpdateTimer
 local hiddenMode = hs.hotkey.modal.new()
@@ -505,7 +577,7 @@ local function activateHiddenItem(right)
   hiddenMode:exit()
   hs.timer.doAfter(0, function()
     local ok, activated = pcall(function()
-      local receiver = resolveHiddenReceiver(entry.window)
+      local receiver = validateHiddenReceiver(entry)
       if not receiver then return false end
       activateSearchMenuBarChoice(receiver.items, receiver.choice, right)
       return true
@@ -522,33 +594,36 @@ hiddenMode:bind({}, "right", function() selectHiddenItem(hiddenSelected + 1) end
 hiddenMode:bind({}, "return", function() activateHiddenItem(false) end)
 hiddenMode:bind({ "alt" }, "return", function() activateHiddenItem(true) end)
 
--- Resolve through the same inventory as Search Menu Bar, only after activation.
-resolveHiddenReceiver = function(window)
-  local menuItems = collectSearchMenuBarItems() or {}
-  local current = menuBarReveal.windowForID(window.id, window.pid)
-  if not current then return end
-  window = current
-  for index, pair in ipairs(menuItems) do
-    local item, position, app = pair[1]
-    local p, size = item.AXPosition, item.AXSize
-    if p and size and size.w > 0 and size.h > 0 then
-      position = { x = p.x + size.w / 2, y = p.y + size.h / 2 }
-      local parent = item.AXParent and item.AXParent.AXParent
-      app = parent and parent:asHSApplication()
-    elseif p == nil then
-      app = item
-      position = unpositionedMenuBarItemPosition(menuItems, index)
-    end
-    if app and position and position.x >= window.x and position.x < window.x + window.w
-        and position.y >= window.y and position.y < window.y + window.h then
-      return { items = menuItems, choice = { id = index, appid = app:bundleID() or app:name(),
-        extraPattern = { item.AXIdentifier or "" } } }
-    end
+-- Validate just the displayed target, retaining its identity if the bar moved.
+validateHiddenReceiver = function(entry)
+  local receiver = entry.receiver
+  local current = menuBarReveal.windowForID(entry.window.id, entry.window.pid)
+  if not receiver or not current or receiver.hostPID ~= current.pid then
+    invalidateMenuBarInventory() return
   end
+  local app = hs.application.applicationForPID(receiver.pid)
+  if not app or (app:bundleID() or app:name()) ~= receiver.choice.appid then
+    invalidateMenuBarInventory() return
+  end
+  local position
+  if receiver.hasAXPosition then
+    if not receiver.element:isValid() then invalidateMenuBarInventory() return end
+    local p, size = receiver.element.AXPosition, receiver.element.AXSize
+    if p and size then position = { x = p.x + size.w / 2, y = p.y + size.h / 2 } end
+  else
+    position = unpositionedMenuBarItemPosition(receiver.items, receiver.choice.id)
+  end
+  if not position or position.x < current.x or position.x >= current.x + current.w
+      or position.y < current.y or position.y >= current.y + current.h then
+    invalidateMenuBarInventory() return
+  end
+  return receiver
 end
 
-local function renderHiddenBar(windows)
-  windows = windows or menuBarReveal.hiddenItems(hiddenScreen)
+local function renderHiddenBar()
+  local _, _, inventory = collectSearchMenuBarItems()
+  if not inventory then hiddenMode:exit() return false end
+  local windows = menuBarReveal.hiddenItems(hiddenScreen, inventory.windows)
   if #windows == 0 then hiddenMode:exit() return false end
   local previous = hiddenEntries and hiddenEntries[hiddenSelected].window.id
   local entries, cached = {}, {}
@@ -557,7 +632,8 @@ local function renderHiddenBar(windows)
     local old = cached[window.id]
     local image = old and old.window.pid == window.pid
         and old.window.w == window.w and old.window.h == window.h and old.image
-    entries[#entries + 1] = { window = window, image = image or nil }
+    entries[#entries + 1] = { window = window, image = image or nil,
+      receiver = inventory.targets[window.id] }
   end
   local display = hiddenScreen:fullFrame()
   local maxWidth, padding = display.w - 20, 5
@@ -644,7 +720,7 @@ local function scheduleHiddenBarUpdate(_, event, app)
             or window.x ~= old.x or window.y ~= old.y
             or window.w ~= old.w or window.h ~= old.h then changed = true break end
       end
-      if changed then renderHiddenBar(windows) end
+      if changed then renderHiddenBar() end
     end)
     if not ok then
       hs.printf("Hidden status items update: %s", err)
