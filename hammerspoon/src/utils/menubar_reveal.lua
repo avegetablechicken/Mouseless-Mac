@@ -22,6 +22,10 @@ local function bridge()
 end
 
 -- Visible status windows also cover apps which expose no AX menu bar items.
+function M.items()
+  return bridge().list()
+end
+
 function M.visibleItems(screen)
   local frame = screen:fullFrame()
   local items = {}
@@ -38,9 +42,9 @@ function M.visibleItems(screen)
   return items
 end
 
-function M.hiddenItems(screen)
+function M.hiddenItems(screen, windows)
   local frame, items = screen:fullFrame(), {}
-  for _, w in ipairs(bridge().list()) do
+  for _, w in ipairs(windows or bridge().list()) do
     if w.w > 1 and w.h > 0 and w.y >= frame.y and w.y < frame.y + w.h
         and w.x < frame.x + frame.w
         and (not w.visible or w.notch or w.x < frame.x) then
