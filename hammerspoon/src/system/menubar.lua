@@ -18,7 +18,7 @@ local function scanSearchMenuBarItems()
       local appid = app:bundleID()
       if app:kind() < 0 and appid ~= "barrier"
           and appid ~= "cn.better365.iShotProHelper" then return false end
-      local isAllowed = allowedApps and allowedApps[appid] or true
+      local isAllowed = allowedApps and allowedApps[appid]
       local apath
       if isAllowed == nil and appid ~= "com.apple.WebKit.WebContent" then
         apath = app:path() or ""
@@ -28,14 +28,14 @@ local function scanSearchMenuBarItems()
           local info = hs.application.infoForBundlePath(appPath)
           if info and info.CFBundleIdentifier then
             local id = info.CFBundleIdentifier
-            isAllowed = allowedApps and allowedApps[id] or true
+            isAllowed = allowedApps and allowedApps[id]
           else
             isAllowed = false
           end
         end
       end
       if isAllowed ~= nil or apath ~= "" then
-        return isAllowed or false
+        return isAllowed ~= false
       end
       return true
     end)
