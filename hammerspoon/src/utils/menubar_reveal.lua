@@ -38,6 +38,30 @@ function M.visibleItems(screen)
   return items
 end
 
+function M.hiddenItems(screen)
+  local frame, items = screen:fullFrame(), {}
+  for _, w in ipairs(bridge().list()) do
+    if w.w > 1 and w.h > 0 and w.y >= frame.y and w.y < frame.y + w.h
+        and w.x < frame.x + frame.w
+        and (not w.visible or w.notch or w.x < frame.x) then
+      items[#items + 1] = w
+    end
+  end
+  table.sort(items, function(a, b) return a.x < b.x end)
+  return items
+end
+
+function M.windowForID(id, pid)
+  for _, window in ipairs(bridge().list()) do
+    if window.id == id and window.pid == pid then return window end
+  end
+end
+
+function M.snapshot(window)
+  local url = bridge().snapshot(window.id)
+  return url and hs.image.imageFromURL(url) or nil
+end
+
 local function identify(item, windows)
   local p, s = item and item.AXPosition, item and item.AXSize
   if not p or not s then return end
@@ -51,9 +75,30 @@ local function identify(item, windows)
   return found
 end
 
+local function pressWindow(window, pid, right)
+  local down, up = right and 3 or 1, right and 4 or 2
+  local mouse = hs.mouse.absolutePosition()
+  local x, y = window.x + window.w / 2, window.y + window.h / 2
+  busy = true
+  local pressed = native.send(down, x, y, window.id, pid)
+  if not pressed then
+    native.send(up, x, y, window.id, pid)
+    hs.mouse.absolutePosition(mouse)
+    busy = false
+    return false
+  end
+  clickTimer = hs.timer.doAfter(0.05, function()
+    local released = native.send(up, x, y, window.id, pid)
+    hs.mouse.absolutePosition(mouse)
+    busy, clickTimer = false, nil
+    if not released then hs.alert.show('Could not finish menu bar click') end
+  end)
+  return true
+end
+
 -- The native click is addressed to the status window, so a notch/overflow
 -- does not redirect the click to the menu bar background or another app.
-function M.show(item)
+function M.show(item, right)
   if busy then return true end
   if not item:isValid()
       or (hs.caffeinate.sessionProperties() or {}).CGSSessionScreenIsLocked then
@@ -67,23 +112,7 @@ function M.show(item)
   local owner = parent and parent:asHSApplication()
   if not owner then return false end
   local pid = owner:pid() -- Tahoe's host window belongs to Control Center, not the receiver.
-  local mouse = hs.mouse.absolutePosition()
-  local x, y = window.x + window.w / 2, window.y + window.h / 2
-  busy = true
-  local pressed = native.send(1, x, y, window.id, pid)
-  if not pressed then
-    native.send(2, x, y, window.id, pid)
-    hs.mouse.absolutePosition(mouse)
-    busy = false
-    return false
-  end
-  clickTimer = hs.timer.doAfter(0.05, function()
-    local released = native.send(2, x, y, window.id, pid)
-    hs.mouse.absolutePosition(mouse)
-    busy, clickTimer = false, nil
-    if not released then hs.alert.show('Could not finish menu bar click') end
-  end)
-  return true
+  return pressWindow(window, pid, right)
 end
 
 return M

@@ -730,6 +730,16 @@ local MENUBAR_MANAGER_SHOW = {
   "com.mortennn.Dozer",
 }
 
+-- Share the reveal adapter inventory with manager-aware hotkey registration.
+function M.getManagerBundleIDs()
+  local ids = {}
+  for appid, handler in pairs(MENUBAR_MANAGER_SHOW) do
+    ids[#ids + 1] = type(handler) == 'string' and handler or appid
+  end
+  table.sort(ids)
+  return ids
+end
+
 -- Detect which menu bar manager is actually active/visible
 local function getValidMenuBarManager()
   -- Leftmost screen x coordinate: used to decide if an item is "hidden"
