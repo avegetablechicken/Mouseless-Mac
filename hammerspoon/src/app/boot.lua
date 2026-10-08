@@ -555,6 +555,7 @@ function updateAppLocale(app)
       resetLocalizationMap(appid)
       localizeCommonMenuItemTitles(A_AppLocale, appid)
       unregisterRunningAppHotKeys(appid, true)
+      registerRunningAppHotKeys(appid)
       return true
     end
   end
