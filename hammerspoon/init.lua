@@ -14,6 +14,18 @@
 -- Track startup time for profiling and diagnostics.
 local t = hs.timer.absoluteTime()
 
+-- Dispose of chooser windows before their Lua callbacks are destroyed.
+local choosers, newChooser = setmetatable({}, { __mode = "k" }), hs.chooser.new
+hs.chooser.new = function(...)
+  local chooser = newChooser(...)
+  choosers[chooser] = true
+  return chooser
+end
+hs.shutdownCallback = function()
+  for chooser in pairs(choosers) do
+    if getmetatable(chooser) then chooser:hide(); chooser:delete() end
+  end
+end
 -- Global runtime flags.
 FLAGS = {}
 FLAGS["LOADING"] = true
