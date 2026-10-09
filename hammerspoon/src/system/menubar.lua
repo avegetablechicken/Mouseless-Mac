@@ -487,13 +487,14 @@ local function littleSnitchMenuBarItemPosition(item)
   return false
 end
 
-local function activateVisibleItem()
+local function activateVisibleItem(right)
   if not refresh() then return end
   local item = items[selected]
   mode:exit()
   hs.timer.doAfter(0, function()
     local position = littleSnitchMenuBarItemPosition(item)
-    if position then
+    if position or right then
+      position = position or { x = item.x + item.w / 2, y = item.y + item.h / 2 }
       -- Keep the run loop servicing event taps between mouse down and up.
       local mouse = hs.mouse.absolutePosition()
       local event, types = hs.eventtap.event, hs.eventtap.event.types
@@ -601,7 +602,7 @@ mode:bind({}, "return", function()
   if overlay then activateVisibleItem() else activateHiddenItem(false) end
 end)
 mode:bind({ "alt" }, "return", function()
-  if not overlay then activateHiddenItem(true) end
+  if overlay then activateVisibleItem(true) else activateHiddenItem(true) end
 end)
 
 -- Validate just the displayed target, retaining its identity if the bar moved.
