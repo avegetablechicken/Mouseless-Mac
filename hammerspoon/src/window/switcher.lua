@@ -60,7 +60,6 @@ function M.new(options, runtime)
       self.inventoryTimer = h.timer.doAfter(0.02, function() self:rebuild() end)
   end)
   self:rebuild()
-  self:layout()
   self.pollTimer = h.timer.doEvery(0.05, function()
     if self.active then
       local flags = h.eventtap.checkKeyboardModifiers()
@@ -218,13 +217,13 @@ function Engine:layout()
   local cellWidth, cellHeight, gridY = 300*scale, 230*scale, 16
   local width, height = columns * cellWidth + 24, gridY + grid.visibleRows * cellHeight + 26
   local frame = {x=screen.x+(screen.w-width)/2,y=screen.y+(screen.h-height)/2,w=width,h=height}
-  local key = table.concat({count,cellWidth,columns,rows}, ':')
+  local key = table.concat({count,cellWidth,columns,rows,frame.x,frame.y}, ':')
+  if self.layoutKey == key then return end
   self.canvas:frame(frame)
   self.capture.positionGlass(frame.x, frame.y, frame.w, frame.h)
   self.columns, self.rows, self.visibleRows = columns, rows, grid.visibleRows
   self.cellWidth, self.cellHeight, self.scale = cellWidth, cellHeight, scale
   self.scrollRow = math.max(0, math.min(self.scrollRow or 0, rows-grid.visibleRows))
-  if self.layoutKey == key then return end
   self.layoutKey = key
   self.slots = math.max(self.slots or 0, math.min(count, 30))
   local elements = {

@@ -243,7 +243,9 @@ static int poll(lua_State *L) {
 }
 
 static int reset(lua_State *L) {
-    [glassPanel close]; glassPanel = nil;
+    // This native-only view and its mask hold no Lua references. The pinned module
+    // can reuse it across Lua-state reloads instead of rebuilding the backdrop.
+    [glassPanel orderOut:nil];
     @synchronized(lock) { generation++; [pending removeAllObjects]; [completed removeAllObjects]; }
     // An in-flight OS request may finish, but its generation cannot enter the new cache.
     return 0;

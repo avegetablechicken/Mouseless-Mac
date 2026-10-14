@@ -130,3 +130,19 @@ clang -fobjc-arc -O2 -framework Cocoa tests/window_capture_image_spec.m \
   -L/opt/homebrew/lib -llua -o /tmp/hammerspoon-capture-image-spec
 /tmp/hammerspoon-capture-image-spec
 ```
+
+## Initialization optimization
+
+Initialization still happens during configuration loading, not on the first key
+press. Unchanged layouts avoid native positioning calls, and startup no longer
+runs layout twice. The native backdrop contains no Lua references and belongs to
+the pinned capture library, so reset hides and reuses that single panel across Lua
+configuration reloads. Screenshot queues and generations still reset; Lua-owned
+canvases, filters and timers are disposed normally. A full application restart
+still needs the first native panel creation.
+
+A same-process, same-count comparison (five windows including minimized windows)
+measured 295.8 ms before and 225.9 ms after for switcher initialization. Backdrop
+work changed from 75.5 ms to 0.017 ms; window-filter subscription remained near
+200 ms. These are individual instrumented reload samples, not a cold-process
+startup benchmark; AX-query latency varies. Profiling code was removed afterward.

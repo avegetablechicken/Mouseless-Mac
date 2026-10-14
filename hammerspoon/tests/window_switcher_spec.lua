@@ -13,6 +13,7 @@ local function fixture(count)
   local timers, results, requests, windows, activated = {}, {}, {}, {}, {}
   local now, queries, shown, allocations = 100, 0, 0, 0
   local heldModifiers = {alt=true}
+  local screenFrame = {x=0,y=0,w=1440,h=900}
   local h = {window={filter={}}, eventtap={event={types={keyDown=1,flagsChanged=2,scrollWheel=3},properties={keyboardEventAutorepeat=1,scrollWheelEventIsContinuous=2,scrollWheelEventPointDeltaAxis1=3,scrollWheelEventDeltaAxis1=4}}},
     keycodes={map={escape=53,tab=48,['`']=50,left=123,right=124,up=126,down=125}}, canvas={windowLevels={overlay=1}}, image={}, screen={}, timer={}}
   for _, name in ipairs({'windowsChanged','windowFocused','windowTitleChanged','windowMinimized',
@@ -31,7 +32,7 @@ local function fixture(count)
   function h.timer.absoluteTime() return now*1e9 end
   function h.eventtap.new(_,fn) return timer(fn) end
   function h.eventtap.checkKeyboardModifiers() return heldModifiers end
-  function h.screen.mainScreen() return {frame=function() return {x=0,y=0,w=1440,h=900} end} end
+  function h.screen.mainScreen() return {frame=function() return screenFrame end} end
   h.screen.watcher={new=function(fn) return timer(fn) end}
   function h.image.imageFromAppBundle(id) return 'icon:'..id end
   function h.image.imageFromName(id) return 'fallback:'..id end
@@ -55,7 +56,7 @@ local function fixture(count)
   local capture={}
   function capture.request(id,token,priority) requests[#requests+1]={id=id,token=token,priority=priority}; return true end
   function capture.poll() local batch=results; results={}; return batch end
-  function capture.positionGlass(x,y,w,h) capture.frame={x=x,y=y,w=w,h=h} end
+  function capture.positionGlass(x,y,w,h) capture.positions=(capture.positions or 0)+1;capture.frame={x=x,y=y,w=w,h=h} end
   function capture.showGlass() capture.visible=true end
   function capture.hideGlass() capture.visible=false end
   function capture.reset() capture.resetCalled=true end
@@ -85,6 +86,7 @@ local function fixture(count)
     result=function(v) results[#results+1]=v end,
     advance=function(s) now=now+s end,
     modifiers=function(flags) heldModifiers=flags end,
+    screen=function(frame) screenFrame=frame end,
     counts=function() return queries,shown,allocations end,
     event=function(kind,key,flags,repeated) return {getType=function() return kind end,getKeyCode=function() return key end,
       getFlags=function() return flags or {} end,getProperty=function() return repeated and 1 or 0 end} end}
@@ -420,6 +422,16 @@ test('a new session or disposal cancels any pending activation',function()
   assert(pending.stopped)
   e:finish(true);pending=e.focusTimer;e:delete()
   assert(pending.stopped and #f.activated==0)
+end)
+
+test('unchanged layouts skip native positioning but monitor moves still update geometry',function()
+  local f=fixture(12);local e=f.engine
+  assert(f.capture.positions==1)
+  e:layout();e:layout();assert(f.capture.positions==1)
+  e:cycle('normal',1,false,{'alt'});assert(f.capture.positions==1)
+  local previousX=f.capture.frame.x
+  f.screen({x=1440,y=0,w=1440,h=900});e:layout()
+  assert(f.capture.positions==2 and f.capture.frame.x==previousX+1440)
 end)
 
 print(passed .. ' tests passed')
