@@ -747,6 +747,26 @@ local nextWindowHotkey, lastWindowHotkey
 local anotherLastWindowHotkey, minimizedLastWindowHotkey
 local anotherLastWindowModifierTap
 
+-- hs.window.switcher has no cancel API; stop its timers before hiding its drawings.
+local function cancelWindowSwitcher(activeSwitcher)
+  if activeSwitcher == nil then return end
+  if activeSwitcher.modsTimer then activeSwitcher.modsTimer:stop() end
+  if activeSwitcher.drawDelayed then activeSwitcher.drawDelayed:stop() end
+  activeSwitcher.selected = nil
+  activeSwitcher.windows = nil
+  activeSwitcher.modsTimer = nil
+  local drawings = activeSwitcher.drawings
+  for _, name in ipairs({ "background", "highlightRect", "selRect", "selThumb",
+      "selIcon", "selTitleRect", "selTitleText" }) do
+    if drawings[name] then drawings[name]:hide() end
+  end
+  for _, drawing in ipairs(drawings) do
+    for _, name in ipairs({ "icon", "thumb", "titleRect", "titleText" }) do
+      if drawing[name] then drawing[name]:hide() end
+    end
+  end
+end
+
 local function registerWindowSwitcher()
   local function previousWindow()
     if windowSwitcherWindowNumber > 0 then
@@ -789,10 +809,16 @@ local function registerWindowSwitcher()
     end
   end
 
-  anotherLastWindowModifierTap = hs.eventtap.new({ hs.eventtap.event.types.flagsChanged },
-  function(event)
+  anotherLastWindowModifierTap = hs.eventtap.new({
+    hs.eventtap.event.types.flagsChanged, hs.eventtap.event.types.keyDown
+  }, function(event)
+    local cancelled = event:getType() == hs.eventtap.event.types.keyDown
+    if cancelled then
+      if event:getKeyCode() ~= hs.keycodes.map.escape then return false end
+      cancelWindowSwitcher(switcher)
+    end
     local flags = event:getFlags()
-    if not flags:contain(lastWindowMods) then
+    if cancelled or not flags:contain(lastWindowMods) then
       hotkeyEnabledByWindowSwitcher = false
       FLAGS["SUSPEND"] = false
       if anotherLastWindowHotkey ~= nil then
@@ -806,7 +832,7 @@ local function registerWindowSwitcher()
       windowSwitcherWindowIdx = nil
       windowSwitcherWindowNumber = nil
     end
-    return false
+    return cancelled
   end)
 
   nextWindowHotkey = bindWindowSwitch(misc["switchWindow"], 'Next Window',
@@ -1027,10 +1053,16 @@ if misc["switchBrowserWindow"] ~= nil then
     end
   end
 
-  anotherLastBrowserModifierTap = hs.eventtap.new({ hs.eventtap.event.types.flagsChanged },
-  function(event)
+  anotherLastBrowserModifierTap = hs.eventtap.new({
+    hs.eventtap.event.types.flagsChanged, hs.eventtap.event.types.keyDown
+  }, function(event)
+    local cancelled = event:getType() == hs.eventtap.event.types.keyDown
+    if cancelled then
+      if event:getKeyCode() ~= hs.keycodes.map.escape then return false end
+      cancelWindowSwitcher(switcher_browsers)
+    end
     local flags = event:getFlags()
-    if not flags:contain(lastBrowserWindowMods) then
+    if cancelled or not flags:contain(lastBrowserWindowMods) then
       hotkeyEnabledByWindowSwitcher = false
       FLAGS["SUSPEND"] = false
       if anotherLastBrowserHotkey ~= nil then
@@ -1041,7 +1073,7 @@ if misc["switchBrowserWindow"] ~= nil then
       windowSwitcherWindowIdx = nil
       windowSwitcherWindowNumber = nil
     end
-    return false
+    return cancelled
   end)
 
   bindWindowSwitch(misc["switchBrowserWindow"], 'Next Browser Window',
