@@ -684,17 +684,6 @@ local function bindWindowSwitch(...)
   return hotkey
 end
 
-local function runningAppDisplayNames(bundleIDs)
-  local appnames = {}
-  for _, bundleID in ipairs(bundleIDs) do
-    local app = find(bundleID)
-    if app ~= nil then
-      table.insert(appnames, app:name())
-    end
-  end
-  return appnames
-end
-
 -- Applications to be excluded from the window switcher.
 --
 -- The configuration supports two forms:
@@ -722,439 +711,98 @@ do
   end
 end
 
-local switcher
-local switcherIncludesMinimized = false
-
--- Indicates whether hotkeys are currently "owned" by the window switcher.
---
--- When true:
---   - Certain hotkeys are conditionally enabled
---   - Global hotkey handling may be suspended
---
--- This flag is toggled dynamically while the modifier key is held,
--- and is reset as soon as the modifier is released.
+-- Keep the inventory, canvas, icons and thumbnails alive between invocations.
+local browserBundleIDs = {
+  "com.apple.Safari", "com.google.Chrome",
+  "com.microsoft.edgemac", "com.microsoft.edgemac.Dev",
+}
+local browserSet = {}; for _, id in ipairs(browserBundleIDs) do browserSet[id] = true end
 local hotkeyEnabledByWindowSwitcher = false
-local function enabledByWindowSwitcherFunc()
-  return hotkeyEnabledByWindowSwitcher
-end
+local function enabledByWindowSwitcherFunc() return hotkeyEnabledByWindowSwitcher end
+local backHotkeys, generalHotkeys = {}, {}
+local engine
 
-local windowSwitcherWindowIdx = nil
-local windowSwitcherWindowNumber = nil
-local nextWindowHotkey, lastWindowHotkey
--- Hotkey triggered by the "back" action while switching windows.
--- This exists separately from the normal backward hotkey so it can
--- be enabled only during active window switching
-local anotherLastWindowHotkey, minimizedLastWindowHotkey
-local anotherLastWindowModifierTap
-
--- hs.window.switcher has no cancel API; stop its timers before hiding its drawings.
-local function cancelWindowSwitcher(activeSwitcher)
-  if activeSwitcher == nil then return end
-  if activeSwitcher.modsTimer then activeSwitcher.modsTimer:stop() end
-  if activeSwitcher.drawDelayed then activeSwitcher.drawDelayed:stop() end
-  activeSwitcher.selected = nil
-  activeSwitcher.windows = nil
-  activeSwitcher.modsTimer = nil
-  local drawings = activeSwitcher.drawings
-  for _, name in ipairs({ "background", "highlightRect", "selRect", "selThumb",
-      "selIcon", "selTitleRect", "selTitleText" }) do
-    if drawings[name] then drawings[name]:hide() end
-  end
-  for _, drawing in ipairs(drawings) do
-    for _, name in ipairs({ "icon", "thumb", "titleRect", "titleText" }) do
-      if drawing[name] then drawing[name]:hide() end
-    end
+local function updateSwitcherHotkeys(active, mode)
+  hotkeyEnabledByWindowSwitcher = active
+  FLAGS["SUSPEND"] = active
+  for key, hotkey in pairs(backHotkeys) do
+    local browserKey = key == "switchBrowserWindowBackTriggered"
+    if active and browserKey == (mode == 'browsers') then hotkey:enable()
+    else hotkey:disable() end
   end
 end
 
+local filter = hs.window.filter.new():setDefaultFilter({})
+local function configureSwitcherApp(app)
+  if not app then return end
+  local rule = ignoredApps[app:bundleID()]
+  if rule ~= nil then filter:setAppFilter(app:name(), rule) end
+end
+for _, app in ipairs(hs.application.runningApplications()) do configureSwitcherApp(app) end
+engine = require('window.switcher').new({
+  filter = filter, browsers = browserSet, onActiveChange = updateSwitcherHotkeys,
+})
+local switcherAppWatcher = hs.application.watcher.new(function(_, event, app)
+  if event == hs.application.watcher.launched then configureSwitcherApp(app) end
+end):start()
+
+local function requiredModifiers(spec)
+  local mods = spec.mods
+  if type(mods) == 'string' then mods = {mods} end
+  local aliases = {option='alt', control='ctrl', command='cmd'}
+  local result = {}
+  for _, mod in ipairs(mods) do result[#result+1] = aliases[mod] or mod end
+  return result
+end
+local normalModifiers = misc["switchWindow"] and requiredModifiers(misc["switchWindow"])
+local browserModifiers = misc["switchBrowserWindow"] and requiredModifiers(misc["switchBrowserWindow"])
+local function navigate(mode, direction, repeated)
+  engine:cycle(mode, direction, repeated, mode == 'browsers' and browserModifiers or normalModifiers)
+end
+local function bindSwitcher(key, message, mode, direction, sessionOnly)
+  local function action(repeated)
+    local step = direction
+    -- Shift+Alt+Tab reverses the ordinary list, but advances the minimized list.
+    if key == 'switchWindowBack' and engine.active and engine.mode == 'normal' then step = -1 end
+    if sessionOnly and not engine.active then return end
+    navigate(mode, step, repeated)
+  end
+  local binder = sessionOnly and newWindowSwitch or bindWindowSwitch
+  return binder(misc[key], message, function() action(false) end, nil,
+    function() action(true) end, {fn=enabledByWindowSwitcherFunc, or_=true})
+end
 local function registerWindowSwitcher()
-  local function previousWindow()
-    if windowSwitcherWindowNumber > 0 then
-      windowSwitcherWindowIdx = windowSwitcherWindowIdx - 1
-      if windowSwitcherWindowIdx == 0 then
-        windowSwitcherWindowIdx = windowSwitcherWindowNumber
-      end
-    end
-    switcher:previous()
-  end
-  local function repeatPreviousWindow()
-    if windowSwitcherWindowIdx > 1 then
-      windowSwitcherWindowIdx = windowSwitcherWindowIdx - 1
-      switcher:previous()
-    end
-  end
-  anotherLastWindowHotkey =
-  newWindowSwitch(misc["switchWindowBackTriggered"], 'Previous Window',
-    previousWindow, nil, repeatPreviousWindow,
-    { fn = enabledByWindowSwitcherFunc, or_ = true })
-  minimizedLastWindowHotkey =
-  newWindowSwitch(misc["switchMinimizedWindowBackTriggered"], 'Previous Window',
-    previousWindow, nil, repeatPreviousWindow,
-    { fn = enabledByWindowSwitcherFunc, or_ = true })
-
-  local _lastWindowMods = misc["switchWindow"].mods
-  if type(_lastWindowMods) == 'string' then
-    _lastWindowMods = { _lastWindowMods }
-  end
-  local lastWindowMods = {}
-  for _, mod in ipairs(_lastWindowMods) do
-    if mod == Mod.Cmd.Long then
-      tinsert(lastWindowMods, Mod.Cmd.Short)
-    elseif mod == Mod.Alt.Long then
-      tinsert(lastWindowMods, Mod.Alt.Short)
-    elseif mod == Mod.Ctrl.Long then
-      tinsert(lastWindowMods, Mod.Ctrl.Short)
-    elseif mod == Mod.Shift.Long then
-      tinsert(lastWindowMods, Mod.Shift.Short)
-    end
-  end
-
-  anotherLastWindowModifierTap = hs.eventtap.new({
-    hs.eventtap.event.types.flagsChanged, hs.eventtap.event.types.keyDown
-  }, function(event)
-    local cancelled = event:getType() == hs.eventtap.event.types.keyDown
-    if cancelled then
-      if event:getKeyCode() ~= hs.keycodes.map.escape then return false end
-      cancelWindowSwitcher(switcher)
-    end
-    local flags = event:getFlags()
-    if cancelled or not flags:contain(lastWindowMods) then
-      hotkeyEnabledByWindowSwitcher = false
-      FLAGS["SUSPEND"] = false
-      if anotherLastWindowHotkey ~= nil then
-        anotherLastWindowHotkey:disable()
-      end
-      if minimizedLastWindowHotkey ~= nil then
-        minimizedLastWindowHotkey:disable()
-      end
-      anotherLastWindowModifierTap:stop()
-      switcher = nil
-      windowSwitcherWindowIdx = nil
-      windowSwitcherWindowNumber = nil
-    end
-    return cancelled
-  end)
-
-  nextWindowHotkey = bindWindowSwitch(misc["switchWindow"], 'Next Window',
-  function()
-    if not anotherLastWindowModifierTap:isEnabled() then
-      hotkeyEnabledByWindowSwitcher = true
-      FLAGS["SUSPEND"] = true
-      if anotherLastWindowHotkey ~= nil then
-        anotherLastWindowHotkey:enable()
-      end
-      if minimizedLastWindowHotkey ~= nil then
-        minimizedLastWindowHotkey:enable()
-      end
-      anotherLastWindowModifierTap:start()
-    end
-    if switcher == nil then
-      switcherIncludesMinimized = false
-      local filter = hs.window.filter.new()
-        for appid, rule in pairs(ignoredApps) do
-        if find(appid) then
-          filter:setAppFilter(find(appid):name(), rule)
-        end
-      end
-      switcher = hs.window.switcher.new(filter)
-    end
-    switcher:next()
-    if windowSwitcherWindowIdx == nil then
-      windowSwitcherWindowNumber = 0
-      for _, _ in pairs(switcher.wf.windows) do
-        windowSwitcherWindowNumber = windowSwitcherWindowNumber + 1
-      end
-      if windowSwitcherWindowNumber > 1 then
-        windowSwitcherWindowIdx = 2
-      else
-        windowSwitcherWindowIdx = windowSwitcherWindowNumber
-      end
-    else
-      windowSwitcherWindowIdx = windowSwitcherWindowIdx + 1
-      if windowSwitcherWindowIdx > windowSwitcherWindowNumber then
-        windowSwitcherWindowIdx = 1
-      end
-    end
-  end,
-  nil,
-  function()
-    if windowSwitcherWindowIdx ~= windowSwitcherWindowNumber then
-      windowSwitcherWindowIdx = windowSwitcherWindowIdx + 1
-      switcher:next()
-    end
-  end,
-  { fn = enabledByWindowSwitcherFunc, or_ = true })
-
-  lastWindowHotkey = bindWindowSwitch(misc["switchWindowBack"], 'Next Window (Including Minimized)',
-  function()
-    if switcher ~= nil and not switcherIncludesMinimized then
-      previousWindow()
-      return
-    end
-    if not anotherLastWindowModifierTap:isEnabled() then
-      hotkeyEnabledByWindowSwitcher = true
-      FLAGS["SUSPEND"] = true
-      if anotherLastWindowHotkey ~= nil then
-        anotherLastWindowHotkey:enable()
-      end
-      if minimizedLastWindowHotkey ~= nil then
-        minimizedLastWindowHotkey:enable()
-      end
-      anotherLastWindowModifierTap:start()
-    end
-    if switcher == nil then
-      switcherIncludesMinimized = true
-      local filter = hs.window.filter.new():setDefaultFilter({})
-      for appid, rule in pairs(ignoredApps) do
-        if find(appid) then
-          filter:setAppFilter(find(appid):name(), rule)
-        end
-      end
-      -- Include minimized windows, but keep hidden applications excluded.
-      local minimizedFilter = hs.window.filter.new(function(win)
-        local app = win:application()
-        return app ~= nil and not app:isHidden()
-            and (win:isVisible() or win:isMinimized())
-            and filter:isWindowAllowed(win)
-      end)
-      switcher = hs.window.switcher.new(minimizedFilter)
-    end
-    switcher:next()
-    if windowSwitcherWindowIdx == nil then
-      windowSwitcherWindowNumber = 0
-      for _, _ in pairs(switcher.wf.windows) do
-        windowSwitcherWindowNumber = windowSwitcherWindowNumber + 1
-      end
-      if windowSwitcherWindowNumber > 1 then
-        windowSwitcherWindowIdx = 2
-      else
-        windowSwitcherWindowIdx = windowSwitcherWindowNumber
-      end
-    else
-      windowSwitcherWindowIdx = windowSwitcherWindowIdx + 1
-      if windowSwitcherWindowIdx > windowSwitcherWindowNumber then
-        windowSwitcherWindowIdx = 1
-      end
-    end
-  end,
-  nil,
-  function()
-    if switcher ~= nil and not switcherIncludesMinimized then
-      repeatPreviousWindow()
-      return
-    end
-    if windowSwitcherWindowIdx ~= windowSwitcherWindowNumber then
-      windowSwitcherWindowIdx = windowSwitcherWindowIdx + 1
-      switcher:next()
-    end
-  end,
-  { fn = enabledByWindowSwitcherFunc, or_ = true })
+  generalHotkeys.next = bindSwitcher('switchWindow', 'Next Window', 'normal', 1)
+  generalHotkeys.minimized = bindSwitcher('switchWindowBack', 'Next Window (Including Minimized)', 'minimized', 1)
+  backHotkeys.switchWindowBackTriggered = bindSwitcher('switchWindowBackTriggered', 'Previous Window', 'normal', -1, true)
+  backHotkeys.switchMinimizedWindowBackTriggered = bindSwitcher('switchMinimizedWindowBackTriggered', 'Previous Window', 'minimized', -1, true)
 end
-
 local function unregisterWindowSwitcher()
-  if nextWindowHotkey ~= nil then
-    nextWindowHotkey:delete()
-    nextWindowHotkey = nil
-  end
-  if lastWindowHotkey ~= nil then
-    lastWindowHotkey:delete()
-    lastWindowHotkey = nil
-  end
-  if anotherLastWindowHotkey ~= nil then
-    anotherLastWindowHotkey:delete()
-    anotherLastWindowHotkey = nil
-  end
-  if minimizedLastWindowHotkey ~= nil then
-    minimizedLastWindowHotkey:delete()
-    minimizedLastWindowHotkey = nil
-  end
-  windowSwitcherWindowIdx = nil
-  windowSwitcherWindowNumber = nil
-  switcher = nil
-  if anotherLastWindowModifierTap ~= nil then
-    anotherLastWindowModifierTap:stop()
-    anotherLastWindowModifierTap = nil
+  if engine.active and engine.mode ~= 'browsers' then engine:finish(false) end
+  for key, hotkey in pairs(generalHotkeys) do hotkey:delete(); generalHotkeys[key] = nil end
+  for _, key in ipairs({'switchWindowBackTriggered', 'switchMinimizedWindowBackTriggered'}) do
+    if backHotkeys[key] then backHotkeys[key]:delete(); backHotkeys[key] = nil end
   end
 end
-
--- Disable the built-in window switcher when an external one (e.g. AltTab)
--- is running, and re-enable it when the external switcher exits.
---
--- This avoids conflicting behaviors and duplicate hotkey handling.
-if misc["switchWindow"] ~= nil then
+if misc["switchWindow"] then
   local altTabBundleID = "com.lwouis.alt-tab-macos"
-  if find(altTabBundleID) == nil then
-    registerWindowSwitcher()
-  else
-    ExecOnSilentQuit(altTabBundleID, registerWindowSwitcher)
-  end
+  if find(altTabBundleID) == nil then registerWindowSwitcher()
+  else ExecOnSilentQuit(altTabBundleID, registerWindowSwitcher) end
   ExecOnSilentLaunch(altTabBundleID, function()
     unregisterWindowSwitcher()
     ExecOnSilentQuit(altTabBundleID, registerWindowSwitcher)
   end)
 end
-
-
--- Browser window switcher.
---
--- This section implements a dedicated window/tab switcher for browsers.
--- Unlike the general window switcher, this one:
---   - Restricts scope to a predefined set of browser bundle IDs
---   - Treats browser windows as a separate navigation domain
---
--- Known limitations:
--- - Fullscreen browser windows are ignored unless previously focused
-
-local browserBundleIDs = {
-  "com.apple.Safari",
-  "com.google.Chrome",
-  "com.microsoft.edgemac",
-  "com.microsoft.edgemac.Dev",
-}
-local switcher_browsers
-
-local anotherLastBrowserHotkey
-local anotherLastBrowserModifierTap
-
-if misc["switchBrowserWindow"] ~= nil then
-  anotherLastBrowserHotkey =
-  newWindowSwitch(misc["switchBrowserWindowBackTriggered"], 'Previous Browser Window',
-  function()
-    if windowSwitcherWindowNumber > 0 then
-      windowSwitcherWindowIdx = windowSwitcherWindowIdx - 1
-      if windowSwitcherWindowIdx == 0 then
-        windowSwitcherWindowIdx = windowSwitcherWindowNumber
-      end
-    end
-    switcher_browsers:previous()
-  end, nil,
-  function()
-    if windowSwitcherWindowIdx > 1 then
-      windowSwitcherWindowIdx = windowSwitcherWindowIdx - 1
-      switcher_browsers:previous()
-    end
-  end,
-  { fn = enabledByWindowSwitcherFunc, or_ = true })
-
-  local _lastBrowserWindowMods = misc["switchBrowserWindow"].mods
-  if type(_lastBrowserWindowMods) == 'string' then
-    _lastBrowserWindowMods = { _lastBrowserWindowMods }
-  end
-  local lastBrowserWindowMods = {}
-  for _, mod in ipairs(_lastBrowserWindowMods) do
-    if mod == Mod.Cmd.Long then
-      tinsert(lastBrowserWindowMods, Mod.Cmd.Short)
-    elseif mod == Mod.Alt.Long then
-      tinsert(lastBrowserWindowMods, Mod.Alt.Short)
-    elseif mod == Mod.Ctrl.Long then
-      tinsert(lastBrowserWindowMods, Mod.Ctrl.Short)
-    elseif mod == Mod.Shift.Long then
-      tinsert(lastBrowserWindowMods, Mod.Shift.Short)
-    end
-  end
-
-  anotherLastBrowserModifierTap = hs.eventtap.new({
-    hs.eventtap.event.types.flagsChanged, hs.eventtap.event.types.keyDown
-  }, function(event)
-    local cancelled = event:getType() == hs.eventtap.event.types.keyDown
-    if cancelled then
-      if event:getKeyCode() ~= hs.keycodes.map.escape then return false end
-      cancelWindowSwitcher(switcher_browsers)
-    end
-    local flags = event:getFlags()
-    if cancelled or not flags:contain(lastBrowserWindowMods) then
-      hotkeyEnabledByWindowSwitcher = false
-      FLAGS["SUSPEND"] = false
-      if anotherLastBrowserHotkey ~= nil then
-        anotherLastBrowserHotkey:disable()
-      end
-      anotherLastBrowserModifierTap:stop()
-      switcher_browsers = nil
-      windowSwitcherWindowIdx = nil
-      windowSwitcherWindowNumber = nil
-    end
-    return cancelled
-  end)
-
-  bindWindowSwitch(misc["switchBrowserWindow"], 'Next Browser Window',
-  function()
-    if not anotherLastBrowserModifierTap:isEnabled() then
-      hotkeyEnabledByWindowSwitcher = true
-      FLAGS["SUSPEND"] = true
-      if anotherLastBrowserHotkey ~= nil then
-        anotherLastBrowserHotkey:enable()
-      end
-      anotherLastBrowserModifierTap:start()
-    end
-    if switcher_browsers == nil then
-      switcher_browsers = hs.window.switcher.new(runningAppDisplayNames(browserBundleIDs))
-    end
-    switcher_browsers:next()
-    if windowSwitcherWindowIdx == nil then
-      windowSwitcherWindowNumber = 0
-      for _, _ in pairs(switcher_browsers.wf.windows) do
-        windowSwitcherWindowNumber = windowSwitcherWindowNumber + 1
-      end
-      if windowSwitcherWindowNumber > 1 then
-        windowSwitcherWindowIdx = 2
-      else
-        windowSwitcherWindowIdx = windowSwitcherWindowNumber
-      end
-    else
-      if windowSwitcherWindowNumber > 1 then
-        windowSwitcherWindowIdx = windowSwitcherWindowIdx + 1
-        if windowSwitcherWindowIdx > windowSwitcherWindowNumber then
-          windowSwitcherWindowIdx = 1
-        end
-      end
-    end
-  end,
-  nil,
-  function()
-    if windowSwitcherWindowIdx ~= windowSwitcherWindowNumber then
-      windowSwitcherWindowIdx = windowSwitcherWindowIdx + 1
-      switcher_browsers:next()
-    end
-  end,
-  { fn = enabledByWindowSwitcherFunc, or_ = true })
-
-  bindWindowSwitch(misc["switchBrowserWindowBack"], 'Previous Browser Window',
-  function()
-    if not anotherLastBrowserModifierTap:isEnabled() then
-      hotkeyEnabledByWindowSwitcher = true
-      FLAGS["SUSPEND"] = true
-      if anotherLastBrowserHotkey ~= nil then
-        anotherLastBrowserHotkey:enable()
-      end
-      anotherLastBrowserModifierTap:start()
-    end
-    if switcher_browsers == nil then
-      switcher_browsers = hs.window.switcher.new(runningAppDisplayNames(browserBundleIDs))
-    end
-    switcher_browsers:previous()
-    if windowSwitcherWindowIdx == nil then
-      windowSwitcherWindowNumber = 0
-      for _, _ in pairs(switcher_browsers.wf.windows) do
-        windowSwitcherWindowNumber = windowSwitcherWindowNumber + 1
-      end
-      windowSwitcherWindowIdx = windowSwitcherWindowNumber
-    else
-      if windowSwitcherWindowNumber > 0 then
-        windowSwitcherWindowIdx = windowSwitcherWindowIdx - 1
-        if windowSwitcherWindowIdx == 0 then
-          windowSwitcherWindowIdx = windowSwitcherWindowNumber
-        end
-      end
-    end
-  end,
-  nil,
-  function()
-    if windowSwitcherWindowIdx > 1 then
-      windowSwitcherWindowIdx = windowSwitcherWindowIdx - 1
-      switcher_browsers:previous()
-    end
-  end,
-  { fn = enabledByWindowSwitcherFunc, or_ = true })
+if misc["switchBrowserWindow"] then
+  bindSwitcher('switchBrowserWindow', 'Next Browser Window', 'browsers', 1)
+  bindSwitcher('switchBrowserWindowBack', 'Previous Browser Window', 'browsers', -1)
+  backHotkeys.switchBrowserWindowBackTriggered = bindSwitcher('switchBrowserWindowBackTriggered', 'Previous Browser Window', 'browsers', -1, true)
+end
+local previousShutdown = hs.shutdownCallback
+hs.shutdownCallback = function()
+  engine:delete()
+  switcherAppWatcher:stop()
+  if previousShutdown then previousShutdown() end
 end
 
 -- show a dialog to specify a window title from all visible windows, use it to switch to a window
