@@ -723,6 +723,7 @@ do
 end
 
 local switcher
+local switcherIncludesMinimized = false
 
 -- Indicates whether hotkeys are currently "owned" by the window switcher.
 --
@@ -743,13 +744,11 @@ local nextWindowHotkey, lastWindowHotkey
 -- Hotkey triggered by the "back" action while switching windows.
 -- This exists separately from the normal backward hotkey so it can
 -- be enabled only during active window switching
-local anotherLastWindowHotkey
+local anotherLastWindowHotkey, minimizedLastWindowHotkey
 local anotherLastWindowModifierTap
 
 local function registerWindowSwitcher()
-  anotherLastWindowHotkey =
-  newWindowSwitch(misc["switchWindowBackTriggered"], 'Previous Window',
-  function()
+  local function previousWindow()
     if windowSwitcherWindowNumber > 0 then
       windowSwitcherWindowIdx = windowSwitcherWindowIdx - 1
       if windowSwitcherWindowIdx == 0 then
@@ -757,14 +756,21 @@ local function registerWindowSwitcher()
       end
     end
     switcher:previous()
-  end, nil,
-  function()
+  end
+  local function repeatPreviousWindow()
     if windowSwitcherWindowIdx > 1 then
       windowSwitcherWindowIdx = windowSwitcherWindowIdx - 1
       switcher:previous()
     end
-  end,
-  { fn = enabledByWindowSwitcherFunc, or_ = true })
+  end
+  anotherLastWindowHotkey =
+  newWindowSwitch(misc["switchWindowBackTriggered"], 'Previous Window',
+    previousWindow, nil, repeatPreviousWindow,
+    { fn = enabledByWindowSwitcherFunc, or_ = true })
+  minimizedLastWindowHotkey =
+  newWindowSwitch(misc["switchMinimizedWindowBackTriggered"], 'Previous Window',
+    previousWindow, nil, repeatPreviousWindow,
+    { fn = enabledByWindowSwitcherFunc, or_ = true })
 
   local _lastWindowMods = misc["switchWindow"].mods
   if type(_lastWindowMods) == 'string' then
@@ -792,6 +798,9 @@ local function registerWindowSwitcher()
       if anotherLastWindowHotkey ~= nil then
         anotherLastWindowHotkey:disable()
       end
+      if minimizedLastWindowHotkey ~= nil then
+        minimizedLastWindowHotkey:disable()
+      end
       anotherLastWindowModifierTap:stop()
       switcher = nil
       windowSwitcherWindowIdx = nil
@@ -808,9 +817,13 @@ local function registerWindowSwitcher()
       if anotherLastWindowHotkey ~= nil then
         anotherLastWindowHotkey:enable()
       end
+      if minimizedLastWindowHotkey ~= nil then
+        minimizedLastWindowHotkey:enable()
+      end
       anotherLastWindowModifierTap:start()
     end
     if switcher == nil then
+      switcherIncludesMinimized = false
       local filter = hs.window.filter.new()
         for appid, rule in pairs(ignoredApps) do
         if find(appid) then
@@ -846,46 +859,67 @@ local function registerWindowSwitcher()
   end,
   { fn = enabledByWindowSwitcherFunc, or_ = true })
 
-  lastWindowHotkey = bindWindowSwitch(misc["switchWindowBack"], 'Previous Window',
+  lastWindowHotkey = bindWindowSwitch(misc["switchWindowBack"], 'Next Window (Including Minimized)',
   function()
+    if switcher ~= nil and not switcherIncludesMinimized then
+      previousWindow()
+      return
+    end
     if not anotherLastWindowModifierTap:isEnabled() then
       hotkeyEnabledByWindowSwitcher = true
       FLAGS["SUSPEND"] = true
       if anotherLastWindowHotkey ~= nil then
         anotherLastWindowHotkey:enable()
       end
+      if minimizedLastWindowHotkey ~= nil then
+        minimizedLastWindowHotkey:enable()
+      end
       anotherLastWindowModifierTap:start()
     end
     if switcher == nil then
-      local filter = hs.window.filter.new()
+      switcherIncludesMinimized = true
+      local filter = hs.window.filter.new():setDefaultFilter({})
       for appid, rule in pairs(ignoredApps) do
         if find(appid) then
           filter:setAppFilter(find(appid):name(), rule)
         end
       end
-      switcher = hs.window.switcher.new(filter)
+      -- Include minimized windows, but keep hidden applications excluded.
+      local minimizedFilter = hs.window.filter.new(function(win)
+        local app = win:application()
+        return app ~= nil and not app:isHidden()
+            and (win:isVisible() or win:isMinimized())
+            and filter:isWindowAllowed(win)
+      end)
+      switcher = hs.window.switcher.new(minimizedFilter)
     end
-    switcher:previous()
+    switcher:next()
     if windowSwitcherWindowIdx == nil then
       windowSwitcherWindowNumber = 0
       for _, _ in pairs(switcher.wf.windows) do
         windowSwitcherWindowNumber = windowSwitcherWindowNumber + 1
       end
-      windowSwitcherWindowIdx = windowSwitcherWindowNumber
-    else
       if windowSwitcherWindowNumber > 1 then
-        windowSwitcherWindowIdx = windowSwitcherWindowIdx - 1
-        if windowSwitcherWindowIdx == 0 then
-          windowSwitcherWindowIdx = windowSwitcherWindowNumber
-        end
+        windowSwitcherWindowIdx = 2
+      else
+        windowSwitcherWindowIdx = windowSwitcherWindowNumber
+      end
+    else
+      windowSwitcherWindowIdx = windowSwitcherWindowIdx + 1
+      if windowSwitcherWindowIdx > windowSwitcherWindowNumber then
+        windowSwitcherWindowIdx = 1
       end
     end
   end,
   nil,
   function()
-    if windowSwitcherWindowIdx > 1 then
-      windowSwitcherWindowIdx = windowSwitcherWindowIdx - 1
-      switcher:previous()
+    if switcher ~= nil and not switcherIncludesMinimized then
+      repeatPreviousWindow()
+      return
+    end
+    if windowSwitcherWindowIdx ~= windowSwitcherWindowNumber then
+      windowSwitcherWindowIdx = windowSwitcherWindowIdx + 1
+      switcher:next()
     end
   end,
   { fn = enabledByWindowSwitcherFunc, or_ = true })
@@ -903,6 +937,10 @@ local function unregisterWindowSwitcher()
   if anotherLastWindowHotkey ~= nil then
     anotherLastWindowHotkey:delete()
     anotherLastWindowHotkey = nil
+  end
+  if minimizedLastWindowHotkey ~= nil then
+    minimizedLastWindowHotkey:delete()
+    minimizedLastWindowHotkey = nil
   end
   windowSwitcherWindowIdx = nil
   windowSwitcherWindowNumber = nil

@@ -69,6 +69,10 @@
         "mods": ["shift", "option"],
         "key": "tab"
       },
+      "switchMinimizedWindowBackTriggered": {
+        "mods": ["shift", "option"],
+        "key": "`"
+      },
       "switchWindowBackTriggered": {
         "mods": "option",
         "key": "`"
