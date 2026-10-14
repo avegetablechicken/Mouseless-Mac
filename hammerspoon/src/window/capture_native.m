@@ -5,6 +5,7 @@
 typedef struct lua_State lua_State;
 typedef long long lua_Integer;
 typedef int (*lua_CFunction)(lua_State *);
+extern double luaL_checknumber(lua_State *, int);
 extern lua_Integer luaL_checkinteger(lua_State *, int);
 extern void lua_createtable(lua_State *, int, int);
 extern void lua_pushinteger(lua_State *, lua_Integer);
@@ -20,12 +21,88 @@ static NSMutableArray<NSDictionary *> *pending, *completed;
 static NSDictionary *inFlight;
 static NSUInteger generation;
 static dispatch_queue_t worker;
+static NSPanel *glassPanel;
 static void pump(void);
+
+// Stage Manager can leave a small window surface inside a large transparent
+// image. Crop the actual alpha footprint before resizing, not after detail is lost.
+static CGImageRef trimWindowImage(CGImageRef image) {
+    size_t width = CGImageGetWidth(image), height = CGImageGetHeight(image);
+    CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
+    CGContextRef context = CGBitmapContextCreate(NULL, width, height, 8, width * 4, space,
+        kCGBitmapByteOrder32Big | (CGBitmapInfo)kCGImageAlphaPremultipliedLast);
+    CGColorSpaceRelease(space);
+    if (!context) return CGImageRetain(image);
+    CGContextDrawImage(context, CGRectMake(0, 0, width, height), image);
+    unsigned char *pixels = CGBitmapContextGetData(context);
+    size_t left = width, top = height, right = 0, bottom = 0;
+    for (size_t y = 0; y < height; y++) {
+        for (size_t x = 0; x < width; x++) {
+            if (pixels[(y * width + x) * 4 + 3] >= 32) {
+                left = MIN(left, x); right = MAX(right, x);
+                top = MIN(top, y); bottom = MAX(bottom, y);
+            }
+        }
+    }
+    if (left == width) { CGContextRelease(context); return NULL; }
+    CGImageRef result = NULL;
+    if (left < right && top < bottom && (right-left+1 < width*0.95 || bottom-top+1 < height*0.95)) {
+        // Crop the normalized bitmap so alpha scan and crop use the same row order.
+        CGImageRef normalized = CGBitmapContextCreateImage(context);
+        left = left > 2 ? left-2 : 0; top = top > 2 ? top-2 : 0;
+        right = MIN(width-1, right+2); bottom = MIN(height-1, bottom+2);
+        result = CGImageCreateWithImageInRect(normalized, CGRectMake(left, top, right-left+1, bottom-top+1));
+        CGImageRelease(normalized);
+    }
+    CGContextRelease(context);
+    return result ?: CGImageRetain(image);
+}
+
+static int positionGlass(lua_State *L) {
+    CGFloat x = luaL_checknumber(L, 1), y = luaL_checknumber(L, 2);
+    CGFloat width = luaL_checknumber(L, 3), height = luaL_checknumber(L, 4);
+    if (!glassPanel) {
+        glassPanel = [[NSPanel alloc] initWithContentRect:NSZeroRect
+            styleMask:NSWindowStyleMaskBorderless | NSWindowStyleMaskNonactivatingPanel
+            backing:NSBackingStoreBuffered defer:NO];
+        glassPanel.releasedWhenClosed = NO;
+        glassPanel.opaque = NO;
+        glassPanel.backgroundColor = NSColor.clearColor;
+        glassPanel.ignoresMouseEvents = YES;
+        glassPanel.hidesOnDeactivate = NO;
+        glassPanel.hasShadow = YES;
+        // Let the material provide translucency; window alpha blends sharp content back in.
+        glassPanel.alphaValue = 1;
+        glassPanel.level = CGWindowLevelForKey(kCGOverlayWindowLevelKey) - 1;
+        glassPanel.collectionBehavior = NSWindowCollectionBehaviorCanJoinAllSpaces
+            | NSWindowCollectionBehaviorFullScreenAuxiliary | NSWindowCollectionBehaviorIgnoresCycle;
+        NSVisualEffectView *effect = [[NSVisualEffectView alloc] initWithFrame:NSZeroRect];
+        effect.material = NSVisualEffectMaterialHUDWindow;
+        effect.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+        effect.state = NSVisualEffectStateActive;
+        effect.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
+        // Mask the material itself without clipping its backdrop-rendering layer.
+        NSImage *mask = [NSImage imageWithSize:NSMakeSize(29, 29) flipped:NO drawingHandler:^BOOL(NSRect rect) {
+            [[NSBezierPath bezierPathWithRoundedRect:rect xRadius:14 yRadius:14] fill];
+            return YES;
+        }];
+        mask.capInsets = NSEdgeInsetsMake(14, 14, 14, 14);
+        effect.maskImage = mask;
+        glassPanel.contentView = effect;
+    }
+    CGFloat screenTop = NSMaxY(NSScreen.screens.firstObject.frame);
+    [glassPanel setFrame:NSMakeRect(x, screenTop-y-height, width, height) display:NO];
+    return 0;
+}
+static int showGlass(lua_State *L) { [glassPanel orderFrontRegardless]; return 0; }
+static int hideGlass(lua_State *L) { [glassPanel orderOut:nil]; return 0; }
 
 static void finish(NSDictionary *job, CGImageRef image, NSString *error) {
     @autoreleasepool {
         NSString *url;
-        if (image) {
+        CGImageRef cropped = image ? CGImageRetain(image) : NULL;
+        if (cropped) {
+            image = cropped;
             // Bound cache and Lua decoding cost even on the legacy capture path.
             CGFloat ratio = MIN(1, MIN(768.0 / CGImageGetWidth(image), 480.0 / CGImageGetHeight(image)));
             size_t width = MAX(1, (size_t)(CGImageGetWidth(image) * ratio));
@@ -42,6 +119,7 @@ static void finish(NSDictionary *job, CGImageRef image, NSString *error) {
                 CGImageRelease(scaled);
                 CGContextRelease(context);
             }
+            CGImageRelease(image);
         }
         @synchronized(lock) {
             if ([job[@"generation"] unsignedIntegerValue] == generation) {
@@ -80,12 +158,18 @@ static void capture(NSDictionary *job) {
         skyLight ? dlsym(skyLight, "CGSHWCaptureWindowList") : NULL;
     CGImageRef image = NULL;
     if (connection && captureWindows) {
-        // ignoreGlobalClipShape | bestResolution | fullSize (Stage Manager).
-        CFArrayRef frames = captureWindows(connection(), &wid, 1, (1 << 11) | (1 << 8) | (1 << 19));
+        // Tahoe's fullSize capture may be transparent or clip the Stage Manager surface.
+        uint32_t options = (1 << 11) | (1 << 8) | (1 << 19);
+        if (@available(macOS 26.0, *)) options &= ~(1 << 19);
+        CFArrayRef frames = captureWindows(connection(), &wid, 1, options);
         if (frames) {
             if (CFArrayGetCount(frames)) image = CGImageRetain((CGImageRef)CFArrayGetValueAtIndex(frames, 0));
             CFRelease(frames);
         }
+    }
+    if (image) {
+        CGImageRef content = trimWindowImage(image);
+        CGImageRelease(image); image = content;
     }
     if (!image) {
         CGImageRef (*snapshot)(CGRect, CFArrayRef, CGWindowImageOption) = dlsym(RTLD_DEFAULT, "CGWindowListCreateImageFromArray");
@@ -93,6 +177,10 @@ static void capture(NSDictionary *job) {
         CFArrayRef ids = CFArrayCreate(NULL, &value, 1, NULL);
         if (snapshot) image = snapshot(CGRectNull, ids, kCGWindowImageBoundsIgnoreFraming);
         CFRelease(ids);
+        if (image) {
+            CGImageRef content = trimWindowImage(image);
+            CGImageRelease(image); image = content;
+        }
     }
     finish(job, image, nil);
     if (image) CGImageRelease(image);
@@ -155,6 +243,7 @@ static int poll(lua_State *L) {
 }
 
 static int reset(lua_State *L) {
+    [glassPanel close]; glassPanel = nil;
     @synchronized(lock) { generation++; [pending removeAllObjects]; [completed removeAllObjects]; }
     // An in-flight OS request may finish, but its generation cannot enter the new cache.
     return 0;
@@ -172,9 +261,12 @@ int luaopen_window_capture(lua_State *L) {
         worker = dispatch_queue_create("hammerspoon.window-capture", DISPATCH_QUEUE_SERIAL);
     });
     reset(L);
-    lua_createtable(L, 0, 3);
+    lua_createtable(L, 0, 6);
     lua_pushcclosure(L, request, 0); lua_setfield(L, -2, "request");
     lua_pushcclosure(L, poll, 0); lua_setfield(L, -2, "poll");
     lua_pushcclosure(L, reset, 0); lua_setfield(L, -2, "reset");
+    lua_pushcclosure(L, positionGlass, 0); lua_setfield(L, -2, "positionGlass");
+    lua_pushcclosure(L, showGlass, 0); lua_setfield(L, -2, "showGlass");
+    lua_pushcclosure(L, hideGlass, 0); lua_setfield(L, -2, "hideGlass");
     return 1;
 }

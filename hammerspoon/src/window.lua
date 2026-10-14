@@ -670,13 +670,6 @@ end)
 -- NOTE: Fullscreen spaces are ignored unless they have been focused at least once.
 local misc = winHK
 
-local function newWindowSwitch(...)
-  local hotkey = newHotkeySpec(...)
-  if hotkey == nil then return nil end
-  hotkey.kind = HK.QUICK_NAVIGATION
-  return hotkey
-end
-
 local function bindWindowSwitch(...)
   local hotkey = bindHotkeySpec(...)
   if hotkey == nil then return nil end
@@ -719,17 +712,12 @@ local browserBundleIDs = {
 local browserSet = {}; for _, id in ipairs(browserBundleIDs) do browserSet[id] = true end
 local hotkeyEnabledByWindowSwitcher = false
 local function enabledByWindowSwitcherFunc() return hotkeyEnabledByWindowSwitcher end
-local backHotkeys, generalHotkeys = {}, {}
+local generalHotkeys, browserHotkeys = {}, {}
 local engine
 
-local function updateSwitcherHotkeys(active, mode)
+local function updateSwitcherHotkeys(active)
   hotkeyEnabledByWindowSwitcher = active
   FLAGS["SUSPEND"] = active
-  for key, hotkey in pairs(backHotkeys) do
-    local browserKey = key == "switchBrowserWindowBackTriggered"
-    if active and browserKey == (mode == 'browsers') then hotkey:enable()
-    else hotkey:disable() end
-  end
 end
 
 local filter = hs.window.filter.new():setDefaultFilter({})
@@ -741,6 +729,11 @@ end
 for _, app in ipairs(hs.application.runningApplications()) do configureSwitcherApp(app) end
 engine = require('window.switcher').new({
   filter = filter, browsers = browserSet, onActiveChange = updateSwitcherHotkeys,
+  navigationKeys = {
+    normal = {next=(misc.switchWindow or {}).key, back=(misc.switchWindowBackTriggered or {}).key},
+    minimized = {next=(misc.switchWindowBack or {}).key, back=(misc.switchMinimizedWindowBackTriggered or {}).key},
+    browsers = {next=(misc.switchBrowserWindow or {}).key, back=(misc.switchBrowserWindowBackTriggered or {}).key},
+  },
 })
 local switcherAppWatcher = hs.application.watcher.new(function(_, event, app)
   if event == hs.application.watcher.launched then configureSwitcherApp(app) end
@@ -759,30 +752,36 @@ local browserModifiers = misc["switchBrowserWindow"] and requiredModifiers(misc[
 local function navigate(mode, direction, repeated)
   engine:cycle(mode, direction, repeated, mode == 'browsers' and browserModifiers or normalModifiers)
 end
-local function bindSwitcher(key, message, mode, direction, sessionOnly)
-  local function action(repeated)
-    local step = direction
-    -- Shift+Alt+Tab reverses the ordinary list, but advances the minimized list.
-    if key == 'switchWindowBack' and engine.active and engine.mode == 'normal' then step = -1 end
-    if sessionOnly and not engine.active then return end
-    navigate(mode, step, repeated)
-  end
-  local binder = sessionOnly and newWindowSwitch or bindWindowSwitch
-  return binder(misc[key], message, function() action(false) end, nil,
-    function() action(true) end, {fn=enabledByWindowSwitcherFunc, or_=true})
+local function bindSwitcher(key, message, mode, direction)
+  return bindWindowSwitch(misc[key], message, function()
+    if not engine.active then navigate(mode, direction, false) end
+  end, nil, nil, {fn=enabledByWindowSwitcherFunc, or_=true})
 end
+local minimizedLaunchTap
 local function registerWindowSwitcher()
   generalHotkeys.next = bindSwitcher('switchWindow', 'Next Window', 'normal', 1)
-  generalHotkeys.minimized = bindSwitcher('switchWindowBack', 'Next Window (Including Minimized)', 'minimized', 1)
-  backHotkeys.switchWindowBackTriggered = bindSwitcher('switchWindowBackTriggered', 'Previous Window', 'normal', -1, true)
-  backHotkeys.switchMinimizedWindowBackTriggered = bindSwitcher('switchMinimizedWindowBackTriggered', 'Previous Window', 'minimized', -1, true)
+  local spec = misc["switchWindowBack"]
+  if spec and not minimizedLaunchTap then
+    local required = {}
+    for _, modifier in ipairs(requiredModifiers(spec)) do required[modifier] = true end
+    minimizedLaunchTap = hs.eventtap.new({hs.eventtap.event.types.keyDown}, function(event)
+      if engine.active or FLAGS["SUSPEND"] then return false end
+      if event:getKeyCode() ~= hs.keycodes.map[spec.key:lower()] then return false end
+      if event:getProperty(hs.eventtap.event.properties.keyboardEventAutorepeat) == 1 then return false end
+      local flags = event:getFlags()
+      for _, modifier in ipairs({'alt', 'ctrl', 'cmd', 'shift', 'fn'}) do
+        if (flags[modifier] == true) ~= (required[modifier] == true) then return false end
+      end
+      navigate('minimized', 1, false)
+      return true
+    end)
+  end
+  if minimizedLaunchTap then minimizedLaunchTap:start() end
 end
 local function unregisterWindowSwitcher()
+  if minimizedLaunchTap then minimizedLaunchTap:stop() end
   if engine.active and engine.mode ~= 'browsers' then engine:finish(false) end
   for key, hotkey in pairs(generalHotkeys) do hotkey:delete(); generalHotkeys[key] = nil end
-  for _, key in ipairs({'switchWindowBackTriggered', 'switchMinimizedWindowBackTriggered'}) do
-    if backHotkeys[key] then backHotkeys[key]:delete(); backHotkeys[key] = nil end
-  end
 end
 if misc["switchWindow"] then
   local altTabBundleID = "com.lwouis.alt-tab-macos"
@@ -794,12 +793,12 @@ if misc["switchWindow"] then
   end)
 end
 if misc["switchBrowserWindow"] then
-  bindSwitcher('switchBrowserWindow', 'Next Browser Window', 'browsers', 1)
-  bindSwitcher('switchBrowserWindowBack', 'Previous Browser Window', 'browsers', -1)
-  backHotkeys.switchBrowserWindowBackTriggered = bindSwitcher('switchBrowserWindowBackTriggered', 'Previous Browser Window', 'browsers', -1, true)
+  browserHotkeys.next = bindSwitcher('switchBrowserWindow', 'Next Browser Window', 'browsers', 1)
+  browserHotkeys.previous = bindSwitcher('switchBrowserWindowBack', 'Previous Browser Window', 'browsers', -1)
 end
 local previousShutdown = hs.shutdownCallback
 hs.shutdownCallback = function()
+  if minimizedLaunchTap then minimizedLaunchTap:stop() end
   engine:delete()
   switcherAppWatcher:stop()
   if previousShutdown then previousShutdown() end
