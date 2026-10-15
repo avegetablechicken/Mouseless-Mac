@@ -17,9 +17,31 @@ function M.new(options, runtime)
   self.capture = options.capture or require('window.capture').new(h)
   self.canvas = h.canvas.new({x = 0, y = 0, w = 1, h = 1})
       :level(h.canvas.windowLevels.overlay):behavior({ 'canJoinAllSpaces', 'fullScreenAuxiliary' })
+  self.canvas:clickActivating(false)
   self.filter = options.filter
-  self.tap = h.eventtap.new({h.eventtap.event.types.keyDown, h.eventtap.event.types.flagsChanged, h.eventtap.event.types.scrollWheel}, function(event)
+  self.tap = h.eventtap.new({h.eventtap.event.types.keyDown, h.eventtap.event.types.flagsChanged,
+    h.eventtap.event.types.scrollWheel, h.eventtap.event.types.leftMouseDown,
+    h.eventtap.event.types.leftMouseUp}, function(event)
     if not self.active then return false end
+    local eventType = event:getType()
+    if eventType == h.eventtap.event.types.leftMouseDown or eventType == h.eventtap.event.types.leftMouseUp then
+      local point, frame = event:location(), self.canvas:frame()
+      local x, y = point.x-frame.x, point.y-frame.y
+      local inside = x >= 0 and x < frame.w and y >= 0 and y < frame.h
+      local index = inside and self:indexAt(x, y)
+      if eventType == h.eventtap.event.types.leftMouseDown then
+        self.clickedInside = inside
+        self.clickedID = index and self.session[index] or nil
+        return inside
+      end
+      local clickedID, clickedInside = self.clickedID, self.clickedInside
+      self.clickedID, self.clickedInside = nil, nil
+      if index and clickedID == self.session[index] then
+        self.selected = index
+        self:finish(true)
+      end
+      return clickedInside == true
+    end
     if event:getType() == h.eventtap.event.types.scrollWheel then
       local properties = h.eventtap.event.properties
       local continuous = event:getProperty(properties.scrollWheelEventIsContinuous) ~= 0
@@ -34,6 +56,12 @@ function M.new(options, runtime)
       local key, flags = event:getKeyCode(), event:getFlags()
       if key == h.keycodes.map.escape then self:finish(false); return true end
       local repeated = event:getProperty(h.eventtap.event.properties.keyboardEventAutorepeat) == 1
+      local actions = { [h.keycodes.map.w]='close', [h.keycodes.map.h]='hide',
+        [h.keycodes.map.m]='minimize' }
+      if actions[key] then
+        if not repeated then self:actOnSelection(actions[key]) end
+        return true
+      end
       if key == self.nextCode or key == self.backCode then
         local direction = key == self.backCode and -1 or 1
         if key == self.nextCode and flags.shift and self.mode ~= 'minimized' then direction = -1 end
@@ -125,7 +153,8 @@ function Engine:rebuild()
     local selectionRow = math.floor((self.selected-1)/self.columns)
     local keepSelectionVisible = selectionRow >= self.scrollRow and selectionRow < self.scrollRow+self.visibleRows
     local selectedID, session, selected = self.session[self.selected], {}, nil
-    local allowed = {}; for _, id in ipairs(lists[self.mode]) do allowed[id] = true end
+    local allowed = {}
+    for _, id in ipairs(lists[self.mode]) do allowed[id] = not self.sessionExcluded[id] end
     for _, id in ipairs(self.session) do
       if allowed[id] then
         session[#session + 1] = id
@@ -147,6 +176,45 @@ function Engine:rebuild()
   end
   if not self.active then self:layout() end
   self:refreshCaptures()
+end
+
+function Engine:indexAt(x, y)
+  local first = self.scrollRow*self.columns+1
+  local last = math.min(#self.session, first+self.visibleRows*self.columns-1)
+  local offset = self.scrollRow*self.cellHeight
+  for i = first, last do
+    local tile = self.tileFrames[i]
+    if x >= tile.x and x < tile.x+tile.w and y >= tile.y-offset
+        and y < tile.y-offset+tile.h then return i end
+  end
+end
+
+function Engine:actOnSelection(action)
+  if not self.active then return end
+  local record = self.records[self.session[self.selected]]
+  if not record then return end
+  call(function()
+    if action == 'hide' then
+      local app = record.win:application()
+      if app then
+        app:hide()
+        for _, item in pairs(self.records) do
+          if item.pid == record.pid then self:updateRecord(item.win) end
+        end
+      end
+    elseif action == 'minimize' then
+      record.win:minimize()
+      self:updateRecord(record.win)
+      -- Do not restore this window on modifier release in the minimized mode.
+      if record.win:isMinimized() then self.sessionExcluded[record.id] = true end
+    elseif action == 'close' then
+      record.win:close()
+    end
+  end)
+  if action ~= 'close' then self:rebuild() end
+  -- Closing may raise a save dialog; let the window filter confirm destruction.
+  stop(self.inventoryTimer)
+  self.inventoryTimer = self.h.timer.doAfter(0.02, function() self:rebuild() end)
 end
 
 function Engine:requestCapture(id, priority)
@@ -315,6 +383,7 @@ function Engine:cycle(mode, direction, repeated, modifiers)
   local started = self.h.timer.absoluteTime()
   if not self.active or (mode == 'browsers') ~= (self.mode == 'browsers') then
     if self.active then self:finish(false) end
+    self.sessionExcluded, self.clickedID, self.clickedInside = {}, nil, nil
     self.session = {}; for i, id in ipairs(self.lists[mode]) do self.session[i] = id end
     if #self.session == 0 then return end
     self.active, self.mode, self.modifiers = true, mode, modifiers
@@ -374,6 +443,7 @@ function Engine:finish(commit)
   if not self.active then return end
   local record = self.records[self.session[self.selected]]
   self.active, self.mode, self.session, self.selected = false, nil, {}, 0
+  self.clickedID, self.clickedInside = nil, nil
   stop(self.afterShow)
   self.canvas:hide(); self.capture.hideGlass(); self.tap:stop()
   self.options.onActiveChange(false)
