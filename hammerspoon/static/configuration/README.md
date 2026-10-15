@@ -1,5 +1,11 @@
 # Configuration GUI
 
+The Configuration window is a native SwiftUI window (`src/configuration/*.swift`).
+`src/configuration.lua` compiles it in the background with `swiftc` once per source
+change, caches the library in the temporary directory by content hash, and loads it
+with `package.loadlib`. Lua keeps all file I/O; the window exchanges the same JSON
+messages (`load`, `save`, `browsePath`, `browseApplication`, `reload`) as before.
+
 The configuration loads `src/configuration.lua` at startup. Open
 `hammerspoon://configuration` or run `Configuration.show()` in the Hammerspoon
 console to display the Configuration window.
@@ -9,8 +15,14 @@ Hammerspoon. The shortcut uses the existing context hotkey manager and respects
 the project's shortcut suspension setting. No additional menu bar icon is created,
 and Hammerspoon's native Preferences remain available.
 
-- The sidebar provides primary categories, tabs provide secondary categories,
-  and section headings organize configuration within each tab.
+- The sidebar lists every page under its category, System Settings style; grouped
+  sections organize configuration within each page. Nested objects open as their own
+  pages (rows with ›), so hierarchy is navigation rather than indentation. Per-app
+  shortcuts, menu translations, and app rules list apps that each open a page.
+- Shortcuts display like System Settings. Click one and type the new combination;
+  Esc cancels and Delete clears. The context menu applies a modifier macro
+  (${hyper.…}) or edits the value as text. Toolbar: Add Entry, More (Edit
+  File JSON, Refresh Files, Show in Finder), Discard, Reload, and Save (⌘S).
 - Strings, numbers, and booleans are directly editable. Nested configurations
   can be expanded, and lists support adding and removing entries.
 - JSON editors include syntax highlighting. **Add entry** is available for lists,
@@ -54,3 +66,20 @@ Missing optional files are shown as empty configurations and created only when
 saved. Missing sections offer **Configure** or **Add entry**, and omitted shortcut
 fields show **Not set**. Browsing alone never inserts default values. Read errors
 and malformed JSON are reported rather than treated as empty files.
+
+## Validation
+
+Run from the project directory:
+
+```sh
+lua tests/configuration_spec.lua
+lua tests/configuration_macros_spec.lua
+luac -p src/configuration.lua init.lua
+```
+
+`tests/configuration_native_harness.swift` opens the window outside Hammerspoon
+against real configuration files (read-only) for layout checks; build instructions
+are in its header. Backend tests use isolated temporary files to
+check saving, backups, conflicts, and rejected inputs. Macro tests exercise the
+startup loader with renamed primary Hyper macros. Bridge behavior requires verification
+inside Hammerspoon.

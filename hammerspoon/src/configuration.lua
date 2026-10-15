@@ -182,58 +182,90 @@ function M.chooseApplication(request)
   return { action = "applicationBrowsed", id = request.id, bundleID = bundleID, proxyName = proxyName }
 end
 
+-- The window is a SwiftUI module compiled once per source change and cached by hash.
+local nativeDirectory = hs.configdir .. "/src/configuration/"
+local nativeSources = { "JSON.swift", "Model.swift", "Components.swift", "Controls.swift", "Shortcut.swift",
+  "Nodes.swift", "Pages.swift", "Panels.swift", "Sync.swift", "Views.swift", "Window.swift", "Bridge.swift" }
+M.waiting = {}
+
+local function nativeBinary()
+  local contents = { read(nativeDirectory .. "lua_bridge.h") or "" }
+  for _, name in ipairs(nativeSources) do contents[#contents + 1] = read(nativeDirectory .. name) or "" end
+  local hash = hs.hash.SHA256(table.concat(contents, "\0"))
+  return hs.fs.temporaryDirectory() .. "hammerspoon-configuration-" .. hash .. ".dylib", hash
+end
+
+-- Compile in the background; Swift builds take long enough to stall the main thread.
+function M.prepare(callback)
+  local binary, hash = nativeBinary()
+  if hs.fs.attributes(binary) then if callback then callback(binary) end; return end
+  if callback then table.insert(M.waiting, callback) end
+  if M.compiler then return end
+  local temporary = binary .. ".tmp"
+  local arguments = { "swiftc", "-O", "-parse-as-library", "-swift-version", "5", "-emit-library",
+    -- Earlier builds stay loaded after a reload; a distinct module keeps their classes apart.
+    "-module-name", "HammerspoonConfiguration_" .. hash:sub(1, 12), "-import-objc-header", nativeDirectory .. "lua_bridge.h",
+    "-Xlinker", "-undefined", "-Xlinker", "dynamic_lookup", "-o", temporary }
+  for _, name in ipairs(nativeSources) do arguments[#arguments + 1] = nativeDirectory .. name end
+  M.compiler = hs.task.new("/usr/bin/xcrun", function(code, _, stderr)
+    M.compiler = nil
+    local waiting = M.waiting
+    M.waiting = {}
+    if code ~= 0 or not os.rename(temporary, binary) then
+      os.remove(temporary)
+      print("-- Configuration window build failed:\n" .. tostring(stderr))
+      if #waiting > 0 then hs.alert.show("Unable to build the Configuration window. See the Console.") end
+      return
+    end
+    for _, fn in ipairs(waiting) do fn(binary) end
+  end, arguments)
+  M.compiler:start()
+end
+
 local function reply(value)
-  if M.view then M.view:evaluateJavaScript("window.receive(" .. hs.json.encode(value) .. ")") end
+  if M.native then M.native.receive(hs.json.encode(value)) end
+end
+
+local function handle(json)
+  local body = hs.json.decode(json)
+  if type(body) ~= "table" then return end
+  if body.action == "load" then
+    local configs = M.load()
+    reply({ action = "loaded", files = configs, appNames = M.appNames, configdir = hs.configdir,
+      proxyApps = ProxyAppInstallationStatus and ProxyAppInstallationStatus() or {},
+      appBindings = AppKeyInspector and AppKeyInspector.snapshot() or {} })
+  elseif body.action == "save" then
+    local ok, saveError = M.save(body.name, body.raw)
+    reply({ action = "saved", name = body.name, raw = ok and body.raw or nil, error = saveError })
+  elseif body.action == "browseApplication" then
+    reply(M.chooseApplication(body))
+  elseif body.action == "browsePath" then
+    reply(M.choosePath(body))
+  elseif body.action == "reload" then
+    if M.reloading then return end
+    M.reloading = true
+    hs.settings.set("configuration.reopenAfterReload", true)
+    M.reloadTimer = hs.timer.doAfter(0, hs.reload)
+  end
 end
 
 function M.show()
-  if M.view then M.view:show(); M.view:hswindow():focus(); return end
-  local html, err = read(hs.configdir .. "/static/configuration/index.html")
-  if not html then hs.alert.show(tostring(err)); return end
-  local appIcon = hs.image.imageFromAppBundle(hs.settings.bundleID)
-  if appIcon then
-    local source = appIcon:setSize({ w = 64, h = 64 }):encodeAsURLString()
-    html = html:gsub('<div class="logo">H</div>', function()
-      return '<img class="logo app-logo" src="' .. source .. '" alt="Hammerspoon">'
-    end)
-  end
-  M.controller = hs.webview.usercontent.new("configuration")
-  M.controller:setCallback(function(message)
-    local body = message.body
-    if type(body) ~= "table" then return end
-    if body.action == "load" then
-      local configs = M.load()
-      reply({ action = "loaded", files = configs, appNames = M.appNames,
-        proxyApps = ProxyAppInstallationStatus and ProxyAppInstallationStatus() or {},
-        appBindings = AppKeyInspector and AppKeyInspector.snapshot() or {} })
-    elseif body.action == "save" then
-      local ok, saveError = M.save(body.name, body.raw)
-      reply({ action = "saved", name = body.name, raw = ok and body.raw or nil,
-        error = saveError })
-    elseif body.action == "browseApplication" then
-      reply(M.chooseApplication(body))
-    elseif body.action == "browsePath" then
-      reply(M.choosePath(body))
-    elseif body.action == "reload" then
-      if M.reloading then return end
-      M.reloading = true
-      hs.settings.set("configuration.reopenAfterReload", true)
-      M.reloadTimer = hs.timer.doAfter(0, hs.reload)
-    end
+  if M.native then M.native.show(); return end
+  M.prepare(function(binary)
+    if M.native then M.native.show(); return end
+    local open, err = package.loadlib(binary, "luaopen_configuration_native")
+    if not open then hs.alert.show("Unable to load the Configuration window: " .. tostring(err)); return end
+    -- Keep the module referenced: collecting it closes the window.
+    M.native = open()
+    M.native.setCallback(handle)
+    M.native.show()
   end)
-  local frame = hs.screen.mainScreen():frame()
-  local w, h = math.min(1080, frame.w - 60), math.min(780, frame.h - 60)
-  M.view = hs.webview.new({ x = frame.x + (frame.w-w)/2, y = frame.y + (frame.h-h)/2, w = w, h = h },
-    { privateBrowsing = true, javaScriptCanOpenWindowsAutomatically = false }, M.controller)
-    :windowStyle({ "titled", "closable", "resizable", "miniaturizable" })
-    :windowTitle("Configuration"):allowTextEntry(true):deleteOnClose(false)
-  -- Closing hides the window, retaining drafts until the next configuration reload.
-  M.view:html(html):show()
-  M.view:hswindow():focus()
+  if M.compiler then hs.alert.show("Preparing the Configuration window…") end
 end
 
 function M.start()
   hs.urlevent.bind("configuration", M.show)
+  M.prepare()
   if hs.settings.get("configuration.reopenAfterReload") then
     M.reopenTimer = hs.timer.doAfter(0, function()
       hs.settings.clear("configuration.reopenAfterReload")
