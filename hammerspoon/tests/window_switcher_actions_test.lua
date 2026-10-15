@@ -17,9 +17,9 @@ local filter={subscribe=function() end,getWindows=function() return windows end}
 local eventCallback
 local h={
   canvas={new=function() return canvas end,windowLevels={overlay=1}},
-  eventtap={event={types={keyDown=1,flagsChanged=2,scrollWheel=3,leftMouseDown=4,leftMouseUp=5},properties={keyboardEventAutorepeat=1}},
+  eventtap={event={types={keyDown=1,flagsChanged=2,scrollWheel=3,leftMouseDown=4,leftMouseUp=5,mouseMoved=6},properties={keyboardEventAutorepeat=1}},
     new=function(types,fn)
-      assert(types[4]==4 and types[5]==5,'must subscribe to real left-button events')
+      assert(types[4]==4 and types[5]==5 and types[6]==6,'must subscribe to click and movement events')
       eventCallback=fn; return {start=function() end,stop=function() end}
     end},
   keycodes={map=keys},window={filter={}},
@@ -77,6 +77,11 @@ local function mouse(kind, px, py)
  return eventCallback({getType=function() return kind end,
    location=function() return {x=canvas.bounds.x+px,y=canvas.bounds.y+py} end})
 end
+assert(not mouse(6,x,y) and e.selected==i and e.active,'hover must select without activation or consuming movement')
+assert(not mouse(6,1,1) and e.selected==i,'padding must retain selection')
+assert(not mouse(6,-1,-1) and e.selected==i,'leaving panel must retain selection')
+e:moveGrid(1,0); assert(e.selected==i+1,'keyboard navigation must still work after hover')
+mouse(6,x,y); assert(e.selected==i,'mouse movement must retake selection after keyboard navigation')
 assert(not mouse(4,-1,-1) and not mouse(5,-1,-1),'outside clicks must pass through')
 assert(mouse(4,x,y) and mouse(5,-1,-1),'dragging out must consume release')
 assert(e.active,'dragging out must not activate')
@@ -87,7 +92,10 @@ assert(not e.active and focused==nil,'click must dismiss before deferred activat
 flush(); assert(focused==expected,'click must activate clicked card')
 a.hidden=false; e:updateRecord(windows[1]); e:updateRecord(windows[2]); e:rebuild()
 start('minimized'); assert(e.session[1]==1,'new session must include previously minimized window')
-e:finish(false)
+local target=e.session[2]; local tile2=e.tileFrames[2]
+mouse(6,tile2.x+10,tile2.y+10)
+eventCallback({getType=function() return 2 end,getFlags=function() return {} end})
+flush(); assert(focused==target,'modifier release must activate hovered window')
 windows={windows[1]}; e:rebuild(); start('minimized'); e.selected=1; key('m')
 assert(not e.active,'no remaining choices must dismiss without restoring minimized window')
 print('PASS: W/H/M actions, repeats, save dialog, scrolling hit test, mouse event routing and consumption, deferred focus, session reset, last window')

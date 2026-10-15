@@ -21,14 +21,24 @@ function M.new(options, runtime)
   self.filter = options.filter
   self.tap = h.eventtap.new({h.eventtap.event.types.keyDown, h.eventtap.event.types.flagsChanged,
     h.eventtap.event.types.scrollWheel, h.eventtap.event.types.leftMouseDown,
-    h.eventtap.event.types.leftMouseUp}, function(event)
+    h.eventtap.event.types.leftMouseUp, h.eventtap.event.types.mouseMoved}, function(event)
     if not self.active then return false end
     local eventType = event:getType()
-    if eventType == h.eventtap.event.types.leftMouseDown or eventType == h.eventtap.event.types.leftMouseUp then
+    if eventType == h.eventtap.event.types.leftMouseDown or eventType == h.eventtap.event.types.leftMouseUp
+        or eventType == h.eventtap.event.types.mouseMoved then
       local point, frame = event:location(), self.canvas:frame()
       local x, y = point.x-frame.x, point.y-frame.y
       local inside = x >= 0 and x < frame.w and y >= 0 and y < frame.h
       local index = inside and self:indexAt(x, y)
+      if eventType == h.eventtap.event.types.mouseMoved then
+        if index and index ~= self.selected then
+          self.selected = index
+          self:paint()
+          stop(self.afterShow)
+          self.afterShow = h.timer.doAfter(0, function() self:refreshCaptures() end)
+        end
+        return false
+      end
       if eventType == h.eventtap.event.types.leftMouseDown then
         self.clickedInside = inside
         self.clickedID = index and self.session[index] or nil
