@@ -157,6 +157,7 @@ uinotifications = hs.axuielement.observer.notifications
 hs.window.filter.ignoreAlways["com.apple.WebKit.WebContent"] = true
 -- Avoid an AX timeout loop while Karabiner monitors frontmost Hammerspoon.
 hs.window.filter.ignoreAlways["org.pqrs.Karabiner-Core-Service"] = true
+hs.window.filter.ignoreAlways["Karabiner-Core-Service"] = true
 
 -- Modifier key representations.
 --
