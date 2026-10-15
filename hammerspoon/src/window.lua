@@ -852,59 +852,37 @@ local function browserChooser()
   -- to allow global fuzzy searching.
   local choices = {}
 
-  -- Enumerate tabs for each supported browser.
-  --
-  -- Safari and Chromium-based browsers differ in how tab IDs
-  -- and titles are exposed via AppleScript, so they are handled
-  -- with small but necessary variations.
-  for _, browser in ipairs(browserBundleIDs) do
-    local app = find(browser)
-    if app ~= nil then
-      local field, tabIDCmd
-      if browser == "com.apple.Safari" then
-        field = 'name'
-        tabIDCmd = 'set theID to j'
-      else
-        field = 'title'
-        tabIDCmd = 'set theID to id of atab'
-      end
-      -- Build AppleScript dynamically to collect tab metadata.
-      --
-      -- The script returns a flattened string because AppleScript
-      -- does not reliably return structured data for complex objects.
+  -- Target each GUI process explicitly: a headless instance can share its bundle ID.
+  for _, app in ipairs(hs.application.runningApplications()) do
+    local browser = app:bundleID()
+    if browserSet[browser] and app:kind() == 1 and #app:allWindows() > 0 then
+      local safari = browser == "com.apple.Safari"
       local script = [[
-        set theResult to ""
-        tell application id "]] .. browser .. [["
-          set windowList to every window
-          repeat with aWindow in windowList
-            set theWinID to ID of aWindow
-            set tabList to every tab of aWindow
-            repeat with j from 1 to count tabList
-              set atab to item j of tabList
-              ]] .. tabIDCmd .. [[ 
-              set theUrl to URL of atab
-              set theTitle to ]] .. field .. [[ of atab
-              set theResult to theResult & theWinID & "|||" & theID & "|||" & theUrl & "|||" & theTitle & "|||"
-            end repeat
-          end repeat
-        end tell
-        return theResult
+        var app = Application(]] .. app:pid() .. [[);
+        var result = [];
+        app.windows().forEach(function(win) {
+          win.tabs().forEach(function(tab, index) {
+            result.push({winID: win.id(), id: ]] .. (safari and 'index + 1' or 'tab.id()') .. [[,
+              title: tab.]] .. (safari and 'name' or 'title') .. [[(), url: tab.url()});
+          });
+        });
+        JSON.stringify(result);
       ]]
-      local ok, result = hs.osascript.applescript(script)
-      -- parse the result and add them to choices
+      local ok, result = hs.osascript.javascript(script)
       if ok then
-        for winID, id, url, title in result:gmatch("(.-)%|%|%|(.-)%|%|%|(.-)%|%|%|(.-)%|%|%|") do
+        for _, tab in ipairs(hs.json.decode(result)) do
           tinsert(choices,
               {
-                text = title,
-                subText = url,
-                image = hs.image.imageFromAppBundle(app:bundleID()),
-                id = id,
-                winID = winID,
+                text = tab.title,
+                subText = tab.url,
+                image = hs.image.imageFromAppBundle(browser),
+                id = tab.id,
+                winID = tab.winID,
+                pid = app:pid(),
                 browser = browser
               })
         end
-      elseif browser == "com.apple.Safari" then
+      elseif safari then
         hs.alert.show("ERROR for Safari. RESTARTING Safari may solve it")
       end
     end
@@ -922,42 +900,28 @@ local function browserChooser()
   -- - Focusing the target window
   local chooser = hs.chooser.new(function(choice)
     if not choice then return end
-    local findTabCmd, focusTabCmd, titleField
-    -- Safari requires index-based tab selection.
-    -- Chromium-based browsers allow direct ID matching.
-    if choice.browser == "com.apple.Safari" then
-      findTabCmd = 'j is ' .. choice.id
-      focusTabCmd = [[
-        tell aWindow to set current tab to tab j
-      ]]
-      titleField = 'name'
-    else
-      findTabCmd = [[
-        (id of item j of tabList is "]] .. tostring(choice.id) .. [[") or ¬
-        (id of item j of tabList is ]] .. choice.id .. [[)]]
-      focusTabCmd = [[
-        tell aWindow to set active tab index to j
-      ]]
-      titleField = 'title'
-    end
-
+    local app = hs.application.applicationForPID(choice.pid)
+    if not app or app:bundleID() ~= choice.browser then return end
+    local safari = choice.browser == "com.apple.Safari"
     local script = [[
-      tell application id "]] .. choice.browser .. [["
-        set aWindow to window id ]] .. choice.winID .. [[
-
-        set tabList to every tab of aWindow
-        repeat with j from 1 to count of tabList
-          if ]] .. findTabCmd .. [[ then
-            ]] .. focusTabCmd .. [[
-            return ]] .. titleField .. [[ of aWindow
-          end if
-        end repeat
-      end tell
+      (function() {
+        var app = Application(]] .. choice.pid .. [[);
+        var windows = app.windows();
+        for (var i = 0; i < windows.length; i++) {
+          var win = windows[i];
+          if (win.id() != ]] .. choice.winID .. [[) continue;
+          var tabs = win.tabs();
+          for (var j = 0; j < tabs.length; j++) {
+            if (]] .. (safari and 'j + 1' or 'tabs[j].id()') .. [[ != ]] .. choice.id .. [[) continue;
+            ]] .. (safari and 'win.currentTab = tabs[j];' or 'win.activeTabIndex = j + 1;') .. [[
+            return win.name();
+          }
+        }
+        return null;
+      })();
     ]]
-    local ok, result = hs.osascript.applescript(script)
-
-    if not ok then return end
-    local app = find(choice.browser)
+    local ok, result = hs.osascript.javascript(script)
+    if not ok or not result then return end
     app:activate()
     local windowMenuItem = localizedMenuBarItem('Window', app:bundleID())
     if windowMenuItem == nil then return end
