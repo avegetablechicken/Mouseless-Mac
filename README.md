@@ -2,9 +2,9 @@
 
 Make your Mac work from the keyboard and trackpad. Mouseless combines Hammerspoon automation with Karabiner-Elements remapping to launch apps, find windows and tabs, navigate menus, arrange your workspace, and manage network proxies.
 
-Customize shortcuts and automation in a local configuration window, or edit the same JSON files directly.
+Customize shortcuts and automation in a native settings window, or edit the same JSON files directly.
 
-![Configuration window showing app launchers and their shortcuts](./assets/configuration.png)
+![Native configuration window showing app launchers and their shortcuts](./assets/configuration.png)
 
 [Installation](#installation) · [Features](#features) · [Everyday shortcuts](#everyday-shortcuts) · [Configuration](#configuration) · [Troubleshooting](#troubleshooting)
 
@@ -18,7 +18,9 @@ Install Hammerspoon and Karabiner-Elements. With Homebrew:
 brew install --cask hammerspoon karabiner-elements
 ```
 
-Launch both apps and complete their macOS setup prompts, including Accessibility for Hammerspoon and the input permissions and components requested by Karabiner-Elements. Some application automation also needs permission to control the target app.
+Launch both apps and complete their macOS setup prompts, including Accessibility for Hammerspoon and the input permissions and components requested by Karabiner-Elements. Grant Screen Recording to Hammerspoon for window previews in the switcher. Some application automation also needs permission to control the target app.
+
+The configuration window is built with `swiftc` on first use, so install the Xcode Command Line Tools (`xcode-select --install`) if they are missing.
 
 ### 2. Install the configuration
 
@@ -50,27 +52,35 @@ Open the configuration window from Terminal:
 open 'hammerspoon://configuration'
 ```
 
-You can also run `Configuration.show()` in the Hammerspoon console, or press **⌥⌘,** while a Hammerspoon app window or menu is active. Start with **Shortcuts → App launcher**, update your preferred apps, then choose **Save changes → Reload**.
+You can also run `Configuration.show()` in the Hammerspoon console, or press **⌥⌘,** while a Hammerspoon app window or menu is active. Start with **Shortcuts → App launcher**, update your preferred apps, then choose **Save** and **Reload**.
 
 ## Features
 
-### Find and switch without reaching for the mouse
+### Switch windows at a glance
 
-Search windows, browser tabs, and supported PDF documents; cycle through windows or browser windows; launch, activate, and hide apps with dedicated shortcuts. App launcher bindings can specify several candidate apps for the same key.
+Hold **⌥** and press **Tab** to open a window switcher with live previews arranged in a scrolling card grid. Keep tapping Tab (or ⇧Tab) to move, then release ⌥ to switch. While it is open, press **W** to close, **H** to hide, or **M** to minimize the selected window, and **Esc** to dismiss. Hovering or clicking a card works too.
+
+**⇧⌥ Tab** opens the same switcher for minimized windows, and **⌃⌥ Tab** limits it to browser windows. Previews are captured in the background, so the switcher appears immediately.
+
+![Window switcher showing window previews in a card grid](./assets/window-switcher.png)
+
+### Find and launch without reaching for the mouse
+
+Search windows, browser tabs, and supported PDF documents; launch, activate, and hide apps with dedicated shortcuts. App launcher bindings can specify several candidate apps for the same key.
 
 ![Tab search showing local demonstration pages and their destinations](./assets/switch-tabs.png)
 
 *Tab search shown with local demonstration pages.*
 
-Search menu bar status items and open their menus from the keyboard. App menus also gain letter- or index-based navigation where configured.
+Search menu bar status items and open their menus from the keyboard. Status items hidden behind the notch or a crowded menu bar appear in a floating bar (**⇧⌥ E**), where arrow keys move between visible and hidden items. App menus also gain letter- or index-based navigation where configured.
 
 ### Discover shortcuts as you work
 
-Display a shortcut sheet containing custom bindings and the active app's menu shortcuts. Hold modifiers to highlight matching commands, or search for a command and execute it from the chooser.
-
-![Shortcut sheet for the current application](./assets/show-keybindings.png)
+Display a shortcut sheet containing custom bindings and the active app's menu shortcuts. Hold modifiers to highlight matching commands, or press **✧ Space** to search for a command and execute it from the search bar.
 
 ![Searchable shortcuts with command descriptions](./assets/search-keybindings.png)
+
+![Shortcut sheet for the current application](./assets/show-keybindings.png)
 
 ### Arrange windows, displays, and Spaces
 
@@ -94,6 +104,7 @@ Set endpoints in `proxy.json`; keep machine-specific entries in the optional, Gi
 
 ### Automate everyday tasks
 
+- Expand abbreviations as you type: with the default `!!` prefix, `!!msd` becomes its configured text, followed by a confirmation sound.
 - Open supported Control Center panels with Globe/Fn shortcuts.
 - Keep the display awake from a menu bar toggle; its state survives a reload.
 - Filter unwanted attribution text from copied content using configurable patterns.
@@ -117,9 +128,11 @@ These bindings come from the checked-in configuration; your local edits take pre
 | Search shortcuts | ✧ Space |
 | Search windows | ⌥ Space |
 | Search tabs / supported documents | ⌃⌥ Space |
-| Next / previous window | ⌥ Tab / ⇧⌥ Tab |
-| Cycle browser windows | ⌃⌥ Tab |
+| Window switcher | ⌥ Tab (W / H / M close, hide, minimize) |
+| Minimized-window switcher | ⇧⌥ Tab |
+| Browser-window switcher | ⌃⌥ Tab |
 | Search menu bar items | ⇧⌥ Space |
+| Show hidden status items | ⇧⌥ E |
 | Open proxy menu | ⇧⌥ X |
 | Open Finder / Safari | ✧ F / ✧ Z |
 | Tile window into a half | Fn ⌃ Arrow |
@@ -134,15 +147,15 @@ The shortcut sheet and [keybindings.json](./hammerspoon/config/keybindings.json)
 
 ## Configuration
 
-### Use the local editor
+### Use the settings window
 
-The configuration window groups settings into **General, Shortcuts, Apps, Network proxy, File sync, and Localization**. Edit fields directly, expand nested rules, add entries, or use the JSON editor for a complete file.
+The native SwiftUI window works like System Settings: the sidebar lists pages under **General, Shortcuts, Apps, Network proxy, File sync, and Localization**, and nested rules open as their own pages. Click a shortcut and type the new combination (**Esc** cancels, **Delete** clears); right-click it to apply a modifier macro such as `${hyper.hyper}`. Toggles, pickers, and lists edit values in place, and **More → Edit File JSON** opens a highlighted editor for the whole file.
 
-**Save changes** saves only the file associated with the current tab and preserves drafts for other files. It creates a `.json.bak` backup of an existing file and checks for external changes before replacing it. **Reload** applies saved settings and reopens the editor; save or discard unsaved drafts first.
+**Save** (⌘S) writes only the current page's file and keeps drafts in other files. It creates a `.json.bak` backup and checks for external changes before replacing a file. **Reload** applies saved settings and reopens the window; save or discard drafts first.
 
-Closing the editor retains drafts until Hammerspoon quits or reloads. **Refresh files** rereads files from disk and asks before discarding unsaved edits. The editor runs locally without a web server or remote assets.
+Closing the window retains drafts until Hammerspoon quits or reloads. **More → Refresh Files** rereads files from disk and asks before discarding unsaved edits. Everything runs locally, with no web server or remote assets.
 
-See the [configuration editor guide](./hammerspoon/static/configuration/README.md) for details.
+See the [configuration window guide](./hammerspoon/static/configuration/README.md) for details.
 
 ### Edit JSON directly
 
@@ -152,7 +165,7 @@ Files live under `~/.hammerspoon/config/` after installation.
 | --- | --- |
 | [keybindings.json](./hammerspoon/config/keybindings.json) | Modifier macros, global and per-app shortcuts, app launchers, remote desktop modifiers |
 | [application.json](./hammerspoon/config/application.json) | App lifecycle, input sources, menu bar items, and app-specific behavior |
-| [misc.json](./hammerspoon/config/misc.json) | Polling interval, clipboard filters, verification-code patterns, and automatic proxy selection |
+| [misc.json](./hammerspoon/config/misc.json) | Polling interval, text expansion, clipboard filters, verification-code patterns, and automatic proxy selection |
 | [proxy.json](./hammerspoon/config/proxy.json) | System and client proxy endpoints |
 | `private-proxy.json` (optional) | Local proxy definitions excluded from Git |
 | [sync.json](./hammerspoon/config/sync.json) | File mappings, path variables, and post-processing commands |
@@ -178,7 +191,7 @@ Reload after editing JSON. Lua file changes trigger an automatic reload. Back up
 | --- | --- |
 | Hyper bindings do not work | Confirm Karabiner's active profile maps Caps Lock to F18 and matches `hyper.hyper`. |
 | All custom shortcuts stop responding | Try ⌃⌥⇧ R to resume hotkeys; check Accessibility and the Hammerspoon console. |
-| Saved configuration has no effect | Save changes, then Reload. JSON edits alone do not reload the configuration. |
+| Saved configuration has no effect | Save, then Reload. JSON edits alone do not reload the configuration. |
 | An app-specific action is missing | Confirm the app/window context, app version, language, and automation permissions. |
 | Trackpad navigation does not respond | Check Karabiner's Multitouch Extension and device-specific configuration. |
 | Proxy switching or server lookup fails | Check client availability, configured ports, routing mode, and the error shown by the menu. |
@@ -193,10 +206,12 @@ hammerspoon/
   init.lua                 Startup, hotkey registration, and watchers
   config/                  Editable JSON configuration
   src/app/                 Application behavior and shortcut handlers
+  src/configuration/       Native SwiftUI configuration window
   src/modal/               Hyper, Globe, double-tap, and trackpad modifiers
   src/system/              Proxy, menu bar, and Control Center integration
   src/utils/               Menu and localization helpers
-  static/configuration/    Local configuration editor
+  src/window/              Window switcher and preview capture
+  static/                  Shortcut sheet, menu bar, and configuration guide assets
   scripts/                 Resource extractors and helper scripts
   Spoons/                  Bundled Hammerspoon extensions
 karabiner/                 Keyboard profile and Touch Bar helper
