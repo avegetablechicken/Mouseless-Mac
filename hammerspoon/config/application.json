@@ -92,6 +92,9 @@
     "com.apple.notificationcenterui",
     "com.pigigaldi.pock",
     {
+      "com.apple.dt.Xcode": {
+        "allowRoles": ["AXStandardWindow", "AXDialog", "AXSystemDialog", "AXUnknown"]
+      },
       "whbalzac.Dongtaizhuomian": {
         "rejectTitles": "^$"
       },
