@@ -99,3 +99,83 @@ flush(); assert(focused==target,'modifier release must activate hovered window')
 windows={windows[1]}; e:rebuild(); start('minimized'); e.selected=1; key('m')
 assert(not e.active,'no remaining choices must dismiss without restoring minimized window')
 print('PASS: W/H/M actions, repeats, save dialog, scrolling hit test, mouse event routing and consumption, deferred focus, session reset, last window')
+
+-- Lifecycle reconciliation is independent of thumbnail success or failure.
+local now, snapshot, axReads = 100, {}, 0
+h.timer.secondsSinceEpoch=function() return now end
+h.window.list=function() return snapshot end
+h.axuielement={windowElement=function(w)
+  axReads=axReads+1
+  return {isValid=function()
+    if w.axError then return nil, 'cannotComplete' end
+    return not w.invalid
+  end}
+end}
+local results={}
+cap.poll=function() local r=results; results={}; return r end
+h.image.imageFromURL=function(url) return url end
+a.hidden=false
+local w=win(50,a)
+windows={w}; e:rebuild()
+local token=e.records[50].token
+e.records[50].image='previous image'
+results={{id=50,token=token,error='No screenshot available'}}
+e:receiveCaptures()
+assert(e.records[50].image=='previous image' and axReads==0,
+  'capture failure must retain the window and not query lifecycle')
+e:rebuild(true); now=103; e:rebuild(true)
+assert(e.records[50] and not e.missing[50], 'missing surface with live AX must stay')
+w.invalid=true; e:rebuild(true)
+assert(e.records[50], 'first invalid AX observation must not remove the window')
+w.axError=true; now=106; e:rebuild(true)
+assert(e.records[50] and not e.missing[50], 'AX errors are inconclusive and reset confirmation')
+w.axError=false; e:rebuild(true)
+snapshot=nil; now=109; e:rebuild(true)
+assert(e.records[50], 'failed WindowServer enumeration must not remove a window')
+snapshot={{kCGWindowNumber=50}}; e:rebuild(true)
+assert(e.records[50] and not e.missing[50], 'retained surface must heal pending AX loss')
+snapshot={}; w.min=true; e:rebuild(true)
+assert(e.records[50] and not e.missing[50], 'minimized windows must be protected')
+w.min=false; a.hidden=true; e:rebuild(true)
+assert(e.records[50] and not e.missing[50], 'hidden apps must be protected')
+a.hidden=false; e:rebuild(true); now=112; e:rebuild(true)
+assert(not e.records[50] and e.ended[50]==w, 'repeated cross-source absence must remove stale filter entries')
+w.invalid=false; e:rebuild(true)
+assert(e.records[50] and e.records[50].token~=token, 'recovered AX element must return with a fresh token')
+local recovered=e.records[50].token
+-- A replacement in the same process with the same window ID is a new lifetime.
+local replacement=win(50,a); windows={replacement}; e:rebuild()
+assert(e.records[50].win==replacement and e.records[50].token~=recovered,
+  'ID reuse must not retain the prior AX object or capture token')
+results={{id=50,token=token,image='stale image'},{id=50,token=recovered,image='also stale'}}
+e:receiveCaptures()
+assert(not e.records[50].image, 'late captures from old lifetimes must be ignored')
+replacement.invalid=true; e:rebuild(true); now=115; e:rebuild(true)
+assert(not e.records[50], 'replacement can independently reach confirmed closure')
+snapshot={{kCGWindowNumber=50}}; replacement.invalid=false; e:rebuild(true)
+assert(e.records[50] and not e.ended[50], 'reappearing surface must not remain blacklisted')
+replacement.invalid=true; snapshot={}; e:rebuild(true)
+windows={}; e:rebuild()
+assert(not next(e.missing) and not next(e.ended), 'filter removal must prune lifecycle bookkeeping')
+print('PASS: capture failure, transient absence, AX errors, hidden/minimized windows, confirmed close, recovery, ID reuse and late captures')
+
+-- A tab can become current without reaching window.filter's create/focus watcher.
+-- Reuse its discovery path: new tabs still pass the filter and old tabs survive.
+local terminal=app(3)
+terminal.bundleID=function() return 'com.apple.Terminal' end
+local inactive, standalone, current=win(60,terminal),win(61,terminal),win(62,terminal)
+windows={inactive,standalone}
+local discoveries=0
+local trackedApp={app=terminal,getCurrentSpaceAppWindows=function()
+  discoveries=discoveries+1
+  if #windows==2 then windows[#windows+1]=current end
+end}
+filter.windows={[{app=trackedApp}]=true}
+snapshot={{kCGWindowNumber=61},{kCGWindowNumber=62}}
+e:rebuild(); assert(#e.lists.normal==2, 'fixture must start with a missed tab')
+e:rebuild(true)
+assert(discoveries==1 and #e.lists.normal==3 and e.records[60] and e.records[61] and e.records[62],
+  'rescan must add the current tab without dropping the inactive tab')
+e:rebuild(true)
+assert(#e.lists.normal==3, 'repeated discovery must not duplicate tabs')
+print('PASS: missed Terminal tab discovery preserves inactive tabs without duplicates')

@@ -13,7 +13,7 @@ function M.new(options, runtime)
   local h = runtime or hs
   local self = setmetatable({ h = h, options = options, records = {}, lists = {},
     icons = {}, serial = 0, active = false, mode = nil, selected = 0,
-    session = {}, metrics = {}, captureErrors = 0, gone = {} }, Engine)
+    session = {}, metrics = {}, captureErrors = 0, ended = {}, missing = {} }, Engine)
   self.capture = options.capture or require('window.capture').new(h)
   self.canvas = h.canvas.new({x = 0, y = 0, w = 1, h = 1})
       :level(h.canvas.windowLevels.overlay):behavior({ 'canJoinAllSpaces', 'fullScreenAuxiliary' })
@@ -107,7 +107,7 @@ function M.new(options, runtime)
     end
     self:receiveCaptures()
   end)
-  self.refreshTimer = h.timer.doEvery(2, function() self:refreshCaptures() end)
+  self.refreshTimer = h.timer.doEvery(2, function() self:rebuild(true) end)
   self.screenWatcher = h.screen.watcher.new(function()
     self.layoutKey = nil
     if self.active then self:layout(); self:paint() end
@@ -123,7 +123,7 @@ function Engine:updateRecord(win)
     if not app then return end
     local old = self.records[id]
     local pid, bundle = app:pid(), app:bundleID()
-    local same = old and old.pid == pid
+    local same = old and old.pid == pid and old.win == win
     if not same then self.serial = self.serial + 1 end
     local iconKey = bundle or ('pid:' .. pid)
     if not self.icons[iconKey] then self.icons[iconKey] = (bundle and self.h.image.imageFromAppBundle(bundle))
@@ -138,13 +138,52 @@ function Engine:updateRecord(win)
   return record
 end
 
-function Engine:rebuild()
+-- A missing surface alone may be an inactive tab or a Space transition. Require
+-- an explicitly invalid AX element on two separated reads before dropping it.
+function Engine:windowEnded(win, id, live, now)
+  if live[id] then self.missing[id] = nil; return false end
+  local ok, invalid = pcall(function()
+    local app = win:application()
+    if (app and app:isHidden()) or win:isMinimized() then return false end
+    return self.h.axuielement.windowElement(win):isValid() == false
+  end)
+  if not ok or not invalid then self.missing[id] = nil; return false end
+  local pending = self.missing[id]
+  if not pending or pending.win ~= win then
+    self.missing[id] = {win = win, since = now}
+    return false
+  end
+  return now - pending.since >= 2
+end
+
+function Engine:rebuild(reconcile)
   if self.deleted then return end
+  local live, now
+  if reconcile then
+    local snapshot = call(self.h.window.list, true)
+    if type(snapshot) == 'table' then
+      live, now = {}, self.h.timer.secondsSinceEpoch()
+      for _, info in ipairs(snapshot) do live[info.kCGWindowNumber] = true end
+      -- Terminal can omit the focus/create notification when changing tabs.
+      for window in pairs(self.filter.windows or {}) do
+        if window.app.app:bundleID() == 'com.apple.Terminal' then
+          window.app:getCurrentSpaceAppWindows()
+          break
+        end
+      end
+    end
+  end
   local lists = { normal = {}, minimized = {}, browsers = {} }
-  local retained = {}
+  local retained, seen = {}, {}
   for _, win in ipairs(self.filter:getWindows(self.h.window.filter.sortByFocusedLast)) do
     local id = call(function() return win:id() end)
-    local record = id and not self.gone[id] and (self.records[id] or self:updateRecord(win))
+    if id then
+      seen[id] = true
+      if live then self.ended[id] = self:windowEnded(win, id, live, now) and win or nil end
+    end
+    local old = id and self.records[id]
+    local record = id and self.ended[id] ~= win
+        and ((old and old.win == win and old) or self:updateRecord(win))
     if record then
       retained[id] = record
       if not record.hidden then
@@ -156,6 +195,8 @@ function Engine:rebuild()
       end
     end
   end
+  for id in pairs(self.missing) do if not seen[id] then self.missing[id] = nil end end
+  for id in pairs(self.ended) do if not seen[id] then self.ended[id] = nil end end
   self.records, self.lists = retained, lists
   if self.active then
     -- Keep surviving windows and the selection stable; append new eligible windows
@@ -254,7 +295,7 @@ end
 
 function Engine:receiveCaptures()
   if self.deleted then return end
-  local changed, gone = false, false
+  local changed = false
   for _, result in ipairs(self.capture.poll()) do
     local record = self.records[result.id]
     if record and record.token == result.token then
@@ -267,14 +308,9 @@ function Engine:receiveCaptures()
         self.lastCaptureError = result.error
         -- Preserve a valid older image when an offscreen/minimized capture fails.
         record.retryAt = self.h.timer.secondsSinceEpoch() + 10
-        -- hs.window.filter can keep a destroyed window, e.g. a closed Terminal tab.
-        local live = false
-        for _, info in ipairs(self.h.window.list(true) or {}) do live = live or info.kCGWindowNumber == result.id end
-        if not live then self.gone[result.id], gone = true, true end
       end
     end
   end
-  if gone then self:rebuild() end
   if changed and self.active then self:paint() end
 end
 
