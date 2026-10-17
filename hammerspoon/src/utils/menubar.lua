@@ -830,12 +830,11 @@ function popupRightMenuBarItem(item, icon)
     local app = hs.application.get(hs.settings.bundleID)
     local map = loadStatusItemsAutosaveName(app)
     local index = map and map[item:autosaveName()]
-    if not index then return false end
-    icon = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem, index)
+    if index then icon = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem, index) end
   end
-  if not icon then return false end
+  if not icon and not registeredItems[item] then return false end
   local offset = 4
-  for _, entry in ipairs(getc(icon, AX.Menu, 1, AX.MenuItem) or {}) do
+  for _, entry in ipairs(icon and getc(icon, AX.Menu, 1, AX.MenuItem) or {}) do
     local mark = entry.AXMenuItemMarkChar
     if mark and mark ~= "" then
       -- Proxy uses the standard menu font/checkmark, whose measured width is its point size.
