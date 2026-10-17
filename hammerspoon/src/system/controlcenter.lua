@@ -268,7 +268,11 @@ local function popupControlCenterSubPanel(panel, allowReentry)
         role = AX.StaticText
       end
     elseif tcontain({ CC.Battery, CC.Hearing }, panel) then
-      role = AX.Button
+      if panel == CC.Hearing and OS_VERSION >= OS["Golden Gate"] then
+        role = AX.CheckBox
+      else
+        role = AX.Button
+      end
     elseif tcontain({ CC.AXShortcuts, CC.User }, panel) then
       if OS_VERSION >= OS.Tahoe:withMinor(1) then
         role = AX.CheckBox
@@ -311,6 +315,9 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     repeat
       ele = tfind(getc(pane, role), function(e)
         if panel == CC.Focus then
+          if OS_VERSION >= OS["Golden Gate"] then
+            return e.AXIdentifier == "controlcenter-focus-modes-compact-2"
+          end
           return e.AXIdentifier == "controlcenter-focus-modes"
         end
         if role == AX.Group then
@@ -425,7 +432,10 @@ if OS_VERSION >= OS.Ventura then
   tinsert(controlCenterPanels, CC.StageManager)
 end
 if OS_VERSION >= OS.Sonoma then
-  tconcat(controlCenterPanels, { CC.AXShortcuts, CC.Battery, CC.User })
+  if OS_VERSION < OS["Golden Gate"] then
+    tinsert(controlCenterPanels, CC.AXShortcuts)
+  end
+  tconcat(controlCenterPanels, { CC.Battery, CC.User })
   if OS_VERSION >= OS.Sonoma:withMinor(2) then
     tinsert(controlCenterPanels, CC.MusicRecognition)
   end
@@ -1210,6 +1220,15 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         end
       until #cbs > 0
       if #cbs > 1 then
+        if OS_VERSION >= OS["Golden Gate"] then
+          -- The first checkbox is the Background Sounds switch itself;
+          -- bind number keys to the sound options after it.
+          local label = mayLocalize("Background Sounds")
+          cbs = tifilter(cbs, function(cb)
+            local desc = cb.AXAttributedDescription
+            return desc == nil or desc:getString():find("^" .. label) == nil
+          end)
+        end
         if backgroundSoundsHotkeys == nil then
           backgroundSoundsHotkeys = {}
         end
@@ -1273,6 +1292,39 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       else
         result = #getc(pane, AX.Button)
       end
+      local function pressPlayPause(buttonIndex)
+        local defaultMusicAppForControlCenter =
+            ApplicationConfigs["defaultMusicAppForControlCenter"]
+        if defaultMusicAppForControlCenter ~= nil then
+          local launchCustomizedApp = false
+          local appTitle = getc(pane, AX.StaticText, 1)
+          if OS_VERSION < OS.Tahoe then
+            local appname = displayName('com.apple.Music')
+            if appTitle and appTitle.AXValue == appname .. '.app' then
+              launchCustomizedApp = true
+            end
+          else
+            if appTitle and appTitle.AXValue == mayLocalize("Not Playing") then
+              launchCustomizedApp = true
+            end
+          end
+          if launchCustomizedApp then
+            if type(defaultMusicAppForControlCenter) == 'string' then
+              defaultMusicAppForControlCenter =
+                  { defaultMusicAppForControlCenter }
+            end
+            for _, appid in ipairs(defaultMusicAppForControlCenter) do
+              if installed(appid) then
+                hs.application.launchOrFocusByBundleID(appid)
+                return
+              end
+            end
+          end
+        end
+        local button = getc(pane, AX.Button, buttonIndex)
+        if button then button:performAction(AX.Press) end
+      end
+
       if (type(result) == "number" and result == 3)
           or (type(result) == "table" and #result == 3) then
         if result == 3 then
@@ -1284,38 +1336,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         end
         local hotkey
         hotkey = newControlCenter("", "Space", result[2],
-          function()
-            local defaultMusicAppForControlCenter =
-                ApplicationConfigs["defaultMusicAppForControlCenter"]
-            if defaultMusicAppForControlCenter ~= nil then
-              local launchCustomizedApp = false
-              local appTitle = getc(pane, AX.StaticText, 1)
-              if OS_VERSION < OS.Tahoe then
-                local appname = displayName('com.apple.Music')
-                if appTitle and appTitle.AXValue == appname .. '.app' then
-                  launchCustomizedApp = true
-                end
-              else
-                if appTitle and appTitle.AXValue == mayLocalize("Not Playing") then
-                  launchCustomizedApp = true
-                end
-              end
-              if launchCustomizedApp then
-                if type(defaultMusicAppForControlCenter) == 'string' then
-                  defaultMusicAppForControlCenter =
-                      { defaultMusicAppForControlCenter }
-                end
-                for _, appid in ipairs(defaultMusicAppForControlCenter) do
-                  if installed(appid) then
-                    hs.application.launchOrFocusByBundleID(appid)
-                    return
-                  end
-                end
-              end
-            end
-            local button = getc(pane, AX.Button, 2)
-            if button then button:performAction(AX.Press) end
-          end)
+          function() pressPlayPause(2) end)
         if not checkAndRegisterControlCenterHotKeys(hotkey) then
           return
         end
@@ -1361,16 +1382,36 @@ function registerControlCenterHotKeys(panel, inMenuBar)
           end
         end
       elseif result == 2 then
-        for i, g in ipairs(getc(pane, AX.Group)) do
-          local buttonLabel = mayLocalize("play")
-              .. "/" .. mayLocalize("pause")
-          local hotkey = newControlCenter("", tostring(i), buttonLabel,
-            function()
-              local button = getc(g, AX.Button, 1)
-              if button then button:performAction(AX.Press) end
-            end)
+        if OS_VERSION >= OS["Golden Gate"]
+            and getc(pane, AX.Group) == nil then
+          local hotkey = newControlCenter("", "Space",
+            mayLocalize("play") .. "/" .. mayLocalize("pause"),
+            function() pressPlayPause(1) end)
           if not checkAndRegisterControlCenterHotKeys(hotkey) then
             return
+          end
+          local buttonRight = getc(pane, AX.Button, 2)
+          if buttonRight and buttonRight.AXEnabled then
+            hotkey = newControlCenter("", "Right", mayLocalize("next"),
+              function()
+                if buttonRight then buttonRight:performAction(AX.Press) end
+              end)
+            if not checkAndRegisterControlCenterHotKeys(hotkey) then
+              return
+            end
+          end
+        else
+          for i, g in ipairs(getc(pane, AX.Group)) do
+            local buttonLabel = mayLocalize("play")
+                .. "/" .. mayLocalize("pause")
+            local hotkey = newControlCenter("", tostring(i), buttonLabel,
+              function()
+                local button = getc(g, AX.Button, 1)
+                if button then button:performAction(AX.Press) end
+              end)
+            if not checkAndRegisterControlCenterHotKeys(hotkey) then
+              return
+            end
           end
         end
       end
@@ -1437,7 +1478,7 @@ local function controlCenterObserverCallback()
     end
     if controlCenterHotKeys ~= nil then
       for _, hotkey in ipairs(controlCenterHotKeys) do
-        hotkey:delete()
+        if hotkey.delete then hotkey:delete() end
       end
       controlCenterHotKeys = nil
     end
