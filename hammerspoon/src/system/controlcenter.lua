@@ -101,6 +101,8 @@ controlCenterLocalized = function(panel, key)
     localeFile = "Users"
   elseif panel == CC.MusicRecognition then
     localeFile = "Music Recognition"
+  elseif panel == CC.StageManager and OS_VERSION >= OS["Golden Gate"] then
+    localeFile = "ControlCenterDisplayableModule"
   else
     localeFile = panel
   end
