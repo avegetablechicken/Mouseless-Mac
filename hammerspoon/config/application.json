@@ -90,6 +90,7 @@
   "windowSwitcherIgnore": [
     "com.apple.controlcenter",
     "com.apple.notificationcenterui",
+    "com.apple.MenuBarAgent",
     "com.pigigaldi.pock",
     {
       "com.apple.dt.Xcode": {
