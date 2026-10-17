@@ -83,12 +83,14 @@ local function scanSearchMenuBarItems()
   -- (e.g. empty entries and Live Activities) that need to be excluded or
   -- merged into the global menu bar ordering
   if OS_VERSION >= OS.Tahoe then
+    local controlCenterApp = find("com.apple.controlcenter")
     local appMenuBarItems = controlCenterMenuBarItems or getValidControlCenterMenuBarItemsTahoe(
-      find("com.apple.controlcenter")
+      controlCenterApp
     )
     local items = {}
     for i, item in ipairs(appMenuBarItems) do
-      tinsert(items, { item, i, controlCenterPreferred and controlCenterPreferred[i] })
+      -- Keep the preference owner separate from the AX host (MenuBarAgent on 27+).
+      tinsert(items, { item, i, controlCenterPreferred and controlCenterPreferred[i], controlCenterApp })
     end
     table.sort(items, function(a, b)
       return a[1].AXPosition.x > b[1].AXPosition.x
@@ -110,7 +112,7 @@ local function scanSearchMenuBarItems()
     local item = pair[1]
     local app
     if item.AXPosition then
-      app = item.AXParent.AXParent:asHSApplication()
+      app = pair[4] or item.AXParent.AXParent:asHSApplication()
     else
       app = item
     end
@@ -205,7 +207,7 @@ local function collectSearchMenuBarItems()
           else
             inventory.targets[w.id] = { items = items, element = element,
               hasAXPosition = p ~= nil, pid = app:pid(), hostPID = w.pid,
-              choice = { id = index, appid = app:bundleID() or app:name(),
+              choice = { id = index, appid = pair[4] and pair[4]:bundleID() or app:bundleID() or app:name(),
                 extraPattern = { element.AXIdentifier or "" } } }
           end
         end
@@ -276,7 +278,7 @@ local function registerSearchMenuBar()
     local item, idx = pair[1], pair[2]
     local app
     if item.AXPosition then
-      app = item.AXParent.AXParent:asHSApplication()
+      app = pair[4] or item.AXParent.AXParent:asHSApplication()
     else
       app = item
     end
@@ -286,6 +288,12 @@ local function registerSearchMenuBar()
     if #maps[appid] > 1 then
       autosaveName = maps[appid][idx]
       if appid == 'com.apple.controlcenter' then
+        local description
+        if OS_VERSION >= OS["Golden Gate"] then
+          description = item:attributeValue("AXDescription")
+        else
+          description = item.AXDescription
+        end
         -- Special handling for Control Center items:
         -- - Normalize BentoBox naming
         -- - Attach additional search patterns
@@ -297,7 +305,7 @@ local function registerSearchMenuBar()
             end
             ccBentoBoxCnt = ccBentoBoxCnt + 1
           end
-        elseif item.AXDescription:match('^'..appname) then
+        elseif description:match('^'..appname) then
           if OS_VERSION < OS.Tahoe then
             extraSearchPattern = "BentoBox"
           else
@@ -310,14 +318,14 @@ local function registerSearchMenuBar()
         elseif item.AXIdentifier:sub(-13) == '.liveActivity' then
           extraSearchPattern = item.AXIdentifier
           appname = localizedString('Live Activity', appid)
-          title = item.AXDescription
+          title = description
         else
           local parts = strsplit(item.AXIdentifier, "%.")
           extraSearchPattern = parts[#parts]
         end
         extraSearchPattern = { appname, extraSearchPattern }
         if item.AXIdentifier:sub(-13) ~= '.liveActivity' then
-          appname = item.AXDescription
+          appname = description
         end
       elseif autosaveName ~= "Item-0" or #tifilter(maps[appid],
           function(v) return v:sub(1, 5) == "Item-" end) > 1 then

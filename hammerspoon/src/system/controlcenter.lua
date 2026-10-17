@@ -332,7 +332,12 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       local actions = ele:actionNames()
       local ret = ele:performAction(actions[#actions])
       if ret and panel == CC.StageManager then
-        local menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+        local menuBarItems
+        if OS_VERSION >= OS["Golden Gate"] then
+          menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
+        else
+          menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+        end
         local menuBarItem = tfind(menuBarItems,
           function(item)
             return item.AXIdentifier == "com.apple.menuextra.controlcenter"
@@ -374,7 +379,13 @@ local function popupControlCenterSubPanel(panel, allowReentry)
   end
   local index
   for i, elem in ipairs(menuBarItems) do
-    if elem.AXDescription and elem.AXDescription:find(locPanel) then
+    local description
+    if OS_VERSION >= OS["Golden Gate"] then
+      description = elem:attributeValue("AXDescription")
+    else
+      description = elem.AXDescription
+    end
+    if description and description:find(locPanel) then
       index = i break
     end
   end

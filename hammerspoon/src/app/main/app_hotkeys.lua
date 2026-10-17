@@ -1453,7 +1453,12 @@ Bartender.barItemTitle = function(index, rightClick)
           end
           local app = find(hint, true)
           if app then
-            local menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+            local menuBarItems
+            if app:bundleID() == "com.apple.controlcenter" and OS_VERSION >= OS["Golden Gate"] then
+              menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
+            else
+              menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+            end
             local iconAlwaysHiddenPosition = -7000
             local alWaysHiddenMenuBarItems = tifilter(menuBarItems, function(item)
               return item.AXPosition.x < iconAlwaysHiddenPosition
@@ -1483,7 +1488,12 @@ Bartender.barItemTitle = function(index, rightClick)
             local map = loadStatusItemsAutosaveName(app)
             if map then
               local iconAlwaysHiddenPosition = -7000
-              local menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+              local menuBarItems
+              if app:bundleID() == "com.apple.controlcenter" and OS_VERSION >= OS["Golden Gate"] then
+                menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
+              else
+                menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+              end
               if not alwaysHiddenBar then
                 local alWaysHiddenMenuBarItems = tifilter(menuBarItems, function(item)
                   return item.AXPosition.x < iconAlwaysHiddenPosition
@@ -1637,7 +1647,12 @@ Ice.barItemTitle = function(index)
         end
         local app = find(hint, true)
         if app then
-          local menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+          local menuBarItems
+          if app:bundleID() == "com.apple.controlcenter" and OS_VERSION >= OS["Golden Gate"] then
+            menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
+          else
+            menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+          end
           local alWaysHiddenMenuBarItems = {}
           local iconAlwaysHidden = getc(toappui(win:application()).AXExtrasMenuBar, AX.MenuBarItem, 3)
           if iconAlwaysHidden then
@@ -1671,7 +1686,12 @@ Ice.barItemTitle = function(index)
           local map = loadStatusItemsAutosaveName(app)
           if map then
             local iconAlwaysHidden = getc(toappui(win:application()).AXExtrasMenuBar, AX.MenuBarItem, 3)
-            local menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+            local menuBarItems
+            if app:bundleID() == "com.apple.controlcenter" and OS_VERSION >= OS["Golden Gate"] then
+              menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
+            else
+              menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+            end
             if iconAlwaysHidden and not alwaysHiddenBar then
               local alWaysHiddenMenuBarItems = tifilter(menuBarItems, function(item)
                 return item.AXPosition.x < iconAlwaysHidden.AXPosition.x
@@ -6900,7 +6920,12 @@ AppHotKeyCallbacks = {
         local s, e = ident:find('.liveActivity')
         if s == nil then return false end
         local prefix = ident:sub(1, e)
-        local menuBarItems = getc(toappui(win:application()).AXExtrasMenuBar, AX.MenuBarItem)
+        local menuBarItems
+        if OS_VERSION >= OS["Golden Gate"] then
+          menuBarItems = getValidControlCenterMenuBarItemsTahoe(win:application())
+        else
+          menuBarItems = getc(toappui(win:application()).AXExtrasMenuBar, AX.MenuBarItem)
+        end
         local menuBarItem = tfind(menuBarItems, function(item)
           return item.AXIdentifier and item.AXIdentifier:sub(1, e) == prefix
         end)

@@ -66,7 +66,19 @@ end
 ------------------------------------------------------------
 
 function getValidControlCenterMenuBarItemsTahoe(app)
-  local menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+  local menuBarItems
+  if OS_VERSION >= OS["Golden Gate"] then
+    -- System status items moved to MenuBarAgent, each inside an AXGroup.
+    local menuBar = toappui(find("com.apple.MenuBarAgent")).AXExtrasMenuBar
+    menuBarItems = {}
+    for _, group in ipairs(getc(menuBar, AX.Group)) do
+      for _, item in ipairs(getc(group, AX.MenuBarItem)) do
+        tinsert(menuBarItems, item)
+      end
+    end
+  else
+    menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+  end
   menuBarItems = tifilter(menuBarItems, function(item)
     return item.AXIdentifier
         and (item.AXIdentifier:sub(1, 20) == 'com.apple.menuextra.'
@@ -134,10 +146,16 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
   local ccBentoBoxCnt = 0
   foreach(positions, function(r)
     local item = r[2]
+    local description
+    if OS_VERSION >= OS["Golden Gate"] then
+      description = item:attributeValue("AXDescription")
+    else
+      description = item.AXDescription
+    end
     local autosaveName
 
     -- BentoBox items are unnamed; assign synthetic identifiers
-    if item.AXDescription:match('^'..app:name()) then
+    if description:match('^'..app:name()) then
       autosaveName = "BentoBox-" .. tostring(ccBentoBoxCnt)
       ccBentoBoxCnt = ccBentoBoxCnt + 1
     else
@@ -147,7 +165,7 @@ local function loadStatusItemsAutosaveNameControlCenterTahoe(app, requirePreferr
       end)
       if autosaveName == nil
           and item.AXIdentifier:sub(-13) ~= '.liveActivity' then
-        local name = delocalizedString(item.AXDescription, appid)
+        local name = delocalizedString(description, appid)
         if type(name) == 'string' then
           name = name:gsub(" ", ""):gsub("‑", "")
           autosaveName = tfind(enabledItems, function(item)
