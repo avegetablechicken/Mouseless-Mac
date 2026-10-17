@@ -563,7 +563,13 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         backgroundSoundsHotkeys = nil
       end
 
-      local menuBarItem = tfind(getc(appUI.AXExtrasMenuBar, AX.MenuBarItem),
+      local menuBarItems
+      if OS_VERSION >= OS["Golden Gate"] then
+        menuBarItems = getValidControlCenterMenuBarItemsTahoe(find('com.apple.controlcenter'))
+      else
+        menuBarItems = getc(appUI.AXExtrasMenuBar, AX.MenuBarItem)
+      end
+      local menuBarItem = tfind(menuBarItems,
         function(item)
           return item.AXIdentifier == "com.apple.menuextra.controlcenter"
         end)
@@ -1396,10 +1402,17 @@ local function controlCenterObserverCallback()
     )
   end
   controlCenterDestroyObserver:callback(function()
+    local homePanel = false
     if OS_VERSION >= OS.Tahoe then
       local win = controlCenter:focusedWindow()
       if win and win:title() == controlCenter:name() then
-        return
+        if OS_VERSION < OS["Golden Gate"] then return end
+        -- Since macOS 27, Escape returns to the main panel instead of
+        -- closing Control Center; release the panel hotkeys in that case.
+        local pane = getc(toappui(controlCenter), AX.Window, 1)
+        if OS_VERSION >= OS.Ventura then pane = getc(pane, AX.Group, 1) end
+        homePanel = testAlready(CC.WiFi, pane, AX.CheckBox) and testAlready(CC.Bluetooth, pane, AX.CheckBox)
+        if not homePanel then return end
       end
     end
     if selectNetworkWatcher ~= nil then
@@ -1443,6 +1456,7 @@ local function controlCenterObserverCallback()
       end
       backgroundSoundsHotkeys = nil
     end
+    if homePanel and controlCenter:focusedWindow() ~= nil then return end
     controlCenterDestroyObserver:stop()
     controlCenterDestroyObserver = nil
   end)
