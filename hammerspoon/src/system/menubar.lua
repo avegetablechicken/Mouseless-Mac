@@ -500,6 +500,19 @@ local function activateVisibleItem(right)
   local item = items[selected]
   mode:exit()
   hs.timer.doAfter(0, function()
+    if OS_VERSION >= OS["Golden Gate"] then
+      local element = item.element
+      if not right and element then
+        if element:pid() == hs.processInfo.processID then
+          if require("utils.menubar").popupProxyMenu(element) then return end
+        elseif tcontain(element:actionNames(), AX.Press) then
+          element:performAction(AX.Press)
+          return
+        end
+      end
+      menuBarReveal.clickGoldenGate(item, right)
+      return
+    end
     local position = littleSnitchMenuBarItemPosition(item)
     if position or right then
       position = position or { x = item.x + item.w / 2, y = item.y + item.h / 2 }
@@ -523,7 +536,7 @@ local function moveFocusToStatusMenus(targetScreen)
   screen = targetScreen or hs.mouse.getCurrentScreen()
   local ok, current = pcall(menuBarReveal.visibleItems, screen)
   if not ok or #current == 0 then
-    screen = nil
+    clearVisibleFocus()
     hs.alert.show("No visible menu bar items")
     return
   end
@@ -755,6 +768,14 @@ local function scheduleHiddenBarUpdate(_, event, app)
 end
 
 local function showHiddenStatusItems(targetScreen)
+  if OS_VERSION >= OS["Golden Gate"] then
+    mode:exit()
+    local target = targetScreen or hs.mouse.getCurrentScreen()
+    if not menuBarReveal.setOverflowExpanded(target, targetScreen and true or nil) then
+      hs.alert.show("Cannot show hidden status items")
+    end
+    return
+  end
   if hiddenBar and not targetScreen then hiddenMode:exit() return end
   clearVisibleFocus()
   if hiddenBar then selectHiddenItem(#hiddenEntries) return end
