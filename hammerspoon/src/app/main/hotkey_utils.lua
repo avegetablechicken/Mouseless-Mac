@@ -345,7 +345,7 @@ function registerMenuBarObserverForHotkeyValidity(app, collectItems)
       menuBarMenuSelectedObservers[appid] = nil
     end)
 
-    if FLAGS["LOADING"] and LoadBuf.menubarSelectedObserverStarted then
+    if FLAGS["COLLECTING_MENUBAR_OBSERVERS"] then
       tinsert(LoadBuf.menubarSelectedObserverStarted, appid)
     end
     if collectItems then
@@ -1616,7 +1616,7 @@ function registerObserversForMenuBarMenu(app, appConfig)
     end
   end
 
-  if FLAGS["LOADING"] and menuBarMenuObservers[appid] then
+  if FLAGS["COLLECTING_MENUBAR_OBSERVERS"] and menuBarMenuObservers[appid] then
     tinsert(LoadBuf.menubarObserverStarted, appid)
   end
 end

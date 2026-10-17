@@ -3,6 +3,7 @@ LoadBuf.menubarObserverStarted = {}
 LoadBuf.menubarSelectedObserverStarted = {}
 LoadBuf.daemonAppFocusedWindowFilters = {}
 LoadBuf.selectedMenuBarAppIDs = nil
+FLAGS["COLLECTING_MENUBAR_OBSERVERS"] = true
 
 local runningApplications = LoadBuf.runningApplications
 
@@ -200,3 +201,4 @@ LoadBuf.menubarObserverStarted = nil
 LoadBuf.menubarSelectedObserverStarted = nil
 LoadBuf.daemonAppFocusedWindowFilters = nil
 LoadBuf.selectedMenuBarAppIDs = nil
+FLAGS["COLLECTING_MENUBAR_OBSERVERS"] = nil
