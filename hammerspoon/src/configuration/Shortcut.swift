@@ -65,14 +65,27 @@ extension Store {
     let inner = text.dropFirst(2).dropLast()
     return inner.hasPrefix("hyper.") ? String(inner.dropFirst(6)) : nil
   }
-  func symbols(_ value: JSON?) -> [String]? {
+  func validateModifierReferences(_ root: JSON) throws {
+    guard let macros = root["hyper"]?.object else { return }
+    for name in macros.keys {
+      var visited = Set<String>()
+      var current: String? = name
+      while let key = current {
+        guard visited.insert(key).inserted else { throw ConfigError("Modifier presets cannot contain circular references: \(key)") }
+        current = macroName(macros[key])
+      }
+    }
+  }
+
+  func symbols(_ value: JSON?, visited: Set<String> = []) -> [String]? {
     switch value {
     case .array(let items)?: return items.map { keyDisplay($0) }
     case .string(let s)? where s.isEmpty: return []
     case .string(let s)? where isReference(s):
       // The Hyper key shows as ✧, matching Hotkey Search (Mod.Hyper.Symbol).
       if macroName(value) == hyperKeyName { return ["✧"] }
-      return macroName(value).flatMap { drafts["keybindings"]?["hyper"]?[$0] }.flatMap { symbols($0) }
+      guard let name = macroName(value), !visited.contains(name) else { return nil }
+      return drafts["keybindings"]?["hyper"]?[name].flatMap { symbols($0, visited: visited.union([name])) }
     case .string?: return [keyDisplay(value)]
     default: return nil
     }

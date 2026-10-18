@@ -370,6 +370,7 @@ struct FileState { var raw: String?, baseline: JSON?, error: String?, missing = 
     if name == "localization" { try validateTranslationValue(path, value) }
     guard var root = drafts[name] else { throw ConfigError("This configuration is no longer available.") }
     try root.assign(path, value)
+    if name == "keybindings" { try validateModifierReferences(root) }
     drafts[name] = root
   }
   func set(_ name: String, _ path: Path, _ value: JSON) {
@@ -925,6 +926,10 @@ struct FileState { var raw: String?, baseline: JSON?, error: String?, missing = 
     guard pending == nil, changed(name) else { return }
     if hasInvalid(name) || requiredFieldsMissing(name) { setStatus("Correct invalid inputs before saving.", error: true); return }
     guard let draft = drafts[name] else { return }
+    if name == "keybindings" {
+      do { try validateModifierReferences(draft) }
+      catch { setStatus(error.localizedDescription, error: true); return }
+    }
     pending = name
     setStatus("Saving…")
     send(["action": "save", "name": name, "raw": draft.stringify() + "\n"])

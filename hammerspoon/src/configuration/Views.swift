@@ -622,7 +622,7 @@ struct DetailToolbar: ToolbarContent {
           guard let draft = store.drafts[name] else { return }
           store.editJSON("Edit \(name).json", draft) { v in
             guard v.isRecord else { throw ConfigError("The root value must be a JSON object") }
-            store.drafts[name] = v; store.mark()
+            try store.assign(name, [], v); store.mark()
           }
         }
         .disabled(store.drafts[tab.file] == nil)
