@@ -175,6 +175,7 @@ func parseKeyField(_ text: String, kind: KeyKind, original: JSON?) throws -> JSO
     expanded = expanded.replacingOccurrences(of: symbol, with: " \(name) ")
   }
   let tokens = expanded.components(separatedBy: CharacterSet(charactersIn: "+,").union(.whitespacesAndNewlines)).filter { !$0.isEmpty }
+  guard !tokens.isEmpty else { throw ConfigError("Enter a modifier name, or None for no modifiers.") }
   let values = try tokens.map { token -> String in
     if let name = modifierNames[token.lowercased()] { return name }
     if isReference(token) || token.range(of: #"^[Ff]\d{1,2}$"#, options: .regularExpression) != nil { return token }
