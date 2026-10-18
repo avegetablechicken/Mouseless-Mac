@@ -48,13 +48,13 @@ end
 
 function M.clickGoldenGate(item, right)
   if busy then return false end
-  local position = { x = item.x + item.w / 2, y = item.y + item.h / 2 }
+  local position = item.clickPoint or { x = item.x + item.w / 2, y = item.y + item.h / 2 }
   local mouse = hs.mouse.absolutePosition()
   local event, types = hs.eventtap.event, hs.eventtap.event.types
   busy = true
   hs.mouse.absolutePosition(position)
   event.newMouseEvent(right and types.rightMouseDown or types.leftMouseDown, position, {}):post()
-  clickTimer = hs.timer.doAfter(0.05, function()
+  clickTimer = hs.timer.doAfter(item.holdDelay or 0.05, function()
     event.newMouseEvent(right and types.rightMouseUp or types.leftMouseUp, position, {}):post()
     clickTimer = hs.timer.doAfter(0.1, function()
       hs.mouse.absolutePosition(mouse)
@@ -71,7 +71,26 @@ function M.setOverflowExpanded(screen, expanded)
   if current == expanded then return true, false end
   -- This system button advertises no AX actions; use its verified hit region.
   local p, size = button.AXPosition, button.AXSize
-  return M.clickGoldenGate({ x = p.x, y = p.y, w = size.w, h = size.h }), true
+  local notch = find("com.wudanwu.PingIsland")
+  local background = notch and getc(toappui(notch), AX.Window, 1, AX.Group, 1)
+  -- Ping Island's transparent root spans the screen, beyond its visible content.
+  -- Prefer an inset point on the exposed side; use edges only as a last resort.
+  for _, dx in ipairs({ size.w * 3 / 4, size.w / 4, size.w / 2, size.w - 1, 1 }) do
+    local point = { x = p.x + dx, y = p.y + size.h / 2 }
+    local hit = hs.axuielement.systemElementAtPosition(point)
+    local clear = hit and hit:pid() == button:pid()
+    if background and hit == background then
+      clear = not tfind(background.AXChildren, function(child)
+        local cp, cs = child.AXPosition, child.AXSize
+        return cp and cs and point.x >= cp.x and point.x < cp.x + cs.w
+            and point.y >= cp.y and point.y < cp.y + cs.h
+      end)
+    end
+    if clear then
+      return M.clickGoldenGate({ x = p.x, y = p.y, w = size.w, h = size.h,
+        clickPoint = point, holdDelay = 0.2 }), true
+    end
+  end
 end
 
 local function goldenGateItems(screen)
