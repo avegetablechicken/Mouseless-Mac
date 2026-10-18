@@ -709,7 +709,11 @@ Weather.getLocationList = function(app)
   local win = app:focusedWindow()
   if win == nil then return end
   local list
-  if OS_VERSION >= OS.Tahoe:withMinor(2) then
+  -- Tested on: Weather 6.0 (1454.0.1); macOS 27.0.1 (previous/next location).
+  if OS_VERSION >= OS["Golden Gate"] then
+    list = getc(towinui(win), AX.Group, 1,
+        AX.Group, 1, AX.Group, 1, AX.Group, 2, AX.Group, 1, AX.Group, 1)
+  elseif OS_VERSION >= OS.Tahoe:withMinor(2) then
     list = getc(towinui(win), AX.Group, 1,
         AX.Group, 1, AX.Group, 2, AX.Group, 2, AX.Group, 1, AX.Group, 1)
   else
@@ -6777,8 +6781,17 @@ AppHotKeyCallbacks = {
       },
       background = true,
       fn = function(win)
-        local button = getc(towinui(win), AX.Group, 1,
-            AX.Group, 1, AX.Button, -1)
+        local button
+        -- Tested on: WeatherMenu 6.0 (1454.0.1); macOS 27.0.1.
+        if OS_VERSION >= OS["Golden Gate"] then
+          button = tfind(getc(towinui(win), AX.Group, 1,
+              AX.Group, 1, AX.Link) or {}, function(link)
+            return link.AXDescription == A_Message
+          end)
+        else
+          button = getc(towinui(win), AX.Group, 1,
+              AX.Group, 1, AX.Button, -1)
+        end
         if button then Callback.Press(button) end
       end
     },
