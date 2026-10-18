@@ -1292,7 +1292,19 @@ local function bindStageManagerWindow(spec, index)
   end
   local fn = function()
     local satisfied, button = condition()
-    if satisfied and button then button:performAction(AX.Press) end
+    if satisfied and button then
+      -- Workaround verified on macOS 27.0.1; the exact introduction is unconfirmed.
+      if OS_VERSION < OS["Golden Gate"]:withPatch(1) then
+        button:performAction(AX.Press)
+        return
+      end
+      local event, point = hs.eventtap.event, hs.geometry(button.AXFrame).center
+      local mousePosition = hs.mouse.absolutePosition()
+      for _, kind in ipairs({ event.types.leftMouseDown, event.types.leftMouseUp }) do
+        event.newMouseEvent(kind, point, {}):setProperty(event.properties.mouseEventClickState, 1):post()
+      end
+      hs.mouse.absolutePosition(mousePosition)
+    end
   end
   local locApp = localizedString("Stage Manager", "com.apple.controlcenter",
                                  { localeFile = "StageManager",
