@@ -244,6 +244,12 @@ local function activateSearchMenuBarChoice(menuBarItems, choice, right)
       end
       return
     end
+    -- Passwords ignores AXPress on macOS 27; a real click toggles it.
+    if choice.appid == "com.apple.Passwords.MenuBarExtra"
+        and OS_VERSION >= OS["Golden Gate"] then
+      leftClickAndRestore(item)
+      return
+    end
     if choice.appid:sub(1, 10) == 'com.apple.' then
       if type(choice.extraPattern) ~= 'table'
           or tfind(choice.extraPattern, function(pattern)
