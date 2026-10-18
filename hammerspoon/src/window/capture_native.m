@@ -156,7 +156,7 @@ static void capture(NSDictionary *job) {
         skyLight ? dlsym(skyLight, "CGSHWCaptureWindowList") : NULL;
     CGImageRef (*snapshotWindow)(CGRect, CGWindowListOption, CGWindowID, CGWindowImageOption) = dlsym(RTLD_DEFAULT, "CGWindowListCreateImage");
     CGImageRef image = snapshotWindow ? snapshotWindow(CGRectNull, kCGWindowListOptionIncludingWindow, wid,
-        kCGWindowImageBoundsIgnoreFraming | kCGWindowImageShouldBeOpaque) : NULL;
+        kCGWindowImageBoundsIgnoreFraming) : NULL;
     if (!image && connection && captureWindows) {
         // Tahoe's fullSize capture may be transparent or clip the Stage Manager surface.
         uint32_t options = (1 << 11) | (1 << 8) | (1 << 19);
