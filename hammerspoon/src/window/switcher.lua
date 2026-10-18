@@ -118,6 +118,24 @@ end
 function Engine:updateRecord(win)
   local id = call(function() return win:id() end)
   if not id then return end
+  -- Keep standard windows; auxiliary windows may explicitly opt out of window cycling.
+  if call(function()
+    local role = win:subrole()
+    if not role or role == '' or role == 'AXStandardWindow' then return false end
+    local ok, value = self.h.osascript.javascript(([=[
+      ObjC.import('Foundation'); ObjC.import('CoreGraphics');
+      ObjC.bindFunction('CGSMainConnectionID', ['unsigned int', []]);
+      ObjC.bindFunction('CGSGetWindowTags', ['int', ['unsigned int', 'unsigned int', 'void *', 'unsigned long']]);
+      var data = $.NSMutableData.dataWithLength(8);
+      var error = $.CGSGetWindowTags($.CGSMainConnectionID(), %d, data.mutableBytes, 64);
+      JSON.stringify({error: error, data: ObjC.unwrap(data.base64EncodedStringWithOptions(0))});
+    ]=]):format(id))
+    if not ok then return false end
+    local result = self.h.json.decode(value)
+    if result.error ~= 0 then return false end
+    local low, high = string.unpack('<I4I4', self.h.base64.decode(result.data))
+    return low & (1 << 18) ~= 0 and high & (1 << 9) == 0
+  end) then self.records[id] = nil; return end
   local record = call(function()
     local app = win:application()
     if not app then return end
