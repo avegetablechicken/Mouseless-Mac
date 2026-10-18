@@ -146,8 +146,6 @@ static void capture(NSDictionary *job) {
         return;
     }
     CGWindowID wid = [job[@"id"] unsignedIntValue];
-    // AltTab's offscreen/minimized-window capture path. Resolve symbols rather
-    // than linking private APIs; retain the public API as a visible-window fallback.
     static void *skyLight;
     static dispatch_once_t once;
     dispatch_once(&once, ^{
@@ -156,8 +154,10 @@ static void capture(NSDictionary *job) {
     uint32_t (*connection)(void) = skyLight ? dlsym(skyLight, "CGSMainConnectionID") : NULL;
     CFArrayRef (*captureWindows)(uint32_t, CGWindowID *, uint32_t, uint32_t) =
         skyLight ? dlsym(skyLight, "CGSHWCaptureWindowList") : NULL;
-    CGImageRef image = NULL;
-    if (connection && captureWindows) {
+    CGImageRef (*snapshotWindow)(CGRect, CGWindowListOption, CGWindowID, CGWindowImageOption) = dlsym(RTLD_DEFAULT, "CGWindowListCreateImage");
+    CGImageRef image = snapshotWindow ? snapshotWindow(CGRectNull, kCGWindowListOptionIncludingWindow, wid,
+        kCGWindowImageBoundsIgnoreFraming | kCGWindowImageShouldBeOpaque) : NULL;
+    if (!image && connection && captureWindows) {
         // Tahoe's fullSize capture may be transparent or clip the Stage Manager surface.
         uint32_t options = (1 << 11) | (1 << 8) | (1 << 19);
         if (@available(macOS 26.0, *)) options &= ~(1 << 19);
