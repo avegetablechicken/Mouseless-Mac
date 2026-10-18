@@ -208,7 +208,13 @@ struct SnippetEntryRow: View {
   }
 
   private func commit() {
-    do { try store.renameKey("misc", rulePath.appending("entries"), from: name, to: text) }
+    do {
+      let next = trimmed(text)
+      guard next.range(of: #"^[!-~]+$"#, options: .regularExpression) != nil else { throw ConfigError("Use printable characters without spaces.") }
+      let rules = store.value("misc", [.k("snippets"), .k("rules")])?.array ?? []
+      guard next == name || !rules.contains(where: { rule in (rule["entries"]?.object?.keys ?? []).contains { (rule["prefix"]?.string ?? "") + $0 == prefix + next } }) else { throw ConfigError("This abbreviation is already used.") }
+      try store.renameKey("misc", rulePath.appending("entries"), from: name, to: next)
+    }
     catch { store.setStatus(error.localizedDescription, error: true); text = name }
   }
 }
