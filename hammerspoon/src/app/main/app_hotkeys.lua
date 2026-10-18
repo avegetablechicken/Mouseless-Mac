@@ -6573,7 +6573,11 @@ AppHotKeyCallbacks = {
     ["showPasswordsDialog"] = {
       message = TB("com.apple.Passwords", "Show"),
       background = true,
-      fn = clickRightMenuBarItem
+      -- Passwords ignores AXPress on macOS 27; a real click toggles its popover.
+      fn = function(app)
+        clickRightMenuBarItem(app, {},
+            OS_VERSION >= OS["Golden Gate"] and "click" or nil)
+      end
     },
     ["newPassword"] = {
       message = T("New Password"),
@@ -6615,7 +6619,8 @@ AppHotKeyCallbacks = {
       condition = PasswordsMenuBarExtra.recordField("User Name"),
       fn = function(field, win)
         Callback.Click(field)
-        clickRightMenuBarItem(win:application())
+        clickRightMenuBarItem(win:application(), {},
+            OS_VERSION >= OS["Golden Gate"] and "click" or nil)
       end
     },
     ["copyPassword"] = {
@@ -6625,7 +6630,8 @@ AppHotKeyCallbacks = {
       condition = PasswordsMenuBarExtra.recordField("Password"),
       fn = function(field, win)
         Callback.Click(field)
-        clickRightMenuBarItem(win:application())
+        clickRightMenuBarItem(win:application(), {},
+            OS_VERSION >= OS["Golden Gate"] and "click" or nil)
       end
     },
     ["copyVerificationCode"] = {
@@ -6640,7 +6646,8 @@ AppHotKeyCallbacks = {
       background = true,
       fn = function(field, win)
         Callback.Click(field)
-        clickRightMenuBarItem(win:application())
+        clickRightMenuBarItem(win:application(), {},
+            OS_VERSION >= OS["Golden Gate"] and "click" or nil)
       end
     },
     ["copyWebsite"] = {
@@ -6700,7 +6707,8 @@ AppHotKeyCallbacks = {
       end,
       fn = function(url, win)
         hs.pasteboard.setContents(url)
-        clickRightMenuBarItem(win:application())
+        clickRightMenuBarItem(win:application(), {},
+            OS_VERSION >= OS["Golden Gate"] and "click" or nil)
       end
     },
     ["record1"] = {
