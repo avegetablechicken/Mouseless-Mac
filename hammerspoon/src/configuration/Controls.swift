@@ -34,10 +34,12 @@ extension Store {
       else { self.set(file, path, .string(text)) }
     })
   }
-  /// Optional switches are removed when off, so files only record what differs from the default.
+  /// App shortcut overrides retain false; removing them would restore Lua defaults.
   func flagBinding(_ file: String, _ path: Path, default fallback: Bool = false) -> Binding<Bool> {
-    Binding(get: { self.value(file, path)?.bool ?? fallback }, set: { on in
-      if on == fallback { if self.value(file, path) != nil { self.deleteEntry(file, path) } }
+    let shortcut = supportsShortcutOptions(file, path.parent)
+    let inherited = shortcut ? hotkeyDefaults.at(Array(path.dropFirst()))?.bool ?? fallback : fallback
+    return Binding(get: { self.value(file, path)?.bool ?? inherited }, set: { on in
+      if !shortcut && on == fallback { if self.value(file, path) != nil { self.deleteEntry(file, path) } }
       else { self.set(file, path, .bool(on)) }
     })
   }

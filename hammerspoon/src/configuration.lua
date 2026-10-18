@@ -231,7 +231,19 @@ local function handle(json)
   if type(body) ~= "table" then return end
   if body.action == "load" then
     local configs = M.load()
+    local hotkeyDefaults = {}
+    for appid, callbacks in pairs(AppHotKeyCallbacks or {}) do
+      hotkeyDefaults[appid] = {}
+      for action, config in pairs(callbacks) do
+        local defaults = {}
+        for _, field in ipairs({ "background", "persist", "repeatable", "nonFrontmost" }) do
+          if type(config[field]) == "boolean" then defaults[field] = config[field] end
+        end
+        hotkeyDefaults[appid][action] = defaults
+      end
+    end
     reply({ action = "loaded", files = configs, appNames = M.appNames, configdir = hs.configdir,
+      hotkeyDefaults = hotkeyDefaults,
       proxyApps = ProxyAppInstallationStatus and ProxyAppInstallationStatus() or {},
       appBindings = AppKeyInspector and AppKeyInspector.snapshot() or {} })
   elseif body.action == "save" then

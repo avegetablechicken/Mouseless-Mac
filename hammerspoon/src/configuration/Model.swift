@@ -312,6 +312,7 @@ struct FileState { var raw: String?, baseline: JSON?, error: String?, missing = 
   var disclosure: [String: Bool] = [:]
   var proxyApps: [String: Bool] = [:]
   var appBindings: [String: JSON] = [:]
+  var hotkeyDefaults: JSON = .object(JObject())
 
   var jsonEditor: JSONEditorRequest?
   var property: PropertyRequest?
@@ -976,6 +977,7 @@ struct FileState { var raw: String?, baseline: JSON?, error: String?, missing = 
     case "loaded":
       proxyApps = (message["proxyApps"] as? [String: Any] ?? [:]).compactMapValues { $0 as? Bool }
       appBindings = (message["appBindings"] as? [String: Any] ?? [:]).mapValues { JSON(any: $0) }
+      hotkeyDefaults = JSON(any: message["hotkeyDefaults"] ?? [String: Any]())
       configDirectory = message["configdir"] as? String ?? configDirectory
       AppIdentity.shared.configuredNames = (message["appNames"] as? [String: Any] ?? [:]).compactMapValues { $0 as? String }
       var loadedFiles: [String: FileState] = [:]
