@@ -15,7 +15,7 @@ local function fixture(count)
   local heldModifiers = {alt=true}
   local screenFrame = {x=0,y=0,w=1440,h=900}
   local h = {window={filter={}}, eventtap={event={types={keyDown=1,flagsChanged=2,scrollWheel=3},properties={keyboardEventAutorepeat=1,scrollWheelEventIsContinuous=2,scrollWheelEventPointDeltaAxis1=3,scrollWheelEventDeltaAxis1=4}}},
-    keycodes={map={escape=53,tab=48,['`']=50,left=123,right=124,up=126,down=125}}, canvas={windowLevels={overlay=1}}, image={}, screen={}, timer={}}
+    keycodes={map={w=13,h=4,m=46,escape=53,tab=48,['`']=50,left=123,right=124,up=126,down=125}}, canvas={windowLevels={overlay=1}}, image={}, screen={}, timer={}}
   for _, name in ipairs({'windowsChanged','windowFocused','windowTitleChanged','windowMinimized',
     'windowUnminimized','windowHidden','windowUnhidden','windowMoved'}) do h.window.filter[name] = name end
   h.window.filter.sortByFocusedLast = 'focused'
@@ -39,7 +39,7 @@ local function fixture(count)
   function h.image.imageFromURL(url) return 'decoded:'..url end
   local canvas = {elements={}}
   function h.canvas.new() allocations=allocations+1; return canvas end
-  for _, name in ipairs({'level','behavior','frame'}) do canvas[name]=function(self) return self end end
+  for _, name in ipairs({'level','behavior','frame','clickActivating'}) do canvas[name]=function(self) return self end end
   function canvas:replaceElements(...) self.elements={...}; allocations=allocations+1; return self end
   function canvas:elementAttribute(i,key,value)
     assert(self.elements[i], 'missing element '..i)
