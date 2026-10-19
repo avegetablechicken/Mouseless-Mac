@@ -1186,13 +1186,14 @@ end
 local function awaitProxyExitTask(path, args, input, timeout, request, outputToFile)
   local thread = coroutine.running()
   local task
-  local outputPath
+  local outputPath, inputPath
   if (not input and outputToFile ~= false) or outputToFile then
     outputPath = os.tmpname()
     tinsert(args, "--output")
     tinsert(args, outputPath)
   end
   local function cleanup()
+    if inputPath then os.remove(inputPath); inputPath = nil end
     if outputPath then os.remove(outputPath); outputPath = nil end
   end
   local function finish(status, body)
@@ -1206,8 +1207,8 @@ local function awaitProxyExitTask(path, args, input, timeout, request, outputToF
           status, body = -1, ""
         end
       end
-      cleanup()
     end
+    cleanup()
     if not task or proxyExitTask ~= task then return end
     proxyExitTask = nil
     if proxyExitTimer then proxyExitTimer:stop(); proxyExitTimer = nil end
@@ -1216,10 +1217,20 @@ local function awaitProxyExitTask(path, args, input, timeout, request, outputToF
     end
   end
   -- File output avoids pipe limits and menu-tracking delays in stream callbacks.
+  if input then
+    inputPath = os.tmpname()
+    local file = io.open(inputPath, "wb")
+    if not file then cleanup(); return -1, "" end
+    local written = file:write(input)
+    local closed = file:close()
+    if not written or not closed then cleanup(); return -1, "" end
+    for i, arg in ipairs(args) do
+      if arg == "-" then args[i] = inputPath end
+    end
+  end
   task = hs.task.new(path, finish, args)
   if not task then cleanup(); return -1, "" end
   proxyExitTask = task
-  if input then task:setInput(input) end
   if not task:start() then
     proxyExitTask = nil
     cleanup()
