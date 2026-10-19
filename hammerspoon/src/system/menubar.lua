@@ -258,6 +258,11 @@ local function activateSearchMenuBarChoice(menuBarItems, choice, right)
   if choice == nil then return end
   hs.timer.doAfter(0, function()
     local item = menuBarItems[choice.id][1]
+    -- A hover before the click lets a notch overlay such as Ping Island take it.
+    -- Tested on: Ping Island 0.32.1; Passwords 3.0.1; iShot Pro Helper 2.6.9; macOS 27.0.1.
+    if menuBarReveal.revealBeforeActivation(item, function(target)
+      menuBarReveal.clickGoldenGate(target, right)
+    end) then return end
     if item.AXPosition == nil then
       local position = unpositionedMenuBarItemPosition(menuBarItems, choice.id)
       if position then

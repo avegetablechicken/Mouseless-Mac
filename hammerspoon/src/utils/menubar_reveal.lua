@@ -2,6 +2,7 @@
 -- item into view can leave it ordered on-screen even after its position returns.
 local M = {}
 local native, clickTimer, busy
+local revealTimer
 
 local function bridge()
   if native then return native end
@@ -29,9 +30,12 @@ end
 local function goldenGateMenuBar(screen)
   local app = find("com.apple.MenuBarAgent")
   if not app then return end
-  -- The second host window exposes the rendered buttons; the first exposes
-  -- application proxies whose hidden-item coordinates overlap.
-  local window = getc(toappui(app), AX.Window, 2)
+  -- Window order changes; prefer the host reporting expanded overflow.
+  local window = tfind(getc(toappui(app), AX.Window), function(w)
+    return tfind(getc(w, AX.Button) or {}, function(b)
+      return b:attributeValue("AXDescription") == localizedString("menuBar.hideOverflowItemsAccessibilityLabel", app:bundleID(), "MenuBarCore")
+    end)
+  end) or getc(toappui(app), AX.Window, 2)
   if not window then return end
   local p, size, frame = window.AXPosition, window.AXSize, screen:fullFrame()
   if not p or not size or p.x ~= frame.x or p.y ~= frame.y then return end
@@ -49,13 +53,16 @@ end
 function M.clickGoldenGate(item, right)
   if busy then return false end
   local position = item.clickPoint or { x = item.x + item.w / 2, y = item.y + item.h / 2 }
-  local mouse = hs.mouse.absolutePosition()
+  local mouse = item.restorePosition or hs.mouse.absolutePosition()
   local event, types = hs.eventtap.event, hs.eventtap.event.types
   busy = true
   hs.mouse.absolutePosition(position)
-  event.newMouseEvent(right and types.rightMouseDown or types.leftMouseDown, position, {}):post()
+  -- Tested on: Snipaste 2.11.3; macOS 27.0.1. A zero click count is ignored.
+  event.newMouseEvent(right and types.rightMouseDown or types.leftMouseDown, position, {})
+      :setProperty(event.properties.mouseEventClickState, 1):post()
   clickTimer = hs.timer.doAfter(item.holdDelay or 0.05, function()
-    event.newMouseEvent(right and types.rightMouseUp or types.leftMouseUp, position, {}):post()
+    event.newMouseEvent(right and types.rightMouseUp or types.leftMouseUp, position, {})
+        :setProperty(event.properties.mouseEventClickState, 1):post()
     clickTimer = hs.timer.doAfter(0.1, function()
       hs.mouse.absolutePosition(mouse)
       busy, clickTimer = false, nil
@@ -91,6 +98,65 @@ function M.setOverflowExpanded(screen, expanded)
         clickPoint = point, holdDelay = 0.2 }), true
     end
   end
+end
+
+-- Source AX items retain collapsed coordinates; click the rendered host instead.
+local function renderedItem(item, screen)
+  local candidates = {}
+  for _, visible in ipairs(M.visibleItems(screen)) do
+    if visible.element == item then return visible end
+    if visible.element and visible.element:pid() == item:pid() then
+      candidates[#candidates + 1] = visible
+    end
+  end
+  local app = hs.application.applicationForPID(item:pid())
+  if not app then return end
+  local _, preferred, sources = loadStatusItemsAutosaveName(app, true)
+  if not sources or #sources ~= #candidates then return end
+  local ordered = {}
+  for index, source in ipairs(sources) do
+    if not preferred[index] then return end
+    ordered[#ordered + 1] = { source = source, position = preferred[index] }
+  end
+  table.sort(ordered, function(a, b) return a.position < b.position end)
+  table.sort(candidates, function(a, b) return a.x > b.x end)
+  for index, entry in ipairs(ordered) do
+    if entry.source == item then return candidates[index] end
+  end
+end
+
+function M.revealBeforeActivation(item, activate)
+  if OS_VERSION < OS["Golden Gate"] then return false end
+  local p = item.AXPosition
+  if not p then return false end
+  local screen = hs.screen.find({ x = p.x, y = p.y, w = 1, h = 1 })
+  if not screen then return false end
+  local _, button, expanded = goldenGateMenuBar(screen)
+  if not button or p.x >= button.AXPosition.x + button.AXSize.w then return false end
+  if revealTimer then return true end
+  if not M.setOverflowExpanded(screen, true) then
+    hs.alert.show("Cannot show hidden status items")
+    return true
+  end
+  local attempts = 0
+  local function ready()
+    revealTimer = nil
+    if not item:isValid() then return end
+    local _, _, shown = goldenGateMenuBar(screen)
+    local target = not busy and shown and renderedItem(item, screen)
+    if target then
+      activate(target)
+      return
+    end
+    attempts = attempts + 1
+    if attempts < 20 then
+      revealTimer = hs.timer.doAfter(0.05, ready)
+    else
+      hs.alert.show("Cannot show hidden status items")
+    end
+  end
+  revealTimer = hs.timer.doAfter(0.05, ready)
+  return true
 end
 
 local function goldenGateItems(screen)

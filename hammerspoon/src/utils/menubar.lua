@@ -963,6 +963,15 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   local menuBarItem = menuBarItems[menuBarIdx or 1]
   if menuBarItem == nil then return false end
 
+  if show and require("utils.menubar_reveal").revealBeforeActivation(menuBarItem, function(target)
+    require("utils.menubar_reveal").clickGoldenGate(target, show == "right-click")
+    if #menuItemPath > 0 then
+      hs.timer.doAfter(0.2, function()
+        clickRightMenuBarItem({ appid, menuBarId }, menuItemPath, false)
+      end)
+    end
+  end) then return true end
+
   -- Rnsure the menu bar item is actually visible
   -- If it's hidden by a manager, ask that manager to reveal it.
 
