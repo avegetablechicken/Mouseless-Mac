@@ -350,8 +350,8 @@ end
 
 local function PhoneShowViewMenu(winUI)
   local button
-  -- Tested on: Phone 1.0; macOS 27.0.1.
   if OS_VERSION >= OS["Golden Gate"] then
+    -- Tested on: Phone 1.0; macOS 27.0.1.
     button = tfind(getc(winUI, AX.Toolbar, 1, AX.Group, 2, AX.MenuButton) or {}, function(bt)
       return bt.AXDescription == T("Filter", winUI)
     end)
@@ -2569,8 +2569,8 @@ AppHotKeyCallbacks = {
       windowFilter = Phone.WF.Main,
       fn = function(win)
         local button
-        -- Tested on: Phone 1.0; macOS 27.0.1.
         if OS_VERSION >= OS["Golden Gate"] then
+          -- Tested on: Phone 1.0; macOS 27.0.1.
           button = tfind(getc(towinui(win), AX.Toolbar, 1, AX.Button) or {}, function(bt)
             return bt.AXDescription == T("Keypad", win)
           end)
