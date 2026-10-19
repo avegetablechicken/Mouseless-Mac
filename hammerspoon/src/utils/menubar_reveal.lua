@@ -85,8 +85,12 @@ function M.setOverflowExpanded(screen, expanded)
   local notch = find("com.wudanwu.PingIsland")
   local background = notch and getc(toappui(notch), AX.Window, 1, AX.Group, 1)
   -- Ping Island's transparent root spans the screen, beyond its visible content.
-  -- Prefer an inset point on the exposed side; use edges only as a last resort.
-  for _, dx in ipairs({ size.w * 3 / 4, size.w / 4, size.w / 2, size.w - 1, 1 }) do
+  -- It also reacts to hovering near the notch; never fall back toward it.
+  -- Prefer an inset point on the far side; use its edge only as a last resort.
+  -- Tested on: Ping Island 0.32.1; macOS 27.0.1.
+  local full = screen:fullFrame()
+  local right = p.x + size.w / 2 >= full.x + full.w / 2
+  for _, dx in ipairs(right and { size.w * 3 / 4, size.w - 1 } or { size.w / 4, 1 }) do
     local point = { x = p.x + dx, y = p.y + size.h / 2 }
     local hit = hs.axuielement.systemElementAtPosition(point)
     local clear = hit and hit:pid() == button:pid()

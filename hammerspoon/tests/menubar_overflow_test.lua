@@ -109,3 +109,28 @@ end
 assert(table.concat(events, ',') == '1,2,3,4')
 assert(#hovers == 2 and hovers[1] == 900, 'restoring the cursor must post mouseMoved for Ping Island')
 print('PASS: left/right clicks carry click count 1 on both down and up; duplicate clicks suppressed')
+
+-- The overflow button sits beside the notch; fallbacks must stay on its far side.
+local notch, covered = { pid = function() return 9 end }, {}
+env.find = function(id) return id == 'com.wudanwu.PingIsland' and notch or app end
+env.hs.axuielement = {}
+local clicked
+local fresh = assert(loadfile('src/utils/menubar_reveal.lua', 't', env))()
+fresh.clickGoldenGate = function(frame) clicked = frame.clickPoint; return true end
+expanded, covered = false, {}
+local owner = { pid = function() return 5 end }
+arrow.pid = owner.pid
+env.getc = function(_, role, index)
+  if role == 'window' then return index and window or { window } end
+  return { arrow }
+end
+env.hs.axuielement.systemElementAtPosition = function(point)
+  return covered[point.x] and notch or owner
+end
+assert(fresh.setOverflowExpanded(screen, true) and clicked.x == 515)
+covered = { [515] = true }
+assert(fresh.setOverflowExpanded(screen, true) and clicked.x == 519)
+covered, clicked = { [515] = true, [519] = true }, nil
+assert(not fresh.setOverflowExpanded(screen, true) and clicked == nil,
+  'covered far side must not move the click toward the notch')
+print('PASS: overflow button clicks stay on the side away from the notch')
