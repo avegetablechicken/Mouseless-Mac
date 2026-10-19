@@ -1024,6 +1024,37 @@ end
 
 --- ## WeChat
 local WeChat = {}
+-- Hosted web content is unreachable from the window root; hit-test the page.
+-- Tested on: WeChat 4.1.15; macOS 27.0.1.
+function WeChat.webAreaURL(win)
+  -- The hit may land on another WeChat window stacked above this one
+  local elem = toappui(win:application()):elementAtPosition(win:frame().center)
+  local webArea
+  while elem and elem.AXRole ~= AX.Window do
+    if webArea == nil and elem.AXRole == AX.WebArea then webArea = elem end
+    elem = elem.AXParent
+  end
+  if webArea == nil or elem ~= towinui(win) then return end
+  local url = webArea.AXURL
+  url = url and url.url
+  -- Mini-programs are served from `servicewechat.com` and don't render in browsers
+  if url == nil or not url:match("^https?://")
+      or url:match("^https?://servicewechat%.com/") then
+    return
+  end
+  -- Drop session parameters (key, uin, pass_ticket, ...) from article links
+  local path = url:match("^https?://mp%.weixin%.qq%.com(/[^?#]*)")
+  if path then
+    local params = {}
+    for _, k in ipairs { "__biz", "mid", "idx", "sn" } do
+      local v = url:match("[?&]" .. k .. "=([^&#]*)")
+      if v then tinsert(params, k .. "=" .. v) end
+    end
+    url = "https://mp.weixin.qq.com" .. path
+        .. (#params > 0 and "?" .. table.concat(params, "&") or "")
+  end
+  return url
+end
 WeChat.WF = {
   Main = {
     fn = function(win)
@@ -1086,8 +1117,10 @@ WeChat.WF = {
         local bt = getc(towinui(win), AX.Group, 1,
             AX.Group, 1, AX.Group, 1, AX.Group, 1, nil, 1)
         A_WinBuf.closeWebButton = bt
-        return bt ~= nil
-            and (bt.AXRole == AX.Button or bt.AXRole == AX.PopUpButton)
+        if bt == nil then
+          return WeChat.webAreaURL(win) ~= nil
+        end
+        return bt.AXRole == AX.Button or bt.AXRole == AX.PopUpButton
       end
     end
   },
@@ -5111,6 +5144,10 @@ AppHotKeyCallbacks = {
         local app = win:application()
         if appVer(app) < "4" then return true end
         local button = A_WinBuf.closeWebButton
+        if button == nil then
+          local url = WeChat.webAreaURL(win)
+          return url ~= nil, url
+        end
         if button.AXRole == AX.PopUpButton then
           local tabs = getc(towinui(win), AX.Group, 1,
               AX.Group, 1, AX.Group, 1, AX.Group, 2,
@@ -5128,6 +5165,10 @@ AppHotKeyCallbacks = {
         return true, button
       end,
       fn = function(button, win)
+        if type(button) == 'string' then
+          hs.urlevent.openURL(button)
+          return
+        end
         if win == nil then
           win = button
           local frame = win:frame()
