@@ -209,9 +209,80 @@ local function readStatusItemPreferences(appid)
   return defaults
 end
 
+-- One authoritative layout snapshot per search, also usable by individual callers.
+-- Tested on: Hammerspoon 1.1.1; macOS 27.0.1.
+-- 27 is provisional: the first minor using this storage is not confirmed.
+function M.readLayout()
+  local plist = hs.plist.read(os.getenv("HOME") .. "/Library/Group Containers/"
+      .. "com.apple.MenuBar/Library/Preferences/com.apple.MenuBar.plist")
+  return plist and plist.TrailingItemPreferredPositions or {}
+end
+
+local function loadStatusItemsGoldenGate(app, requirePreferredPosition, layout)
+  local appid = app:bundleID() or app:name()
+  local map, preferred, items = {}, {}, nil
+  local function assign(index, name, position)
+    map[index], map[name] = name, index
+    preferred[index], preferred[name] = position, position
+  end
+  if appid == "com.apple.controlcenter" then
+    items = getValidControlCenterMenuBarItemsTahoe(app)
+    -- These identifiers belong to the actual MenuBarAgent controls, not old
+    -- localized labels or synthetic positions in the Control Center plist.
+    local modules = { clock = "Clock", controlcenter = "BentoBox-0",
+      battery = "Battery", sound = "Sound", audiovideo = "AudioVideoModule" }
+    for i, item in ipairs(items) do
+      local identifier = item.AXIdentifier or ""
+      local name = modules[identifier:match("^com%.apple%.menuextra%.(.+)$")]
+      if name and layout["module:" .. name] ~= nil then
+        assign(i, name, layout["module:" .. name])
+      end
+    end
+  else
+    local saved, ordered = {}, {}
+    local prefix = "status:" .. appid .. "::"
+    local bundleID = app:bundleID()
+    local info = bundleID and hs.application.infoForBundleID(bundleID) or {}
+    local executablePrefix = info.CFBundleExecutable and "status:" .. info.CFBundleExecutable .. "::"
+    for key, position in pairs(layout) do
+      local ownerPrefix = key:sub(1, #prefix) == prefix and prefix
+          or executablePrefix and key:sub(1, #executablePrefix) == executablePrefix and executablePrefix
+      if ownerPrefix then
+        saved[#saved + 1] = { name = key:sub(#ownerPrefix + 1), position = position }
+      end
+    end
+    if #saved == 0 then return end
+    items = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+    -- Little Snitch genuinely has no AX status item; retain its known menu path.
+    if items == nil and appid == "at.obdev.littlesnitch.agent" and #saved == 1 then
+      assign(1, saved[1].name, saved[1].position)
+    else
+      if not items or #items ~= #saved then return end
+      for i, item in ipairs(items) do
+        local position = item.AXPosition
+        if not position then return end
+        ordered[#ordered + 1] = { index = i, x = position.x }
+      end
+      table.sort(saved, function(a, b) return a.position < b.position end)
+      table.sort(ordered, function(a, b) return a.x > b.x end)
+      for i, item in ipairs(ordered) do
+        -- Equal coordinates cannot establish an identity; do not guess.
+        if ordered[i + 1] and item.x == ordered[i + 1].x then return end
+        if saved[i + 1] and saved[i].position == saved[i + 1].position then return end
+        assign(item.index, saved[i].name, saved[i].position)
+      end
+    end
+  end
+  if requirePreferredPosition then return map, preferred, items end
+  return map
+end
+
 -- Build a stable mapping between "visual index" and "autosave name"
 -- so we can address menu bar items reliably across reorders.
-function loadStatusItemsAutosaveName(app, requirePreferredPosition)
+function loadStatusItemsAutosaveName(app, requirePreferredPosition, layout)
+  if OS_VERSION >= OS["Golden Gate"] then
+    return loadStatusItemsGoldenGate(app, requirePreferredPosition, layout or M.readLayout())
+  end
   local appid = app:bundleID() or app:name()
 
   -- Special case: Control Center on Tahoe+ has different persistence keys.

@@ -1,0 +1,72 @@
+-- Run with: lua tests/menubar_positions_test.lua
+local appid = 'org.hammerspoon.Hammerspoon'
+local items = {{AXPosition={x=855}}, {AXPosition={x=856}}}
+local old = {['NSStatusItem Preferred Position Item-0']=1017,
+  ['NSStatusItem Preferred Position PROXY']=551}
+local reads = 0
+local env = setmetatable({
+  OS_VERSION=27, OS={['Golden Gate']=27,Tahoe=26}, AX={MenuBarItem='AXMenuBarItem'},
+  tinsert=table.insert, getc=function() return items end, toappui=function() return {} end,
+  hs={application={infoForBundleID=function(id)
+    return {CFBundleExecutable=id=="example.owner" and "example-process" or "Hammerspoon"}
+  end},settings={bundleID=appid,getKeys=function() return {} end},plist={read=function(path)
+    reads=reads+1
+    assert(path:match('com.apple.MenuBar/Library/Preferences/com.apple.MenuBar.plist$'))
+    return {TrailingItemPreferredPositions={
+      ['status:'..appid..'::Item-0']=889, ['status:'..appid..'::PROXY']=551,
+      ['status:other.app::Item-0']=50}}
+  end}},
+},{__index=_G})
+local m=assert(loadfile('src/utils/menubar.lua','t',env))()
+local proxy={autosaveName=function() return 'PROXY' end,
+  frame=function() error('New OS must not match overlapping frame coordinates') end}
+m.register(proxy)
+local app={bundleID=function() return appid end}
+local map,p=env.loadStatusItemsAutosaveName(app,true)
+assert(map[1]=='Item-0' and map[2]=='PROXY' and map.PROXY==2)
+assert(p[1]==889 and p[2]==551 and reads==1)
+-- A shared snapshot serves multiple apps without rereading disk.
+local layout=m.readLayout()
+local before=reads
+map,p=env.loadStatusItemsAutosaveName(app,true,layout)
+assert(map.PROXY==2 and reads==before)
+-- Missing/stale/ambiguous records must not fall back to old preferences.
+assert(env.loadStatusItemsAutosaveName(app,true,{})==nil)
+local extra={}
+for k,v in pairs(layout) do extra[k]=v end
+extra['status:'..appid..'::removed']=999
+assert(env.loadStatusItemsAutosaveName(app,true,extra)==nil)
+items[2].AXPosition.x=855
+assert(env.loadStatusItemsAutosaveName(app,true,layout)==nil)
+items[2].AXPosition.x=856
+-- Control Center uses exact module IDs; transient items stay present but unnamed.
+env.getValidControlCenterMenuBarItemsTahoe=function()
+  return {{AXIdentifier='com.apple.menuextra.clock'},
+    {AXIdentifier='com.apple.menuextra.controlcenter'},
+    {AXIdentifier='example.liveActivity'}}
+end
+local cc={bundleID=function() return 'com.apple.controlcenter' end}
+local ccmap,ccpos,ccitems=env.loadStatusItemsAutosaveName(cc,true,
+  {['module:Clock']=0,['module:BentoBox-0']=133})
+assert(ccmap[1]=='Clock' and ccpos[1]==0 and ccmap[2]=='BentoBox-0')
+assert(#ccitems==3 and ccmap[3]==nil)
+-- Framework-created status items may use CFBundleExecutable as their owner.
+local originalItems=items
+items={{AXPosition={x=500}}}
+local executableApp={bundleID=function() return 'example.owner' end}
+local execMap,execPositions=env.loadStatusItemsAutosaveName(executableApp,true,
+  {['status:example-process::Item-0']=476})
+assert(execMap[1]=='Item-0' and execPositions[1]==476)
+items=originalItems
+-- Older systems retain their own preferences and registered-frame correction.
+env.OS_VERSION=26
+items[1].AXPosition.x=100; items[2].AXPosition.x=200
+proxy.frame=function() return {x=200} end
+env.hs.settings.getKeys=function()
+  return {'NSStatusItem Preferred Position Item-0','NSStatusItem Preferred Position PROXY'}
+end
+env.hs.settings.get=function(k) return old[k] end
+map,p=env.loadStatusItemsAutosaveName(app,true)
+assert(map[1]=='Item-0' and map[2]=='PROXY' and p[1]==1017 and p[2]==551)
+assert(reads==before, 'Older OS must not read the new storage')
+print('PASS: shared layout, stale/ambiguous records, system modules, and legacy mapping')

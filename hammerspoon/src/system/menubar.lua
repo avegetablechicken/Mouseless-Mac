@@ -10,6 +10,7 @@ local function scanSearchMenuBarItems()
   -- For each app, try to load autosaved status item identifiers
   -- and map them to accessibility menu bar elements if available.
   local menuBarItems, maps, unpositioned = {}, {}, {}
+  local layout = OS_VERSION >= OS["Golden Gate"] and require("utils.menubar").readLayout()
   local controlCenterMenuBarItems, controlCenterPreferred
   local apps = hs.application.runningApplications()
   if OS_VERSION >= OS.Tahoe then
@@ -42,7 +43,7 @@ local function scanSearchMenuBarItems()
   end
   for _, app in ipairs(apps) do
     local appid = app:bundleID() or app:name()
-    local map, preferred, appMenuBarItems = loadStatusItemsAutosaveName(app, true)
+    local map, preferred, appMenuBarItems = loadStatusItemsAutosaveName(app, true, layout)
     if appid == 'com.apple.controlcenter' then
       controlCenterMenuBarItems = appMenuBarItems
       controlCenterPreferred = preferred
@@ -51,10 +52,10 @@ local function scanSearchMenuBarItems()
     if map and (next(map) ~= nil or appid == 'com.apple.controlcenter') then
       assert(preferred)
       maps[appid] = map
-      if appid ~= 'com.apple.controlcenter' or OS_VERSION < OS.Tahoe then
+      if layout or appid ~= 'com.apple.controlcenter' or OS_VERSION < OS.Tahoe then
         if appMenuBarItems then
           for i, item in ipairs(appMenuBarItems) do
-            tinsert(menuBarItems, { item, i, preferred[i] })
+            tinsert(menuBarItems, { item, i, preferred[i], layout and app or nil })
           end
         else
           for i, item in ipairs(preferred) do
@@ -66,6 +67,36 @@ local function scanSearchMenuBarItems()
   end
   if #menuBarItems == 0 and #unpositioned == 0 then
     return
+  end
+
+  if layout then
+    -- Saved layout defines the global order. No coordinate trimming, Control
+    -- Center insertion, or neighbor-based ordering repair on the new system.
+    for _, pair in ipairs(unpositioned) do tinsert(menuBarItems, pair) end
+    for i, pair in ipairs(menuBarItems) do pair._order = i end
+    table.sort(menuBarItems, function(a, b)
+      local ap, bp = a[3] or math.huge, b[3] or math.huge
+      if ap == bp then return a._order < b._order end
+      return ap < bp
+    end)
+    -- Recording/live-activity items can ignore their saved position while active.
+    local temporary = {}
+    for i = #menuBarItems, 1, -1 do
+      local pair = menuBarItems[i]
+      local id = pair[1].AXIdentifier or ""
+      if id == "com.apple.menuextra.audiovideo" or id:sub(-13) == ".liveActivity" then
+        tremove(menuBarItems, i)
+        tinsert(temporary, pair)
+      end
+    end
+    for _, pair in ipairs(temporary) do
+      local index = #menuBarItems + 1
+      for j, other in ipairs(menuBarItems) do
+        if other[1].AXPosition and other[1].AXPosition.x < pair[1].AXPosition.x then index = j break end
+      end
+      tinsert(menuBarItems, index, pair)
+    end
+    return menuBarItems, maps
   end
 
   -- Sort menu bar items by their on-screen position (right to left),
@@ -178,7 +209,8 @@ end
 local function collectSearchMenuBarItems()
   local windows = menuBarReveal.items()
   local signature = menuBarSignature(windows)
-  if menuBarInventory and menuBarInventory.signature == signature then
+  if OS_VERSION < OS["Golden Gate"]
+      and menuBarInventory and menuBarInventory.signature == signature then
     return menuBarInventory.items, menuBarInventory.maps, menuBarInventory
   end
   local items, maps = scanSearchMenuBarItems()
@@ -387,6 +419,7 @@ local function registerSearchMenuBar()
       image = image,
       id = #choices + 1,
       appid = appid,
+      autosaveName = maps[appid][idx],
       extraPattern = extraSearchPattern
     }
   end
