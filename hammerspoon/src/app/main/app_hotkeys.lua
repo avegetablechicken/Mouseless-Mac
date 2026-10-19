@@ -3775,8 +3775,21 @@ AppHotKeyCallbacks = {
       fn = Callback.Select
     },
     ["insertLine"] = {  -- Insert > Line
-      message = T{"Insert", "Line"},
-      condition = MenuItem.isEnabled{ "Insert", "Line" },
+      -- Tested on: Keynote 15.4; macOS 27.0.1 (Insert > Line menu).
+      message = function(app)
+        if appVer(app) >= "15.4" then
+          return T("Insert", app) .. " > "
+              .. localizedString("Line", app, "TSApplication", true)
+        end
+        return T{"Insert", "Line"}(app)
+      end,
+      condition = function(app)
+        if appVer(app) >= "15.4" then
+          local path = { T("Insert", app), localizedString("Line", app, "TSApplication", true) }
+          return Callback.Enabled(app:findMenuItem(path)), path
+        end
+        return MenuItem.isEnabled{ "Insert", "Line" }(app)
+      end,
       fn = Callback.Select
     },
     ["showInFinder"] = {
