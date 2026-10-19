@@ -125,6 +125,8 @@ local function renderedItem(item, screen)
   end
 end
 
+M.renderedItem = renderedItem
+
 function M.revealBeforeActivation(item, activate)
   if OS_VERSION < OS["Golden Gate"] then return false end
   local p = item.AXPosition

@@ -542,17 +542,23 @@ end
 
 local function activateVisibleItem(right)
   if not refresh() then return end
-  local item = items[selected]
+  local item, targetScreen = items[selected], screen
   mode:exit()
   hs.timer.doAfter(0, function()
     if OS_VERSION >= OS["Golden Gate"] then
-      local element = item.element
-      if not right and element then
-        if element:pid() == hs.processInfo.processID then
-          if require("utils.menubar").popupProxyMenu(element) then return end
-        elseif tcontain(element:actionNames(), AX.Press) then
-          element:performAction(AX.Press)
-          return
+      local searchItems = collectSearchMenuBarItems() or {}
+      for index, pair in ipairs(searchItems) do
+        local source = pair[1]
+        if item.element and source:pid() == item.element:pid() then
+          local rendered = source.AXPosition and menuBarReveal.renderedItem(source, targetScreen)
+          if (rendered and rendered.id == item.id) or source == item.element then
+            local app = pair[4] or (source.AXPosition and source.AXParent.AXParent:asHSApplication() or source)
+            activateSearchMenuBarChoice(searchItems, {
+              id = index, appid = app:bundleID() or app:name(),
+              extraPattern = { source.AXIdentifier or "" },
+            }, right)
+            return
+          end
         end
       end
       menuBarReveal.clickGoldenGate(item, right)
