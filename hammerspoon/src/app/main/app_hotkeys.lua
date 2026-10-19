@@ -6619,7 +6619,8 @@ AppHotKeyCallbacks = {
   ["com.apple.Passwords"] = {
     ["search"] = {
       message = T("Search"),
-      enabled = OS_VERSION >= OS.Tahoe,
+      -- Native Cmd+F tested on: Passwords 3.0.1; macOS 27.0.1.
+      enabled = OS_VERSION >= OS.Tahoe and OS_VERSION < OS["Golden Gate"],
       condition = function(app)
         if app:focusedWindow() == nil then return false end
         local searchButton = getc(towinui(app:focusedWindow()),
