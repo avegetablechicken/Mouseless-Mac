@@ -476,52 +476,6 @@ function localizeSteam(str, appLocale, locale)
 end
 
 local WeChatLocales = { "en", "zh_CN", "zh_TW" }
-function extractWeChatSegments(cacheDir)
-  local appid = 'com.tencent.xinWeChat'
-  mkdir(cacheDir)
-  local executable = hs.application.infoForBundleID(appid).CFBundleExecutable
-  executable = hs.application.pathForBundleID(appid)
-      .. '/Contents/MacOS/' .. executable
-  local file = io.open(executable, "rb")
-  if not file then return end
-  local data = file:read("*all")
-  file:close()
-  local pos = 0
-  for _=1,#WeChatLocales do
-    pos = data:find('Copyright © 2011%-2025 Tencent%. All Rights Reserved%.', pos + 1)
-    if pos then
-      local s, e
-      for i=pos-1,2,-1 do
-        if data:sub(i-1,i-1):match('%c') ~= nil and data:sub(i-1,i-1):match('%s') == nil
-            and data:sub(i,i):match('%c') ~= nil and data:sub(i,i):match('%s') == nil then
-          s = i + 1
-          break
-        end
-      end
-      for i=pos+1,data:len()-1 do
-        if data:sub(i,i):match('%c') ~= nil and data:sub(i,i):match('%s') == nil
-            and data:sub(i+1,i+1):match('%c') ~= nil and data:sub(i+1,i+1):match('%s') == nil then
-          e = i - 1
-          break
-        end
-      end
-      if s and e then
-        local chunk = data:sub(s, e):gsub('%z', '\n')
-        local locale
-        if chunk:find('騰訊') then locale = 'zh_TW'
-        elseif chunk:find('腾讯') then locale = 'zh_CN'
-        else locale = 'en' end
-        local localeFile = cacheDir .. '/' .. locale .. '.txt'
-        local f = io.open(localeFile, "w")
-        if f then
-          f:write(chunk)
-          f:close()
-        end
-      end
-    end
-  end
-end
-
 local function weChatICULocale(samples)
   local script = [[
 ObjC.import("Foundation");
@@ -547,11 +501,12 @@ end
 
 local nonASCIIPattern = "[" .. string.char(128) .. "-" .. string.char(255) .. "]"
 
--- Since v4.0.6, WeChat stores each locale as an offset table with a header
+-- WeChat 4 stores each locale as an offset table with a header
 -- { count, 0, offsets pointer, strings pointer } in __DATA,__data of the
--- main executable, of Frameworks/wechat.dylib since v4.1.8, and of
--- Resources/wechat.dylib since v4.1.9. Entries share indices across
--- locales; each entry holds two offsets for the Weixin and WeChat brandings.
+-- main executable (checked since v4.0.3), of Frameworks/wechat.dylib since
+-- v4.1.8, and of Resources/wechat.dylib since v4.1.9. Entries share indices
+-- across locales; each entry holds two offsets for the Weixin and WeChat
+-- brandings.
 local function weChatStringTables()
   local appid = 'com.tencent.xinWeChat'
   local appPath = hs.application.pathForBundleID(appid)
@@ -672,98 +627,9 @@ local function weChatTableLookup(str, from, to)
 end
 
 function localizeWeChat(str, appLocale)
-  local appid = 'com.tencent.xinWeChat'
-  local tmpBaseDir = localeTmpDir .. appid
   local locale = matchLocale(appLocale, WeChatLocales)
   if locale == 'en' then return str, locale end
-  if applicationVersion(appid) >= "4.0.6" then
-    return weChatTableLookup(str, 'en', locale), locale
-  end
-  local localeFile = tmpBaseDir .. '/' .. locale .. '.txt'
-  local enLocaleFile = tmpBaseDir .. '/en.txt'
-  if not exists(localeFile) or not exists(enLocaleFile) then
-    extractWeChatSegments(tmpBaseDir)
-  end
-  local file = io.open(localeFile, "r")
-  if not file then return end
-  local data = file:read("*all")
-  file:close()
-  local strings = strsplit(data, '\n')
-  local indices = {}
-  for i, s in ipairs(strings) do
-    if s:find('%%d') then
-      tinsert(indices, i)
-    end
-  end
-  local enFile = io.open(enLocaleFile, "r")
-  if not enFile then return end
-  local enData = enFile:read("*all")
-  enFile:close()
-  local enStrings = strsplit(enData, '\n')
-  local enIndices = {}
-  for i, s in ipairs(enStrings) do
-    if s:find('%%d') then
-      tinsert(enIndices, i)
-    end
-  end
-  if #indices ~= #enIndices then return end
-  local localized = {}
-  for i, s in ipairs(enStrings) do
-    if s == str then
-      local gIndex = #enIndices
-      for k, ind in ipairs(enIndices) do
-        if ind > i then
-          gIndex = k - 1
-          break
-        end
-      end
-
-      local newIndices = {}
-      for j=indices[gIndex] or 1,indices[gIndex+1] or #strings do
-        if strings[j]:find('%%s') then
-          tinsert(newIndices, j)
-        end
-      end
-      local newEnIndices = {}
-      for j=enIndices[gIndex] or 1,enIndices[gIndex+1] or #enStrings do
-        if enStrings[j]:find('%%s') then
-          tinsert(newEnIndices, j)
-        end
-      end
-      if #newIndices ~= #newEnIndices or #newIndices == 0 then
-        local start = enIndices[gIndex] or 1
-        local end_ = enIndices[gIndex+1] or #enStrings
-        if i*2 > start + end_ then
-          tinsert(localized, strings[(indices[gIndex+1] or #strings) + i - end_])
-        else
-          tinsert(localized, strings[(indices[gIndex] or 1) + i - start])
-        end
-      else
-        local newGIndex = #newEnIndices
-        for k, ind in ipairs(newEnIndices) do
-          if ind > i then
-            newGIndex = k - 1
-            break
-          end
-        end
-
-        local start = newEnIndices[newGIndex] or enIndices[gIndex] or 1
-        local end_ = newEnIndices[newGIndex+1] or enIndices[gIndex+1] or #enStrings
-        if i*2 > start + end_ then
-          tinsert(localized,
-              strings[(newIndices[newGIndex+1] or indices[gIndex+1] or #strings) + i - end_])
-        else
-          tinsert(localized,
-              strings[(newIndices[newGIndex] or indices[gIndex] or 1) + i - start])
-        end
-      end
-    end
-  end
-  if #localized <= 1 then
-    return localized[1], locale
-  else
-    return localized, locale
-  end
+  return weChatTableLookup(str, 'en', locale), locale
 end
 
 local qqLocCache = nil  -- { loc = {zh→en}, deloc = {en→zh} }
@@ -1048,98 +914,9 @@ function delocalizeSteam(str, appLocale, locale)
 end
 
 function delocalizeWeChat(str, appLocale)
-  local appid = 'com.tencent.xinWeChat'
-  local tmpBaseDir = localeTmpDir .. appid
   local locale = matchLocale(appLocale, WeChatLocales)
   if locale == 'en' then return str end
-  if applicationVersion(appid) >= "4.0.6" then
-    return weChatTableLookup(str, locale, 'en'), locale
-  end
-  local localeFile = tmpBaseDir .. '/' .. locale .. '.txt'
-  local enLocaleFile = tmpBaseDir .. '/en.txt'
-  if not exists(localeFile) or not exists(enLocaleFile) then
-    extractWeChatSegments(tmpBaseDir)
-  end
-  local file = io.open(localeFile, "r")
-  if not file then return end
-  local data = file:read("*all")
-  file:close()
-  local strings = strsplit(data, '\n')
-  local indices = {}
-  for i, s in ipairs(strings) do
-    if s:find('%%d') then
-      tinsert(indices, i)
-    end
-  end
-  local enFile = io.open(enLocaleFile, "r")
-  if not enFile then return end
-  local enData = enFile:read("*all")
-  enFile:close()
-  local enStrings = strsplit(enData, '\n')
-  local enIndices = {}
-  for i, s in ipairs(enStrings) do
-    if s:find('%%d') then
-      tinsert(enIndices, i)
-    end
-  end
-  if #indices ~= #enIndices then return end
-  local delocalized = {}
-  for i, s in ipairs(strings) do
-    if s == str then
-      local gIndex = #indices
-      for k, ind in ipairs(indices) do
-        if ind > i then
-          gIndex = k - 1
-          break
-        end
-      end
-
-      local newIndices = {}
-      for j=indices[gIndex] or 1,indices[gIndex+1] or #strings do
-        if strings[j]:find('%%s') then
-          tinsert(newIndices, j)
-        end
-      end
-      local newEnIndices = {}
-      for j=enIndices[gIndex] or 1,enIndices[gIndex+1] or #enStrings do
-        if enStrings[j]:find('%%s') then
-          tinsert(newEnIndices, j)
-        end
-      end
-      if #newIndices ~= #newEnIndices or #newIndices == 0 then
-        local start = indices[gIndex] or 1
-        local end_ = indices[gIndex+1] or #strings
-        if i*2 > start + end_ then
-          tinsert(delocalized, enStrings[(enIndices[gIndex+1] or #enStrings) + i - end_])
-        else
-          tinsert(delocalized, enStrings[(enIndices[gIndex] or 1) + i - start])
-        end
-      else
-        local newGIndex = #newIndices
-        for k, ind in ipairs(newIndices) do
-          if ind > i then
-            newGIndex = k - 1
-            break
-          end
-        end
-
-        local start = newIndices[newGIndex] or indices[gIndex] or 1
-        local end_ = newIndices[newGIndex+1] or indices[gIndex+1] or #strings
-        if i*2 > start + end_ then
-          tinsert(delocalized,
-              enStrings[(newEnIndices[newGIndex+1] or enIndices[gIndex+1] or #enStrings) + i - end_])
-        else
-          tinsert(delocalized,
-              enStrings[(newEnIndices[newGIndex] or enIndices[gIndex] or 1) + i - start])
-        end
-      end
-    end
-  end
-  if #delocalized <= 1 then
-    return delocalized[1], locale
-  else
-    return delocalized, locale
-  end
+  return weChatTableLookup(str, locale, 'en'), locale
 end
 
 function delocalizeQQ(str, appLocale)
