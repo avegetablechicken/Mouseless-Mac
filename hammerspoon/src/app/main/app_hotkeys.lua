@@ -524,8 +524,8 @@ FaceTime.hasCall = function(win)
   local section
   if OS_VERSION >= OS.Tahoe then
     local collection
-    -- macOS 27 / FaceTime 36: collection inspected; deletion not runtime tested.
     if OS_VERSION >= OS["Golden Gate"] then
+      -- macOS 27 / FaceTime 36: collection inspected; deletion not runtime tested.
       collection = getc(towinui(win), AX.Group, 1, AX.Group, 1,
           AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
     elseif OS_VERSION >= OS.Tahoe:withMinor(2) then
@@ -607,8 +607,8 @@ end
 
 local function FaceTimeShowViewMenu(win)
   local button
-  -- Tested on: FaceTime 36; macOS 27.0.1.
   if OS_VERSION >= OS["Golden Gate"] then
+    -- Tested on: FaceTime 36; macOS 27.0.1.
     button = tfind(getc(towinui(win), AX.Group, 1, AX.Group, 1,
         AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Button) or {}, function(bt)
       return bt.AXDescription == T("Filter", win)
@@ -2616,8 +2616,8 @@ AppHotKeyCallbacks = {
       windowFilter = FaceTime.WF.Main,
       condition = function(win)
         local button
-        -- Tested on: FaceTime 36; macOS 27.0.1.
         if OS_VERSION >= OS["Golden Gate"] then
+          -- Tested on: FaceTime 36; macOS 27.0.1.
           button = tfind(getc(towinui(win), AX.Group, 1, AX.Group, 1, AX.Button) or {}, function(bt)
             return bt.AXDescription == T("New Call", win)
           end)
