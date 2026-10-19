@@ -7048,7 +7048,10 @@ AppHotKeyCallbacks = {
 
   ["com.apple.VoiceOverUtility"] =
   {
-    ["closeWindow"] = specialCommonHotkeyConfigs["closeWindow"]
+    ["closeWindow"] = specialCommonHotkeyConfigUpdated("closeWindow", {
+      -- Native Cmd+W tested on: VoiceOver Utility 10; macOS 27.0.1.
+      enabled = OS_VERSION < OS["Golden Gate"]
+    })
   },
 
   ["com.apple.DigitalColorMeter"] =
