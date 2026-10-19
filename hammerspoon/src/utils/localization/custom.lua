@@ -547,15 +547,25 @@ end
 
 local nonASCIIPattern = "[" .. string.char(128) .. "-" .. string.char(255) .. "]"
 
--- Since v4.1.9, WeChat stores each locale in Resources/wechat.dylib as an
--- offset table with a header { count, 0, offsets pointer, strings pointer }.
--- Entries share indices across locales; each entry holds two offsets for
--- the Weixin and WeChat brandings.
+-- Since v4.0.6, WeChat stores each locale as an offset table with a header
+-- { count, 0, offsets pointer, strings pointer } in __DATA,__data of the
+-- main executable, of Frameworks/wechat.dylib since v4.1.8, and of
+-- Resources/wechat.dylib since v4.1.9. Entries share indices across
+-- locales; each entry holds two offsets for the Weixin and WeChat brandings.
 local function weChatStringTables()
   local appid = 'com.tencent.xinWeChat'
   local appPath = hs.application.pathForBundleID(appid)
   if appPath == nil or appPath == "" then return end
-  local file = io.open(appPath .. '/Contents/Resources/wechat.dylib', "rb")
+  local version, path = applicationVersion(appid)
+  if version >= "4.1.9" then
+    path = appPath .. '/Contents/Resources/wechat.dylib'
+  elseif version >= "4.1.8" then
+    path = appPath .. '/Contents/Frameworks/wechat.dylib'
+  else
+    local info = hs.application.infoForBundleID(appid)
+    path = appPath .. '/Contents/MacOS/' .. get(info, 'CFBundleExecutable')
+  end
+  local file = io.open(path, "rb")
   if file == nil then return end
 
   local base = 0
@@ -666,7 +676,7 @@ function localizeWeChat(str, appLocale)
   local tmpBaseDir = localeTmpDir .. appid
   local locale = matchLocale(appLocale, WeChatLocales)
   if locale == 'en' then return str, locale end
-  if applicationVersion(appid) >= "4.1.9" then
+  if applicationVersion(appid) >= "4.0.6" then
     return weChatTableLookup(str, 'en', locale), locale
   end
   local localeFile = tmpBaseDir .. '/' .. locale .. '.txt'
@@ -1042,7 +1052,7 @@ function delocalizeWeChat(str, appLocale)
   local tmpBaseDir = localeTmpDir .. appid
   local locale = matchLocale(appLocale, WeChatLocales)
   if locale == 'en' then return str end
-  if applicationVersion(appid) >= "4.1.9" then
+  if applicationVersion(appid) >= "4.0.6" then
     return weChatTableLookup(str, locale, 'en'), locale
   end
   local localeFile = tmpBaseDir .. '/' .. locale .. '.txt'
