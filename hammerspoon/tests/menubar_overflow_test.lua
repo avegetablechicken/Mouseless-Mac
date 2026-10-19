@@ -86,15 +86,16 @@ for _, order in ipairs({ { window, proxyWindow }, { proxyWindow, window } }) do
   assert(selected == left, 'expanded host must be recognized in either window order')
 end
 print('PASS: expanded host is selected in either AX window order')
-local events = {}
+local events, hovers = {}, {}
 env.hs.mouse = { absolutePosition = function() return { x = 900, y = 500 } end }
 env.hs.eventtap = { event = {
-  types = { leftMouseDown = 1, leftMouseUp = 2, rightMouseDown = 3, rightMouseUp = 4 },
+  types = { leftMouseDown = 1, leftMouseUp = 2, rightMouseDown = 3, rightMouseUp = 4, mouseMoved = 5 },
   properties = { mouseEventClickState = 1 },
-  newMouseEvent = function(kind)
+  newMouseEvent = function(kind, point)
     return { setProperty = function(self, property, value)
       assert(property == 1); self.clickCount = value; return self
     end, post = function(self)
+      if kind == 5 then hovers[#hovers + 1] = point.x return end
       assert(self.clickCount == 1, 'both mouse events must carry a single click')
       events[#events + 1] = kind
     end }
@@ -106,4 +107,5 @@ for _, rightClick in ipairs({ false, true }) do
   tick(); tick()
 end
 assert(table.concat(events, ',') == '1,2,3,4')
+assert(#hovers == 2 and hovers[1] == 900, 'restoring the cursor must post mouseMoved for Ping Island')
 print('PASS: left/right clicks carry click count 1 on both down and up; duplicate clicks suppressed')

@@ -65,6 +65,10 @@ function M.clickGoldenGate(item, right)
         :setProperty(event.properties.mouseEventClickState, 1):post()
     clickTimer = hs.timer.doAfter(0.1, function()
       hs.mouse.absolutePosition(mouse)
+      -- A warp posts no mouseMoved, so Ping Island keeps capturing the notch
+      -- area for about 0.5s after the overflow click.
+      -- Tested on: Ping Island 0.32.1; macOS 27.0.1.
+      event.newMouseEvent(types.mouseMoved, mouse, {}):post()
       busy, clickTimer = false, nil
     end)
   end)
