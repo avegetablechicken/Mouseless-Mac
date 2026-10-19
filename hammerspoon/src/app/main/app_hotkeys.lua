@@ -741,6 +741,17 @@ Games.WF.Main = {
   end
 }
 
+Games.getViewButtons = function(win)
+  if OS_VERSION >= OS["Golden Gate"] then
+    -- Tested on: Games 1.0; macOS 27.0.1 (navigation and search).
+    return getc(towinui(win), AX.Toolbar, 1,
+        AX.Group, 1, AX.TabGroup, 1, AX.RadioButton)
+  else
+    return getc(towinui(win), AX.Toolbar, 1,
+        AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+  end
+end
+
 --- ### Weather
 local Weather = {}
 Weather.getLocationList = function(app)
@@ -2900,7 +2911,6 @@ AppHotKeyCallbacks = {
     }
   },
 
-  -- Tested on: Games 1.0; macOS 27.0.1 (navigation and search).
   ["com.apple.games"] = {
     ["back"] = {
       message = TC("Back"),
@@ -2916,18 +2926,14 @@ AppHotKeyCallbacks = {
     },
     ["view1"] = {
       message = function(win)
-        local buttons = getc(towinui(win), AX.Toolbar, 1,
-            AX.Group, 1, OS_VERSION >= OS["Golden Gate"] and AX.TabGroup or AX.RadioGroup,
-            1, AX.RadioButton)
+        local buttons = Games.getViewButtons(win)
         if buttons and #buttons >= 1 then
           return buttons[1].AXDescription
         end
       end,
       windowFilter = Games.WF.Main,
       fn = function(win)
-        local buttons = getc(towinui(win), AX.Toolbar, 1,
-            AX.Group, 1, OS_VERSION >= OS["Golden Gate"] and AX.TabGroup or AX.RadioGroup,
-            1, AX.RadioButton)
+        local buttons = Games.getViewButtons(win)
         if buttons and #buttons >= 1 then
           Callback.Press(buttons[1])
         end
@@ -2935,18 +2941,14 @@ AppHotKeyCallbacks = {
     },
     ["view2"] = {
       message = function(win)
-        local buttons = getc(towinui(win), AX.Toolbar, 1,
-            AX.Group, 1, OS_VERSION >= OS["Golden Gate"] and AX.TabGroup or AX.RadioGroup,
-            1, AX.RadioButton)
+        local buttons = Games.getViewButtons(win)
         if buttons and #buttons >= 2 then
           return buttons[2].AXDescription
         end
       end,
       windowFilter = Games.WF.Main,
       fn = function(win)
-        local buttons = getc(towinui(win), AX.Toolbar, 1,
-            AX.Group, 1, OS_VERSION >= OS["Golden Gate"] and AX.TabGroup or AX.RadioGroup,
-            1, AX.RadioButton)
+        local buttons = Games.getViewButtons(win)
         if buttons and #buttons >= 2 then
           Callback.Press(buttons[2])
         end
@@ -2954,18 +2956,14 @@ AppHotKeyCallbacks = {
     },
     ["view3"] = {
       message = function(win)
-        local buttons = getc(towinui(win), AX.Toolbar, 1,
-            AX.Group, 1, OS_VERSION >= OS["Golden Gate"] and AX.TabGroup or AX.RadioGroup,
-            1, AX.RadioButton)
+        local buttons = Games.getViewButtons(win)
         if buttons and #buttons >= 3 then
           return buttons[3].AXDescription
         end
       end,
       windowFilter = Games.WF.Main,
       fn = function(win)
-        local buttons = getc(towinui(win), AX.Toolbar, 1,
-            AX.Group, 1, OS_VERSION >= OS["Golden Gate"] and AX.TabGroup or AX.RadioGroup,
-            1, AX.RadioButton)
+        local buttons = Games.getViewButtons(win)
         if buttons and #buttons >= 3 then
           Callback.Press(buttons[3])
         end
@@ -2975,9 +2973,7 @@ AppHotKeyCallbacks = {
       message = TC("Search"),
       windowFilter = Games.WF.Main,
       fn = function(win)
-        local buttons = getc(towinui(win), AX.Toolbar, 1,
-            AX.Group, 1, OS_VERSION >= OS["Golden Gate"] and AX.TabGroup or AX.RadioGroup,
-            1, AX.RadioButton)
+        local buttons = Games.getViewButtons(win)
         local button = tfind(buttons or {}, function(bt)
           return bt.AXDescription == A_Message
         end)
