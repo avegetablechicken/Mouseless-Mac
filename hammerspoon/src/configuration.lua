@@ -72,6 +72,10 @@ function M.save(name, raw)
       and (type(decoded.pollingInterval) ~= "number" or decoded.pollingInterval <= 0) then
     return nil, "Polling interval must be greater than 0"
   end
+  if name == "misc" and decoded.menuBarOverflowCollapseDelay ~= nil
+      and (type(decoded.menuBarOverflowCollapseDelay) ~= "number" or decoded.menuBarOverflowCollapseDelay < 0) then
+    return nil, "Hidden menu bar collapse delay must be 0 or greater"
+  end
   if (name == "proxy" or name == "proxy-local") and type(decoded.v2rayN) == "table" then
     local client = decoded.v2rayN
     local function validPAC(spec)

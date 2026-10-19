@@ -1,5 +1,6 @@
 {
     "pollingInterval": 3,
+    "menuBarOverflowCollapseDelay": 15,
 
     "snippets": {
         "sound": "Pop",

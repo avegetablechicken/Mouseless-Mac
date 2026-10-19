@@ -134,3 +134,58 @@ covered, clicked = { [515] = true, [519] = true }, nil
 assert(not fresh.setOverflowExpanded(screen, true) and clicked == nil,
   'covered far side must not move the click toward the notch')
 print('PASS: overflow button clicks stay on the side away from the notch')
+
+-- Overflow expanded only for an activation collapses after the configured delay.
+local timers, requests, config, changed = {}, {}, {}, true
+env.hs.timer.doAfter = function(delay, fn)
+  local timer = { delay = delay, fn = fn }
+  function timer:stop() self.stopped = true end
+  timers[#timers + 1] = timer
+  return timer
+end
+env.exists = function(path) return path == 'config/misc.json' end
+env.hs.json = { read = function() return config end }
+local auto = assert(loadfile('src/utils/menubar_reveal.lua', 't', env))()
+auto.setOverflowExpanded = function(_, value) requests[#requests + 1] = value; return true, changed end
+local function collapses()
+  local found = {}
+  for _, timer in ipairs(timers) do
+    if timer.delay ~= 0.05 and not timer.stopped and not timer.fired then found[#found + 1] = timer end
+  end
+  return found
+end
+local function fire() local timer = collapses()[1]; timer.fired = true; timer.fn() end
+local function settle() -- let pending reveal polling finish without activating
+  item.isValid = function() return false end
+  for _, timer in ipairs(timers) do
+    if timer.delay == 0.05 and not timer.ran then timer.ran = true; timer.fn() end
+  end
+  item.isValid = function() return true end
+end
+expanded = false
+assert(auto.revealBeforeActivation(item, activate))
+assert(#collapses() == 1 and collapses()[1].delay == 15, 'default collapse delay is 15s')
+settle()
+local first = collapses()[1]
+changed = false
+assert(auto.revealBeforeActivation(item, activate))
+assert(first.stopped and #collapses() == 1, 'a later activation restarts the delay')
+settle()
+fire()
+assert(requests[#requests] == false, 'collapse requests a collapsed overflow')
+assert(auto.revealBeforeActivation(item, activate))
+assert(#collapses() == 0, 'overflow that was already shown is left alone')
+settle()
+changed, config = true, { menuBarOverflowCollapseDelay = 0 }
+assert(auto.revealBeforeActivation(item, activate))
+assert(#collapses() == 0, 'a zero delay disables automatic collapse')
+settle()
+config = { menuBarOverflowCollapseDelay = 5 }
+assert(auto.revealBeforeActivation(item, activate))
+assert(collapses()[1].delay == 5, 'configured delay is honored')
+settle()
+assert(auto.clickGoldenGate({ x = 300, y = 0, w = 24, h = 28 }))
+local count = #requests
+fire()
+assert(#requests == count and collapses()[1].delay == 1, 'collapse waits for an in-flight click')
+print('PASS: overflow expanded for activation collapses after the configured delay')

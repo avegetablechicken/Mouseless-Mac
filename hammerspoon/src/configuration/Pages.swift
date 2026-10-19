@@ -62,9 +62,12 @@ struct GeneralPage: View {
     Section {
       StepperRow(title: "Polling interval", help: "How often background checks run, such as detecting apps that quit silently",
                  value: store.numberBinding("misc", [.k("pollingInterval")], default: 1), range: 0.25...60, step: 0.25, unit: "s")
+      StepperRow(title: "Hidden menu bar collapse delay",
+                 help: "Seconds before collapsing hidden menu bar items revealed to activate one; 0 keeps them shown",
+                 value: store.numberBinding("misc", [.k("menuBarOverflowCollapseDelay")], default: 15), range: 0...300, step: 1, unit: "s")
     }
     SnippetsSections()
-    let known: Set<String> = ["pollingInterval", "snippets", "pasteboardFilter", "verificationFilter", "proxy"]
+    let known: Set<String> = ["pollingInterval", "menuBarOverflowCollapseDelay", "snippets", "pasteboardFilter", "verificationFilter", "proxy"]
     ForEach((store.drafts["misc"]?.object?.keys ?? []).filter { !known.contains($0) }, id: \.self) { key in
       SectionView(spec: SectionSpec(file: "misc", path: [.k(key)], value: store.value("misc", [.k(key)])))
     }

@@ -13,7 +13,7 @@ struct TabID: Hashable { let group: Int, tab: Int }
 
 let groups: [GroupSpec] = [
   GroupSpec(id: "general", name: "General", description: "Fine-tune everyday actions and automation.", tabs: [
-    TabSpec(title: "General", file: "misc", keys: ["pollingInterval", "@other"], symbol: "gearshape.fill", tint: .gray),
+    TabSpec(title: "General", file: "misc", keys: ["pollingInterval", "menuBarOverflowCollapseDelay", "@other"], symbol: "gearshape.fill", tint: .gray),
     TabSpec(title: "Clipboard", file: "misc", keys: ["pasteboardFilter", "verificationFilter"], symbol: "doc.on.clipboard.fill", tint: .blue),
   ]),
   GroupSpec(id: "keys", name: "Shortcuts", description: "Define shortcuts for global actions and individual apps.", tabs: [
@@ -46,6 +46,7 @@ let groups: [GroupSpec] = [
 
 let labels: [String: [String]] = [
   "bundleID": ["Applications"], "pollingInterval": ["Polling interval", "Interval between recurring tasks, in seconds"],
+  "menuBarOverflowCollapseDelay": ["Hidden menu bar collapse delay", "Seconds before collapsing items revealed for activation; 0 keeps them shown"],
   "pasteboardFilter": ["Clipboard cleanup", "Match and remove extra text when copying"],
   "verificationFilter": ["Verification codes", "Message matching conditions and extraction rules"],
   "hyper": ["Modifier combinations", "Reuse modifier combinations with ${hyper.…} references"],
@@ -70,7 +71,7 @@ func labelText(_ key: String?) -> String? { key.flatMap { labels[$0]?.first } }
 func helpText(_ key: String?) -> String? { key.flatMap { labels[$0].flatMap { $0.count > 1 ? $0[1] : nil } } }
 
 let emptyConfiguration: [String: [String: JSON]] = [
-  "misc": ["pollingInterval": .number(1), "pasteboardFilter": .array([]), "verificationFilter": .array([]), "proxy": .array([])],
+  "misc": ["pollingInterval": .number(1), "menuBarOverflowCollapseDelay": .number(15), "pasteboardFilter": .array([]), "verificationFilter": .array([]), "proxy": .array([])],
   "keybindings": ["hyper": .object(JObject()), "parameters": .object(JObject()), "remoteDesktopModifiers": .object(JObject()),
                   "hotkeys.global": .object(JObject()), "hotkeys.appkeys": .array([]), "hotkeys.menubar": .object(JObject()),
                   "hotkeys.shared": .object(JObject())],

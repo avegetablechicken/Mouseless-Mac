@@ -2,7 +2,7 @@
 -- item into view can leave it ordered on-screen even after its position returns.
 local M = {}
 local native, clickTimer, busy
-local revealTimer
+local revealTimer, collapseTimer
 
 local function bridge()
   if native then return native end
@@ -76,6 +76,8 @@ function M.clickGoldenGate(item, right)
 end
 
 function M.setOverflowExpanded(screen, expanded)
+  -- An explicit toggle supersedes a pending automatic collapse.
+  if collapseTimer then collapseTimer:stop() collapseTimer = nil end
   local _, button, current = goldenGateMenuBar(screen)
   if not button then return false end
   if expanded == nil then expanded = not current end
@@ -135,6 +137,26 @@ end
 
 M.renderedItem = renderedItem
 
+-- Seconds before collapsing overflow expanded only for an activation; 0 keeps it.
+local function collapseDelay()
+  local config = exists("config/misc.json") and hs.json.read("config/misc.json") or {}
+  local delay = config.menuBarOverflowCollapseDelay
+  return type(delay) == "number" and delay >= 0 and delay or 15
+end
+
+-- Later activations restart the delay so a freshly opened menu stays open.
+local function scheduleCollapse(screen)
+  if collapseTimer then collapseTimer:stop() collapseTimer = nil end
+  local delay = collapseDelay()
+  if delay <= 0 then return end
+  local function collapse()
+    collapseTimer = nil
+    if busy then collapseTimer = hs.timer.doAfter(1, collapse) return end
+    M.setOverflowExpanded(screen, false)
+  end
+  collapseTimer = hs.timer.doAfter(delay, collapse)
+end
+
 function M.revealBeforeActivation(item, activate)
   if OS_VERSION < OS["Golden Gate"] then return false end
   local p = item.AXPosition
@@ -144,10 +166,13 @@ function M.revealBeforeActivation(item, activate)
   local _, button, expanded = goldenGateMenuBar(screen)
   if not button or p.x >= button.AXPosition.x + button.AXSize.w then return false end
   if revealTimer then return true end
-  if not M.setOverflowExpanded(screen, true) then
+  local pending = collapseTimer ~= nil
+  local shown, changed = M.setOverflowExpanded(screen, true)
+  if not shown then
     hs.alert.show("Cannot show hidden status items")
     return true
   end
+  if changed or pending then scheduleCollapse(screen) end
   local attempts = 0
   local function ready()
     revealTimer = nil

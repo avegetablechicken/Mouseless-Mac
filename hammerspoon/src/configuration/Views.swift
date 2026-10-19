@@ -811,7 +811,7 @@ struct SectionView: View {
     let file = spec.file, path = spec.path
     return (file == "localization" && path.count == 1 && path[0].key == "resources")
       || (file == "sync" && path.count == 1 && ["file", "variable"].contains(path[0].key ?? ""))
-      || (file == "misc" && path.count == 1 && path[0].key == "pollingInterval")
+      || (file == "misc" && path.count == 1 && ["pollingInterval", "menuBarOverflowCollapseDelay"].contains(path[0].key ?? ""))
       || (file == "keybindings" && ((path.count == 1 && path[0].key == "hyper")
           || (path.count == 2 && path[0].key == "hotkeys" && ["appkeys", "global", "shared"].contains(path[1].key ?? ""))))
   }

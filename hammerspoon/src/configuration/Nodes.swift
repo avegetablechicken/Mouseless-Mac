@@ -346,7 +346,7 @@ struct ScalarControl: View {
       Toggle("", isOn: Binding(get: { store.value(file, path)?.bool ?? false }, set: { store.set(file, path, .bool($0)) }))
         .labelsHidden().toggleStyle(.switch).controlSize(.small)
     case .number(let n)?:
-      NumberField(file: file, path: path, number: n, minimum: path.last?.key == "pollingInterval" ? 0.01 : nil, alignment: alignment)
+      NumberField(file: file, path: path, number: n, minimum: path.last?.key == "pollingInterval" ? 0.01 : path.last?.key == "menuBarOverflowCollapseDelay" ? 0 : nil, alignment: alignment)
     default:
       if value == nil || value?.string != nil, let context = store.pathFieldContext(file, path) {
         PathField(file: file, path: path, context: context, alignment: alignment)
