@@ -2874,6 +2874,7 @@ AppHotKeyCallbacks = {
     }
   },
 
+  -- Tested on: Games 1.0; macOS 27.0.1 (navigation and search).
   ["com.apple.games"] = {
     ["back"] = {
       message = TC("Back"),
@@ -2890,7 +2891,8 @@ AppHotKeyCallbacks = {
     ["view1"] = {
       message = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1,
-            AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+            AX.Group, 1, OS_VERSION >= OS["Golden Gate"] and AX.TabGroup or AX.RadioGroup,
+            1, AX.RadioButton)
         if buttons and #buttons >= 1 then
           return buttons[1].AXDescription
         end
@@ -2898,7 +2900,8 @@ AppHotKeyCallbacks = {
       windowFilter = Games.WF.Main,
       fn = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1,
-            AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+            AX.Group, 1, OS_VERSION >= OS["Golden Gate"] and AX.TabGroup or AX.RadioGroup,
+            1, AX.RadioButton)
         if buttons and #buttons >= 1 then
           Callback.Press(buttons[1])
         end
@@ -2907,7 +2910,8 @@ AppHotKeyCallbacks = {
     ["view2"] = {
       message = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1,
-            AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+            AX.Group, 1, OS_VERSION >= OS["Golden Gate"] and AX.TabGroup or AX.RadioGroup,
+            1, AX.RadioButton)
         if buttons and #buttons >= 2 then
           return buttons[2].AXDescription
         end
@@ -2915,7 +2919,8 @@ AppHotKeyCallbacks = {
       windowFilter = Games.WF.Main,
       fn = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1,
-            AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+            AX.Group, 1, OS_VERSION >= OS["Golden Gate"] and AX.TabGroup or AX.RadioGroup,
+            1, AX.RadioButton)
         if buttons and #buttons >= 2 then
           Callback.Press(buttons[2])
         end
@@ -2924,7 +2929,8 @@ AppHotKeyCallbacks = {
     ["view3"] = {
       message = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1,
-            AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+            AX.Group, 1, OS_VERSION >= OS["Golden Gate"] and AX.TabGroup or AX.RadioGroup,
+            1, AX.RadioButton)
         if buttons and #buttons >= 3 then
           return buttons[3].AXDescription
         end
@@ -2932,7 +2938,8 @@ AppHotKeyCallbacks = {
       windowFilter = Games.WF.Main,
       fn = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1,
-            AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+            AX.Group, 1, OS_VERSION >= OS["Golden Gate"] and AX.TabGroup or AX.RadioGroup,
+            1, AX.RadioButton)
         if buttons and #buttons >= 3 then
           Callback.Press(buttons[3])
         end
@@ -2943,7 +2950,8 @@ AppHotKeyCallbacks = {
       windowFilter = Games.WF.Main,
       fn = function(win)
         local buttons = getc(towinui(win), AX.Toolbar, 1,
-            AX.Group, 1, AX.RadioGroup, 1, AX.RadioButton)
+            AX.Group, 1, OS_VERSION >= OS["Golden Gate"] and AX.TabGroup or AX.RadioGroup,
+            1, AX.RadioButton)
         local button = tfind(buttons or {}, function(bt)
           return bt.AXDescription == A_Message
         end)
