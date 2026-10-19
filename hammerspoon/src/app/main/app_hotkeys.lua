@@ -349,8 +349,16 @@ if OS_VERSION >= OS.Tahoe then
 end
 
 local function PhoneShowViewMenu(winUI)
-  local button = getc(winUI, AX.Toolbar, 1,
-      AX.Group, 2, AX.Group, 1, AX.MenuButton, 1)
+  local button
+  -- Tested on: Phone 1.0; macOS 27.0.1.
+  if OS_VERSION >= OS["Golden Gate"] then
+    button = tfind(getc(winUI, AX.Toolbar, 1, AX.Group, 2, AX.MenuButton) or {}, function(bt)
+      return bt.AXDescription == T("Filter", winUI)
+    end)
+  else
+    button = getc(winUI, AX.Toolbar, 1,
+        AX.Group, 2, AX.Group, 1, AX.MenuButton, 1)
+  end
   if button then
     Callback.Press(button) return true
   end
@@ -2544,8 +2552,16 @@ AppHotKeyCallbacks = {
       message = T("New Call"),
       windowFilter = Phone.WF.Main,
       fn = function(win)
-        local button = getc(towinui(win), AX.Toolbar, 1,
-            AX.Group, 3, AX.Group, 1, AX.Button, 1)
+        local button
+        -- Tested on: Phone 1.0; macOS 27.0.1.
+        if OS_VERSION >= OS["Golden Gate"] then
+          button = tfind(getc(towinui(win), AX.Toolbar, 1, AX.Button) or {}, function(bt)
+            return bt.AXDescription == T("Keypad", win)
+          end)
+        else
+          button = getc(towinui(win), AX.Toolbar, 1,
+              AX.Group, 3, AX.Group, 1, AX.Button, 1)
+        end
         if button then Callback.Press(button) end
       end
     },
