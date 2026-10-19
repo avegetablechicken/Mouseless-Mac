@@ -918,6 +918,15 @@ local function getTabUrl(app, axDocumentOnly)
       return cached
     end
   end
+  if OS_VERSION >= OS["Golden Gate"] and app:bundleID() == "com.apple.Safari" then
+    -- Tested on: Safari 27.0.1; macOS 27.0.1 (local-page URL).
+    local page = win and getc(towinui(win), AX.SplitGroup, 1, AX.TabGroup, 1,
+        AX.Group, 1, AX.Group, 1, AX.ScrollArea, 1, AX.WebArea, 1)
+    local value = page and page.AXURL
+    local url = value and value.url
+    if cacheKey then startupTabUrlCache[cacheKey] = url or false end
+    return url
+  end
   if win ~= nil then
     local doc = towinui(win).AXDocument
     if type(doc) == 'string' and doc:match("^[%a][%w+.-]*://") then
