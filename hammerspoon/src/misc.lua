@@ -165,17 +165,24 @@ else
   locDefaultVerificationPattern = defaultVerificationPattern
 end
 -- Parse verification code from the most recent incoming message.
+local lastVerificationMessageID
 local function parseVerificationCodeFromFirstMessage()
-  local content, ok = hs.execute([[
+  local columns = OS_VERSION >= OS["Golden Gate"] and "ROWID || char(9) || text" or "text"
+  local content, ok = hs.execute(strfmt([[
     /usr/bin/sqlite3 $HOME/Library/Messages/chat.db \
     '''
-    SELECT text FROM message
+    SELECT %s FROM message
     WHERE
     datetime(date/1000000000 + 978307200,"unixepoch","localtime")
     > datetime("now","localtime","-10 second")
     ORDER BY date DESC LIMIT 1;
-    ''']])
+    ''']], columns))
   if ok and content ~= '\n' then
+    if OS_VERSION >= OS["Golden Gate"] then
+      local messageID, text = content:match("^(%d+)\t(.*)")
+      if messageID == nil or messageID == lastVerificationMessageID then return end
+      lastVerificationMessageID, content = messageID, text
+    end
     for _, pattern in ipairs(verificationPatterns) do
       if type(pattern.filter) == 'string' then
         if content:find(pattern.filter) then
@@ -206,7 +213,9 @@ local function watchNotificationCenter(notificationCenterApp)
   NewMessageWindowObserver = uiobserver.new(notificationCenterApp:pid())
   NewMessageWindowObserver:addWatcher(
     toappui(notificationCenterApp),
-    uinotifications.windowCreated)
+    -- Tested on: NotificationCenter 1.0; macOS 27.0.1 (layout update event).
+    OS_VERSION >= OS["Golden Gate"] and uinotifications.layoutChanged
+        or uinotifications.windowCreated)
   NewMessageWindowObserver:callback(function()
     local code = parseVerificationCodeFromFirstMessage()
     if code then
