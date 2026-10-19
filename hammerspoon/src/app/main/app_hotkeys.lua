@@ -647,6 +647,20 @@ FaceTime.selectView = function(index)
   end
 end
 
+-- ### Help Viewer
+local HelpViewer = {}
+HelpViewer.navigationButton = function(app, title)
+  local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
+  local first = getc(toolbar, AX.Group, 1, AX.Group, 1, AX.Button, 1)
+  local hasSidebar = first and (first.AXDescription == T("Show Sidebar", app)
+      or first.AXDescription == T("Hide Sidebar", app))
+  local group = hasSidebar and 2 or 1
+  if title == "Home" then group = group + 1 end
+  return tfind(getc(toolbar, AX.Group, group, AX.Group, 1, AX.Button) or {}, function(button)
+    return button.AXDescription == T(title, app)
+  end)
+end
+
 -- ### Music
 local Music = {}
 Music.WF = {}
@@ -2757,6 +2771,10 @@ AppHotKeyCallbacks = {
       message = TC("Back"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
+        if OS_VERSION >= OS["Golden Gate"] then
+          -- Tested on: Tips 27.0; macOS 27.0.1 (without the sidebar button).
+          return Callback.Enabled(HelpViewer.navigationButton(app, "Previous"))
+        end
         local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
         local button
         if toolbar and toolbar[1].AXRole == AX.Button then
@@ -2772,6 +2790,10 @@ AppHotKeyCallbacks = {
       message = TC("Forward"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
+        if OS_VERSION >= OS["Golden Gate"] then
+          -- Tested on: Tips 27.0; macOS 27.0.1 (without the sidebar button).
+          return Callback.Enabled(HelpViewer.navigationButton(app, "Next"))
+        end
         local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
         local button
         if toolbar and toolbar[1].AXRole == AX.Button then
@@ -2787,6 +2809,10 @@ AppHotKeyCallbacks = {
       message = TG("house"),
       condition = function(app)
         if app:focusedWindow() == nil then return false end
+        if OS_VERSION >= OS["Golden Gate"] then
+          -- Tested on: Tips 27.0; macOS 27.0.1 (without the sidebar button).
+          return Callback.Enabled(HelpViewer.navigationButton(app, "Home"))
+        end
         local toolbar = getc(towinui(app:focusedWindow()), AX.Toolbar, 1)
         local buttons
         if OS_VERSION >= OS.Tahoe then
