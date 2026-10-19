@@ -2,7 +2,7 @@
 
 ## Communicating with Hammerspoon
 
-Use interaction with the running Hammerspoon instance sparingly, only when information essential to the task cannot be obtained through source inspection, static checks, or direct inspection of the target application. Do not open Hammerspoon or Console, bootstrap IPC, or check reload completion as a routine step for configuration or hotkey changes. For example, extending Alt+D to recognize Pages' “复原更改” button requires inspecting Pages and editing the existing button matching logic, not communicating with Hammerspoon. Editing Lua files alone does not justify runtime interaction.
+Use interaction with the running Hammerspoon instance sparingly, only when information essential to the task cannot be obtained through source inspection, static checks, or direct inspection of the target application. Do not open Hammerspoon or Console, bootstrap IPC, or check reload completion as a routine step for configuration or hotkey changes. For example, extending Alt+D to recognize Pages' “Revert Changes” button requires inspecting Pages and editing the existing button matching logic, not communicating with Hammerspoon. Editing Lua files alone does not justify runtime interaction.
 
 The Console and CLI procedures below apply only after establishing a concrete need for Hammerspoon's internal runtime information. Inspect a target application's accessibility hierarchy directly in that application whenever possible. File moves, path updates, static checks, and Git operations alone do not require these procedures. Honor an explicit user instruction not to open Hammerspoon.
 
