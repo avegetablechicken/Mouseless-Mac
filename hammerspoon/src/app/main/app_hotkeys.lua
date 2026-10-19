@@ -524,7 +524,11 @@ FaceTime.hasCall = function(win)
   local section
   if OS_VERSION >= OS.Tahoe then
     local collection
-    if OS_VERSION >= OS.Tahoe:withMinor(2) then
+    -- macOS 27 / FaceTime 36: collection inspected; deletion not runtime tested.
+    if OS_VERSION >= OS["Golden Gate"] then
+      collection = getc(towinui(win), AX.Group, 1, AX.Group, 1,
+          AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 2)
+    elseif OS_VERSION >= OS.Tahoe:withMinor(2) then
       collection = getc(towinui(win), AX.Group, 1, AX.Group, 1,
           AX.Group, 2, AX.Group, 1, AX.Group, 1)
     else
@@ -603,7 +607,13 @@ end
 
 local function FaceTimeShowViewMenu(win)
   local button
-  if OS_VERSION < OS.Tahoe:withMinor(2) then
+  -- Tested on: FaceTime 36; macOS 27.0.1.
+  if OS_VERSION >= OS["Golden Gate"] then
+    button = tfind(getc(towinui(win), AX.Group, 1, AX.Group, 1,
+        AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Button) or {}, function(bt)
+      return bt.AXDescription == T("Filter", win)
+    end)
+  elseif OS_VERSION < OS.Tahoe:withMinor(2) then
     button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
         AX.Group, 1, AX.Group, 1, AX.Group, 1, AX.Group, 1,
         AX.Button, 1)
@@ -626,7 +636,13 @@ FaceTime.selectView = function(index)
       hs.timer.usleep(0.01 * 1000000)
       menu = getc(winUI, AX.Group, 1, AX.Menu, 1)
     until menu or not winUI:isValid()
-    local menuItem = getc(menu, AX.MenuItem, index)
+    local menuItem
+    if OS_VERSION >= OS["Golden Gate"] then
+      local titles = { "Calls", "Missed", "Video", "Voicemail", "Spam" }
+      menuItem = getc(menu, AX.MenuItem, T(titles[index], win))
+    else
+      menuItem = getc(menu, AX.MenuItem, index)
+    end
     if menuItem then Callback.Press(menuItem) end
   end
 end
@@ -2600,7 +2616,12 @@ AppHotKeyCallbacks = {
       windowFilter = FaceTime.WF.Main,
       condition = function(win)
         local button
-        if OS_VERSION < OS.Tahoe then
+        -- Tested on: FaceTime 36; macOS 27.0.1.
+        if OS_VERSION >= OS["Golden Gate"] then
+          button = tfind(getc(towinui(win), AX.Group, 1, AX.Group, 1, AX.Button) or {}, function(bt)
+            return bt.AXDescription == T("New Call", win)
+          end)
+        elseif OS_VERSION < OS.Tahoe then
           button = getc(towinui(win), AX.Group, 1, AX.Group, 1,
               AX.Group, 1, AX.Group, 1, AX.Button, 2)
         elseif OS_VERSION < OS.Tahoe:withMinor(2) then
