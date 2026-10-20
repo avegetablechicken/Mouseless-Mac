@@ -74,6 +74,23 @@ assert(m.revealBeforeActivation(own, function(target) selected = target end))
 tick()
 assert(selected == right, 'hs.menubar objects use their live frame')
 print('PASS: icons of one application and hs.menubar objects resolve by revealed position')
+-- Unnamed icons collapsed together: the entry's slot picks the host in saved order.
+local sibling = { pid = item.pid, AXPosition = { x = 500, y = 0 }, AXSize = { w = 20, h = 24 } }
+item.AXPosition.x = 500
+env.hs.application = { applicationForPID = function() return app end }
+env.loadStatusItemsAutosaveName = function() return {}, { 864, 544 }, { item, sibling } end
+local farHost = { x = 300, y = 0, w = 30, h = 24, element = { pid = item.pid } }
+local nearHost = { x = 450, y = 0, w = 30, h = 24, element = { pid = item.pid } }
+m.visibleItems = function() return { farHost, nearHost } end
+assert(m.revealBeforeActivation(item, function(target) selected = target end, 544))
+tick()
+assert(selected == nearHost, 'the smaller saved slot is the rightmost host')
+assert(m.revealBeforeActivation(item, function(target) selected = target end, 864))
+tick()
+assert(selected == farHost, 'the slot, not the arbitrarily assigned source, picks the host')
+print('PASS: unnamed collapsed icons resolve by their saved slot')
+item.AXPosition.x = 303
+m.visibleItems = function() return { right, left } end
 
 -- Both windows remain in AX, but only the rendered window changes its label.
 local collapsedArrow = { attributeValue = function() return 'show' end }

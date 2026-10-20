@@ -191,6 +191,30 @@ local function renderedItem(item, screen)
   end
 end
 
+-- Icons collapsed together cannot be matched to their source items, so a search
+-- entry stands for a saved slot: once revealed, an application's hosts appear
+-- in saved order from right to left.
+local function slotItem(item, screen, slot)
+  local app = hs.application.applicationForPID(item:pid())
+  if not app then return end
+  local _, preferred, sources = loadStatusItemsAutosaveName(app, true)
+  if not sources then return end
+  local slots, hosts = {}, {}
+  for index = 1, #sources do
+    if not preferred[index] then return end
+    slots[index] = preferred[index]
+  end
+  for _, visible in ipairs(M.visibleItems(screen)) do
+    if visible.element and visible.element:pid() == item:pid() then hosts[#hosts + 1] = visible end
+  end
+  if #hosts ~= #slots then return end
+  table.sort(slots)
+  table.sort(hosts, function(a, b) return a.x > b.x end)
+  for index, position in ipairs(slots) do
+    if position == slot then return hosts[index] end
+  end
+end
+
 -- Seconds before collapsing overflow expanded only for an activation; 0 keeps it.
 local function collapseDelay()
   local config = exists("config/misc.json") and hs.json.read("config/misc.json") or {}
@@ -211,9 +235,11 @@ local function scheduleCollapse(screen)
   collapseTimer = hs.timer.doAfter(delay, collapse)
 end
 
-function M.revealBeforeActivation(item, activate)
+-- slot: saved position standing for the item when it is collapsed with siblings.
+function M.revealBeforeActivation(item, activate, slot)
   local screen = overflowScreen(item)
   if not screen then return false end
+  local bySlot = slot ~= nil and M.collapsedInOverflow(item)
   if revealTimer then return true end
   local pending = collapseTimer ~= nil
   local shown, changed = M.setOverflowExpanded(screen, true)
@@ -227,7 +253,8 @@ function M.revealBeforeActivation(item, activate)
     revealTimer = nil
     if item.isValid and not item:isValid() then return end
     local _, _, shown = goldenGateMenuBar(screen)
-    local target = not busy and shown and renderedItem(item, screen)
+    local target = not busy and shown
+        and (bySlot and slotItem(item, screen, slot) or not bySlot and renderedItem(item, screen))
     if target then
       activate(target)
       return
