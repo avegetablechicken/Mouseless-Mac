@@ -286,13 +286,14 @@ local function activateSearchMenuBarChoice(menuBarItems, choice, right)
       end
       return
     end
-    -- Passwords ignores AXPress on macOS 27; a real click toggles it.
-    if choice.appid == "com.apple.Passwords.MenuBarExtra"
-        and OS_VERSION >= OS["Golden Gate"] then
-      leftClickAndRestore(item)
-      return
-    end
     if choice.appid:sub(1, 10) == 'com.apple.' then
+      -- On macOS 27 only Control Center and MenuBarAgent items accept AXPress;
+      -- others such as Passwords and Weather ignore it, and a real click toggles them.
+      if OS_VERSION >= OS["Golden Gate"] and choice.appid ~= "com.apple.controlcenter"
+          and choice.appid ~= "com.apple.MenuBarAgent" then
+        leftClickAndRestore(item)
+        return
+      end
       if type(choice.extraPattern) ~= 'table'
           or tfind(choice.extraPattern, function(pattern)
                 return pattern:sub(-13) == '.liveActivity'
