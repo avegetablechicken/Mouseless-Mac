@@ -6,10 +6,13 @@ local old = {['NSStatusItem Preferred Position Item-0']=1017,
 local reads = 0
 local env = setmetatable({
   OS_VERSION=27, OS={['Golden Gate']=27,Tahoe=26}, AX={MenuBarItem='AXMenuBarItem'},
-  tinsert=table.insert, getc=function() return items end, toappui=function() return {} end,
+  tinsert=table.insert, strfmt=string.format, getc=function() return items end, toappui=function() return {} end,
   hs={application={infoForBundleID=function(id)
     return {CFBundleExecutable=id=="example.owner" and "example-process" or "Hammerspoon"}
-  end},settings={bundleID=appid,getKeys=function() return {} end},plist={read=function(path)
+  end},settings={bundleID=appid,getKeys=function() return {} end},fs={pathToAbsolute=function(path) return path end},plist={read=function(path)
+    if path:match('com%.apple%.controlcenter%.plist$') then
+      return {['NSStatusItem VisibleCC Clock']=true,['NSStatusItem VisibleCC BentoBox-0']=true}
+    end
     reads=reads+1
     assert(path:match('com.apple.MenuBar/Library/Preferences/com.apple.MenuBar.plist$'))
     return {TrailingItemPreferredPositions={
@@ -39,13 +42,22 @@ assert(env.loadStatusItemsAutosaveName(app,true,extra)==nil)
 items[2].AXPosition.x=855
 assert(env.loadStatusItemsAutosaveName(app,true,layout)==nil)
 items[2].AXPosition.x=856
--- Control Center uses exact module IDs; transient items stay present but unnamed.
-env.getValidControlCenterMenuBarItemsTahoe=function()
-  return {{AXIdentifier='com.apple.menuextra.clock'},
-    {AXIdentifier='com.apple.menuextra.controlcenter'},
-    {AXIdentifier='example.liveActivity'}}
+-- Control Center reuses the shared autosave-name mapping; transient items stay unnamed.
+function env.tfind(t,f) for _,v in ipairs(t) do if f(v) then return v end end end
+function env.tifilter(t,f) local r={} for _,v in ipairs(t) do if f(v) then r[#r+1]=v end end return r end
+function env.tcontain(t,x) return env.tfind(t,function(v) return v==x end)~=nil end
+function env.foreach(t,f) for _,v in ipairs(t) do f(v) end end
+function env.strsplit(s,sep) local r={} for p in (s..'.'):gmatch('(.-)'..sep) do r[#r+1]=p end return r end
+local function ccItem(id,x,desc)
+  return {AXIdentifier=id,AXPosition={x=x},attributeValue=function() return desc end}
 end
-local cc={bundleID=function() return 'com.apple.controlcenter' end}
+env.getValidControlCenterMenuBarItemsTahoe=function()
+  return {ccItem('com.apple.menuextra.clock',300,'Clock'),
+    ccItem('com.apple.menuextra.controlcenter',200,'Control Center'),
+    ccItem('com.apple.example.liveActivity',100,'Activity')}
+end
+local cc={bundleID=function() return 'com.apple.controlcenter' end,
+  name=function() return 'Control Center' end}
 local ccmap,ccpos,ccitems=env.loadStatusItemsAutosaveName(cc,true,
   {['module:Clock']=0,['module:BentoBox-0']=133})
 assert(ccmap[1]=='Clock' and ccpos[1]==0 and ccmap[2]=='BentoBox-0')

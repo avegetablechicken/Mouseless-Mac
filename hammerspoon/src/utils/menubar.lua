@@ -226,14 +226,10 @@ local function loadStatusItemsGoldenGate(app, requirePreferredPosition, layout)
     preferred[index], preferred[name] = position, position
   end
   if appid == "com.apple.controlcenter" then
-    items = getValidControlCenterMenuBarItemsTahoe(app)
-    -- These identifiers belong to the actual MenuBarAgent controls, not old
-    -- localized labels or synthetic positions in the Control Center plist.
-    local modules = { clock = "Clock", controlcenter = "BentoBox-0",
-      battery = "Battery", sound = "Sound", audiovideo = "AudioVideoModule" }
-    for i, item in ipairs(items) do
-      local identifier = item.AXIdentifier or ""
-      local name = modules[identifier:match("^com%.apple%.menuextra%.(.+)$")]
+    local names, _, ccItems = loadStatusItemsAutosaveNameControlCenterTahoe(app, true)
+    items = ccItems
+    for i in ipairs(items) do
+      local name = names[i]
       if name and layout["module:" .. name] ~= nil then
         assign(i, name, layout["module:" .. name])
       end
