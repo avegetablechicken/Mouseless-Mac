@@ -32,6 +32,39 @@ revealEnv.OS_VERSION = 26
 assert(not reveal.hiddenBySystemManager(at(500)) and not reveal.collapsedInOverflow(at(500)))
 print('PASS: native overflow detection, collapsed and revealed items, hs.menubar frames, macOS 26')
 
+-- A screen without overflow orders icons collapsed on the notched screen.
+local function el(t)
+  t.pid = function() return 5 end
+  t.attributeValue = function(self, key) return self[key] end
+  return t
+end
+local plain = { AXSize = { w = 24, h = 24 } }
+local proxy = { AXSize = { w = 28, h = 24 }, AXHelp = 'Proxy' }
+local sourceItems = { el({ AXSize = plain.AXSize }), el({ AXSize = proxy.AXSize, AXHelp = proxy.AXHelp }) }
+local notched = { AXChildren = {
+  { AXRole = 'AXButton' },
+  { AXSize = { w = 26 }, AXChildren = { el({ AXRole = 'AXButton', AXSize = proxy.AXSize, AXHelp = proxy.AXHelp }) } },
+  { AXSize = { w = 30 }, AXChildren = { el({ AXRole = 'AXButton', AXSize = plain.AXSize }) } },
+} }
+local external = { AXChildren = {
+  { AXSize = { w = 26 }, AXPosition = { x = -647 }, AXChildren = { el({ AXRole = 'AXApplication' }) } },
+  { AXSize = { w = 30 }, AXPosition = { x = -971 }, AXChildren = { el({ AXRole = 'AXApplication' }) } },
+} }
+local screensEnv = setmetatable({
+  OS_VERSION = 27, OS = { ['Golden Gate'] = 27 },
+  AX = { Window = 'AXWindow', Button = 'AXButton', Application = 'AXApplication' },
+  find = function() return agent end, toappui = function(a) return a end,
+  getc = function(_, role) assert(role == 'AXWindow') return { notched, external } end,
+  tfind = revealEnv.tfind, tifilter = revealEnv.tfilter,
+}, { __index = _G })
+local screens = assert(loadfile('src/utils/menubar_reveal.lua', 't', screensEnv))()
+local positions = screens.uncollapsedPositions(sourceItems)
+assert(positions and positions[1] == -971 and positions[2] == -647)
+sourceItems[2].AXHelp = nil
+sourceItems[2].AXSize = plain.AXSize
+assert(screens.uncollapsedPositions(sourceItems) == nil, 'identical icons stay unresolved')
+print('PASS: a screen without overflow orders icons collapsed elsewhere; identical icons stay unresolved')
+
 -- Manager priority: MenuBarAgent first on Golden Gate; third-party managers on older macOS.
 local running = {}
 local item = { overflow = true, AXPosition = { x = 100 } }

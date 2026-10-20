@@ -4,11 +4,13 @@ local items = {{AXPosition={x=855}}, {AXPosition={x=856}}}
 local old = {['NSStatusItem Preferred Position Item-0']=1017,
   ['NSStatusItem Preferred Position PROXY']=551}
 local reads = 0
+local elsewhere
 local env = setmetatable({
   OS_VERSION=27, OS={['Golden Gate']=27,Tahoe=26}, AX={MenuBarItem='AXMenuBarItem'},
   require=function(name)
     assert(name=='utils.menubar_reveal')
-    return {collapsedInOverflow=function(item) return item.collapsed==true end}
+    return {collapsedInOverflow=function(item) return item.collapsed==true end,
+      uncollapsedPositions=function() return elsewhere end}
   end,
   tinsert=table.insert, strfmt=string.format, getc=function() return items end, toappui=function() return {} end,
   hs={application={infoForBundleID=function(id)
@@ -53,6 +55,11 @@ local stack
 map,p,stack=env.loadStatusItemsAutosaveName(app,true,layout)
 assert(next(map)==nil and #stack==2)
 assert((p[1]==889 and p[2]==551) or (p[1]==551 and p[2]==889))
+-- Another screen without overflow names icons collapsed together.
+elsewhere = { -971, -647 }
+map,p=env.loadStatusItemsAutosaveName(app,true,layout)
+assert(map[1]=='Item-0' and map[2]=='PROXY' and p[1]==889 and p[2]==551)
+elsewhere = nil
 -- A single collapsed icon remains unambiguous.
 items[2].collapsed=false; items[2].AXPosition.x=856
 map=env.loadStatusItemsAutosaveName(app,true,layout)

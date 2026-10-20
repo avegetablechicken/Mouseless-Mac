@@ -80,6 +80,54 @@ function M.hiddenBySystemManager(item)
   return overflowScreen(item) ~= nil
 end
 
+-- Positions of an application's status items on a screen without overflow, where
+-- icons collapsed on the notched screen are all rendered. Hosts there expose only
+-- their process, so each source is linked through its host on the notched screen,
+-- whose child mirrors the source, to the host of equal width. Returns nil unless
+-- every source maps to a distinct host.
+-- Tested on: Hammerspoon 1.1.1; macOS 27.0.1.
+function M.uncollapsedPositions(sources)
+  local agent = find("com.apple.MenuBarAgent")
+  if not agent or #sources == 0 then return end
+  local pid = sources[1]:pid()
+  local function owned(host)
+    -- The overflow arrow has no children.
+    local child = (host.AXChildren or {})[1]
+    return child and child:pid() == pid and child or nil
+  end
+  local bridge, rendered
+  for _, window in ipairs(getc(toappui(agent), AX.Window) or {}) do
+    local hosts = window.AXChildren or {}
+    local arrow = tfind(hosts, function(host) return host.AXRole == AX.Button end)
+    local mine = tifilter(hosts, owned)
+    if arrow and not bridge and tfind(mine, function(host) return owned(host).AXRole ~= AX.Application end) then
+      bridge = mine
+    elseif not arrow and not rendered and #mine > 0 then
+      rendered = mine
+    end
+  end
+  if not bridge or not rendered or #rendered ~= #sources then return end
+  local function same(a, b) return a ~= nil and b ~= nil and math.abs(a - b) < 0.5 end
+  local positions, used = {}, {}
+  for index, source in ipairs(sources) do
+    local size = source.AXSize
+    local function mirrors(host)
+      local child, childSize = owned(host), owned(host).AXSize
+      return size and childSize and same(size.w, childSize.w) and same(size.h, childSize.h)
+          and child.AXHelp == source.AXHelp and child.AXTitle == source.AXTitle
+          and child:attributeValue("AXDescription") == source:attributeValue("AXDescription")
+    end
+    local matches = tifilter(bridge, mirrors)
+    if #matches ~= 1 then return end
+    local width = matches[1].AXSize and matches[1].AXSize.w
+    local hosts = tifilter(rendered, function(host) return host.AXSize and same(host.AXSize.w, width) end)
+    if #hosts ~= 1 or used[hosts[1]] then return end
+    used[hosts[1]] = true
+    positions[index] = hosts[1].AXPosition.x
+  end
+  return positions
+end
+
 -- Collapsed overflow stacks every icon beneath its arrow, so icons of the same
 -- application cannot be told apart; once revealed they lie left of the arrow.
 -- Tested on: Hammerspoon 1.1.1; macOS 27.0.1.

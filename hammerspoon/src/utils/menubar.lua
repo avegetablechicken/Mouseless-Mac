@@ -263,6 +263,13 @@ local function loadStatusItemsGoldenGate(app, requirePreferredPosition, layout)
         if collapsed then stacked = stacked + 1 end
         ordered[#ordered + 1] = { index = i, x = position.x, collapsed = collapsed }
       end
+      -- Another screen without overflow may still show their order.
+      local elsewhere = stacked > 1 and reveal.uncollapsedPositions(items)
+      if elsewhere then
+        for _, entry in ipairs(ordered) do
+          entry.x, entry.collapsed = elsewhere[entry.index], false
+        end
+      end
       table.sort(saved, function(a, b) return a.position < b.position end)
       table.sort(ordered, function(a, b) return a.x > b.x end)
       for i, item in ipairs(ordered) do
