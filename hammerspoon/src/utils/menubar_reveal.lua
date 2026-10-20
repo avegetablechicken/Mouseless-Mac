@@ -114,6 +114,21 @@ function M.clickGoldenGate(item, right)
   return true
 end
 
+-- Ping Island's transparent root spans the screen, beyond its visible content.
+local function pingIslandBackground()
+  local notch = find("com.wudanwu.PingIsland")
+  return notch and getc(toappui(notch), AX.Window, 1, AX.Group, 1)
+end
+
+-- A hit on that root is covered only where one of its visible children lies.
+local function coveredByPingIsland(background, point)
+  return tfind(background.AXChildren, function(child)
+    local cp, cs = child.AXPosition, child.AXSize
+    return cp and cs and point.x >= cp.x and point.x < cp.x + cs.w
+        and point.y >= cp.y and point.y < cp.y + cs.h
+  end) ~= nil
+end
+
 function M.setOverflowExpanded(screen, expanded)
   -- An explicit toggle supersedes a pending automatic collapse.
   if collapseTimer then collapseTimer:stop() collapseTimer = nil end
@@ -123,10 +138,8 @@ function M.setOverflowExpanded(screen, expanded)
   if current == expanded then return true, false end
   -- This system button advertises no AX actions; use its verified hit region.
   local p, size = button.AXPosition, button.AXSize
-  local notch = find("com.wudanwu.PingIsland")
-  local background = notch and getc(toappui(notch), AX.Window, 1, AX.Group, 1)
-  -- Ping Island's transparent root spans the screen, beyond its visible content.
-  -- It also reacts to hovering near the notch; never fall back toward it.
+  local background = pingIslandBackground()
+  -- Ping Island reacts to hovering near the notch; never fall back toward it.
   -- Prefer an inset point on the far side; use its edge only as a last resort.
   -- Tested on: Ping Island 0.32.1; macOS 27.0.1.
   local full = screen:fullFrame()
@@ -136,17 +149,31 @@ function M.setOverflowExpanded(screen, expanded)
     local hit = hs.axuielement.systemElementAtPosition(point)
     local clear = hit and hit:pid() == button:pid()
     if background and hit == background then
-      clear = not tfind(background.AXChildren, function(child)
-        local cp, cs = child.AXPosition, child.AXSize
-        return cp and cs and point.x >= cp.x and point.x < cp.x + cs.w
-            and point.y >= cp.y and point.y < cp.y + cs.h
-      end)
+      clear = not coveredByPingIsland(background, point)
     end
     if clear then
       return M.clickGoldenGate({ x = p.x, y = p.y, w = size.w, h = size.h,
         clickPoint = point, holdDelay = 0.2 }), true
     end
   end
+end
+
+-- Native click at a rendered status item. Ping Island's content can extend over
+-- icons next to the notch; then use the side away from it, as for the overflow button.
+function M.clickVisible(item, screen, right)
+  local background = pingIslandBackground()
+  local full = screen:fullFrame()
+  local far = item.x + item.w / 2 >= full.x + full.w / 2 and item.w * 3 / 4 or item.w / 4
+  for _, dx in ipairs({ item.w / 2, far }) do
+    local point = { x = item.x + dx, y = item.y + item.h / 2 }
+    local hit = background and hs.axuielement.systemElementAtPosition(point)
+    if not hit or hit:pid() ~= background:pid()
+        or hit == background and not coveredByPingIsland(background, point) then
+      return M.clickGoldenGate({ x = item.x, y = item.y, w = item.w, h = item.h,
+        clickPoint = point }, right)
+    end
+  end
+  hs.alert.show("Status item is covered by Ping Island")
 end
 
 -- Source items reach their rendered position about 0.2-0.4s after the hosts;
@@ -163,8 +190,6 @@ local function renderedItem(item, screen)
     end
   end
 end
-
-M.renderedItem = renderedItem
 
 -- Seconds before collapsing overflow expanded only for an activation; 0 keeps it.
 local function collapseDelay()

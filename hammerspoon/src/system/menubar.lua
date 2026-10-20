@@ -548,22 +548,8 @@ local function activateVisibleItem(right)
   mode:exit()
   hs.timer.doAfter(0, function()
     if OS_VERSION >= OS["Golden Gate"] then
-      local searchItems = collectSearchMenuBarItems() or {}
-      for index, pair in ipairs(searchItems) do
-        local source = pair[1]
-        if item.element and source:pid() == item.element:pid() then
-          local rendered = source.AXPosition and menuBarReveal.renderedItem(source, targetScreen)
-          if (rendered and rendered.id == item.id) or source == item.element then
-            local app = pair[4] or (source.AXPosition and source.AXParent.AXParent:asHSApplication() or source)
-            activateSearchMenuBarChoice(searchItems, {
-              id = index, appid = app:bundleID() or app:name(),
-              extraPattern = { source.AXIdentifier or "" },
-            }, right)
-            return
-          end
-        end
-      end
-      menuBarReveal.clickGoldenGate(item, right)
+      -- Focused items are rendered; a native click at the highlight needs no scan.
+      menuBarReveal.clickVisible(item, targetScreen, right)
       return
     end
     local position = littleSnitchMenuBarItemPosition(item)
