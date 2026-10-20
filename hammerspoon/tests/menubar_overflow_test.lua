@@ -14,6 +14,7 @@ local env = setmetatable({
     return { arrow }
   end,
   tfind = function(items, predicate) for _, item in ipairs(items) do if predicate(item) then return item end end end,
+  tfilter = function(items, predicate) local r = {} for _, item in ipairs(items) do if predicate(item) then r[#r + 1] = item end end return r end,
   localizedString = function(key) return key:find('showOverflow') and 'show' or 'hide' end,
   hs = { screen = { find = function(rect)
     -- Point arguments are display-layout positions, not absolute pixels.

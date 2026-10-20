@@ -1810,11 +1810,7 @@ local menubarHK = KeybindingConfigs.hotkeys.global or {}
 
 local proxyHotkey = bindHotkeySpec(menubarHK["showProxyMenu"], "Show Proxy Menu",
 function()
-  local hammerspoon = find(hs.settings.bundleID)
-  if hiddenByMenuBarManager(hammerspoon, proxy:autosaveName()) then
-    clickRightMenuBarItem{hammerspoon, proxy:autosaveName()}
-    return
-  end
+  -- Items hidden by a menu bar manager are revealed by popupRightMenuBarItem.
   popupRightMenuBarItem(proxy)
 end)
 if proxyHotkey then

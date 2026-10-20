@@ -836,6 +836,13 @@ end
 
 -- Detect which menu bar manager is actually active/visible
 local function getValidMenuBarManager()
+  -- Third-party managers are not yet adapted to Golden Gate; prefer the system overflow.
+  -- It is not in MENUBAR_MANAGER_SHOW: it always runs, so it must not suppress
+  -- hotkeys registered for systems without a manager, and it reveals asynchronously.
+  if OS_VERSION >= OS["Golden Gate"] then
+    local manager = find("com.apple.MenuBarAgent")
+    if manager then return manager end
+  end
   -- Leftmost screen x coordinate: used to decide if an item is "hidden"
   local leftmostHorizontal = 0
   foreach(hs.screen.allScreens(), function(screen)
@@ -881,6 +888,10 @@ function hiddenByMenuBarManager(app, index, map)
     menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
   end
   local menuBarItem = menuBarItems[index or 1]
+  if manager:bundleID() == "com.apple.MenuBarAgent" then
+    local hidden = require("utils.menubar_reveal").hiddenBySystemManager(menuBarItem)
+    return hidden, manager, map
+  end
   -- Any item with x < leftmost screen x is considered "off-screen hidden".
   local leftmostHorizontal = 0
   foreach(hs.screen.allScreens(), function(screen)
@@ -890,9 +901,7 @@ function hiddenByMenuBarManager(app, index, map)
 end
 
 -- Align a Hammerspoon popup with its status item; icon is an optional AX element.
-function popupRightMenuBarItem(item, icon)
-  local frame = item:_frame()
-  if not frame then return false end
+function popupRightMenuBarItem(item, icon, target)
   if not icon then
     local app = hs.application.get(hs.settings.bundleID)
     local map = loadStatusItemsAutosaveName(app)
@@ -900,6 +909,20 @@ function popupRightMenuBarItem(item, icon)
     if index then icon = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem, index) end
   end
   if not icon and not registeredItems[item] then return false end
+  if not target then
+    local app = hs.application.get(hs.settings.bundleID)
+    local manager = getValidMenuBarManager()
+    if manager and manager:bundleID() == "com.apple.MenuBarAgent" then
+      -- Pop up at the item's rendered position once revealed.
+      if icon and require("utils.menubar_reveal").revealBeforeActivation(icon, function(target)
+        popupRightMenuBarItem(item, icon, target)
+      end) then return true end
+    elseif manager and hiddenByMenuBarManager(app, item:autosaveName()) then
+      return clickRightMenuBarItem{ app, item:autosaveName() }
+    end
+  end
+  local frame = target or item:_frame()
+  if not frame then return false end
   local offset = 4
   for _, entry in ipairs(icon and getc(icon, AX.Menu, 1, AX.MenuItem) or {}) do
     local mark = entry.AXMenuItemMarkChar
@@ -959,15 +982,6 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
   local menuBarItem = menuBarItems[menuBarIdx or 1]
   if menuBarItem == nil then return false end
 
-  if show and require("utils.menubar_reveal").revealBeforeActivation(menuBarItem, function(target)
-    require("utils.menubar_reveal").clickGoldenGate(target, show == "right-click")
-    if #menuItemPath > 0 then
-      hs.timer.doAfter(0.2, function()
-        clickRightMenuBarItem({ appid, menuBarId }, menuItemPath, false)
-      end)
-    end
-  end) then return true end
-
   -- Rnsure the menu bar item is actually visible
   -- If it's hidden by a manager, ask that manager to reveal it.
 
@@ -975,7 +989,19 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
     local click = type(show) == "string" and show or false
     local hidden, manager
     hidden, manager, map = hiddenByMenuBarManager(app, menuBarId, map)
-    if hidden then
+    if hidden and manager:bundleID() == "com.apple.MenuBarAgent" then
+      -- Native overflow reveals asynchronously; click the rendered item, then
+      -- continue with the submenu path once its menu is open.
+      local reveal = require("utils.menubar_reveal")
+      return reveal.revealBeforeActivation(menuBarItem, function(target)
+        reveal.clickGoldenGate(target, show == "right-click")
+        if #menuItemPath > 0 then
+          hs.timer.doAfter(0.2, function()
+            clickRightMenuBarItem({ appid, menuBarId }, menuItemPath, false)
+          end)
+        end
+      end)
+    elseif hidden then
       assert(manager)
       -- Use manager-specific reveal strategy if available, else generic.
       local showFunc = MENUBAR_MANAGER_SHOW[manager:bundleID()]

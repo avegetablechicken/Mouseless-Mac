@@ -54,6 +54,21 @@ local function goldenGateMenuBar(screen)
   return window, button, button and button:attributeValue("AXDescription") == hide
 end
 
+-- Screen whose native overflow holds the item, revealed or not.
+local function overflowScreen(item)
+  if OS_VERSION < OS["Golden Gate"] then return end
+  local p = item and item.AXPosition
+  if not p then return end
+  local screen = hs.screen.find({ x = p.x, y = p.y, w = 1, h = 1 })
+  if not screen then return end
+  local _, button = goldenGateMenuBar(screen)
+  if button and p.x < button.AXPosition.x + button.AXSize.w then return screen end
+end
+
+function M.hiddenBySystemManager(item)
+  return overflowScreen(item) ~= nil
+end
+
 function M.clickGoldenGate(item, right)
   if busy then return false end
   local position = item.clickPoint or { x = item.x + item.w / 2, y = item.y + item.h / 2 }
@@ -162,13 +177,8 @@ local function scheduleCollapse(screen)
 end
 
 function M.revealBeforeActivation(item, activate)
-  if OS_VERSION < OS["Golden Gate"] then return false end
-  local p = item.AXPosition
-  if not p then return false end
-  local screen = hs.screen.find({ x = p.x, y = p.y, w = 1, h = 1 })
+  local screen = overflowScreen(item)
   if not screen then return false end
-  local _, button, expanded = goldenGateMenuBar(screen)
-  if not button or p.x >= button.AXPosition.x + button.AXSize.w then return false end
   if revealTimer then return true end
   local pending = collapseTimer ~= nil
   local shown, changed = M.setOverflowExpanded(screen, true)
