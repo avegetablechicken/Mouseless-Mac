@@ -35,8 +35,9 @@ struct SidebarView: View {
       }
       ForEach(groups.indices, id: \.self) { g in
         Section(groups[g].name) {
-          ForEach(groups[g].tabs.indices, id: \.self) { t in
-            let tab = groups[g].tabs[t]
+          // Unique row identities; bare indices collide with the section indices and leave sections empty.
+          ForEach(groups[g].tabs.indices.map { TabID(group: g, tab: $0) }, id: \.self) { id in
+            let tab = groups[g].tabs[id.tab]
             HStack(spacing: 9) {
               IconTile(symbol: tab.symbol, tint: tab.tint, size: 22)
               Text(tab.title).lineLimit(1)
@@ -46,7 +47,7 @@ struct SidebarView: View {
               }
             }
             .padding(.vertical, 1)
-            .tag(TabID(group: g, tab: t))
+            .tag(id)
           }
         }
       }
