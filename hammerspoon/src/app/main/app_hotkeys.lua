@@ -966,6 +966,66 @@ WPS.WF.PDF = {
   end
 }
 
+-- Tabs are not exposed; only the close buttons (dots if modified) of the
+-- active tab and modified tabs are. Document tabs have equal widths, so
+-- locate the active tab's button from the active index in the Window menu.
+WPS.activeTabButton = function(win)
+  local newTab = T("New Tab", { localeFile = 'wpsoffice' })(win)
+  local buttons = getc(towinui(win), AX.Button)
+  local newTabButton = tfind(buttons, function(bt)
+    return (bt.AXDescription or ""):sub(1, #newTab) == newTab
+  end)
+  if newTabButton == nil then return end
+  local right = newTabButton.AXPosition.x
+  local tabButtons = tifilter(buttons, function(bt)
+    return bt.AXTitle == "" and bt.AXDescription == ""
+        and bt.AXPosition.x < right
+  end)
+  if #tabButtons <= 1 then return tabButtons[1] end
+
+  local window = T("Window", { localeFile = 'wpsoffice' })(win)
+  local menuItems = getc(toappui(win:application()), AX.MenuBar, 1,
+      AX.MenuBarItem, window, AX.Menu, 1, AX.MenuItem)
+  local n, k = 0, nil
+  for _, item in ipairs(menuItems or {}) do
+    if (item.AXTitle or ""):match("^%d+ ") then
+      n = n + 1
+      if (item.AXMenuItemMarkChar or "") ~= "" then k = n end
+    end
+  end
+  if k == nil then return end
+
+  -- whether the button at `x` can be in slot `k` of `n` tabs with `width`,
+  -- with every other button in a whole slot
+  local left = win:frame().x
+  local function fits(x, width)
+    local tail = right - x
+    if n * width > right - left
+        or tail <= (n - k) * width or tail >= (n - k + 1) * width then
+      return false
+    end
+    return tfind(tabButtons, function(bt)
+      local slots = (x - bt.AXPosition.x) / width
+      local nearest = math.floor(slots + 0.5)
+      return math.abs(slots - nearest) * width > 2
+          or k - nearest < 1 or k - nearest > n
+    end) == nil
+  end
+  local found
+  for i, bt in ipairs(tabButtons) do
+    local x = bt.AXPosition.x
+    local dist = math.abs(x - tabButtons[i == 1 and 2 or 1].AXPosition.x)
+    for m = 1, n - 1 do
+      if fits(x, dist / m) then
+        if found then return end
+        found = bt
+        break
+      end
+    end
+  end
+  return found
+end
+
 -- ### JabRef
 local JabRef = {}
 
@@ -3665,7 +3725,11 @@ AppHotKeyCallbacks = {
             return true, winUI[i].AXPosition
           end
         end
-        return false
+        -- right-click the title of the active tab, left of its close button
+        local tabButton = WPS.activeTabButton(win)
+        if tabButton == nil then return false end
+        return Callback.Clickable(tabButton,
+            { -3 * tabButton.AXSize.w, tabButton.AXSize.h / 2 })
       end,
       fn = function(position, win)
         local app = win:application()
