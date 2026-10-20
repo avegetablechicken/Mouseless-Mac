@@ -914,6 +914,7 @@ local specialConfirmFuncs = {
   ["com.kingsoft.wpsoffice.mac"] = function(winUI)
     if winUI.AXSubrole == AX.Dialog then
       local btnName = T("Don't Save", winUI)
+      btnName = btnName and btnName:gsub('%(&?%w%)$', '')
       return btnName and tfind(getc(winUI, AX.Button) or {}, function(button)
         return button.AXTitle and button.AXTitle:match('^'..btnName)
       end)
