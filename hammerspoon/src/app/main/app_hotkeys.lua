@@ -3581,7 +3581,7 @@ AppHotKeyCallbacks = {
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 1, AX.Group)
         local firstSplitLine
-        for i, g in ipairs(groups) do
+        for i, g in ipairs(groups or {}) do
           if g.AXSize.h == 16 then
             firstSplitLine = i
             break
@@ -3610,7 +3610,7 @@ AppHotKeyCallbacks = {
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 1, AX.Group)
         local firstSplitLine, secondSplitLine
-        for i, g in ipairs(groups) do
+        for i, g in ipairs(groups or {}) do
           if g.AXSize.h == 16 then
             if firstSplitLine == nil then
               firstSplitLine = i
@@ -3620,7 +3620,7 @@ AppHotKeyCallbacks = {
             end
           end
         end
-        if secondSplitLine == nil or (secondSplitLine - firstSplitLine > 2) then
+        if firstSplitLine and (secondSplitLine == nil or secondSplitLine - firstSplitLine > 2) then
           return Callback.Clickable(groups[firstSplitLine + 2])
         end
         return false
@@ -3638,7 +3638,7 @@ AppHotKeyCallbacks = {
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 1, AX.Group)
         local firstSplitLine, secondSplitLine, thirdSplitLine
-        for i, g in ipairs(groups) do
+        for i, g in ipairs(groups or {}) do
           if g.AXSize.h == 16 then
             if firstSplitLine == nil then
               firstSplitLine = i
@@ -3669,7 +3669,7 @@ AppHotKeyCallbacks = {
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 1, AX.Group)
         local firstSplitLine, secondSplitLine, thirdSplitLine
-        for i, g in ipairs(groups) do
+        for i, g in ipairs(groups or {}) do
           if g.AXSize.h == 16 then
             if firstSplitLine == nil then
               firstSplitLine = i
@@ -3700,7 +3700,7 @@ AppHotKeyCallbacks = {
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 1, AX.Group)
         local firstSplitLine, secondSplitLine, thirdSplitLine
-        for i, g in ipairs(groups) do
+        for i, g in ipairs(groups or {}) do
           if g.AXSize.h == 16 then
             if firstSplitLine == nil then
               firstSplitLine = i
