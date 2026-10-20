@@ -30,15 +30,19 @@ end
 local function goldenGateMenuBar(screen)
   local app = find("com.apple.MenuBarAgent")
   if not app then return end
+  -- Each screen has its own hosts; screens without a notch have no overflow button.
+  local frame = screen:fullFrame()
+  local windows = tfilter(getc(toappui(app), AX.Window) or {}, function(w)
+    local p = w.AXPosition
+    return p ~= nil and w.AXSize ~= nil and p.x == frame.x and p.y == frame.y
+  end)
   -- Window order changes; prefer the host reporting expanded overflow.
-  local window = tfind(getc(toappui(app), AX.Window), function(w)
+  local window = tfind(windows, function(w)
     return tfind(getc(w, AX.Button) or {}, function(b)
       return b:attributeValue("AXDescription") == localizedString("menuBar.hideOverflowItemsAccessibilityLabel", app:bundleID(), "MenuBarCore")
     end)
-  end) or getc(toappui(app), AX.Window, 2)
+  end) or windows[#windows]
   if not window then return end
-  local p, size, frame = window.AXPosition, window.AXSize, screen:fullFrame()
-  if not p or not size or p.x ~= frame.x or p.y ~= frame.y then return end
   local show = localizedString("menuBar.showOverflowItemsAccessibilityLabel",
       app:bundleID(), "MenuBarCore")
   local hide = localizedString("menuBar.hideOverflowItemsAccessibilityLabel",
