@@ -3557,6 +3557,7 @@ AppHotKeyCallbacks = {
         end
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+            or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 1, AX.Group)
         local firstSplitLine
         for i, g in ipairs(groups or {}) do
           if g.AXSize.h == 16 then
@@ -3578,6 +3579,7 @@ AppHotKeyCallbacks = {
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+            or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 1, AX.Group)
         local firstSplitLine
         for i, g in ipairs(groups) do
           if g.AXSize.h == 16 then
@@ -3606,6 +3608,7 @@ AppHotKeyCallbacks = {
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+            or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 1, AX.Group)
         local firstSplitLine, secondSplitLine
         for i, g in ipairs(groups) do
           if g.AXSize.h == 16 then
@@ -3633,6 +3636,7 @@ AppHotKeyCallbacks = {
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+            or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 1, AX.Group)
         local firstSplitLine, secondSplitLine, thirdSplitLine
         for i, g in ipairs(groups) do
           if g.AXSize.h == 16 then
@@ -3663,6 +3667,7 @@ AppHotKeyCallbacks = {
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+            or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 1, AX.Group)
         local firstSplitLine, secondSplitLine, thirdSplitLine
         for i, g in ipairs(groups) do
           if g.AXSize.h == 16 then
@@ -3693,6 +3698,7 @@ AppHotKeyCallbacks = {
         local winUI = towinui(win)
         local groups = getc(winUI, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
             or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 4, AX.Group)
+            or getc(winUI, AX.SplitGroup, 1, AX.SplitGroup, 1, AX.Group, 1, AX.Group)
         local firstSplitLine, secondSplitLine, thirdSplitLine
         for i, g in ipairs(groups) do
           if g.AXSize.h == 16 then
