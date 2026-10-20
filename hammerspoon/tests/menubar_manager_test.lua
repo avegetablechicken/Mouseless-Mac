@@ -20,14 +20,17 @@ local revealEnv = setmetatable({
 }, { __index = _G })
 local reveal = assert(loadfile('src/utils/menubar_reveal.lua', 't', revealEnv))()
 local function at(x) return { AXPosition = { x = x, y = 0 }, AXSize = { w = 24, h = 24 } } end
-assert(reveal.hiddenBySystemManager(at(500)))
+assert(reveal.hiddenBySystemManager(at(500)) and reveal.collapsedInOverflow(at(500)))
 expanded = true
 assert(reveal.hiddenBySystemManager(at(300)), 'a revealed item still belongs to the overflow')
-assert(not reveal.hiddenBySystemManager(at(600)))
+assert(not reveal.collapsedInOverflow(at(300)), 'a revealed item lies left of the arrow')
+assert(reveal.collapsedInOverflow({ frame = function() return { x = 498, y = 0, w = 26, h = 24 } end }),
+  'hs.menubar objects report their live frame')
+assert(not reveal.hiddenBySystemManager(at(600)) and not reveal.collapsedInOverflow(at(600)))
 assert(not reveal.hiddenBySystemManager(nil))
 revealEnv.OS_VERSION = 26
-assert(not reveal.hiddenBySystemManager(at(500)))
-print('PASS: native overflow detection, revealed item, visible item, macOS 26')
+assert(not reveal.hiddenBySystemManager(at(500)) and not reveal.collapsedInOverflow(at(500)))
+print('PASS: native overflow detection, collapsed and revealed items, hs.menubar frames, macOS 26')
 
 -- Manager priority: MenuBarAgent first on Golden Gate; third-party managers on older macOS.
 local running = {}

@@ -49,7 +49,9 @@ local function scanSearchMenuBarItems()
       controlCenterPreferred = preferred
     end
     -- Temporary system icons can leave holes in the autosave-name mapping.
-    if map and (next(map) ~= nil or appid == 'com.apple.controlcenter') then
+    -- Icons collapsed together have saved slots but no names.
+    if map and (next(map) ~= nil or next(preferred or {}) ~= nil
+        or appid == 'com.apple.controlcenter') then
       assert(preferred)
       maps[appid] = map
       if layout or appid ~= 'com.apple.controlcenter' or OS_VERSION < OS.Tahoe then

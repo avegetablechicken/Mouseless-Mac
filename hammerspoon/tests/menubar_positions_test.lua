@@ -6,6 +6,10 @@ local old = {['NSStatusItem Preferred Position Item-0']=1017,
 local reads = 0
 local env = setmetatable({
   OS_VERSION=27, OS={['Golden Gate']=27,Tahoe=26}, AX={MenuBarItem='AXMenuBarItem'},
+  require=function(name)
+    assert(name=='utils.menubar_reveal')
+    return {collapsedInOverflow=function(item) return item.collapsed==true end}
+  end,
   tinsert=table.insert, strfmt=string.format, getc=function() return items end, toappui=function() return {} end,
   hs={application={infoForBundleID=function(id)
     return {CFBundleExecutable=id=="example.owner" and "example-process" or "Hammerspoon"}
@@ -42,6 +46,18 @@ assert(env.loadStatusItemsAutosaveName(app,true,extra)==nil)
 items[2].AXPosition.x=855
 assert(env.loadStatusItemsAutosaveName(app,true,layout)==nil)
 items[2].AXPosition.x=856
+-- Icons collapsed together keep their saved slots but stay unnamed.
+items[1].collapsed, items[2].collapsed = true, true
+items[2].AXPosition.x=855
+local stack
+map,p,stack=env.loadStatusItemsAutosaveName(app,true,layout)
+assert(next(map)==nil and #stack==2)
+assert((p[1]==889 and p[2]==551) or (p[1]==551 and p[2]==889))
+-- A single collapsed icon remains unambiguous.
+items[2].collapsed=false; items[2].AXPosition.x=856
+map=env.loadStatusItemsAutosaveName(app,true,layout)
+assert(map[1]=='Item-0' and map[2]=='PROXY')
+items[1].collapsed, items[2].collapsed = nil, nil
 -- Control Center reuses the shared autosave-name mapping; transient items stay unnamed.
 function env.tfind(t,f) for _,v in ipairs(t) do if f(v) then return v end end end
 function env.tifilter(t,f) local r={} for _,v in ipairs(t) do if f(v) then r[#r+1]=v end end return r end
@@ -81,4 +97,4 @@ env.hs.settings.get=function(k) return old[k] end
 map,p=env.loadStatusItemsAutosaveName(app,true)
 assert(map[1]=='Item-0' and map[2]=='PROXY' and p[1]==1017 and p[2]==551)
 assert(reads==before, 'Older OS must not read the new storage')
-print('PASS: shared layout, stale/ambiguous records, system modules, and legacy mapping')
+print('PASS: shared layout, stale/ambiguous records, collapsed icons, system modules, and legacy mapping')

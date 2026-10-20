@@ -54,19 +54,39 @@ local function goldenGateMenuBar(screen)
   return window, button, button and button:attributeValue("AXDescription") == hide
 end
 
--- Screen whose native overflow holds the item, revealed or not.
+-- Live frame of an AX status item or of one of Hammerspoon's hs.menubar objects.
+local function frameOf(item)
+  if item == nil then return end
+  local p = item.AXPosition
+  if p then
+    local size = item.AXSize
+    return size and { x = p.x, y = p.y, w = size.w, h = size.h }
+  end
+  return item.frame and item:frame()
+end
+
+-- Screen and arrow of the native overflow that holds the item, revealed or not.
 local function overflowScreen(item)
   if OS_VERSION < OS["Golden Gate"] then return end
-  local p = item and item.AXPosition
-  if not p then return end
-  local screen = hs.screen.find({ x = p.x, y = p.y, w = 1, h = 1 })
+  local frame = frameOf(item)
+  if not frame then return end
+  local screen = hs.screen.find({ x = frame.x, y = frame.y, w = 1, h = 1 })
   if not screen then return end
   local _, button = goldenGateMenuBar(screen)
-  if button and p.x < button.AXPosition.x + button.AXSize.w then return screen end
+  if button and frame.x < button.AXPosition.x + button.AXSize.w then return screen, button end
 end
 
 function M.hiddenBySystemManager(item)
   return overflowScreen(item) ~= nil
+end
+
+-- Collapsed overflow stacks every icon beneath its arrow, so icons of the same
+-- application cannot be told apart; once revealed they lie left of the arrow.
+-- Tested on: Hammerspoon 1.1.1; macOS 27.0.1.
+function M.collapsedInOverflow(item)
+  local screen, button = overflowScreen(item)
+  local frame = screen and frameOf(item)
+  return frame ~= nil and frame.x + frame.w > button.AXPosition.x
 end
 
 function M.clickGoldenGate(item, right)
@@ -129,28 +149,18 @@ function M.setOverflowExpanded(screen, expanded)
   end
 end
 
--- Source AX items retain collapsed coordinates; click the rendered host instead.
+-- Source items reach their rendered position about 0.2-0.4s after the hosts;
+-- until then they stay stacked beneath the arrow and match no rendered host.
+-- Tested on: Hammerspoon 1.1.1; macOS 27.0.1.
 local function renderedItem(item, screen)
-  local candidates = {}
+  local frame = frameOf(item)
+  if not frame then return end
+  local x, y = frame.x + frame.w / 2, frame.y + frame.h / 2
   for _, visible in ipairs(M.visibleItems(screen)) do
-    if visible.element == item then return visible end
-    if visible.element and visible.element:pid() == item:pid() then
-      candidates[#candidates + 1] = visible
+    if x >= visible.x and x < visible.x + visible.w
+        and y >= visible.y and y < visible.y + visible.h then
+      return visible
     end
-  end
-  local app = hs.application.applicationForPID(item:pid())
-  if not app then return end
-  local _, preferred, sources = loadStatusItemsAutosaveName(app, true)
-  if not sources or #sources ~= #candidates then return end
-  local ordered = {}
-  for index, source in ipairs(sources) do
-    if not preferred[index] then return end
-    ordered[#ordered + 1] = { source = source, position = preferred[index] }
-  end
-  table.sort(ordered, function(a, b) return a.position < b.position end)
-  table.sort(candidates, function(a, b) return a.x > b.x end)
-  for index, entry in ipairs(ordered) do
-    if entry.source == item then return candidates[index] end
   end
 end
 
@@ -190,7 +200,7 @@ function M.revealBeforeActivation(item, activate)
   local attempts = 0
   local function ready()
     revealTimer = nil
-    if not item:isValid() then return end
+    if item.isValid and not item:isValid() then return end
     local _, _, shown = goldenGateMenuBar(screen)
     local target = not busy and shown and renderedItem(item, screen)
     if target then
@@ -198,7 +208,8 @@ function M.revealBeforeActivation(item, activate)
       return
     end
     attempts = attempts + 1
-    if attempts < 20 then
+    -- Source coordinates settled about 1s after the expansion click.
+    if attempts < 40 then
       revealTimer = hs.timer.doAfter(0.05, ready)
     else
       hs.alert.show("Cannot show hidden status items")

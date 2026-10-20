@@ -28,7 +28,6 @@ local item = { pid = function() return 7 end, AXPosition = { x = 500, y = 0 }, A
 m.setOverflowExpanded = function() reveals = reveals + 1; return true end
 local rendered = { x = 460, y = 0, w = 20, h = 24, element = item }
 m.visibleItems = function() return expanded and { rendered } or {} end
-env.hs.application = { applicationForPID = function() return nil end }
 local function activate(target) assert(target == rendered); activated = activated + 1 end
 local function tick() table.remove(pending, 1).fn() end
 assert(m.revealBeforeActivation(item, activate))
@@ -37,9 +36,11 @@ tick()
 assert(activated == 0, 'must wait for expansion')
 expanded = true
 tick()
-assert(item.AXPosition.x == 500, 'source coordinates remain collapsed')
+assert(activated == 0, 'a source still stacked beneath the arrow must not match a host')
+item.AXPosition.x = 460
+tick()
 assert(activated == 1 and #pending == 0)
-assert(m.revealBeforeActivation(item, activate), 'already expanded overflow still needs rendered coordinates')
+assert(m.revealBeforeActivation(item, activate), 'a revealed item still belongs to the overflow')
 tick()
 assert(activated == 2)
 expanded = false
@@ -47,7 +48,7 @@ item.AXPosition.x = 600
 assert(not m.revealBeforeActivation(item, activate), 'visible item must not expand overflow')
 item.AXPosition.x = 500
 assert(m.revealBeforeActivation(item, activate))
-for _ = 1, 20 do tick() end
+for _ = 1, 40 do tick() end
 assert(alerts == 1 and activated == 2 and #pending == 0, 'timeout must not click a hidden item')
 item.isValid = function() return false end
 assert(m.revealBeforeActivation(item, activate))
@@ -55,21 +56,24 @@ tick()
 assert(#pending == 0 and activated == 2, 'removed item must not activate')
 env.OS_VERSION = 26
 assert(not m.revealBeforeActivation(item, activate), 'older macOS must retain existing behavior')
-print('PASS: overflow expansion, stale source coordinates, duplicate activation, visible items, timeout, removed item, macOS 26')
+print('PASS: overflow expansion, delayed source coordinates, duplicate activation, visible items, timeout, removed item, macOS 26')
 env.OS_VERSION = 27
 expanded = true
 item.isValid = function() return true end
-local second = { pid = item.pid }
-local left = { x = 300, element = { pid = item.pid } }
-local right = { x = 450, element = { pid = item.pid } }
-env.hs.application = { applicationForPID = function() return app end }
-env.loadStatusItemsAutosaveName = function() return {}, { 800, 500 }, { item, second } end
-m.visibleItems = function() return { left, right } end
+-- Icons of one application are told apart by their own revealed positions.
+local left = { x = 300, y = 0, w = 30, h = 24 }
+local right = { x = 450, y = 0, w = 30, h = 24 }
+m.visibleItems = function() return { right, left } end
 local selected
+item.AXPosition.x = 303
 assert(m.revealBeforeActivation(item, function(target) selected = target end))
 tick()
-assert(selected == left, 'multiple icons must follow saved order, not host child order')
-print('PASS: multiple icons from the same application use saved layout order')
+assert(selected == left, 'the host must contain the revealed source item')
+local own = { frame = function() return { x = 452, y = 0, w = 26, h = 24 } end }
+assert(m.revealBeforeActivation(own, function(target) selected = target end))
+tick()
+assert(selected == right, 'hs.menubar objects use their live frame')
+print('PASS: icons of one application and hs.menubar objects resolve by revealed position')
 
 -- Both windows remain in AX, but only the rendered window changes its label.
 local collapsedArrow = { attributeValue = function() return 'show' end }

@@ -254,18 +254,28 @@ local function loadStatusItemsGoldenGate(app, requirePreferredPosition, layout)
       assign(1, saved[1].name, saved[1].position)
     else
       if not items or #items ~= #saved then return end
+      local reveal = #items > 1 and require("utils.menubar_reveal")
+      local stacked = 0
       for i, item in ipairs(items) do
         local position = item.AXPosition
         if not position then return end
-        ordered[#ordered + 1] = { index = i, x = position.x }
+        local collapsed = reveal and reveal.collapsedInOverflow(item)
+        if collapsed then stacked = stacked + 1 end
+        ordered[#ordered + 1] = { index = i, x = position.x, collapsed = collapsed }
       end
       table.sort(saved, function(a, b) return a.position < b.position end)
       table.sort(ordered, function(a, b) return a.x > b.x end)
       for i, item in ipairs(ordered) do
-        -- Equal coordinates cannot establish an identity; do not guess.
-        if ordered[i + 1] and item.x == ordered[i + 1].x then return end
         if saved[i + 1] and saved[i].position == saved[i + 1].position then return end
-        assign(item.index, saved[i].name, saved[i].position)
+        if item.collapsed and stacked > 1 then
+          -- Icons collapsed together share one point: keep their saved slots for
+          -- ordering, but leave them unnamed; activation identifies them once revealed.
+          preferred[item.index] = saved[i].position
+        else
+          -- Equal coordinates cannot establish an identity; do not guess.
+          if ordered[i + 1] and item.x == ordered[i + 1].x then return end
+          assign(item.index, saved[i].name, saved[i].position)
+        end
       end
     end
   end
@@ -900,28 +910,17 @@ function hiddenByMenuBarManager(app, index, map)
   return menuBarItem.AXPosition.x < leftmostHorizontal, manager, map
 end
 
--- Align a Hammerspoon popup with its status item; icon is an optional AX element.
-function popupRightMenuBarItem(item, icon, target)
-  if not icon then
-    local app = hs.application.get(hs.settings.bundleID)
-    local map = loadStatusItemsAutosaveName(app)
-    local index = map and map[item:autosaveName()]
-    if index then icon = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem, index) end
-  end
-  if not icon and not registeredItems[item] then return false end
-  if not target then
-    local app = hs.application.get(hs.settings.bundleID)
-    local manager = getValidMenuBarManager()
-    if manager and manager:bundleID() == "com.apple.MenuBarAgent" then
-      -- Pop up at the item's rendered position once revealed.
-      if icon and require("utils.menubar_reveal").revealBeforeActivation(icon, function(target)
-        popupRightMenuBarItem(item, icon, target)
-      end) then return true end
-    elseif manager and hiddenByMenuBarManager(app, item:autosaveName()) then
-      return clickRightMenuBarItem{ app, item:autosaveName() }
-    end
-  end
-  local frame = target or item:_frame()
+-- AX icon of a Hammerspoon status item; icons collapsed together resolve only once revealed.
+local function statusIcon(item)
+  local app = hs.application.get(hs.settings.bundleID)
+  local map = loadStatusItemsAutosaveName(app)
+  local index = map and map[item:autosaveName()]
+  return index and getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem, index) or nil
+end
+
+-- Pop up a Hammerspoon status item's menu at its current frame.
+local function popupAtFrame(item, icon)
+  local frame = item:_frame()
   if not frame then return false end
   local offset = 4
   for _, entry in ipairs(icon and getc(icon, AX.Menu, 1, AX.MenuItem) or {}) do
@@ -938,6 +937,24 @@ function popupRightMenuBarItem(item, icon, target)
     y = screen.y + 1 + 5, -- 1pt below menu bar + AppKit's 5pt first-item inset (macOS 26).
   })
   return true
+end
+
+-- Align a Hammerspoon popup with its status item; icon is an optional AX element.
+function popupRightMenuBarItem(item, icon)
+  icon = icon or statusIcon(item)
+  if not icon and not registeredItems[item] then return false end
+  local app = hs.application.get(hs.settings.bundleID)
+  local manager = getValidMenuBarManager()
+  if manager and manager:bundleID() == "com.apple.MenuBarAgent" then
+    -- Our own item reports a live frame even while collapsed AX icons share
+    -- one point; the reveal returns once that frame is rendered.
+    if require("utils.menubar_reveal").revealBeforeActivation(item, function()
+      popupAtFrame(item, icon or statusIcon(item))
+    end) then return true end
+  elseif manager and hiddenByMenuBarManager(app, item:autosaveName()) then
+    return clickRightMenuBarItem{ app, item:autosaveName() }
+  end
+  return popupAtFrame(item, icon)
 end
 
 -- Open a menu bar item, then navigate submenus and finally press the leaf menu item.
