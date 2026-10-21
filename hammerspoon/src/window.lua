@@ -817,13 +817,19 @@ function()
   local allWindows = wFilter:getWindows()
   local choices = {}
   for _, window in ipairs(allWindows) do
+    -- The window switcher keeps hs.window.filter active, so it can retain destroyed windows.
+    local ok, ended = pcall(function()
+      return hs.axuielement.windowElement(window):isValid() == false end)
+    if not (ok and ended) then
     tinsert(choices,
         {
           text = window:title(),
           subText = window:application():name(),
-          image = window:snapshot(),
+          -- Stage Manager windows outside the active stage need the switcher's capture fallbacks.
+          image = window:snapshot() or (engine.records[window:id() or -1] or {}).image,
           window = window
         })
+    end
   end
 
   if #choices == 0 then
