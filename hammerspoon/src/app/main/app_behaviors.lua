@@ -116,7 +116,7 @@ end
 
 -- MonoProxyMac
 if installed("com.MonoCloud.MonoProxyMac") and applicationVersion("com.MonoCloud.MonoProxyMac") < "1.0.9" then
-  Evt.OnLaunched("com.MonoCloud.MonoProxyMac", function(app)
+  Evt.OnRunning("com.MonoCloud.MonoProxyMac", function(app)
     local observer = uiobserver.new(app:pid())
     observer:addWatcher(toappui(app), uinotifications.windowCreated)
     observer:callback(function(obs, winUI)
@@ -124,10 +124,10 @@ if installed("com.MonoCloud.MonoProxyMac") and applicationVersion("com.MonoCloud
       if text and text.AXValue == "Helper install fail!" then
         local confirm = getc(winUI, AX.Button, "OK")
         if confirm then Callback.Press(confirm) end
-        obs:stop() obs = nil
       end
     end)
     observer:start()
+    for _, winUI in ipairs(toappui(app).AXWindows or {}) do observer:callback()(observer, winUI) end
     Evt.StopOnTerminated(app, observer)
 
     local win = app:focusedWindow()
@@ -137,7 +137,6 @@ if installed("com.MonoCloud.MonoProxyMac") and applicationVersion("com.MonoCloud
       if text and text.AXValue == "Chute icon not visible" then
         local confirm = getc(winUI, AX.Button, "OK")
         if confirm then Callback.Press(confirm) end
-        return
       end
     end
     local observer = uiobserver.new(app:pid())
@@ -148,11 +147,11 @@ if installed("com.MonoCloud.MonoProxyMac") and applicationVersion("com.MonoCloud
         if text and text.AXValue == "Chute icon not visible" then
           local confirm = getc(winUI, AX.Button, "OK")
           if confirm then Callback.Press(confirm) end
-          obs:stop() obs = nil
         end
       end
     end)
     observer:start()
+    for _, winUI in ipairs(toappui(app).AXWindows or {}) do observer:callback()(observer, winUI) end
     Evt.StopOnTerminated(app, observer)
   end)
 end
