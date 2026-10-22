@@ -713,10 +713,10 @@ if privateProxyConfigs ~= nil then
 end
 
 -- Shared styled text for section headers, mimicking macOS standard
--- section header appearance (smaller system font, secondary label color).
+-- section header appearance (smaller bold system font, secondary label color).
 local SECTION_HEADER_STYLE = {
-  font = { name = ".AppleSystemUIFont", size = 11 },
-  color = { red = 0.55, green = 0.55, blue = 0.56, alpha = 1.0 },
+  font = { name = ".AppleSystemUIFontBold", size = 11 },
+  color = { list = "System", name = "secondaryLabelColor" },
 }
 
 local function styledTitle(text)
