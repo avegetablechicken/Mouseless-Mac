@@ -196,7 +196,7 @@ local phonesManagers = ApplicationConfigs.manageAndroidDevices or {}
 if type(phonesManagers) == 'string' then phonesManagers = { phonesManagers } end
 local function isConfiguredPhone(device)
   return any(phones, function(phone)
-    return device.productName == phone[1] and device.vendorName == phone[2]
+    return device.productName == phone.product and device.vendorName == phone.vendor
   end)
 end
 local attachedPhones = {}

@@ -671,8 +671,8 @@ struct FileState { var raw: String?, baseline: JSON?, error: String?, missing = 
     else if name == "misc" && path.first(is: "verificationFilter") { initial = .object(JObject([("filter", .array([])), ("extract", .string(""))])) }
     else if name == "misc" && path.last?.key == "proxy" { initial = .object(JObject([("candidates", .array([]))])) }
     else if path.last?.key == "candidates" { initial = .object(JObject([("name", .string("")), ("mode", .string("pac"))])) }
-    // Hammerspoon reads phones as [product, vendor].
-    else if name == "application" && path.first(is: "androidDevices") { initial = .array([.string(""), .string("")]) }
+    // Hammerspoon reads phones as {product, vendor}.
+    else if name == "application" && path.first(is: "androidDevices") { initial = .object(JObject([("product", .string("")), ("vendor", .string(""))])) }
     else if let first = value(name, path)?[0] {
       switch first {
       case .object: initial = .object(JObject())

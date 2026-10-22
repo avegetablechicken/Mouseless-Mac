@@ -670,7 +670,7 @@ struct InputDevicesPage: View {
 
   @ViewBuilder private var androidSections: some View {
     let devices = store.value("application", [.k("androidDevices")])?.array ?? []
-    let legacy = devices.contains { $0.isRecord }
+    let legacy = devices.contains { !$0.isRecord }
     Section {
       AppListEditor(file: "application", path: [.k("manageAndroidDevices")], ordered: true, empty: "No phone manager")
     } header: { Text("Android Phone Manager") } footer: {
@@ -679,13 +679,13 @@ struct InputDevicesPage: View {
     Section {
       if legacy {
         HStack {
-          Label("Some phones are saved as {product, vendor} objects, but Hammerspoon only reads [product, vendor] lists, so connecting them does nothing.",
+          Label("Some phones are saved as [product, vendor] lists, but Hammerspoon only reads {product, vendor} objects, so connecting them does nothing.",
                 systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
           Spacer()
           Button("Convert") {
             store.set("application", [.k("androidDevices")], .array(devices.map { item in
-              guard let object = item.object else { return item }
-              return .array([object["product"] ?? .string(""), object["vendor"] ?? .string("")])
+              guard let list = item.array else { return item }
+              return .object(JObject([("product", list.first ?? .string("")), ("vendor", list.count > 1 ? list[1] : .string(""))]))
             }))
           }
           .controlSize(.small)
@@ -705,7 +705,7 @@ struct InputDevicesPage: View {
         }
       }
       if devices.isEmpty { EmptyRow(text: "No phones") }
-      ListControls(add: { _ in store.set("application", [.k("androidDevices")], .array(devices + [.array([.string(""), .string("")])])) },
+      ListControls(add: { _ in store.set("application", [.k("androidDevices")], .array(devices + [.object(JObject([("product", .string("")), ("vendor", .string(""))]))])) },
                    remove: device.map { i in { store.deleteEntry("application", [.k("androidDevices"), .i(i)]); device = nil } },
                    applications: false)
     } header: { Text("Android Phones") } footer: {
@@ -714,7 +714,7 @@ struct InputDevicesPage: View {
   }
 
   private func deviceField(_ index: Int, _ item: JSON, _ position: Int, _ key: String) -> some View {
-    let path: Path = item.isRecord ? [.k("androidDevices"), .i(index), .k(key)] : [.k("androidDevices"), .i(index), .i(position)]
+    let path: Path = item.isArray ? [.k("androidDevices"), .i(index), .i(position)] : [.k("androidDevices"), .i(index), .k(key)]
     return PlainField(text: store.stringBinding("application", path), prompt: key == "product" ? "Product" : "Vendor", alignment: .leading)
       .frame(maxWidth: .infinity)
   }
