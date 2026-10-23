@@ -210,6 +210,8 @@ function M.setOverflowExpanded(screen, expanded)
         clickPoint = point, holdDelay = 0.2 }), true
     end
   end
+  -- The requested state lets a failed toggle say which way it failed.
+  return false, false, expanded
 end
 
 -- Native click at a rendered status item. Ping Island's content can extend over
