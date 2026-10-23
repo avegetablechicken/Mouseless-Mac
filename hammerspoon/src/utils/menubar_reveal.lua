@@ -41,6 +41,12 @@ local function goldenGateMenuBar(screen)
     return tfind(getc(w, AX.Button) or {}, function(b)
       return b:attributeValue("AXDescription") == localizedString("menuBar.hideOverflowItemsAccessibilityLabel", app:bundleID(), "MenuBarCore")
     end)
+  end) or tfind(windows, function(w)
+    -- Hosts for other Spaces share the frame; only the live one is hit-tested.
+    local b = getc(w, AX.Button, 1)
+    local p, size = b and b.AXPosition, b and b.AXSize
+    return p and size and hs.axuielement.systemElementAtPosition(
+        { x = p.x + size.w / 2, y = p.y + size.h / 2 }) == b
   end) or windows[#windows]
   if not window then return end
   local show = localizedString("menuBar.showOverflowItemsAccessibilityLabel",
