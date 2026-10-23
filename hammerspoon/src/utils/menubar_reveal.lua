@@ -183,6 +183,15 @@ local function coveredByPingIsland(background, point)
   end) ~= nil
 end
 
+-- Its opened panel drops below the menu bar, and its root then hit-tests as
+-- solid around the notch even where no child lies.
+local function pingIslandOpen(background, bottom)
+  return tfind(background.AXChildren or {}, function(child)
+    local cp, cs = child.AXPosition, child.AXSize
+    return cp and cs and cp.y + cs.h > bottom
+  end) ~= nil
+end
+
 function M.setOverflowExpanded(screen, expanded)
   -- An explicit toggle supersedes a pending automatic collapse.
   if collapseTimer then collapseTimer:stop() collapseTimer = nil end
@@ -204,6 +213,7 @@ function M.setOverflowExpanded(screen, expanded)
     local clear = hit and hit:pid() == button:pid()
     if background and hit == background then
       clear = not coveredByPingIsland(background, point)
+          and not pingIslandOpen(background, p.y + size.h)
     end
     if clear then
       return M.clickGoldenGate({ x = p.x, y = p.y, w = size.w, h = size.h,
@@ -224,7 +234,8 @@ function M.clickVisible(item, screen, right)
     local point = { x = item.x + dx, y = item.y + item.h / 2 }
     local hit = background and hs.axuielement.systemElementAtPosition(point)
     if not hit or hit:pid() ~= background:pid()
-        or hit == background and not coveredByPingIsland(background, point) then
+        or hit == background and not coveredByPingIsland(background, point)
+          and not pingIslandOpen(background, item.y + item.h) then
       return M.clickGoldenGate({ x = item.x, y = item.y, w = item.w, h = item.h,
         clickPoint = point }, right)
     end
@@ -311,13 +322,17 @@ function M.revealBeforeActivation(item, activate, slot)
     local _, _, shown = goldenGateMenuBar(screen)
     local target = not busy and shown
         and (bySlot and slotItem(item, screen, slot) or not bySlot and renderedItem(item, screen))
+    -- An expansion click inside Ping Island's hover zone opens it over the
+    -- revealed icons for about 2.3s; wait until it closes.
+    local background = target and pingIslandBackground()
+    if background and pingIslandOpen(background, target.y + target.h) then target = nil end
     if target then
       activate(target)
       return
     end
     attempts = attempts + 1
     -- Source coordinates settled about 1s after the expansion click.
-    if attempts < 40 then
+    if attempts < 100 then
       revealTimer = hs.timer.doAfter(0.05, ready)
     else
       hs.alert.show("Cannot show hidden status items")

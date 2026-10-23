@@ -8,7 +8,8 @@ local window = { AXPosition = { x = 0, y = 0 }, AXSize = { w = 1000, h = 24 } }
 local app = { bundleID = function() return 'com.apple.MenuBarAgent' end }
 local env = setmetatable({
   OS_VERSION = 27, OS = { ['Golden Gate'] = 27 }, AX = { Window = 'window', Button = 'button' },
-  find = function() return app end, toappui = function(a) return a end,
+  find = function(id) return id ~= 'com.wudanwu.PingIsland' and app or nil end,
+  toappui = function(a) return a end,
   getc = function(_, role, index)
     if role == 'window' then return index and window or { window } end
     return { arrow }
@@ -43,17 +44,31 @@ assert(activated == 1 and #pending == 0)
 assert(m.revealBeforeActivation(item, activate), 'a revealed item still belongs to the overflow')
 tick()
 assert(activated == 2)
+-- Ping Island opened by the expansion click covers the target until it closes.
+local islandApp, islandRoot = {}, { AXChildren = {
+  { AXPosition = { x = 470, y = 4 }, AXSize = { w = 40, h = 19 } },
+  { AXPosition = { x = 460, y = 28 }, AXSize = { w = 576, h = 309 } } } }
+local baseFind, baseGetc = env.find, env.getc
+env.find = function(id) return id == 'com.wudanwu.PingIsland' and islandApp or app end
+env.getc = function(a, ...) if a == islandApp then return islandRoot end return baseGetc(a, ...) end
+assert(m.revealBeforeActivation(item, activate))
+tick()
+assert(activated == 2, 'an opened island must delay activation')
+table.remove(islandRoot.AXChildren)
+tick()
+assert(activated == 3 and #pending == 0, 'a closed island over the target must not delay activation')
+env.find, env.getc = baseFind, baseGetc
 expanded = false
 item.AXPosition.x = 600
 assert(not m.revealBeforeActivation(item, activate), 'visible item must not expand overflow')
 item.AXPosition.x = 500
 assert(m.revealBeforeActivation(item, activate))
-for _ = 1, 40 do tick() end
-assert(alerts == 1 and activated == 2 and #pending == 0, 'timeout must not click a hidden item')
+for _ = 1, 100 do tick() end
+assert(alerts == 1 and activated == 3 and #pending == 0, 'timeout must not click a hidden item')
 item.isValid = function() return false end
 assert(m.revealBeforeActivation(item, activate))
 tick()
-assert(#pending == 0 and activated == 2, 'removed item must not activate')
+assert(#pending == 0 and activated == 3, 'removed item must not activate')
 env.OS_VERSION = 26
 assert(not m.revealBeforeActivation(item, activate), 'older macOS must retain existing behavior')
 print('PASS: overflow expansion, delayed source coordinates, duplicate activation, visible items, timeout, removed item, macOS 26')
@@ -155,6 +170,13 @@ assert(fresh.setOverflowExpanded(screen, true) and clicked.x == 519)
 covered, clicked = { [515] = true, [519] = true }, nil
 assert(not fresh.setOverflowExpanded(screen, true) and clicked == nil,
   'covered far side must not move the click toward the notch')
+-- An opened island's root covers the button although no child lies there.
+window.pid, window.AXChildren = notch.pid, { { AXPosition = { x = 460, y = 28 }, AXSize = { w = 576, h = 309 } } }
+env.hs.axuielement.systemElementAtPosition = function() return window end
+assert(not fresh.setOverflowExpanded(screen, true) and clicked == nil, 'an opened island must not be clicked through')
+window.AXChildren = {}
+assert(fresh.setOverflowExpanded(screen, true) and clicked.x == 515, 'a closed island root must stay clickable')
+window.pid, window.AXChildren = nil, nil
 print('PASS: overflow button clicks stay on the side away from the notch')
 
 -- Overflow expanded only for an activation collapses after the configured delay.
