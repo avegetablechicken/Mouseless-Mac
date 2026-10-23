@@ -135,6 +135,15 @@ static void finish(NSDictionary *job, CGImageRef image, NSString *error) {
     pump();
 }
 
+static void *skyLightHandle(void) {
+    static void *skyLight;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        skyLight = dlopen("/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight", RTLD_LAZY);
+    });
+    return skyLight;
+}
+
 static void capture(NSDictionary *job) {
     NSDictionary *session = CFBridgingRelease(CGSessionCopyCurrentDictionary());
     if ([session[@"CGSSessionScreenIsLocked"] boolValue]) {
@@ -146,11 +155,7 @@ static void capture(NSDictionary *job) {
         return;
     }
     CGWindowID wid = [job[@"id"] unsignedIntValue];
-    static void *skyLight;
-    static dispatch_once_t once;
-    dispatch_once(&once, ^{
-        skyLight = dlopen("/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight", RTLD_LAZY);
-    });
+    void *skyLight = skyLightHandle();
     uint32_t (*connection)(void) = skyLight ? dlsym(skyLight, "CGSMainConnectionID") : NULL;
     CFArrayRef (*captureWindows)(uint32_t, CGWindowID *, uint32_t, uint32_t) =
         skyLight ? dlsym(skyLight, "CGSHWCaptureWindowList") : NULL;
@@ -242,6 +247,34 @@ static int poll(lua_State *L) {
     return 1;
 }
 
+// Every window the WindowServer still owns, including other Spaces, minimized
+// windows and hidden applications. Native code avoids a JXA context per query:
+// each one reserves JIT memory that is never returned until Hammerspoon crashes.
+static int windowIDs(lua_State *L) {
+    NSArray *windows = CFBridgingRelease(CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID));
+    if (!windows) return 0;
+    lua_createtable(L, (int)windows.count, 0);
+    int index = 0;
+    for (NSDictionary *info in windows) {
+        lua_pushinteger(L, [info[(__bridge NSString *)kCGWindowNumber] longLongValue]);
+        lua_rawseti(L, -2, ++index);
+    }
+    return 1;
+}
+
+// The low and high 32 bits of a window's WindowServer tags; nothing on failure.
+static int windowTags(lua_State *L) {
+    CGWindowID wid = (CGWindowID)luaL_checkinteger(L, 1);
+    void *skyLight = skyLightHandle();
+    uint32_t (*connection)(void) = skyLight ? dlsym(skyLight, "CGSMainConnectionID") : NULL;
+    int (*getTags)(uint32_t, CGWindowID, uint32_t *, int) =
+        skyLight ? dlsym(skyLight, "CGSGetWindowTags") : NULL;
+    uint32_t tags[2] = {0, 0};
+    if (!connection || !getTags || getTags(connection(), wid, tags, 64) != 0) return 0;
+    lua_pushinteger(L, tags[0]); lua_pushinteger(L, tags[1]);
+    return 2;
+}
+
 static int reset(lua_State *L) {
     // This native-only view and its mask hold no Lua references. The pinned module
     // can reuse it across Lua-state reloads instead of rebuilding the backdrop.
@@ -263,12 +296,14 @@ int luaopen_window_capture(lua_State *L) {
         worker = dispatch_queue_create("hammerspoon.window-capture", DISPATCH_QUEUE_SERIAL);
     });
     reset(L);
-    lua_createtable(L, 0, 6);
+    lua_createtable(L, 0, 8);
     lua_pushcclosure(L, request, 0); lua_setfield(L, -2, "request");
     lua_pushcclosure(L, poll, 0); lua_setfield(L, -2, "poll");
     lua_pushcclosure(L, reset, 0); lua_setfield(L, -2, "reset");
     lua_pushcclosure(L, positionGlass, 0); lua_setfield(L, -2, "positionGlass");
     lua_pushcclosure(L, showGlass, 0); lua_setfield(L, -2, "showGlass");
     lua_pushcclosure(L, hideGlass, 0); lua_setfield(L, -2, "hideGlass");
+    lua_pushcclosure(L, windowIDs, 0); lua_setfield(L, -2, "windowIDs");
+    lua_pushcclosure(L, windowTags, 0); lua_setfield(L, -2, "windowTags");
     return 1;
 }

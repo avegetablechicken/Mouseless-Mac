@@ -103,7 +103,12 @@ print('PASS: W/H/M actions, repeats, save dialog, scrolling hit test, mouse even
 -- Lifecycle reconciliation is independent of thumbnail success or failure.
 local now, snapshot, axReads = 100, {}, 0
 h.timer.secondsSinceEpoch=function() return now end
-h.window.list=function() return snapshot end
+cap.windowIDs=function()
+  if snapshot==nil then return nil end
+  local ids={}
+  for _, info in ipairs(snapshot) do ids[#ids+1]=info.kCGWindowNumber end
+  return ids
+end
 h.axuielement={windowElement=function(w)
   axReads=axReads+1
   return {isValid=function()

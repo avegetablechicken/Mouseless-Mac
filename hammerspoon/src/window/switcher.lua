@@ -122,19 +122,8 @@ function Engine:updateRecord(win)
   if call(function()
     local role = win:subrole()
     if not role or role == '' or role == 'AXStandardWindow' then return false end
-    local ok, value = self.h.osascript.javascript(([=[
-      ObjC.import('Foundation'); ObjC.import('CoreGraphics');
-      ObjC.bindFunction('CGSMainConnectionID', ['unsigned int', []]);
-      ObjC.bindFunction('CGSGetWindowTags', ['int', ['unsigned int', 'unsigned int', 'void *', 'unsigned long']]);
-      var data = $.NSMutableData.dataWithLength(8);
-      var error = $.CGSGetWindowTags($.CGSMainConnectionID(), %d, data.mutableBytes, 64);
-      JSON.stringify({error: error, data: ObjC.unwrap(data.base64EncodedStringWithOptions(0))});
-    ]=]):format(id))
-    if not ok then return false end
-    local result = self.h.json.decode(value)
-    if result.error ~= 0 then return false end
-    local low, high = string.unpack('<I4I4', self.h.base64.decode(result.data))
-    return low & (1 << 18) ~= 0 and high & (1 << 9) == 0
+    local low, high = self.capture.windowTags(id)
+    return low ~= nil and low & (1 << 18) ~= 0 and high & (1 << 9) == 0
   end) then self.records[id] = nil; return end
   local record = call(function()
     local app = win:application()
@@ -178,10 +167,12 @@ function Engine:rebuild(reconcile)
   if self.deleted then return end
   local live, now
   if reconcile then
-    local snapshot = call(self.h.window.list, true)
-    if type(snapshot) == 'table' then
+    -- `hs.window.list` only reports on-screen windows, which sent every window on
+    -- another Space, minimized or hidden through AX checks on each refresh.
+    local ids = call(self.capture.windowIDs)
+    if type(ids) == 'table' then
       live, now = {}, self.h.timer.secondsSinceEpoch()
-      for _, info in ipairs(snapshot) do live[info.kCGWindowNumber] = true end
+      for _, id in ipairs(ids) do live[id] = true end
       -- Terminal can omit the focus/create notification when changing tabs.
       for window in pairs(self.filter.windows or {}) do
         if window.app.app:bundleID() == 'com.apple.Terminal' then
