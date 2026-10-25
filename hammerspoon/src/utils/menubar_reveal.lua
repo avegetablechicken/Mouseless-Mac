@@ -342,6 +342,12 @@ function M.revealBeforeActivation(item, activate, slot)
   return true
 end
 
+-- MenuBarAgent hosts the Live Activity pill directly in its window, outside
+-- AXExtrasMenuBar, so Control Center's status items do not include it.
+function M.isLiveActivityPill(element)
+  return (element.AXIdentifier or ""):sub(1, 19) == "live-activity-pill-"
+end
+
 local function goldenGateItems(screen)
   local window, button, expanded = goldenGateMenuBar(screen)
   if not window then return {} end
@@ -352,7 +358,7 @@ local function goldenGateItems(screen)
       local p, size = host.AXPosition, host.AXSize
       local hidden = p and edge and p.x < edge
       -- The Live Activity pill beside the arrow shows only while overflow is collapsed.
-      local pill = host.AXRole == AX.MenuBarItem
+      local pill = M.isLiveActivityPill(host)
       local revealed = hidden and expanded and not pill and size and p.x + size.w <= button.AXPosition.x
       -- Collapsed overflow elements still exist, stacked beneath the arrow.
       if p and size and size.w > 1 and size.h > 0
@@ -384,6 +390,18 @@ function M.visibleItems(screen)
   end
   table.sort(items, function(a, b) return a.x < b.x end)
   return items
+end
+
+-- Live Activity pills currently shown on any screen.
+-- Tested on: Hammerspoon 1.1.1; macOS 27.0.1.
+function M.liveActivityPills()
+  local pills = {}
+  for _, screen in ipairs(hs.screen.allScreens()) do
+    for _, item in ipairs(goldenGateItems(screen)) do
+      if M.isLiveActivityPill(item.id) then pills[#pills + 1] = item.id end
+    end
+  end
+  return pills
 end
 
 function M.hiddenItems(screen, windows)

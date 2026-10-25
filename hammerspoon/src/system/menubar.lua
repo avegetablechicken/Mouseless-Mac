@@ -74,6 +74,12 @@ local function scanSearchMenuBarItems()
   if layout then
     -- Saved layout defines the global order. No coordinate trimming, Control
     -- Center insertion, or neighbor-based ordering repair on the new system.
+    local controlCenterApp = find("com.apple.controlcenter")
+    if controlCenterApp and maps["com.apple.controlcenter"] then
+      for i, pill in ipairs(menuBarReveal.liveActivityPills()) do
+        tinsert(menuBarItems, { pill, #(controlCenterMenuBarItems or {}) + i, nil, controlCenterApp })
+      end
+    end
     for _, pair in ipairs(unpositioned) do tinsert(menuBarItems, pair) end
     for i, pair in ipairs(menuBarItems) do pair._order = i end
     table.sort(menuBarItems, function(a, b)
@@ -86,15 +92,19 @@ local function scanSearchMenuBarItems()
     for i = #menuBarItems, 1, -1 do
       local pair = menuBarItems[i]
       local id = pair[1].AXIdentifier or ""
-      if id == "com.apple.menuextra.audiovideo" or id:sub(-13) == ".liveActivity" then
+      if id == "com.apple.menuextra.audiovideo" or id:sub(-13) == ".liveActivity"
+          or menuBarReveal.isLiveActivityPill(pair[1]) then
         tremove(menuBarItems, i)
         tinsert(temporary, pair)
       end
     end
     for _, pair in ipairs(temporary) do
       local index = #menuBarItems + 1
+      -- Items collapsed in overflow stay beneath the arrow, right of the pill beside it.
+      local pill = menuBarReveal.isLiveActivityPill(pair[1])
       for j, other in ipairs(menuBarItems) do
-        if other[1].AXPosition and other[1].AXPosition.x < pair[1].AXPosition.x then index = j break end
+        if other[1].AXPosition and (other[1].AXPosition.x < pair[1].AXPosition.x
+            or pill and menuBarReveal.hiddenBySystemManager(other[1])) then index = j break end
       end
       tinsert(menuBarItems, index, pair)
     end
@@ -260,6 +270,14 @@ local function activateSearchMenuBarChoice(menuBarItems, choice, right)
   if choice == nil then return end
   hs.timer.doAfter(0, function()
     local item = menuBarItems[choice.id][1]
+    -- The pill reports success for AXPress but opens its panel only on a click.
+    -- Tested on: Hammerspoon 1.1.1; macOS 27.0.1.
+    if OS_VERSION >= OS["Golden Gate"] and menuBarReveal.isLiveActivityPill(item) then
+      local p, size = item.AXPosition, item.AXSize
+      menuBarReveal.clickVisible({ x = p.x, y = p.y, w = size.w, h = size.h },
+          hs.screen.find({ x = p.x, y = p.y, w = 1, h = 1 }), right)
+      return
+    end
     -- Unnamed entries of icons collapsed together stand for their saved slot.
     local slot = choice.autosaveName == nil and choice.appid ~= "com.apple.controlcenter"
         and menuBarItems[choice.id][3] or nil
@@ -365,6 +383,16 @@ local function registerSearchMenuBar()
             end
             ccBentoBoxCnt = ccBentoBoxCnt + 1
           end
+        elseif OS_VERSION >= OS["Golden Gate"] and menuBarReveal.isLiveActivityPill(item) then
+          -- The pill's description is generic; its texts show the activity.
+          local texts = {}
+          for _, child in ipairs(item.AXChildren or {}) do
+            for _, text in ipairs(getc(child, AX.Group, 1, AX.StaticText) or {}) do
+              tinsert(texts, text.AXValue)
+            end
+          end
+          extraSearchPattern = item.AXIdentifier
+          title = table.concat(texts, " ")
         elseif item.AXIdentifier:sub(-13) == '.liveActivity' then
           extraSearchPattern = item.AXIdentifier
           appname = localizedString('Live Activity', appid)
