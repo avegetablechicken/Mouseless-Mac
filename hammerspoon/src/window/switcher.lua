@@ -254,6 +254,7 @@ function Engine:actOnSelection(action)
   if not self.active then return end
   local record = self.records[self.session[self.selected]]
   if not record then return end
+  local closingApp
   call(function()
     if action == 'hide' then
       local app = record.win:application()
@@ -269,13 +270,19 @@ function Engine:actOnSelection(action)
       -- Do not restore this window on modifier release in the minimized mode.
       if record.win:isMinimized() then self.sessionExcluded[record.id] = true end
     elseif action == 'close' then
+      for window in pairs(self.filter.windows or {}) do
+        if window.id == record.id then closingApp = window.app; break end
+      end
       record.win:close()
     end
   end)
   if action ~= 'close' then self:rebuild() end
   -- Closing may raise a save dialog; let the window filter confirm destruction.
   stop(self.inventoryTimer)
-  self.inventoryTimer = self.h.timer.doAfter(0.02, function() self:rebuild() end)
+  self.inventoryTimer = self.h.timer.doAfter(0.02, function()
+    if closingApp then closingApp:getCurrentSpaceAppWindows() end
+    self:rebuild()
+  end)
 end
 
 function Engine:requestCapture(id, priority)
