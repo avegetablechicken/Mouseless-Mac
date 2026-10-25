@@ -163,6 +163,11 @@ end
 
 function Engine:rebuild(reconcile)
   if self.deleted then return end
+  -- hs.window.filter can retain a destroyed window without its object, leaving a
+  -- hole in getWindows that hides every window focused before it.
+  for window in pairs(self.filter.windows or {}) do
+    if window.window == nil then self.filter.windows[window] = nil end
+  end
   local live, now
   if reconcile then
     -- `hs.window.list` only reports on-screen windows, which sent every window on

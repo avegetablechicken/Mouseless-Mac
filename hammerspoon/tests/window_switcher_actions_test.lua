@@ -175,7 +175,7 @@ local trackedApp={app=terminal,getCurrentSpaceAppWindows=function()
   discoveries=discoveries+1
   if #windows==2 then windows[#windows+1]=current end
 end}
-filter.windows={[{app=trackedApp}]=true}
+filter.windows={[{app=trackedApp,window=inactive}]=true}
 snapshot={{kCGWindowNumber=61},{kCGWindowNumber=62}}
 e:rebuild(); assert(#e.lists.normal==2, 'fixture must start with a missed tab')
 e:rebuild(true)
@@ -184,3 +184,11 @@ assert(discoveries==1 and #e.lists.normal==3 and e.records[60] and e.records[61]
 e:rebuild(true)
 assert(#e.lists.normal==3, 'repeated discovery must not duplicate tabs')
 print('PASS: missed Terminal tab discovery preserves inactive tabs without duplicates')
+
+-- window.filter can retain a destroyed entry whose window object is gone; its
+-- hole in getWindows used to hide every window focused before it.
+local stale={app=trackedApp}
+filter.windows[stale]=true
+e:rebuild()
+assert(filter.windows[stale]==nil and #e.lists.normal==3, 'destroyed filter entries must be pruned')
+print('PASS: destroyed window.filter entries do not truncate the inventory')
