@@ -311,6 +311,14 @@ function Engine:receiveCaptures()
       record.requestedAt = nil
       if result.image then
         local image = self.h.image.imageFromURL(result.image)
+        -- Keep an undistorted cache when Stage Manager returns a skewed surface.
+        if image and record.image then
+          local frame = call(function() return record.win:frame() end)
+          local size, cached = image:size(), record.image:size()
+          if frame and frame.w > 0 and frame.h > 0 and size.h > 0 and cached.h > 0
+              and math.abs(cached.w / cached.h / (frame.w / frame.h) - 1) < 0.1
+              and math.abs(size.w / size.h / (frame.w / frame.h) - 1) >= 0.1 then image = nil end
+        end
         if image then record.image, record.capturedAt = image, self.h.timer.secondsSinceEpoch(); changed = true end
       else
         self.captureErrors = self.captureErrors + 1
