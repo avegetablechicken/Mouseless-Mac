@@ -171,11 +171,12 @@ function Engine:rebuild(reconcile)
     if type(ids) == 'table' then
       live, now = {}, self.h.timer.secondsSinceEpoch()
       for _, id in ipairs(ids) do live[id] = true end
-      -- Terminal can omit the focus/create notification when changing tabs.
+      -- Rescan each tracked application for windows whose creation event was missed.
+      local refreshed = {}
       for window in pairs(self.filter.windows or {}) do
-        if window.app.app:bundleID() == 'com.apple.Terminal' then
+        if not refreshed[window.app] then
+          refreshed[window.app] = true
           window.app:getCurrentSpaceAppWindows()
-          break
         end
       end
     end
@@ -193,7 +194,9 @@ function Engine:rebuild(reconcile)
         and ((old and old.win == win and old) or self:updateRecord(win))
     if record then
       retained[id] = record
-      if not record.hidden then
+      -- Cached native tabs can remain AX-visible after losing their Space membership.
+      local spaces = not record.minimized and call(function() return self.h.spaces.windowSpaces(id) end)
+      if not record.hidden and not (type(spaces) == 'table' and #spaces == 0) then
         if record.visible then
           lists.normal[#lists.normal + 1] = id
           if self.options.browsers[record.bundle] then lists.browsers[#lists.browsers + 1] = id end
