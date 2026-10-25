@@ -451,6 +451,11 @@ function Engine:cycle(mode, direction, repeated, modifiers)
     if self.active then self:finish(false) end
     self.sessionExcluded, self.clickedID, self.clickedInside = {}, nil, nil
     self.session = {}; for i, id in ipairs(self.lists[mode]) do self.session[i] = id end
+    local current = call(self.h.window.focusedWindow)
+    local currentID = current and call(function() return current:id() end)
+    for i, id in ipairs(self.session) do
+      if id == currentID then table.remove(self.session, i); table.insert(self.session, 1, id); break end
+    end
     if #self.session == 0 then return end
     self.active, self.mode, self.modifiers = true, mode, modifiers
     self.scrollRow, self.scrollDelta = 0, 0
@@ -463,8 +468,7 @@ function Engine:cycle(mode, direction, repeated, modifiers)
     self.options.onActiveChange(true, mode)
     self.tap:start()
     local stage = call(function() return self.h.plist.read(os.getenv('HOME') .. '/Library/Preferences/com.apple.WindowManager.plist') end)
-    local current = stage and stage.GloballyEnabled and call(self.h.window.focusedWindow)
-    local record = current and self.records[current:id()]
+    local record = stage and stage.GloballyEnabled and self.records[currentID]
     local image = record and call(function() return current:snapshot() end)
     if image then record.image, record.capturedAt = image, self.h.timer.secondsSinceEpoch() end
     self:paint()
