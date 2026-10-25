@@ -351,11 +351,13 @@ local function goldenGateItems(screen)
     if host ~= button then
       local p, size = host.AXPosition, host.AXSize
       local hidden = p and edge and p.x < edge
-      local revealed = hidden and expanded and size and p.x + size.w <= button.AXPosition.x
+      -- The Live Activity pill beside the arrow shows only while overflow is collapsed.
+      local pill = host.AXRole == AX.MenuBarItem
+      local revealed = hidden and expanded and not pill and size and p.x + size.w <= button.AXPosition.x
       -- Collapsed overflow elements still exist, stacked beneath the arrow.
       if p and size and size.w > 1 and size.h > 0
           and p.x >= frame.x and p.x + size.w <= frame.x + frame.w
-          and (not hidden or revealed) then
+          and (not hidden or revealed or pill and not expanded) then
         local element = getc(host, nil, 1)
         if element and element.AXRole == AX.Group then element = getc(element, AX.MenuBarItem, 1) end
         items[#items + 1] = { id = host, x = p.x, y = p.y,
