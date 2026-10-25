@@ -1,5 +1,3 @@
--- Persistent window inventory and canvas. The summon path uses only cached records;
--- captures arrive asynchronously and never gate showing or keyboard navigation.
 local M = {}
 local Engine = {}; Engine.__index = Engine
 
@@ -464,11 +462,15 @@ function Engine:cycle(mode, direction, repeated, modifiers)
     self:ensureSelectionVisible()
     self.options.onActiveChange(true, mode)
     self.tap:start()
+    local stage = call(function() return self.h.plist.read(os.getenv('HOME') .. '/Library/Preferences/com.apple.WindowManager.plist') end)
+    local current = stage and stage.GloballyEnabled and call(self.h.window.focusedWindow)
+    local record = current and self.records[current:id()]
+    local image = record and call(function() return current:snapshot() end)
+    if image then record.image, record.capturedAt = image, self.h.timer.secondsSinceEpoch() end
     self:paint()
     self.capture.showGlass()
     self.canvas:show()
     self.metrics.lastShowMs = (self.h.timer.absoluteTime()-started)/1e6
-    -- No snapshot, AX query, window enumeration or native request before show().
     stop(self.afterShow)
     self.afterShow = self.h.timer.doAfter(0, function() self:refreshCaptures() end)
   else
