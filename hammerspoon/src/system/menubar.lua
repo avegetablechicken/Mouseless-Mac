@@ -579,6 +579,16 @@ local function activateVisibleItem(right)
   local item, targetScreen = items[selected], screen
   mode:exit()
   hs.timer.doAfter(0, function()
+    local element = not right and (item.element or hs.axuielement.systemElementAtPosition(
+        { x = item.x + item.w / 2, y = item.y + item.h / 2 }))
+    local app = element and hs.application.applicationForPID(element:pid())
+    local appid = app and app:bundleID() or ""
+    if element and element.AXRole == AX.MenuBarItem and appid:sub(1, 10) == "com.apple."
+        and (OS_VERSION < OS["Golden Gate"] or appid == "com.apple.controlcenter" or appid == "com.apple.MenuBarAgent")
+        and (element.AXIdentifier or ""):sub(-13) ~= ".liveActivity"
+        and not (OS_VERSION >= OS["Golden Gate"] and menuBarReveal.isLiveActivityPill(item.id)) then
+      if element:performAction(AX.Press) then return end
+    end
     if OS_VERSION >= OS["Golden Gate"] then
       -- Focused items are rendered; a native click at the highlight needs no scan.
       menuBarReveal.clickVisible(item, targetScreen, right)
