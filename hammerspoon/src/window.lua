@@ -848,6 +848,105 @@ end)
 
 require 'utils'
 
+-- Favicon stores of supported browsers, relative to `~/Library`.
+local browserFaviconStores = {
+  ["com.apple.Safari"] = "Safari/Favicon Cache",
+  ["com.google.Chrome"] = "Application Support/Google/Chrome",
+  ["com.microsoft.edgemac"] = "Application Support/Microsoft Edge",
+  ["com.microsoft.edgemac.Dev"] = "Application Support/Microsoft Edge Dev",
+}
+
+-- Look up tab favicons cached by a browser.
+--
+-- Safari maps page URLs to icon UUIDs and stores each icon in a file
+-- named by the MD5 of its UUID; Chromium browsers keep PNG bitmaps
+-- in the `Favicons` database of each profile.
+-- Returns a lookup function and a function closing the databases.
+local function tabFaviconLookup(browser)
+  local base = os.getenv("HOME") .. "/Library/" .. browserFaviconStores[browser]
+  local queries = {}
+  -- `sql` filters `column` by the exact page URL, or by the site origin
+  -- and a URL range covering every page of the same site.
+  local function addQuery(path, sql, column, toImage, immutable)
+    if not exists(path) then return end
+    -- Chromium keeps its databases exclusively locked once written to.
+    local db = immutable
+        and hs.sqlite3.open("file:" .. path:gsub(" ", "%%20") .. "?immutable=1",
+            hs.sqlite3.OPEN_READONLY + hs.sqlite3.OPEN_URI)
+        or hs.sqlite3.open(path, hs.sqlite3.OPEN_READONLY)
+    if db == nil then return end
+    local exact = db:prepare(strfmt(sql, column .. " = ?"))
+    local site = db:prepare(strfmt(sql, strfmt("(%s = ? OR %s >= ? AND %s < ?)",
+        column, column, column)))
+    if exact and site then
+      tinsert(queries, { db = db, exact = exact, site = site, toImage = toImage })
+    else
+      if exact then exact:finalize() end
+      if site then site:finalize() end
+      db:close()
+    end
+  end
+  if browser == "com.apple.Safari" then
+    addQuery(base .. "/favicons.db",
+        "SELECT uuid FROM page_url WHERE %s LIMIT 1", "url",
+        function(uuid)
+          return hs.image.imageFromPath(
+              base .. "/favicons/" .. hs.hash.MD5(uuid):upper())
+        end)
+  elseif exists(base) then
+    for profile in hs.fs.dir(base) do
+      if profile == "Default" or profile:match("^Profile %d+$") then
+        addQuery(base .. "/" .. profile .. "/Favicons", [[
+          SELECT b.image_data FROM icon_mapping m
+          JOIN favicon_bitmaps b ON b.icon_id = m.icon_id
+          WHERE %s ORDER BY b.width DESC LIMIT 1
+        ]], "m.page_url", function(data)
+          return hs.image.imageFromURL(
+              "data:image/png;base64," .. hs.base64.encode(data))
+        end, true)
+      end
+    end
+  end
+
+  local function firstValue(stmt, ...)
+    local value
+    local args = { ... }
+    pcall(function()
+      stmt:bind_values(table.unpack(args))
+      for v in stmt:urows() do value = v break end
+    end)
+    stmt:reset()
+    return value
+  end
+  local function lookup(url)
+    if url == nil then return end
+    local passes = { function(query) return firstValue(query.exact, url) end }
+    -- Pages with per-visit parameters or not yet loaded may only be
+    -- cached under other URLs of the same site, whose icon the browser shows.
+    local origin = url:match("^%a[%w+.-]*://[^/?#]+")
+    if origin then
+      tinsert(passes, function(query)
+        return firstValue(query.site, origin, origin .. "/", origin .. "0")
+      end)
+    end
+    for _, pass in ipairs(passes) do
+      for _, query in ipairs(queries) do
+        local value = pass(query)
+        local image = value and query.toImage(value)
+        if image then return image end
+      end
+    end
+  end
+  local function close()
+    for _, query in ipairs(queries) do
+      query.exact:finalize()
+      query.site:finalize()
+      query.db:close()
+    end
+  end
+  return lookup, close
+end
+
 -- Browser tab chooser.
 --
 -- Presents a unified chooser for switching between tabs across
@@ -876,18 +975,21 @@ local function browserChooser()
       ]]
       local ok, result = hs.osascript.javascript(script)
       if ok then
+        local favicon, closeFavicons = tabFaviconLookup(browser)
+        local appIcon = hs.image.imageFromAppBundle(browser)
         for _, tab in ipairs(hs.json.decode(result)) do
           tinsert(choices,
               {
                 text = tab.title,
                 subText = tab.url,
-                image = hs.image.imageFromAppBundle(browser),
+                image = favicon(tab.url) or appIcon,
                 id = tab.id,
                 winID = tab.winID,
                 pid = app:pid(),
                 browser = browser
               })
         end
+        closeFavicons()
       elseif safari then
         hs.alert.show("ERROR for Safari. RESTARTING Safari may solve it")
       end
