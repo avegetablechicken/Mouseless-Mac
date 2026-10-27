@@ -637,16 +637,48 @@ if hs.fs.attributes("config/misc.json") ~= nil then
     pollingInterval = json.pollingInterval
   end
 end
-ContinuousWatcher = hs.timer.new(pollingInterval, function()
-  for _, proc in pairs(processesExecEvery) do
-    proc()
-  end
-end, true)
-ContinuousWatcherQuick = hs.timer.new(0.25, function()
-  for _, proc in pairs(processesExecEveryQuick) do
-    proc()
-  end
-end, true)
+local quickPollingInterval = 0.25
+local function newContinuousWatcher(interval, processes)
+  return hs.timer.new(interval, function()
+    for _, proc in pairs(processes) do
+      proc()
+    end
+  end, true)
+end
+ContinuousWatcher = newContinuousWatcher(pollingInterval, processesExecEvery)
+ContinuousWatcherQuick = newContinuousWatcher(quickPollingInterval, processesExecEveryQuick)
+
+-- Power saving: poll less often while the battery is nearly empty. A weak
+-- charger cannot keep up then, and every Accessibility call slows down.
+local powerSavingBatteryPercentage = 10
+PowerSavingFactor = 3
+PowerSaving = false
+local powerSavingCallbacks = {}
+
+-- Register fn(saving); it also runs right away if power saving is already on.
+function OnPowerSavingChanged(fn)
+  tinsert(powerSavingCallbacks, fn)
+  if PowerSaving then fn(true) end
+end
+
+OnPowerSavingChanged(function(saving)
+  local factor = saving and PowerSavingFactor or 1
+  ContinuousWatcher:stop()
+  ContinuousWatcherQuick:stop()
+  ContinuousWatcher = newContinuousWatcher(
+      pollingInterval * factor, processesExecEvery):start()
+  ContinuousWatcherQuick = newContinuousWatcher(
+      quickPollingInterval * factor, processesExecEveryQuick):start()
+end)
+
+local function updatePowerSaving()
+  local percentage = hs.battery.percentage()
+  local saving = percentage ~= nil and percentage >= 0
+      and percentage < powerSavingBatteryPercentage
+  if saving == PowerSaving then return end
+  PowerSaving = saving
+  for _, fn in ipairs(powerSavingCallbacks) do fn(saving) end
+end
 
 -- Reload configuration when Lua files change.
 local function reloadConfig(files)
@@ -845,6 +877,8 @@ end
 -- Start all watchers and background services.
 ContinuousWatcher:start()
 ContinuousWatcherQuick:start()
+PowerWatcher = hs.battery.watcher.new(updatePowerSaving):start()
+updatePowerSaving()
 ConfigWatcher = hs.pathwatcher.new(os.getenv("HOME") .. "/.hammerspoon/", reloadConfig):start()
 AppWatcher = hs.application.watcher.new(applicationCallback):start()
 MonitorWatcher = hs.screen.watcher.new(monitorChangedCallback):start()

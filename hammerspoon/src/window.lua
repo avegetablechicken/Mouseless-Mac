@@ -735,6 +735,9 @@ engine = require('window.switcher').new({
     browsers = {next=(misc.switchBrowserWindow or {}).key, back=(misc.switchBrowserWindowBackTriggered or {}).key},
   },
 })
+OnPowerSavingChanged(function(saving)
+  engine:setRefreshFactor(saving and PowerSavingFactor or 1)
+end)
 local switcherAppWatcher = hs.application.watcher.new(function(_, event, app)
   if event == hs.application.watcher.launched then configureSwitcherApp(app) end
 end):start()

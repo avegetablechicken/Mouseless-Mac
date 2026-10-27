@@ -105,7 +105,9 @@ function M.new(options, runtime)
     end
     self:receiveCaptures()
   end)
-  self.refreshTimer = h.timer.doEvery(2, function() self:rebuild(true) end)
+  self.refreshInterval = options.refreshInterval or 2
+  self.refresh = function() self:rebuild(true) end
+  self.refreshTimer = h.timer.doEvery(self.refreshInterval, self.refresh)
   self.screenWatcher = h.screen.watcher.new(function()
     self.layoutKey = nil
     if self.active then self:layout(); self:paint() end
@@ -543,6 +545,13 @@ function Engine:finish(commit)
       call(function() record.win:unminimize(); record.win:focus() end)
     end)
   end
+end
+
+-- Stretch the periodic inventory refresh, e.g. while power saving.
+function Engine:setRefreshFactor(factor)
+  if self.deleted then return end
+  stop(self.refreshTimer)
+  self.refreshTimer = self.h.timer.doEvery(self.refreshInterval * factor, self.refresh)
 end
 
 function Engine:delete()
