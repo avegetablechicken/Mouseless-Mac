@@ -433,14 +433,20 @@ function find(hint, exact)
   if exact == nil then exact = true end
   local apps = {hs.application.find(hint, exact)}
   -- A name-like hint may also match a bundle ID shared by helper processes.
-  if type(hint) == 'string' and not hint:find('.', 1, true) then
+  if type(hint) == 'string' and not hint:find('.', 1, true) and #apps > 0 then
+    -- One `ps` for all matches: LaunchServices can keep listing dozens of
+    -- terminated instances, and a `ps` for each blocks for seconds.
+    local commands, pids = {}, {}
+    for _, app in ipairs(apps) do tinsert(pids, app:pid()) end
+    local output = hs.execute('/bin/ps -o pid=,comm= -p ' .. table.concat(pids, ','))
+    for pid, command in (output or ''):gmatch('(%d+) ([^\n]+)') do
+      commands[tonumber(pid)] = (command:gsub("%s+$", ""))
+    end
     apps = tifilter(apps, function(app)
-      local path = app:path()
+      local path = commands[app:pid()] and app:path()
       local info = path and hs.application.infoForBundlePath(path)
       if not info or not info.CFBundleExecutable then return false end
-      local command, ok = hs.execute(strfmt('/bin/ps -p %d -o comm=', app:pid()))
-      return ok and command:gsub("%s+$", "")
-          == path .. '/Contents/MacOS/' .. info.CFBundleExecutable
+      return commands[app:pid()] == path .. '/Contents/MacOS/' .. info.CFBundleExecutable
     end)
   end
   return filterParallels(apps)
