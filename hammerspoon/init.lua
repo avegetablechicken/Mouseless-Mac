@@ -755,10 +755,31 @@ function ExecOnSilentQuit(appid, action)
   end
 end
 
+-- `find` costs milliseconds per call, so this periodic poll looks bundle IDs
+-- up in one snapshot of running applications, excluding Parallels helpers as
+-- `find` does. Name-like IDs still go through `find`.
+local function runningApplicationsByBundleID()
+  local running = {}
+  for _, app in ipairs(hs.application.runningApplications()) do
+    local appid = app:bundleID()
+    if appid and running[appid] == nil and (not appid:find('com.parallels', 1, true)
+        or appid == 'com.parallels.desktop.console') then
+      running[appid] = app
+    end
+  end
+  return running
+end
+
+local function findRunning(running, appid)
+  if appid:find('.', 1, true) then return running[appid] end
+  return find(appid)
+end
+
 ExecContinuously(function()
   local launchedAppsTmp = {}
+  local running = runningApplicationsByBundleID()
   for appid, processes in pairs(processesOnSilentLaunch) do
-    local app = find(appid)
+    local app = findRunning(running, appid)
     if launchedApps[appid] == nil and app ~= nil then
       applicationCallback(app:name(), hs.application.watcher.launching, app)
       for _, proc in ipairs(processes) do
@@ -770,7 +791,7 @@ ExecContinuously(function()
   end
 
   for appid, processes in pairs(processesOnSilentQuit) do
-    local app = find(appid)
+    local app = findRunning(running, appid)
     if launchedApps[appid] and app == nil then
       -- Detach first so callbacks can safely register or cancel callbacks.
       processesOnSilentQuit[appid] = nil
