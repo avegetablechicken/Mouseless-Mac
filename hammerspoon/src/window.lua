@@ -869,7 +869,12 @@ local function tabFaviconLookup(browser)
   local base = os.getenv("HOME") .. "/Library/" .. browserFaviconStores[browser]
   local queries = {}
   -- `sql` filters `column` by the exact page URL, or by the site origin
-  -- and a URL range covering every page of the same site.
+  -- and a URL range covering every page of the same site, then prefers
+  -- icons named for the current appearance (e.g. GitHub's
+  -- `favicon-dark.svg`) and icons shared by more pages. Exact matches
+  -- for the other appearance are left to the site query, as pages such
+  -- as GitHub switch their icon when the appearance changes.
+  local dark = hs.host.interfaceStyle() == "Dark" and 1 or 0
   local function addQuery(path, sql, column, toImage, immutable)
     if not exists(path) then return end
     -- Chromium keeps its databases exclusively locked once written to.
@@ -878,9 +883,9 @@ local function tabFaviconLookup(browser)
             hs.sqlite3.OPEN_READONLY + hs.sqlite3.OPEN_URI)
         or hs.sqlite3.open(path, hs.sqlite3.OPEN_READONLY)
     if db == nil then return end
-    local exact = db:prepare(strfmt(sql, column .. " = ?"))
-    local site = db:prepare(strfmt(sql, strfmt("(%s = ? OR %s >= ? AND %s < ?)",
-        column, column, column)))
+    local exact = db:prepare(strfmt(sql, dark, column .. " = ?", "matches"))
+    local site = db:prepare(strfmt(sql, dark, strfmt("(%s = ? OR %s >= ? AND %s < ?)",
+        column, column, column), "1"))
     if exact and site then
       tinsert(queries, { db = db, exact = exact, site = site, toImage = toImage })
     else
@@ -891,7 +896,10 @@ local function tabFaviconLookup(browser)
   end
   if browser == "com.apple.Safari" then
     addQuery(base .. "/favicons.db",
-        "SELECT uuid FROM page_url WHERE %s LIMIT 1", "url",
+        [[SELECT p.uuid, (instr(lower(i.url), 'dark') > 0) = %d AS matches
+          FROM page_url p JOIN icon_info i ON i.uuid = p.uuid
+          WHERE %s GROUP BY p.uuid HAVING %s
+          ORDER BY matches DESC, count(*) DESC LIMIT 1]], "p.url",
         function(uuid)
           return hs.image.imageFromPath(
               base .. "/favicons/" .. hs.hash.MD5(uuid):upper())
@@ -900,9 +908,12 @@ local function tabFaviconLookup(browser)
     for profile in hs.fs.dir(base) do
       if profile == "Default" or profile:match("^Profile %d+$") then
         addQuery(base .. "/" .. profile .. "/Favicons", [[
-          SELECT b.image_data FROM icon_mapping m
-          JOIN favicon_bitmaps b ON b.icon_id = m.icon_id
-          WHERE %s ORDER BY b.width DESC LIMIT 1
+          SELECT (SELECT image_data FROM favicon_bitmaps
+                  WHERE icon_id = m.icon_id ORDER BY width DESC LIMIT 1),
+                 (instr(lower(f.url), 'dark') > 0) = %d AS matches
+          FROM icon_mapping m JOIN favicons f ON f.id = m.icon_id
+          WHERE %s GROUP BY m.icon_id HAVING %s
+          ORDER BY matches DESC, count(*) DESC LIMIT 1
         ]], "m.page_url", function(data)
           return hs.image.imageFromURL(
               "data:image/png;base64," .. hs.base64.encode(data))
