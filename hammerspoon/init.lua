@@ -503,6 +503,7 @@ function newHotkey(mods, key, message, pressedfn, releasedfn, repeatfn, predicat
   repeatfn = suspendWrapper(repeatfn, mods, key, predicates)
   local hotkey = newHotkeyImpl(mods, key, message, pressedfn, releasedfn, repeatfn)
   hotkey.suspendable = true
+  hotkey.predicates = predicates
   return hotkey
 end
 

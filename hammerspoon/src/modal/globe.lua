@@ -43,6 +43,15 @@ local keyHandler = function(e)
     hotkey = get(module.keys, idx, 1)
   end
   if hotkey then
+    -- let the original event through instead of re-sending it via suspendWrapper
+    if hotkey.suspendable then
+      local enabled, predicates = not FLAGS["SUSPEND"], hotkey.predicates
+      if predicates and ((enabled and predicates.and_ == true)
+          or (not enabled and predicates.or_ == true)) then
+        enabled = predicates.fn()
+      end
+      if not enabled then return false end
+    end
     local callback = get(module.bindings, hotkey, eventType)
     if callback then
       callback()
