@@ -965,62 +965,33 @@ end
 --
 -- Presents a unified chooser for switching between tabs across
 -- all supported browsers.
+local cancelTabSearch
 local function browserChooser()
-  -- Each choice represents a single browser tab.
-  -- Tabs are flattened across all windows and browsers
-  -- to allow global fuzzy searching.
-  local choices = {}
-
-  -- Target each GUI process explicitly: a headless instance can share its bundle ID.
-  for _, app in ipairs(hs.application.runningApplications()) do
-    local browser = app:bundleID()
-    if browserSet[browser] and app:kind() == 1 and #app:allWindows() > 0 then
-      local safari = browser == "com.apple.Safari"
-      local script = [[
-        var app = Application(]] .. app:pid() .. [[);
-        var result = [];
-        app.windows().forEach(function(win) {
-          win.tabs().forEach(function(tab, index) {
-            result.push({winID: win.id(), id: ]] .. (safari and 'index + 1' or 'tab.id()') .. [[,
-              title: tab.]] .. (safari and 'name' or 'title') .. [[(), url: tab.url()});
-          });
-        });
-        JSON.stringify(result);
-      ]]
-      local ok, result = hs.osascript.javascript(script)
-      if ok then
-        local favicon, closeFavicons = tabFaviconLookup(browser)
-        local appIcon = hs.image.imageFromAppBundle(browser)
-        for _, tab in ipairs(hs.json.decode(result)) do
-          tinsert(choices,
-              {
-                text = tab.title,
-                subText = tab.url,
-                image = favicon(tab.url) or appIcon,
-                id = tab.id,
-                winID = tab.winID,
-                pid = app:pid(),
-                browser = browser
-              })
-        end
-        closeFavicons()
-      elseif safari then
-        hs.alert.show("ERROR for Safari. RESTARTING Safari may solve it")
-      end
+  local choices, requests, tasks = {}, {}, {}
+  local chooser, deadline
+  local closed, pending, failed = false, 0, false
+  local function stopTasks()
+    if deadline then deadline:stop(); deadline = nil end
+    for _, task in ipairs(tasks) do
+      if task:isRunning() then task:terminate() end
     end
   end
-
-  if #choices == 0 then
-    hs.alert.show("NO VALID TABS")
-    return
+  local function cancel()
+    if closed then return end
+    closed = true
+    stopTasks()
+    if cancelTabSearch == cancel then cancelTabSearch = nil end
+    chooser:hide()
   end
+  cancelTabSearch = cancel
 
   -- Handle tab selection.
   --
   -- Tab activation is browser-specific and may involve:
   -- - Selecting the tab via AppleScript
   -- - Focusing the target window
-  local chooser = hs.chooser.new(function(choice)
+  chooser = hs.chooser.new(function(choice)
+    cancel()
     if not choice then return end
     local app = hs.application.applicationForPID(choice.pid)
     if not app or app:bundleID() ~= choice.browser then return end
@@ -1057,8 +1028,81 @@ local function browserChooser()
     end)
   end)
   chooser:searchSubText(true)
-  chooser:choices(choices)
+  chooser:placeholderText("Loading tabs…")
+  chooser:hideCallback(cancel)
   chooser:show()
+
+  -- Target GUI processes explicitly: headless instances can share a bundle ID.
+  for _, app in ipairs(hs.application.runningApplications()) do
+    local browser = app:bundleID()
+    if browserSet[browser] and app:kind() == 1 and #app:allWindows() > 0 then
+      local safari = browser == "com.apple.Safari"
+      local script = [[
+        var app = Application(]] .. app:pid() .. [[);
+        var result = [];
+        app.windows().forEach(function(win) {
+          win.tabs().forEach(function(tab, index) {
+            result.push({winID: win.id(), id: ]] .. (safari and 'index + 1' or 'tab.id()') .. [[,
+              title: tab.]] .. (safari and 'name' or 'title') .. [[(), url: tab.url()});
+          });
+        });
+        JSON.stringify(result);
+      ]]
+      tinsert(requests, {browser = browser, pid = app:pid(), script = script})
+    end
+  end
+
+  local function finishRequest(request, exitCode, output)
+    if closed then return end
+    pending = pending - 1
+    local ok, tabs = false, nil
+    if exitCode == 0 then ok, tabs = pcall(hs.json.decode, output) end
+    if ok and type(tabs) == 'table' then
+      local favicon, closeFavicons = tabFaviconLookup(request.browser)
+      local appIcon = hs.image.imageFromAppBundle(request.browser)
+      for _, tab in ipairs(tabs) do
+        tinsert(choices, {
+          text = tab.title, subText = tab.url,
+          image = favicon(tab.url) or appIcon,
+          id = tab.id, winID = tab.winID,
+          pid = request.pid, browser = request.browser,
+        })
+      end
+      closeFavicons()
+      chooser:choices(choices)
+    else
+      failed = true
+    end
+    if pending == 0 then
+      if deadline then deadline:stop(); deadline = nil end
+      chooser:placeholderText("Search tabs")
+      if #choices == 0 then
+        cancel()
+        hs.alert.show(failed and "UNABLE TO READ BROWSER TABS" or "NO VALID TABS")
+      end
+    end
+  end
+
+  pending = #requests
+  if pending == 0 then cancel(); hs.alert.show("NO VALID TABS"); return end
+  -- Apple Events can stall after switching tabs. Keep that wait off Lua's thread.
+  deadline = hs.timer.doAfter(15, function()
+    cancel()
+    hs.alert.show("TAB SEARCH TIMED OUT")
+  end)
+  for _, request in ipairs(requests) do
+    local task = hs.task.new("/usr/bin/osascript", function(code, output)
+      finishRequest(request, code, output)
+    end, {'-l', 'JavaScript', '-e', request.script})
+    if task then tinsert(tasks, task) end
+    if not task or not task:start() then finishRequest(request, -1, '') end
+  end
+end
+
+local shutdownBeforeTabSearch = hs.shutdownCallback
+hs.shutdownCallback = function()
+  if cancelTabSearch then cancelTabSearch() end
+  if shutdownBeforeTabSearch then shutdownBeforeTabSearch() end
 end
 
 -- PDF / Tab chooser.
@@ -1378,6 +1422,7 @@ end
 -- Show a chooser for switching to a tab across browsers and PDF applications.
 bindWindowSwitch(misc["searchTab"], 'Switch to Tab',
 function()
+  if cancelTabSearch then cancelTabSearch() end
   local app = hs.application.frontmostApplication()
   local appid = app:bundleID()
 
