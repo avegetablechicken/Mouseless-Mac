@@ -32,6 +32,24 @@ revealEnv.OS_VERSION = 26
 assert(not reveal.hiddenBySystemManager(at(500)) and not reveal.collapsedInOverflow(at(500)))
 print('PASS: native overflow detection, collapsed and revealed items, hs.menubar frames, macOS 26')
 
+-- A host for another Space may keep overflow expanded while the live one is collapsed.
+revealEnv.OS_VERSION = 27
+local liveArrow = { AXPosition = arrow.AXPosition, AXSize = arrow.AXSize,
+  attributeValue = function() return 'show' end }
+local staleArrow = { AXPosition = arrow.AXPosition, AXSize = arrow.AXSize,
+  attributeValue = function() return 'hide' end }
+local live = { AXPosition = window.AXPosition, AXSize = window.AXSize, AXChildren = { at(490), at(600), liveArrow } }
+local stale = { AXPosition = window.AXPosition, AXSize = window.AXSize, AXChildren = { at(300), at(600), staleArrow } }
+revealEnv.getc = function(element, role, index)
+  if role == 'window' then return { stale, live } end
+  local button = element == live and liveArrow or staleArrow
+  if role == 'button' then return index and button or { button } end
+end
+revealEnv.hs.axuielement = { systemElementAtPosition = function() return liveArrow end }
+local visible = reveal.visibleItems(screen)
+assert(#visible == 1 and visible[1].x == 600, 'items revealed on another Space are not visible')
+print('PASS: the live overflow host wins over an expanded host for another Space')
+
 -- A screen without overflow orders icons collapsed on the notched screen.
 local function el(t)
   t.pid = function() return 5 end
