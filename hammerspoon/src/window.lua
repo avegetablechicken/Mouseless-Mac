@@ -829,7 +829,7 @@ function()
           text = window:title(),
           subText = window:application():name(),
           -- Stage Manager windows outside the active stage need the switcher's capture fallbacks.
-          image = window:snapshot() or (engine.records[window:id() or -1] or {}).image,
+          image = window:snapshot(true) or (engine.records[window:id() or -1] or {}).image,
           window = window
         })
     end
