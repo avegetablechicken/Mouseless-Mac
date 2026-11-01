@@ -317,8 +317,13 @@ function Engine:refreshCaptures()
     end
     if self.selected >= first and self.selected <= last then self:requestCapture(self.session[self.selected], true) end
   else
+    -- Stage Manager brings the active app's windows into the stage undistorted.
+    local front = self.records[(self.lists.minimized or {})[1] or -1]
     for i, id in ipairs(self.lists.minimized or {}) do
-      if i == 1 or not self.records[id].image then self:requestCapture(id, false) end
+      local record = self.records[id]
+      if i == 1 or not record.image or (record.pid == front.pid and not record.minimized) then
+        self:requestCapture(id, false)
+      end
     end
   end
 end
