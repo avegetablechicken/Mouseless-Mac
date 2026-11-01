@@ -296,7 +296,12 @@ function Engine:requestCapture(id, priority)
   local record, now = self.records[id], self.h.timer.secondsSinceEpoch()
   if not record or record.hidden or (record.retryAt and now < record.retryAt) then return end
   if record.requestedAt and now - record.requestedAt < 2 then return end
-  if record.capturedAt and now - record.capturedAt < (priority and 1 or 10) then return end
+  if record.capturedAt and now - record.capturedAt < (priority and 1 or 10) then
+    -- A skewed Stage Manager surface must not delay an undistorted recapture.
+    local frame, size = call(function() return record.win:frame() end), record.image and record.image:size()
+    if not (frame and size and frame.w > 0 and frame.h > 0 and size.h > 0
+        and math.abs(size.w / size.h / (frame.w / frame.h) - 1) >= 0.1) then return end
+  end
   if self.capture.request(id, record.token, priority) then record.requestedAt = now end
 end
 
