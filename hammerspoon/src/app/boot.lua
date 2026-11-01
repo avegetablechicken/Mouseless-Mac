@@ -73,6 +73,9 @@ function focusOrHide(hint)
     else
       app = hs.application.open(hint)
     end
+  elseif app:bundleID() == "app.remixdesign.LaunchOS" then
+    -- hiding LaunchOS skips its own dismissal and leaves the menu bar hidden
+    hs.eventtap.keyStroke("", "Escape", nil, app)
   else
     app:hide()
   end
