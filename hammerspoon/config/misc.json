@@ -22,7 +22,7 @@
 
     "verificationFilter": [
         {
-            "filter": ["Microsoft", "安全代码"],
+            "filter": ["Microsoft", "代码"],
             "extract": "%d%d%d%d+"
         },
         {
