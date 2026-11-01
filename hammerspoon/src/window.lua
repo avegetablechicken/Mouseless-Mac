@@ -818,35 +818,54 @@ function()
     end
   end
   local allWindows = wFilter:getWindows()
-  local choices = {}
+  local windows, ids = {}, {}
   for _, window in ipairs(allWindows) do
     -- The window switcher keeps hs.window.filter active, so it can retain destroyed windows.
     local ok, ended = pcall(function()
       return hs.axuielement.windowElement(window):isValid() == false end)
     if not (ok and ended) then
-    tinsert(choices,
-        {
-          text = window:title(),
-          subText = window:application():name(),
-          -- Stage Manager windows outside the active stage need the switcher's capture fallbacks.
-          image = window:snapshot(true) or (engine.records[window:id() or -1] or {}).image,
-          window = window
-        })
+      tinsert(windows, window)
+      tinsert(ids, window:id())
     end
   end
 
-  if #choices == 0 then
+  if #windows == 0 then
     hs.alert.show("NO VALID WINDOWS")
     return
   end
 
+  -- Reuse the switcher's preview cache, which keeps undistorted Stage Manager
+  -- captures; snapshot only windows that have no cached preview yet.
+  local snapshots = {}
+  local function preview(window)
+    local record = engine.records[window:id() or -1]
+    if record and record.image then return record.image end
+    if snapshots[window] == nil then snapshots[window] = window:snapshot(true) or false end
+    return snapshots[window] or nil
+  end
+
   local chooser = hs.chooser.new(function(choice)
+    engine.previewListener = nil
     if not choice then return end
     choice.window:focus()
   end)
   chooser:searchSubText(true)
-  chooser:choices(choices)
+  chooser:choices(function()
+    local choices = {}
+    for _, window in ipairs(windows) do
+      tinsert(choices, {
+        text = window:title(),
+        subText = window:application():name(),
+        image = preview(window),
+        window = window
+      })
+    end
+    return choices
+  end)
   chooser:show()
+  engine:requestPreviews(ids, function()
+    if chooser:isVisible() then chooser:refreshChoicesCallback(true) end
+  end)
 end)
 
 require 'utils'

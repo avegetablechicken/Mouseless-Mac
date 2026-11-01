@@ -300,6 +300,12 @@ function Engine:requestCapture(id, priority)
   if self.capture.request(id, record.token, priority) then record.requestedAt = now end
 end
 
+-- Refresh cached previews for another consumer; `onChange` runs when new captures arrive.
+function Engine:requestPreviews(ids, onChange)
+  self.previewListener = onChange
+  for i = #ids, 1, -1 do self:requestCapture(ids[i], true) end
+end
+
 function Engine:refreshCaptures()
   if self.deleted then return end
   if self.active then
@@ -344,6 +350,7 @@ function Engine:receiveCaptures()
     end
   end
   if changed and self.active then self:paint() end
+  if changed and self.previewListener then self.previewListener() end
 end
 
 -- Grow monotonically up to 5x6; larger lists scroll vertically at the same card size.
