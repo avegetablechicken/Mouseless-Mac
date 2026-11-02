@@ -184,7 +184,14 @@ local function testAlready(panel, pane, role)
     end
   end
 
-  return tfind(getc(pane, role) or {}, function(elem)
+  local elems = getc(pane, role) or {}
+  if OS_VERSION >= OS["Golden Gate"]:withMinor(2) then
+    -- Since macOS 27.2, main panel tiles are wrapped in groups
+    for _, g in ipairs(getc(pane, AX.Group) or {}) do
+      tconcat(elems, getc(g, role))
+    end
+  end
+  return tfind(elems, function(elem)
     return elem.AXTitle == locPanel
         or elem.AXAttributedDescription:getString():match('^'..locPanel)
   end) ~= nil
@@ -247,6 +254,9 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     elseif panel == CC.Display then
       if OS_VERSION >= OS.Ventura and OS_VERSION <= OS.Sequoia then
         role = AX.Group
+      elseif OS_VERSION >= OS["Golden Gate"]:withMinor(2) then
+        role = AX.Group
+        locPanel = "module-" .. panel:gsub(" ", "")
       elseif OS_VERSION >= OS.Tahoe:withMinor(1) then
         role = AX.Button
       else
@@ -255,6 +265,9 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     elseif panel == CC.KbBrightness then
       if OS_VERSION <= OS.Sequoia then
         role = AX.Button
+      elseif OS_VERSION >= OS["Golden Gate"]:withMinor(2) then
+        role = AX.Group
+        locPanel = "module-" .. panel:gsub(" ", "")
       elseif OS_VERSION >= OS.Tahoe:withMinor(1) then
         role = AX.Button
         locPanel = controlCenterLocalized(panel, "Keyboard")
@@ -262,7 +275,10 @@ local function popupControlCenterSubPanel(panel, allowReentry)
         role = AX.StaticText
       end
     elseif panel == CC.Sound then
-      if OS_VERSION >= OS.Tahoe:withMinor(1) then
+      if OS_VERSION >= OS["Golden Gate"]:withMinor(2) then
+        role = AX.Group
+        locPanel = "module-" .. panel:gsub(" ", "")
+      elseif OS_VERSION >= OS.Tahoe:withMinor(1) then
         role = AX.Button
       else
         role = AX.StaticText
@@ -313,7 +329,14 @@ local function popupControlCenterSubPanel(panel, allowReentry)
     local totalDelay = 0
     locPanel = locPanel or controlCenterLocalized(panel)
     repeat
-      ele = tfind(getc(pane, role), function(e)
+      local elems = getc(pane, role)
+      if OS_VERSION >= OS["Golden Gate"]:withMinor(2) then
+        -- Since macOS 27.2, main panel tiles are wrapped in groups
+        for _, g in ipairs(getc(pane, AX.Group)) do
+          tconcat(elems, getc(g, role))
+        end
+      end
+      ele = tfind(elems, function(e)
         if panel == CC.Focus then
           if OS_VERSION >= OS["Golden Gate"] then
             return e.AXIdentifier == "controlcenter-focus-modes-compact-2"
@@ -321,6 +344,9 @@ local function popupControlCenterSubPanel(panel, allowReentry)
           return e.AXIdentifier == "controlcenter-focus-modes"
         end
         if role == AX.Group then
+          if OS_VERSION >= OS["Golden Gate"]:withMinor(2) then
+            return e.AXIdentifier == locPanel
+          end
           local elem = getc(e, AX.StaticText, 1)
           return elem and elem.AXValue == locPanel
         elseif role == AX.StaticText then
@@ -665,7 +691,10 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       totalDelay = totalDelay + 0.05
       if panel == CC.Display then
         local role = OS_VERSION < OS.Ventura and AX.ScrollArea or AX.Group
-        slider = tfind(getc(pane, role, 1, AX.Slider) or {},
+        -- Since macOS 27.2, the first group only holds the display name
+        -- Tested on: macOS 27.2.
+        local index = OS_VERSION >= OS["Golden Gate"]:withMinor(2) and 2 or 1
+        slider = tfind(getc(pane, role, index, AX.Slider) or {},
             function(ele) return ele.AXEnabled end)
       else
         slider = tfind(getc(pane, AX.Slider) or {},
@@ -1382,8 +1411,9 @@ function registerControlCenterHotKeys(panel, inMenuBar)
           end
         end
       elseif result == 2 then
+        -- Tested on: macOS 27.2.
         if OS_VERSION >= OS["Golden Gate"]
-            and getc(pane, AX.Group) == nil then
+            and #getc(pane, AX.Group) == 0 then
           local hotkey = newControlCenter("", "Space",
             mayLocalize("play") .. "/" .. mayLocalize("pause"),
             function() pressPlayPause(1) end)
