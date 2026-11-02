@@ -298,6 +298,10 @@ local function popupControlCenterSubPanel(panel, allowReentry)
       else
         role = AX.Button
       end
+    elseif panel == CC.NowPlaying
+        and OS_VERSION >= OS["Golden Gate"]:withMinor(2) then
+      role = AX.Group
+      locPanel = "module-" .. panel:gsub(" ", "")
     elseif panel == CC.NowPlaying then
       local ele
       local totalDelay = 0
