@@ -249,6 +249,11 @@ local function loadStatusItemsGoldenGate(app, requirePreferredPosition, layout)
     end
     if #saved == 0 then return end
     items = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+    -- Since macOS 27.2 (27.1 unverified) only icons collapsed in overflow lack
+    -- AXExtrasMenuBar; visible ones keep it, in the order other callers index.
+    if items == nil and OS_VERSION >= OS["Golden Gate"]:withMinor(2) then
+      items = require("utils.menubar_reveal").collapsedSources(app, layout)
+    end
     -- Little Snitch genuinely has no AX status item; retain its known menu path.
     if items == nil and appid == "at.obdev.littlesnitch.agent" and #saved == 1 then
       assign(1, saved[1].name, saved[1].position)

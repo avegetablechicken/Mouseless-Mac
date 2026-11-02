@@ -143,6 +143,34 @@ function M.collapsedInOverflow(item)
   return frame ~= nil and frame.x + frame.w > button.AXPosition.x
 end
 
+-- Since macOS 27.2 an application's AXExtrasMenuBar is gone while its icons
+-- are collapsed in overflow; the live overflow hosts still mirror them there.
+-- Hosts are read once per layout snapshot, i.e. once per search.
+-- Tested on: Hammerspoon 1.1.1; macOS 27.2.
+local collapsedBySnapshot = setmetatable({}, { __mode = "k" })
+function M.collapsedSources(app, snapshot)
+  local byPID = snapshot and collapsedBySnapshot[snapshot]
+  if not byPID then
+    byPID = {}
+    for _, screen in ipairs(hs.screen.allScreens()) do
+      local window, button = goldenGateMenuBar(screen)
+      local left = button and button.AXPosition.x
+      for _, host in ipairs(button and window.AXChildren or {}) do
+        -- The overflow arrow has no children.
+        local child = (host.AXChildren or {})[1]
+        local frame = child and frameOf(child)
+        if frame and frame.x + frame.w > left and frame.x < left + button.AXSize.w then
+          local pid = child:pid()
+          byPID[pid] = byPID[pid] or {}
+          tinsert(byPID[pid], child)
+        end
+      end
+    end
+    if snapshot then collapsedBySnapshot[snapshot] = byPID end
+  end
+  return byPID[app:pid()]
+end
+
 function M.clickGoldenGate(item, right)
   if busy then return false end
   local position = item.clickPoint or { x = item.x + item.w / 2, y = item.y + item.h / 2 }
