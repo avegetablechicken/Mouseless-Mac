@@ -272,6 +272,8 @@ local menuBarMenuSelectedObservers = {}
 function flushMenuBarObserverSupportCache()
 end
 
+local collapsedSnapshot
+
 function getMenuBarItemsForValidity(appUI, collectItems)
   if collectItems == nil then collectItems = true end
   local ok, menuBar = pcall(function() return appUI.AXExtrasMenuBar end)
@@ -279,6 +281,18 @@ function getMenuBarItemsForValidity(appUI, collectItems)
   if menuBar == nil and OS_VERSION < OS.Tahoe then
     local menuBars = appUI:childrenWithRole(AX.MenuBar)
     menuBar = menuBars and menuBars[#menuBars]
+  end
+  if menuBar == nil and OS_VERSION >= OS["Golden Gate"]:withMinor(2) then
+    -- Since macOS 27.2 an application collapsed in overflow has no
+    -- AXExtrasMenuBar, though its element still posts menu notifications.
+    -- Calls in one run-loop pass share one snapshot of the overflow hosts.
+    if not collapsedSnapshot then
+      collapsedSnapshot = {}
+      hs.timer.doAfter(0, function() collapsedSnapshot = nil end)
+    end
+    local app = appUI:asHSApplication()
+    local sources = app and require("utils.menubar_reveal").collapsedSources(app, collapsedSnapshot)
+    if sources then return collectItems and sources or true end
   end
   if menuBar == nil then
     return collectItems and {} or false
