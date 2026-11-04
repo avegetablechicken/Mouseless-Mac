@@ -370,6 +370,22 @@ function M.revealBeforeActivation(item, activate, slot)
   return true
 end
 
+-- Expand the overflow holding item only so that its application exposes its
+-- status items, without activating any. Returns a function that collapses it
+-- again once the operation is done, or nil if it was expanded otherwise. The
+-- delayed collapse stays scheduled in case that function is never called.
+function M.expandFor(item)
+  local screen = overflowScreen(item)
+  if not screen then return end
+  local pending = collapseTimer ~= nil
+  local shown, changed = M.setOverflowExpanded(screen, true)
+  if not shown or not (changed or pending) then return end
+  scheduleCollapse(screen)
+  return function()
+    if not M.setOverflowExpanded(screen, false) then scheduleCollapse(screen) end
+  end
+end
+
 -- MenuBarAgent hosts the Live Activity pill directly in its window, outside
 -- AXExtrasMenuBar, so Control Center's status items do not include it.
 function M.isLiveActivityPill(element)

@@ -854,6 +854,7 @@ local function updateProxyWrapper(wrapped, appname)
     local previousApp = appid and find(appid)
     local restoreV2rayN = appname == "v2rayN"
         and (previousApp == nil or #previousApp:visibleWindows() == 0)
+    local collapseOverflow
     local activate = function()
       local activated = wrapped.fn(mod, item) ~= false
       local deadline = hs.timer.secondsSinceEpoch() + 10
@@ -872,6 +873,7 @@ local function updateProxyWrapper(wrapped, appname)
           local window = app and app:mainWindow()
           if window then window:close(); app:hide() end
         end
+        if collapseOverflow then collapseOverflow() end
         registerProxyMenu(false)
         if not activated then hs.alert("Unable to activate " .. (appname or "proxy")) end
       end, 0.1)
@@ -892,6 +894,12 @@ local function updateProxyWrapper(wrapped, appname)
       activate()
       return
     end
+    -- Since macOS 27.2 the menu of an icon collapsed in overflow is unreadable;
+    -- expand overflow until the operation below is done.
+    local reveal = require("utils.menubar_reveal")
+    local collapsed = previousApp and OS_VERSION >= OS["Golden Gate"]:withMinor(2)
+        and reveal.collapsedSources(previousApp)
+    collapseOverflow = collapsed and reveal.expandFor(collapsed[1]) or nil
     ensureProxyAppRunning(appname)
     local deadline = hs.timer.secondsSinceEpoch() + 10
     proxyActivationTimer = hs.timer.waitUntil(function()
@@ -901,6 +909,7 @@ local function updateProxyWrapper(wrapped, appname)
       if ready() then
         activate()
       else
+        if collapseOverflow then collapseOverflow() end
         hs.alert("Error occurred while starting " .. appname .. ". Please retry")
       end
     end, 0.1)
