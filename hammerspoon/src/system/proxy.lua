@@ -339,6 +339,21 @@ local function clickClashVergeMode(title)
   return true
 end
 
+-- Outbound modes are matched by title, as their positions vary across versions;
+-- the description lines after the first are ignored.
+-- With `checked`, only the ticked mode matches.
+local function monoCloudOutboundMode(pattern, checked)
+  local app = find(proxyAppBundleIDs.MonoCloud)
+  local menu = app and getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem, 1,
+      AX.Menu, 1, AX.MenuItem, "Outbound Mode", AX.Menu, 1)
+  for i, item in ipairs(getc(menu, AX.MenuItem) or {}) do
+    if (item.AXTitle or ""):match("^[^\n]*"):find(pattern, 1, true)
+        and (not checked or item.AXMenuItemMarkChar == "✓") then
+      return i, item
+    end
+  end
+end
+
 -- Toggle connect/disconnect VPN using `MonoCloud`
 local function toggleMonoCloud(enable, alert)
   local appid = proxyAppBundleIDs.MonoCloud
@@ -474,16 +489,18 @@ local proxyActivateFuncs = {
 
   MonoCloud = {
     global = function()
-      if toggleMonoCloud(false) then
-        if clickRightMenuBarItem(proxyAppBundleIDs.MonoCloud, { "Outbound Mode", 2 }) then
+      local index = monoCloudOutboundMode("Global")
+      if index and toggleMonoCloud(false) then
+        if clickRightMenuBarItem(proxyAppBundleIDs.MonoCloud, { "Outbound Mode", index }) then
           return enable_proxy_global("MonoCloud")
         end
       end
       return false
     end,
     pac = function()
-      if toggleMonoCloud(false) then
-        if clickRightMenuBarItem(proxyAppBundleIDs.MonoCloud, { "Outbound Mode", 3 }) then
+      local index = monoCloudOutboundMode("Rule")
+      if index and toggleMonoCloud(false) then
+        if clickRightMenuBarItem(proxyAppBundleIDs.MonoCloud, { "Outbound Mode", index }) then
           return enable_proxy_global("MonoCloud")
         end
       end
@@ -1064,21 +1081,10 @@ parseProxyInfo = function(info, require_mode)
           mode = "Global"
         elseif require_mode then
           do
-            local appid = proxyAppBundleIDs.MonoCloud
-            if find(appid) ~= nil then
-              local appUI = toappui(find(appid))
-              local outboundModeMenu = getc(appUI.AXExtrasMenuBar,
-                  AX.MenuBarItem, 1, AX.Menu, 1,
-                  AX.MenuItem, "Outbound Mode", AX.Menu, 1)
-              if outboundModeMenu ~= nil then
-                if getc(outboundModeMenu, AX.MenuItem, 2)
-                    .AXMenuItemMarkChar == "✓" then
-                  mode = "Global"
-                elseif getc(outboundModeMenu, AX.MenuItem, 3)
-                    .AXMenuItemMarkChar == "✓" then
-                  mode = "PAC"
-                end
-              end
+            if monoCloudOutboundMode("Global", true) then
+              mode = "Global"
+            elseif monoCloudOutboundMode("Rule", true) then
+              mode = "PAC"
             end
           end
         end
