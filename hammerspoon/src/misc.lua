@@ -214,8 +214,9 @@ local function watchNotificationCenter(notificationCenterApp)
   NewMessageWindowObserver:addWatcher(
     toappui(notificationCenterApp),
     -- Tested on: NotificationCenter 1.0; macOS 27.0.1 (layout update event).
-    OS_VERSION >= OS["Golden Gate"] and uinotifications.layoutChanged
-        or uinotifications.windowCreated)
+    -- macOS 27.2 creates a window for each banner again, without a layout update.
+    OS_VERSION >= OS["Golden Gate"] and OS_VERSION < OS["Golden Gate"]:withMinor(2)
+        and uinotifications.layoutChanged or uinotifications.windowCreated)
   NewMessageWindowObserver:callback(function()
     local code = parseVerificationCodeFromFirstMessage()
     if code then
