@@ -163,7 +163,8 @@ local function registerPseudoWindowDestroyObserver(app, roles)
                   local noMenuFromPopover = true
                   if role == AX.Popover then
                     local menuBarMenu = getc(appUI.AXExtrasMenuBar, AX.MenuBarItem, 1)
-                    noMenuFromPopover = menuBarMenu.AXSelected == false
+                    -- An icon collapsed in overflow (no AXExtrasMenuBar on macOS 27.2) has no menu open.
+                    noMenuFromPopover = menuBarMenu == nil or menuBarMenu.AXSelected == false
                   end
                   return noWindow and noMenuFromPopover
                 end
