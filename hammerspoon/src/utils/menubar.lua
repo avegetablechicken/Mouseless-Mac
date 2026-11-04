@@ -908,6 +908,9 @@ function hiddenByMenuBarManager(app, index, map)
     menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
   else
     menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+    if menuBarItems == nil and OS_VERSION >= OS["Golden Gate"]:withMinor(2) then
+      menuBarItems = require("utils.menubar_reveal").collapsedSources(app)
+    end
   end
   local menuBarItem = menuBarItems[index or 1]
   if manager:bundleID() == "com.apple.MenuBarAgent" then
@@ -1007,6 +1010,9 @@ function clickRightMenuBarItem(appid, menuItemPath, show)
     menuBarItems = getValidControlCenterMenuBarItemsTahoe(app)
   else
     menuBarItems = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
+    if menuBarItems == nil and OS_VERSION >= OS["Golden Gate"]:withMinor(2) then
+      menuBarItems = require("utils.menubar_reveal").collapsedSources(app)
+    end
   end
   local menuBarItem = menuBarItems[menuBarIdx or 1]
   if menuBarItem == nil then return false end
