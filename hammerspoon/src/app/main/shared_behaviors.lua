@@ -123,6 +123,9 @@ end
 local specialNoPseudoWindowRules = {
   ["com.app.menubarx"] = function(app, defaultRule)
     return appVer(app) < "1.6.9" and defaultRule()
+  end,
+  ["com.omni.mac.utility.store.ntfs"] = function(app, defaultRule)
+    return appVer(app) < "2" and defaultRule()
   end
 }
 PseudoWindowDestroyObservers = {}
