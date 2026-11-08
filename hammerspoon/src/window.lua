@@ -1060,7 +1060,7 @@ local function browserChooser()
         var app = Application(]] .. app:pid() .. [[);
         var result = [];
         app.windows().forEach(function(win) {
-          win.tabs().forEach(function(tab, index) {
+          (win.tabs() || []).forEach(function(tab, index) {
             result.push({winID: win.id(), id: ]] .. (safari and 'index + 1' or 'tab.id()') .. [[,
               title: tab.]] .. (safari and 'name' or 'title') .. [[(), url: tab.url()});
           });
