@@ -104,7 +104,8 @@ local function scanSearchMenuBarItems()
       local pill = menuBarReveal.isLiveActivityPill(pair[1])
       for j, other in ipairs(menuBarItems) do
         if other[1].AXPosition and (other[1].AXPosition.x < pair[1].AXPosition.x
-            or pill and menuBarReveal.hiddenBySystemManager(other[1])) then index = j break end
+            or pill and not menuBarReveal.isLiveActivityPill(other[1])
+              and menuBarReveal.hiddenBySystemManager(other[1])) then index = j break end
       end
       tinsert(menuBarItems, index, pair)
     end
