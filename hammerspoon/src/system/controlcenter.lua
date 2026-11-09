@@ -1096,57 +1096,49 @@ function registerControlCenterHotKeys(panel, inMenuBar)
 
     local area = getc(appUI, AX.Window, 1,
         OS_VERSION < OS.Ventura and AX.ScrollArea or AX.Group, 1)
-    local cb3
+    local cbs
+    local attempts = 0
+    -- True Tone is not available on every display (e.g. Apple Virtual).
+    -- Wait for controls to appear, not for a fixed number of display toggles.
     repeat
       hs.timer.usleep(0.05 * 1000000)
-      cb3 = getc(area, AX.CheckBox, 3)
-    until cb3 or not pane:isValid()
-    if cb3 == nil then return end
-    local cbs = getc(area, AX.CheckBox)
-    local cbTitles = tmap(cbs, function (cb)
-      return cb.AXAttributedDescription:getString()
-    end)
-    local cbIdents = tmap(cbs, function (cb)
-      return cb.AXIdentifier
-    end)
-    local enableds = tmap(cbs, function (cb)
-      return cb.AXValue
-    end)
-    for i=1,3 do
-      local checkbox = tfind({"Dark Mode", "Night Shift", "True Tone"},
-        function(ele)
-          return cbTitles[i]:find(mayLocalize(ele))
-        end)
-      local op = enableds[i] == 0 and "Enable" or "Disable"
-      local hotkey = newControlCenter("", tostring(i),
-        op .. " " .. mayLocalize(checkbox),
-        function()
-          local cb = getc(area, AX.CheckBox, i)
-          if not cb then return end
-          cb:performAction(AX.Press)
-          enableds[i] = 1 - enableds[i]
-        end)
-      if not checkAndRegisterControlCenterHotKeys(hotkey) then
-        return
+      attempts = attempts + 1
+      cbs = getc(area, AX.CheckBox) or {}
+    until #cbs > 0 or attempts >= 20 or not pane:isValid()
+
+    local toggleNames = {"Dark Mode", "Night Shift", "True Tone"}
+    local toggleIDs = {"display-setting-dark-mode", "display-setting-night-shift",
+                       "display-setting-true-tone"}
+    local deviceIndex = 0
+    for _, cb in ipairs(cbs) do
+      local description = cb.AXAttributedDescription
+      local title = description and description:getString() or cb.AXTitle or ""
+      local ident = cb.AXIdentifier or ""
+      local key, mods, message
+      for i, name in ipairs(toggleNames) do
+        local localized = mayLocalize(name)
+        if ident == toggleIDs[i]
+            or (localized and title:find(localized, 1, true)) then
+          key, mods = tostring(i), ""
+          message = (cb.AXValue == 0 and "Enable " or "Disable ")
+              .. (localized or name)
+          break
+        end
       end
-    end
-    for i=4,#cbs do
-      if i - 3 > 10 then break end
-      local _, nameIdx = cbIdents[i]:find("device-", 1, true)
-      local device = cbIdents[i]:sub(nameIdx + 1, -1)
-      local msg
-      if enableds[i] == 0 then
-        msg = "Connect to " .. device
-      else
-        msg = "Disconnect to " .. device
+      if key == nil then
+        local _, nameIdx = ident:find("device-", 1, true)
+        if nameIdx and deviceIndex < 10 then
+          deviceIndex = deviceIndex + 1
+          key, mods = tostring(deviceIndex % 10), "⌘"
+          message = (cb.AXValue == 0 and "Connect to " or "Disconnect from ")
+              .. ident:sub(nameIdx + 1)
+        end
       end
-      local hotkey = newControlCenter("⌘", tostring((i-3)%10), msg,
-        function()
-          local cb = getc(area, AX.CheckBox, i)
-          if cb then cb:performAction(AX.Press) end
+      if key then
+        local hotkey = newControlCenter(mods, key, message, function()
+          if cb:isValid() then cb:performAction(AX.Press) end
         end)
-      if not checkAndRegisterControlCenterHotKeys(hotkey) then
-        return
+        if not checkAndRegisterControlCenterHotKeys(hotkey) then return end
       end
     end
   elseif panel == CC.MusicRecognition then
