@@ -520,7 +520,20 @@ local function registerWithoutMenuBarManagers(spec, message, callback, onSuspend
 end
 
 local misc = KeybindingConfigs.hotkeys.global or {}
-registerWithoutMenuBarManagers(misc.searchMenuBar, "Search Menu Bar", registerSearchMenuBar)
+local statusBar = localizedSystemString({
+  { "VOSCommand.MoveToStatusBar",
+    "/System/iOSSupport/System/Library/PrivateFrameworks/VoiceOverServices.framework",
+    "VoiceOverServices" },
+  { "com.apple.systemuiserver.friendlyName",
+    "/System/Library/PrivateFrameworks/ScreenReader.framework", "SCRApplication" },
+})
+local searchMenuBarMessage = statusBar and localizedSystemString({
+  { "Search %@", "/System/Library/PrivateFrameworks/Spotlight.framework",
+    "Localizable", literal = true },
+  { "SEARCH IN %@", "/System/Library/CoreServices/Spotlight.app", "Localizable" },
+}, "Search %@", statusBar) or "Search Menu Bar"
+registerWithoutMenuBarManagers(misc.searchMenuBar, searchMenuBarMessage,
+                               registerSearchMenuBar)
 
 -- Keyboard selection of currently visible status icons, without revealing overflow.
 local items, selected, screen, overlay, watcher, clickTimer
@@ -645,21 +658,14 @@ local spec = (KeybindingConfigs.hotkeys.global or {}).moveFocusToStatusMenus
 if spec then
   -- Borrow the wording of the VoiceOver command or, where it is missing,
   -- of the shortcut in System Settings > Keyboard
-  local message
-  for _, source in ipairs {
-    { "SCRWorkspace.menuExtras.title", "ScreenReader.framework", "SCRWorkspace" },
+  local message = localizedSystemString({
+    { "SCRWorkspace.menuExtras.title",
+      "/System/Library/PrivateFrameworks/ScreenReader.framework", "SCRWorkspace" },
     { "Move focus to status menus",
       "/System/Library/ExtensionKit/Extensions/KeyboardSettings.appex",
       "DefaultShortcutsTable" },
-  } do
-    local result = localizedString(source[1],
-        { framework = source[2], localeFile = source[3] })
-    if type(result) == 'string' and result ~= source[1] then
-      message = result break
-    end
-  end
-  local hotkey = bindHotkeySpec(spec, message or "Move Focus to Status Menus",
-                                moveFocusToStatusMenus)
+  }, "Move Focus to Status Menus")
+  local hotkey = bindHotkeySpec(spec, message, moveFocusToStatusMenus)
   if hotkey then hotkey.kind = HK.MENUBAR end
 end
 
@@ -923,5 +929,8 @@ mode:bind({}, "down", function()
 end)
 
 registerWithoutMenuBarManagers(misc.showHiddenStatusItems,
-    "Show Hidden Status Items", showHiddenStatusItems,
+    localizedSystemString({
+      { "menuBar.showOverflowItemsAccessibilityLabel",
+        "/System/Library/CoreServices/MenuBarAgent.app", "MenuBarCore" },
+    }, "Show Hidden Status Items"), showHiddenStatusItems,
     function() if hiddenBar then hiddenMode:exit() end end)

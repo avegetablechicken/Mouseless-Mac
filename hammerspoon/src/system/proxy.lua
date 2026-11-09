@@ -1823,7 +1823,13 @@ registerProxyMenuWrapper()
 
 local menubarHK = KeybindingConfigs.hotkeys.global or {}
 
-local proxyHotkey = bindHotkeySpec(menubarHK["showProxyMenu"], "Show Proxy Menu",
+local proxies = localizedSystemString({
+  { "Proxies", "/System/Library/SystemProfiler/SPNetworkReporter.spreporter",
+    "Localizable", literal = true },
+  { "proxies", "/System/Library/ExtensionKit/Extensions/Network.appex", "Localizable" },
+})
+local proxyHotkey = bindHotkeySpec(menubarHK["showProxyMenu"],
+    proxies and localizedShowHide(true, proxies) or "Show Proxy Menu",
 function()
   -- Items hidden by a menu bar manager are revealed by popupRightMenuBarItem.
   popupRightMenuBarItem(proxy)

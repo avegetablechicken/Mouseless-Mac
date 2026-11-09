@@ -1223,6 +1223,54 @@ function localizedString(str, appid, params, force)
   end
 end
 
+-- Localize a generic message with strings borrowed from system bundles.
+-- Not every bundle exists on every macOS version, so sources are tried in
+-- order before falling back. Each source is
+-- `{ key, bundle path, locale file pattern, capitalize first letter }`;
+-- set `literal = true` if the key is the English text itself, so that an
+-- unchanged result is accepted. Keys must differ between sources: failed
+-- lookups are cached per key. The locale is that of `appid`, or the system
+-- locale if omitted. `%@` in the result is replaced by `arg`; without a
+-- result and a fallback, nil is returned.
+function localizedSystemString(sources, fallback, arg, appid)
+  local result
+  for _, source in ipairs(sources) do
+    local key, bundle = source[1], source[2]
+    if exists(bundle) then
+      local params = { framework = bundle, localeFile = source[3] }
+      local str
+      if appid then
+        str = localizedString(key, appid, params)
+      else
+        str = localizedString(key, params)
+      end
+      if type(str) == 'string' and (str ~= key or source.literal) then
+        result = str
+        if source[4] and result:byte(1) < 128 then
+          result = result:sub(1, 1):upper() .. result:sub(2)
+        end
+        break
+      end
+    end
+  end
+  result = result or fallback
+  if result and arg ~= nil then
+    -- some locales use a format specifier such as `%[tt]@`
+    result = result:gsub('%%%[%a*%]@', '%%@'):gsub('%%@', function() return arg end)
+  end
+  return result
+end
+
+-- "Show %@" / "Hide %@", from the Dock menus or SwiftUI
+function localizedShowHide(show, name, appid)
+  return localizedSystemString({
+    { show and "SHOW_NAME" or "HIDE_NAME",
+      "/System/Library/CoreServices/Dock.app", "DockMenus" },
+    { show and "Show %@" or "Hide %@",
+      "/System/Library/Frameworks/SwiftUI.framework", "Scenes", literal = true },
+  }, show and "Show %@" or "Hide %@", name, appid)
+end
+
 
 deLocaleMap = {}
 deLocaleInversedMap = {}

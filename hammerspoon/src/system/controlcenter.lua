@@ -130,33 +130,10 @@ controlCenterLocalized = function(panel, key)
 end
 
 -- Localize a generic hotkey message with strings from other system bundles,
--- in the locale of Control Center. Not every bundle exists on every macOS
--- version, so sources are tried in order (the longest-lived first) before
--- falling back to English. Each source is
--- `{ key, bundle path, locale file pattern, capitalize first letter }`.
--- Keys must differ between sources: failed lookups are cached per key.
--- `%@` in the result is replaced by `arg`.
+-- in the locale of Control Center. Sources are tried in order, the
+-- longest-lived first (see `localizedSystemString`).
 local function systemLocalized(sources, fallback, arg)
-  local result
-  for _, source in ipairs(sources) do
-    local key, bundle = source[1], source[2]
-    if exists(bundle) then
-      local str = localizedString(key, "com.apple.controlcenter",
-          { framework = bundle, localeFile = source[3] })
-      if type(str) == 'string' and str ~= key then
-        result = str
-        if source[4] and result:byte(1) < 128 then
-          result = result:sub(1, 1):upper() .. result:sub(2)
-        end
-        break
-      end
-    end
-  end
-  result = result or fallback
-  if arg ~= nil then
-    result = result:gsub('%%@', function() return arg end)
-  end
-  return result
+  return localizedSystemString(sources, fallback, arg, "com.apple.controlcenter")
 end
 
 -- Slider step messages, e.g. "Increase Brightness".
@@ -185,7 +162,7 @@ local function connectionMessage(connected, name)
     return systemLocalized({
       { "CONNECTED_FORMAT", vpnMenu, "Localizable" },
       { "Disconnect from %@", "/System/Library/PrivateFrameworks/AnnotationKit.framework",
-        "AKToolbarViewController_Mac" },
+        "AKToolbarViewController_Mac", literal = true },
     }, "Disconnect from %@", name)
   else
     return systemLocalized({
@@ -208,14 +185,16 @@ local function switchMessage(turnOn, name)
   }, turnOn and "Enable %@" or "Disable %@", name)
 end
 
--- Show / hide messages for disclosure sections
-local function disclosureMessage(show, name)
+-- Toggle messages for switches
+local function toggleMessage()
   return systemLocalized({
-    { show and "SHOW_NAME" or "HIDE_NAME",
-      "/System/Library/CoreServices/Dock.app", "DockMenus" },
-    { show and "Show %@" or "Hide %@",
-      "/System/Library/Frameworks/SwiftUI.framework", "Scenes" },
-  }, show and "Show %@" or "Hide %@", name)
+    { "Toggle", "/System/Library/Frameworks/AppIntents.framework", "Localizable",
+      literal = true },
+    { "toggle", "/System/Library/PrivateFrameworks/ScreenReader.framework",
+      "SCRGeneral", true },
+    { "Toggle (Operation)", "/System/Library/PrivateFrameworks/WorkflowKit.framework",
+      "Localizable" },
+  }, "Toggle")
 end
 
 local function testAlready(panel, pane, role)
@@ -760,7 +739,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     until checkbox or totalDelay > 1
     if checkbox then
       local hotkey = newControlCenter("", "Space",
-        "Toggle " .. controlCenterLocalized(panel),
+        toggleMessage(),
         function() checkbox:performAction(AX.Press) end
       )
       if not checkAndRegisterControlCenterHotKeys(hotkey) then
@@ -913,8 +892,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
   -- Helper to register left/right arrow hotkeys
   -- for expanding or collapsing disclosure sections.
   local registerHotkeyForTraingleDisclosure = function(actionFunc, msg, enabled)
-    local showMsg = disclosureMessage(true, msg)
-    local hideMsg = disclosureMessage(false, msg)
+    local showMsg = localizedShowHide(true, msg, "com.apple.controlcenter")
+    local hideMsg = localizedShowHide(false, msg, "com.apple.controlcenter")
     if enabled == 0 then
       hotkeyShow = newControlCenter("", "Right", showMsg,
         function()
@@ -1366,7 +1345,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
     end
 
     local hotkey = newControlCenter("", "Space",
-      "Toggle " .. mayLocalize("Background Sounds"),
+      toggleMessage(),
       function()
         if hotkeyShow ~= nil then
           hotkeyShow:delete()
