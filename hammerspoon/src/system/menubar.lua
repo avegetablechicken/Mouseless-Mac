@@ -643,7 +643,23 @@ end
 
 local spec = (KeybindingConfigs.hotkeys.global or {}).moveFocusToStatusMenus
 if spec then
-  local hotkey = bindHotkeySpec(spec, "Move Focus to Status Menus", moveFocusToStatusMenus)
+  -- Borrow the wording of the VoiceOver command or, where it is missing,
+  -- of the shortcut in System Settings > Keyboard
+  local message
+  for _, source in ipairs {
+    { "SCRWorkspace.menuExtras.title", "ScreenReader.framework", "SCRWorkspace" },
+    { "Move focus to status menus",
+      "/System/Library/ExtensionKit/Extensions/KeyboardSettings.appex",
+      "DefaultShortcutsTable" },
+  } do
+    local result = localizedString(source[1],
+        { framework = source[2], localeFile = source[3] })
+    if type(result) == 'string' and result ~= source[1] then
+      message = result break
+    end
+  end
+  local hotkey = bindHotkeySpec(spec, message or "Move Focus to Status Menus",
+                                moveFocusToStatusMenus)
   if hotkey then hotkey.kind = HK.MENUBAR end
 end
 

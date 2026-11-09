@@ -129,6 +129,95 @@ controlCenterLocalized = function(panel, key)
   return result
 end
 
+-- Localize a generic hotkey message with strings from other system bundles,
+-- in the locale of Control Center. Not every bundle exists on every macOS
+-- version, so sources are tried in order (the longest-lived first) before
+-- falling back to English. Each source is
+-- `{ key, bundle path, locale file pattern, capitalize first letter }`.
+-- Keys must differ between sources: failed lookups are cached per key.
+-- `%@` in the result is replaced by `arg`.
+local function systemLocalized(sources, fallback, arg)
+  local result
+  for _, source in ipairs(sources) do
+    local key, bundle = source[1], source[2]
+    if exists(bundle) then
+      local str = localizedString(key, "com.apple.controlcenter",
+          { framework = bundle, localeFile = source[3] })
+      if type(str) == 'string' and str ~= key then
+        result = str
+        if source[4] and result:byte(1) < 128 then
+          result = result:sub(1, 1):upper() .. result:sub(2)
+        end
+        break
+      end
+    end
+  end
+  result = result or fallback
+  if arg ~= nil then
+    result = result:gsub('%%@', function() return arg end)
+  end
+  return result
+end
+
+-- Slider step messages, e.g. "Increase Brightness".
+-- `kind` is "brightness", "keyboard-brightness" or "volume".
+local sliderActionKeys = {
+  ["brightness"]          = { "BRIGHTNESS_UP", "BRIGHTNESS_DOWN" },
+  ["keyboard-brightness"] = { "ILLUMINATION_UP", "ILLUMINATION_DOWN" },
+  ["volume"]              = { "VOLUME_UP_FULL_WIDTH", "VOLUME_DOWN_FULL_WIDTH" },
+}
+local function sliderStepMessage(kind, up, fallback)
+  return systemLocalized({
+    -- Touch Bar Control Strip descriptions
+    { "AXDescription-com.apple.system." .. kind .. (up and "-up" or "-down"),
+      "/System/Library/CoreServices/ControlStrip.app", "Localizable", true },
+    -- accessibility action names
+    { sliderActionKeys[kind][up and 1 or 2],
+      "/System/Library/PrivateFrameworks/AccessibilitySharedUISupport.framework",
+      "LocalizedStrings%-AXAction" },
+  }, fallback)
+end
+
+-- Connect / disconnect messages
+local function connectionMessage(connected, name)
+  local vpnMenu = "/System/Library/CoreServices/Menu Extras/VPN.menu"
+  if connected then
+    return systemLocalized({
+      { "CONNECTED_FORMAT", vpnMenu, "Localizable" },
+      { "Disconnect from %@", "/System/Library/PrivateFrameworks/AnnotationKit.framework",
+        "AKToolbarViewController_Mac" },
+    }, "Disconnect from %@", name)
+  else
+    return systemLocalized({
+      { "NOT_CONNECTED_FORMAT", vpnMenu, "Localizable" },
+      { "connect_to_%@", "/System/Library/Frameworks/CoreAudioKit.framework",
+        "NetworkMIDILocalizable" },
+    }, "Connect to %@", name)
+  end
+end
+
+-- Turn on / off messages for system settings
+local function switchMessage(turnOn, name)
+  return systemLocalized({
+    { "HFNaturalLanguage_Action_Power_" .. (turnOn and "1" or "0") .. "_Named",
+      "/System/iOSSupport/System/Library/PrivateFrameworks/Home.framework",
+      "HFLocalizable" },
+    { turnOn and "Turn On (System Setting)" or "Turn Off (System Setting)",
+      "/System/Library/PrivateFrameworks/VoiceShortcutClient.framework",
+      "Localizable" },
+  }, turnOn and "Enable %@" or "Disable %@", name)
+end
+
+-- Show / hide messages for disclosure sections
+local function disclosureMessage(show, name)
+  return systemLocalized({
+    { show and "SHOW_NAME" or "HIDE_NAME",
+      "/System/Library/CoreServices/Dock.app", "DockMenus" },
+    { show and "Show %@" or "Hide %@",
+      "/System/Library/Frameworks/SwiftUI.framework", "Scenes" },
+  }, show and "Show %@" or "Hide %@", name)
+end
+
 local function testAlready(panel, pane, role)
   if panel == CC.StageManager then return false end
   local locPanel = controlCenterLocalized(panel)
@@ -684,6 +773,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
   -- Provide fine-grained and jump-to-min/max shortcuts.
   if tcontain({CC.Display, CC.Sound, CC.KbBrightness}, panel) then
     local name = panel == CC.Sound and "Volume" or "Brightness"
+    local sliderKind = panel == CC.Sound and "volume"
+        or panel == CC.KbBrightness and "keyboard-brightness" or "brightness"
     local actions = {{ '=', 'Up'}, {'-', 'Down'}}
     if OS_VERSION < OS.Tahoe or panel == CC.Display or panel == CC.Sound then
       tconcat(actions, {{'[', 'Min'}, {']', 'Max'}})
@@ -709,6 +800,9 @@ function registerControlCenterHotKeys(panel, inMenuBar)
       for _, spec in ipairs(actions) do
         local key = spec[1]
         local msg = name .. ' ' .. spec[2]
+        if key == '=' or key == '-' then
+          msg = sliderStepMessage(sliderKind, key == '=', msg)
+        end
         local hotkey = newControlCenter("", key, msg,
           function()
             if key == '=' then
@@ -798,11 +892,11 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         end
         if name then
           index = index + 1
-          local msg = "Connect to " .. name
+          local msg = connectionMessage(false, name)
           if enabled == nil or enabled == 1 then
             local newName = name:match("(.-), %d+%%$")
             if newName ~= nil then name = newName end
-            msg = "Disconnect to " .. name
+            msg = connectionMessage(true, name)
           end
           local hotkey = newControlCenter("", tostring(index%10), msg,
               function()
@@ -819,13 +913,15 @@ function registerControlCenterHotKeys(panel, inMenuBar)
   -- Helper to register left/right arrow hotkeys
   -- for expanding or collapsing disclosure sections.
   local registerHotkeyForTraingleDisclosure = function(actionFunc, msg, enabled)
+    local showMsg = disclosureMessage(true, msg)
+    local hideMsg = disclosureMessage(false, msg)
     if enabled == 0 then
-      hotkeyShow = newControlCenter("", "Right", "Show " .. msg,
+      hotkeyShow = newControlCenter("", "Right", showMsg,
         function()
           assert(hotkeyShow) hotkeyShow:disable()
           actionFunc()
           if hotkeyHide == nil then
-            hotkeyHide = newControlCenter("", "Left", "Hide " .. msg,
+            hotkeyHide = newControlCenter("", "Left", hideMsg,
               function()
                 assert(hotkeyHide) hotkeyHide:disable()
                 assert(hotkeyShow) hotkeyShow:enable()
@@ -836,12 +932,12 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         end)
       assert(hotkeyShow) hotkeyShow:enable()
     else
-      hotkeyHide = newControlCenter("", "Left", "Hide " .. msg,
+      hotkeyHide = newControlCenter("", "Left", hideMsg,
         function()
           assert(hotkeyHide) hotkeyHide:disable()
           actionFunc()
           if hotkeyShow == nil then
-            hotkeyShow = newControlCenter("", "Right", "Show " .. msg,
+            hotkeyShow = newControlCenter("", "Right", showMsg,
               function()
                 assert(hotkeyShow) hotkeyShow:disable()
                 hotkeyHide:enable()
@@ -937,7 +1033,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
                 connected = true
               end
             end
-            local msg = (connected and "Disconnect to " or "Connect to ") .. title
+            local msg = connectionMessage(connected, title)
             local hotkey = newControlCenter("", tostring(idx % 10), msg,
               function()
                 local cb = cbs[idx]
@@ -1120,8 +1216,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         if ident == toggleIDs[i]
             or (localized and title:find(localized, 1, true)) then
           key, mods = tostring(i), ""
-          message = (cb.AXValue == 0 and "Enable " or "Disable ")
-              .. (localized or name)
+          message = switchMessage(cb.AXValue == 0, localized or name)
           break
         end
       end
@@ -1130,8 +1225,7 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         if nameIdx and deviceIndex < 10 then
           deviceIndex = deviceIndex + 1
           key, mods = tostring(deviceIndex % 10), "⌘"
-          message = (cb.AXValue == 0 and "Connect to " or "Disconnect from ")
-              .. ident:sub(nameIdx + 1)
+          message = connectionMessage(cb.AXValue ~= 0, ident:sub(nameIdx + 1))
         end
       end
       if key then
@@ -1199,8 +1293,8 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         triangle:performAction(actions[actIdx])
         hearingFunc()
       end
-      registerHotkeyForTraingleDisclosure(actionFunc, "Sounds",
-                                          slid and 1 or 0)
+      local sounds = controlCenterLocalized(CC.Sound) or "Sounds"
+      registerHotkeyForTraingleDisclosure(actionFunc, sounds, slid and 1 or 0)
       if slid == nil then return end
 
       local sliders = getc(pane, AX.Slider)
@@ -1218,7 +1312,11 @@ function registerControlCenterHotKeys(panel, inMenuBar)
         for _, spec in pairs(actions) do
           local key = spec[1]
           local slid = enabledSliders[1]
-          local hotkey = newControlCenter("", key, "Volume " .. spec[2],
+          local msg = "Volume " .. spec[2]
+          if key == '=' or key == '-' then
+            msg = sliderStepMessage("volume", key == '=', msg)
+          end
+          local hotkey = newControlCenter("", key, msg,
             function()
               if key == '=' then
                 slid:performAction(AX.Increment)
