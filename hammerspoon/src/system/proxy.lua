@@ -1307,7 +1307,14 @@ local registerProxyMenu
 local parseProxyInfo
 local proxyActivationTimer
 local proxyLaunchTimer
+-- How each proxy mode is activated, keyed by "<proxy>/<mode>", so that
+-- System Proxy and TUN Mode can activate the current or last proxy mode.
+local proxyModeSpecs = {}
+
 local function updateProxyWrapper(wrapped, appname)
+  if appname and wrapped.tun == nil and rawget(wrapped, "title") then
+    proxyModeSpecs[appname .. "/" .. wrapped.title:match("%S+")] = wrapped
+  end
   local fn = function(mod, item)
     if proxyLaunchTimer then
       proxyLaunchTimer:stop()
@@ -1328,9 +1335,13 @@ local function updateProxyWrapper(wrapped, appname)
     -- it is switched off for the previous one and on for the new one. The
     -- TUN service also follows the PAC rules of the mode, so it restarts.
     local controller = tunOwner or tunActive and tunController() or nil
+    -- System Proxy leaves TUN mode even for the same proxy; TUN Mode chosen
+    -- while direct activates the last proxy mode with TUN mode.
     local leaveTUN = controller ~= nil and wrapped.tun ~= true
-        and (appname == nil or controller ~= appname or tunServiceActive())
+        and (appname == nil or controller ~= appname or tunServiceActive()
+             or wrapped.noTUN)
     local carryTUN = leaveTUN and wrapped.tun == nil and appname ~= nil
+        and not wrapped.noTUN or wrapped.withTUN
     local tunApp = leaveTUN and not tunServiceActive()
         and proxyAppBundleIDs[controller] and find(proxyAppBundleIDs[controller]) or nil
     if tunApp and tunApp ~= previousApp
@@ -2031,6 +2042,20 @@ local function registerProxyMenuImpl(enabledProxy, mode)
     enabledProxy, mode = controller, proxyClientMode(controller)
   end
   setProxyIcon(enabledProxy)
+  local current = enabledProxy ~= "" and mode and enabledProxy .. "/" .. mode
+  if current and current ~= hs.settings.get("proxy.lastMode") then
+    hs.settings.set("proxy.lastMode", current)
+  end
+  current = current or hs.settings.get("proxy.lastMode")
+  -- Activate the current or last proxy mode with or without TUN mode.
+  local function activateCurrent(options)
+    return function(mod, item)
+      local spec = current and proxyModeSpecs[current]
+      if spec == nil then return end
+      updateProxyWrapper(setmetatable(options, { __index = spec }),
+          current:match("^(.*)/")).fn(mod, item)
+    end
+  end
 
   proxyMenu =
   {
@@ -2080,13 +2105,23 @@ local function registerProxyMenuImpl(enabledProxy, mode)
       end
     },
 
+    { title = "-" },
+
     updateProxyWrapper({
-      title = "Disable",
+      title = "Direct",
       fn = function() disable_proxy() end,
       shortcut = '0',
-      checked = enabledProxy == ""
+      checked = enabledProxy == "" and not tunActive
     }),
   }
+
+  local systemProxyItem = {
+    title = "System Proxy",
+    fn = activateCurrent({ noTUN = true }),
+    shortcut = 's',
+    checked = enabledProxy ~= "" and not tunActive,
+  }
+  tinsert(proxyMenu, systemProxyItem)
 
   local tunItem
   -- TUN mode switched on in a client itself can also be switched off here.
@@ -2097,16 +2132,18 @@ local function registerProxyMenuImpl(enabledProxy, mode)
       fn = function() end,
       tun = false,
     })
-  else
+  elseif enabledProxy ~= "" then
     tunItem = updateProxyWrapper({
       title = "TUN Mode",
       fn = function() return enableTUN(enabledProxy) end,
       tun = true,
     }, enabledProxy)
     -- TUN mode started elsewhere cannot be controlled here.
-    tunItem.disabled = tunActive or enabledProxy == ""
-        or tunOutbound(enabledProxy) == nil
-          and NetworkWatcher:proxies().ProxyAutoConfigEnable ~= 1
+    tunItem.disabled = tunActive or tunOutbound(enabledProxy) == nil
+        and NetworkWatcher:proxies().ProxyAutoConfigEnable ~= 1
+  else
+    tunItem = { title = "TUN Mode", fn = activateCurrent({ withTUN = true }) }
+    tunItem.disabled = tunActive
   end
   tunItem.shortcut = 't'
   -- Marked only once detection confirms TUN mode is running.
@@ -2146,7 +2183,10 @@ local function registerProxyMenuImpl(enabledProxy, mode)
             clickRightMenuBarItem(appid)
           end
           if find(appid) == nil then
-            local previous = tfind(proxyMenu, function(entry) return entry.checked and entry.fn end)
+            local previous = tfind(proxyMenu, function(entry)
+              return entry.checked and entry.fn
+                  and entry.title ~= "System Proxy" and entry.title ~= "TUN Mode"
+            end)
             local service = getNetworkService()
             local originalProxy, originalMode = parseProxyInfo(NetworkWatcher:proxies())
             local lastProxy, lastMode = originalProxy, originalMode
@@ -2211,6 +2251,11 @@ local function registerProxyMenuImpl(enabledProxy, mode)
         name, enabledProxy == name,
         mode, proxyMenuIdx)
   end
+
+  -- Proxy modes are registered while their items are built above.
+  local hasCurrent = current ~= nil and proxyModeSpecs[current] ~= nil
+  systemProxyItem.disabled = not hasCurrent
+  if enabledProxy == "" and not hasCurrent then tunItem.disabled = true end
 
   registerProxySettingsEntry(proxyMenu)
   proxy:setMenu(proxyMenu)
