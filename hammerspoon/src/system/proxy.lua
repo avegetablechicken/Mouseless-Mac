@@ -279,21 +279,37 @@ local function matchesV2rayNRoute(name, mode)
   return name:find(keyword, 1, true) ~= nil
 end
 
+-- Bring up the v2rayN main window; returns its UI once it is frontmost.
+local v2rayNReopenedAt = 0
+local function v2rayNWindowUI(app)
+  local appUI = toappui(app)
+  if not app:isFrontmost() or #app:visibleWindows() == 0 then
+    if #app:visibleWindows() == 0 and appUI.AXExtrasMenuBar ~= nil then
+      clickRightMenuBarItem(proxyAppBundleIDs.v2rayN, "Display GUI")
+    elseif #app:visibleWindows() == 0 then
+      -- Activation shows no window; reopening does, also while the menu bar
+      -- item is collapsed in overflow.
+      local now = hs.timer.secondsSinceEpoch()
+      if now - v2rayNReopenedAt >= 1 then
+        v2rayNReopenedAt = now
+        hs.task.new("/usr/bin/open", nil, { "-b", proxyAppBundleIDs.v2rayN }):start()
+      end
+    else
+      app:activate(true)
+    end
+    return
+  end
+  return appUI
+end
+
 local function clickV2rayNMode(mode)
   ensureProxyAppRunning("v2rayN")
   local appid = proxyAppBundleIDs.v2rayN
   local app = find(appid)
   if app == nil then return false end
   if matchesV2rayNRoute(v2rayNRoutingName(), mode) then return true end
-  local appUI = toappui(app)
-  if not app:isFrontmost() or #app:visibleWindows() == 0 then
-    if #app:visibleWindows() == 0 and appUI.AXExtrasMenuBar ~= nil then
-      clickRightMenuBarItem(appid, "Display GUI")
-    else
-      app:activate(true)
-    end
-    return false
-  end
+  local appUI = v2rayNWindowUI(app)
+  if appUI == nil then return false end
   local routing = findV2rayNElement(appUI, function(element)
     return element.AXIdentifier == "cmbRoutings2"
   end)
@@ -311,6 +327,41 @@ local function clickV2rayNMode(mode)
     leftClickAndRestore(item, app)
   end
   return false -- The existing activation timer retries until the route is saved.
+end
+
+local function v2rayNTunEnabled()
+  local path = os.getenv("HOME")
+      .. "/Library/Application Support/v2rayN/guiConfigs/guiNConfig.json"
+  local config = exists(path) and hs.json.read(path) or nil
+  return get(config, "TunModeItem", "EnableTun") == true
+end
+
+-- Click v2rayN's TUN toggle once its main window is up.
+local function clickV2rayNTun(enable)
+  local app = find(proxyAppBundleIDs.v2rayN)
+  if app == nil then return false end
+  if v2rayNTunEnabled() == enable then return true end
+  local hidden = #app:visibleWindows() == 0
+  local appUI
+  local deadline = hs.timer.secondsSinceEpoch() + 5
+  hs.timer.waitUntil(function()
+    appUI = v2rayNWindowUI(app)
+    return appUI ~= nil or hs.timer.secondsSinceEpoch() >= deadline
+  end, function()
+    local toggle = findV2rayNElement(appUI, function(element)
+      return element.AXIdentifier == "togEnableTun"
+    end)
+    local value = toggle and toggle.AXValue
+    if toggle and (value == 1 or value == true) ~= enable then
+      -- The Avalonia toggle exposes no AXPress action.
+      leftClickAndRestore(toggle, app)
+    end
+    -- Turning TUN mode off needs no password, so restore the window at once;
+    -- callers enabling it restore the window after the prompt.
+    local window = hidden and not enable and app:mainWindow()
+    if window then window:close(); app:hide() end
+  end, 0.1)
+  return true
 end
 
 local function clashVergeModeMenu(appid)
@@ -401,6 +452,430 @@ local function toggleMonoCloud(enable, alert)
     end
   end
 
+  return true
+end
+
+-- TUN mode detection. Finds utun interfaces with IPv4 addresses, then
+-- verifies via netstat that host TCP connections are actually flowing
+-- through them. This excludes idle utun interfaces (e.g. Parallels shared
+-- networking) that have an IP but don't carry host internet traffic.
+-- Interfaces routing the internet or fake IPs (198.18.0.0/15) also count:
+-- with the system proxy kept on, few connections pass through them.
+local tunActive = false
+local tunInfo = nil
+local tunCheckTask
+-- Proxy whose TUN mode was enabled from the menu, kept across reloads.
+local tunOwner = hs.settings.get("proxy.tunOwner")
+local tunActivating = false
+local tunServiceDir = hs.fs.temporaryDirectory() .. "hammerspoon-tun/"
+local tunServiceFlag = tunServiceDir .. "running"
+local tunServiceFailed = false
+-- Files written by the root TUN service live where only root can write.
+local TUN_SERVICE_ROOT = "/var/run/hammerspoon-tun"
+
+-- Whether the root TUN service of this Hammerspoon session is up; it
+-- refreshes its heartbeat file every second.
+local function tunServiceSession()
+  local modified = hs.fs.attributes(TUN_SERVICE_ROOT .. ".alive", "modification")
+  return modified ~= nil and os.time() - modified <= 3
+end
+
+-- Whether the root TUN service has been asked to run sing-box
+local function tunServiceRunning()
+  local flag = tunServiceSession() and io.open(tunServiceFlag)
+  if not flag then return false end
+  local wanted = flag:read("a")
+  flag:close()
+  return wanted ~= "" and wanted ~= "stop"
+end
+
+-- Address of the TUN service's interface, which also identifies an instance
+-- left from an earlier configuration
+local TUN_SERVICE_ADDRESS = "172.19.0.1"
+
+local function tunServiceActive()
+  return tunServiceRunning() or tunActive and tfind(tunInfo or {}, function(info)
+    return info.address == TUN_SERVICE_ADDRESS
+  end) ~= nil
+end
+local tunController
+local TUN_SHELL_CMD = [[
+  routes=" $(for ip in 1.1.1.1 198.18.0.1; do route -n get $ip 2>/dev/null | awk '/interface:/{print $2}'; done | tr '\n' ' ')"
+  for iface in $(ifconfig 2>/dev/null | awk '/^utun[0-9]/{gsub(/:.*/,"",$1); print $1}'); do
+    addr=$(ifconfig "$iface" 2>/dev/null | awk '/inet / && $2!="127.0.0.1"{print $2}')
+    if [ -n "$addr" ]; then
+      count=$(netstat -an -p tcp 2>/dev/null | grep -c "$addr")
+      case "$routes" in *" $iface "*) count=1;; esac
+      if [ "$count" -gt 0 ]; then echo "$iface $addr"; fi
+    fi
+  done
+]]
+
+local function updateTUNState(result)
+  local detected = result and result ~= ""
+  if detected then
+    tunInfo = {}
+    for iface, addr in result:gmatch("(%S+)%s+(%S+)") do
+      tinsert(tunInfo, {interface = iface, address = addr})
+    end
+    if #tunInfo == 0 then tunInfo = nil end
+  else
+    tunInfo = nil
+  end
+  if detected ~= tunActive then
+    tunActive = detected
+    return true
+  end
+  return false
+end
+
+local function checkTUNState(callback)
+  if tunCheckTask ~= nil then return end
+  local task = hs.task.new("/bin/zsh", function(exitCode, stdout)
+    tunCheckTask = nil
+    if exitCode ~= 0 then return end
+    local changed = updateTUNState(stdout)
+    -- Forget an owner whose TUN interface has gone, unless the TUN service
+    -- started here is still running.
+    if not tunActive and tunOwner and not tunActivating
+        and not tunServiceActive() then
+      tunOwner = nil
+      hs.settings.set("proxy.tunOwner", nil)
+    end
+    if callback then callback(changed) end
+  end, { "-c", TUN_SHELL_CMD })
+  if task == nil then return end
+  tunCheckTask = task
+  if not task:start() then tunCheckTask = nil end
+end
+
+-- TUN mode.
+--
+-- TUN mode applies to the active proxy and leaves the system proxy as is.
+-- Clients with a built-in TUN mode are switched in the client; for others,
+-- sing-box captures traffic into a TUN interface and forwards it to the
+-- proxy's SOCKS5 (or HTTP) endpoint. It runs as root and stops once the
+-- control file asks it to, so only its first start in a Hammerspoon session
+-- needs a password.
+local function shellQuote(s)
+  return "'" .. s:gsub("'", "'\\''") .. "'"
+end
+
+-- Endpoint that the TUN service forwards traffic of a proxy to
+local function tunOutbound(name)
+  local config = ProxyConfigs[name]
+  if config and config.locations then
+    local rc = executeCondition(config.condition, true)
+    config = rc >= 0 and config[config.locations[rc + 1]] or nil
+  end
+  local addrs = config and config.global or {}
+  if addrs[5] and addrs[6] then
+    return { tag = "proxy", type = "socks",
+             server = addrs[5], server_port = tonumber(addrs[6]) }
+  elseif addrs[1] and addrs[2] then
+    return { tag = "proxy", type = "http",
+             server = addrs[1], server_port = tonumber(addrs[2]) }
+  end
+end
+
+-- Homebrew installs command line tools outside Hammerspoon's PATH.
+local function findHomebrewExecutable(name)
+  return tfind({ "/opt/homebrew/bin/" .. name, "/usr/local/bin/" .. name },
+      function(path) return hs.fs.attributes(path, "mode") == "file" end)
+end
+
+local PAC_ROUTE_TYPES = {
+  PROXY = "http", HTTP = "http", SOCKS = "socks", SOCKS5 = "socks",
+}
+
+-- Domain or IPv4 address in a PAC string literal, such as a gfwlist rule
+local function pacLiteralHost(literal)
+  local host = literal:gsub("\\/", "/"):gsub("^@@", ""):gsub("^||", "")
+      :gsub("^|", ""):gsub("^%a+://", ""):gsub("^%*?%.", ""):match("^[%w%.%-]+")
+  if host and (host:match("%.%a[%w%-]*$") or host:match("^%d+%.%d+%.%d+%.%d+$")) then
+    return host:lower()
+  end
+end
+
+-- Outbounds, route rules and final outbound from a PAC file evaluated with
+-- pactester. TUN mode sees no URLs, so every host the PAC mentions is
+-- evaluated, and hosts routed like the PAC's default need no rule unless
+-- they are exceptions under a host routed otherwise.
+local function pactesterPACRoute(tester, body)
+  mkdir(tunServiceDir)
+  local pacPath, urlsPath = tunServiceDir .. "proxy.pac", tunServiceDir .. "urls.txt"
+  local hosts, seen = { "hammerspoon-tun.invalid" }, {}
+  for literal in body:gmatch('"([^"\n]*)"') do
+    local host = pacLiteralHost(literal)
+    if host and not seen[host] then seen[host] = true; tinsert(hosts, host) end
+  end
+  for literal in body:gmatch("'([^'\n]*)'") do
+    local host = pacLiteralHost(literal)
+    if host and not seen[host] then seen[host] = true; tinsert(hosts, host) end
+  end
+  local pacFile, urlsFile = io.open(pacPath, "w"), io.open(urlsPath, "w")
+  if pacFile == nil or urlsFile == nil then return end
+  pacFile:write(body)
+  pacFile:close()
+  for _, host in ipairs(hosts) do urlsFile:write("https://", host, "/\n") end
+  urlsFile:close()
+  local output, ok = hs.execute(strfmt("%s -p %s -f %s", shellQuote(tester),
+      shellQuote(pacPath), shellQuote(urlsPath)))
+  if not ok then return end
+
+  local outbounds, routes = {}, {}
+  local function outboundTag(route)
+    if route == "DIRECT" then return "direct" end
+    local kind, host, port = route:match("^(%u+)%s+([^%s:]+):(%d+)$")
+    if PAC_ROUTE_TYPES[kind] == nil then return end
+    local tag = kind .. " " .. host .. ":" .. port
+    if not tfind(outbounds, function(o) return o.tag == tag end) then
+      tinsert(outbounds, { tag = tag, type = PAC_ROUTE_TYPES[kind],
+                           server = host, server_port = tonumber(port) })
+    end
+    return tag
+  end
+  for line in output:gmatch("[^\n]+") do
+    local host, result = line:match("^https://(.-)/ : (.*)$")
+    local route = result and result:match("^%s*([^;]-)%s*;") or result
+    if host and route then routes[host] = outboundTag(route) end
+  end
+  local final = routes["hammerspoon-tun.invalid"]
+  if final == nil then return end
+
+  local groups, order = {}, {}
+  local function add(tag, host)
+    if groups[tag] == nil then
+      groups[tag] = { domains = {}, addresses = {} }
+      tinsert(order, tag)
+    end
+    if host:match("^%d+%.%d+%.%d+%.%d+$") then
+      tinsert(groups[tag].addresses, host .. "/32")
+    else
+      tinsert(groups[tag].domains, host)
+    end
+  end
+  local exceptions = {}
+  for i = 2, #hosts do
+    local host, tag = hosts[i], routes[hosts[i]]
+    if tag and tag ~= final then
+      add(tag, host)
+    elseif tag == final then
+      local parent = host:match("^[^.]+%.(.+)$")
+      while parent do
+        if routes[parent] and routes[parent] ~= final then
+          tinsert(exceptions, host)
+          break
+        end
+        parent = parent:match("^[^.]+%.(.+)$")
+      end
+    end
+  end
+  local rules = {}
+  if #exceptions > 0 then
+    tinsert(rules, { domain_suffix = exceptions, outbound = final })
+  end
+  for _, tag in ipairs(order) do
+    local group = groups[tag]
+    if #group.domains > 0 then
+      tinsert(rules, { domain_suffix = group.domains, outbound = tag })
+    end
+    if #group.addresses > 0 then
+      tinsert(rules, { ip_cidr = group.addresses, outbound = tag })
+    end
+  end
+  return outbounds, rules, final
+end
+
+-- Outbounds, route rules and final outbound from a PAC file generated by
+-- gfwlist2pac, read without pactester; its Adblock-style rules are reduced
+-- to domains.
+local function gfwlistPACRoute(body)
+  local kind, host, port = body:match(
+      'var%s+proxy%s*=%s*"%s*(%u+)%s+([^%s:;"]+):(%d+)')
+  local list = body:match("var%s+rules%s*=%s*%[(.-)\n%];")
+  if PAC_ROUTE_TYPES[kind] == nil or list == nil then return end
+  local direct, proxied, addresses = {}, {}, {}
+  for entry in list:gmatch('"([^"\n]*)"') do
+    -- Regular expressions match whole URLs and cannot be reduced to domains.
+    local domain = entry:sub(1, 1) ~= "/" and pacLiteralHost(entry)
+    if domain and domain:match("^%d+%.%d+%.%d+%.%d+$") then
+      if entry:sub(1, 2) ~= "@@" then tinsert(addresses, domain .. "/32") end
+    elseif domain then
+      tinsert(entry:sub(1, 2) == "@@" and direct or proxied, domain)
+    end
+  end
+  local rules = {}
+  if #direct > 0 then
+    tinsert(rules, { domain_suffix = direct, outbound = "direct" })
+  end
+  if #proxied > 0 then
+    tinsert(rules, { domain_suffix = proxied, outbound = "proxy" })
+  end
+  if #addresses > 0 then
+    tinsert(rules, { ip_cidr = addresses, outbound = "proxy" })
+  end
+  return {{ tag = "proxy", type = PAC_ROUTE_TYPES[kind],
+            server = host, server_port = tonumber(port) }}, rules, "direct"
+end
+
+local function startTUNService(name)
+  local outbounds, pacRules, final
+  local info = NetworkWatcher:proxies()
+  if info.ProxyAutoConfigEnable == 1 then
+    local status, body = hs.http.get(info.ProxyAutoConfigURLString)
+    if status == 200 and body ~= nil then
+      local tester = findHomebrewExecutable("pactester")
+      if tester then
+        outbounds, pacRules, final = pactesterPACRoute(tester, body)
+      else
+        outbounds, pacRules, final = gfwlistPACRoute(body)
+      end
+    end
+    if outbounds == nil then
+      hs.alert("Unable to read the PAC file for TUN mode. Install pactester with: brew install pacparser")
+      return false
+    end
+  else
+    local outbound = tunOutbound(name)
+    if outbound == nil then return false end
+    outbounds, final = { outbound }, "proxy"
+  end
+
+  local singbox = findHomebrewExecutable("sing-box")
+  if singbox == nil then
+    hs.alert("sing-box is not installed, so TUN mode cannot be started. Install it with: brew install sing-box")
+    return false
+  end
+
+  local rules = {
+    { action = "sniff" },
+    { protocol = "dns", action = "hijack-dns" },
+    { ip_is_private = true, outbound = "direct" },
+  }
+  -- Let local proxy clients reach their servers directly instead of looping
+  -- their own connections back into the TUN interface.
+  for _, outbound in ipairs(outbounds) do
+    if outbound.server == "127.0.0.1" or outbound.server == "localhost" then
+      local path = hs.execute(strfmt(
+          "pid=$(/usr/sbin/lsof -nP -iTCP:%d -sTCP:LISTEN -t | head -1); "
+          .. '[ -n "$pid" ] && /bin/ps -o comm= -p "$pid"', outbound.server_port))
+      path = path and path:match("^%s*(.-)%s*$")
+      if path and path ~= "" then
+        tinsert(rules, 3, { process_path = { path }, outbound = "direct" })
+      end
+    end
+  end
+  for _, rule in ipairs(pacRules or {}) do tinsert(rules, rule) end
+  tinsert(outbounds, { type = "direct", tag = "direct" })
+  local singboxConfig = {
+    log = { level = "warn" },
+    dns = {
+      servers = {
+        { type = "fakeip", tag = "fakeip", inet4_range = "198.18.0.0/15" },
+        { type = "local", tag = "local" },
+      },
+      rules = {{ query_type = { "A", "AAAA" }, server = "fakeip" }},
+      final = "local",
+    },
+    inbounds = {{ type = "tun", tag = "tun-in",
+                  address = { TUN_SERVICE_ADDRESS .. "/30" }, auto_route = true }},
+    outbounds = outbounds,
+    route = {
+      auto_detect_interface = true,
+      default_domain_resolver = "local",
+      rules = rules,
+      final = final,
+    },
+  }
+
+  mkdir(tunServiceDir)
+  local configPath = tunServiceDir .. "config.json"
+  local scriptPath = tunServiceDir .. "run.sh"
+  if not hs.json.write(singboxConfig, configPath, true, true) then return false end
+  local flag = io.open(tunServiceFlag, "w")
+  if flag == nil then return false end
+  flag:write(tostring(hs.timer.absoluteTime()))
+  flag:close()
+  tunServiceFailed = false
+  -- A running service restarts sing-box with the new configuration.
+  if tunServiceSession() then return true end
+
+  -- The service runs as root until Hammerspoon quits or the control file is
+  -- removed. It runs sing-box with a root-owned copy of the configuration,
+  -- rejecting settings that make sing-box write files, and writes only
+  -- under TUN_SERVICE_ROOT.
+  local script = io.open(scriptPath, "w")
+  if script == nil then return false end
+  script:write(strfmt([[
+control=%s
+config=%s
+copy=%s.json
+current=
+pid=
+while kill -0 %d 2>/dev/null && [ -e "$control" ]; do
+  touch %s.alive
+  wanted=$(cat "$control")
+  if [ "$wanted" != "$current" ]; then
+    [ -n "$pid" ] && kill $pid && wait $pid
+    pid=
+    current=$wanted
+    if [ "$wanted" != stop ] && cp "$config" "$copy" \
+        && ! grep -qE '"(output|cache_file|path|external_ui|external_controller)"' "$copy"; then
+      %s run -c "$copy" > %s.log 2>&1 &
+      pid=$!
+    fi
+  fi
+  sleep 1
+done
+[ -n "$pid" ] && kill $pid
+rm -f "$copy" %s.alive
+]], shellQuote(tunServiceFlag), shellQuote(configPath), TUN_SERVICE_ROOT,
+    hs.processInfo.processID, TUN_SERVICE_ROOT, shellQuote(singbox),
+    TUN_SERVICE_ROOT, TUN_SERVICE_ROOT))
+  script:close()
+
+  local command = strfmt("(umask 077; cp %s %s.sh && /bin/sh %s.sh) > /dev/null 2>&1 &",
+      shellQuote(scriptPath), TUN_SERVICE_ROOT, TUN_SERVICE_ROOT)
+  -- Run asynchronously so the password dialog does not block Hammerspoon.
+  local task = hs.task.new("/usr/bin/osascript", function(exitCode)
+    if exitCode ~= 0 then tunServiceFailed = true end
+  end, { "-e", 'do shell script "' .. command:gsub('\\', '\\\\'):gsub('"', '\\"')
+      .. '" with administrator privileges' })
+  if task == nil or not task:start() then return false end
+  return true
+end
+
+-- Enable TUN mode for the active proxy, trying only once.
+local function enableTUN(name)
+  local appid = proxyAppBundleIDs[name]
+  local appVer = appid and applicationVersion(appid)
+  if appVer and name == "MonoCloud" and appVer >= "1.0" then
+    -- MonoCloud provides Enhanced Mode (TUN) since 1.0.
+    return clickRightMenuBarItem(appid, "Enhanced Mode (TUN)")
+  elseif appVer and name == "v2rayN" and appVer >= "7.2.2" then
+    -- v2rayN runs its TUN core with sudo on macOS since 7.2.2.
+    return clickV2rayNTun(true)
+  end
+  return startTUNService(name)
+end
+
+-- Turn off the TUN mode enabled from the menu, trying only once.
+local function disableTUN()
+  if tunOwner == nil then return true end
+  local appid = proxyAppBundleIDs[tunOwner]
+  if tunServiceActive() then
+    local flag = io.open(tunServiceFlag, "w")
+    if flag then flag:write("stop"); flag:close() end
+  elseif appid and find(appid) ~= nil then
+    if tunOwner == "MonoCloud" then
+      clickRightMenuBarItem(appid, "Local Proxy Only")
+    elseif tunOwner == "v2rayN" then
+      clickV2rayNTun(false)
+    end
+  end
+  tunOwner = nil
+  hs.settings.set("proxy.tunOwner", nil)
   return true
 end
 
@@ -519,7 +994,6 @@ local proxyForIcon = ""
 local proxyAppIconBundleID
 local composedProxyIcons = {}
 local proxyUsesLightForeground
-local proxyIconForcedInactive = false
 local nextProxyThemeCheck = 0
 
 local function imageLuminanceAt(image, x, y)
@@ -611,7 +1085,7 @@ end
 local function applyProxyIcon()
   local icon = "proxy.pdf"
   local template = true
-  if proxyIconForcedInactive or proxyForIcon == "" then
+  if proxyForIcon == "" then
     if not composedProxyIcons.disabled then
       local canvas = hs.canvas.new({ x = 0, y = 0, w = 18, h = 18 })
       canvas:appendElements(
@@ -636,7 +1110,7 @@ local function applyProxyIcon()
 end
 
 local function refreshProxyIconTheme(force)
-  if proxyIconForcedInactive or not proxyAppIconBundleID then return end
+  if not proxyAppIconBundleID then return end
   local now = hs.timer.secondsSinceEpoch()
   if not force and now < nextProxyThemeCheck then return end
 
@@ -652,19 +1126,12 @@ end
 local function setProxyIcon(enabledProxy)
   proxyForIcon = enabledProxy or ""
   proxyAppIconBundleID = proxyAppBundleIDs[proxyForIcon]
-  proxyIconForcedInactive = false
   if proxyAppIconBundleID then
     local detected = menuBarUsesLightForeground()
     if detected == nil then detected = hs.host.interfaceStyle() == "Dark" end
     proxyUsesLightForeground = detected
   end
   applyProxyIcon()
-end
-
-local function forceInactiveProxyIcon()
-  proxyIconForcedInactive = true
-  applyProxyIcon()
-  proxy:setTooltip("Proxy: TUN Mode")
 end
 
 setProxyIcon(nil)
@@ -850,24 +1317,70 @@ local function updateProxyWrapper(wrapped, appname)
       proxyActivationTimer:stop()
       proxyActivationTimer = nil
     end
+    tunActivating = false
     local appid = proxyAppBundleIDs[appname]
     local previousApp = appid and find(appid)
     local restoreV2rayN = appname == "v2rayN"
         and (previousApp == nil or #previousApp:visibleWindows() == 0)
     local collapseOverflow
-    local activate = function()
+    local reveal = require("utils.menubar_reveal")
+    -- Like the system proxy, TUN mode carries over to the activated proxy:
+    -- it is switched off for the previous one and on for the new one. The
+    -- TUN service also follows the PAC rules of the mode, so it restarts.
+    local controller = tunOwner or tunActive and tunController() or nil
+    local leaveTUN = controller ~= nil and wrapped.tun ~= true
+        and (appname == nil or controller ~= appname or tunServiceActive())
+    local carryTUN = leaveTUN and wrapped.tun == nil and appname ~= nil
+    local tunApp = leaveTUN and not tunServiceActive()
+        and proxyAppBundleIDs[controller] and find(proxyAppBundleIDs[controller]) or nil
+    if tunApp and tunApp ~= previousApp
+        and OS_VERSION >= OS["Golden Gate"]:withMinor(2) then
+      local collapsed = reveal.collapsedSources(tunApp)
+      collapseOverflow = collapsed and reveal.expandFor(collapsed[1]) or nil
+    end
+    local run = function()
+      if leaveTUN then
+        leaveTUN = false
+        tunOwner = controller
+        disableTUN()
+      end
       local activated = wrapped.fn(mod, item) ~= false
-      local deadline = hs.timer.secondsSinceEpoch() + 10
+      if activated and wrapped.tun then
+        tunOwner, tunActivating = appname, true
+        hs.settings.set("proxy.tunOwner", appname)
+      end
+      return activated
+    end
+    local matched = false
+    local activate = function()
+      local activated = run()
+      -- Enabling TUN mode may wait for an administrator password.
+      local deadline = hs.timer.secondsSinceEpoch() + (wrapped.tun and 60 or 10)
       proxyActivationTimer = hs.timer.waitUntil(function()
-        if not activated and (appid == nil or find(appid) ~= nil) then
-          activated = wrapped.fn(mod, item) ~= false
+        -- TUN mode is switched only once, whether or not that succeeds.
+        if not activated and wrapped.tun == nil
+            and (appid == nil or find(appid) ~= nil) then
+          activated = run()
+        end
+        -- Confirm the TUN state repeatedly until it matches the switch.
+        if wrapped.tun then
+          checkTUNState()
+          return not activated or tunActive or tunServiceFailed
+              or hs.timer.secondsSinceEpoch() >= deadline
+        elseif wrapped.tun == false then
+          checkTUNState()
+          return not tunActive or hs.timer.secondsSinceEpoch() >= deadline
         end
         local enabledProxy, mode = parseProxyInfo(NetworkWatcher:proxies())
-        return activated and enabledProxy == (appname or "")
+        matched = activated and enabledProxy == (appname or "")
             and (appname == nil or mode == wrapped.title:match("%S+"))
-            or hs.timer.secondsSinceEpoch() >= deadline
+        return matched or hs.timer.secondsSinceEpoch() >= deadline
       end, function()
         proxyActivationTimer = nil
+        if wrapped.tun then
+          tunActivating = false
+          if not tunActive then activated = false end
+        end
         if restoreV2rayN then
           local app = find(appid)
           local window = app and app:mainWindow()
@@ -876,6 +1389,21 @@ local function updateProxyWrapper(wrapped, appname)
         if collapseOverflow then collapseOverflow() end
         registerProxyMenu(false)
         if not activated then hs.alert("Unable to activate " .. (appname or "proxy")) end
+        if carryTUN and matched then
+          -- Wait for the previous TUN interface to go before starting anew.
+          local tunDeadline = hs.timer.secondsSinceEpoch() + 10
+          proxyActivationTimer = hs.timer.waitUntil(function()
+            checkTUNState()
+            return not tunActive or hs.timer.secondsSinceEpoch() >= tunDeadline
+          end, function()
+            proxyActivationTimer = nil
+            updateProxyWrapper({
+              title = "TUN Mode",
+              fn = function() return enableTUN(appname) end,
+              tun = true,
+            }, appname).fn()
+          end, 0.2)
+        end
       end, 0.1)
     end
     if appid == nil then
@@ -896,10 +1424,9 @@ local function updateProxyWrapper(wrapped, appname)
     end
     -- Since macOS 27.2 the menu of an icon collapsed in overflow is unreadable;
     -- expand overflow until the operation below is done.
-    local reveal = require("utils.menubar_reveal")
     local collapsed = previousApp and OS_VERSION >= OS["Golden Gate"]:withMinor(2)
         and reveal.collapsedSources(previousApp)
-    collapseOverflow = collapsed and reveal.expandFor(collapsed[1]) or nil
+    collapseOverflow = collapsed and reveal.expandFor(collapsed[1]) or collapseOverflow
     ensureProxyAppRunning(appname)
     local deadline = hs.timer.secondsSinceEpoch() + 10
     proxyActivationTimer = hs.timer.waitUntil(function()
@@ -1018,6 +1545,58 @@ local function proxyAddressesMatch(info, addrs)
   return active
 end
 
+-- Mode of a proxy from its client's own state where it serves both modes
+-- through the same addresses
+local function proxyClientMode(appname)
+  local appid = proxyAppBundleIDs[appname]
+  if appname == "Clash Verge Rev" then
+    if find(appid) == nil then return end
+    local outboundModeMenu = clashVergeModeMenu(appid)
+    if outboundModeMenu == nil then return end
+    local ruleMode = getc(outboundModeMenu, AX.MenuItem,
+        localizedString("Rule Mode", appid))
+    local globalMode = getc(outboundModeMenu, AX.MenuItem,
+        localizedString("Global Mode", appid))
+    if ruleMode and ruleMode.AXMenuItemMarkChar == "✓" then
+      return "PAC"
+    elseif globalMode and globalMode.AXMenuItemMarkChar == "✓" then
+      return "Global"
+    end
+  elseif appname == "v2rayN" then
+    local name = v2rayNRoutingName()
+    if matchesV2rayNRoute(name, "global") then
+      return "Global"
+    elseif matchesV2rayNRoute(name, "pac") then
+      return "PAC"
+    end
+  elseif appname == "MonoCloud" then
+    if monoCloudOutboundMode("Global", true) then
+      return "Global"
+    elseif monoCloudOutboundMode("Rule", true) then
+      return "PAC"
+    end
+  else
+    return "Global"
+  end
+end
+
+-- Proxy whose client runs the active TUN mode, if it can be told
+tunController = function()
+  if tunOwner then return tunOwner end
+  -- The TUN service forwards to the proxy set as the system proxy.
+  if tunServiceActive() then
+    local enabledProxy = parseProxyInfo(NetworkWatcher:proxies(), false)
+    if enabledProxy ~= "" then return enabledProxy end
+  end
+  if find(proxyAppBundleIDs.v2rayN) and v2rayNTunEnabled() then
+    return "v2rayN"
+  end
+  local app = find(proxyAppBundleIDs.MonoCloud)
+  local enhanced = app and getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem, 1,
+      AX.Menu, 1, AX.MenuItem, "Enhanced Mode (TUN)")
+  if enhanced and enhanced.AXMenuItemMarkChar == "✓" then return "MonoCloud" end
+end
+
 parseProxyInfo = function(info, require_mode)
   if require_mode == nil then require_mode = true end
   local enabledProxy = ""
@@ -1063,40 +1642,7 @@ parseProxyInfo = function(info, require_mode)
         end
       end
       if enabledProxy ~= "" then
-        if enabledProxy == "Clash Verge Rev" and require_mode then
-          local appid = proxyAppBundleIDs[enabledProxy]
-          if find(appid) ~= nil then
-            local outboundModeMenu = clashVergeModeMenu(appid)
-            if outboundModeMenu ~= nil then
-              local ruleMode = getc(outboundModeMenu, AX.MenuItem,
-                  localizedString("Rule Mode", appid))
-              local globalMode = getc(outboundModeMenu, AX.MenuItem,
-                  localizedString("Global Mode", appid))
-              if ruleMode and ruleMode.AXMenuItemMarkChar == "✓" then
-                mode = "PAC"
-              elseif globalMode and globalMode.AXMenuItemMarkChar == "✓" then
-                mode = "Global"
-              end
-            end
-          end
-        elseif enabledProxy == "v2rayN" and require_mode then
-          local name = v2rayNRoutingName()
-          if matchesV2rayNRoute(name, "global") then
-            mode = "Global"
-          elseif matchesV2rayNRoute(name, "pac") then
-            mode = "PAC"
-          end
-        elseif enabledProxy ~= "MonoCloud" then
-          mode = "Global"
-        elseif require_mode then
-          do
-            if monoCloudOutboundMode("Global", true) then
-              mode = "Global"
-            elseif monoCloudOutboundMode("Rule", true) then
-              mode = "PAC"
-            end
-          end
-        end
+        if require_mode then mode = proxyClientMode(enabledProxy) end
         break
       end
     end
@@ -1282,10 +1828,7 @@ local function queryProxyExit(request, deadline)
   local routes = { "DIRECT" }
   local settings = NetworkWatcher:proxies()
   if settings.ProxyAutoConfigEnable == 1 then
-    local tester
-    for _, path in ipairs({ "/opt/homebrew/bin/pactester", "/usr/local/bin/pactester" }) do
-      if hs.fs.attributes(path, "mode") == "file" then tester = path; break end
-    end
+    local tester = findHomebrewExecutable("pactester")
     if not tester then return nil, "pactester_missing" end
     local status, body = curl(settings.ProxyAutoConfigURLString, "", 10)
     if status ~= 0 then return nil, status == 28 and "request_timeout" or "pac_unreachable" end
@@ -1482,6 +2025,11 @@ local function registerProxyMenuImpl(enabledProxy, mode)
   if enabledProxy == nil then
     enabledProxy, mode = parseProxyInfo(NetworkWatcher:proxies())
   end
+  -- A client's TUN mode carries traffic regardless of the system proxy.
+  local controller = tunActive and tunController()
+  if controller and controller ~= enabledProxy and proxyAppBundleIDs[controller] then
+    enabledProxy, mode = controller, proxyClientMode(controller)
+  end
   setProxyIcon(enabledProxy)
 
   proxyMenu =
@@ -1539,6 +2087,37 @@ local function registerProxyMenuImpl(enabledProxy, mode)
       checked = enabledProxy == ""
     }),
   }
+
+  local tunItem
+  -- TUN mode switched on in a client itself can also be switched off here.
+  if controller or tunOwner then
+    tunItem = updateProxyWrapper({
+      title = "TUN Mode",
+      -- Switched off as the TUN mode left behind when activating no proxy.
+      fn = function() end,
+      tun = false,
+    })
+  else
+    tunItem = updateProxyWrapper({
+      title = "TUN Mode",
+      fn = function() return enableTUN(enabledProxy) end,
+      tun = true,
+    }, enabledProxy)
+    -- TUN mode started elsewhere cannot be controlled here.
+    tunItem.disabled = tunActive or enabledProxy == ""
+        or tunOutbound(enabledProxy) == nil
+          and NetworkWatcher:proxies().ProxyAutoConfigEnable ~= 1
+  end
+  tunItem.shortcut = 't'
+  -- Marked only once detection confirms TUN mode is running.
+  tunItem.checked = tunActive
+  tinsert(proxyMenu, tunItem)
+  for _, info in ipairs(tunActive and tunInfo or {}) do
+    tinsert(proxyMenu, {
+      title = strfmt("    %s  %s", info.interface, info.address),
+      disabled = true
+    })
+  end
 
   local proxyMenuIdx = 1
   local otherProxies = {}
@@ -1637,54 +2216,6 @@ local function registerProxyMenuImpl(enabledProxy, mode)
   proxy:setMenu(proxyMenu)
 end
 
--- TUN mode detection. Finds utun interfaces with IPv4 addresses, then
--- verifies via netstat that host TCP connections are actually flowing
--- through them. This excludes idle utun interfaces (e.g. Parallels shared
--- networking) that have an IP but don't carry host internet traffic.
-local tunActive = false
-local tunInfo = nil
-local tunCheckTask
-local TUN_SHELL_CMD = [[
-  for iface in $(ifconfig 2>/dev/null | awk '/^utun[0-9]/{gsub(/:.*/,"",$1); print $1}'); do
-    addr=$(ifconfig "$iface" 2>/dev/null | awk '/inet / && $2!="127.0.0.1"{print $2}')
-    if [ -n "$addr" ]; then
-      count=$(netstat -an -p tcp 2>/dev/null | grep -c "$addr")
-      if [ "$count" -gt 0 ]; then echo "$iface $addr"; fi
-    fi
-  done
-]]
-
-local function updateTUNState(result)
-  local detected = result and result ~= ""
-  if detected then
-    tunInfo = {}
-    for iface, addr in result:gmatch("(%S+)%s+(%S+)") do
-      tinsert(tunInfo, {interface = iface, address = addr})
-    end
-    if #tunInfo == 0 then tunInfo = nil end
-  else
-    tunInfo = nil
-  end
-  if detected ~= tunActive then
-    tunActive = detected
-    return true
-  end
-  return false
-end
-
-local function checkTUNState(callback)
-  if tunCheckTask ~= nil then return end
-  local task = hs.task.new("/bin/zsh", function(exitCode, stdout)
-    tunCheckTask = nil
-    if exitCode ~= 0 then return end
-    local changed = updateTUNState(stdout)
-    if callback then callback(changed) end
-  end, { "-c", TUN_SHELL_CMD })
-  if task == nil then return end
-  tunCheckTask = task
-  if not task:start() then tunCheckTask = nil end
-end
-
 -- Register proxy menubar with retry logic on network availability
 
 registerProxyMenu = function(retry, enabledProxy, mode)
@@ -1715,26 +2246,6 @@ registerProxyMenu = function(retry, enabledProxy, mode)
     }}
     proxy:setMenu(menu)
     return true
-  elseif tunActive then
-    registerProxyMenuImpl(enabledProxy, mode)
-    forceInactiveProxyIcon()
-    if tunInfo and #tunInfo > 0 then
-      for i, info in ipairs(tunInfo) do
-        tinsert(proxyMenu, 1 + i, {
-          title = strfmt("TUN: %s (%s)", info.interface, info.address),
-          disabled = true
-        })
-      end
-    else
-      tinsert(proxyMenu, 2, { title = "TUN Mode", disabled = true })
-    end
-    for _, item in ipairs(proxyMenu) do
-      if item.fn and not (item.shortcut and item.shortcut:match("^[a-z]$")) then
-        item.disabled = true
-      end
-    end
-    proxy:setMenu(proxyMenu)
-    return true
   else
     registerProxyMenuImpl(enabledProxy, mode)
     return true
@@ -1759,7 +2270,11 @@ local function registerProxyMenuWrapper(storeObj, changedKeys)
   if Ipv4State ~= nil then
     local curNetID = Ipv4State["PrimaryService"]
     tinsert(NetworkMonitorKeys, "Setup:/Network/Service/" .. curNetID .. "/Proxies")
+    -- Setting the system proxy is pointless while TUN mode is on.
     if lastIpv4State == nil and proxySettings ~= nil then
+      updateTUNState(hs.execute(TUN_SHELL_CMD))
+    end
+    if lastIpv4State == nil and proxySettings ~= nil and not tunActive then
       for _, cfg in ipairs(proxySettings) do
         if cfg.condition == nil or executeCondition(cfg.condition) then
           for _, candidate in ipairs(cfg.candidates or {}) do
@@ -1848,6 +2363,7 @@ for appname, appid in pairs(proxyAppBundleIDs) do
           disable_proxy()
         end
       end
+      if tunOwner == appname then disableTUN() end
     end)
   end)
 end
