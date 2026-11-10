@@ -1261,6 +1261,19 @@ function localizedSystemString(sources, fallback, arg, appid)
   return result
 end
 
+-- Substitute `name` into a format string, dropping quotation marks around it
+-- (e.g. 显示“%@” -> 显示键盘快捷键) unless `quoted` is set
+local function formatName(format, name, quoted)
+  format = format:gsub('%%%[%a*%]@', '%%@')
+  for _, quotes in ipairs(quoted and {} or {
+    { '“', '”' }, { '“', '“' }, { '„', '“' }, { '「', '」' },
+    { '«', '»' }, { '»', '«' }, { '״', '״' },
+  }) do
+    format = format:gsub(quotes[1] .. '%%@' .. quotes[2], '%%@')
+  end
+  return (format:gsub('%%@', function() return name end))
+end
+
 -- "Show %@" / "Hide %@", from the Dock menus or SwiftUI
 function localizedShowHide(show, name, appid)
   return localizedSystemString({
@@ -1269,6 +1282,15 @@ function localizedShowHide(show, name, appid)
     { show and "Show %@" or "Hide %@",
       "/System/Library/Frameworks/SwiftUI.framework", "Scenes", literal = true },
   }, show and "Show %@" or "Hide %@", name, appid)
+end
+
+-- "Search %@", from Spotlight
+function localizedSearch(name, appid)
+  return formatName(localizedSystemString({
+    { "Search %@", "/System/Library/PrivateFrameworks/Spotlight.framework",
+      "Localizable", literal = true },
+    { "SEARCH IN %@", "/System/Library/CoreServices/Spotlight.app", "Localizable" },
+  }, "Search %@", nil, appid), name)
 end
 
 

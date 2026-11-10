@@ -755,6 +755,32 @@ local browserModifiers = misc["switchBrowserWindow"] and requiredModifiers(misc[
 local function navigate(mode, direction, repeated)
   engine:cycle(mode, direction, repeated, mode == 'browsers' and browserModifiers or normalModifiers)
 end
+-- Switcher messages borrowed from system localization resources,
+-- e.g. 下个窗口, 网页浏览器 > 上个窗口
+local function windowStepMessage(next)
+  return localizedSystemString({
+    { next and "VOTEventCommandRightElementCommunity"
+        or "VOTEventCommandLeftElementCommunity",
+      "/System/iOSSupport/System/Library/PrivateFrameworks/VoiceOverServices.framework",
+      "VoiceOverCommands" },
+  })
+end
+local function nextWindowMessage()
+  return windowStepMessage(true) or localizedSystemString({
+    { "Cycle Through Windows", "/System/Library/Frameworks/AppKit.framework",
+      "MenuCommands", literal = true },
+  }, 'Next Window')
+end
+local function browserWindowMessage(next)
+  local browser = localizedSystemString({
+    { "Web Browser", "/System/Library/CoreServices/CoreTypes.bundle", "InfoPlist",
+      literal = true },
+  })
+  local step = windowStepMessage(next)
+  if browser and step then return browser .. ' > ' .. step end
+  return next and 'Next Browser Window' or 'Previous Browser Window'
+end
+
 local function bindSwitcher(key, message, mode, direction)
   return bindWindowSwitch(misc[key], message, function()
     if not engine.active then navigate(mode, direction, false) end
@@ -762,7 +788,7 @@ local function bindSwitcher(key, message, mode, direction)
 end
 local minimizedLaunchTap
 local function registerWindowSwitcher()
-  generalHotkeys.next = bindSwitcher('switchWindow', 'Next Window', 'normal', 1)
+  generalHotkeys.next = bindSwitcher('switchWindow', nextWindowMessage(), 'normal', 1)
   local spec = misc["switchWindowBack"]
   if spec and not minimizedLaunchTap then
     local required = {}
@@ -796,8 +822,10 @@ if misc["switchWindow"] then
   end)
 end
 if misc["switchBrowserWindow"] then
-  browserHotkeys.next = bindSwitcher('switchBrowserWindow', 'Next Browser Window', 'browsers', 1)
-  browserHotkeys.previous = bindSwitcher('switchBrowserWindowBack', 'Previous Browser Window', 'browsers', -1)
+  browserHotkeys.next = bindSwitcher('switchBrowserWindow',
+      browserWindowMessage(true), 'browsers', 1)
+  browserHotkeys.previous = bindSwitcher('switchBrowserWindowBack',
+      browserWindowMessage(false), 'browsers', -1)
 end
 local previousShutdown = hs.shutdownCallback
 hs.shutdownCallback = function()
@@ -809,7 +837,17 @@ end
 
 -- show a dialog to specify a window title from all visible windows, use it to switch to a window
 -- fixme: full screen space will be ignored if not once focused
-bindWindowSwitch(misc["searchWindow"], 'Switch to Window',
+local windowsNoun = localizedSystemString({
+  { "Windows (Content Property Name)",
+    "/System/Library/PrivateFrameworks/ContentKit.framework", "Localizable" },
+  { "Windows", "/System/Library/ExtensionKit/Extensions/KeyboardSettings.appex",
+    "DefaultShortcutsTable", literal = true },
+})
+bindWindowSwitch(misc["searchWindow"], windowsNoun and localizedSearch(windowsNoun)
+    or localizedSystemString({
+      { "SCRWorkspace.switchWindow.title",
+        "/System/Library/PrivateFrameworks/ScreenReader.framework", "SCRWorkspace" },
+    }, 'Switch to Window'),
 function()
   local wFilter = hs.window.filter.new()
   for appid, rule in pairs(ignoredApps) do
@@ -1439,7 +1477,21 @@ local function PDFChooser()
 end
 
 -- Show a chooser for switching to a tab across browsers and PDF applications.
-bindWindowSwitch(misc["searchTab"], 'Switch to Tab',
+local searchTabMessage = localizedSystemString({
+  { "Search Tabs", "/System/Library/Frameworks/AppKit.framework", "WindowTabs",
+    literal = true },
+})
+if searchTabMessage == nil then
+  local tabs = localizedSystemString({
+    { "Tabs (plural)", "/System/Library/PrivateFrameworks/WorkflowKit.framework",
+      "Localizable" },
+  })
+  searchTabMessage = tabs and localizedSearch(tabs) or localizedSystemString({
+    { "browser_SwitchToTabIntent_1.0.0_intent_title",
+      "/System/Library/PrivateFrameworks/AppIntentSchemas.framework", "Localizable" },
+  }, 'Switch to Tab')
+end
+bindWindowSwitch(misc["searchTab"], searchTabMessage,
 function()
   if cancelTabSearch then cancelTabSearch() end
   local app = hs.application.frontmostApplication()

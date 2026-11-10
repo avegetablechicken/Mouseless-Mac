@@ -733,6 +733,7 @@ for _, name in ipairs({
   "localizedString",
   "localizedSystemString",
   "localizedShowHide",
+  "localizedSearch",
   "delocalizedString",
   "localizeCommonMenuItemTitles",
   "delocalizedMenuItem",
