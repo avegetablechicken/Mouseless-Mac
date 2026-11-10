@@ -1154,6 +1154,7 @@ local function generateHtml(validOnly, showCustom, showApp, evFlags, reload)
       <!DOCTYPE html>
       <html>
       <head>
+      <meta name="color-scheme" content="light dark">
       <style type="text/css">
           *{margin:0; padding:0;}
           html, body{
@@ -1260,6 +1261,19 @@ local function generateHtml(validOnly, showCustom, showApp, evFlags, reload)
             width: 300px;
             line-height: 1.3;
             background: lightgray;
+          }
+          @media (prefers-color-scheme: dark) {
+            html, body, header, footer{
+              background-color: #1e1e1e;
+              color: #ddd;
+            }
+            a{ color: #ddd; }
+            header hr{
+              border-top: 1px solid rgba(0, 0, 0, 0.5);
+              border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            .typetext{ background: #4a4a4a; }
+            .menutext{ background: #333; }
           }
       </style>
       </head>
