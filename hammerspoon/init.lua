@@ -21,6 +21,11 @@ hs.chooser.new = function(...)
   choosers[chooser] = true
   return chooser
 end
+-- hs.chooser raises its window level only after focusing the query field;
+-- refocus at the final level so input method candidates appear above it.
+local chooserMT = hs.getObjectMetatable("hs.chooser")
+local showChooser = chooserMT.show
+chooserMT.show = function(self, ...) showChooser(self, ...); return showChooser(self, ...) end
 hs.shutdownCallback = function()
   for chooser in pairs(choosers) do
     if getmetatable(chooser) then chooser:hide(); chooser:delete() end
