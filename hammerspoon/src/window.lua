@@ -1018,6 +1018,27 @@ local function tabFaviconLookup(browser)
   return lookup, close
 end
 
+-- Select a window by title from the app's Window menu.
+local function selectWindowMenuItem(app, windowMenuItem, title)
+  -- The Window menu shortens long window titles to `prefix…suffix`.
+  local menu = getc(toappui(app), AX.MenuBar, 1, AX.MenuBarItem, windowMenuItem, AX.Menu, 1)
+  local item = menu and getc(menu, AX.MenuItem, title) == nil
+      and tfind(getc(menu, AX.MenuItem), function(i)
+    local prefix, suffix = (i.AXTitle or ""):match("^(.-)…(.*)$")
+    return prefix ~= nil and title:sub(1, #prefix) == prefix
+        and title:sub(#title - #suffix + 1) == suffix
+  end)
+  if item then title = item.AXTitle end
+  hs.timer.doAfter(0.1, function()
+    if menuBarVisible() then
+      app:selectMenuItem{ windowMenuItem, title }
+    else
+      hs.eventtap.keyStroke('fn⌃', 'F2')
+      app:selectMenuItem{ windowMenuItem, title }
+    end
+  end)
+end
+
 -- Browser tab chooser.
 --
 -- Presents a unified chooser for switching between tabs across
@@ -1075,14 +1096,7 @@ local function browserChooser()
     app:activate()
     local windowMenuItem = localizedMenuBarItem('Window', app:bundleID())
     if windowMenuItem == nil then return end
-    hs.timer.doAfter(0.1, function()
-      if menuBarVisible() then
-        app:selectMenuItem{ windowMenuItem, result }
-      else
-        hs.eventtap.keyStroke('fn⌃', 'F2')
-        app:selectMenuItem{ windowMenuItem, result }
-      end
-    end)
+    selectWindowMenuItem(app, windowMenuItem, result)
   end)
   chooser:searchSubText(true)
   chooser:placeholderText("Loading tabs…")
@@ -1462,14 +1476,7 @@ local function PDFChooser()
       app:activate()
       local windowMenuItem = localizedMenuBarItem('Window', app:bundleID())
       if windowMenuItem == nil then return end
-      hs.timer.doAfter(0.1, function()
-        if menuBarVisible() then
-          app:selectMenuItem{ windowMenuItem, result }
-        else
-          hs.eventtap.keyStroke('fn⌃', 'F2')
-          app:selectMenuItem{ windowMenuItem, result }
-        end
-      end)
+      selectWindowMenuItem(app, windowMenuItem, result)
     end
   end)
   chooser:choices(choices)
