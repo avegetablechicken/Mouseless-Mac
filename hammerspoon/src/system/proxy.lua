@@ -1829,7 +1829,7 @@ local proxies = localizedSystemString({
   { "proxies", "/System/Library/ExtensionKit/Extensions/Network.appex", "Localizable" },
 })
 local proxyHotkey = bindHotkeySpec(menubarHK["showProxyMenu"],
-    proxies and localizedShowHide(true, proxies) or "Show Proxy Menu",
+    rememberEnglishMessage(proxies and localizedShowHide(true, proxies), "Show Proxy Menu"),
 function()
   -- Items hidden by a menu bar manager are revealed by popupRightMenuBarItem.
   popupRightMenuBarItem(proxy)

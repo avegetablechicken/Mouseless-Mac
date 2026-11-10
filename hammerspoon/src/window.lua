@@ -766,10 +766,10 @@ local function windowStepMessage(next)
   })
 end
 local function nextWindowMessage()
-  return windowStepMessage(true) or localizedSystemString({
+  return rememberEnglishMessage(windowStepMessage(true) or localizedSystemString({
     { "Cycle Through Windows", "/System/Library/Frameworks/AppKit.framework",
       "MenuCommands", literal = true },
-  }, 'Next Window')
+  }), 'Next Window')
 end
 local function browserWindowMessage(next)
   local browser = localizedSystemString({
@@ -777,8 +777,8 @@ local function browserWindowMessage(next)
       literal = true },
   })
   local step = windowStepMessage(next)
-  if browser and step then return browser .. ' > ' .. step end
-  return next and 'Next Browser Window' or 'Previous Browser Window'
+  return rememberEnglishMessage(browser and step and browser .. ' > ' .. step,
+      next and 'Next Browser Window' or 'Previous Browser Window')
 end
 
 local function bindSwitcher(key, message, mode, direction)
@@ -843,11 +843,11 @@ local windowsNoun = localizedSystemString({
   { "Windows", "/System/Library/ExtensionKit/Extensions/KeyboardSettings.appex",
     "DefaultShortcutsTable", literal = true },
 })
-bindWindowSwitch(misc["searchWindow"], windowsNoun and localizedSearch(windowsNoun)
-    or localizedSystemString({
+bindWindowSwitch(misc["searchWindow"], rememberEnglishMessage(
+    windowsNoun and localizedSearch(windowsNoun) or localizedSystemString({
       { "SCRWorkspace.switchWindow.title",
         "/System/Library/PrivateFrameworks/ScreenReader.framework", "SCRWorkspace" },
-    }, 'Switch to Window'),
+    }), 'Switch to Window'),
 function()
   local wFilter = hs.window.filter.new()
   for appid, rule in pairs(ignoredApps) do
@@ -1498,7 +1498,7 @@ if searchTabMessage == nil then
       "/System/Library/PrivateFrameworks/AppIntentSchemas.framework", "Localizable" },
   }, 'Switch to Tab')
 end
-bindWindowSwitch(misc["searchTab"], searchTabMessage,
+bindWindowSwitch(misc["searchTab"], rememberEnglishMessage(searchTabMessage, 'Switch to Tab'),
 function()
   if cancelTabSearch then cancelTabSearch() end
   local app = hs.application.frontmostApplication()

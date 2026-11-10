@@ -734,6 +734,8 @@ for _, name in ipairs({
   "localizedSystemString",
   "localizedShowHide",
   "localizedSearch",
+  "rememberEnglishMessage",
+  "englishMessageOf",
   "delocalizedString",
   "localizeCommonMenuItemTitles",
   "delocalizedMenuItem",

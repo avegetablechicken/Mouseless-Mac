@@ -527,11 +527,11 @@ local statusBar = localizedSystemString({
   { "com.apple.systemuiserver.friendlyName",
     "/System/Library/PrivateFrameworks/ScreenReader.framework", "SCRApplication" },
 })
-local searchMenuBarMessage = statusBar and localizedSystemString({
+local searchMenuBarMessage = rememberEnglishMessage(statusBar and localizedSystemString({
   { "Search %@", "/System/Library/PrivateFrameworks/Spotlight.framework",
     "Localizable", literal = true },
   { "SEARCH IN %@", "/System/Library/CoreServices/Spotlight.app", "Localizable" },
-}, "Search %@", statusBar) or "Search Menu Bar"
+}, "Search %@", statusBar), "Search Menu Bar")
 registerWithoutMenuBarManagers(misc.searchMenuBar, searchMenuBarMessage,
                                registerSearchMenuBar)
 
@@ -658,13 +658,13 @@ local spec = (KeybindingConfigs.hotkeys.global or {}).moveFocusToStatusMenus
 if spec then
   -- Borrow the wording of the VoiceOver command or, where it is missing,
   -- of the shortcut in System Settings > Keyboard
-  local message = localizedSystemString({
+  local message = rememberEnglishMessage(localizedSystemString({
     { "SCRWorkspace.menuExtras.title",
       "/System/Library/PrivateFrameworks/ScreenReader.framework", "SCRWorkspace" },
     { "Move focus to status menus",
       "/System/Library/ExtensionKit/Extensions/KeyboardSettings.appex",
       "DefaultShortcutsTable" },
-  }, "Move Focus to Status Menus")
+  }), "Move Focus to Status Menus")
   local hotkey = bindHotkeySpec(spec, message, moveFocusToStatusMenus)
   if hotkey then hotkey.kind = HK.MENUBAR end
 end
@@ -929,8 +929,8 @@ mode:bind({}, "down", function()
 end)
 
 registerWithoutMenuBarManagers(misc.showHiddenStatusItems,
-    localizedSystemString({
+    rememberEnglishMessage(localizedSystemString({
       { "menuBar.showOverflowItemsAccessibilityLabel",
         "/System/Library/CoreServices/MenuBarAgent.app", "MenuBarCore" },
-    }, "Show Hidden Status Items"), showHiddenStatusItems,
+    }), "Show Hidden Status Items"), showHiddenStatusItems,
     function() if hiddenBar then hiddenMode:exit() end end)

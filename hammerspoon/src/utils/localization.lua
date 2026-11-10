@@ -1261,6 +1261,24 @@ function localizedSystemString(sources, fallback, arg, appid)
   return result
 end
 
+-- English messages behind localized hotkey messages, so that hotkeys can also
+-- be searched by their English messages
+local englishMessages = {}
+
+-- Remember `english` as the English version of the `localized` message;
+-- returns `localized`, or `english` if there is no localized message
+function rememberEnglishMessage(localized, english)
+  if localized ~= nil and english ~= nil and localized ~= english then
+    englishMessages[localized] = english
+  end
+  return localized or english
+end
+
+-- The English version of a localized hotkey message, or nil
+function englishMessageOf(localized)
+  return englishMessages[localized]
+end
+
 -- Substitute `name` into a format string, dropping quotation marks around it
 -- (e.g. 显示“%@” -> 显示键盘快捷键) unless `quoted` is set
 local function formatName(format, name, quoted)

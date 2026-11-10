@@ -1789,14 +1789,18 @@ function()
         goto continue
       end
     end
+    local subText = idx
+        .. (msg and " -- " .. msg or "")
+        .. (submsg and " > " .. submsg or "")
+        .. (entry.source == HK_SOURCE.APP and " (built-in)" or "")
+        .. (entry.valid and "" or " [DISABLED contextually]")
     tinsert(choices,
         {
           text = actualMsg,
-          subText = idx
-              .. (msg and " -- " .. msg or "")
-              .. (submsg and " > " .. submsg or "")
-              .. (entry.source == HK_SOURCE.APP and " (built-in)" or "")
-              .. (entry.valid and "" or " [DISABLED contextually]"),
+          subText = subText,
+          -- also match the English version of a localized message
+          searchText = (actualMsg .. "\n" .. subText .. "\n"
+              .. (englishMessageOf(actualMsg) or "")):lower(),
           image = image,
           mods = mods,
           key = key,
@@ -1919,8 +1923,21 @@ function()
     end
     -- End of chooser execution.
   end)
-  chooser:searchSubText(true)
-  chooser:choices(choices)
+  -- Filter by the query ourselves, so that English messages of localized
+  -- hotkeys also match. `setChoices` keeps the choices filtered by modifiers.
+  local shownChoices, query = choices, ""
+  local function setChoices(list)
+    shownChoices = list
+    if query == "" then chooser:choices(list) return end
+    chooser:choices(tifilter(list, function(choice)
+      return choice.searchText:find(query, 1, true) ~= nil
+    end))
+  end
+  chooser:queryChangedCallback(function(q)
+    query = q:lower()
+    setChoices(shownChoices)
+  end)
+  setChoices(choices)
 
   local hkKeybindingsLastModifier = {}
   local firstCmd, secondCmd, firstCmdTime = false, false, 0
@@ -1967,7 +1984,7 @@ function()
         cnt = cnt + 1
       end
       if secondCmd then
-        chooser:choices(choices)
+        setChoices(choices)
         firstCmd, secondCmd, firstCmdTime = false, false, 0
       end
       if cnt == 1 and evFlags.cmd == true then
@@ -1980,7 +1997,7 @@ function()
                 or (choice.modal == HK_MODAL.HYPER and choice.key == '⌘')
                 or (choice.modal == HK_MODAL.DOUBLE_TAP and choice.key == '⌘⌘')
           end)
-          chooser:choices(filterd)
+          setChoices(filterd)
         end
       elseif cnt > 0 then
         local filterd = tifilter(choices, function(choice)
@@ -2008,9 +2025,9 @@ function()
           end
           return true
         end)
-        chooser:choices(filterd)
+        setChoices(filterd)
       else
-        chooser:choices(choices)
+        setChoices(choices)
       end
       hkKeybindingsLastModifier = evFlags
     end
