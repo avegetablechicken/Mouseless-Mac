@@ -1551,7 +1551,8 @@ local function bindStageManagerWindow(spec, index)
       for _, kind in ipairs({ event.types.leftMouseDown, event.types.leftMouseUp }) do
         event.newMouseEvent(kind, point, {}):setProperty(event.properties.mouseEventClickState, 1):post()
       end
-      hs.mouse.absolutePosition(mousePosition)
+      -- Restore the pointer only after the click has been handled.
+      hs.timer.doAfter(0.1, function() hs.mouse.absolutePosition(mousePosition) end)
     end
   end
   local locApp = localizedString("Stage Manager", "com.apple.controlcenter",
