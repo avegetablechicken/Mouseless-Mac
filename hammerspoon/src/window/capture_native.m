@@ -250,16 +250,46 @@ static int poll(lua_State *L) {
 // Every window the WindowServer still owns, including other Spaces, minimized
 // windows and hidden applications. Native code avoids a JXA context per query:
 // each one reserves JIT memory that is never returned until Hammerspoon crashes.
+// Every WindowServer window ID, and in a second table the owner PID of each
+// normal (layer 0) window, 0 for other layers. Only windows not seen before are
+// described: describing all of them took 60-130 ms with thousands of windows.
+static NSDictionary<NSNumber *, NSNumber *> *windowOwners;
 static int windowIDs(lua_State *L) {
-    NSArray *windows = CFBridgingRelease(CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID));
-    if (!windows) return 0;
-    lua_createtable(L, (int)windows.count, 0);
-    int index = 0;
-    for (NSDictionary *info in windows) {
-        lua_pushinteger(L, [info[(__bridge NSString *)kCGWindowNumber] longLongValue]);
-        lua_rawseti(L, -2, ++index);
+    CFArrayRef ids = CGWindowListCreate(kCGWindowListOptionAll, kCGNullWindowID);
+    if (!ids) return 0;
+    CFIndex count = CFArrayGetCount(ids);
+    NSMutableDictionary<NSNumber *, NSNumber *> *owners = [NSMutableDictionary dictionaryWithCapacity:count];
+    const void **unknown = malloc(sizeof(void *) * (count ? count : 1));
+    CFIndex unknownCount = 0;
+    for (CFIndex i = 0; i < count; i++) {
+        const void *wid = CFArrayGetValueAtIndex(ids, i);
+        NSNumber *key = @((CGWindowID)(uintptr_t)wid);
+        NSNumber *owner = windowOwners[key];
+        if (owner) owners[key] = owner; else unknown[unknownCount++] = wid;
     }
-    return 1;
+    if (unknownCount > 0) {
+        CFArrayRef query = CFArrayCreate(NULL, unknown, unknownCount, NULL);
+        NSArray *descriptions = CFBridgingRelease(CGWindowListCreateDescriptionFromArray(query));
+        CFRelease(query);
+        for (NSDictionary *info in descriptions) {
+            BOOL normal = [info[(__bridge NSString *)kCGWindowLayer] intValue] == 0;
+            owners[info[(__bridge NSString *)kCGWindowNumber]] =
+                normal ? info[(__bridge NSString *)kCGWindowOwnerPID] : @0;
+        }
+    }
+    free(unknown);
+    windowOwners = owners;
+    lua_createtable(L, (int)count, 0);
+    lua_createtable(L, (int)count, 0);
+    for (CFIndex i = 0; i < count; i++) {
+        CGWindowID wid = (CGWindowID)(uintptr_t)CFArrayGetValueAtIndex(ids, i);
+        lua_pushinteger(L, wid);
+        lua_rawseti(L, -3, i + 1);
+        lua_pushinteger(L, [owners[@(wid)] longLongValue]);
+        lua_rawseti(L, -2, i + 1);
+    }
+    CFRelease(ids);
+    return 2;
 }
 
 // The low and high 32 bits of a window's WindowServer tags; nothing on failure.

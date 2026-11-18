@@ -105,9 +105,11 @@ local now, snapshot, axReads = 100, {}, 0
 h.timer.secondsSinceEpoch=function() return now end
 cap.windowIDs=function()
   if snapshot==nil then return nil end
-  local ids={}
-  for _, info in ipairs(snapshot) do ids[#ids+1]=info.kCGWindowNumber end
-  return ids
+  local ids, owners={}, {}
+  for _, info in ipairs(snapshot) do
+    ids[#ids+1]=info.kCGWindowNumber; owners[#owners+1]=info.kCGWindowOwnerPID or 0
+  end
+  return ids, owners
 end
 h.axuielement={windowElement=function(w)
   axReads=axReads+1
@@ -176,14 +178,20 @@ local trackedApp={app=terminal,getCurrentSpaceAppWindows=function()
   if #windows==2 then windows[#windows+1]=current end
 end}
 filter.windows={[{app=trackedApp,window=inactive}]=true}
-snapshot={{kCGWindowNumber=61},{kCGWindowNumber=62}}
+snapshot={{kCGWindowNumber=61,kCGWindowOwnerPID=3},{kCGWindowNumber=62,kCGWindowOwnerPID=3}}
 e:rebuild(); assert(#e.lists.normal==2, 'fixture must start with a missed tab')
 e:rebuild(true)
 assert(discoveries==1 and #e.lists.normal==3 and e.records[60] and e.records[61] and e.records[62],
   'rescan must add the current tab without dropping the inactive tab')
 e:rebuild(true)
 assert(#e.lists.normal==3, 'repeated discovery must not duplicate tabs')
+assert(discoveries==1, 'an unchanged WindowServer list must not rescan any application')
+snapshot[#snapshot+1]={kCGWindowNumber=63,kCGWindowOwnerPID=3}
+for _=1,5 do e:rebuild(true) end
+assert(discoveries==4, 'a window that never becomes trackable must be retried at most three times')
+snapshot[#snapshot]=nil
 print('PASS: missed Terminal tab discovery preserves inactive tabs without duplicates')
+print('PASS: only owners of untracked WindowServer windows are rescanned, at most three times each')
 
 -- window.filter can retain a destroyed entry whose window object is gone; its
 -- hole in getWindows used to hide every window focused before it.

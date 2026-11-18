@@ -11,7 +11,7 @@ function M.new(options, runtime)
   local h = runtime or hs
   local self = setmetatable({ h = h, options = options, records = {}, lists = {},
     icons = {}, serial = 0, active = false, mode = nil, selected = 0,
-    session = {}, metrics = {}, captureErrors = 0, ended = {}, missing = {} }, Engine)
+    session = {}, metrics = {}, captureErrors = 0, ended = {}, missing = {}, untracked = {} }, Engine)
   self.capture = options.capture or require('window.capture').new(h)
   self.canvas = h.canvas.new({x = 0, y = 0, w = 1, h = 1})
       :level(h.canvas.windowLevels.overlay):behavior({ 'canJoinAllSpaces', 'fullScreenAuxiliary' })
@@ -174,18 +174,30 @@ function Engine:rebuild(reconcile)
   if reconcile then
     -- `hs.window.list` only reports on-screen windows, which sent every window on
     -- another Space, minimized or hidden through AX checks on each refresh.
-    local ids = call(self.capture.windowIDs)
-    if type(ids) == 'table' then
+    local ok, ids, owners = pcall(self.capture.windowIDs)
+    if ok and type(ids) == 'table' then
       live, now = {}, self.h.timer.secondsSinceEpoch()
       for _, id in ipairs(ids) do live[id] = true end
-      -- Rescan each tracked application for windows whose creation event was missed.
-      local refreshed = {}
+      -- A window whose creation notification was missed still appears in the
+      -- WindowServer list. Rescan only the owner of a normal window this
+      -- inventory lacks, at most three times per window, instead of asking every
+      -- application each time: one slow app used to stall input for seconds.
+      local apps = {}
       for window in pairs(self.filter.windows or {}) do
-        if not refreshed[window.app] then
-          refreshed[window.app] = true
-          window.app:getCurrentSpaceAppWindows()
+        local pid = window.app.pid or call(function() return window.app.app:pid() end)
+        if pid then apps[pid] = window.app end
+      end
+      local untracked, rescan = {}, {}
+      for i, id in ipairs(ids) do
+        local app = owners and apps[owners[i]]
+        if app and not self.records[id] then
+          local attempts = self.untracked[id] or 0
+          if attempts < 3 then rescan[app], attempts = true, attempts + 1 end
+          untracked[id] = attempts
         end
       end
+      self.untracked = untracked
+      for app in pairs(rescan) do app:getCurrentSpaceAppWindows() end
     end
   end
   local lists = { normal = {}, minimized = {}, browsers = {} }
