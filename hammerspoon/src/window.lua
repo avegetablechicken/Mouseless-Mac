@@ -787,13 +787,16 @@ local function bindSwitcher(key, message, mode, direction)
   end, nil, nil, {fn=enabledByWindowSwitcherFunc, or_=true})
 end
 local minimizedLaunchTap
+local keytap = require('modal.keytap')
 local function registerWindowSwitcher()
   generalHotkeys.next = bindSwitcher('switchWindow', nextWindowMessage(), 'normal', 1)
   local spec = misc["switchWindowBack"]
   if spec and not minimizedLaunchTap then
     local required = {}
     for _, modifier in ipairs(requiredModifiers(spec)) do required[modifier] = true end
-    minimizedLaunchTap = hs.eventtap.new({hs.eventtap.event.types.keyDown}, function(event)
+    -- Only this key waits for the callback; other keys pass without Lua.
+    minimizedLaunchTap = keytap.new({decide = {hs.eventtap.event.types.keyDown},
+        keys = {{requiredModifiers(spec), spec.key}}}, function(event)
       if engine.active or FLAGS["SUSPEND"] then return false end
       if event:getKeyCode() ~= hs.keycodes.map[spec.key:lower()] then return false end
       if event:getProperty(hs.eventtap.event.properties.keyboardEventAutorepeat) == 1 then return false end
@@ -801,7 +804,7 @@ local function registerWindowSwitcher()
       for _, modifier in ipairs({'alt', 'ctrl', 'cmd', 'shift', 'fn'}) do
         if (flags[modifier] == true) ~= (required[modifier] == true) then return false end
       end
-      navigate('minimized', 1, false)
+      keytap.defer(navigate, 'minimized', 1, false)
       return true
     end)
   end

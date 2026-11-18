@@ -78,9 +78,11 @@ local pasteboardKeyDown = false
 local pasteboardKeyUp = false
 local pasteboardBuffer = nil
 local prependPasteboardTimer
-PrependPasteboardTapper = hs.eventtap.new(
-{ hs.eventtap.event.types.keyDown, hs.eventtap.event.types.keyUp },
-function(ev)
+-- Only Cmd+C waits for this callback; other keys pass without Lua.
+PrependPasteboardTapper = require("modal.keytap").new({
+  decide = { hs.eventtap.event.types.keyDown, hs.eventtap.event.types.keyUp },
+  keys = { { { Mod.Cmd.Short }, "c" } },
+}, function(ev)
   if ev:getKeyCode() ~= hs.keycodes.map["c"]
       or not ev:getFlags():containExactly{ Mod.Cmd.Short } then
     return false

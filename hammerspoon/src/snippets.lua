@@ -71,8 +71,20 @@ function M.start(shared, overrides)
     end
   end
 
-  return hs.eventtap.new({types.keyDown, types.leftMouseDown,
-      types.rightMouseDown, types.otherMouseDown}, function(ev)
+  -- A click resets the buffer. Count clicks with the native listen-only tap so
+  -- that they never wait for this callback; observe them here only without it.
+  local loaded, keystate = pcall(require, "modal.keystate")
+  keystate = loaded and keystate or nil
+  local mouseDowns = keystate and keystate.mouseDownCount()
+  local eventTypes = {types.keyDown}
+  if mouseDowns == nil then
+    eventTypes = {types.keyDown, types.leftMouseDown, types.rightMouseDown, types.otherMouseDown}
+  end
+
+  -- The native tap reports keys after they were delivered, so typing never
+  -- waits for this callback.
+  local tap, native
+  tap, native = require("modal.keytap").new({listen = eventTypes}, function(ev, keyDowns)
     if ev:getProperty(properties.eventSourceUserData) == marker then
       return false
     end
@@ -80,8 +92,15 @@ function M.start(shared, overrides)
       buffer = ""
       return false
     end
+    if mouseDowns ~= nil then
+      local count = keystate.mouseDownCount()
+      if count ~= mouseDowns then mouseDowns, buffer = count, "" end
+    end
     local flags = ev:getFlags()
-    local focus = hs.uielement.focusedElement()
+    -- The frontmost application, not the focused element: asking the app over
+    -- Accessibility here held every keystroke until that app answered.
+    local app = hs.application.frontmostApplication()
+    local focus = app and app:pid()
     local source = hs.keycodes.currentSourceID()
     if focus ~= previousFocus or source ~= previousSource then buffer = "" end
     previousFocus, previousSource = focus, source
@@ -108,7 +127,17 @@ function M.start(shared, overrides)
 
     local events = {}
     -- The last physical key is suppressed, so only erase earlier characters.
-    for _ = 1, #candidate - 1 do keyEvents(events, "delete") end
+    -- A native tap reported it after it was delivered: erase it too, unless
+    -- more keys followed, which the replacement would be mixed with.
+    local erase = #candidate - 1
+    if native then
+      if keyDowns ~= keystate.keyDownCount() then
+        buffer = ""
+        return false
+      end
+      erase = #candidate
+    end
+    for _ = 1, erase do keyEvents(events, "delete") end
     for _, code in utf8.codes(replacement) do
       if code == 10 or code == 13 then
         keyEvents(events, "return")
@@ -120,8 +149,13 @@ function M.start(shared, overrides)
     end
     buffer = ""
     if expansionSound then expansionSound:play() end
+    if native then
+      for _, e in ipairs(events) do e:post() end
+      return false
+    end
     return true, events
-  end):start()
+  end)
+  return tap:start()
 end
 
 return M

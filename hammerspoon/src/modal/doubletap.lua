@@ -1,7 +1,7 @@
 local tinsert  = table.insert
 local tcontain = hs.fnutils.contains
-local timer    = require("hs.timer")
 local eventtap = require("hs.eventtap")
+local keytap   = require("modal.keytap")
 local events   = eventtap.event.types
 
 local log = hs.logger.new('hotkey', 'info')
@@ -99,9 +99,12 @@ function module:_new(mods, key, msg, func)
   if msg then self.msg = self.idx .. ": " .. msg end
 
   -- the actual workhorse
-  self.eventWatcher = eventtap.new({ events.flagsChanged, events.keyDown, events.keyUp }, function(ev)
+  -- Events are reported after they were delivered, possibly late, so time
+  -- them by when they happened.
+  self.eventWatcher = keytap.new({ listen = { events.flagsChanged, events.keyDown, events.keyUp } }, function(ev)
+    local now = ev:timestamp() / 1e9
     -- if it's been too long; previous state doesn't matter
-    if (timer.secondsSinceEpoch() - self.timeFirstKeyDown) > self.timeFrame then
+    if (now - self.timeFirstKeyDown) > self.timeFrame then
       self.timeFirstKeyDown, self.firstDown, self.secondDown = 0, false, false
     end
 
@@ -112,7 +115,7 @@ function module:_new(mods, key, msg, func)
           self.timeFirstKeyDown, self.firstDown, self.secondDown = 0, false, false
         elseif self:_onlyTargetKey(ev) and not self.firstDown then -- **KEY** down and it's a first
           self.firstDown = true
-          self.timeFirstKeyDown = timer.secondsSinceEpoch()
+          self.timeFirstKeyDown = now
         elseif self:_onlyTargetKey(ev) and self.firstDown then -- **KEY** down and it's the second
           self.secondDown = true
         elseif not noFlags(ev) then                            -- otherwise reset and start over
@@ -127,7 +130,7 @@ function module:_new(mods, key, msg, func)
       else
         if ev:getType() == events.keyDown and self:_onlyTargetKey(ev) and not self.firstDown then -- **KEY** down and it's a first
           self.firstDown = true
-          self.timeFirstKeyDown = timer.secondsSinceEpoch()
+          self.timeFirstKeyDown = now
         elseif ev:getType() == events.keyDown and self:_onlyTargetKey(ev) and self.firstDown then -- **KEY** down and it's the second
           self.secondDown = true
         elseif ev:getType() == events.keyUp and self:_onlyTargetKey(ev) and self.firstDown and self.secondDown then

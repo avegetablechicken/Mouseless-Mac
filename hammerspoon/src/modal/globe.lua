@@ -1,6 +1,7 @@
 local module = {}
 
 local eventtap  = require("hs.eventtap")
+local keytap    = require("modal.keytap")
 local event     = eventtap.event
 local log     	= hs.logger.new('hotkey', 'info')
 
@@ -54,22 +55,27 @@ local keyHandler = function(e)
     end
     local callback = get(module.bindings, hotkey, eventType)
     if callback then
-      callback()
+      keytap.defer(callback)
       return true, {}
     end
   end
   return false
 end
-local keyWatcher = eventtap.new({ event.types.keyDown, event.types.keyUp }, keyHandler)
-
-local fnHandler = function(e)
-  if e:getFlags().fn then
-    if not keyWatcher:isEnabled() then keyWatcher:start() end
-  elseif keyWatcher:isEnabled() then
-    keyWatcher:stop()
+-- Keys wait for keyHandler only while fn is held: the native tap tracks fn
+-- itself; otherwise a flagsChanged tap starts the key tap while fn is held.
+local keyWatcher, native = keytap.new({ decide = { event.types.keyDown, event.types.keyUp },
+                                        whileFn = true }, keyHandler)
+local fnWatcher = keyWatcher
+if not native then
+  local fnHandler = function(e)
+    if e:getFlags().fn then
+      if not keyWatcher:isEnabled() then keyWatcher:start() end
+    elseif keyWatcher:isEnabled() then
+      keyWatcher:stop()
+    end
   end
+  fnWatcher = eventtap.new({ event.types.flagsChanged }, fnHandler)
 end
-local fnWatcher = eventtap.new({ event.types.flagsChanged }, fnHandler)
 
 
 local hotkey = {}
