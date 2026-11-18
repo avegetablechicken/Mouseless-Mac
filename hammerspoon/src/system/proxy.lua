@@ -840,12 +840,22 @@ rm -f "$copy" %s.alive
 
   local command = strfmt("(umask 077; cp %s %s.sh && /bin/sh %s.sh) > /dev/null 2>&1 &",
       shellQuote(scriptPath), TUN_SERVICE_ROOT, TUN_SERVICE_ROOT)
-  -- Run asynchronously so the password dialog does not block Hammerspoon.
-  local task = hs.task.new("/usr/bin/osascript", function(exitCode)
-    if exitCode ~= 0 then tunServiceFailed = true end
-  end, { "-e", 'do shell script "' .. command:gsub('\\', '\\\\'):gsub('"', '\\"')
-      .. '" with administrator privileges' })
-  if task == nil or not task:start() then return false end
+  -- Ask for the password only in the system's authorization dialog.
+  local function authorizeWithPassword()
+    local task = hs.task.new("/usr/bin/osascript", function(exitCode)
+      if exitCode ~= 0 then tunServiceFailed = true end
+    end, { "-e", 'do shell script "' .. command:gsub('\\', '\\\\'):gsub('"', '\\"')
+        .. '" with prompt "Hammerspoon needs administrator privileges to start TUN mode."'
+        .. ' with administrator privileges' })
+    if task == nil or not task:start() then tunServiceFailed = true end
+  end
+  -- sudo tries Touch ID where PAM enables pam_tid. Without a terminal it
+  -- cannot ask for a password, so failing or cancelling Touch ID falls back
+  -- to the system dialog. Run asynchronously so neither blocks Hammerspoon.
+  local task = hs.task.new("/usr/bin/sudo", function(exitCode)
+    if exitCode ~= 0 then authorizeWithPassword() end
+  end, { "--", "/bin/sh", "-c", command })
+  if task == nil or not task:start() then authorizeWithPassword() end
   return true
 end
 
