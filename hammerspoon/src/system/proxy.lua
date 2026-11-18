@@ -405,6 +405,13 @@ local function monoCloudOutboundMode(pattern, checked)
   end
 end
 
+-- MonoCloud's saved settings, readable while its menu bar item is collapsed
+-- in overflow
+local function monoCloudSettings()
+  local path = os.getenv("HOME") .. "/Library/Application Support/MonoProxy/config.json"
+  return exists(path) and hs.json.read(path) or nil
+end
+
 -- Toggle connect/disconnect VPN using `MonoCloud`
 local function toggleMonoCloud(enable, alert)
   local appid = proxyAppBundleIDs.MonoCloud
@@ -1597,6 +1604,16 @@ local function proxyClientMode(appname)
       return "PAC"
     end
   elseif appname == "MonoCloud" then
+    -- Saved outbound modes: 0 rule-based, 1 lite, 2 global, 3 advanced
+    -- rule-based. Rule-based modes serve as PAC mode.
+    local outbound = get(monoCloudSettings(), "active_outbound_mode")
+    if outbound == 2 then
+      return "Global"
+    elseif outbound == 0 or outbound == 3 then
+      return "PAC"
+    elseif outbound == 1 then
+      return
+    end
     if monoCloudOutboundMode("Global", true) then
       return "Global"
     elseif monoCloudOutboundMode("Rule", true) then
@@ -1619,9 +1636,13 @@ tunController = function()
     return "v2rayN"
   end
   local app = find(proxyAppBundleIDs.MonoCloud)
-  local enhanced = app and getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem, 1,
-      AX.Menu, 1, AX.MenuItem, "Enhanced Mode (TUN)")
-  if enhanced and enhanced.AXMenuItemMarkChar == "✓" then return "MonoCloud" end
+  local enhanced = app and get(monoCloudSettings(), "tun_actived")
+  if enhanced == nil and app then
+    local item = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem, 1,
+        AX.Menu, 1, AX.MenuItem, "Enhanced Mode (TUN)")
+    enhanced = item and item.AXMenuItemMarkChar == "✓"
+  end
+  if enhanced then return "MonoCloud" end
 end
 
 parseProxyInfo = function(info, require_mode)
