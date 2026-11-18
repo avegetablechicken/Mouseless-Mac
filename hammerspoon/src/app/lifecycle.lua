@@ -300,6 +300,8 @@ end
 -- ## application callbacks
 
 local launchTimer
+-- Only an application still between launching and launched skips registration.
+local launchingPids = {}
 local launchWaitInterval = 0.2
 local launchWaitTimeout = 10
 
@@ -318,10 +320,6 @@ local function hyperModeIsActive()
     if modal:isEnabled() then return true end
   end
   return false
-end
-
-local function isSameApplication(a, b)
-  return a ~= nil and b ~= nil and (a == b or a:pid() == b:pid())
 end
 
 local function runDeferredHyperActions()
@@ -362,13 +360,9 @@ function App_applicationCallback(appname, eventType, app)
       FLAGS["APP_LAUNCHING_OVERRIDE"] = true
     end
     FLAGS["APP_LAUNCHING"] = true
+    launchingPids[app:pid()] = true
   elseif eventType == hs.application.watcher.launched then
-    if hyperModeIsActive() then
-      runAfterHyperReleased(function()
-        App_applicationCallback(appname, eventType, app)
-      end)
-      return
-    end
+    launchingPids[app:pid()] = nil
     if launchTimer then
       launchTimer:stop()
       launchTimer = nil
@@ -399,10 +393,8 @@ function App_applicationCallback(appname, eventType, app)
 
       if FLAGS["RIGHT_MENUBAR_ITEM_SELECTED"] ~= nil then
         hs.timer.doAfter(1, function()
-          runAfterHyperReleased(function()
-            registerMenuBarObserverForHotkeyValidity(app)
-            registerObserverForRightMenuBarSettingsMenuItem(app)
-          end)
+          registerMenuBarObserverForHotkeyValidity(app)
+          registerObserverForRightMenuBarSettingsMenuItem(app)
         end)
       end
       FLAGS["APP_LAUNCHING"] = nil
@@ -410,22 +402,13 @@ function App_applicationCallback(appname, eventType, app)
     if doublecheck and not doublecheck() then
       local deadline = hs.timer.secondsSinceEpoch() + launchWaitTimeout
       launchTimer = hs.timer.waitUntil(function()
-        return not hyperModeIsActive()
-            and (doublecheck() or hs.timer.secondsSinceEpoch() >= deadline)
+        return doublecheck() or hs.timer.secondsSinceEpoch() >= deadline
       end, action, launchWaitInterval)
     else
       action()
     end
     FLAGS["NEED_DOUBLE_CHECK"] = nil
   elseif eventType == hs.application.watcher.activated then
-    if hyperModeIsActive() then
-      runAfterHyperReleased(function()
-        if isSameApplication(app, hs.application.frontmostApplication()) then
-          App_applicationCallback(appname, eventType, app)
-        end
-      end)
-      return
-    end
     local deactivatedAppids = {}
     for bid, _ in pairs(Evt.ProcOnDeactivated) do
       if bid ~= appid then
@@ -457,8 +440,9 @@ function App_applicationCallback(appname, eventType, app)
 
     FLAGS["NO_RESHOW_KEYBINDING"] = true
     if isFrontmostApplication(app) then registerForOpenSavePanel(app) end
-    FLAGS["NEED_DOUBLE_CHECK"] = FLAGS["APP_LAUNCHING"]
-    if not FLAGS["APP_LAUNCHING"] then
+    local launching = FLAGS["APP_LAUNCHING"] and launchingPids[app:pid()]
+    FLAGS["NEED_DOUBLE_CHECK"] = launching
+    if not launching then
       local localeUpdated = updateAppLocale(app)
       if isFrontmostApplication(app) then
         onLaunchedAndActivated(app, localeUpdated)
@@ -466,6 +450,7 @@ function App_applicationCallback(appname, eventType, app)
       end
     end
   elseif eventType == hs.application.watcher.terminated then
+    launchingPids[app:pid()] = nil
     runOneShotCallbacks(Evt.ProcOnTerminated, appid)
   elseif eventType == hs.application.watcher.deactivated and appname == nil then
     local terminatedAppids = {}
