@@ -411,7 +411,7 @@ struct FileState { var raw: String?, baseline: JSON?, error: String?, missing = 
         paths = (keys.filter { $0 == "browsers" } + keys.filter { $0 != "browsers" }).map { [.k("hotkeys"), .k($0)] }
       case "@other":
         var known = group.tabs.flatMap { $0.keys }.filter { !$0.hasPrefix("@") }
-        if name == "misc" { known.append("proxy") }
+        if name == "misc" { known += ["proxy", "proxyClientTUN"] }
         paths = object.keys.filter { !known.contains($0) }.map { [.k($0)] }
       default:
         paths = [key.split(separator: ".").map { .k(String($0)) }]

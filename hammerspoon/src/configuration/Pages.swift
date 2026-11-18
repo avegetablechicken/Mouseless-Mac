@@ -67,7 +67,8 @@ struct GeneralPage: View {
                  value: store.numberBinding("misc", [.k("menuBarOverflowCollapseDelay")], default: 15), range: 0...300, step: 1, unit: "s")
     }
     SnippetsSections()
-    let known: Set<String> = ["pollingInterval", "menuBarOverflowCollapseDelay", "snippets", "pasteboardFilter", "verificationFilter", "proxy"]
+    let known: Set<String> = ["pollingInterval", "menuBarOverflowCollapseDelay", "snippets", "pasteboardFilter", "verificationFilter", "proxy",
+                              "proxyClientTUN"]
     ForEach((store.drafts["misc"]?.object?.keys ?? []).filter { !known.contains($0) }, id: \.self) { key in
       SectionView(spec: SectionSpec(file: "misc", path: [.k(key)], value: store.value("misc", [.k(key)])))
     }
@@ -800,6 +801,18 @@ struct ProxyClientsPage: View {
     } footer: {
       Text(file == "proxy-local" ? "Private clients replace shared clients with the same name and aren't synced."
            : "App clients switch the app's own mode; other clients set the system proxy directly.")
+    }
+    if file == "proxy" {
+      Section {
+        Toggle(isOn: store.flagBinding("misc", [.k("proxyClientTUN")])) {
+          TitleLabel(title: "Use clients' TUN mode", helpText: "v2rayN 7.2.2 or later and MonoCloud 1.0 or later")
+        }
+        .toggleStyle(.switch)
+      } header: {
+        Text("TUN Mode")
+      } footer: {
+        Text("Otherwise Hammerspoon runs its own TUN mode with sing-box, falling back to clients' TUN mode when sing-box isn't installed.")
+      }
     }
   }
 }

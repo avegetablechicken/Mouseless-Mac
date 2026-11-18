@@ -470,6 +470,9 @@ local tunActivating = false
 local tunServiceDir = hs.fs.temporaryDirectory() .. "hammerspoon-tun/"
 local tunServiceFlag = tunServiceDir .. "running"
 local tunServiceFailed = false
+-- "proxyClientTUN" in misc.json prefers the TUN mode built into clients.
+local preferClientTUN = exists("config/misc.json")
+    and get(hs.json.read("config/misc.json"), "proxyClientTUN") == true
 -- Files written by the root TUN service live where only root can write.
 local TUN_SERVICE_ROOT = "/var/run/hammerspoon-tun"
 
@@ -849,7 +852,10 @@ end
 -- Enable TUN mode for the active proxy, trying only once.
 local function enableTUN(name)
   local appid = proxyAppBundleIDs[name]
-  local appVer = appid and applicationVersion(appid)
+  -- Hammerspoon's TUN service is used unless clients are set to use their
+  -- own or sing-box is not installed.
+  local clientTUN = preferClientTUN or findHomebrewExecutable("sing-box") == nil
+  local appVer = appid and clientTUN and applicationVersion(appid)
   if appVer and name == "MonoCloud" and appVer >= "1.0" then
     -- MonoCloud provides Enhanced Mode (TUN) since 1.0.
     return clickRightMenuBarItem(appid, "Enhanced Mode (TUN)")
