@@ -2,7 +2,9 @@ require "utils"
 
 local appsTmpDir = hs.fs.temporaryDirectory() .. hs.settings.bundleID .. "/application"
 
-hs.application.enableSpotlightForNameSearches(true)
+-- Off: the live Spotlight query converted every update's results with
+-- synchronous calls to mds on the main thread, stalling input.
+hs.application.enableSpotlightForNameSearches(false)
 
 LoadBuf.runningApplications = {}
 foreach(hs.application.runningApplications(), function(app)
