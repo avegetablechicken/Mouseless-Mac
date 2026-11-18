@@ -873,9 +873,10 @@ end
 
 local function showHiddenStatusItems(targetScreen)
   if OS_VERSION >= OS["Golden Gate"] then
-    mode:exit()
     local target = targetScreen or hs.mouse.getCurrentScreen()
     local ok, _, expanded = menuBarReveal.setOverflowExpanded(target, targetScreen and true or nil)
+    if ok == nil then return end
+    mode:exit()
     if not ok then
       hs.alert.show(expanded == false and "Cannot collapse hidden status items"
           or "Cannot show hidden status items")

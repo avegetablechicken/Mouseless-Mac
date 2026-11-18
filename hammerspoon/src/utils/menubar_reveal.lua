@@ -221,10 +221,11 @@ local function pingIslandOpen(background, bottom)
 end
 
 function M.setOverflowExpanded(screen, expanded)
+  local window, button, current = goldenGateMenuBar(screen)
+  if not window then return false end
+  if not button then return nil end
   -- An explicit toggle supersedes a pending automatic collapse.
   if collapseTimer then collapseTimer:stop() collapseTimer = nil end
-  local _, button, current = goldenGateMenuBar(screen)
-  if not button then return false end
   if expanded == nil then expanded = not current end
   if current == expanded then return true, false end
   -- This system button advertises no AX actions; use its verified hit region.
