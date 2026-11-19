@@ -177,7 +177,9 @@ function Engine:rebuild(reconcile)
     local ok, ids, owners = pcall(self.capture.windowIDs)
     if ok and type(ids) == 'table' then
       live, now = {}, self.h.timer.secondsSinceEpoch()
-      for _, id in ipairs(ids) do live[id] = true end
+      -- An ordered-out panel keeps its WindowServer number after its AX window is
+      -- destroyed; only a normal-layer window proves liveness without AX checks.
+      for i, id in ipairs(ids) do live[id] = not owners or owners[i] ~= 0 end
       -- A window whose creation notification was missed still appears in the
       -- WindowServer list. Rescan only the owner of a normal window this
       -- inventory lacks, at most three times per window, instead of asking every
