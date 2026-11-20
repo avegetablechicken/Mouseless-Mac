@@ -429,25 +429,110 @@ if frontApp then
 end
 
 -- ## specify input source for apps
----@diagnostic disable-next-line: lowercase-global
-function selectInputSourceInApp(app)
+-- The config value for an app is one of:
+--   - an input source ID
+--   - a list of candidate input source IDs, the first available one is used
+--   - a list of rules `{ "windowFilter": ..., "inputSource": ... }` matched
+--     in order against the focused window; a rule without `windowFilter`
+--     matches any window and serves as the default
+local function selectInputSource(inputSource)
+  if type(inputSource) == 'string' then inputSource = { inputSource } end
+  local currentSourceID = hs.keycodes.currentSourceID()
+  for _, source in ipairs(inputSource) do
+    if currentSourceID == source then
+      return
+    end
+    if hs.keycodes.currentSourceID(source) then
+      break
+    end
+  end
+end
+
+local function matchInputSourceTitles(titles, title)
+  if type(titles) == 'number' then return #title > titles end
+  if type(titles) == 'string' then titles = { titles } end
+  return tfind(titles, function(t) return title:match(t) ~= nil end) ~= nil
+end
+
+-- "hs.window.filter" may evaluate a stale title while the title is changing,
+-- so titles are matched against the current title directly
+local function isWindowAllowedForInputSource(win, filter)
+  if win == nil then return false end
+  if filter.allowTitles
+      and not matchInputSourceTitles(filter.allowTitles, win:title()) then
+    return false
+  end
+  if filter.rejectTitles
+      and matchInputSourceTitles(filter.rejectTitles, win:title()) then
+    return false
+  end
+  local f = tcopy(filter)
+  f.allowTitles, f.rejectTitles = nil, nil
+  return next(f) == nil or isWindowAllowed(win, f)
+end
+
+local function inputSourceRuleForWindow(win, rules)
+  for i, rule in ipairs(rules) do
+    if rule.windowFilter == nil
+        or isWindowAllowedForInputSource(win, rule.windowFilter) then
+      return i
+    end
+  end
+end
+
+local function inputSourceRulesForApp(app)
   local inputSource = get(ApplicationConfigs, "inputSource",
       app:bundleID() or app:name())
-  if inputSource ~= nil then
-    local currentSourceID = hs.keycodes.currentSourceID()
-    if type(inputSource) == 'string' then
-      if currentSourceID ~= inputSource then
-        hs.keycodes.currentSourceID(inputSource)
-      end
-    else
-      for _, source in ipairs(inputSource) do
-        if currentSourceID == source then
-          return
-        end
-        if hs.keycodes.currentSourceID(source) then
-          break
-        end
+  if type(inputSource) == 'table' and type(inputSource[1]) == 'table' then
+    return inputSource
+  end
+  return nil, inputSource
+end
+
+-- the focused window and the matched rule last applied, keyed by app id
+local inputSourceStates = {}
+
+local function applyInputSourceRules(app, rules, win)
+  local appid = app:bundleID() or app:name()
+  local rule = inputSourceRuleForWindow(win, rules)
+  local wid = win and win:id()
+  local last = inputSourceStates[appid]
+  -- title changes that keep the same rule (e.g. spinners in titles) do not
+  -- override manual input source switches
+  if rule and (last == nil or last.wid ~= wid or last.rule ~= rule) then
+    selectInputSource(rules[rule].inputSource)
+  end
+  inputSourceStates[appid] = { wid = wid, rule = rule }
+end
+
+-- Window filters of the rules are watched by the existing window filter
+-- observers for window-specific hotkeys, which reevaluate on focused window,
+-- main window (e.g. native tab) and title changes.
+for appid, inputSource in pairs(ApplicationConfigs["inputSource"] or {}) do
+  if type(inputSource) == 'table' and type(inputSource[1]) == 'table' then
+    for _, rule in ipairs(inputSource) do
+      if rule.windowFilter ~= nil then
+        WinFilterCallbacks[appid] = WinFilterCallbacks[appid] or {}
+        tinsert(WinFilterCallbacks[appid], {
+          filter = rule.windowFilter,
+          fn = function(app, win) applyInputSourceRules(app, inputSource, win) end,
+        })
       end
     end
   end
+end
+-- window filters of the frontmost app were registered before these callbacks
+if frontApp and WinFilterCallbacks[frontApp:bundleID() or frontApp:name()] then
+  registerWinFiltersForApp(frontApp)
+end
+
+---@diagnostic disable-next-line: lowercase-global
+function selectInputSourceInApp(app)
+  local rules, inputSource = inputSourceRulesForApp(app)
+  if rules == nil then
+    if inputSource ~= nil then selectInputSource(inputSource) end
+    return
+  end
+  inputSourceStates[app:bundleID() or app:name()] = nil
+  applyInputSourceRules(app, rules, app:focusedWindow())
 end

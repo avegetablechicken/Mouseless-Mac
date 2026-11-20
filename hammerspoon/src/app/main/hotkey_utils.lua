@@ -1155,6 +1155,19 @@ function isWindowAllowed(win, filter)
       and (extended.condition == nil or injectWindowState(extended.condition)(win))
 end
 
+-- Callbacks for window filters that are not bound to hotkeys, keyed by app
+-- id. Each item is `{ filter = windowFilter, fn = function(app, win) end }`;
+-- `fn` runs whenever the focused window of the app is reevaluated against
+-- `filter` (focus, main window or title changes).
+WinFilterCallbacks = {}
+
+local function runWinFilterCallbacks(app, filter, win)
+  local appid = app:bundleID() or app:name()
+  for _, item in ipairs(WinFilterCallbacks[appid] or {}) do
+    if sameFilter(item.filter, filter) then item.fn(app, win) end
+  end
+end
+
 local focusedWindowObservers = {}
 local function registerSingleWinFilterForApp(app, filter, retry, appUI,
                                             hasFocusedWindowAttr)
@@ -1210,6 +1223,14 @@ local function registerSingleWinFilterForApp(app, filter, retry, appUI,
     titleWatcherElement = towinui(win)
     observer:addWatcher(titleWatcherElement, uinotifications.titleChanged)
   end
+  local function allowWindow(w)
+    registerInWinHotKeys(w, filter)
+    runWinFilterCallbacks(app, filter, w)
+  end
+  local function disallowWindow(w)
+    unregisterInWinHotKeys(appid, false, filter)
+    runWinFilterCallbacks(app, filter, w)
+  end
   observer:callback(function(_, element, notification)
     local titleChanged = notification == uinotifications.titleChanged
     local previousWin = win
@@ -1229,7 +1250,7 @@ local function registerSingleWinFilterForApp(app, filter, retry, appUI,
       removeTitleWatcher()
     end
     if win == nil then
-      unregisterInWinHotKeys(appid, false, filter)
+      disallowWindow(nil)
       return
     end
     if notification == uinotifications.focusedUIElementChanged
@@ -1266,16 +1287,16 @@ local function registerSingleWinFilterForApp(app, filter, retry, appUI,
       if allowTitles then
         if type(allowTitles) == 'number' then
           if #win:title() <= allowTitles then
-            unregisterInWinHotKeys(appid, false, filter)
+            disallowWindow(win)
             return
           end
         elseif not matchTitles(allowTitles, win:title()) then
-          unregisterInWinHotKeys(appid, false, filter)
+          disallowWindow(win)
           return
         end
       end
       if rejectTitles and matchTitles(rejectTitles, win:title()) then
-        unregisterInWinHotKeys(appid, false, filter)
+        disallowWindow(win)
         return
       end
       ignoreTitleChange = true
@@ -1288,9 +1309,9 @@ local function registerSingleWinFilterForApp(app, filter, retry, appUI,
       if next(f) == nil then f = nil end
     end
     if isWindowAllowed(win, f) then
-      registerInWinHotKeys(win, filter)
+      allowWindow(win)
     else
-      unregisterInWinHotKeys(appid, false, filter)
+      disallowWindow(win)
     end
   end)
   observer:start()
@@ -1322,6 +1343,15 @@ function registerWinFiltersForApp(app)
       registerSingleWinFilterForApp(app, windowFilter, nil, appUI,
           hasFocusedWindowAttr)
     end
+  end
+  for _, item in ipairs(WinFilterCallbacks[appid] or {}) do
+    if appUI == nil then
+      appUI = toappui(app)
+      hasFocusedWindowAttr = tcontain(appUI:attributeNames() or {},
+          "AXFocusedWindow")
+    end
+    registerSingleWinFilterForApp(app, item.filter, nil, appUI,
+        hasFocusedWindowAttr)
   end
 end
 

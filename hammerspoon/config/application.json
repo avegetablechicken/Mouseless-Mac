@@ -134,7 +134,27 @@
     "com.jetbrains.pycharm": "com.apple.keylayout.ABC",
     "com.microsoft.VSCode": "com.apple.keylayout.ABC",
     "com.mathworks.matlab": "com.apple.keylayout.ABC",
-    "com.apple.Terminal": "com.apple.keylayout.ABC",
+    "com.apple.Terminal": [
+      {
+        "windowFilter": {
+          "allowTitles": [
+            "%sclaude%f[%s]", "%scodex%f[%s]", "%sagy%f[%s]",
+            "%sgemini%f[%s]", "%sqwen%f[%s]", "%sopencode%f[%s]",
+            "%scrush%f[%s]", "%sdroid%f[%s]", "%samp%f[%s]",
+            "%scursor%-agent%f[%s]", "%scopilot%f[%s]",
+            "%sgoose%f[%s]", "%saider%f[%s]", "%skimi%f[%s]",
+            "%sqodercli%f[%s]", "%siflow%f[%s]", "%scodebuddy%f[%s]",
+            "%sauggie%f[%s]", "%skiro%-cli%f[%s]", "%svibe%f[%s]",
+            "%sgrok%f[%s]", "%shermes%f[%s]", "%somp%f[%s]", "%spi%f[%s]"
+          ]
+        },
+        "inputSource": [
+          "com.apple.inputmethod.SCIM.Shuangpin",
+          "com.apple.inputmethod.SCIM.ITABC"
+        ]
+      },
+      { "inputSource": "com.apple.keylayout.ABC" }
+    ],
     "org.xquartz.X11": "com.apple.keylayout.ABC",
     "com.termius.mac": "com.apple.keylayout.ABC",
     "com.termius-dmg.mac": "com.apple.keylayout.ABC",
