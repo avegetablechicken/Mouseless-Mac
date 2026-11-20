@@ -657,6 +657,10 @@ function injectWindowState(fn)
   end
 end
 
+LoadBuf.withWindowBuffer = function(win, action)
+  return injectWindowState(function() return action(A_WinBuf) end)(win)
+end
+
 function getBufferedMenuBarItems(app)
   if A_AppBuf.menuBarItems == nil then
     A_AppBuf.menuBarItems = getMenuBarItems(app)

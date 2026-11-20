@@ -228,40 +228,42 @@ function registerZoomHotkeys(app, force)
   end
 end
 
--- Enable or disable resize-related hotkeys based on fullscreen state.
---
--- Background:
---   Since macOS Sequoia, native "Move & Resize" menu items may
---   conflict with custom resize hotkeys.
---
--- This function dynamically:
---   - disables conflicting hotkeys in fullscreen spaces
---   - re-enables them when returning to normal spaces
+local function menuItemsByTitle(items)
+  local byTitle = {}
+  for _, item in ipairs(items or {}) do
+    local title = item.AXTitle
+    if title then byTitle[title] = item end
+  end
+  return byTitle
+end
+
+-- Layout and restore must use the same window history.
+local function hasNativeWindowLayout(app)
+  local menus = menuItemsByTitle(getMenuBarItems(app))
+  local window = menus.Window or menus[localizedMenuBarItem("Window", app:bundleID(),
+                                                            { locale = A_AppLocale })]
+  if not window then return false end
+
+  local function itemNamed(items, title)
+    return items[title] or items[TC(title, app)]
+        or (SYSTEM_LOCALE:sub(1, 2) ~= 'en' and items[TC(title, app, { locale = SYSTEM_LOCALE })])
+  end
+  local items = menuItemsByTitle(getc(window, AX.Menu, 1, AX.MenuItem))
+  local layout = itemNamed(items, "Move & Resize")
+  if not layout or not itemNamed(items, "Fill") or not itemNamed(items, "Center") then
+    return false
+  end
+  local layoutItems = menuItemsByTitle(getc(layout, AX.Menu, 1, AX.MenuItem))
+  for _, title in ipairs({ "Left", "Right", "Top", "Bottom", "Return to Previous Size" }) do
+    if not itemNamed(layoutItems, title) then return false end
+  end
+  return true
+end
+
 ---@diagnostic disable-next-line: lowercase-global
 function registerResizeHotkeys(app)
   if OS_VERSION < OS.Sequoia then return end
-  local menu, submenu = "Window", "Move & Resize"
-  local menuItem = app:findMenuItem{ menu, submenu }
-  if menuItem == nil then
-    local localizedMenu = localizedMenuBarItem('Window', app:bundleID(),
-                                               { locale = A_AppLocale })
-    local localizedSubmenu = TC(submenu, app)
-    if localizedSubmenu == submenu and SYSTEM_LOCALE:sub(1, 2) ~= 'en' then
-      localizedSubmenu = TC(submenu, app, { locale = SYSTEM_LOCALE })
-    end
-    if localizedSubmenu ~= nil then
-      menuItem = app:findMenuItem{ localizedMenu, localizedSubmenu }
-    end
-    if menuItem == nil then
-      if localizedSubmenu ~= nil then
-        menuItem = app:findMenuItem{ menu, localizedSubmenu }
-      end
-      if menuItem == nil then
-        menuItem = app:findMenuItem{ localizedMenu, submenu }
-      end
-    end
-  end
-  local toEnable = menuItem == nil and not inFullscreenSpace()
+  local toEnable = app ~= nil and not inFullscreenSpace() and not hasNativeWindowLayout(app)
   for _, hotkey in ipairs(HotkeysResizeConflictedSinceSequia or {}) do
     if toEnable then
       hotkey:enable()

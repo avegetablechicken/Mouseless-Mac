@@ -109,6 +109,10 @@
         "mods": "${hyper.moveTo}",
         "key": "C"
       },
+      "returnToPreviousSize": {
+        "mods": "${hyper.resize}",
+        "key": "R"
+      },
       "moveToTop": {
         "mods": "${hyper.moveTo}",
         "key": "W"

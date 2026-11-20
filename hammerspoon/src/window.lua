@@ -11,6 +11,19 @@ local winHK = KeybindingConfigs.hotkeys.global or {}
 -- by non-maximize (non-filling) operations.
 local frameCacheMaximize = {}
 
+local legacyWindowLayout = OS_VERSION < OS.Sequoia
+local withWindowBuffer = LoadBuf.withWindowBuffer
+local restoreHK
+local function setWindowFrame(win, frame)
+  if restoreHK and restoreHK.enabled then
+    local previous = win:frame()
+    if previous ~= frame then
+      withWindowBuffer(win, function(buffer) buffer.previousLayoutFrame = previous end)
+    end
+  end
+  win:setFrame(frame)
+end
+
 -- Functions in this file fall into two categories:
 --
 -- 1) Internal hotkey handlers
@@ -173,6 +186,7 @@ end
 -- Create or bind a window resize hotkey that may conflict with system behavior.
 HotkeysResizeConflictedSinceSequia = {}
 local function newResizeWindowMayConflict(...)
+  if legacyWindowLayout then return bindResizeWindow(...) end
   local hotkey
   if FLAGS["LOADING"] and FLAGS["NO_MOVE_RESIZE"] then
     hotkey = bindResizeWindow(...)
@@ -192,7 +206,7 @@ function(win)
 
   f.x = f.x - moveStep
   f.y = f.y - moveStep
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move towards top
@@ -201,7 +215,7 @@ function(win)
   local f = win:frame()
 
   f.y = f.y - moveStep
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move towards top-right
@@ -211,7 +225,7 @@ function(win)
 
   f.x = f.x + moveStep
   f.y = f.y - moveStep
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move towards left
@@ -220,7 +234,7 @@ function(win)
   local f = win:frame()
 
   f.x = f.x - moveStep
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move towards right
@@ -229,7 +243,7 @@ function(win)
   local f = win:frame()
 
   f.x = f.x + moveStep
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move towards bottom-left
@@ -239,7 +253,7 @@ function(win)
 
   f.x = f.x - moveStep
   f.y = f.y + moveStep
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move towards bottom
@@ -248,7 +262,7 @@ function(win)
   local f = win:frame()
 
   f.y = f.y + moveStep
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move towards bottom-right
@@ -258,7 +272,7 @@ function(win)
 
   f.x = f.x + moveStep
   f.y = f.y + moveStep
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Get the usable screen frame for a window.
@@ -305,7 +319,7 @@ function(win)
   f.y = max.y
   f.w = max.w / 2
   f.h = max.h
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move and zoom to right half
@@ -318,7 +332,7 @@ function(win)
   f.y = max.y
   f.w = max.w / 2
   f.h = max.h
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move and zoom to top half
@@ -331,7 +345,7 @@ function(win)
   f.y = max.y
   f.w = max.w
   f.h = max.h / 2
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move and zoom to bottom half
@@ -344,7 +358,7 @@ function(win)
   f.y = max.y + max.h / 2
   f.w = max.w
   f.h = max.h / 2
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move and zoom to top-left quadrant
@@ -357,7 +371,7 @@ function(win)
   f.y = max.y
   f.w = max.w / 2
   f.h = max.h / 2
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move and zoom to top-right quadrant
@@ -370,7 +384,7 @@ function(win)
   f.y = max.y
   f.w = max.w / 2
   f.h = max.h / 2
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move and zoom to bottom-left quadrant
@@ -383,7 +397,7 @@ function(win)
   f.y = max.y + max.h / 2
   f.w = max.w / 2
   f.h = max.h / 2
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move and zoom to bottom-right quadrant
@@ -396,7 +410,7 @@ function(win)
   f.y = max.y + max.h / 2
   f.w = max.w / 2
   f.h = max.h / 2
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move and zoom to left 1/3
@@ -409,7 +423,7 @@ function(win)
   f.y = max.y
   f.w = max.w / 3
   f.h = max.h
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move and zoom to right 1/3
@@ -422,7 +436,7 @@ function(win)
   f.y = max.y
   f.w = max.w / 3
   f.h = max.h
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move and zoom to left 2/3
@@ -435,7 +449,7 @@ function(win)
   f.y = max.y
   f.w = max.w * 2 / 3
   f.h = max.h
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move and zoom to right 2/3
@@ -448,7 +462,7 @@ function(win)
   f.y = max.y
   f.w = max.w * 2 / 3
   f.h = max.h
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Toggle maximize for the focused window.
@@ -457,13 +471,13 @@ end)
 local fillHK = newResizeWindowMayConflict("fill", "Fill",
 function(win)
   if frameCacheMaximize[win:id()] then
-    win:setFrame(frameCacheMaximize[win:id()])
+    setWindowFrame(win, frameCacheMaximize[win:id()])
     frameCacheMaximize[win:id()] = nil
   else
     frameCacheMaximize[win:id()] = win:frame()
     local screen = win:screen()
     local max = screen:frame()
-    win:setFrame(max)
+    setWindowFrame(win, max)
   end
 end)
 if fillHK then fillHK.subkind = HK.PRIVELLEGE end
@@ -486,7 +500,7 @@ function(win)
   local r = f.x + f.w
   f.x = math.max(max.x, f.x - resizeStep)
   f.w = r - f.x
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Shrink left border
@@ -497,7 +511,7 @@ function(win)
   local r = f.x + f.w
   f.w = math.max(resizeStep, f.w - resizeStep)
   f.x = r - f.w
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Expand right border
@@ -508,7 +522,7 @@ function(win)
   local max = screen:frame()
 
   f.w = math.min(max.x + max.w - f.x, f.w + resizeStep)
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Shrink right border
@@ -517,7 +531,7 @@ function(win)
   local f = win:frame()
 
   f.w = math.max(resizeStep, f.w - resizeStep)
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Expand top border
@@ -530,7 +544,7 @@ function(win)
   local b = f.y + f.h
   f.y = math.max(max.y, f.y - resizeStep)
   f.h = b - f.y
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Shrink top border
@@ -541,7 +555,7 @@ function(win)
   local b = f.y + f.h
   f.h = math.max(resizeStep, f.h - resizeStep)
   f.y = b - f.h
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Expand bottom border
@@ -552,7 +566,7 @@ function(win)
   local max = screen:frame()
 
   f.h = math.min(max.y + max.h - f.y, f.h + resizeStep)
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Shrink bottom border
@@ -561,7 +575,7 @@ function(win)
   local f = win:frame()
 
   f.h = math.max(resizeStep, f.h - resizeStep)
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move to top-left
@@ -572,7 +586,7 @@ function(win)
 
   f.x = max.x
   f.y = max.y
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move to top
@@ -583,7 +597,7 @@ function(win)
   local max = screen:frame()
 
   f.y = max.y
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move to top-right
@@ -594,7 +608,7 @@ function(win)
 
   f.x = max.x + max.w - f.w
   f.y = max.y
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move to left
@@ -604,7 +618,7 @@ function(win)
   local max = getScreenFrame(win)
 
   f.x = max.x
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move to center
@@ -617,9 +631,18 @@ function(win)
   -- make the bahavior consistent with the system "Center" shortcut
   f.x = max.x + math.ceil((max.w - f.w) / 2)
   f.y = max.y + math.ceil((max.h - f.h + 1) / 2)
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 if centerHK then centerHK.subkind = HK.PRIVELLEGE end
+
+restoreHK = newResizeWindowMayConflict("returnToPreviousSize", "Return to Previous Size", function(win)
+  withWindowBuffer(win, function(buffer)
+    if buffer.previousLayoutFrame then
+      win:setFrame(buffer.previousLayoutFrame)
+      buffer.previousLayoutFrame = nil
+    end
+  end)
+end)
 
 -- Move to right
 bindMoveWindow("moveToRight", "Move to Right",
@@ -628,7 +651,7 @@ function(win)
   local max = getScreenFrame(win)
 
   f.x = max.x + max.w - f.w
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move to bottom-left
@@ -639,7 +662,7 @@ function(win)
 
   f.x = max.x
   f.y = max.y + max.h - f.h
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move to bottom
@@ -650,7 +673,7 @@ function(win)
   local max = screen:frame()
 
   f.y = max.y + max.h - f.h
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Move to bottom-right
@@ -661,7 +684,7 @@ function(win)
 
   f.x = max.x + max.w - f.w
   f.y = max.y + max.h - f.h
-  win:setFrame(f)
+  setWindowFrame(win, f)
 end)
 
 -- Window-based switcher (Windows-style Alt-Tab behavior)
