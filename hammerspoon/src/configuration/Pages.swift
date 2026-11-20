@@ -19,7 +19,7 @@ struct SelectableRow<Content: View>: View {
 
 /// A row that opens an editor sheet.
 struct PanelRow<Label: View>: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let panel: Panel
   var summary = ""
   @ViewBuilder let label: Label
@@ -57,7 +57,7 @@ struct StepperRow: View {
 // MARK: - General
 
 struct GeneralPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   var body: some View {
     Section {
       StepperRow(title: "Polling interval", help: "How often background checks run, such as detecting apps that quit silently",
@@ -76,7 +76,7 @@ struct GeneralPage: View {
 }
 
 struct SnippetsSections: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   @State private var rule = 0
   @State private var selection: String?
   private let base: Path = [.k("snippets")]
@@ -185,7 +185,7 @@ struct SnippetsSections: View {
 }
 
 struct SnippetEntryRow: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let rulePath: Path, prefix: String, name: String, value: JSON?
   @State private var text = ""
 
@@ -208,7 +208,7 @@ struct SnippetEntryRow: View {
       }
     }
     .onAppear { text = name }
-    .onChange(of: name) { text = name }
+    .onChange(of: name) { name in text = name }
   }
 
   private func commit() {
@@ -226,7 +226,7 @@ struct SnippetEntryRow: View {
 // MARK: - Clipboard
 
 struct ClipboardPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   var body: some View {
     let filters = store.value("misc", [.k("pasteboardFilter")])?.array ?? []
     Section {
@@ -284,7 +284,7 @@ struct ClipboardPage: View {
 // MARK: - Shortcuts
 
 struct ModifiersPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   @State private var selection: String?
 
   var body: some View {
@@ -358,7 +358,7 @@ struct ModifiersPage: View {
 }
 
 struct GlobalActionsPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   private static let groups: [(String, (String) -> Bool)] = [
     ("Hammerspoon", { ["reloadHammerspoon", "toggleHotkeys", "toggleConsole", "showHotkeys", "searchHotkeys", "showCurrentWindowInfo"].contains($0) }),
     ("Menu Bar", { ["searchMenuBar", "moveFocusToStatusMenus", "showHiddenStatusItems", "showProxyMenu"].contains($0) }),
@@ -397,7 +397,7 @@ struct GlobalActionsPage: View {
 }
 
 struct AppLauncherPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   var body: some View {
     let base: Path = [.k("hotkeys"), .k("appkeys")]
     let entries = store.value("keybindings", base)?.array ?? []
@@ -421,7 +421,7 @@ struct AppLauncherPage: View {
 }
 
 struct MenusPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   private static let sharedGroups: [(String, (String) -> Bool)] = [
     ("Windows", { $0.hasPrefix("zoom") }),
     ("Tabs and Documents", { ["remapPreviousTab", "openRecent", "confirmDelete"].contains($0) }),
@@ -456,7 +456,7 @@ struct MenusPage: View {
 }
 
 struct MenuModeSection: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let mode: String, title: String, footer: String
   @State private var lastMods: JSON = .string("option")
 
@@ -490,7 +490,7 @@ struct MenuModeSection: View {
 // MARK: - Apps
 
 struct WindowBehaviorPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   @State private var list = "hideWithoutWindow"
   @State private var selection: String?
 
@@ -575,7 +575,7 @@ struct WindowBehaviorPage: View {
 }
 
 struct LifecyclePage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   var body: some View {
     Section {
       AppListEditor(file: "application", path: [.k("forbidden")], empty: "No blocked apps")
@@ -626,7 +626,7 @@ struct LifecyclePage: View {
 }
 
 struct InputDevicesPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   @State private var selection: String?
   @State private var device: Int?
 
@@ -722,7 +722,7 @@ struct InputDevicesPage: View {
 }
 
 struct MountainDuckPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   var body: some View {
     let path: Path = [.k("io.mountainduck"), .k("connections")]
     let rules = store.value("application", path)?.array ?? []
@@ -769,7 +769,7 @@ struct MountainDuckPage: View {
 // MARK: - Network proxy
 
 struct ProxyClientsPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String
   var body: some View {
     let clients = store.value(file, [])?.object ?? JObject()
@@ -818,7 +818,7 @@ struct ProxyClientsPage: View {
 }
 
 struct AutoSwitchingPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   var body: some View {
     let path: Path = [.k("proxy")]
     let rules = store.value("misc", path)?.array ?? []
@@ -881,7 +881,7 @@ struct AutoSwitchingPage: View {
 }
 
 struct CandidateRow: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let path: Path, index: Int, count: Int, clients: [String]
   var body: some View {
     let candidate = store.value("misc", path)?.object ?? JObject()
@@ -919,7 +919,7 @@ struct CandidateRow: View {
 // MARK: - File sync and localization
 
 struct ResourcesPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   @State private var selection: String?
   var body: some View {
     let resources = store.value("localization", [.k("resources")])?.object ?? JObject()
@@ -951,7 +951,7 @@ struct ResourcesPage: View {
 
 /// Menu translations for one app: menu titles and strings are separate views of one page.
 struct TranslationsPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let app: String
   @State private var direction = "reverse"
   @State private var selection: String?

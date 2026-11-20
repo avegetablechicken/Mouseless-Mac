@@ -108,7 +108,7 @@ func syncDestination(_ value: JSON?) -> String {
 // MARK: - Path display
 
 struct VariableChip: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let name: String
   var large = false
 
@@ -153,7 +153,7 @@ struct RichPath: View {
 
 /// The Finder icon of a synced file or folder, or a placeholder when it doesn't exist.
 struct SyncFileIcon: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let path: String
   var size: CGFloat = 28
 
@@ -178,7 +178,7 @@ private func pathName(_ path: String) -> (name: String, parent: String) {
 // MARK: - Pages
 
 struct FileMappingsPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   @State private var selection: String?
 
   var body: some View {
@@ -232,7 +232,7 @@ struct FileMappingsPage: View {
 }
 
 struct PathVariablesPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   @State private var selection: String?
 
   var body: some View {
@@ -285,7 +285,7 @@ struct PathVariablesPage: View {
 
 /// Edits a path as a starting folder (a variable, the home folder, or the disk root) plus the path inside it.
 struct SyncPathEditor: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let path: String
   var folder = false
   /// The variable being edited, which can't build on itself.
@@ -331,7 +331,7 @@ struct SyncPathEditor: View {
         .textSelection(.enabled)
     }
     .onAppear { rest = split(path).1 }
-    .onChange(of: path) { rest = split(path).1 }
+    .onChange(of: path) { path in rest = split(path).1 }
   }
 
   private func choices(_ base: Base) -> [String] {
@@ -365,7 +365,7 @@ struct SyncPathEditor: View {
 }
 
 struct SyncFilePanel: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let source: String
 
   var body: some View {
@@ -403,7 +403,7 @@ struct SyncFilePanel: View {
 }
 
 struct SyncVariablePanel: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let name: String
   @State private var text = ""
 
@@ -418,7 +418,7 @@ struct SyncVariablePanel: View {
         TitleLabel(title: "Name", helpText: "Mappings that use it are renamed too")
       }
       .onAppear { text = name }
-      .onChange(of: name) { text = name }
+      .onChange(of: name) { name in text = name }
     }
     Section {
       SyncPathEditor(path: store.value("sync", path)?.string ?? "", folder: true, excluding: name) { next in

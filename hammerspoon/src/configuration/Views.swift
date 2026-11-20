@@ -3,10 +3,9 @@ import AppKit
 import SwiftUI
 
 struct ConfigurationView: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
 
   var body: some View {
-    @Bindable var store = store
     NavigationSplitView {
       SidebarView()
         .navigationSplitViewColumnWidth(min: 210, ideal: 236, max: 320)
@@ -24,15 +23,11 @@ struct ConfigurationView: View {
 // MARK: - Sidebar
 
 struct SidebarView: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
 
   var body: some View {
-    @Bindable var store = store
     List(selection: $store.selection) {
-      Section {
-        BrandHeader()
-          .selectionDisabled()
-      }
+      brandSection
       ForEach(groups.indices, id: \.self) { g in
         Section(groups[g].name) {
           // Unique row identities; bare indices collide with the section indices and leave sections empty.
@@ -53,6 +48,17 @@ struct SidebarView: View {
       }
     }
     .listStyle(.sidebar)
+  }
+  @ViewBuilder private var brandSection: some View {
+    #if compiler(>=5.9)
+    if #available(macOS 14, *) {
+      Section { BrandHeader().selectionDisabled() }
+    } else {
+      Section(header: BrandHeader()) { EmptyView() }
+    }
+    #else
+    Section(header: BrandHeader()) { EmptyView() }
+    #endif
   }
 }
 
@@ -79,10 +85,9 @@ struct BrandHeader: View {
 // MARK: - Detail
 
 struct DetailView: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
 
   var body: some View {
-    @Bindable var store = store
     let tab = store.tab
     NavigationStack(path: $store.route) {
       Form {
@@ -106,17 +111,17 @@ struct DetailView: View {
       .id(store.tabID)
       .navigationTitle(tab.title)
       .navigationSubtitle(tab.file + ".json" + (store.changed(tab.file) ? " — Edited" : ""))
-      .toolbar { DetailToolbar() }
+      .configurationToolbar(store)
       .navigationDestination(for: NodeRoute.self) { NodePage(route: $0) }
     }
-    .onChange(of: store.tabID) { store.route = []; store.closeSheet(); store.panel = nil }
+    .onChange(of: store.tabID) { _ in store.route = []; store.closeSheet(); store.panel = nil }
     .overlay(alignment: .bottom) { StatusPill() }
   }
 }
 
 /// Tabs keyed by application list their apps; each app opens its own page.
 struct TabContent: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let sections: [SectionSpec]
 
   private var appList: Bool {
@@ -173,7 +178,7 @@ struct TabContent: View {
 }
 
 struct AppRouteRow: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let spec: SectionSpec
 
   var body: some View {
@@ -197,7 +202,7 @@ struct AppRouteRow: View {
 /// A pushed page for one nested entry.
 /// Editors and confirmations, presented by whichever layer is frontmost.
 struct StoreModals: ViewModifier {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let active: Bool
   func body(content: Content) -> some View {
     content
@@ -220,7 +225,7 @@ struct StoreModals: ViewModifier {
 
 /// A page pushed from a tab; details opened from it appear in a sheet.
 struct NodePage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let route: NodeRoute
 
   var body: some View {
@@ -229,20 +234,13 @@ struct NodePage: View {
       .navigationTitle(route.title)
       .navigationSubtitle(route.file + ".json" + (store.changed(route.file) ? " — Edited" : ""))
       .navigationBarBackButtonHidden(true)
-      .toolbar {
-        ToolbarItem(placement: .navigation) {
-          Button { if !store.route.isEmpty { store.route.removeLast() } } label: { Label("Back", systemImage: "chevron.backward") }
-            .keyboardShortcut("[", modifiers: .command)
-            .help("Back (⌘[)")
-        }
-        DetailToolbar()
-      }
+      .configurationToolbar(store, back: true)
   }
 }
 
 /// Details in a sheet, as System Settings does; deeper levels push inside the sheet.
 struct DetailSheet: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let root: NodeRoute
 
   var body: some View {
@@ -281,7 +279,7 @@ struct DetailSheet: View {
 }
 
 struct NodeForm: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let route: NodeRoute
 
   var body: some View {
@@ -398,7 +396,7 @@ struct FlatSections: View {
 
 /// Plain values share one section; nested lists and objects each get titled sections.
 struct ObjectPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, value: JSON, title: String
   var excluded: Set<String> = []
   var extra: [String] = []
@@ -414,7 +412,7 @@ struct ObjectPage: View {
 
 /// Each object in a list as its own section, so its fields are edited in place.
 struct RecordSections: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, items: [JSON], title: String
 
   var body: some View {
@@ -542,7 +540,7 @@ extension Store {
 
 /// A shortcut's details: its key combination, then any other settings.
 struct ShortcutPage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, object: JObject, title: String
 
   private var appLauncher: Bool { path.at(1)?.key == "appkeys" && path.count == 3 }
@@ -565,7 +563,7 @@ struct ShortcutPage: View {
 }
 
 struct HeroHeader: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   var body: some View {
     let tab = store.tab
     Section {
@@ -593,71 +591,134 @@ struct HeroHeader: View {
   }
 }
 
-struct DetailToolbar: ToolbarContent {
-  @Environment(Store.self) private var store
-
-  var body: some ToolbarContent {
-    let tab = store.tab
-    ToolbarItemGroup(placement: .primaryAction) {
-      if let dynamic = tab.keys.first(where: { $0.hasPrefix("@") }), store.drafts[tab.file] != nil {
-        let path: Path = dynamic == "@apps" ? [.k("hotkeys")] : []
-        let need = store.entryNeedsApplication(tab.file, path)
-        if need.needed {
-          Menu {
-            Button("Enter Manually…") { store.openEntryEditor(tab.file, path, title: tab.title, applicationID: "") }
-            Button(need.proxy ? "Browse Applications…" : "Browse…") {
-              store.browseApplication { id, proxyName in
-                store.openEntryEditor(tab.file, path, title: tab.title, applicationID: need.proxy ? (proxyName ?? id) : id)
-              }
-            }
-          } label: { Label("Add Entry", systemImage: "plus") }
-          .help("Add entry")
-        } else {
-          Button { store.openEntryEditor(tab.file, path, title: tab.title, applicationID: "") } label: { Label("Add Entry", systemImage: "plus") }
-            .help("Add entry")
-        }
+private extension View {
+  @MainActor @ViewBuilder func configurationToolbar(_ store: Store, back: Bool = false) -> some View {
+    let actions = DetailToolbar(store: store)
+    if ConfigurationWindowController.bridgesToolbar {
+      toolbar {
+        if back { ToolbarItem(placement: .navigation) { backButton(store) } }
+        actions
       }
-      Menu {
-        Button("Edit File JSON…") {
-          let name = tab.file
-          guard let draft = store.drafts[name] else { return }
-          store.editJSON("Edit \(name).json", draft) { v in
-            guard v.isRecord else { throw ConfigError("The root value must be a JSON object") }
-            try store.assign(name, [], v); store.mark()
-          }
+    } else {
+      safeAreaInset(edge: .top, spacing: 0) {
+        HStack {
+          if back { backButton(store) }
+          Text(store.route.last?.title ?? store.tab.title).font(.headline)
+          Spacer()
+          actions.entryActions
+          actions.fileActions
+          actions.saveButton
         }
-        .disabled(store.drafts[tab.file] == nil)
-        Button("Refresh Files") { store.readAgain() }
-        if let directory = store.configDirectory {
-          Divider()
-          Button("Show in Finder") {
-            NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: directory + "/config/" + tab.file + ".json")])
-          }
-        }
-      } label: { Label("More", systemImage: "ellipsis") }
-      .help("More actions")
+        .labelStyle(.iconOnly)
+        .padding(8)
+        .background(.bar)
+      }
     }
-    ToolbarItemGroup(placement: .primaryAction) {
-      Button { store.discard() } label: { Label("Discard Changes", systemImage: "arrow.uturn.backward") }
-        .disabled(!store.canDiscard)
-        .help("Discard changes to \(tab.file).json")
-      Button { store.reload() } label: { Label("Reload", systemImage: "arrow.clockwise") }
-        .disabled(store.pending != nil || store.reloading)
-        .help("Reload Hammerspoon to apply saved configuration")
-    }
-    ToolbarItem(placement: .primaryAction) {
-      Button { store.save() } label: { Text("Save") }
-        .buttonStyle(.borderedProminent)
-        .tint(store.canSave ? .accentColor : .gray)
-        .keyboardShortcut("s", modifiers: .command)
-        .disabled(!store.canSave)
-        .help("Save \(tab.file).json (⌘S)")
-    }
+  }
+
+  @MainActor private func backButton(_ store: Store) -> some View {
+    Button { if !store.route.isEmpty { store.route.removeLast() } } label: { Label("Back", systemImage: "chevron.backward") }
+      .keyboardShortcut("[", modifiers: .command)
+      .help("Back (⌘[)")
   }
 }
 
+@MainActor private struct DetailToolbar: ToolbarContent {
+  @ObservedObject var store: Store
+
+  var body: some ToolbarContent {
+    ToolbarItemGroup(placement: .primaryAction) { entryActions }
+    ToolbarItemGroup(placement: .primaryAction) { fileActions }
+    ToolbarItem(placement: .primaryAction) { saveButton }
+  }
+
+  @ViewBuilder var entryActions: some View {
+    let tab = store.tab
+    if let dynamic = tab.keys.first(where: { $0.hasPrefix("@") }), store.drafts[tab.file] != nil {
+      let path: Path = dynamic == "@apps" ? [.k("hotkeys")] : []
+      let need = store.entryNeedsApplication(tab.file, path)
+      if need.needed {
+        Menu {
+          Button("Enter Manually…") { store.openEntryEditor(tab.file, path, title: tab.title, applicationID: "") }
+          Button(need.proxy ? "Browse Applications…" : "Browse…") {
+            store.browseApplication { id, proxyName in
+              store.openEntryEditor(tab.file, path, title: tab.title, applicationID: need.proxy ? (proxyName ?? id) : id)
+            }
+          }
+        } label: { Label("Add Entry", systemImage: "plus") }
+        .help("Add entry")
+      } else {
+        Button { store.openEntryEditor(tab.file, path, title: tab.title, applicationID: "") } label: { Label("Add Entry", systemImage: "plus") }
+          .help("Add entry")
+      }
+    }
+    Menu {
+      Button("Edit File JSON…") {
+        let name = tab.file
+        guard let draft = store.drafts[name] else { return }
+        store.editJSON("Edit \(name).json", draft) { v in
+          guard v.isRecord else { throw ConfigError("The root value must be a JSON object") }
+          try store.assign(name, [], v); store.mark()
+        }
+      }
+      .disabled(store.drafts[tab.file] == nil)
+      Button("Refresh Files") { store.readAgain() }
+      if let directory = store.configDirectory {
+        Divider()
+        Button("Show in Finder") {
+          NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: directory + "/config/" + tab.file + ".json")])
+        }
+      }
+    } label: { Label("More", systemImage: "ellipsis") }
+    .help("More actions")
+  }
+
+  @ViewBuilder var fileActions: some View {
+    Button { store.discard() } label: { Label("Discard Changes", systemImage: "arrow.uturn.backward") }
+      .disabled(!store.canDiscard)
+      .help("Discard changes to \(store.file).json")
+    Button { store.reload() } label: { Label("Reload", systemImage: "arrow.clockwise") }
+      .disabled(store.pending != nil || store.reloading)
+      .help("Reload Hammerspoon to apply saved configuration")
+  }
+
+  var saveButton: some View {
+    Button { store.save() } label: { Text("Save") }
+      .buttonStyle(.borderedProminent)
+      .tint(store.canSave ? .accentColor : .gray)
+      .keyboardShortcut("s", modifiers: .command)
+      .disabled(!store.canSave)
+      .help("Save \(store.file).json (⌘S)")
+  }
+}
+
+private extension View {
+  @ViewBuilder func statusPillBackground() -> some View {
+    #if compiler(>=6.2)
+    if #available(macOS 26, *) {
+      glassEffect(.regular, in: .capsule)
+    } else {
+      materialPill
+    }
+    #else
+    materialPill
+    #endif
+  }
+
+  private var materialPill: some View {
+    background(.regularMaterial, in: Capsule()).shadow(color: .black.opacity(0.15), radius: 8, y: 2)
+  }
+}
+
+private var configurationAnimation: Animation {
+  #if compiler(>=5.9)
+  if #available(macOS 14, *) { return .snappy }
+  #endif
+  return .spring(response: 0.4, dampingFraction: 0.85)
+}
+
 struct StatusPill: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   var body: some View {
     if let status = store.status {
       let pill = HStack(spacing: 8) {
@@ -671,17 +732,11 @@ struct StatusPill: View {
       }
       .font(.callout)
       .padding(.horizontal, 14).padding(.vertical, 9)
-      Group {
-        if #available(macOS 26.0, *) {
-          pill.glassEffect(.regular, in: .capsule)
-        } else {
-          pill.background(.regularMaterial, in: Capsule()).shadow(color: .black.opacity(0.15), radius: 8, y: 2)
-        }
-      }
-      .padding(.bottom, 16)
-      .padding(.horizontal, 24)
-      .transition(.move(edge: .bottom).combined(with: .opacity))
-      .animation(.snappy, value: status)
+      pill.statusPillBackground()
+        .padding(.bottom, 16)
+        .padding(.horizontal, 24)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .animation(configurationAnimation, value: status)
     }
   }
 }
@@ -700,7 +755,7 @@ struct SectionTitle: View {
 }
 
 struct SectionView: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let spec: SectionSpec
 
   private var key: String { spec.path.last?.description ?? "" }
@@ -761,7 +816,7 @@ struct SectionView: View {
       } header: {
         HStack(spacing: 6) {
           Button {
-            withAnimation(.snappy) {
+            withAnimation(configurationAnimation) {
               if open { store.collapsed.insert(expansionKey) } else { store.collapsed.remove(expansionKey) }
             }
           } label: {
@@ -819,7 +874,7 @@ struct SectionView: View {
 }
 
 struct AutoSwitchingSections: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, rules: [JSON]
 
   var body: some View {
@@ -890,7 +945,7 @@ struct ErrorText: View {
 }
 
 struct JSONEditorSheet: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let request: JSONEditorRequest
   @State private var text = ""
   @State private var error: String?
@@ -921,7 +976,7 @@ struct JSONEditorSheet: View {
 }
 
 struct PropertySheet: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let request: PropertyRequest
   @State private var draft: PropertyRequest?
   @State private var error: String?

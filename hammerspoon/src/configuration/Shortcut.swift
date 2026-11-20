@@ -94,7 +94,7 @@ extension Store {
 
 /// Keycaps for a modifier value and key, with macro references shown by name.
 struct BindingCaps: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let mods: JSON??
   let key: JSON??
 
@@ -124,7 +124,7 @@ struct BindingCaps: View {
 /// A shortcut shown as text, as in System Settings. Clicking turns it into a field that
 /// records the next key combination; the context menu offers macros and text editing.
 struct ShortcutButton: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String
   let title: String
   var modsPath: Path?
@@ -157,7 +157,7 @@ struct ShortcutButton: View {
       .onTapGesture { if !recording { start() } }
       .contextMenu { menu }
       .popover(isPresented: $editingText, arrowEdge: .bottom) {
-        ShortcutEditor(file: file, title: title, modsPath: modsPath, keyPath: keyPath).environment(store)
+        ShortcutEditor(file: file, title: title, modsPath: modsPath, keyPath: keyPath).environmentObject(store)
       }
       .help("Click to record a new shortcut")
       .accessibilityLabel(title)
@@ -254,7 +254,7 @@ struct ShortcutButton: View {
 }
 
 struct ShortcutEditor: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, title: String
   var modsPath: Path?
   var keyPath: Path?

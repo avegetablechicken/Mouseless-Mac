@@ -36,7 +36,7 @@ extension Store {
 }
 
 struct NodeView: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String
   let path: Path
   let value: JSON?
@@ -116,7 +116,7 @@ struct NodeView: View {
 // MARK: - Generic containers
 
 struct ContainerView: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, value: JSON, key: String, depth: Int, title: String
   var onRemove: (() -> Void)?
   var removeHelp = "Delete"
@@ -199,7 +199,7 @@ struct ContainerView: View {
 
 /// A row that opens a nested page, as System Settings does for details.
 struct DrillRow<Label: View>: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   @Environment(\.navigationContext) private var context
   let route: NodeRoute
   var summary = ""
@@ -223,7 +223,7 @@ struct DrillRow<Label: View>: View {
 
 /// Short lists of scalars edited in place as a wrapping row of tokens.
 struct CompactListRow: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, items: [JSON]
 
   var body: some View {
@@ -250,7 +250,7 @@ struct CompactListRow: View {
 // MARK: - Scalars
 
 struct ScalarRow: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   @Environment(\.fieldAlignment) private var fieldAlignment
   let file: String, path: Path, value: JSON?, key: String, title: String
   var hideLabel = false
@@ -332,7 +332,7 @@ struct ScalarRow: View {
 
 /// The input for a single scalar: switch, number, text, or path.
 struct ScalarControl: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, value: JSON?
   var alignment: TextAlignment = .trailing
   var compact = false
@@ -363,7 +363,7 @@ struct ScalarControl: View {
 }
 
 struct NumberField: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, number: Double
   var minimum: Double?
   var alignment: TextAlignment = .trailing
@@ -376,8 +376,8 @@ struct NumberField: View {
       .monospacedDigit()
       .frame(width: 90)
       .onAppear { text = JSON.formatNumber(number) }
-      .onChange(of: number) { if store.invalid[invalidKey] == nil, Double(trimmed(text)) != number { text = JSON.formatNumber(number) } }
-      .onChange(of: text) {
+      .onChange(of: number) { number in if store.invalid[invalidKey] == nil, Double(trimmed(text)) != number { text = JSON.formatNumber(number) } }
+      .onChange(of: text) { text in
         guard let parsed = Double(trimmed(text)), parsed.isFinite, minimum.map({ parsed >= $0 }) ?? true else {
           store.markInvalid(invalidKey, "Enter a valid number before saving."); return
         }
@@ -387,7 +387,7 @@ struct NumberField: View {
 }
 
 struct PathField: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, context: PathContext
   var alignment: TextAlignment = .trailing
   var body: some View {
@@ -400,7 +400,7 @@ struct PathField: View {
 }
 
 struct BrowseButton: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let current: String, context: PathContext, key: String
   let commit: (String) -> Void
   var body: some View {
@@ -423,7 +423,7 @@ struct BrowseButton: View {
 
 /// Raw text editor for a modifier or key value; used in the shortcut popover.
 struct KeyField: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, value: JSON?, kind: KeyKind, title: String
   var width: CGFloat = 170
   @State private var text = ""
@@ -442,8 +442,8 @@ struct KeyField: View {
       .help(kind == .modifiers ? "Modifier names, symbols, or a ${hyper.…} reference" : "Key name")
       .accessibilityLabel(title)
       .onAppear { text = keyRaw(value) }
-      .onChange(of: value) { if !focused { text = keyRaw(value) } }
-      .onChange(of: text) {
+      .onChange(of: value) { value in if !focused { text = keyRaw(value) } }
+      .onChange(of: text) { text in
         guard focused else { return }
         let current = store.value(file, path)
         do {
@@ -457,7 +457,7 @@ struct KeyField: View {
 // MARK: - Shortcuts
 
 struct ShortcutRow: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   @Environment(\.navigationContext) private var context
   let file: String, path: Path, value: JSON, title: String
 
@@ -488,7 +488,7 @@ struct ShortcutRow: View {
 }
 
 struct AppLaunchName: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   @Environment(\.navigationContext) private var context
   let file: String, path: Path, value: JSON, title: String
 
@@ -525,7 +525,7 @@ struct AppLaunchName: View {
 // MARK: - Mappings
 
 struct NamedMappingRow: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, value: JSON?
   @State private var text = ""
 
@@ -574,8 +574,8 @@ struct NamedMappingRow: View {
     }
     .hoverRow()
     .onAppear { text = key }
-    .onChange(of: key) { text = key }
-    .onChange(of: text) {
+    .onChange(of: key) { key in text = key }
+    .onChange(of: text) { text in
       do { _ = try store.validateMappingName(file, path, text); store.clearInvalid(errorKey) }
       catch { store.markInvalid(errorKey, error.localizedDescription) }
     }
@@ -603,7 +603,7 @@ struct NamedMappingRow: View {
 private let modifierChoices = ["command", "option", "control", "shift", "fn"]
 
 struct ModifierMappingRow: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, value: JSON?
   var onRemove: (() -> Void)?
 
@@ -636,7 +636,7 @@ struct ModifierMappingRow: View {
 }
 
 struct WindowBehaviorMappingView: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, value: JSON, depth: Int
 
   var body: some View {
@@ -653,7 +653,7 @@ struct WindowBehaviorMappingView: View {
 }
 
 struct LocalizationResourcesView: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, value: JSON
 
   var body: some View {
@@ -673,7 +673,7 @@ struct LocalizationResourcesView: View {
 // MARK: - Clipboard
 
 struct VerificationCodesView: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, rules: [JSON]
 
   var body: some View {
@@ -712,7 +712,7 @@ struct VerificationCodesView: View {
 
 /// A string field, or a JSON button for values of another type.
 struct TextValue: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, label: String
   var monospaced = false
   var fixedWidth = true
@@ -735,7 +735,7 @@ struct TextValue: View {
 
 /// Translation blocks as sections; used as a page's content.
 struct MenuTranslationsView: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, value: JSON?
 
   var body: some View {
@@ -801,7 +801,7 @@ struct MenuTranslationsView: View {
 // MARK: - Proxy
 
 struct ProxyModeView: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, value: JSON?, key: String, depth: Int
   var skipNamedMapping = false
 
@@ -816,7 +816,7 @@ struct ProxyModeView: View {
 }
 
 struct ProxyClientView: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, value: JSON, key: String
 
   var body: some View {
@@ -847,7 +847,7 @@ struct ProxyClientView: View {
 
 /// A proxy condition: a row that opens it, or a section on its own page.
 struct ProxyConditionView: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, value: JSON?
   var asSection = false
 
@@ -890,7 +890,7 @@ struct ProxyConditionView: View {
 }
 
 struct ProxyConditionField: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, value: JSON?, key: String
 
   var body: some View {
@@ -926,7 +926,7 @@ struct ProxyConditionField: View {
 }
 
 struct ProxyCandidatesView: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, candidates: [JSON]
 
   var body: some View {
@@ -958,7 +958,7 @@ struct ProxyCandidatesView: View {
 
 /// A candidate's own page: name and mode, other settings, then its condition.
 struct CandidatePage: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, object: JObject
 
   var body: some View {

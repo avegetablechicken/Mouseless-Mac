@@ -82,7 +82,7 @@ struct PromptRequest: Identifiable {
 }
 
 struct PromptSheet: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let request: PromptRequest
   @State private var text = ""
   @FocusState private var focused: Bool
@@ -232,7 +232,7 @@ struct ScopedRows<Content: View>: View {
 }
 
 struct AppListEditor: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path
   var ordered = false
   var empty = "No apps"
@@ -291,7 +291,7 @@ struct AppListEditor: View {
 
 /// The + − control under a list. Adding an app offers the app chooser or a typed bundle ID.
 struct ListControls: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   var add: ((String) -> Void)?
   var addTitle = "Add App"
   var remove: (() -> Void)?
@@ -336,7 +336,7 @@ struct ListControls: View {
 
 /// Network and shell conditions shared by proxy rules, proxy clients, and Mountain Duck.
 struct ConditionEditor: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path
   var exitCodeNote: String? = nil
 
@@ -369,7 +369,7 @@ func conditionSummary(_ value: JSON?) -> String {
 
 /// Which windows something applies to. Every field is optional; unknown fields are kept.
 struct WindowFilterFields: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path
   var showsURLs = false
   var showsSheets = true

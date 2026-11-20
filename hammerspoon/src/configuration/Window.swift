@@ -6,6 +6,13 @@ import SwiftUI
   let store = Store()
   private(set) var window: NSWindow?
 
+  static var bridgesToolbar: Bool {
+    #if compiler(>=5.9)
+    if #available(macOS 14, *) { return true }
+    #endif
+    return false
+  }
+
   init(send: @escaping ([String: Any]) -> Void) {
     store.send = send
   }
@@ -15,7 +22,12 @@ import SwiftUI
       window = makeWindow()
       store.load()
     }
-    NSApp.activate()
+    #if compiler(>=5.9)
+    if #available(macOS 14, *) { NSApp.activate() }
+    else { NSApp.activate(ignoringOtherApps: true) }
+    #else
+    NSApp.activate(ignoringOtherApps: true)
+    #endif
     window?.makeKeyAndOrderFront(nil)
   }
 
@@ -28,8 +40,10 @@ import SwiftUI
   }
 
   private func makeWindow() -> NSWindow {
-    let host = NSHostingController(rootView: ConfigurationView().environment(store))
-    host.sceneBridgingOptions = [.toolbars, .title]
+    let host = NSHostingController(rootView: ConfigurationView().environmentObject(store))
+    #if compiler(>=5.9)
+    if #available(macOS 14, *) { host.sceneBridgingOptions = [.toolbars, .title] }
+    #endif
     let window = NSWindow(contentViewController: host)
     window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
     window.title = "Configuration"

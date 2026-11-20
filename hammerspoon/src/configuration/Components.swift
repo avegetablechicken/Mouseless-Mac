@@ -130,7 +130,7 @@ struct ToolButton: View {
 
 /// "Add" control; when the entry is an application it offers manual entry or browsing.
 struct AddEntryButton: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   var title = "Add…"
   var needsApplication = false
   var proxy = false
@@ -209,7 +209,7 @@ struct PlainField: View {
       .multilineTextAlignment(alignment)
       .foregroundStyle(invalid ? AnyShapeStyle(.red) : secondary && !focused ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
       .focused($focused)
-      .onChange(of: focused) { onFocusChange?(focused) }
+      .onChange(of: focused) { focused in onFocusChange?(focused) }
       .onSubmit { onSubmit?() }
   }
 }
@@ -412,7 +412,7 @@ enum NodeAction {
 }
 
 struct NodeActionItems: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let actions: [NodeAction]
   var body: some View {
     ForEach(Array(actions.enumerated()), id: \.offset) { index, action in
@@ -452,7 +452,7 @@ struct ActionsMenu: View {
 
 /// Footer buttons for a list: other actions in a menu, adding as the trailing button.
 struct ActionButtons: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let actions: [NodeAction]
   var body: some View {
     let others = actions.filter { !$0.isAdd }

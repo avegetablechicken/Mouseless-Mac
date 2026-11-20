@@ -1,7 +1,18 @@
 // Configuration state and editing rules. Lua owns file I/O; this side keeps drafts.
 import AppKit
 import SwiftUI
-import Observation
+import Combine
+
+#if compiler(<5.9)
+// Lua invokes the bridge on Hammerspoon's main thread. Older Swift runtimes
+// need an explicit thread check before entering synchronous main-actor code.
+extension MainActor {
+  @MainActor(unsafe) static func assumeIsolated<T>(_ body: @MainActor () -> T) -> T {
+    precondition(Thread.isMainThread)
+    return body()
+  }
+}
+#endif
 
 struct TabSpec {
   let title: String, file: String, keys: [String], symbol: String, tint: Color
@@ -298,42 +309,42 @@ struct FileState { var raw: String?, baseline: JSON?, error: String?, missing = 
 
 // MARK: - Store
 
-@MainActor @Observable final class Store {
-  var files: [String: FileState] = [:]
-  var drafts: [String: JSON] = [:]
-  var invalid: [String: String] = [:]
-  var selection: TabID? = TabID(group: 0, tab: 0)
-  var pending: String?
-  var reloading = false
-  var loaded = false
-  var status: String?
-  var statusIsError = false
-  var expandedApps: Set<String> = []
-  var collapsed: Set<String> = []
-  var disclosure: [String: Bool] = [:]
-  var proxyApps: [String: Bool] = [:]
-  var appBindings: [String: JSON] = [:]
-  var hotkeyDefaults: JSON = .object(JObject())
+@MainActor final class Store: ObservableObject {
+  @Published var files: [String: FileState] = [:]
+  @Published var drafts: [String: JSON] = [:]
+  @Published var invalid: [String: String] = [:]
+  @Published var selection: TabID? = TabID(group: 0, tab: 0)
+  @Published var pending: String?
+  @Published var reloading = false
+  @Published var loaded = false
+  @Published var status: String?
+  @Published var statusIsError = false
+  @Published var expandedApps: Set<String> = []
+  @Published var collapsed: Set<String> = []
+  @Published var disclosure: [String: Bool] = [:]
+  @Published var proxyApps: [String: Bool] = [:]
+  @Published var appBindings: [String: JSON] = [:]
+  @Published var hotkeyDefaults: JSON = .object(JObject())
 
-  var jsonEditor: JSONEditorRequest?
-  var property: PropertyRequest?
-  var route: [NodeRoute] = []
+  @Published var jsonEditor: JSONEditorRequest?
+  @Published var property: PropertyRequest?
+  @Published var route: [NodeRoute] = []
   /// Details opened from a pushed page: the sheet's root page and the pages pushed inside it.
-  var sheet: NodeRoute?
-  var sheetPath: [NodeRoute] = []
+  @Published var sheet: NodeRoute?
+  @Published var sheetPath: [NodeRoute] = []
   /// A purpose-built editor sheet, such as a verification rule or a proxy client.
-  var panel: Panel?
-  var prompt: PromptRequest?
-  var confirm: ConfirmRequest?
+  @Published var panel: Panel?
+  @Published var prompt: PromptRequest?
+  @Published var confirm: ConfirmRequest?
 
-  @ObservationIgnored var send: ([String: Any]) -> Void = { _ in }
-  @ObservationIgnored private var nextRequest = 0
-  @ObservationIgnored private var browseCallbacks: [String: (String, String) -> Void] = [:]
-  @ObservationIgnored private var appCallbacks: [String: (String, String?) -> Void] = [:]
-  @ObservationIgnored private var statusTimer: Timer?
-  var browsing: Set<String> = []
-  var configDirectory: String?
-  @ObservationIgnored private var browseKeys: [String: String] = [:]
+  var send: ([String: Any]) -> Void = { _ in }
+  private var nextRequest = 0
+  private var browseCallbacks: [String: (String, String) -> Void] = [:]
+  private var appCallbacks: [String: (String, String?) -> Void] = [:]
+  private var statusTimer: Timer?
+  @Published var browsing: Set<String> = []
+  @Published var configDirectory: String?
+  private var browseKeys: [String: String] = [:]
 
   var tabID: TabID { selection ?? TabID(group: 0, tab: 0) }
   var group: GroupSpec { groups[tabID.group] }

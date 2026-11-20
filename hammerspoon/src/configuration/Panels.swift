@@ -24,7 +24,7 @@ let windowListTitles = ["hideWithoutWindow": "Hide when the last window closes",
                         "windowSwitcherIgnore": "Hide from the window switcher"]
 
 struct PanelSheet: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let panel: Panel
 
   var body: some View {
@@ -161,7 +161,7 @@ extension Store {
 // MARK: - Clipboard
 
 struct VerificationPanel: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let index: Int
   var body: some View {
     let path: Path = [.k("verificationFilter"), .i(index)]
@@ -180,7 +180,7 @@ struct VerificationPanel: View {
 // MARK: - Shortcuts
 
 struct AppLauncherPanel: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let index: Int
 
   enum Target: String, CaseIterable { case app = "App", path = "Path", vm = "Parallels VM" }
@@ -235,7 +235,7 @@ struct AppLauncherPanel: View {
 }
 
 struct PathListEditor: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path
   var directory = false
   @State private var selection: Int?
@@ -270,7 +270,7 @@ struct PathListEditor: View {
 }
 
 struct ShortcutPanel: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, path: Path, title: String
 
   private enum WindowScope: String, CaseIterable { case none = "Any Time", any = "Any Window", matching = "Matching Windows" }
@@ -380,7 +380,7 @@ struct ShortcutPanel: View {
 }
 
 struct RemoteDesktopPanel: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let app: String
 
   private enum Scope: String, CaseIterable { case remote = "Remote Sessions", local = "Other Windows", matching = "Matching Windows" }
@@ -450,7 +450,7 @@ struct RemoteDesktopPanel: View {
 // MARK: - Apps
 
 struct WindowRulePanel: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let list: String, index: Int, app: String
 
   var body: some View {
@@ -476,7 +476,7 @@ struct WindowRulePanel: View {
 }
 
 struct MountainDuckPanel: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let index: Int
 
   var body: some View {
@@ -499,7 +499,7 @@ struct MountainDuckPanel: View {
 }
 
 struct InputSourcesPanel: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let app: String
   @State private var selection: Int?
 
@@ -536,7 +536,7 @@ struct InputSourcesPanel: View {
 // MARK: - Network proxy
 
 struct ProxyClientPanel: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let file: String, name: String
   @State private var mode = "pac"
   @State private var location = 0
@@ -616,7 +616,7 @@ struct ProxyClientPanel: View {
 // MARK: - Localization
 
 struct ResourcePanel: View {
-  @Environment(Store.self) private var store
+  @EnvironmentObject private var store: Store
   let app: String
 
   enum Kind: String, CaseIterable { case path = "Folder", electron = "Electron", java = "Java", qt = "Qt", rust = "Rust i18n" }
