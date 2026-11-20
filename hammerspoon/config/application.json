@@ -169,6 +169,46 @@
     "com.tencent.qq": [
       "com.apple.inputmethod.SCIM.Shuangpin",
       "com.apple.inputmethod.SCIM.ITABC"
+    ],
+    "com.openai.codex": [
+      "com.apple.inputmethod.SCIM.Shuangpin",
+      "com.apple.inputmethod.SCIM.ITABC"
+    ],
+    "com.anthropic.claudefordesktop": [
+      "com.apple.inputmethod.SCIM.Shuangpin",
+      "com.apple.inputmethod.SCIM.ITABC"
+    ],
+    "com.google.antigravity": [
+      "com.apple.inputmethod.SCIM.Shuangpin",
+      "com.apple.inputmethod.SCIM.ITABC"
+    ],
+    "sh.paseo.desktop": [
+      "com.apple.inputmethod.SCIM.Shuangpin",
+      "com.apple.inputmethod.SCIM.ITABC"
+    ],
+    "dev.openchamber.desktop": [
+      "com.apple.inputmethod.SCIM.Shuangpin",
+      "com.apple.inputmethod.SCIM.ITABC"
+    ],
+    "ai.opencode.desktop": [
+      "com.apple.inputmethod.SCIM.Shuangpin",
+      "com.apple.inputmethod.SCIM.ITABC"
+    ],
+    "com.maka.desktop": [
+      "com.apple.inputmethod.SCIM.Shuangpin",
+      "com.apple.inputmethod.SCIM.ITABC"
+    ],
+    "com.deepseek.dsh": [
+      "com.apple.inputmethod.SCIM.Shuangpin",
+      "com.apple.inputmethod.SCIM.ITABC"
+    ],
+    "dev.zcode.app": [
+      "com.apple.inputmethod.SCIM.Shuangpin",
+      "com.apple.inputmethod.SCIM.ITABC"
+    ],
+    "com.qoder.app": [
+      "com.apple.inputmethod.SCIM.Shuangpin",
+      "com.apple.inputmethod.SCIM.ITABC"
     ]
   },
 
