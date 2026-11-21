@@ -175,13 +175,14 @@ end
 
 -- Turn on / off messages for system settings
 local function switchMessage(turnOn, name)
+  -- Home's loctable (7 MB) takes seconds to read, so try it last
   return systemLocalized({
-    { "HFNaturalLanguage_Action_Power_" .. (turnOn and "1" or "0") .. "_Named",
-      "/System/iOSSupport/System/Library/PrivateFrameworks/Home.framework",
-      "HFLocalizable" },
     { turnOn and "Turn On (System Setting)" or "Turn Off (System Setting)",
       "/System/Library/PrivateFrameworks/VoiceShortcutClient.framework",
       "Localizable" },
+    { "HFNaturalLanguage_Action_Power_" .. (turnOn and "1" or "0") .. "_Named",
+      "/System/iOSSupport/System/Library/PrivateFrameworks/Home.framework",
+      "HFLocalizable" },
   }, turnOn and "Enable %@" or "Disable %@", name)
 end
 
