@@ -27,6 +27,22 @@ function isBinarayPlist(file)
   return firstByte == "b"
 end
 
+-- Read `locales` of a loctable, which holds every locale. Pushing a large one
+-- whole into Lua with "hs.plist.read" blocks for seconds (e.g. 15s for the
+-- 7 MB HFLocalizable of Home.framework), so extract the locales with plutil.
+function readLoctableLocales(file, locales)
+  if (hs.fs.attributes(file, 'size') or 0) <= 64 * 1024 then
+    return hs.plist.read(file) or {}
+  end
+  local cmd = "printf '{'"
+  for _, locale in ipairs(locales) do
+    cmd = cmd .. strfmt([[; printf '"%s":'; plutil -extract '%s' json -o - '%s' ]]
+        .. [[2>/dev/null || printf null; printf ',']], locale, locale, file)
+  end
+  local json, ok = hs.execute(cmd .. [[; printf '"":null}']])
+  return ok and hs.json.decode(json) or {}
+end
+
 function parseBinaryPlistFile(file, keepOrder, keepAll)
   if keepOrder == nil then keepOrder = true end
   -- do not use "hs.plist.read" for performance reasons
@@ -116,11 +132,12 @@ end
 
 function localizeByLoctableImpl(str, filePath, locale, localesDict, baseNibFile)
   if localesDict[locale] == nil then
-    local loctables = hs.plist.read(filePath)
+    local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
+    local loctables = readLoctableLocales(filePath, baseNibFile and { locale }
+        or tconcat({ locale }, enLocales))
     localesDict[locale] = loctables[locale]
     if localesDict[locale] == nil then return end
     if baseNibFile == nil then
-      local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
       for _, en in ipairs(enLocales) do
         localesDict[en] = loctables[en]
       end
@@ -868,11 +885,12 @@ end
 
 function delocalizeByLoctableImpl(str, filePath, locale, localesDict, baseNibFile)
   if localesDict[locale] == nil then
-    local loctables = hs.plist.read(filePath)
+    local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
+    local loctables = readLoctableLocales(filePath, baseNibFile and { locale }
+        or tconcat({ locale }, enLocales))
     localesDict[locale] = loctables[locale]
     if localesDict[locale] == nil then return end
     if baseNibFile == nil then
-      local enLocales = tconcat({ 'en', 'English', 'Base' }, extraEnglishLocales)
       for _, en in ipairs(enLocales) do
         localesDict[en] = loctables[en]
       end
