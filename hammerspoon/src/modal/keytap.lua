@@ -41,7 +41,7 @@ function M.new(options, fn)
           local ok, result = xpcall(fn, debug.traceback, e, keyDowns)
           if not ok then log.e(result) end
           return ok and result == true
-        end)
+        end, options.listenHyper == true)
   end
   if watcher then return watcher, true end
   local types = {}

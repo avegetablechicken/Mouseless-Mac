@@ -165,7 +165,7 @@ static bool handleHyper(CGEventType type, CGEventRef event, int code, int modifi
 #define DECIDE_TIMEOUT 0.5  // seconds a key waits for Lua before passing through
 typedef struct { int code, modifiers; } Rule;
 typedef struct {
-    bool used, enabled, whileFn;
+    bool used, enabled, whileFn, listenHyper;
     CGEventMask listen, decide;
     int ruleCount;
     Rule rules[RULES];
@@ -234,6 +234,18 @@ static CGEventRef handleKey(CGEventTapProxy proxy, CGEventType type, CGEventRef 
     if (type == kCGEventFlagsChanged) {
         atomic_store(&fnHeld, (modifiers & 16) != 0);
     } else if (handleHyper(type, event, code, modifiers)) {
+        // The Hyper double-tap watcher also needs intervening consumed chord keys.
+        if (CGEventGetIntegerValueField(event, kCGKeyboardEventAutorepeat)) return NULL;
+        pthread_mutex_lock(&watchersLock);
+        for (int i = WATCHERS - 1; i >= 0; i--) {
+            Watcher *w = &watchers[i];
+            if (w->used && w->enabled && w->listenHyper && (w->listen & CGEventMaskBit(type))) {
+                NSData *data = CFBridgingRelease(CGEventCreateData(NULL, event));
+                notifyWatcher(*w, data, CGEventGetIntegerValueField(event, kCGEventSourceUserData),
+                              atomic_load(&keyDowns));
+            }
+        }
+        pthread_mutex_unlock(&watchersLock);
         return NULL;
     }
     long long sequence = atomic_load(&keyDowns);
@@ -368,7 +380,7 @@ static int deleteWatcher(lua_State *L) {
 }
 
 // watch(listenMask, decideMask, rules, whileFn,
-//       callback(eventData, keyDowns, eventSourceUserData)):
+//       callback(eventData, keyDowns, eventSourceUserData), listenHyper):
 // rules is a list of {keyCode, modifiers}. Returns a stopped watcher with
 // start, stop and isEnabled, or nothing when the tap is unavailable.
 static int watch(lua_State *L) {
@@ -387,7 +399,7 @@ static int watch(lua_State *L) {
     }
     if (slot < 0) return 0;
     Watcher w = { .used = true, .whileFn = whileFn, .listen = listen, .decide = decide,
-                  .ruleCount = (int)ruleCount, .serial = watcherSerial };
+                  .ruleCount = (int)ruleCount, .serial = watcherSerial, .listenHyper = lua_toboolean(L, 6) };
     for (int i = 0; i < ruleCount; i++) {
         lua_rawgeti(L, 3, i + 1);
         lua_rawgeti(L, -1, 1); w.rules[i].code = (int)lua_tointeger(L, -1);

@@ -101,7 +101,8 @@ function module:_new(mods, key, msg, func)
   -- the actual workhorse
   -- Events are reported after they were delivered, possibly late, so time
   -- them by when they happened.
-  self.eventWatcher = keytap.new({ listen = { events.flagsChanged, events.keyDown, events.keyUp } }, function(ev)
+  self.eventWatcher = keytap.new({ listen = { events.flagsChanged, events.keyDown, events.keyUp },
+      listenHyper = Mod.Hyper and self.key == hs.keycodes.map[Mod.Hyper.Long] }, function(ev)
     local now = ev:timestamp() / 1e9
     -- if it's been too long; previous state doesn't matter
     if (now - self.timeFirstKeyDown) > self.timeFrame then
