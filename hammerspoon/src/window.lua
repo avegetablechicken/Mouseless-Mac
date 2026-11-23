@@ -1055,6 +1055,11 @@ local function selectWindowMenuItem(app, windowMenuItem, title)
         and title:sub(#title - #suffix + 1) == suffix
   end)
   if item then title = item.AXTitle end
+  -- Same-titled windows (e.g. in different profiles) are ambiguous in the
+  -- menu; the target window was already ordered front before activation.
+  local same = menu and tifilter(getc(menu, AX.MenuItem),
+      function(i) return i.AXTitle == title end) or {}
+  if #same > 1 then return end
   hs.timer.doAfter(0.1, function()
     if menuBarVisible() then
       app:selectMenuItem{ windowMenuItem, title }
@@ -1143,6 +1148,7 @@ local function browserChooser()
           for (var j = 0; j < tabs.length; j++) {
             if (]] .. (safari and 'j + 1' or 'tabs[j].id()') .. [[ != ]] .. choice.id .. [[) continue;
             ]] .. (safari and 'win.currentTab = tabs[j];' or 'win.activeTabIndex = j + 1;') .. [[
+            win.index = 1;
             return win.name();
           }
         }
@@ -1564,6 +1570,7 @@ local function PDFChooser()
           repeat with j from 1 to count of tabList
             if ]] .. findTabCmd .. [[ then
               ]] .. focusTabCmd .. [[
+              set index of aWindow to 1
               return ]] .. titleField .. [[ of aWindow
             end if
           end repeat
