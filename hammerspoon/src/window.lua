@@ -1065,6 +1065,38 @@ local function selectWindowMenuItem(app, windowMenuItem, title)
   end)
 end
 
+-- Names of Safari profiles other than the default one.
+--
+-- Each File > New Window item identifies its profile, such as
+-- `NewWork%20ProfileWindow?isDefaultProfile=false`.
+local function safariNonDefaultProfiles(app)
+  local fileMenu = localizedMenuBarItem('File', app:bundleID())
+  local items = fileMenu and getc(toappui(app), AX.MenuBar, 1,
+      AX.MenuBarItem, fileMenu, AX.Menu, 1, AX.MenuItem) or {}
+  local profiles = {}
+  for _, item in ipairs(items) do
+    local name = (item.AXIdentifier or ""):match("^New(.+)Window%?isDefaultProfile=false$")
+    if name then
+      tinsert(profiles, (name:gsub("%%(%x%x)",
+          function(hex) return string.char(tonumber(hex, 16)) end)))
+    end
+  end
+  return profiles
+end
+
+-- Names of Chromium profiles other than the default one (`Default`).
+local function chromiumNonDefaultProfiles(browser)
+  local localState = hs.json.read(os.getenv("HOME") .. "/Library/"
+      .. browserFaviconStores[browser] .. "/Local State") or {}
+  local profiles = {}
+  for dir, info in pairs((localState.profile or {}).info_cache or {}) do
+    if dir ~= "Default" and type(info.name) == 'string' then
+      tinsert(profiles, info.name)
+    end
+  end
+  return profiles
+end
+
 -- Browser tab chooser.
 --
 -- Presents a unified chooser for switching between tabs across
@@ -1138,14 +1170,28 @@ local function browserChooser()
         var app = Application(]] .. app:pid() .. [[);
         var result = [];
         app.windows().forEach(function(win) {
+          var winName = win.name(), bounds = ]] .. (safari and 'null' or 'win.bounds()') .. [[;
           (win.tabs() || []).forEach(function(tab, index) {
             result.push({winID: win.id(), id: ]] .. (safari and 'index + 1' or 'tab.id()') .. [[,
-              title: tab.]] .. (safari and 'name' or 'title') .. [[(), url: tab.url()});
+              title: tab.]] .. (safari and 'name' or 'title') .. [[(), url: tab.url(),
+              winName: winName, bounds: bounds});
           });
         });
         JSON.stringify(result);
       ]]
-      tinsert(requests, {browser = browser, pid = app:pid(), script = script})
+      local profiles = safari and safariNonDefaultProfiles(app)
+          or chromiumNonDefaultProfiles(browser)
+      -- Chromium names the profile only in accessibility window titles,
+      -- such as `Title - Google Chrome - Work`, listed front to back like
+      -- scripting windows.
+      local axWindows = {}
+      if not safari and #profiles > 0 then
+        for _, win in ipairs(app:allWindows()) do
+          tinsert(axWindows, { title = win:title(), frame = win:frame() })
+        end
+      end
+      tinsert(requests, {browser = browser, pid = app:pid(), script = script,
+          profiles = profiles, axWindows = axWindows})
     end
   end
 
@@ -1157,9 +1203,37 @@ local function browserChooser()
     if ok and type(tabs) == 'table' then
       local favicon, closeFavicons = tabFaviconLookup(request.browser)
       local appIcon = hs.image.imageFromAppBundle(request.browser)
+      -- Profile shown in each window title when several profiles exist:
+      -- Safari prefixes it (`Work — Title`); Chromium appends it to the
+      -- accessibility title of the window with the same bounds, taking
+      -- identical windows in order.
+      local winProfiles = {}
+      local function windowProfile(tab)
+        if winProfiles[tab.winID] ~= nil then return winProfiles[tab.winID] end
+        local title, b = type(tab.winName) == 'string' and tab.winName or nil, tab.bounds
+        if title and b then
+          title = nil
+          for i, win in ipairs(request.axWindows) do
+            local f = win.frame
+            if (win.title or ""):find(tab.winName .. " - ", 1, true) == 1
+                and f.x == b.x and f.y == b.y and f.w == b.width and f.h == b.height then
+              title = table.remove(request.axWindows, i).title
+              break
+            end
+          end
+        end
+        local profile = title and tfind(request.profiles, function(name)
+          if b then return title:sub(-#name - 3) == " - " .. name end
+          return title:find(name .. " — ", 1, true) == 1
+        end)
+        winProfiles[tab.winID] = profile or false
+        return profile
+      end
       for _, tab in ipairs(tabs) do
+        local profile = windowProfile(tab)
         tinsert(choices, {
-          text = tab.title, subText = tab.url,
+          text = tab.title,
+          subText = profile and (profile .. " — " .. (tab.url or "")) or tab.url,
           image = favicon(tab.url) or appIcon,
           id = tab.id, winID = tab.winID,
           pid = request.pid, browser = request.browser,
