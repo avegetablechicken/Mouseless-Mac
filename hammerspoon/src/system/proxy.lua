@@ -2034,7 +2034,9 @@ local function registerProxySettingsEntry(menu)
   tinsert(menu, {
     title = "Show in " .. hs.application.nameForBundleID("com.apple.systempreferences"),
     fn = function()
-      local app = hs.application.open("com.apple.systempreferences", 2, true)
+      local app = OS_VERSION < OS.Ventura
+          and hs.application.open("com.apple.systempreferences", 2, true)
+          or hs.application.get("com.apple.systempreferences")
       local action = function()
         if OS_VERSION < OS.Ventura then
           hs.osascript.applescript([[
@@ -2047,20 +2049,22 @@ local function registerProxySettingsEntry(menu)
             end tell
           ]])
         else
-          hs.osascript.applescript([[
-            tell application id "com.apple.systempreferences"
-              reveal anchor "Proxies" of pane ¬
-                  id "com.apple.Network-Settings.extension"
-            end tell
-          ]])
+          hs.urlevent.openURLWithBundle(
+              "x-apple.systempreferences:com.apple.Network-Settings.extension?Proxies",
+              "com.apple.systempreferences")
         end
       end
 
-      if app:focusedWindow():role() == AX.Sheet then
-        hs.eventtap.keyStroke("", "Escape")
-        hs.timer.waitUntil(function()
-          return app:focusedWindow():role() ~= AX.Sheet
-        end, action)
+      local win = app and app:focusedWindow()
+      if win and win:role() == AX.Sheet then
+        hs.application.launchOrFocusByBundleID("com.apple.systempreferences")
+        hs.timer.waitUntil(function() return app:isFrontmost() end, function()
+          hs.eventtap.keyStroke({"cmd"}, ".")
+          hs.timer.waitUntil(function()
+            local w = app:focusedWindow()
+            return not w or w:role() ~= AX.Sheet
+          end, action, 0.1)
+        end, 0.05)
       else
         action()
       end
