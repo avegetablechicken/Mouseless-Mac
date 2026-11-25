@@ -92,6 +92,9 @@ local executableApp={bundleID=function() return 'example.owner' end}
 local execMap,execPositions=env.loadStatusItemsAutosaveName(executableApp,true,
   {['status:example-process::Item-0']=476})
 assert(execMap[1]=='Item-0' and execPositions[1]==476)
+execMap,execPositions=env.loadStatusItemsAutosaveName(executableApp,true,
+  {['status:example.owner::Item-0']=308,['status:example-process::Item-0']=388})
+assert(execMap[1]=='Item-0' and execPositions[1]==308)
 items=originalItems
 -- Older systems retain their own preferences and registered-frame correction.
 env.OS_VERSION=26

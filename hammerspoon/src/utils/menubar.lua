@@ -235,18 +235,19 @@ local function loadStatusItemsGoldenGate(app, requirePreferredPosition, layout)
       end
     end
   else
-    local saved, ordered = {}, {}
+    local saved, fallback, ordered = {}, {}, {}
     local prefix = "status:" .. appid .. "::"
     local bundleID = app:bundleID()
     local info = bundleID and hs.application.infoForBundleID(bundleID) or {}
     local executablePrefix = info.CFBundleExecutable and "status:" .. info.CFBundleExecutable .. "::"
     for key, position in pairs(layout) do
-      local ownerPrefix = key:sub(1, #prefix) == prefix and prefix
-          or executablePrefix and key:sub(1, #executablePrefix) == executablePrefix and executablePrefix
-      if ownerPrefix then
-        saved[#saved + 1] = { name = key:sub(#ownerPrefix + 1), position = position }
+      if key:sub(1, #prefix) == prefix then
+        saved[#saved + 1] = { name = key:sub(#prefix + 1), position = position }
+      elseif executablePrefix and key:sub(1, #executablePrefix) == executablePrefix then
+        fallback[#fallback + 1] = { name = key:sub(#executablePrefix + 1), position = position }
       end
     end
+    if #saved == 0 then saved = fallback end
     if #saved == 0 then return end
     items = getc(toappui(app).AXExtrasMenuBar, AX.MenuBarItem)
     -- Since macOS 27.2 (27.1 unverified) only icons collapsed in overflow lack
