@@ -1211,6 +1211,12 @@
         "key": "delete"
       }
     },
+    "com.apple.findmy": {
+      "view4": {
+        "mods": "command",
+        "key": "4"
+      }
+    },
     "com.apple.Safari": {
       "showInFinder": {
         "mods": ["shift", "command"],

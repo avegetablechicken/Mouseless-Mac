@@ -3166,6 +3166,25 @@ AppHotKeyCallbacks = {
     }
   },
 
+  ["com.apple.findmy"] = {
+    ["view4"] = {
+      message = T("Me"),
+      enabled = OS_VERSION >= OS["Golden Gate"],
+      condition = function(app)
+        local win = app:focusedWindow()
+        if win == nil then return false end
+        local tabs = getc(towinui(win), AX.Group, 1,
+            AX.Group, "FindMy.Application", AX.Group, "CardContainerView",
+            AX.TabGroup, 1, AX.RadioButton)
+        local tab = tfind(tabs or {}, function(bt)
+          return bt.AXDescription == A_Message
+        end)
+        return Callback.Enabled(tab)
+      end,
+      fn = Callback.Press
+    }
+  },
+
   ["com.apple.AppStore"] =
   {
     ["back"] = {
