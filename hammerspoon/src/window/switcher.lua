@@ -136,6 +136,7 @@ function Engine:updateRecord(win)
     if not self.icons[iconKey] then self.icons[iconKey] = (bundle and self.h.image.imageFromAppBundle(bundle))
         or self.h.image.imageFromName('NSApplicationIcon') end
     return { id = id, win = win, pid = pid, bundle = bundle, title = win:title() or '',
+      frame = call(function() return win:frame() end),
       appName = app:name(), icon = self.icons[iconKey], token = same and old.token or self.serial,
       image = same and old.image or nil, capturedAt = same and old.capturedAt or nil,
       requestedAt = same and old.requestedAt or nil, retryAt = same and old.retryAt or nil,
@@ -312,7 +313,7 @@ function Engine:requestCapture(id, priority)
   if record.requestedAt and now - record.requestedAt < 2 then return end
   if record.capturedAt and now - record.capturedAt < (priority and 1 or 10) then
     -- A skewed Stage Manager surface must not delay an undistorted recapture.
-    local frame, size = call(function() return record.win:frame() end), record.image and record.image:size()
+    local frame, size = record.frame, record.image and record.image:size()
     if not (frame and size and frame.w > 0 and frame.h > 0 and size.h > 0
         and math.abs(size.w / size.h / (frame.w / frame.h) - 1) >= 0.1) then return end
   end
@@ -358,7 +359,7 @@ function Engine:receiveCaptures()
         local image = self.h.image.imageFromURL(result.image)
         -- Keep an undistorted cache when Stage Manager returns a skewed surface.
         if image and record.image then
-          local frame = call(function() return record.win:frame() end)
+          local frame = record.frame
           local size, cached = image:size(), record.image:size()
           if frame and frame.w > 0 and frame.h > 0 and size.h > 0 and cached.h > 0
               and math.abs(cached.w / cached.h / (frame.w / frame.h) - 1) < 0.1
@@ -435,6 +436,7 @@ function Engine:layout()
   elements[#elements+1] = {type='rectangle',action='skip',fillColor={white=1,alpha=0.12},frame={x=width-7,y=gridY,w=3,h=height-42}}
   elements[#elements+1] = {type='rectangle',action='skip',fillColor={white=1,alpha=0.5},roundedRectRadii={xRadius=1.5,yRadius=1.5},frame={x=width-7,y=gridY,w=3,h=1}}
   self.canvas:replaceElements(table.unpack(elements))
+  self.painted = {}
 end
 
 function Engine:ensureSelectionVisible()
@@ -469,7 +471,8 @@ function Engine:paint()
     local item = index <= last and self.records[self.session[index]] or nil
     local base = 3+(i-1)*3
     for j = base, base+2 do self.canvas:elementAttribute(j, 'action', item and 'strokeAndFill' or 'skip') end
-    if item then
+    local previous = self.painted[i]
+    if item and (not previous or previous.item ~= item or previous.image ~= item.image or previous.row ~= self.scrollRow) then
       local tile, scale = self.tileFrames[index], self.scale
       local x, y = tile.x-4*scale, tile.y-offset
       self.canvas:elementAttribute(base, 'frame', {x=x+12*scale,y=y+44*scale,w=self.cellWidth-24*scale,h=self.cellHeight-60*scale})
@@ -478,6 +481,7 @@ function Engine:paint()
       self.canvas:elementAttribute(base, 'image', item.image or item.icon)
       self.canvas:elementAttribute(base+1, 'image', item.icon)
       self.canvas:elementAttribute(base+2, 'text', (item.minimized and '↓ ' or '') .. (item.title ~= '' and item.title or item.appName))
+      self.painted[i] = {item=item, image=item.image, row=self.scrollRow}
     end
   end
   self.canvas:elementAttribute(3+self.slots*3, 'text', self.selected .. ' / ' .. #self.session .. '   ·   Esc')
